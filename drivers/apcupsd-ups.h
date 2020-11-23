@@ -44,6 +44,7 @@ typedef struct {
 #define STATUS_CHRG		1024	/* charging */
 #define STATUS_DISCHRG		2048	/* discharging */
 
+/*
 static status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
   { "TRIM", STATUS_TRIM },
@@ -59,6 +60,7 @@ static status_lkp_t status_info[] = {
   { "DISCHRG", STATUS_DISCHRG },
   { "NULL", 0 },
 };
+*/
 /* from usbhid-ups.h */
 
 typedef struct {
