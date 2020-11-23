@@ -140,10 +140,10 @@ static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain it
 static daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
-static mib2nut_info_t *mib2nut_info;
+mib2nut_info_t *mib2nut_info;
 /* FIXME: to be trashed */
-static snmp_info_t *snmp_info;
-static alarms_info_t *alarms_info;
+snmp_info_t *snmp_info;
+alarms_info_t *alarms_info;
 static const char *mibname;
 static const char *mibvers;
 

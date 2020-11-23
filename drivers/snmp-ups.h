@@ -286,6 +286,12 @@ extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
 
+/* pointer to the Snmp2Nut lookup table */
+extern mib2nut_info_t *mib2nut_info;
+/* FIXME: to be trashed */
+extern snmp_info_t *snmp_info;
+extern alarms_info_t *alarms_info;
+
 /* Common daisychain structure and functions */
 
 bool_t daisychain_init(void);
@@ -301,4 +307,3 @@ typedef struct {
 
 
 #endif /* SNMP_UPS_H */
-
