@@ -60,6 +60,7 @@ addons:
     - libmodbus-dev
     - libnss3-dev
     - libssl-dev
+# NOTE: Keep the list above in sync with replicas like deps_driverlibs_cross_i386 below
 
 # Common settings for jobs in the matrix built below
 env:
@@ -352,24 +353,53 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
   - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32"
     os: linux
     arch: x86
-    sudo: false
+    sudo: true
+    before_install: sudo dpkg --add-architecture i386 && sudo apt-get update
     services:
         - docker
     compiler: gcc
     addons:
       apt:
-        packages:
-        - *deps_driverlibs
+        packages: &deps_driverlibs_cross_i386
+        - git
+        - ccache
         - gcc-multilib
-### Seems this one precludes builds against OpenSSL or Mozilla NSS
-### Needed for C++ build that we skip without C++11 anyway
-#        - g++-multilib
+        - g++-multilib
+        - libcppunit-dev:i386
+        - libcppunit-subunit-dev:i386
+        - libneon27:i386
+        - libneon27-dev:i386
+        - libltdl7:i386
+        - libltdl-dev:i386
+        #MISSING:i386? hdr only?# - libi2c-dev:i386
+        - libi2c-dev
+        - lua5.1:i386
+        - liblua5.1-0-dev:i386
+        - libsnmp-dev:i386
+        - libfreeipmi-dev:i386
+        - libipmimonitoring-dev:i386
+        - libusb-dev:i386
+        - linux-libc-dev:i386
+        - libpowerman0-dev:i386
+        - libavahi-common-dev:i386
+        - libavahi-core-dev:i386
+        - libavahi-client-dev:i386
+        - libgd2-xpm-dev:i386
+        - libpng-dev:i386
+        - libjpeg-dev:i386
+        - libfreetype6-dev:i386
+        - libxpm-dev:i386
+        - libxml2-utils:i386
+        - libmodbus-dev:i386
+        - libnss3-dev:i386
+        - libssl-dev:i386
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" CC=clang-8 CXX=clang++-8
     os: linux
     arch: x86
     dist: xenial
-    sudo: false
+    sudo: true
+    before_install: sudo dpkg --add-architecture i386 && sudo apt-get update
     services:
         - docker
     compiler: clang
@@ -380,9 +410,7 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         packages:
         - clang-8
         - clang-format-8
-        - g++-multilib
-        - gcc-multilib
-        - *deps_driverlibs
+        - *deps_driverlibs_cross_i386
 
 # Try s390x builds to check for issues with endianness
 # (it is one current Travis offer with BigEndian CPUs)
