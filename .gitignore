@@ -25,6 +25,7 @@ Makefile.in
 /conf_nut_report_feature
 /conf??????/
 /dir.??????/
+/configure-test*/
 /cscope.*
 /depcomp
 /INSTALL
