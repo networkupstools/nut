@@ -513,7 +513,8 @@ static int get_ups_extended()
 	return 0;
 }
 
-static int get_ups_statuscode()
+/* Not static, exposed via header. Not used though, currently... */
+int get_ups_statuscode()
 {
 	uint8_t length;
 	int recv;
