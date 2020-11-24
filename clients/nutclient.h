@@ -482,22 +482,22 @@ public:
 	bool isOk()const;
 	/**
 	 * Test if the device is valid (has a name and is attached to a client).
-     * @see Device::isOk()
+	 * @see Device::isOk()
 	 */
 	operator bool()const;
 	/**
 	 * Test if the device is not valid (has no name or is not attached to any client).
-     * @see Device::isOk()
+	 * @see Device::isOk()
 	 */
 	bool operator!()const;
 	/**
 	 * Test if the two devices are sames (same name ad same client attached to).
 	 */
 	bool operator==(const Device& dev)const;
-  /**
-   * Comparison operator.
-   */
-  bool operator<(const Device& dev)const;
+	/**
+	 * Comparison operator.
+	 */
+	bool operator<(const Device& dev)const;
 
 	/**
 	 * Retrieve the description of the devce if specified.
@@ -507,7 +507,7 @@ public:
 	/**
 	 * Intend to retrieve the value of a variable of the device.
 	 * \param name Name of the variable to get.
-     * \return Value of the variable, if available.
+	 * \return Value of the variable, if available.
 	 */
 	std::vector<std::string> getVariableValue(const std::string& name);
 	/**
@@ -540,7 +540,7 @@ public:
 
 	/**
 	 * Retrieve a Variable object representing the specified variable.
-     * \param name Variable name.
+	 * \param name Variable name.
 	 * \return Variable object.
 	 */
 	Variable getVariable(const std::string& name);
