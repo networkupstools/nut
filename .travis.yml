@@ -382,6 +382,7 @@ _matrix_linux_gnustd_nowarn_arm_64bit_fatal:
     services:
         - docker
     compiler: clang
+    if: branch =~ fightwarn
     addons:
       apt:
         sources:
