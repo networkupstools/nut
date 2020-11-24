@@ -457,6 +457,9 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+#ifdef _NUTCLIENTTEST_BUILD
+	friend class NutClientTest;
+#endif
 public:
 	~Device();
 	Device(const Device& dev);
@@ -606,6 +609,9 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+#ifdef _NUTCLIENTTEST_BUILD
+	friend class NutClientTest;
+#endif
 public:
 	~Variable();
 
@@ -686,6 +692,9 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+#ifdef _NUTCLIENTTEST_BUILD
+	friend class NutClientTest;
+#endif
 public:
 	~Command();
 
