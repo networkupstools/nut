@@ -60,6 +60,23 @@ static inline void *xrealloc(void *ptr, size_t size){return realloc(ptr, size);}
 static inline char *xstrdup(const char *string){return strdup(string);}
 #endif /* HAVE_NUTCOMMON */
 
+/* To stay in line with modern C++, we use nullptr (not numeric NULL
+ * or shim __null on some systems) which was defined after C++98.
+ * The NUT C++ interface is intended for C++11 and newer, so we
+ * quiesce these warnigns if possible.
+ * An idea might be to detect if we do build with old C++ standard versions
+ * and define a nullptr like https://stackoverflow.com/a/44517878/4715872
+ * but again - currently we do not intend to support that officially.
+ */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_PEDANTIC
+#pragma GCC diagnostic ignored "-Wc++98-compat-pedantic"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT
+#pragma GCC diagnostic ignored "-Wc++98-compat"
+#endif
 
 namespace nut
 {
@@ -175,7 +192,7 @@ void Socket::connect(const std::string& host, int port)
 		}
 	}
 
-	for (ai = res; ai != NULL; ai = ai->ai_next) {
+	for (ai = res; ai != nullptr; ai = ai->ai_next) {
 
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 
@@ -202,11 +219,11 @@ void Socket::connect(const std::string& host, int port)
 			if(errno == EINPROGRESS) {
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
-				select(sock_fd+1,NULL,&wfds,NULL, hasTimeout()?&_tv:NULL);
+				select(sock_fd+1, nullptr, &wfds, nullptr, hasTimeout() ? &_tv : nullptr);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
-					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
-							&error,&error_size);
+					getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
+							&error, &error_size);
 					if( error == 0) {
 						/* connect successful */
 						v = 0;
@@ -262,10 +279,10 @@ void Socket::connect(const std::string& host, int port)
 
 
 #ifdef OLD
-	struct hostent *hostinfo = NULL;
+	struct hostent *hostinfo = nullptr;
 	SOCKADDR_IN sin = { 0 };
 	hostinfo = ::gethostbyname(host.c_str());
-	if(hostinfo == NULL) /* Host doesnt exist */
+	if(hostinfo == nullptr) /* Host doesnt exist */
 	{
 		throw nut::UnknownHostException();
 	}
@@ -316,7 +333,7 @@ size_t Socket::read(void* buf, size_t sz)
 		fd_set fds;
 		FD_ZERO(&fds);
 		FD_SET(_sock, &fds);
-		int ret = select(_sock+1, &fds, NULL, NULL, &_tv);
+		int ret = select(_sock+1, &fds, nullptr, nullptr, &_tv);
 		if (ret < 1) {
 			throw nut::TimeoutException();
 		}
@@ -343,7 +360,7 @@ size_t Socket::write(const void* buf, size_t sz)
 		fd_set fds;
 		FD_ZERO(&fds);
 		FD_SET(_sock, &fds);
-		int ret = select(_sock+1, NULL, &fds, NULL, &_tv);
+		int ret = select(_sock+1, nullptr, &fds, nullptr, &_tv);
 		if (ret < 1) {
 			throw nut::TimeoutException();
 		}
@@ -427,7 +444,7 @@ Device Client::getDevice(const std::string& name)
 	if(hasDevice(name))
 		return Device(this, name);
 	else
-		return Device(NULL, "");
+		return Device(nullptr, "");
 }
 
 std::set<Device> Client::getDevices()
@@ -587,7 +604,7 @@ Device TcpClient::getDevice(const std::string& name)
 	catch(NutException& ex)
 	{
 		if(ex.str()=="UNKNOWN-UPS")
-			return Device(NULL, "");
+			return Device(nullptr, "");
 		else
 			throw;
 	}
@@ -1116,7 +1133,7 @@ Client* Device::getClient()
 
 bool Device::isOk()const
 {
-	return _client!=NULL && !_name.empty();
+	return _client!=nullptr && !_name.empty();
 }
 
 Device::operator bool()const
@@ -1189,7 +1206,7 @@ Variable Device::getVariable(const std::string& name)
 	if(getClient()->hasDeviceVariable(getName(), name))
 		return Variable(this, name);
 	else
-		return Variable(NULL, "");
+		return Variable(nullptr, "");
 }
 
 std::set<Variable> Device::getVariables()
@@ -1245,7 +1262,7 @@ Command Device::getCommand(const std::string& name)
 	if(getClient()->hasDeviceCommand(getName(), name))
 		return Command(this, name);
 	else
-		return Command(NULL, "");
+		return Command(nullptr, "");
 }
 
 TrackingID Device::executeCommand(const std::string& name, const std::string& param)
@@ -1326,7 +1343,7 @@ Device* Variable::getDevice()
 
 bool Variable::isOk()const
 {
-	return _device!=NULL && !_name.empty();
+	return _device!=nullptr && !_name.empty();
 
 }
 
@@ -1421,7 +1438,7 @@ Device* Command::getDevice()
 
 bool Command::isOk()const
 {
-	return _device!=NULL && !_name.empty();
+	return _device!=nullptr && !_name.empty();
 }
 
 Command::operator bool()const
@@ -1466,14 +1483,14 @@ extern "C" {
 strarr strarr_alloc(unsigned short count)
 {
 	strarr arr = (strarr)xcalloc(count+1, sizeof(char*));
-	arr[count] = NULL;
+	arr[count] = nullptr;
 	return arr;
 }
 
 void strarr_free(strarr arr)
 {
 	char** pstr = arr;
-	while(*pstr!=NULL)
+	while(*pstr!=nullptr)
 	{
 		free(*pstr);
 		++pstr;
@@ -1517,7 +1534,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short por
 	{
 		// TODO really catch it
 		delete client;
-		return NULL;
+		return nullptr;
 	}
 
 }
@@ -1709,7 +1726,7 @@ strarr nutclient_get_devices(NUTCLIENT_t client)
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 int nutclient_has_device(NUTCLIENT_t client, const char* dev)
@@ -1743,7 +1760,7 @@ char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev)
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 strarr nutclient_get_device_variables(NUTCLIENT_t client, const char* dev)
@@ -1760,7 +1777,7 @@ strarr nutclient_get_device_variables(NUTCLIENT_t client, const char* dev)
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 strarr nutclient_get_device_rw_variables(NUTCLIENT_t client, const char* dev)
@@ -1777,7 +1794,7 @@ strarr nutclient_get_device_rw_variables(NUTCLIENT_t client, const char* dev)
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 int nutclient_has_device_variable(NUTCLIENT_t client, const char* dev, const char* var)
@@ -1811,7 +1828,7 @@ char* nutclient_get_device_variable_description(NUTCLIENT_t client, const char* 
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var)
@@ -1828,7 +1845,7 @@ strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev,
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value)
@@ -1885,7 +1902,7 @@ strarr nutclient_get_device_commands(NUTCLIENT_t client, const char* dev)
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 int nutclient_has_device_command(NUTCLIENT_t client, const char* dev, const char* cmd)
@@ -1919,7 +1936,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
 			catch(...){}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param)
@@ -1937,5 +1954,9 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 		}
 	}
 }
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT
+#pragma GCC diagnostic pop
+#endif
 
 } /* extern "C" */

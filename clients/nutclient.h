@@ -985,7 +985,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * Create a client to NUTD using a TCP connection.
  * \param host Host name to connect to.
  * \param port Host port.
- * \return New client or NULL if failed.
+ * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
 /**
