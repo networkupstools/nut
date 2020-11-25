@@ -87,12 +87,12 @@ void NutClientTest::test_stringset_to_strarr()
 	strset.insert("world");
 
 	strarr arr = stringset_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result is null", arr!=NULL);
+	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result is null", arr != nullptr);
 
 	std::set<std::string> res;
 
 	char** ptr = arr;
-	while(*ptr!=NULL)
+	while(*ptr != nullptr)
 	{
 		res.insert(std::string(*ptr));
 		ptr++;
@@ -114,7 +114,7 @@ void NutClientTest::test_stringvector_to_strarr()
 	strset.push_back("world");
 
 	strarr arr = stringvector_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result is null", arr!=NULL);
+	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result is null", arr != nullptr);
 
 	char** ptr = arr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 0==\"test\"", std::string("test"), std::string(*ptr));
@@ -123,7 +123,7 @@ void NutClientTest::test_stringvector_to_strarr()
 	++ptr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 2==\"world\"", std::string("world"), std::string(*ptr));
 	++ptr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", (char*)NULL, *ptr);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", nullptr, *ptr);
 
 	strarr_free(arr);
 }
