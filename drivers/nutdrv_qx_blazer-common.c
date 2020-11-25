@@ -203,7 +203,19 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 		/* Truncate to minute */
 		ondelay -= (ondelay % 60);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, valuelen, "%d", ondelay);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	} else if (!strcasecmp(item->info_type, "ups.delay.shutdown")) {
 
@@ -216,7 +228,19 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 			offdelay -= (offdelay % 60);
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, valuelen, "%d", offdelay);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	} else {
 
@@ -231,6 +255,16 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 /* Preprocess instant commands */
 int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -302,6 +336,10 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		return -1;
 
 	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
