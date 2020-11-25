@@ -99,11 +99,11 @@ static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
-static int (*nut_snmp_errno);
-static oid (*nut_usmAESPrivProtocol);
-static oid (*nut_usmHMACMD5AuthProtocol);
-static oid (*nut_usmHMACSHA1AuthProtocol);
-static oid (*nut_usmDESPrivProtocol);
+static int *nut_snmp_errno;
+static oid *nut_usmAESPrivProtocol;
+static oid *nut_usmHMACMD5AuthProtocol;
+static oid *nut_usmHMACSHA1AuthProtocol;
+static oid *nut_usmDESPrivProtocol;
 
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
