@@ -151,13 +151,13 @@ public:
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 * \note Actually, authentication fails only if already set, not if bad values are sent.
 	 */
-	virtual void authenticate(const std::string& user, const std::string& passwd)=0;
+	virtual void authenticate(const std::string& user, const std::string& passwd) = 0;
 
 	/**
 	 * Disconnect from the NUTD server.
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
-	virtual void logout()=0;
+	virtual void logout() = 0;
 
 	/**
 	 * Device manipulations.
@@ -186,13 +186,13 @@ public:
 	 * Retrieve names of devices supported by NUTD server.
 	 * \return The set of names of supported devices.
 	 */
-	virtual std::set<std::string> getDeviceNames()=0;
+	virtual std::set<std::string> getDeviceNames() = 0;
 	/**
 	 * Retrieve the description of a device.
 	 * \param name Device name.
 	 * \return Device description.
 	 */
-	virtual std::string getDeviceDescription(const std::string& name)=0;
+	virtual std::string getDeviceDescription(const std::string& name) = 0;
 	/** \} */
 
 	/**
@@ -205,13 +205,13 @@ public:
 	 * \param dev Device name
 	 * \return Variable names
 	 */
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)=0;
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev) = 0;
 	/**
 	 * Retrieve names of read/write variables supported by a device.
 	 * \param dev Device name
 	 * \return RW variable names
 	 */
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)=0;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev) = 0;
 	/**
 	 * Test if a variable is supported by a device.
 	 * \param dev Device name
@@ -225,14 +225,14 @@ public:
 	 * \param name Variable name
 	 * \return Variable description if provided.
 	 */
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)=0;
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name) = 0;
 	/**
 	 * Retrieve values of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \return Variable values (usually one) if available.
 	 */
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)=0;
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name) = 0;
 	/**
 	 * Retrieve values of all variables of a device.
 	 * \param dev Device name
@@ -251,14 +251,14 @@ public:
 	 * \param name Variable name
 	 * \param value Variable value
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)=0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) = 0;
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
-	 * \param value Variable value
+	 * \param values Vector of variable values
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)=0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) = 0;
 	/** \} */
 
 	/**
@@ -271,7 +271,7 @@ public:
 	 * \param dev Device name
 	 * \return Command names
 	 */
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)=0;
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) = 0;
 	/**
 	 * Test if a command is supported by a device.
 	 * \param dev Device name
@@ -285,14 +285,14 @@ public:
 	 * \param name Command name
 	 * \return Command description if provided.
 	 */
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)=0;
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) = 0;
 	/**
 	 * Intend to execute a command.
 	 * \param dev Device name
 	 * \param name Command name
 	 * \param param Additional command parameter
 	 */
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")=0;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") = 0;
 	/** \} */
 
 	/**
@@ -303,25 +303,25 @@ public:
 	 * Log the current user (if authenticated) for a device.
 	 * \param dev Device name.
 	 */
-	virtual void deviceLogin(const std::string& dev)=0;
+	virtual void deviceLogin(const std::string& dev) = 0;
 	/**
 	 * Retrieve the number of user longged in the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
-	virtual int deviceGetNumLogins(const std::string& dev)=0;
-	virtual void deviceMaster(const std::string& dev)=0;
-	virtual void deviceForcedShutdown(const std::string& dev)=0;
+	virtual int deviceGetNumLogins(const std::string& dev) = 0;
+	virtual void deviceMaster(const std::string& dev) = 0;
+	virtual void deviceForcedShutdown(const std::string& dev) = 0;
 
 	/**
 	 * Retrieve the result of a tracking ID.
 	 * \param id Tracking ID.
 	 */
-	virtual TrackingResult getTrackingResult(const TrackingID& id)=0;
+	virtual TrackingResult getTrackingResult(const TrackingID& id) = 0;
 
 	virtual bool hasFeature(const Feature& feature);
-	virtual bool isFeatureEnabled(const Feature& feature)=0;
-	virtual void setFeature(const Feature& feature, bool status)=0;
+	virtual bool isFeatureEnabled(const Feature& feature) = 0;
+	virtual void setFeature(const Feature& feature, bool status) = 0;
 
 	static const Feature TRACKING;
 
@@ -537,7 +537,7 @@ public:
 	/**
 	 * Intend to set values of a variable of the device.
 	 * \param name Variable name.
-	 * \param value New variable values.
+	 * \param values Vector of new variable values.
 	 */
 	void setVariable(const std::string& name, const std::vector<std::string>& values);
 
@@ -672,7 +672,7 @@ public:
 	void setValue(const std::string& value);
 	/**
 	 * Intend to set (multiple) values to the variable.
-	 * \param value New variable values.
+	 * \param values Vector of new variable values.
 	 */
 	void setValues(const std::vector<std::string>& values);
 
@@ -745,9 +745,8 @@ public:
 	std::string getDescription();
 
 	/**
-	 * Intend to retrieve command description.
-	 * \param param Additional command parameter
-	 * \return Command description if provided.
+	 * Intend to execute the instant command on device.
+	 * \param param Optional additional command parameter
 	 */
 	void execute(const std::string& param="");
 
