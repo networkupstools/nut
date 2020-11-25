@@ -730,7 +730,7 @@ std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient
 			{
 				std::vector<std::string>& vals = *it2;
 				std::string var = vals[0];
-				vals.erase(vals.begin()),
+				vals.erase(vals.begin());
 				map2[var] = vals;
 			}
 			map[*it] = map2;
