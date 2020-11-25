@@ -748,13 +748,16 @@ void upsdrv_shutdown(void)
 
 	if (!SourceFail)     /* on line */
 	{
+		/* FIXME: Both legs of the if-clause send CMD_SHUT, where is the "forcing"? */
 		printf("On line, forcing shutdown command...\n");
-		send_command( CMD_SHUT );
+		/* send_command( CMD_SHUT ); */
+		sendshut();
 	}
 	else
 	{
 		printf("On battery, sending normal shutdown command...\n");
-		send_command( CMD_SHUT );
+		/* send_command( CMD_SHUT ); */
+		sendshut();
 	}
 }
 
