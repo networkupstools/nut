@@ -191,7 +191,7 @@ typedef struct {
 /**
  * convert hex string to int
  * @param  head  input string
- * @param  count string length
+ * @param  len   string length
  * @return parsed value (>=0) if success, -1 on error
  */
 static long from_hex(const byte_t *head, unsigned len)
