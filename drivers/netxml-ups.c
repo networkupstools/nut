@@ -175,7 +175,7 @@ static object_entry_t *set_object_add(
 /**
  *  \brief  SET_OBJECT: RAW POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -185,7 +185,7 @@ static object_query_t *set_object_raw(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: FORM POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return \c NULL (FORM POST mode resp. is ignored by specification)
  */
@@ -195,7 +195,7 @@ static object_query_t *set_object_form(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -1238,8 +1238,8 @@ static object_entry_t *set_object_add(
  *  \param  buff   Buffer
  *  \param  entry  SET_OBJECT request entry
  *
- *  \retval OBJECT_OK    on success
- *  \retval OBJECT_ERROR otherwise
+ *  \return OBJECT_OK    on success
+ *  \return OBJECT_ERROR otherwise
  */
 static object_query_status_t set_object_serialise_entries(ne_buffer *buff, object_entry_t *entry) {
 	object_query_status_t status = OBJECT_OK;
