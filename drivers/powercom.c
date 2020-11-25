@@ -285,6 +285,9 @@ static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
  */
 
 static void shutdown_halt(void)
+	__attribute__((noreturn));
+
+static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
@@ -293,6 +296,9 @@ static void shutdown_halt(void)
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 	exit (0);
 }
+
+static void shutdown_ret(void)
+	__attribute__((noreturn));
 
 static void shutdown_ret(void)
 {
