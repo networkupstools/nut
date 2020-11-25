@@ -18,6 +18,20 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#include "common.h"
+
+/* Current CPPUnit offends the honor of C++98 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+#endif
+
 #include <cppunit/extensions/HelperMacros.h>
 
 class ExampleTest : public CppUnit::TestFixture
@@ -59,3 +73,7 @@ void ExampleTest::testOne()
   // Check
   CPPUNIT_ASSERT_EQUAL( i, cast );
 }
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic pop
+#endif
