@@ -123,7 +123,12 @@ void NutClientTest::test_stringvector_to_strarr()
 	++ptr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 2==\"world\"", std::string("world"), std::string(*ptr));
 	++ptr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", nullptr, *ptr);
+
+	/* https://stackoverflow.com/a/12565009/4715872
+	 * Can not compare nullptr_t and another data type (char*)
+	 * with CPPUNIT template assertEquals()
+	 */
+	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", nullptr == *ptr);
 
 	strarr_free(arr);
 }
