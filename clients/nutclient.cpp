@@ -1480,7 +1480,7 @@ void Command::execute(const std::string& param)
 extern "C" {
 
 
-strarr strarr_alloc(unsigned short count)
+strarr strarr_alloc(size_t count)
 {
 	strarr arr = static_cast<strarr>(xcalloc(count+1, sizeof(char*)));
 	arr[count] = nullptr;

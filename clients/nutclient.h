@@ -781,7 +781,7 @@ typedef char** strarr;
 /**
  * Alloc an array of string.
  */
-strarr strarr_alloc(unsigned short count);
+strarr strarr_alloc(size_t count);
 
 /**
  * Free an array of string.
