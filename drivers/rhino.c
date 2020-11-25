@@ -529,8 +529,10 @@ static void sendshut( void )
 	for(i=0; i < 30000; i++)
 		usleep( UPSDELAY ); /* 15 seconds delay */
 
-	send_command( CMD_SHUT );
-	upslogx(LOG_NOTICE, "Ups shutdown command sent");
+	if ( send_command( CMD_SHUT ) < 1 )
+		upslogx(LOG_ERR, "Ups shutdown command sending failed");
+	else
+		upslogx(LOG_NOTICE, "Ups shutdown command sent");
 	printf("Ups shutdown command sent\n");
 }
 
