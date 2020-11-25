@@ -1,6 +1,11 @@
 # Network UPS Tools: clients
 EXTRA_DIST =
 
+# nutclient.cpp for some legacy reason (maybe initial detached development?)
+# optionally includes "common.h" with the NUT build setup - and this option
+# was never triggered in fact, not until pushed through command line like this:
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1
+
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
