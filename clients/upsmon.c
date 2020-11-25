@@ -618,6 +618,9 @@ static void slavesync(void)
 }
 
 static void forceshutdown(void)
+	__attribute__((noreturn));
+
+static void forceshutdown(void)
 {
 	utype_t	*ups;
 	int	isamaster = 0;
