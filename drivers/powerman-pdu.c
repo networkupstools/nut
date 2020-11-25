@@ -20,7 +20,7 @@
 
 #include "main.h"
 
-#include <libpowerman.h>
+#include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
 #define DRIVER_VERSION	"0.11"
@@ -49,7 +49,7 @@ static int reconnect_ups(void);
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	pm_err_t rv = -1;
+	pm_err_t rv = PM_EBADARG;
 	char *cmdsuffix = NULL;
 	char *cmdindex = NULL;
 	char outletname[SMALLBUF];
