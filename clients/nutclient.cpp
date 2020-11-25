@@ -1549,6 +1549,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short por
 	catch(nut::NutException& ex)
 	{
 		// TODO really catch it
+		NUT_UNUSED_VARIABLE(ex);
 		delete client;
 		return nullptr;
 	}
