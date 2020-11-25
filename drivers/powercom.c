@@ -826,6 +826,9 @@ void upsdrv_updateinfo(void)
 
 /* shutdown UPS */
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */
 	printf("Forced UPS shutdown (and wait for power)...\n");
