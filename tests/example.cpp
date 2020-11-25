@@ -53,7 +53,7 @@ void ExampleTest::testOne()
   float f = 1.0;
 
   // Process
-  int cast = (int)f;
+  int cast = static_cast<int>(f);
 
   // Check
   CPPUNIT_ASSERT_EQUAL( i, cast );
