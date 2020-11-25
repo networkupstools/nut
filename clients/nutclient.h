@@ -51,7 +51,7 @@ class NutException : public std::exception
 {
 public:
 	NutException(const std::string& msg):_msg(msg){}
-	virtual ~NutException() {}
+	virtual ~NutException();
 	virtual const char * what() const noexcept {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
@@ -65,7 +65,7 @@ class SystemException : public NutException
 {
 public:
 	SystemException();
-	virtual ~SystemException() {}
+	virtual ~SystemException();
 private:
 	static std::string err();
 };
@@ -78,7 +78,7 @@ class IOException : public NutException
 {
 public:
 	IOException(const std::string& msg):NutException(msg){}
-	virtual ~IOException() {}
+	virtual ~IOException();
 };
 
 /**
@@ -88,7 +88,7 @@ class UnknownHostException : public IOException
 {
 public:
 	UnknownHostException():IOException("Unknown host"){}
-	virtual ~UnknownHostException() {}
+	virtual ~UnknownHostException();
 };
 
 /**
@@ -98,7 +98,7 @@ class NotConnectedException : public IOException
 {
 public:
 	NotConnectedException():IOException("Not connected"){}
-	virtual ~NotConnectedException() {}
+	virtual ~NotConnectedException();
 };
 
 /**
@@ -108,7 +108,7 @@ class TimeoutException : public IOException
 {
 public:
 	TimeoutException():IOException("Timeout"){}
-	virtual ~TimeoutException() {}
+	virtual ~TimeoutException();
 };
 
 /**

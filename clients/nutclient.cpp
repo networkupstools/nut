@@ -98,6 +98,14 @@ std::string SystemException::err()
 	}
 }
 
+/* Implemented out-of-line to avoid "Weak vtables" warnings and related overheads */
+NutException::~NutException() {}
+SystemException::~SystemException() {}
+IOException::~IOException() {}
+UnknownHostException::~UnknownHostException() {}
+NotConnectedException::~NotConnectedException() {}
+TimeoutException::~TimeoutException() {}
+
 
 namespace internal
 {
