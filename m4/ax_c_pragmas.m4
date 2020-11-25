@@ -194,3 +194,45 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   CFLAGS="${CFLAGS_SAVED}"
   CXXFLAGS="${CXXFLAGS_SAVED}"
 ])
+
+AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+  dnl ### To be sure, bolt the language
+  AC_LANG_PUSH([C])
+
+  AC_CACHE_CHECK([for practical support to pritnf("%s", NULL)],
+    [ax_cv__printf_string_null],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([dnl
+#include <stdio.h>
+#include <strings.h>
+], [dnl
+char buf[128];
+char *s = NULL;
+int res = snprintf(buf, sizeof(buf), "%s", s);
+buf[sizeof(buf)-1] = '\0';
+if (res < 0) {
+    printf(stderr, "FAILED to snprintf() a NULL string argument");
+    exit 1;
+}
+if (buf[0] == '\0')
+    printf(stderr, "RETURNED empty string from snprintf() with a NULL string argument");
+    exit 0;
+}
+if (strcasestr(buf, 'null') == NULL)
+    printf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'", buf);
+    exit 0;
+}
+printf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'", buf);
+exit 0;
+            ])],
+        [ax_cv__printf_string_null=yes],
+        [ax_cv__printf_string_null=no]
+    )]
+  )
+
+  AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
+    AC_DEFINE([HAVE_PRINTF_STRING_NULL], 1, [define if your libc can printf("%s", NULL) sanely])
+  ])
+
+  AC_LANG_POP([C])
+])
