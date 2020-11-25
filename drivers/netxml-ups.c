@@ -799,8 +799,8 @@ static int netxml_alarm_subscribe(const char *page)
 		}
 
 		/* Range of valid values constrained above */
-		port = tmp_port;
-		secret = tmp_secret;
+		port = (int)tmp_port;
+		secret = (int)tmp_secret;
 
 	}
 
