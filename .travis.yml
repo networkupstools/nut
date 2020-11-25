@@ -356,6 +356,7 @@ _matrix_linux_gnustd_nowarn_s390x_64bit_viable:
       apt:
         packages:
         - *deps_driverlibs
+        - time
 
   - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
     os: linux
@@ -372,6 +373,7 @@ _matrix_linux_gnustd_nowarn_s390x_64bit_viable:
         - g++-9
         - gcc-9
         - *deps_driverlibs
+        - time
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
     os: linux
@@ -410,6 +412,7 @@ _matrix_linux_gnustd_nowarn_s390x_64bit_fatal:
         - clang-8
         - clang-format-8
         - *deps_driverlibs
+        - time
 
 # Try ARM builds to check for issues with non-x86 CPUs
 _matrix_linux_gnustd_nowarn_arm_64bit_viable:
