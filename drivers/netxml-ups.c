@@ -1069,7 +1069,7 @@ static void set_object_req_destroy(set_object_req_t *req) {
 /**
  *  \brief  SET_OBJECT response list entry destructor
  *
- *  \param  req  SET_OBJECT response list entry
+ *  \param  resp  SET_OBJECT response list entry
  */
 static void set_object_resp_destroy(set_object_resp_t *resp) {
 	assert(NULL != resp);
@@ -1580,9 +1580,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *
  *  The function creates HTTP request, sends it and reads-out the response.
  *
- *  \param[in]   session    HTTP session
+ *  \param[in]   argsession HTTP session
  *  \param[in]   method     Request method
- *  \param[in]   uri        Request URI
+ *  \param[in]   arguri     Request URI
  *  \param[in]   ct         Request content type (optional, \c NULL accepted)
  *  \param[in]   req_body   Request body (optional, \c NULL is accepted)
  *  \param[out]  resp_body  Response body (optional, \c NULL is accepted)
