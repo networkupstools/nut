@@ -2,6 +2,7 @@
 
    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
+	2020	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -61,4 +62,3 @@ int main(int argc, char* argv[])
     "'" << ( wasSucessful ? "true" : "false" ) << "'" << std::endl;
   return wasSucessful ? 0 : 1;
 }
-

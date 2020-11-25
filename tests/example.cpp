@@ -2,6 +2,7 @@
 
    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
+	2020	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,5 +59,3 @@ void ExampleTest::testOne()
   // Check
   CPPUNIT_ASSERT_EQUAL( i, cast );
 }
-
-

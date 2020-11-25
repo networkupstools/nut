@@ -1,6 +1,7 @@
 /* nutclienttest - CppUnit nutclient unit test
 
    Copyright (C) 2016  Emilien Kia <emilien.kia@gmail.com>
+   Copyright (C) 2020  Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
