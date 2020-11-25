@@ -449,6 +449,10 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #else /* WITH_NEON */
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
+	NUT_UNUSED_VARIABLE(start_ip);
+	NUT_UNUSED_VARIABLE(stop_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
 	return NULL;
 }
 #endif /* WITH_NEON */
