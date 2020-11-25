@@ -610,6 +610,10 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 /* stub function */
 nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec)
 {
+	NUT_UNUSED_VARIABLE(startIP);
+	NUT_UNUSED_VARIABLE(stopIP);
+	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 #endif /* WITH_IPMI */
