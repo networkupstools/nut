@@ -98,7 +98,7 @@ void NutClientTest::test_stringset_to_strarr()
 		ptr++;
 	}
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringset_to_strarr(...) result has not 3 items", (size_t)3, res.size());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringset_to_strarr(...) result has not 3 items", static_cast<size_t>(3), res.size());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"test\"", res.find("test")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"hello\"", res.find("hello")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"world\"", res.find("world")!=res.end());
