@@ -219,6 +219,17 @@ static void drawbar(
 	double value, 				/* UPS variable value to draw */
 	const char *format			/* printf style format to be used when rendering summary text */
 )
+	__attribute__((noreturn));
+
+static void drawbar(
+	int lvllo, int lvlhi,			/* min and max numbers on the scale */
+	int step, int step5, int step10,	/* steps for minor, submajor and major dashes */
+	int redlo1, int redhi1,			/* first red zone start and end */
+	int redlo2, int redhi2,			/* second red zone start and end */
+	int grnlo, int grnhi,			/* green zone start and end */
+	double value, 				/* UPS variable value to draw */
+	const char *format			/* printf style format to be used when rendering summary text */
+)
 {
 	gdImagePtr	im;
 	int		bar_color, summary_color;
@@ -273,6 +284,9 @@ static void drawbar(
 
 /* draws the error image */
 static void noimage(const char *fmt, ...)
+	__attribute__((noreturn));
+
+static void noimage(const char *fmt, ...)
 {
 	gdImagePtr	im;
 	int		back_color, summary_color;
@@ -314,6 +328,10 @@ static void noimage(const char *fmt, ...)
    UPS variable can be determined.
    deviation < 0 means that values below nom should be grey instead of
    green */
+static void drawgeneralbar(double var, int min, int nom, int max,
+		int deviation, 	const char *format)
+	__attribute__((noreturn));
+
 static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 {
@@ -375,6 +393,10 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 /* draws input and output voltage bar style indicators */
 static void draw_utility(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_utility(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	/* hack: deal with hardware that doesn't have known transfer points */
 	if (min == -1) {
@@ -418,6 +440,10 @@ static void draw_utility(double var, int min, int nom, int max,
 /* draws battery.percent bar style indicator */
 static void draw_battpct(double var, int min, int nom,
 		int max, int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_battpct(double var, int min, int nom,
+		int max, int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(nom);
 	NUT_UNUSED_VARIABLE(max);
@@ -431,6 +457,10 @@ static void draw_battpct(double var, int min, int nom,
 }
 
 /* draws battery.voltage bar style indicator */
+static void draw_battvolt(double var, int min, int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
 static void draw_battvolt(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
@@ -480,6 +510,11 @@ static void draw_battvolt(double var, int min, int nom, int max,
 static void draw_upsload(double var, int min,
 		int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_upsload(double var, int min,
+		int nom, int max,
+		int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(min);
 	NUT_UNUSED_VARIABLE(nom);
@@ -492,6 +527,10 @@ static void draw_upsload(double var, int min,
 /* draws temperature bar style indicator */
 static void draw_temperature(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_temperature(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	int	hi = get_imgarg("tempmax");
 	int	lo = get_imgarg("tempmin");
@@ -502,6 +541,10 @@ static void draw_temperature(double var, int min, int nom, int max,
 }
 
 /* draws humidity bar style indicator */
+static void draw_humidity(double var, int min, int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
 static void draw_humidity(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
