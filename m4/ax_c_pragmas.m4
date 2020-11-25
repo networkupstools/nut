@@ -85,6 +85,18 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunreachable-code"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-overflow"],
+    [ax_cv__pragma__gcc__diags_ignored_format_overflow],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wformat-overflow"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_overflow=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_overflow=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_overflow" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-overflow"])
+  ])
+
   AC_LANG_POP([C])
 
   dnl ### Series of tests for C++ specific pragmas
