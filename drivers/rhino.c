@@ -470,7 +470,8 @@ static int
 send_command( int cmd )
 {
 	static const size_t sizes = 19, iend = 18;
-	int i, chk, checksum = 0, ret, kount; /*, j, uc; */
+	size_t i;
+	int chk, checksum = 0, ret, kount; /*, j, uc; */
 	unsigned char ch, *psend = NULL;
 
 	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
