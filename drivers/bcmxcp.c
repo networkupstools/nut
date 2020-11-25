@@ -2064,9 +2064,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
-
-
-
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -2087,39 +2084,32 @@ static int decode_instcmd_exec(const int res, const unsigned char exec_status, c
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 	}
 }
@@ -2430,39 +2420,32 @@ static int decode_setvar_exec(const int res, const unsigned char exec_status, co
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 	}
 }
