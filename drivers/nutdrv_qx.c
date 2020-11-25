@@ -2806,20 +2806,29 @@ static int	qx_process_answer(item_t *item, const int len)
 /* See header file for details. */
 int	qx_process(item_t *item, const char *command)
 {
-	char	buf[sizeof(item->answer) - 1] = "",
-		cmd[command ? (strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) : (item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF)];
+	char	buf[sizeof(item->answer) - 1] = "", *cmd;
 	int	len;
+	size_t cmdlen = command ?
+		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
+		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
+	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+
+	if ( !(cmd = xmalloc(cmdsz)) ) {
+		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
+		return -1;
+	}
 
 	/* Prepare the command to be used */
-	memset(cmd, 0, sizeof(cmd));
-	snprintf(cmd, sizeof(cmd), "%s", command ? command : item->command);
+	memset(cmd, 0, cmdsz);
+	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
 
 	/* Preprocess the command */
 	if (
 		item->preprocess_command != NULL &&
-		item->preprocess_command(item, cmd, sizeof(cmd)) == -1
+		item->preprocess_command(item, cmd, cmdsz) == -1
 	) {
 		upsdebugx(4, "%s: failed to preprocess command [%s]", __func__, item->info_type);
+		free (cmd);
 		return -1;
 	}
 
@@ -2836,9 +2845,12 @@ int	qx_process(item_t *item, const char *command)
 			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
 			/* Clear answer, preventing it from being reused by next items with same command */
 			memset(item->answer, 0, sizeof(item->answer));
+			free (cmd);
 			return -1;
 		}
 	}
+
+	free (cmd);
 
 	/* Process the answer to get the value */
 	return qx_process_answer(item, len);
