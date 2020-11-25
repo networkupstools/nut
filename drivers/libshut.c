@@ -274,7 +274,7 @@ static int shut_control_msg(int upsfd, int requesttype, int request, int value,
 #define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
 static void align_request(struct shut_ctrltransfer_s *ctrl)
 {
-#if WORDS_BIGENDIAN
+#if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
 	/* Sparc/Mips/... are big endian, USB/SHUT little endian */
 	(*ctrl).wValue    = BYTESWAP((*ctrl).wValue);
 	(*ctrl).wIndex    = BYTESWAP((*ctrl).wIndex);
