@@ -320,12 +320,19 @@ static int instcmd (const char *cmdname, const char *extra)
 	    return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/* NOTE: In this context, "return" is UPS behavior after the
+		 * wall-power gets restored. The routine exits the driver anyway.
+		 */
 		shutdown_ret();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		shutdown_halt();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
