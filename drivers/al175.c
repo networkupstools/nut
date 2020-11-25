@@ -1230,6 +1230,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
