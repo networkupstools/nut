@@ -114,6 +114,30 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wc++98-compat"])
   ])
 
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wglobal-constructors"],
+    [ax_cv__pragma__gcc__diags_ignored_global_constructors],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wglobal-constructors"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_global_constructors=yes],
+      [ax_cv__pragma__gcc__diags_ignored_global_constructors=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_global_constructors" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wglobal-constructors"])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wexit-time-destructors"],
+    [ax_cv__pragma__gcc__diags_ignored_exit_time_destructors],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wexit-time-destructors"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_exit_time_destructors=yes],
+      [ax_cv__pragma__gcc__diags_ignored_exit_time_destructors=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_exit_time_destructors" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wexit-time-destructors"])
+  ])
+
   AC_LANG_POP([C++])
 
   dnl # Meta-macros for simpler use-cases where we pick
