@@ -1000,23 +1000,23 @@ typedef int VV_t;	/* voltage */
 #define	ACT int
 
 /* Declare to keep compiler happy even if some routines below are not used currently */
-ACT	TOGGLE_PRS_ONOFF	();
-ACT	CANCEL_BOOST		();
-ACT	STOP_BATTERY_TEST	();
+ACT	TOGGLE_PRS_ONOFF	(void);
+ACT	CANCEL_BOOST		(void);
+ACT	STOP_BATTERY_TEST	(void);
 ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes);
 ACT	SET_FLOAT_VOLTAGE	(VV_t v);
 ACT	SET_BOOST_VOLTAGE	(VV_t v);
 ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
 ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow);
 ACT	SET_DISCONNECT_LEVEL_AND_DELAY	(VV_t level, mm_t delay);
-ACT	RESET_ALARMS		();
-ACT	CHANGE_COMM_PROTOCOL	();
+ACT	RESET_ALARMS		(void);
+ACT	CHANGE_COMM_PROTOCOL	(void);
 ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
 ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
 ACT	SWITCH_TEMP_COMP	(int on);
-ACT	SWITCH_SYM_ALARM	();
+ACT	SWITCH_SYM_ALARM	(void);
 
 /* Implement */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
