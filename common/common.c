@@ -41,6 +41,10 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #include "nut_stdint.h"
 #if UINTPTR_MAX == 0xffffffffffffffffULL
 # define BUILD_64   1
+#else
+# ifdef BUILD_64
+#  undef BUILD_64
+# endif
 #endif
 
 	int	nut_debug_level = 0;
@@ -720,18 +724,18 @@ static const char * search_paths[] = {
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/local"LIBDIR,
-#if BUILD_64
+#ifdef BUILD_64
 	// Fall back to explicit preference of 64-bit paths as named on some OSes
 	"/usr/lib/64",
 	"/usr/lib64",
 #endif
 	"/usr/lib",
-#if BUILD_64
+#ifdef BUILD_64
 	"/lib/64",
 	"/lib64",
 #endif
 	"/lib",
-#if BUILD_64
+#ifdef BUILD_64
 	"/usr/local/lib/64",
 	"/usr/local/lib64",
 #endif
