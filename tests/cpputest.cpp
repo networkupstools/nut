@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 
   /* Return error code 1 if the one of test failed. */
   std::cerr << "D: Got to the end of test suite with code " <<
-    "'" << wasSucessful << "'" << std::endl;
+    "'" << ( wasSucessful ? "true" : "false" ) << "'" << std::endl;
   return wasSucessful ? 0 : 1;
 }
 
