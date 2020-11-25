@@ -321,6 +321,12 @@ static void noimage(const char *fmt, ...)
 
 	drawimage(im);
 
+	/* NOTE: Earlier code called noimage() and then exit(EXIT_FAILURE);
+	 * to signal an error via process exit code. Now that drawimage()
+	 * always ends with exit(EXIT_SUCCESS) - which might make webserver
+	 * feel good - the command-line use if any suffers no error returns.
+	 */
+
 	/* NOTREACHED */
 }
 
@@ -600,13 +606,17 @@ int main(int argc, char **argv)
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
 		noimage("Invalid UPS definition (upsname[@hostname[:port]])\n");
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	for (i = 0; imgvar[i].name; i++)
@@ -616,7 +626,9 @@ int main(int argc, char **argv)
 			   registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* get the variable value */
@@ -627,7 +639,9 @@ int main(int argc, char **argv)
 				snprintf(str, sizeof(str), "%s N/A",
 					imgvar[i].name);
 				noimage(str);
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* when getting minimum, nominal and maximum values,
@@ -680,7 +694,9 @@ int main(int argc, char **argv)
 		}
 
 	noimage("Unknown display");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 	exit(EXIT_FAILURE);
+#endif
 }
 
 imgvar_t imgvar[] = {
