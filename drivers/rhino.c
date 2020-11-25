@@ -469,8 +469,14 @@ CommReceive(const unsigned char *bufptr, int size)
 static int
 send_command( int cmd )
 {
-	int i, chk, checksum = 0, iend = 18, sizes = 19, ret, kount; /*, j, uc; */
-	unsigned char ch, psend[sizes];
+	static const size_t sizes = 19, iend = 18;
+	int i, chk, checksum = 0, ret, kount; /*, j, uc; */
+	unsigned char ch, *psend = NULL;
+
+	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
+		upslogx(LOG_ERR, "send_command() failed to allocate buffer");
+		return -1;
+	}
 
 	/* mounting buffer to send */
 
@@ -510,6 +516,8 @@ send_command( int cmd )
 		usleep( UPSDELAY ); /* delay between sent command */
 		kount++;
 	}
+
+	free (psend);
 	return ret;
 }
 
