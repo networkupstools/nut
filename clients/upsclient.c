@@ -504,6 +504,16 @@ const char *upscli_strerror(UPSCONN_t *ups)
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
 #endif
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+
 	if (!ups) {
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
@@ -560,6 +570,10 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			ups->pc_ctx.errmsg);
 		return ups->errbuf;
 	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	/* fallthrough */
 
@@ -1169,8 +1183,20 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 		/* snprintfcat would tie us to common */
 
 		len = strlen(buf);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(buf + len, bufsize - len, format,
 			pconf_encode(arg[i], enc, sizeof(enc)));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	len = strlen(buf);
