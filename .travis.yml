@@ -1174,9 +1174,9 @@ jobs:
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
 
 ### Linux on s390x (BigEndian)
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
-  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
-  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
   - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang-8 CXX=clang++-8
 
 ### Linux on ARM
