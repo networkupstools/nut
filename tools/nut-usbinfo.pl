@@ -112,7 +112,7 @@ sub gen_usb_files
 	print $outUdev 'SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="hid", GOTO="nut-usbups_rules_real"'."\n";
-	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
+	print $outUdev 'GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
 	open my $out_devd, ">$output_devd" || die "error $output_devd : $!";
