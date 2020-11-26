@@ -321,8 +321,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
 #ifndef HAVE___ATTRIBUTE__NORETURN
-# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNR
-EACHABLE_CODE)
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunreachable-code"
 # endif
