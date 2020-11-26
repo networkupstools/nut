@@ -419,19 +419,23 @@ static double mge_time_conversion_nuf(const char *value)
 }
 
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf }
+	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf }
+	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 #else
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, NULL }
+	{ 0, NULL, mge_date_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, NULL }
+	{ 0, NULL, mge_time_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 #endif /* HAVE_STRPTIME */
 
@@ -461,7 +465,8 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
-	{ 0, NULL, mge_battery_voltage_nominal_fun, NULL }
+	{ 0, NULL, mge_battery_voltage_nominal_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
@@ -485,7 +490,8 @@ static const char *mge_battery_voltage_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage[] = {
-	{ 0, NULL, mge_battery_voltage_fun, NULL }
+	{ 0, NULL, mge_battery_voltage_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_powerfactor_conversion_fun(double value)
@@ -495,7 +501,8 @@ static const char *mge_powerfactor_conversion_fun(double value)
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
-	{ 0, NULL, mge_powerfactor_conversion_fun, NULL }
+	{ 0, NULL, mge_powerfactor_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_battery_capacity_fun(double value)
@@ -505,10 +512,11 @@ static const char *mge_battery_capacity_fun(double value)
 }
 
 static info_lkp_t mge_battery_capacity[] = {
-	{ 0, NULL, mge_battery_capacity_fun, NULL }
+	{ 0, NULL, mge_battery_capacity_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t eaton_enable_disable_info[] = {
+static info_lkp_t eaton_enable_disable_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "enabled", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -560,7 +568,7 @@ static info_lkp_t mge_short_circuit[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t mge_onbatt_info[] = {
+static info_lkp_t mge_onbatt_info[] = {
 	{ 1, "!online", NULL, NULL },
 	{ 0, "online", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -637,7 +645,7 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		return 0;
 }
 
-info_lkp_t pegasus_yes_no_info[] = {
+static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 0, NULL, NULL, NULL }
@@ -807,7 +815,7 @@ static const char *eaton_converter_online_fun(double value)
 		return NULL;
 }
 
-info_lkp_t eaton_converter_online_info[] = {
+static info_lkp_t eaton_converter_online_info[] = {
 	{ 0, "dummy", eaton_converter_online_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };

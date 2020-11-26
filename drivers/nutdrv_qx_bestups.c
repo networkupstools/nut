@@ -59,7 +59,7 @@ static int	inverted_bbb_bit = 0;
 /* == Ranges/enums == */
 
 /* Range for ups.delay.start */
-info_rw_t	bestups_r_ondelay[] = {
+static info_rw_t	bestups_r_ondelay[] = {
 	{ "60", 0 },
 	{ "599940", 0 },
 	{ "", 0 }

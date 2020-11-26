@@ -26,7 +26,11 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+/* This is used in upsstats.c and in upsimage.c, but compiler complains about
+ * non-extern definition if this is not "static". To move or not to move?..
+ * Do we have cases of building binaries refering to only one of those objects?
+ */
+static struct {
 	char	*name;
 	int	val;		/* hex digits, ala HTML */
 	int	min;		/* minimum reasonable value */

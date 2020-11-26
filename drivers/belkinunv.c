@@ -161,19 +161,19 @@ upsdrv_info_t upsdrv_info = {
 /* size of an array */
 #define asize(x) ((int)(sizeof(x)/sizeof(x[0])))
 
-const char *upstype[3] = {
+static const char *upstype[3] = {
 	"ONLINE",
 	"OFFLINE",
 	"LINEINT"
 };
 
-const char *voltsens[3] = {
+static const char *voltsens[3] = {
 	"normal",
 	"medium",
 	"low"
 };
 
-const char *teststatus[6] = {
+static const char *teststatus[6] = {
 	"no test performed",
 	"test passed",
 	"test failed",

@@ -42,7 +42,7 @@ void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
-int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
+static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, int size);
 
 /* usb_set_descriptor() for Powerware devices */
@@ -94,7 +94,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 #define XCP_USB_TIMEOUT 5000
 
 /* global variables */
-usb_dev_handle *upsdev = NULL;
+static usb_dev_handle *upsdev = NULL;
 extern int exit_flag;
 static unsigned int comm_failures = 0;
 

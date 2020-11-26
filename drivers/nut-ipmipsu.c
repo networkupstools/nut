@@ -48,10 +48,10 @@ upsdrv_info_t upsdrv_info = {
 /* Abstract structure to allow different IPMI implementation
  * We currently use FreeIPMI, but OpenIPMI and others are serious
  * candidates! */
-IPMIDevice_t ipmi_dev;
+static IPMIDevice_t ipmi_dev;
 
 /* Currently used to store FRU ID, but will probably evolve... */
-int ipmi_id = -1;
+static int ipmi_id = -1;
 
 void upsdrv_initinfo(void)
 {

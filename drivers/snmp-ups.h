@@ -248,10 +248,12 @@ void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
 bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
 	info_lkp_t *oid2info);
+bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len);
 bool_t nut_snmp_get_int(const char *OID, long *pval);
 bool_t nut_snmp_set(const char *OID, char type, const char *value);
 bool_t nut_snmp_set_str(const char *OID, const char *value);
 bool_t nut_snmp_set_int(const char *OID, long value);
+bool_t nut_snmp_set_time(const char *OID, long value);
 void nut_snmp_perror(struct snmp_session *sess,  int status,
 	struct snmp_pdu *response, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 4, 5)));
@@ -262,6 +264,7 @@ void su_init_instcmds(void);
 void su_setuphandlers(void); /* need to deal with external function ptr */
 void su_setinfo(snmp_info_t *su_info_p, const char *value);
 void su_status_set(snmp_info_t *, long value);
+void su_alarm_set(snmp_info_t *, long value);
 snmp_info_t *su_find_info(const char *type);
 bool_t snmp_ups_walk(int mode);
 bool_t su_ups_get(snmp_info_t *su_info_p);
@@ -283,9 +286,15 @@ extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
 
+/* pointer to the Snmp2Nut lookup table */
+extern mib2nut_info_t *mib2nut_info;
+/* FIXME: to be trashed */
+extern snmp_info_t *snmp_info;
+extern alarms_info_t *alarms_info;
+
 /* Common daisychain structure and functions */
 
-bool_t daisychain_init();
+bool_t daisychain_init(void);
 int su_addcmd(snmp_info_t *su_info_p);
 
 /* Structure containing info about each daisychain device, including phases
@@ -298,4 +307,3 @@ typedef struct {
 
 
 #endif /* SNMP_UPS_H */
-

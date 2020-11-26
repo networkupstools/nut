@@ -37,6 +37,7 @@
 #include "nut-scan.h"
 #include "serial.h"
 #include "bcmxcp_io.h"
+#include "bcmxcp_ser.h"
 #include "bcmxcp.h"
 #include "nutscan-serial.h"
 
@@ -48,12 +49,14 @@
 #define SHUT_SYNC 0x16
 #define MAX_TRY   4
 
-/* BCMXCP header */
+/* BCMXCP header defines these externs now: */
+/*
 extern unsigned char AUT[4];
 extern struct pw_baud_rate {
         int rate;
         int name;
 } pw_baud_rates[];
+*/
 
 /* Local list of found devices */
 static nutscan_device_t * dev_ret = NULL;
@@ -118,18 +121,22 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-int shut_synchronise(int upsfd)
+static int shut_synchronise(int arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
+	/* FIXME? Should we save "arg_upsfd" into global "upsfd" variable?
+	 * This was previously shadowed by function argument named "upsfd"...
+	 */
+	/* upsfd = arg_upsfd; */
 
 	/* Sync with the UPS according to notification */
 	for (try = 0; try < MAX_TRY; try++) {
-		if ((ser_send_char(upsfd, SHUT_SYNC)) == -1) {
+		if ((ser_send_char(arg_upsfd, SHUT_SYNC)) == -1) {
 			continue;
 		}
 
-		ser_get_char(upsfd, &reply, 1, 0);
+		ser_get_char(arg_upsfd, &reply, 1, 0);
 		if (reply == SHUT_SYNC) {
 			return 1;
 		}
@@ -141,7 +148,7 @@ int shut_synchronise(int upsfd)
  *   send SYNC token (0x16) and receive the SYNC token back
  *   FIXME: maybe try to get device descriptor?!
  */
-nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	int devfd = -1;
@@ -190,7 +197,7 @@ nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
  *   Send PW_SET_REQ_ONLY_MODE command (0xA0) and wait for response
  *   [Get ID Block (PW_ID_BLOCK_REQ) (0x31)]
  */
-nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	int i, ret, devfd = -1;
@@ -279,7 +286,7 @@ nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
  *   - simply try to get Q1 (status) string
  *   - check its size and first char. which should be '('
  */
-nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	struct termios tio;

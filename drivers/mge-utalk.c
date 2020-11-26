@@ -101,7 +101,7 @@ upsdrv_info_t upsdrv_info = {
 #define SD_RETURN	0
 #define SD_STAYOFF	1
 
-int sdtype = SD_RETURN;
+static int sdtype = SD_RETURN;
 static time_t lastpoll; /* Timestamp the last polling */
 
 /* --------------------------------------------------------------- */

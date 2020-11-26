@@ -341,7 +341,7 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 	upssend ("p%d=%*s\r", parameter, dlen, data);
@@ -443,7 +443,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "max_load", "rated VA load VA");
 }
 
-struct {
+static struct {
 	const char * val;
 	speed_t speed;
 } speed_table[] = {

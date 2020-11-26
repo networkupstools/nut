@@ -41,8 +41,6 @@
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
-extern int	shutdown_duration;
-
 static int	mge_ambient_value = 0;
 
 /* The number of phases is not present in XML data as a separate node,

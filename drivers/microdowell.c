@@ -54,7 +54,9 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-ENT_STRUCT ups ;
+static ENT_STRUCT ups ;
+
+/* common driver routines */
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
 
@@ -63,30 +65,30 @@ int setvar(const char *varname, const char *val);
 
 static int CheckDataChecksum(unsigned char *Buff, int Len)
 {
-   int i, Idx ;
-   unsigned char Xor ;
+	int i, Idx ;
+	unsigned char Xor ;
 
-   ups.FramePointer = Xor = 0 ;
-   for (Idx=0 ; Idx < Len ; Idx++)
-      if (Buff[Idx] == STX_CHAR)
-         break ;
+	ups.FramePointer = Xor = 0 ;
+	for (Idx=0 ; Idx < Len ; Idx++)
+		if (Buff[Idx] == STX_CHAR)
+			break ;
 
 	ups.FramePointer = Idx ; /* Memorise start point. */
 
-   /* Check that the message is not to short... */
-   if ( (Idx > (Len-4)) || (Idx+Buff[Idx+1]+2 > Len) )
-      return(ERR_MSG_TOO_SHORT) ;   /* To short message! */
+	/* Check that the message is not to short... */
+	if ( (Idx > (Len-4)) || (Idx+Buff[Idx+1]+2 > Len) )
+		return(ERR_MSG_TOO_SHORT) ;   /* Too short a message! */
 
-   /* Calculate checksum */
-   for (i=Idx+1 ; i < Idx+Buff[Idx+1]+2 ; i++)
-      Xor ^= Buff[i] ;
+	/* Calculate checksum */
+	for (i=Idx+1 ; i < Idx+Buff[Idx+1]+2 ; i++)
+		Xor ^= Buff[i] ;
 
-   /* if Xor != then checksum error */
-   if (Xor != Buff[i])
-      return(ERR_MSG_CHECKSUM) ; /* error in checksum */
+	/* if Xor != then checksum error */
+	if (Xor != Buff[i])
+		return(ERR_MSG_CHECKSUM) ; /* error in checksum */
 
-   /* If checksum OK: return */
-   return(0) ;
+	/* If checksum OK: return */
+	return(0) ;
 }
 
 
@@ -115,13 +117,13 @@ static const char *ErrMessages[] = {
 /*    */   ""
    } ;
 
-const char *PrintErr(int ErrCode)
+static const char *PrintErr(int ErrCode)
 {
 	int msgIndex = 0 ;
 
 	/* The default 'msgIndex' is 0 (error code not defined) */
 	switch (ErrCode) {
-		case ERR_NO_ERROR			: msgIndex = 19 ; break ;
+		case ERR_NO_ERROR       : msgIndex = 19 ; break ;
 
 		case ERR_I2C_BUSY       : msgIndex =  1 ; break ;
 		case ERR_CMD_CHECKSUM   : msgIndex =  2 ; break ;
@@ -142,21 +144,21 @@ const char *PrintErr(int ErrCode)
 		case ERR_COM_NO_CHARS   : msgIndex = 16 ; break ;
 		case ERR_MSG_TOO_SHORT  : msgIndex = 17 ; break ;
 		case ERR_MSG_CHECKSUM   : msgIndex = 18 ; break ;
-		default: msgIndex = 0 ; break ;
+
+		default                 : msgIndex = 0  ; break ;
 		}
 	return(ErrMessages[msgIndex]) ;
 }
 
-
-int CheckErrCode(unsigned char * Buff)
+static int CheckErrCode(unsigned char * Buff)
 {
-   auto int Ret ;
+	auto int Ret ;
 
-   switch (Buff[2]) {
-      /* I have found an error */
-      case CMD_NACK   :
-                  Ret = Buff[3] ;
-                  break ;
+	switch (Buff[2]) {
+		/* I have found an error */
+		case CMD_NACK   :
+			Ret = Buff[3] ;
+			break ;
 
 		case CMD_ACK           :
 		case CMD_GET_STATUS    :
@@ -175,19 +177,19 @@ int CheckErrCode(unsigned char * Buff)
 		case CMD_SET_EEP_BLOCK :
 		case CMD_GET_EEP_SEED  :
 		case CMD_INIT          :
-						Ret = 0 ;
-	   				break ;
+			Ret = 0 ;
+			break ;
 
-      /* command not recognized */
-      default:
-						Ret = ERR_CMD_UNRECOG ;
-	   				break ;
-      }
-   return(Ret) ;
+		/* command not recognized */
+		default:
+			Ret = ERR_CMD_UNRECOG ;
+			break ;
+		}
+	return(Ret) ;
 }
 
 
-void SendCmdToSerial(unsigned char *Buff, int Len)
+static void SendCmdToSerial(unsigned char *Buff, int Len)
 {
 	int i;
 	unsigned char Tmp[20], Xor ;
@@ -208,22 +210,19 @@ void SendCmdToSerial(unsigned char *Buff, int Len)
 	ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
 }
 
-
-
-
-unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
+static unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
 {
 	#define TMP_BUFF_LEN	1024
-   unsigned char InpBuff[TMP_BUFF_LEN+1] ;
+	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
-   int i, ErrCode ;
-   unsigned char *p ;
+	int i, ErrCode ;
+	unsigned char *p ;
 	int BuffLen ;
 
 	/* The default error code (no received character) */
 	ErrCode = ERR_COM_NO_CHARS ;
 
-   SendCmdToSerial(OutBuffer, Len) ;
+	SendCmdToSerial(OutBuffer, Len) ;
 	usleep(10000) ; /* small delay (1/100 s) */
 
 	/* get chars until timeout */
@@ -272,8 +271,6 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
 		}
 	return(NULL) ;	/* There have been errors in the reading of the data */
 }
-
-
 
 static int detect_hardware(void)
 {
@@ -380,6 +377,7 @@ static int detect_hardware(void)
 		return -1;
 		}
 
+
 	/* Get working time (battery+normal)) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_MIN_VBATT ;			/* working time */
@@ -415,6 +413,7 @@ static int detect_hardware(void)
 		return -1;
 		}
 
+
 	/* Get the THRESHOLD table (1) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_THRESHOLD_1 ;		/* Thresholds table 0 */
@@ -431,6 +430,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Thresholds table 1 [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
+
 
 	/* Get the THRESHOLD table (2) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
@@ -470,7 +470,6 @@ static int detect_hardware(void)
 		}
 
 
-
 	/* Get UPS sensitivity (fault points) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_FAULT_POINTS ;		/* Number of fault points (sensitivity)) */
@@ -493,6 +492,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Input Sensitivity [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
+
 
 	/* Set internal UPS clock */
 	time(&lTime) ;
@@ -641,8 +641,6 @@ void upsdrv_updateinfo(void)
 
 
 /* ========================= */
-
-
 
 
 int instcmd(const char *cmdname, const char *extra)
@@ -804,8 +802,6 @@ int setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 
-
-
 void upsdrv_initinfo(void)
 {
 	/* Get vars from ups.conf */
@@ -863,22 +859,18 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 
-
 	/* Register the available instant commands. */
-/*	dstate_addcmd("test.battery.start");
+/*
+	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("beeper.toggle");
-	*/
+*/
 
 	/* set handlers */
 	upsh.instcmd = instcmd ;
 	upsh.setvar = setvar;
 }
-
-
-
-
 
 void upsdrv_shutdown(void)
 {

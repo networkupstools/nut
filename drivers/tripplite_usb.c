@@ -315,7 +315,7 @@ static int reconnect_ups(void)
  *
  * Uses toprint() macro defined above.
  */
-void toprint_str(char *str, int len)
+static void toprint_str(char *str, int len)
 {
 	int i;
 	if(len <= 0) len = strlen(str);
@@ -411,7 +411,7 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	return (char *)buf;
 }
 
-enum tl_model_t decode_protocol(unsigned int proto)
+static enum tl_model_t decode_protocol(unsigned int proto)
 {
 	switch(proto) {
 		case 0x0004:
@@ -437,7 +437,7 @@ enum tl_model_t decode_protocol(unsigned int proto)
 	return TRIPP_LITE_UNKNOWN;
 }
 
-void decode_v(const unsigned char *value)
+static void decode_v(const unsigned char *value)
 {
 	unsigned char ivn, lb;
 	int bv;
@@ -494,11 +494,11 @@ void decode_v(const unsigned char *value)
 void upsdrv_initinfo(void);
 
 /*!@brief Report a USB comm failure, and reconnect if necessary
- * 
+ *
  * @param[in] res	Result code from libusb/libhid call
  * @param[in] msg	Error message to display
  */
-void usb_comm_fail(int res, const char *msg)
+static void usb_comm_fail(int res, const char *msg)
 {
 	static int try = 0;
 
@@ -617,7 +617,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
  * The variables are of the form "ups.debug.X" where "X" is the command
  * character.
  */
-void debug_message(const char *msg, int len)
+static void debug_message(const char *msg, int len)
 {
 	int ret;
 	unsigned char tmp_value[9];

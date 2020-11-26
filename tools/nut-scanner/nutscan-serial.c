@@ -45,7 +45,7 @@ typedef struct {
 	char auto_stop_port;
 } device_portname_t;
 
-device_portname_t device_portname[] = {
+static device_portname_t device_portname[] = {
 #ifdef NUT_PLATFORM_HPUX
 	/* the first number seems to be a card instance, the second number seems
 	to be a port number */

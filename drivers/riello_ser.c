@@ -48,23 +48,16 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
-uint8_t typeRielloProtocol;
+static uint8_t gpser_error_control;
+static uint8_t typeRielloProtocol;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
-
-TRielloData DevData;
+static TRielloData DevData;
 
 /**********************************************************************
  * char_read (char *bytes, int size, int read_timeout)
@@ -121,7 +114,7 @@ static int char_read (char *bytes, int size, int read_timeout)
  * returns 0 on success, -1 on error, -2 on timeout
  *
  **********************************************************************/
-int serial_read (int read_timeout, unsigned char *readbuf)
+static int serial_read (int read_timeout, unsigned char *readbuf)
 {
 	static unsigned char cache[512];
 	static unsigned char *cachep = cache;
@@ -153,7 +146,7 @@ int serial_read (int read_timeout, unsigned char *readbuf)
 	return -1;
 }
 
-void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
+static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 {
 	time_t realt, nowt;
 	uint8_t commb = 0;
@@ -163,14 +156,14 @@ void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
 		serial_read(1000, &commb);
 		nowt = time(NULL);
 		commbyte = commb;
-		riello_parse_serialport(typedev, bufIn, gpser_error_control);
+		riello_parse_serialport(typedev, arg_bufIn, gpser_error_control);
 
 		if ((nowt - realt) > 4)
 			break;
 	}
 }
 
-int get_ups_nominal()
+static int get_ups_nominal()
 {
 	uint8_t length;
 
@@ -203,7 +196,7 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status()
+static int get_ups_status()
 {
 	uint8_t numread, length;
 
@@ -243,7 +236,7 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended()
+static int get_ups_extended()
 {
 	uint8_t length;
 
@@ -276,6 +269,7 @@ int get_ups_extended()
 	return 0;
 }
 
+/* Not static, exposed via header. Not used though, currently... */
 int get_ups_statuscode()
 {
 	uint8_t length;
@@ -309,7 +303,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-int get_ups_sentr()
+static int get_ups_sentr()
 {
 	uint8_t length;
 
@@ -352,7 +346,7 @@ int get_ups_sentr()
 	return 0;
 }
 
-int riello_instcmd(const char *cmdname, const char *extra)
+static int riello_instcmd(const char *cmdname, const char *extra)
 {
 	uint8_t length;
 	uint16_t delay;
@@ -630,7 +624,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm()
+static int start_ups_comm()
 {
 	uint8_t length;
 

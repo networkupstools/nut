@@ -25,35 +25,35 @@
 #include "dstate.h"
 #include "attribute.h"
 
-	/* data which may be useful to the drivers */
-	int		upsfd = -1;
-	char		*device_path = NULL;
-	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+/* data which may be useful to the drivers */
+int		upsfd = -1;
+char		*device_path = NULL;
+const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
-	/* may be set by the driver to wake up while in dstate_poll_fds */
-	int	extrafd = -1;
+/* may be set by the driver to wake up while in dstate_poll_fds */
+int	extrafd = -1;
 
-	/* for ser_open */
-	int	do_lock_port = 1;
+/* for ser_open */
+int	do_lock_port = 1;
 
-	/* for dstate->sock_connect, default to asynchronous */
-	int	do_synchronous = 0;
+/* for dstate->sock_connect, default to asynchronous */
+int	do_synchronous = 0;
 
-	/* for detecting -a values that don't match anything */
-	static	int	upsname_found = 0;
+/* for detecting -a values that don't match anything */
+static	int	upsname_found = 0;
 
-	static vartab_t	*vartab_h = NULL;
+static vartab_t	*vartab_h = NULL;
 
-	/* variables possibly set by the global part of ups.conf */
-	unsigned int	poll_interval = 2;
-	static char	*chroot_path = NULL, *user = NULL;
+/* variables possibly set by the global part of ups.conf */
+unsigned int	poll_interval = 2;
+static char	*chroot_path = NULL, *user = NULL;
 
-	/* signal handling */
-	int	exit_flag = 0;
+/* signal handling */
+int	exit_flag = 0;
 
-	/* everything else */
-	static char	*pidfn = NULL;
-	int	dump_data = 0; /* Store the update_count requested */
+/* everything else */
+static char	*pidfn = NULL;
+static int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)

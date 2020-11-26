@@ -43,9 +43,9 @@ upsdrv_info_t upsdrv_info = {
 
 #define DEBUG 1
 
-int     type;
-char    name[31];
-char    firmware[6];
+static int     type;
+static char    name[31];
+static char    firmware[6];
 
 /********************************************************************
  *
