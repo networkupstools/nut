@@ -111,6 +111,7 @@ sub gen_usb_files
 	print $outUdev 'ACTION=="remove", GOTO="nut-usbups_rules_end"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"'."\n";
+	print $outUdev 'SUBSYSTEM=="hid", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
@@ -195,11 +196,11 @@ sub gen_usb_files
 					if ($vendorName{$vendorId}) {
 						$tmpOutputUPower = $tmpOutputUPower."\n# ".$vendorName{$vendorId}."\n";
 					}
-					print $outputUPower "ATTRS{idVendor}==\"".removeHexPrefix($vendorId)."\", ENV{UPOWER_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
+					print $outputUPower "ENV{HID_ID}==\"*:0000".uc(removeHexPrefix($vendorId)).":*\", ENV{UPOWER_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
 					$upowerMfrHeaderDone = 1;
 				}
-				$tmpOutputUPower = $tmpOutputUPower."ATTRS{idVendor}==\"".removeHexPrefix($vendorId);
-				$tmpOutputUPower = $tmpOutputUPower."\", ATTRS{idProduct}==\"".removeHexPrefix($productId)."\",";
+				$tmpOutputUPower = $tmpOutputUPower."ENV{HID_ID}==\"0003:0000".uc(removeHexPrefix($vendorId)).":";
+				$tmpOutputUPower = $tmpOutputUPower."0000".uc(removeHexPrefix($productId))."\",";
 				$tmpOutputUPower = $tmpOutputUPower.' ENV{UPOWER_BATTERY_TYPE}="ups"'."\n";
 			}
 
