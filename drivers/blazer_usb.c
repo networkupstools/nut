@@ -480,7 +480,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return ret;
-#else
+#else	/* if TESTING: */
 	const struct {
 		const char	*command;
 		const char	*answer;
@@ -505,7 +505,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return snprintf(buf, buflen, "%s", testing[i].command);
-#endif
+#endif	/* TESTING */
 }
 
 
@@ -646,7 +646,7 @@ void upsdrv_initups(void)
 			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
 		}
 	}
-#endif
+#endif	/* TESTING */
 	blazer_initups();
 }
 
@@ -667,5 +667,5 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
-#endif
+#endif	/* TESTING */
 }
