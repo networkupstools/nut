@@ -1,6 +1,7 @@
 /* nutclienttest - CppUnit nutclient unit test
 
    Copyright (C) 2016  Emilien Kia <emilien.kia@gmail.com>
+   Copyright (C) 2020  Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,6 +17,20 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#include "common.h"
+
+/* Current CPPUnit offends the honor of C++98 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+#endif
+
 #include <cppunit/extensions/HelperMacros.h>
 
 namespace nut {
@@ -87,18 +102,18 @@ void NutClientTest::test_stringset_to_strarr()
 	strset.insert("world");
 
 	strarr arr = stringset_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result is null", arr!=NULL);
+	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result is null", arr != nullptr);
 
 	std::set<std::string> res;
 
 	char** ptr = arr;
-	while(*ptr!=NULL)
+	while(*ptr != nullptr)
 	{
 		res.insert(std::string(*ptr));
 		ptr++;
 	}
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringset_to_strarr(...) result has not 3 items", (size_t)3, res.size());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringset_to_strarr(...) result has not 3 items", static_cast<size_t>(3), res.size());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"test\"", res.find("test")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"hello\"", res.find("hello")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"world\"", res.find("world")!=res.end());
@@ -114,7 +129,7 @@ void NutClientTest::test_stringvector_to_strarr()
 	strset.push_back("world");
 
 	strarr arr = stringvector_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result is null", arr!=NULL);
+	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result is null", arr != nullptr);
 
 	char** ptr = arr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 0==\"test\"", std::string("test"), std::string(*ptr));
@@ -123,7 +138,12 @@ void NutClientTest::test_stringvector_to_strarr()
 	++ptr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 2==\"world\"", std::string("world"), std::string(*ptr));
 	++ptr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", (char*)NULL, *ptr);
+
+	/* https://stackoverflow.com/a/12565009/4715872
+	 * Can not compare nullptr_t and another data type (char*)
+	 * with CPPUNIT template assertEquals()
+	 */
+	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", nullptr == *ptr);
 
 	strarr_free(arr);
 }
@@ -197,3 +217,7 @@ void NutClientTest::test_copy_assignment_var() {
 }
 
 } // namespace nut {}
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic pop
+#endif
