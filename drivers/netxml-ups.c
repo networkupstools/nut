@@ -1590,9 +1590,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *  \return HTTP status code if response was sent, 0 on send error
  */
 static int send_http_request(
-	ne_session *session,
+	ne_session *argsession,
 	const char *method,
-	const char *uri,
+	const char *arguri,
 	const char *ct,
 	ne_buffer  *req_body,
 	ne_buffer  *resp_body)
@@ -1602,7 +1602,7 @@ static int send_http_request(
 	ne_request *req = NULL;
 
 	/* Create request */
-	req = ne_request_create(session, method, uri);
+	req = ne_request_create(argsession, method, arguri);
 
 	/* Neon claims that request creation is always successful */
 	assert(NULL != req);
