@@ -162,11 +162,16 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-static int subdriver_match_func(USBDevice_t *hd, void *privdata)
+static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 {
 	NUT_UNUSED_VARIABLE(privdata);
 
-	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
+	/* FIXME? Should we save "arghd" into global "hd" variable?
+	 * This was previously shadowed by function argument named "hd"...
+	 */
+	/* hd = arghd; */
+
+	switch (is_usb_device_supported(tripplite_usb_device_table, arghd))
 	{
 	case SUPPORTED:
 		return 1;
