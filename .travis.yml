@@ -407,6 +407,8 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         - yes | sudo apt-get install -f
         - yes | sudo apt-get install -y --force-yes libperl5.22:i386
         - yes | sudo apt-get install -y --force-yes libsnmp-dev:i386
+        - yes | sudo apt-get remove -y --force-yes libfreetype6:amd64 || true
+        - yes | sudo apt-get remove -y --force-yes libltdl7:amd64 || true
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
     os: linux
