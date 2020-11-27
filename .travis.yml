@@ -392,6 +392,7 @@ _matrix_linux_gnustd_nowarn_s390x_64bit_viable:
         - clang-8
         - clang-format-8
         - *deps_driverlibs
+        - time
 
 _matrix_linux_gnustd_nowarn_s390x_64bit_fatal:
   include: &_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
