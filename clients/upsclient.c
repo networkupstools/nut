@@ -586,9 +586,9 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
-	int		ret;
+	ssize_t		ret;
 	fd_set		fds;
 	struct timeval	tv;
 
@@ -608,9 +608,9 @@ static int upscli_select_read(const int fd, void *buf, const size_t buflen, cons
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
@@ -647,9 +647,9 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeo
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
-	int		ret;
+	ssize_t		ret;
 	fd_set		fds;
 	struct timeval	tv;
 
@@ -669,9 +669,9 @@ static int upscli_select_write(const int fd, const void *buf, const size_t bufle
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
@@ -1379,9 +1379,9 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret;
+	ssize_t	ret;
 
 	if (!ups) {
 		return -1;
@@ -1412,14 +1412,14 @@ int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsi
 	return 0;
 }
 
-int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
+ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret;
+	ssize_t	ret;
 	size_t	recv;
 
 	if (!ups) {
@@ -1467,7 +1467,7 @@ int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned i
 	return 0;
 }
 
-int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
+ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	return upscli_readline_timeout(ups, buf, buflen, DEFAULT_NETWORK_TIMEOUT);
 }
