@@ -389,15 +389,27 @@ void upsdrv_updateinfo(void)
 	int	ret, i;
 
 	for (i = 0; vartab[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(vartab[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(vartab[i].var, vartab[i].fmt, val * multi[vartab[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(vartab[i].var, vartab[i].fmt, multi[vartab[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	if (num_inphases==3){
@@ -421,27 +433,51 @@ void upsdrv_updateinfo(void)
 	}
 
 	for (i = 0; cmdin_p[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(cmdin_p[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(cmdin_p[i].var, cmdin_p[i].fmt, val * multi[cmdin_p[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(cmdin_p[i].var, cmdin_p[i].fmt, multi[cmdin_p[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	for (i = 0; cmdout_p[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(cmdout_p[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(cmdout_p[i].var, cmdout_p[i].fmt, val * multi[cmdout_p[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(cmdout_p[i].var, cmdout_p[i].fmt, multi[cmdout_p[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	status_init();

@@ -126,7 +126,7 @@ static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen);
+static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen);
 #ifdef DEBUG
 static double interval(void);
 #endif
@@ -1078,7 +1078,7 @@ static void process_boolean_info(const char *nutvalue)
 	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
+static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
@@ -1087,6 +1087,10 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+
+	/* Save the global "hd" for this driver instance */
+	hd = arghd;
+	udev = argudev;
 
 	/* Parse Report Descriptor */
 	Free_ReportDesc(pDesc);
@@ -1596,7 +1600,19 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(item->info_type, item->dfl, value);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	return 1;

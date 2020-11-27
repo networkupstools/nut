@@ -405,7 +405,19 @@ void upsdrv_initups(void)
 			cur_info_p->OID = (char *)xmalloc(SU_INFOSIZE);
 			snprintf((char*)cur_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			/* Use the daisychain master (0) / 1rst device index */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char*)cur_info_p->OID, SU_INFOSIZE, su_info_p->OID, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		else {
 			upsdebugx(2, "Found entry, not a template %s", su_info_p->OID);
@@ -1312,7 +1324,19 @@ static bool_t match_model_OID()
 			cur_info_p->OID = (char *)xmalloc(SU_INFOSIZE);
 			snprintf((char*)cur_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			/* Use the daisychain master (0) / 1rst device index */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char*)cur_info_p->OID, SU_INFOSIZE, su_info_p->OID, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		else {
 			upsdebugx(2, "Found entry, not a template %s", su_info_p->OID);
@@ -1662,6 +1686,15 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 	{
 		/* not initialised yet */
 		for (base_index = 0 ; base_index < 2 ; base_index++) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			/* Test if this template also includes daisychain, in which case
 			 * we just use the current device index */
 			if (is_multiple_template(su_info_p->OID) == TRUE) {
@@ -1677,6 +1710,9 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			else {
 				snprintf(test_OID, sizeof(test_OID), su_info_p->OID, base_index);
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 			if (nut_snmp_get(test_OID) != NULL) {
 				if (su_info_p->flags & SU_FLAG_ZEROINVALID) {
@@ -1723,7 +1759,19 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	if (nut_snmp_get(test_OID) == NULL) {
 		base_index++;
 	}
@@ -1738,7 +1786,19 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 
 	/* Now, actually iterate */
 	for (base_count = 0 ;  ; base_count++) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(test_OID, sizeof(test_OID), OID_template, base_index + base_count);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		if (nut_snmp_get(test_OID) == NULL)
 			break;
 	}
@@ -1818,8 +1878,20 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 					/* Device 1 ("device.0", whole daisychain) needs no
 					 * special processing */
 					cur_nut_index = cur_template_number;
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 				}
 			}
 			else /* Outlet and outlet groups templates */
@@ -1827,6 +1899,15 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				/* Get the index of the current template instance */
 				cur_nut_index = cur_template_number;
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 				/* Special processing for daisychain */
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
@@ -1836,8 +1917,8 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 						strcat(&tmp_buf[0], su_info_p->info_type);
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
-							snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-								&tmp_buf[0], current_device_number, cur_nut_index);
+						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+							&tmp_buf[0], current_device_number, cur_nut_index);
 					}
 					else {
 						// FIXME: daisychain-whole, what to do?
@@ -1886,6 +1967,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 					}
 				}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 				/* add instant commands to the info database. */
 				if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
@@ -2182,7 +2266,19 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
 					upsdebugx(2, "Found template, need to be adapted");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number + device_template_offset);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 				}
 				else {
 					/* Otherwise, just point at what we found */
@@ -2445,8 +2541,20 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if (tmp_info_p != NULL) {
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
 					current_device_number + device_template_offset);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 			}
 			else {
 				free_info(tmp_info_p);
@@ -2759,8 +2867,20 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if ((su_info_p->dfl != NULL) &&
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
 				item_number);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
@@ -2777,6 +2897,15 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			 * these outlet | outlet groups also include formatting info,
 			 * so we have to check if the daisychain is enabled, and if
 			 * the formatting info for it are in 1rst or 2nd position */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			if (daisychain_enabled == TRUE) {
 				/* Note: daisychain_enabled == TRUE means that we have
 				 * daisychain template. However:
@@ -2802,6 +2931,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			else {
 				snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID, item_number);
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
 		 * can be setting a server side variable! */

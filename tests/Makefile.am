@@ -15,6 +15,11 @@ nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
 ### Optional tests which can not be built everywhere
+# List of src files for CppUnit tests
+CPPUNITTESTSRC = example.cpp nutclienttest.cpp
+# The test driver which orchestrates running those tests above
+CPPUNITTESTERSRC = cpputest.cpp
+
 if HAVE_CXX11
 if HAVE_CPPUNIT
 # Note: per configure script this "SHOULD" also assume
@@ -30,16 +35,12 @@ endif
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la
-
-# List of src files for CppUnit tests
-CPPUNITTESTSRC = example.cpp nutclienttest.cpp
-
-cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
+cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball
 
-EXTRA_DIST += example.cpp cpputest.cpp
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 endif !HAVE_CPPUNIT
 
