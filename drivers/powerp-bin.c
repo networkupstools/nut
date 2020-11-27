@@ -493,6 +493,7 @@ static int powpan_updateinfo(void)
 		dstate_setinfo("input.frequency", "%.1f", op_freq(status.i_freq));
 		break;
 
+	case PR:
 	default:
 		dstate_setinfo("input.voltage", "%d", status.i_volt);
 		if (status.flags[0] & 0x84) {
