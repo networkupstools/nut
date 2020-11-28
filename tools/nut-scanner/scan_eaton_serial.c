@@ -30,7 +30,14 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 #include <signal.h>
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -408,10 +415,17 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		if( oldact.sa_handler == SIG_DFL ) {
 			change_action_handler = 1;
 			signal(SIGPIPE,SIG_IGN);
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	/* port(s) iterator */
@@ -447,7 +461,14 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #endif
 
 	if(change_action_handler) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		signal(SIGPIPE,SIG_DFL);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	/* free everything... */
