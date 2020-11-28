@@ -299,10 +299,10 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 				nutscan_free_device(dev);
 			}
 			device = strtok_r(NULL,";",&device_saveptr);
-		};
+		}
 
 		phrase = strtok_r(NULL,"\"",&t_saveptr);
-	};
+	}
 	free(t);
 
 	/* If no device published in avahi data, try to get the device by
