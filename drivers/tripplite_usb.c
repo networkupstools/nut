@@ -162,11 +162,16 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-static int subdriver_match_func(USBDevice_t *hd, void *privdata)
+static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 {
 	NUT_UNUSED_VARIABLE(privdata);
 
-	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
+	/* FIXME? Should we save "arghd" into global "hd" variable?
+	 * This was previously shadowed by function argument named "hd"...
+	 */
+	/* hd = arghd; */
+
+	switch (is_usb_device_supported(tripplite_usb_device_table, arghd))
 	{
 	case SUPPORTED:
 		return 1;
@@ -207,6 +212,11 @@ static int is_binary_protocol()
 	switch(tl_model) {
 	case TRIPP_LITE_SMART_3005:
 		return 1;
+	case TRIPP_LITE_SMARTPRO:
+	case TRIPP_LITE_SMART_0004:
+	case TRIPP_LITE_OMNIVS:
+	case TRIPP_LITE_OMNIVS_2001:
+	case TRIPP_LITE_UNKNOWN:
 	default:
 		return 0;
 	}
@@ -222,6 +232,9 @@ static int is_smart_protocol()
 	case TRIPP_LITE_SMART_0004:
 	case TRIPP_LITE_SMART_3005:
 		return 1;
+	case TRIPP_LITE_OMNIVS:
+	case TRIPP_LITE_OMNIVS_2001:
+	case TRIPP_LITE_UNKNOWN:
 	default:
 		return 0;
 	}
@@ -777,6 +790,9 @@ static int control_outlet(int outlet_id, int state)
 #pragma GCC diagnostic pop
 #endif
 
+		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_UNKNOWN:
 		default:
 			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
@@ -1404,6 +1420,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
+		case TRIPP_LITE_UNKNOWN:
 		default:
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;

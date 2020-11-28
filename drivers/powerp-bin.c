@@ -298,8 +298,20 @@ static int powpan_setvar(const char *varname, const char *val)
 				continue;
 			}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf(command, sizeof(command), vartab[i].set,
 				vartab[i].map[type][j].command);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, "%s", val);
@@ -481,6 +493,7 @@ static int powpan_updateinfo(void)
 		dstate_setinfo("input.frequency", "%.1f", op_freq(status.i_freq));
 		break;
 
+	case PR:
 	default:
 		dstate_setinfo("input.voltage", "%d", status.i_volt);
 		if (status.flags[0] & 0x84) {

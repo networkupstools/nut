@@ -101,7 +101,7 @@ static int cypress_setfeatures()
 static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
-	int i, err, size, errno;
+	int i, err, size;
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -164,7 +164,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 static int Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
-	int err, size, errno, ep;
+	int err, size, ep;
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;

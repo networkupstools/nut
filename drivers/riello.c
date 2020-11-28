@@ -769,9 +769,9 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uinp1 = buffer[35]*230/100;
 		data->Uinp2 = buffer[36]*230/100;
 		data->Uinp3 = buffer[37]*230/100;
-		data->Iinp1 = ((pom/690)*buffer[38])/100;;
-		data->Iinp2 = ((pom/690)*buffer[39])/100;;
-		data->Iinp3 = ((pom/690)*buffer[40])/100;;
+		data->Iinp1 = ((pom/690)*buffer[38])/100;
+		data->Iinp2 = ((pom/690)*buffer[39])/100;
+		data->Iinp3 = ((pom/690)*buffer[40])/100;
 		data->Finp = buffer[41]+256*buffer[42];
 
 		if (buffer[79] & 0x80) {
