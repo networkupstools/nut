@@ -637,7 +637,6 @@ static void upsdrv_init_nofc(void)
 			break;
 		default:
 			fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
-			break;
 	}
 	fc.valid = 1;
 }

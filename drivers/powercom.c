@@ -285,6 +285,9 @@ static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
  */
 
 static void shutdown_halt(void)
+	__attribute__((noreturn));
+
+static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
@@ -293,6 +296,9 @@ static void shutdown_halt(void)
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 	exit (0);
 }
+
+static void shutdown_ret(void)
+	__attribute__((noreturn));
 
 static void shutdown_ret(void)
 {
@@ -314,12 +320,19 @@ static int instcmd (const char *cmdname, const char *extra)
 	    return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/* NOTE: In this context, "return" is UPS behavior after the
+		 * wall-power gets restored. The routine exits the driver anyway.
+		 */
 		shutdown_ret();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		shutdown_halt();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
@@ -818,6 +831,9 @@ void upsdrv_updateinfo(void)
 }
 
 /* shutdown UPS */
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
 void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */

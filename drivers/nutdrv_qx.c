@@ -2149,11 +2149,29 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPIPE:		/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {

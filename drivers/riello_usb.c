@@ -953,6 +953,9 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;

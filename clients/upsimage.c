@@ -219,6 +219,17 @@ static void drawbar(
 	double value, 				/* UPS variable value to draw */
 	const char *format			/* printf style format to be used when rendering summary text */
 )
+	__attribute__((noreturn));
+
+static void drawbar(
+	int lvllo, int lvlhi,			/* min and max numbers on the scale */
+	int step, int step5, int step10,	/* steps for minor, submajor and major dashes */
+	int redlo1, int redhi1,			/* first red zone start and end */
+	int redlo2, int redhi2,			/* second red zone start and end */
+	int grnlo, int grnhi,			/* green zone start and end */
+	double value, 				/* UPS variable value to draw */
+	const char *format			/* printf style format to be used when rendering summary text */
+)
 {
 	gdImagePtr	im;
 	int		bar_color, summary_color;
@@ -285,6 +296,9 @@ static void drawbar(
 
 /* draws the error image */
 static void noimage(const char *fmt, ...)
+	__attribute__((noreturn));
+
+static void noimage(const char *fmt, ...)
 {
 	gdImagePtr	im;
 	int		back_color, summary_color;
@@ -331,6 +345,12 @@ static void noimage(const char *fmt, ...)
 
 	drawimage(im);
 
+	/* NOTE: Earlier code called noimage() and then exit(EXIT_FAILURE);
+	 * to signal an error via process exit code. Now that drawimage()
+	 * always ends with exit(EXIT_SUCCESS) - which might make webserver
+	 * feel good - the command-line use if any suffers no error returns.
+	 */
+
 	/* NOTREACHED */
 }
 
@@ -338,6 +358,10 @@ static void noimage(const char *fmt, ...)
    UPS variable can be determined.
    deviation < 0 means that values below nom should be grey instead of
    green */
+static void drawgeneralbar(double var, int min, int nom, int max,
+		int deviation, 	const char *format)
+	__attribute__((noreturn));
+
 static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 {
@@ -399,6 +423,10 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 /* draws input and output voltage bar style indicators */
 static void draw_utility(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_utility(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	/* hack: deal with hardware that doesn't have known transfer points */
 	if (min == -1) {
@@ -442,6 +470,10 @@ static void draw_utility(double var, int min, int nom, int max,
 /* draws battery.percent bar style indicator */
 static void draw_battpct(double var, int min, int nom,
 		int max, int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_battpct(double var, int min, int nom,
+		int max, int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(nom);
 	NUT_UNUSED_VARIABLE(max);
@@ -455,6 +487,10 @@ static void draw_battpct(double var, int min, int nom,
 }
 
 /* draws battery.voltage bar style indicator */
+static void draw_battvolt(double var, int min, int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
 static void draw_battvolt(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
@@ -504,6 +540,11 @@ static void draw_battvolt(double var, int min, int nom, int max,
 static void draw_upsload(double var, int min,
 		int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_upsload(double var, int min,
+		int nom, int max,
+		int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(min);
 	NUT_UNUSED_VARIABLE(nom);
@@ -516,6 +557,10 @@ static void draw_upsload(double var, int min,
 /* draws temperature bar style indicator */
 static void draw_temperature(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_temperature(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	int	hi = get_imgarg("tempmax");
 	int	lo = get_imgarg("tempmin");
@@ -526,6 +571,10 @@ static void draw_temperature(double var, int min, int nom, int max,
 }
 
 /* draws humidity bar style indicator */
+static void draw_humidity(double var, int min, int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
 static void draw_humidity(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
@@ -581,13 +630,17 @@ int main(int argc, char **argv)
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
 		noimage("Invalid UPS definition (upsname[@hostname[:port]])\n");
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	for (i = 0; imgvar[i].name; i++)
@@ -597,7 +650,9 @@ int main(int argc, char **argv)
 			   registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* get the variable value */
@@ -608,7 +663,9 @@ int main(int argc, char **argv)
 				snprintf(str, sizeof(str), "%s N/A",
 					imgvar[i].name);
 				noimage(str);
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* when getting minimum, nominal and maximum values,
@@ -661,7 +718,9 @@ int main(int argc, char **argv)
 		}
 
 	noimage("Unknown display");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 	exit(EXIT_FAILURE);
+#endif
 }
 
 imgvar_t imgvar[] = {
