@@ -532,6 +532,8 @@ fail:
 /* stub function */
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
+	NUT_UNUSED_VARIABLE(usec_timeout);
+
 	return NULL;
 }
 #endif /* WITH_AVAHI */

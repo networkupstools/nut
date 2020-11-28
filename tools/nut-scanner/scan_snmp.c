@@ -743,7 +743,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		try_SysOID((void *)tmp_sec);
 #endif
 		ip_str = nutscan_ip_iter_inc(&ip);
-	};
+	}
 
 #ifdef HAVE_PTHREAD
 	for ( i=0; i < thread_count ; i++) {
@@ -757,10 +757,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	return result;
 }
 #else /* WITH_SNMP */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec)
 {
+	NUT_UNUSED_VARIABLE(start_ip);
+	NUT_UNUSED_VARIABLE(stop_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
 	return NULL;
 }
 #endif /* WITH_SNMP */
-
-
