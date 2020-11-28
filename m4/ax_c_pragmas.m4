@@ -97,6 +97,18 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-overflow"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wassign-enum"],
+    [ax_cv__pragma__gcc__diags_ignored_assign_enum],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wassign-enum"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_assign_enum=yes],
+      [ax_cv__pragma__gcc__diags_ignored_assign_enum=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_assign_enum" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wassign-enum"])
+  ])
+
   AC_LANG_POP([C])
 
   dnl ### Series of tests for C++ specific pragmas
