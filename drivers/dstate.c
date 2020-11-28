@@ -1192,14 +1192,14 @@ int dstate_detect_phasecount(
 		 * tables should take care of this with converion routine and numeric
 		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
-		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		do { strncpy(bufrw_ptr, suffix, bufrw_max); \
 		  if ( (var = dstate_getinfo(buf)) ) { \
 		    if ( (var[0] == '0' && var[1] == '\0') || \
 		         (var[0] == '\0') ) { \
 		      var = NULL; \
 		    } \
 		  } \
-		} ;
+		} while(0)
 
 		dstate_getinfo_nonzero(v1,  "L1.voltage");
 		dstate_getinfo_nonzero(v2,  "L2.voltage");

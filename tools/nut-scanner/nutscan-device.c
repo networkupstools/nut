@@ -77,7 +77,7 @@ static void deep_free_device(nutscan_device_t * device)
 		}
 
 		free(current);
-	};
+	}
 
 	if(device->prev) {
 		device->prev->next = device->next;

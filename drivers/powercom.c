@@ -404,8 +404,7 @@ static int ups_getinfo(void)
 			return 0;
 		} else
 			upsdebugx(5, "Num of bytes received from UPS: %d", c);
-
-	};
+	}
 
 	/* optional dump of raw data */
 	if (nut_debug_level > 4) {
@@ -413,15 +412,15 @@ static int ups_getinfo(void)
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
 			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
-		};
-	};
+		}
+	}
 
 	/* validate raw data for correctness */
 	if (validate_raw_data() != 0) {
 		upslogx(LOG_NOTICE, "data receiving error (validation check)");
 		dstate_datastale();
 		return 0;
-	};
+	}
 	return 1;
 }
 
@@ -871,7 +870,7 @@ void upsdrv_initups(void)
 			exit (1);
 		}
 		type = i;
-	};
+	}
 
 	/* check line voltage from arguments */
 	if (getval("linevoltage") != NULL) {
@@ -879,9 +878,9 @@ void upsdrv_initups(void)
 		if (! ( (tmp >= 200 && tmp <= 240) || (tmp >= 100 && tmp <= 120) ) ) {
 			printf("Given line voltage '%d' is out of range (100-120 or 200-240 V)\n", tmp);
 			exit (1);
-		};
+		}
 		linevoltage = (unsigned int) tmp;
-	};
+	}
 
 	if (getval("numOfBytesFromUPS") != NULL) {
 		tmp = atoi(getval("numOfBytesFromUPS"));
@@ -889,7 +888,7 @@ void upsdrv_initups(void)
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
 			       tmp, MAX_NUM_OF_BYTES_FROM_UPS);
 			exit (1);
-		};
+		}
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
@@ -903,7 +902,7 @@ void upsdrv_initups(void)
 			printf("Given methodOfFlowControl '%s' isn't valid!\n",
 					getval("methodOfFlowControl"));
 			exit (1);
-		};
+		}
 		types[type].flowControl = types[i].flowControl;
 	}
 
