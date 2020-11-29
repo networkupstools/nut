@@ -26,7 +26,10 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+/* This is only used in upsstats.c, but might it also have external consumers?..
+ * To move or not to move?..
+ */
+static struct {
 	char	*name;
 	char	*desc;
 	int	severity;

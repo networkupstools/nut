@@ -195,9 +195,10 @@ static int do_date(const char *buf)
 {
 	char	datebuf[SMALLBUF];
 	time_t	tod;
+	struct tm tmbuf;
 
 	time(&tod);
-	if (strftime(datebuf, sizeof(datebuf), buf, localtime(&tod))) {
+	if (strftime(datebuf, sizeof(datebuf), buf, localtime_r(&tod, &tmbuf))) {
 		printf("%s", datebuf);
 		return 1;
 	}

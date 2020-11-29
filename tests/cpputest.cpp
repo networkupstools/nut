@@ -2,6 +2,7 @@
 
    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
+	2020	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <stdexcept>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
@@ -58,7 +60,6 @@ int main(int argc, char* argv[])
 
   /* Return error code 1 if the one of test failed. */
   std::cerr << "D: Got to the end of test suite with code " <<
-    "'" << wasSucessful << "'" << std::endl;
+    "'" << ( wasSucessful ? "true" : "false" ) << "'" << std::endl;
   return wasSucessful ? 0 : 1;
 }
-

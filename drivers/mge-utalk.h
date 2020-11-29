@@ -52,7 +52,7 @@ typedef struct {
   const char	*finalname;
 } models_name_t;
 
-models_name_t Si1_models_names [] =
+static models_name_t Si1_models_names [] =
   {
 	/* Pulsar EX */
 	{ "Pulsar EX7", "Pulsar EX 7" },

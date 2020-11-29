@@ -167,8 +167,8 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
-int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
 char * get_libname(const char* base_libname);
 

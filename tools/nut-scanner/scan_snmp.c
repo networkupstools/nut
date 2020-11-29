@@ -74,7 +74,7 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-long g_usec_timeout ;
+static long g_usec_timeout ;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -88,7 +88,7 @@ static struct snmp_session * (*nut_snmp_sess_session)(void *handle);
 static void * (*nut_snmp_parse_oid)(const char *input, oid *objid,
 		size_t *objidlen);
 static struct snmp_pdu * (*nut_snmp_pdu_create) (int command );
-netsnmp_variable_list * (*nut_snmp_add_null_var)(netsnmp_pdu *pdu,
+static netsnmp_variable_list * (*nut_snmp_add_null_var)(netsnmp_pdu *pdu,
 			const oid *objid, size_t objidlen);
 static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 			netsnmp_pdu **response);
@@ -99,13 +99,14 @@ static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
-static int (*nut_snmp_errno);
-static oid (*nut_usmAESPrivProtocol);
-static oid (*nut_usmHMACMD5AuthProtocol);
-static oid (*nut_usmHMACSHA1AuthProtocol);
-static oid (*nut_usmDESPrivProtocol);
+static int *nut_snmp_errno;
+static oid *nut_usmAESPrivProtocol;
+static oid *nut_usmHMACMD5AuthProtocol;
+static oid *nut_usmHMACSHA1AuthProtocol;
+static oid *nut_usmDESPrivProtocol;
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_snmp_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -742,7 +743,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		try_SysOID((void *)tmp_sec);
 #endif
 		ip_str = nutscan_ip_iter_inc(&ip);
-	};
+	}
 
 #ifdef HAVE_PTHREAD
 	for ( i=0; i < thread_count ; i++) {
@@ -756,10 +757,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	return result;
 }
 #else /* WITH_SNMP */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec)
 {
+	NUT_UNUSED_VARIABLE(start_ip);
+	NUT_UNUSED_VARIABLE(stop_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
 	return NULL;
 }
 #endif /* WITH_SNMP */
-
-
