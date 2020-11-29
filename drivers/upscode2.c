@@ -1187,19 +1187,19 @@ static void check_uppm(void)
 	if (strcmp(var, "ACPM"))
 		upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 	while (1) {
-		int val, stat;
+		int intval, stat;
 		upscrecv(var);
 		if (strlen(var) == 0)
 			break;
 		upsdebugx(2, "UPPM available: %s", var);
-		stat = sscanf(var, "P%2d", &val);
+		stat = sscanf(var, "P%2d", &intval);
 		if (stat != 1) {
 			upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 			return;
 		}
-		has_uppm_p[val] = 1;
-		if (val > last)
-			last = val;
+		has_uppm_p[intval] = 1;
+		if (intval > last)
+			last = intval;
 	}
 
 	for (i = 0; i <= last; i++) {
