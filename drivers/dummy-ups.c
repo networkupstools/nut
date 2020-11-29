@@ -427,13 +427,13 @@ static void upsconf_err(const char *errmsg)
 /* for dummy mode
  * parse the definition file and process its content
  */
-static int parse_data_file(int upsfd)
+static int parse_data_file(int arg_upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
-	NUT_UNUSED_VARIABLE(upsfd);
+	NUT_UNUSED_VARIABLE(arg_upsfd);
 
 	time(&now);
 
