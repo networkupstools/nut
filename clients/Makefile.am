@@ -1,6 +1,11 @@
 # Network UPS Tools: clients
 EXTRA_DIST =
 
+# nutclient.cpp for some legacy reason (maybe initial detached development?)
+# optionally includes "common.h" with the NUT build setup - and this option
+# was never triggered in fact, not until pushed through command line like this:
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
+
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
@@ -67,6 +72,9 @@ if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
+# Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
+# which is defined for in-tree CXX builds above:
+libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 else
 EXTRA_DIST += nutclient.h nutclient.cpp
 endif

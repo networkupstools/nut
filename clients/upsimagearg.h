@@ -17,13 +17,20 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_UPSIMAGEARG_H_SEEN
+#define NUT_UPSIMAGEARG_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+/* This is used in upsstats.c and in upsimage.c, but compiler complains about
+ * non-extern definition if this is not "static". To move or not to move?..
+ * Do we have cases of building binaries refering to only one of those objects?
+ */
+static struct {
 	char	*name;
 	int	val;		/* hex digits, ala HTML */
 	int	min;		/* minimum reasonable value */
@@ -71,3 +78,4 @@ extern imgvar_t imgvar[];
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_UPSIMAGEARG_H_SEEN */

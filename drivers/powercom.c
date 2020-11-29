@@ -274,15 +274,18 @@ enum status {
 	OFF           = 128U
 };
 
-unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
-unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
-unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
-unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
-unsigned int OPTImodels[]={0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
+static unsigned int voltages[]	= {100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
+static unsigned int BNTmodels[]	= {0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
+static unsigned int KINmodels[]	= {0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
+static unsigned int IMPmodels[]	= {0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
+static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /*
  * local used functions
  */
+
+static void shutdown_halt(void)
+	__attribute__((noreturn));
 
 static void shutdown_halt(void)
 {
@@ -293,6 +296,9 @@ static void shutdown_halt(void)
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 	exit (0);
 }
+
+static void shutdown_ret(void)
+	__attribute__((noreturn));
 
 static void shutdown_ret(void)
 {
@@ -314,15 +320,22 @@ static int instcmd (const char *cmdname, const char *extra)
 	    return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/* NOTE: In this context, "return" is UPS behavior after the
+		 * wall-power gets restored. The routine exits the driver anyway.
+		 */
 		shutdown_ret();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		shutdown_halt();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -391,8 +404,7 @@ static int ups_getinfo(void)
 			return 0;
 		} else
 			upsdebugx(5, "Num of bytes received from UPS: %d", c);
-
-	};
+	}
 
 	/* optional dump of raw data */
 	if (nut_debug_level > 4) {
@@ -400,15 +412,15 @@ static int ups_getinfo(void)
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
 			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
-		};
-	};
+		}
+	}
 
 	/* validate raw data for correctness */
 	if (validate_raw_data() != 0) {
 		upslogx(LOG_NOTICE, "data receiving error (validation check)");
 		dstate_datastale();
 		return 0;
-	};
+	}
 	return 1;
 }
 
@@ -562,7 +574,9 @@ static float output_voltage(void)
 				tmp=(raw_data[BATTERY_CHARGE]*rdatax)*(raw_data[BATTERY_CHARGE]*rdatax)*
 					(t-raw_data[OUTPUT_VOLTAGE])/t;
 				if (tmp>0)
-					tmp=sqrt(tmp)*rdatay*boostdata-raw_data[UPS_LOAD]*rdataz*boostdata;
+					/* Casts below try to avoid potential multiplication overflow */
+					tmp=(float)( (double)sqrt(tmp)*rdatay*boostdata -
+						(double)raw_data[UPS_LOAD]*rdataz*boostdata );
 			} else {
 				tmp=(raw_data[BATTERY_CHARGE]*rdatax-raw_data[UPS_LOAD]*rdataz)*
 					(raw_data[BATTERY_CHARGE]*rdatax-raw_data[UPS_LOAD]*rdataz)*
@@ -663,13 +677,13 @@ static float load_level(void)
 			if (model==525) return raw_data[UPS_LOAD]*110.0/load525[voltage];
 			if (model==625) return raw_data[UPS_LOAD]*110.0/load625[voltage];
 			if (model<2000) return raw_data[UPS_LOAD]*1.13;
-			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2k[voltage];
+			return raw_data[UPS_LOAD]*110.0/load2k[voltage];
 		} else {
 			if (model==425) return raw_data[UPS_LOAD]*110.0/load425i[voltage];
 			if (model==525) return raw_data[UPS_LOAD]*110.0/load525i[voltage];
 			if (model==625) return raw_data[UPS_LOAD]*110.0/load625i[voltage];
 			if (model<2000) return raw_data[UPS_LOAD]*1.66;
-			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
+			return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		return raw_data[UPS_LOAD];
@@ -818,6 +832,9 @@ void upsdrv_updateinfo(void)
 
 /* shutdown UPS */
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */
 	printf("Forced UPS shutdown (and wait for power)...\n");
@@ -853,7 +870,7 @@ void upsdrv_initups(void)
 			exit (1);
 		}
 		type = i;
-	};
+	}
 
 	/* check line voltage from arguments */
 	if (getval("linevoltage") != NULL) {
@@ -861,9 +878,9 @@ void upsdrv_initups(void)
 		if (! ( (tmp >= 200 && tmp <= 240) || (tmp >= 100 && tmp <= 120) ) ) {
 			printf("Given line voltage '%d' is out of range (100-120 or 200-240 V)\n", tmp);
 			exit (1);
-		};
+		}
 		linevoltage = (unsigned int) tmp;
-	};
+	}
 
 	if (getval("numOfBytesFromUPS") != NULL) {
 		tmp = atoi(getval("numOfBytesFromUPS"));
@@ -871,7 +888,7 @@ void upsdrv_initups(void)
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
 			       tmp, MAX_NUM_OF_BYTES_FROM_UPS);
 			exit (1);
-		};
+		}
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
@@ -885,7 +902,7 @@ void upsdrv_initups(void)
 			printf("Given methodOfFlowControl '%s' isn't valid!\n",
 					getval("methodOfFlowControl"));
 			exit (1);
-		};
+		}
 		types[type].flowControl = types[i].flowControl;
 	}
 
