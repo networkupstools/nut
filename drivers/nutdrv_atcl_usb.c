@@ -165,7 +165,19 @@ static void usb_comm_fail(const char *fmt, ...)
 	}
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why))) {
@@ -320,7 +332,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
@@ -474,7 +495,8 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	/* Not "const" because this mismatches arg type of usb_interrupt_write() */
+	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
 	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);

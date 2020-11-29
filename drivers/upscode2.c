@@ -440,7 +440,7 @@ static cmd_t variables[] = {
 
 static int instcmd (const char *auxcmd, const char *data);
 static int setvar (const char *var, const char *data);
-static void upsc_setstatus(unsigned int status);
+static void upsc_setstatus(unsigned int upsc_status);
 static void upsc_flush_input(void);
 static void upsc_getbaseinfo(void);
 static int upsc_commandlist(void);
@@ -963,8 +963,10 @@ void upsdrv_cleanup(void)
 /*
  * Generate status string from bitfield
  */
-static void upsc_setstatus(unsigned int status)
+static void upsc_setstatus(unsigned int upsc_status)
 {
+	/* Save into global state variable for the driver instance */
+	status = upsc_status;
 
 	/*
 	 * I'll look for all available statuses, even though they might not be
@@ -1185,19 +1187,19 @@ static void check_uppm(void)
 	if (strcmp(var, "ACPM"))
 		upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 	while (1) {
-		int val, stat;
+		int intval, stat;
 		upscrecv(var);
 		if (strlen(var) == 0)
 			break;
 		upsdebugx(2, "UPPM available: %s", var);
-		stat = sscanf(var, "P%2d", &val);
+		stat = sscanf(var, "P%2d", &intval);
 		if (stat != 1) {
 			upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 			return;
 		}
-		has_uppm_p[val] = 1;
-		if (val > last)
-			last = val;
+		has_uppm_p[intval] = 1;
+		if (intval > last)
+			last = intval;
 	}
 
 	for (i = 0; i <= last; i++) {
@@ -1353,9 +1355,22 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 					upslogx(LOG_ERR, "Unknown value: %s %s",
 						var, val);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upslogx(LOG_ERR, "Unknown type for %s", var);
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
+
 			}
 			return 1;
 		}

@@ -97,7 +97,7 @@ typedef struct nutscan_xml {
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec);
 
-nutscan_device_t * nutscan_scan_usb();
+nutscan_device_t * nutscan_scan_usb(void);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout < 0 then the common usec_timeout arg overrides it */

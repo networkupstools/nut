@@ -438,8 +438,7 @@ static void get_status()
 	     powerInput5vIo <= POWER_PRESENT )
 	{
 		if ( powerInput       == POWER_NOT_PRESENT &&
-		     ( powerInput5vIo != POWER_NOT_PRESENT &&
-		       powerInput5vIo <= POWER_PRESENT ))
+		     ( powerInput5vIo != POWER_NOT_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{

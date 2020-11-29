@@ -20,59 +20,61 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 #include "main.h"
 #include "dstate.h"
+#include "attribute.h"
 
-	/* data which may be useful to the drivers */
-	int		upsfd = -1;
-	char		*device_path = NULL;
-	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+/* data which may be useful to the drivers */
+int		upsfd = -1;
+char		*device_path = NULL;
+const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
-	/* may be set by the driver to wake up while in dstate_poll_fds */
-	int	extrafd = -1;
+/* may be set by the driver to wake up while in dstate_poll_fds */
+int	extrafd = -1;
 
-	/* for ser_open */
-	int	do_lock_port = 1;
+/* for ser_open */
+int	do_lock_port = 1;
 
-	/* for dstate->sock_connect, default to asynchronous */
-	int	do_synchronous = 0;
+/* for dstate->sock_connect, default to asynchronous */
+int	do_synchronous = 0;
 
-	/* for detecting -a values that don't match anything */
-	static	int	upsname_found = 0;
+/* for detecting -a values that don't match anything */
+static	int	upsname_found = 0;
 
-	static vartab_t	*vartab_h = NULL;
+static vartab_t	*vartab_h = NULL;
 
-	/* variables possibly set by the global part of ups.conf */
-	unsigned int	poll_interval = 2;
-	static char	*chroot_path = NULL, *user = NULL;
+/* variables possibly set by the global part of ups.conf */
+unsigned int	poll_interval = 2;
+static char	*chroot_path = NULL, *user = NULL;
 
-	/* signal handling */
-	int	exit_flag = 0;
+/* signal handling */
+int	exit_flag = 0;
 
-	/* should this driver instance go to background (default)
-	 * or stay foregrounded (default if -D options are set on
-	 * command line)?
-	 * Value is tri-state:
-	 * -1 (default) Background the driver process
-	 *  0 User required to not background explicitly,
-	 *    or passed -D and current value was -1
-	 *  1 User required to background even if with -D
-	 */
-	int background_flag = -1;
+/* should this driver instance go to background (default)
+ * or stay foregrounded (default if -D options are set on
+ * command line)?
+ * Value is tri-state:
+ * -1 (default) Background the driver process
+ *  0 User required to not background explicitly,
+ *    or passed -D and current value was -1
+ *  1 User required to background even if with -D
+ */
+int background_flag = -1;
 
-	/* Users can pass a -D[...] option to enable debugging.
-	 * For the service tracing purposes, also the ups.conf
-	 * can define a debug_min value in the global or device
-	 * section, to set the minimal debug level (CLI provided
-	 * value less than that would not have effect, can have
-	 * more.
-	 */
-	int nut_debug_level_global = -1;
-	int nut_debug_level_driver = -1;
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the ups.conf
+ * can define a debug_min value in the global or device
+ * section, to set the minimal debug level (CLI provided
+ * value less than that would not have effect, can have
+ * more.
+ */
+int nut_debug_level_global = -1;
+int nut_debug_level_driver = -1;
 
-	/* everything else */
-	static char	*pidfn = NULL;
-	int	dump_data = 0; /* Store the update_count requested */
+/* everything else */
+static char	*pidfn = NULL;
+static int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -98,6 +100,9 @@ void upsdrv_banner (void)
 }
 
 /* power down the attached load immediately */
+static void forceshutdown(void)
+	__attribute__((noreturn));
+
 static void forceshutdown(void)
 {
 	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
@@ -540,7 +545,14 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 }

@@ -157,7 +157,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		if (pParser->Count == 0) {
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-#if WORDS_BIGENDIAN
+#if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
 			{
 				int	i;
 				unsigned long	valTmp = 0;

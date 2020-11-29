@@ -52,7 +52,8 @@ struct scan_nut_arg {
 	long timeout;
 };
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -222,16 +223,23 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-        if( !nutscan_avail_nut ) {
-                return NULL;
-        }
+	if( !nutscan_avail_nut ) {
+		return NULL;
+	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		if( oldact.sa_handler == SIG_DFL ) {
 			change_action_handler = 1;
-			signal(SIGPIPE,SIG_IGN);
+			signal(SIGPIPE, SIG_IGN);
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
@@ -289,7 +297,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 
 	if(change_action_handler) {
-		signal(SIGPIPE,SIG_DFL);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
+		signal(SIGPIPE, SIG_DFL);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	return nutscan_rewind_device(dev_ret);

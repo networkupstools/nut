@@ -40,42 +40,43 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
-const struct option longopts[] =
-	{{ "timeout",required_argument,NULL,'t' },
-	{ "start_ip",required_argument,NULL,'s' },
-	{ "end_ip",required_argument,NULL,'e' },
-	{ "eaton_serial",required_argument,NULL,'E' },
-	{ "mask_cidr",required_argument,NULL,'m' },
-	{ "community",required_argument,NULL,'c' },
-	{ "secLevel",required_argument,NULL,'l' },
-	{ "secName",required_argument,NULL,'u' },
-	{ "authPassword",required_argument,NULL,'W' },
-	{ "privPassword",required_argument,NULL,'X' },
-	{ "authProtocol",required_argument,NULL,'w' },
-	{ "privProtocol",required_argument,NULL,'x' },
-	{ "username",required_argument,NULL,'b' },
-	{ "password",required_argument,NULL,'B' },
-	{ "authType",required_argument,NULL,'d' },
-	{ "cipher_suite_id",required_argument,NULL,'L' },
-	{ "port",required_argument,NULL,'p' },
-	{ "complete_scan",no_argument,NULL,'C' },
-	{ "usb_scan",no_argument,NULL,'U' },
-	{ "snmp_scan",no_argument,NULL,'S' },
-	{ "xml_scan",no_argument,NULL,'M' },
-	{ "oldnut_scan",no_argument,NULL,'O' },
-	{ "avahi_scan",no_argument,NULL,'A' },
-	{ "ipmi_scan",no_argument,NULL,'I' },
-	{ "disp_nut_conf",no_argument,NULL,'N' },
-	{ "disp_parsable",no_argument,NULL,'P' },
-	{ "quiet",no_argument,NULL,'q' },
-	{ "help",no_argument,NULL,'h' },
-	{ "version",no_argument,NULL,'V' },
-	{ "available",no_argument,NULL,'a' },
-	{ "nut_debug_level", no_argument, NULL, 'D' },
-	{NULL,0,NULL,0}};
+static const struct option longopts[] = {
+	{ "timeout", required_argument, NULL, 't' },
+	{ "start_ip", required_argument, NULL, 's' },
+	{ "end_ip", required_argument, NULL, 'e' },
+	{ "eaton_serial", required_argument, NULL, 'E' },
+	{ "mask_cidr", required_argument, NULL, 'm' },
+	{ "community", required_argument, NULL, 'c' },
+	{ "secLevel", required_argument, NULL, 'l' },
+	{ "secName", required_argument, NULL, 'u' },
+	{ "authPassword", required_argument, NULL, 'W' },
+	{ "privPassword", required_argument, NULL, 'X' },
+	{ "authProtocol", required_argument, NULL, 'w' },
+	{ "privProtocol", required_argument, NULL, 'x' },
+	{ "username", required_argument, NULL, 'b' },
+	{ "password", required_argument, NULL, 'B' },
+	{ "authType", required_argument, NULL, 'd' },
+	{ "cipher_suite_id", required_argument, NULL, 'L' },
+	{ "port", required_argument, NULL, 'p' },
+	{ "complete_scan", no_argument, NULL, 'C' },
+	{ "usb_scan", no_argument, NULL, 'U' },
+	{ "snmp_scan", no_argument, NULL, 'S' },
+	{ "xml_scan", no_argument, NULL, 'M' },
+	{ "oldnut_scan", no_argument, NULL, 'O' },
+	{ "avahi_scan", no_argument, NULL, 'A' },
+	{ "ipmi_scan", no_argument, NULL, 'I' },
+	{ "disp_nut_conf", no_argument, NULL, 'N' },
+	{ "disp_parsable", no_argument, NULL, 'P' },
+	{ "quiet", no_argument, NULL, 'q' },
+	{ "help", no_argument, NULL, 'h' },
+	{ "version", no_argument, NULL, 'V' },
+	{ "available", no_argument, NULL, 'a' },
+	{ "nut_debug_level",  no_argument,  NULL,  'D' },
+	{NULL, 0, NULL, 0}
+};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c)
 #endif /* HAVE_GETOPT_LONG */
@@ -149,7 +150,7 @@ static void * run_eaton_serial(void *arg)
 
 #endif /* HAVE_PTHREAD */
 
-void show_usage()
+static void show_usage()
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");

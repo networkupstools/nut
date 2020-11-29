@@ -25,8 +25,8 @@
 #include "netssl.h"
 #include <ctype.h>
 
-	ups_t	*upstable = NULL;
-	int	num_ups = 0;
+static ups_t	*upstable = NULL;
+int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)

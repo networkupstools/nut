@@ -150,7 +150,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	}
 
 	if (node->flags & ST_FLAG_STRING) {
-		sendback(client, "%s STRING:%d\n", buf, node->aux);
+		sendback(client, "%s STRING:%ld\n", buf, node->aux);
 		return;
 	}
 

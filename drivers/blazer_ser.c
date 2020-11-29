@@ -124,7 +124,7 @@ void upsdrv_initups(void)
 		{ "reverse",	0, 1 },
 		{ "both",	1, 1 },
 		{ "none",	0, 0 },
-		{ NULL }
+		{ NULL, 0, 0 }
 	};
 
 	int	i;

@@ -59,7 +59,7 @@
 #define AVOCENT_OID_OUTLET_CONTROL	".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.1"
 #endif
 
-info_lkp_t avocent_outlet_status_info[] = {
+static info_lkp_t avocent_outlet_status_info[] = {
 	{ 1, "off", NULL, NULL },
 	{ 2, "on", NULL, NULL },
 /*	{ 3, "offLocked", NULL, NULL },
@@ -75,7 +75,7 @@ info_lkp_t avocent_outlet_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-snmp_info_t emerson_avocent_pdu_mib[] = {
+static snmp_info_t emerson_avocent_pdu_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Avocent",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

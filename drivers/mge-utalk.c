@@ -101,7 +101,7 @@ upsdrv_info_t upsdrv_info = {
 #define SD_RETURN	0
 #define SD_STAYOFF	1
 
-int sdtype = SD_RETURN;
+static int sdtype = SD_RETURN;
 static time_t lastpoll; /* Timestamp the last polling */
 
 /* --------------------------------------------------------------- */
@@ -680,6 +680,15 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 	/* initialize info string */
 	infostr[0] = '\0';
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	/* write into infostr with proper formatting */
 	if ( strpbrk(item->fmt, "feEgG") ) {           /* float */
 		snprintf(infostr, infolen, item->fmt,
@@ -690,6 +699,9 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 	} else {
 		snprintf(infostr, infolen, item->fmt, buf);
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 }
 
 
@@ -866,8 +878,19 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 	/* build command string */
 	va_start(ap, fmt);
-
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(command, sizeof(command), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	if ((ret < 1) || (ret >= (int) sizeof(command)))
 		upsdebugx(4, "mge_command: command truncated");

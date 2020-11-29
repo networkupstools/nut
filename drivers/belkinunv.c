@@ -161,19 +161,19 @@ upsdrv_info_t upsdrv_info = {
 /* size of an array */
 #define asize(x) ((int)(sizeof(x)/sizeof(x[0])))
 
-const char *upstype[3] = {
+static const char *upstype[3] = {
 	"ONLINE",
 	"OFFLINE",
 	"LINEINT"
 };
 
-const char *voltsens[3] = {
+static const char *voltsens[3] = {
 	"normal",
 	"medium",
 	"low"
 };
 
-const char *teststatus[6] = {
+static const char *teststatus[6] = {
 	"no test performed",
 	"test passed",
 	"test failed",
@@ -710,7 +710,19 @@ static void updatestatus(int smode, const char *fmt, ...) {
 
 	/* read formatted argument string */
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	buf[sizeof(buf)-1] = 0;
 	va_end(ap);
 

@@ -169,11 +169,22 @@ void riello_parse_rc(uint8_t* buffer, TRielloData* data);
 void riello_parse_sentr(uint8_t* buffer, TRielloData* data);
 
 /* communication functions */
-void riello_init_serial();
+void riello_init_serial(void);
 uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length);
 uint8_t riello_tail(uint8_t type, uint8_t length);
 uint8_t riello_test_nak(uint8_t type, uint8_t* buffer);
 void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum);
 void riello_comm_setup(const char *port);
+
+int get_ups_statuscode(void);
+
+/* Shared global variables for driver subtypes */
+/* extern uint8_t foundheader; */
+extern uint16_t buf_ptr_length;
+extern uint8_t wait_packet;
+extern uint8_t foundnak;
+extern uint8_t foundbadcrc;
+extern uint8_t commbyte;
+extern uint8_t requestSENTR;
 
 #endif /* NUT_RIELLO_H_SEEN */

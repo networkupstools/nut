@@ -11,6 +11,16 @@ char *strerror(int errnum)
 {
     static char buf[32];
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+
     switch (errnum) {
 #if defined (EPERM)
       case EPERM:
@@ -498,6 +508,11 @@ char *strerror(int errnum)
     /* Fallback: just print the error number */
     snprintf(buf, sizeof(buf), "Error %d", errnum);
     return buf;
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
 }
 
 #endif /* HAVE_STRERROR */

@@ -43,7 +43,7 @@ typedef struct st_tree_s {
 	size_t	safesize;
 
 	int	flags;
-	int	aux;
+	long	aux;
 
 	struct enum_s		*enum_list;
 	struct range_s		*range_list;

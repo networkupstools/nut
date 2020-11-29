@@ -28,6 +28,7 @@
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
+#include "attribute.h"
 
 typedef struct {
 	char	*upsname;
@@ -331,6 +332,9 @@ static void start_driver(const ups_t *ups)
 }
 
 static void help(const char *progname)
+	__attribute__((noreturn));
+
+static void help(const char *progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
@@ -491,7 +495,6 @@ int main(int argc, char **argv)
 			case 'h':
 			default:
 				help(prog);
-				break;
 		}
 	}
 

@@ -20,7 +20,7 @@
 #ifndef NUT_GENERICUPS_H_SEEN
 #define NUT_GENERICUPS_H_SEEN 1
 
-struct {
+static struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
 	const	char	*desc;			/* used in -h listing	*/

@@ -56,7 +56,7 @@ typedef struct IPMIDevice_s {
 /* Generic functions, to implement in the backends */
 int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev);
 void nut_ipmi_close(void);
-int nut_ipmi_monitoring_init();
+int nut_ipmi_monitoring_init(void);
 int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev);
 
 #endif /* NUT_IPMI_H */

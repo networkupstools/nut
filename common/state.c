@@ -311,7 +311,7 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 {
 	st_tree_t	*sttmp;
-	int	aux;
+	long	aux;
 
 	/* find the tree node for var */
 	sttmp = state_tree_find(root, var);

@@ -60,7 +60,7 @@ int dstate_addrange(const char *var, const int min, const int max);
 void dstate_setflags(const char *var, int flags);
 void dstate_addflags(const char *var, const int addflags);
 void dstate_delflags(const char *var, const int delflags);
-void dstate_setaux(const char *var, int aux);
+void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
 void dstate_addcmd(const char *cmdname);
 int dstate_delinfo(const char *var);

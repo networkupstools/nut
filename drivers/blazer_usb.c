@@ -243,7 +243,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q\r",  0x07, '\r' },
 		{ "C\r",  0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
@@ -435,11 +435,15 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	{
 	case -EBUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 	case -EPIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
@@ -476,7 +480,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return ret;
-#else
+#else	/* if TESTING: */
 	const struct {
 		const char	*command;
 		const char	*answer;
@@ -501,7 +505,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return snprintf(buf, buflen, "%s", testing[i].command);
-#endif
+#endif	/* TESTING */
 }
 
 
@@ -533,7 +537,7 @@ void upsdrv_initups(void)
 		{ "phoenix", &phoenix_command },
 		{ "ippon", &ippon_command },
 		{ "krauler", &krauler_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret, langid;
@@ -642,7 +646,7 @@ void upsdrv_initups(void)
 			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
 		}
 	}
-#endif
+#endif	/* TESTING */
 	blazer_initups();
 }
 
@@ -663,5 +667,5 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
-#endif
+#endif	/* TESTING */
 }

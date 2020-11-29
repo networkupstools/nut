@@ -111,6 +111,9 @@ static void setup_signals(void)
 }
 
 static void help(const char *prog)
+	__attribute__((noreturn));
+
+static void help(const char *prog)
 {
 	printf("UPS status logger.\n");
 
@@ -179,6 +182,7 @@ static void do_time(const char *arg)
 	unsigned int	i;
 	char	timebuf[SMALLBUF], *format;
 	time_t	tod;
+	struct tm tmbuf;
 
 	format = xstrdup(arg);
 
@@ -188,7 +192,7 @@ static void do_time(const char *arg)
 			format[i] = '%';
 
 	time(&tod);
-	strftime(timebuf, sizeof(timebuf), format, localtime(&tod));
+	strftime(timebuf, sizeof(timebuf), format, localtime_r(&tod, &tmbuf));
 
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", timebuf);
 
@@ -402,7 +406,9 @@ int main(int argc, char **argv)
 		switch(i) {
 			case 'h':
 				help(prog);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 
 			case 's':
 				monhost = optarg;

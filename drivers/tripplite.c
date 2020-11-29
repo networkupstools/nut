@@ -299,15 +299,15 @@ void upsdrv_initinfo(void)
 	w = hex2d(w_value, 2);
 	l = hex2d(l_value, 2);
 
-	model = "Smart %d";
+	model = "Smart";
 	if (w & 0x40)
-		model = "Unison %d";
+		model = "Unison";
 
 	va = ((w & 0x3f) * 32 + (l >> 3)) * 5;  /* New formula */
 	if (!(w & 0x80))
 		va = l / 2;   /* Old formula */
 
-	dstate_setinfo("ups.model", model, va);
+	dstate_setinfo("ups.model", "%s %d", model, va);
 	dstate_setinfo("ups.firmware", "%c%c",
 			'A'+v_value[0]-'0', 'A'+v_value[1]-'0');
 

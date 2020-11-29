@@ -244,7 +244,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 		{ "susp",	VSUSP		},
 		{ "time",	VTIME		},
 		{ "werase",	VWERASE		},
-		{ NULL },
+		{ NULL, 0 },
 	}, *cp;
 
 	/* clear status flags so that they don't affect our binary compare */
@@ -434,11 +434,12 @@ static void alert_handler(char ch)
  * function is subtly different from generic ser_get_line_alert()
  */
 #define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
-static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
+static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
-	int	i, ret, sec = 3, usec = 0;
+	ssize_t	i, ret;
+	int	sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
 	if (upsfd == -1)
@@ -660,14 +661,19 @@ static void apc_flush(int flags)
 }
 
 /* apc specific wrappers around set/del info - to handle "packed" variables */
-void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 {
-	char name[vt->nlen0], *nidx;
+	char *name, *nidx;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_delinfo(vt->name);
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_delinfo() failed to allocate buffer");
 		return;
 	}
 
@@ -680,17 +686,29 @@ void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 	}
 
 	vt->cnt = 0;
+	free(name);
 }
 
-void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 {
-	char name[vt->nlen0], *nidx;
-	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
+	char *name, *nidx;
+	char *temp, *vidx[APC_PACK_MAX], *com, *curr;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_setinfo(vt->name, "%s", convert_data(vt, upsval));
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		return;
+	}
+
+	if ( !(temp = xmalloc(sizeof(char) * (strlen(upsval) + 1))) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		free(name);
 		return;
 	}
 
@@ -734,6 +752,9 @@ void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		else
 			dstate_setinfo(name, "N/A");
 	}
+
+	free(name);
+	free(temp);
 }
 
 static const char *preread_data(apc_vartab_t *vt)

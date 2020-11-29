@@ -18,7 +18,9 @@
  *
  */
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <regex.h>
 
@@ -256,6 +258,9 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 	CFRelease(power_dictionary);
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

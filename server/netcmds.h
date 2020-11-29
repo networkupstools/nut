@@ -43,7 +43,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+static struct {
 	const	char	*name;
 	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
 	int	flags;
@@ -68,7 +68,7 @@ struct {
 	{ "SET",	net_set,	FLAG_USER	},
 	{ "INSTCMD",	net_instcmd,	FLAG_USER	},
 
-	{ NULL,		(void(*)())(NULL), 0		}
+	{ NULL,		(void(*)(struct nut_ctype_s *, int,  const char **))(NULL), 0		}
 };
 
 #ifdef __cplusplus
