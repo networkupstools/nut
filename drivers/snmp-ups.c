@@ -2344,7 +2344,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
 {
-	long *input_phases, *output_phases, *bypass_phases;
+	long *walked_input_phases, *walked_output_phases, *walked_bypass_phases;
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
@@ -2458,26 +2458,26 @@ bool_t snmp_ups_walk(int mode)
 			 * Non matching items are disabled, and flags are cleared at init
 			 * time */
 			/* Process input phases information */
-			input_phases = &daisychain_info[current_device_number]->input_phases;
+			walked_input_phases = &daisychain_info[current_device_number]->input_phases;
 			if (su_info_p->flags & SU_INPHASES) {
-				upsdebugx(1, "Check input_phases (%ld)", *input_phases);
-				if (process_phase_data("input", input_phases, su_info_p) == 1)
+				upsdebugx(1, "Check input_phases (%ld)", *walked_input_phases);
+				if (process_phase_data("input", walked_input_phases, su_info_p) == 1)
 					continue;
 			}
 
 			/* Process output phases information */
-			output_phases = &daisychain_info[current_device_number]->output_phases;
+			walked_output_phases = &daisychain_info[current_device_number]->output_phases;
 			if (su_info_p->flags & SU_OUTPHASES) {
-				upsdebugx(1, "Check output_phases (%ld)", *output_phases);
-				if (process_phase_data("output", output_phases, su_info_p) == 1)
+				upsdebugx(1, "Check output_phases (%ld)", *walked_output_phases);
+				if (process_phase_data("output", walked_output_phases, su_info_p) == 1)
 					continue;
 			}
 
 			/* Process bypass phases information */
-			bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
+			walked_bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
 			if (su_info_p->flags & SU_BYPPHASES) {
-				upsdebugx(1, "Check bypass_phases (%ld)", *bypass_phases);
-				if (process_phase_data("input.bypass", bypass_phases, su_info_p) == 1)
+				upsdebugx(1, "Check bypass_phases (%ld)", *walked_bypass_phases);
+				if (process_phase_data("input.bypass", walked_bypass_phases, su_info_p) == 1)
 					continue;
 			}
 
