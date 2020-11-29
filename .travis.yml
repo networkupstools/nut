@@ -1252,8 +1252,8 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang-5.0 CXX=clang++-5.0
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc-9 CXX=g++-9
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32" LDFLAGS="-m32"
-  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32" LDFLAGS="-m32"
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
   - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
   - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
   - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0

@@ -97,6 +97,42 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-overflow"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcovered-switch-default"],
+    [ax_cv__pragma__gcc__diags_ignored_covered_switch_default],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wcovered-switch-default"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_covered_switch_default=yes],
+      [ax_cv__pragma__gcc__diags_ignored_covered_switch_default=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_covered_switch_default" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcovered-switch-default"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstrict-prototypes"],
+    [ax_cv__pragma__gcc__diags_ignored_strict_prototypes],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wstrict-prototypes"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_strict_prototypes=yes],
+      [ax_cv__pragma__gcc__diags_ignored_strict_prototypes=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_strict_prototypes" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wstrict-prototypes"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wassign-enum"],
+    [ax_cv__pragma__gcc__diags_ignored_assign_enum],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wassign-enum"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_assign_enum=yes],
+      [ax_cv__pragma__gcc__diags_ignored_assign_enum=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_assign_enum" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wassign-enum"])
+  ])
+
   AC_LANG_POP([C])
 
   dnl ### Series of tests for C++ specific pragmas
