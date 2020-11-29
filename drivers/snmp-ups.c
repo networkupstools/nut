@@ -66,8 +66,25 @@
 #include "hpe-pdu-mib.h"
 
 /* Address API change */
-#ifndef usmAESPrivProtocol
+#if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
 #define usmAESPrivProtocol usmAES128PrivProtocol
+#endif
+
+#ifdef USM_PRIV_PROTO_AES_LEN
+# define NUT_securityPrivProtoLen USM_PRIV_PROTO_AES_LEN
+#else
+# ifdef USM_PRIV_PROTO_AES128_LEN
+#  define NUT_securityPrivProtoLen USM_PRIV_PROTO_AES128_LEN
+# else
+/* FIXME: Find another way to get the size of array(?) to avoid:
+ *   error: division 'sizeof (oid * {aka long unsigned int *}) / sizeof (oid {aka long unsigned int})' does not compute the number of array elements [-Werror=sizeof-pointer-div]
+ * See also https://bugs.php.net/bug.php?id=37564 for context
+ * which is due to most values in /usr/include/net-snmp/librarytransform_oids.h
+ * being defined as "oid[10]" or similar arrays, and "backwards compatibility"
+ * usmAESPrivProtocol name is an "oid *" pointer.
+ */
+#  define NUT_securityPrivProtoLen (sizeof(usmAESPrivProtocol)/sizeof(oid))
+# endif
 #endif
 
 static mib2nut_info_t *mib2nut[] = {
@@ -114,20 +131,21 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
-int quirk_symmetra_threephase = 0;
+static int quirk_symmetra_threephase = 0;
+
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
-long devices_count = 1;
-int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
-bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
-daisychain_info_t **daisychain_info = NULL;
+static long devices_count = 1;
+static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
+static daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
 mib2nut_info_t *mib2nut_info;
 /* FIXME: to be trashed */
 snmp_info_t *snmp_info;
 alarms_info_t *alarms_info;
-const char *mibname;
-const char *mibvers;
+static const char *mibname;
+static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
 #define DRIVER_VERSION		"1.12"
@@ -147,16 +165,16 @@ upsdrv_info_t	upsdrv_info = {
 };
 /* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
 
-time_t lastpoll = 0;
+static time_t lastpoll = 0;
 
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
-int template_index_base = -1;
+static int template_index_base = -1;
 /* Not that stable in the end... */
-int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
-int outlet_template_index_base = -1;
-int outletgroup_template_index_base = -1;
-int device_template_offset = -1;
+static int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
+static int outlet_template_index_base = -1;
+static int outletgroup_template_index_base = -1;
+static int device_template_offset = -1;
 
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
@@ -387,7 +405,19 @@ void upsdrv_initups(void)
 			cur_info_p->OID = (char *)xmalloc(SU_INFOSIZE);
 			snprintf((char*)cur_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			/* Use the daisychain master (0) / 1rst device index */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char*)cur_info_p->OID, SU_INFOSIZE, su_info_p->OID, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		else {
 			upsdebugx(2, "Found entry, not a template %s", su_info_p->OID);
@@ -577,7 +607,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) authPassword, strlen(authPassword),
+				(const unsigned char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
 				&g_snmp_sess.securityAuthKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -593,7 +623,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		}
 		else if (strcmp(privProtocol, "AES") == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
-			g_snmp_sess.securityPrivProtoLen =  sizeof(usmAESPrivProtocol)/sizeof(oid);
+			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
 		else
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
@@ -604,7 +634,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) privPassword, strlen(privPassword),
+				(const unsigned char *) privPassword, strlen(privPassword),
 				g_snmp_sess.securityPrivKey,
 				&g_snmp_sess.securityPrivKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -635,7 +665,7 @@ void nut_snmp_cleanup(void)
 }
 
 /* Free a struct snmp_pdu * returned by nut_snmp_walk */
-void nut_snmp_free(struct snmp_pdu ** array_to_free)
+static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
@@ -652,7 +682,7 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -790,7 +820,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf_len - 1 : pdu->variables->val_len;
 		/* Test for hexadecimal values */
 		int hex = 0, x;
-		u_char *cp;
+		unsigned char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
 			if (!(isprint(*cp) || isspace(*cp))) {
 				hex = 1;
@@ -1238,13 +1268,14 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 		if (info_type[0] == 'L') {
 			/* Extract phase number */
 			item_number = atoi(info_type+1);
+			char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
 
 			upsdebugx(2, "%s: appending phase L%i", __func__, item_number);
 
 			/* Inject in the alarm string */
-			snprintf(alarm_info_value, sizeof(alarm_info_value),
+			snprintf(alarm_info_value_more, sizeof(alarm_info_value_more),
 				"phase L%i %s", item_number, info_value);
-			info_value = &alarm_info_value[0];
+			info_value = &alarm_info_value_more[0];
 		}
 
 		/* Set the alarm value */
@@ -1270,7 +1301,7 @@ snmp_info_t *su_find_info(const char *type)
 
 /* Counter match the sysOID using {device,ups}.model OID
  * Return TRUE if this OID can be retrieved, FALSE otherwise */
-bool_t match_model_OID()
+static bool_t match_model_OID()
 {
 	bool_t retCode = FALSE;
 	snmp_info_t *su_info_p, *cur_info_p;
@@ -1293,7 +1324,19 @@ bool_t match_model_OID()
 			cur_info_p->OID = (char *)xmalloc(SU_INFOSIZE);
 			snprintf((char*)cur_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			/* Use the daisychain master (0) / 1rst device index */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char*)cur_info_p->OID, SU_INFOSIZE, su_info_p->OID, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		else {
 			upsdebugx(2, "Found entry, not a template %s", su_info_p->OID);
@@ -1320,7 +1363,7 @@ bool_t match_model_OID()
 
 /* Try to find the MIB using sysOID matching.
  * Return a pointer to a mib2nut definition if found, NULL otherwise */
-mib2nut_info_t *match_sysoid()
+static mib2nut_info_t *match_sysoid()
 {
 	char sysOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
@@ -1460,6 +1503,9 @@ bool_t load_mib2nut(const char *mib)
 	} else {
 		fatalx(EXIT_FAILURE, "No supported device detected");
 	}
+
+	/* Should not get here thanks to fatalx() above, but need to silence a warning */
+	return FALSE;
 }
 
 /* find the OID value matching that INFO_* value */
@@ -1530,7 +1576,7 @@ static void disable_competition(snmp_info_t *entry)
 /* Test if the template is a multiple one, i.e. with a formatting string that
  * contains multiple "%i".
  * Return TRUE if yes (multiple "%i" found), FALSE otherwise */
-bool_t is_multiple_template(const char *OID_template)
+static bool_t is_multiple_template(const char *OID_template)
 {
 	bool_t retCode = FALSE;
 	char *format_char = NULL;
@@ -1557,9 +1603,9 @@ bool_t is_multiple_template(const char *OID_template)
 /* Instantiate an snmp_info_t from a template.
  * Useful for outlet and outlet.group templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
-snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
+static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
-	upsdebugx(1, "%s(%s)", __func__, info_template->info_type);
+	upsdebugx(1, "%s(%s)", __func__, info_template ? info_template->info_type : "n/a");
 
 	/* sanity check */
 	if (info_template == NULL)
@@ -1591,7 +1637,7 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 
 /* Free a dynamically allocated snmp_info_t.
  * Useful for outlet and outlet.group templates */
-void free_info(snmp_info_t *su_info_p)
+static void free_info(snmp_info_t *su_info_p)
 {
 	/* sanity check */
 	if (su_info_p == NULL)
@@ -1608,7 +1654,7 @@ void free_info(snmp_info_t *su_info_p)
 
 /* return the base SNMP index (0 or 1) to start template iteration on
  * the MIB, based on a test using a template OID */
-int base_snmp_template_index(const snmp_info_t *su_info_p)
+static int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
 	if (!su_info_p)
 		return -1;
@@ -1640,6 +1686,15 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 	{
 		/* not initialised yet */
 		for (base_index = 0 ; base_index < 2 ; base_index++) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			/* Test if this template also includes daisychain, in which case
 			 * we just use the current device index */
 			if (is_multiple_template(su_info_p->OID) == TRUE) {
@@ -1655,6 +1710,9 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			else {
 				snprintf(test_OID, sizeof(test_OID), su_info_p->OID, base_index);
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 			if (nut_snmp_get(test_OID) != NULL) {
 				if (su_info_p->flags & SU_FLAG_ZEROINVALID) {
@@ -1701,7 +1759,19 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	if (nut_snmp_get(test_OID) == NULL) {
 		base_index++;
 	}
@@ -1716,7 +1786,19 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 
 	/* Now, actually iterate */
 	for (base_count = 0 ;  ; base_count++) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(test_OID, sizeof(test_OID), OID_template, base_index + base_count);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		if (nut_snmp_get(test_OID) == NULL)
 			break;
 	}
@@ -1728,7 +1810,7 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 /* Process template definition, instantiate and get data or register
  * command
  * type: outlet, outlet.group, device */
-bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
+static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 {
 	/* Default to TRUE, and leave to get_and_process_data() to set
 	 * to FALSE when actually getting data from devices, to avoid false
@@ -1796,8 +1878,20 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 					/* Device 1 ("device.0", whole daisychain) needs no
 					 * special processing */
 					cur_nut_index = cur_template_number;
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 				}
 			}
 			else /* Outlet and outlet groups templates */
@@ -1805,6 +1899,15 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				/* Get the index of the current template instance */
 				cur_nut_index = cur_template_number;
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 				/* Special processing for daisychain */
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
@@ -1814,8 +1917,8 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 						strcat(&tmp_buf[0], su_info_p->info_type);
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
-							snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-								&tmp_buf[0], current_device_number, cur_nut_index);
+						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+							&tmp_buf[0], current_device_number, cur_nut_index);
 					}
 					else {
 						// FIXME: daisychain-whole, what to do?
@@ -1864,6 +1967,9 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 					}
 				}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 				/* add instant commands to the info database. */
 				if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
@@ -1939,7 +2045,7 @@ int extract_template_number(int template_type, const char* varname)
 
 /* Extract the id number of a template from a variable name.
  * Example: return '1' for type = 'outlet.1.desc' */
-int extract_template_number_from_snmp_info_t(const char* varname)
+static int extract_template_number_from_snmp_info_t(const char* varname)
 {
 	return extract_template_number(get_template_type(varname), varname);
 }
@@ -2102,7 +2208,7 @@ bool_t daisychain_init()
  * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
  * skip the present data)
  */
-int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
+static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
 {
 	snmp_info_t *tmp_info_p;
 	char tmpOID[SU_INFOSIZE];
@@ -2160,7 +2266,19 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
 					upsdebugx(2, "Found template, need to be adapted");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number + device_template_offset);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 				}
 				else {
 					/* Otherwise, just point at what we found */
@@ -2226,7 +2344,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
 {
-	long *input_phases, *output_phases, *bypass_phases;
+	long *walked_input_phases, *walked_output_phases, *walked_bypass_phases;
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
@@ -2340,26 +2458,26 @@ bool_t snmp_ups_walk(int mode)
 			 * Non matching items are disabled, and flags are cleared at init
 			 * time */
 			/* Process input phases information */
-			input_phases = &daisychain_info[current_device_number]->input_phases;
+			walked_input_phases = &daisychain_info[current_device_number]->input_phases;
 			if (su_info_p->flags & SU_INPHASES) {
-				upsdebugx(1, "Check input_phases (%ld)", *input_phases);
-				if (process_phase_data("input", input_phases, su_info_p) == 1)
+				upsdebugx(1, "Check input_phases (%ld)", *walked_input_phases);
+				if (process_phase_data("input", walked_input_phases, su_info_p) == 1)
 					continue;
 			}
 
 			/* Process output phases information */
-			output_phases = &daisychain_info[current_device_number]->output_phases;
+			walked_output_phases = &daisychain_info[current_device_number]->output_phases;
 			if (su_info_p->flags & SU_OUTPHASES) {
-				upsdebugx(1, "Check output_phases (%ld)", *output_phases);
-				if (process_phase_data("output", output_phases, su_info_p) == 1)
+				upsdebugx(1, "Check output_phases (%ld)", *walked_output_phases);
+				if (process_phase_data("output", walked_output_phases, su_info_p) == 1)
 					continue;
 			}
 
 			/* Process bypass phases information */
-			bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
+			walked_bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
 			if (su_info_p->flags & SU_BYPPHASES) {
-				upsdebugx(1, "Check bypass_phases (%ld)", *bypass_phases);
-				if (process_phase_data("input.bypass", bypass_phases, su_info_p) == 1)
+				upsdebugx(1, "Check bypass_phases (%ld)", *walked_bypass_phases);
+				if (process_phase_data("input.bypass", walked_bypass_phases, su_info_p) == 1)
 					continue;
 			}
 
@@ -2423,8 +2541,20 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if (tmp_info_p != NULL) {
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
 					current_device_number + device_template_offset);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 			}
 			else {
 				free_info(tmp_info_p);
@@ -2575,9 +2705,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
 				 || !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
 					/* Convert from three phase line-to-line voltage to line-to-neutral voltage */
-					double value = atof(buf);
-					value = value * 0.707;
-					snprintf(buf, sizeof(buf), "%.2f", value);
+					double tmp_dvalue = atof(buf);
+					tmp_dvalue = tmp_dvalue * 0.707;
+					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
 		}
@@ -2633,7 +2763,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
  *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
  *   STAT_SET_FAILED otherwise
  */
-int su_setOID(int mode, const char *varname, const char *val)
+static int su_setOID(int mode, const char *varname, const char *val)
 {
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
@@ -2737,8 +2867,20 @@ int su_setOID(int mode, const char *varname, const char *val)
 		if ((su_info_p->dfl != NULL) &&
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
 				item_number);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
@@ -2755,6 +2897,15 @@ int su_setOID(int mode, const char *varname, const char *val)
 			 * these outlet | outlet groups also include formatting info,
 			 * so we have to check if the daisychain is enabled, and if
 			 * the formatting info for it are in 1rst or 2nd position */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			if (daisychain_enabled == TRUE) {
 				/* Note: daisychain_enabled == TRUE means that we have
 				 * daisychain template. However:
@@ -2780,6 +2931,9 @@ int su_setOID(int mode, const char *varname, const char *val)
 			else {
 				snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID, item_number);
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
 		 * can be setting a server side variable! */

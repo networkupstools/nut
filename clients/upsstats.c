@@ -134,7 +134,7 @@ static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 	if (numa < numq) {
 		if (verbose)
 			printf("[Invalid response]\n");
-		
+
 		return 0;
 	}
 
@@ -195,9 +195,10 @@ static int do_date(const char *buf)
 {
 	char	datebuf[SMALLBUF];
 	time_t	tod;
+	struct tm tmbuf;
 
 	time(&tod);
-	if (strftime(datebuf, sizeof(datebuf), buf, localtime(&tod))) {
+	if (strftime(datebuf, sizeof(datebuf), buf, localtime_r(&tod, &tmbuf))) {
 		printf("%s", datebuf);
 		return 1;
 	}
@@ -291,12 +292,12 @@ static int do_img(char *buf)
 
 	/* only allow known types through */
 
-	if (!strcmp(type, "input.voltage") 
-			|| !strcmp(type, "input.L1-N.voltage") 
-			|| !strcmp(type, "input.L2-N.voltage") 
+	if (!strcmp(type, "input.voltage")
+			|| !strcmp(type, "input.L1-N.voltage")
+			|| !strcmp(type, "input.L2-N.voltage")
 			|| !strcmp(type, "input.L3-N.voltage")
-			|| !strcmp(type, "input.L1-L2.voltage") 
-			|| !strcmp(type, "input.L2-L3.voltage") 
+			|| !strcmp(type, "input.L1-L2.voltage")
+			|| !strcmp(type, "input.L2-L3.voltage")
 			|| !strcmp(type, "input.L3-L1.voltage")) {
 		return get_img_val(type, "Input voltage", imgargs);
 	}
@@ -308,11 +309,11 @@ static int do_img(char *buf)
 		return get_img_val(type, "Battery charge", imgargs);
 
 	if (!strcmp(type, "output.voltage")
-			|| !strcmp(type, "output.L1-N.voltage") 
-			|| !strcmp(type, "output.L2-N.voltage") 
+			|| !strcmp(type, "output.L1-N.voltage")
+			|| !strcmp(type, "output.L2-N.voltage")
 			|| !strcmp(type, "output.L3-N.voltage")
-			|| !strcmp(type, "output.L1-L2.voltage") 
-			|| !strcmp(type, "output.L2-L3.voltage") 
+			|| !strcmp(type, "output.L1-L2.voltage")
+			|| !strcmp(type, "output.L2-L3.voltage")
 			|| !strcmp(type, "output.L3-L1.voltage")) {
 		return get_img_val(type, "Output voltage", imgargs);
 	}
@@ -363,13 +364,13 @@ static void ups_connect(void)
 		/* see if it's just on the same host */
 		newups = newhost = NULL;
 
-		if (upscli_splitname(currups->sys, &newups, &newhost, 
+		if (upscli_splitname(currups->sys, &newups, &newhost,
 			&newport) != 0) {
 			printf("Unusable UPS definition [%s]\n", currups->sys);
-			fprintf(stderr, "Unusable UPS definition [%s]\n", 
+			fprintf(stderr, "Unusable UPS definition [%s]\n",
 				currups->sys);
 			exit(EXIT_FAILURE);
-		}		
+		}
 
 		if ((!strcmp(newhost, hostname)) && (port == newport)) {
 			free(upsname);
@@ -842,7 +843,7 @@ static void parse_line(const char *buf)
 
 static void display_template(const char *tfn)
 {
-	char	fn[SMALLBUF], buf[LARGEBUF];	
+	char	fn[SMALLBUF], buf[LARGEBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
@@ -890,7 +891,7 @@ static void display_tree(int verbose)
 	printf("<HTML>\n");
 	printf("<HEAD><TITLE>upsstat: data tree of %s</TITLE></HEAD>\n", currups->desc);
 
-	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
+	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n");
 
 	printf("<TABLE BGCOLOR=\"#50A0A0\" ALIGN=\"CENTER\">\n");
 	printf("<TR><TD>\n");
@@ -910,12 +911,12 @@ static void display_tree(int verbose)
 		if (numa < 4) {
 			if (verbose)
 				printf("[Invalid response]\n");
-		
+
 			return;
 		}
 
 		printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"LEFT\">\n");
-	
+
 		printf("<TD>%s</TD>\n", answer[2]);
 		printf("<TD>:</TD>\n");
 		printf("<TD>%s<br></TD>\n", answer[3]);
@@ -936,7 +937,7 @@ static void add_ups(char *sys, char *desc)
 
 	tmp = last = ulhead;
 
-	while (tmp) { 
+	while (tmp) {
 		last = tmp;
 		tmp = tmp->next;
 	}
@@ -1041,9 +1042,12 @@ static void display_single(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
+
 	extractcgiargs();
 
-	printf("Content-type: text/html\n"); 
+	printf("Content-type: text/html\n");
 	printf("Pragma: no-cache\n");
 	printf("\n");
 

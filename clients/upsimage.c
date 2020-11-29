@@ -112,6 +112,9 @@ static int get_imgarg(const char *name)
 
 /* write the HTML header then have gd dump the image */
 static void drawimage(gdImagePtr im)
+	__attribute__((noreturn));
+
+static void drawimage(gdImagePtr im)
 {
 	printf("Pragma: no-cache\n");
 	printf("Content-type: image/png\n\n");
@@ -191,7 +194,7 @@ static void drawscale(
 			if (level % step5 == 0)
 				gdImageLine(im, 5, y, width - 5, y, col2);
 			else
-		    		gdImageLine(im, 10, y, width - 10, y, col2);
+				gdImageLine(im, 10, y, width - 10, y, col2);
 		}
 	}
 
@@ -207,6 +210,17 @@ static void drawscale(
 }
 
 /* draws the bar style indicator */
+static void drawbar(
+	int lvllo, int lvlhi,			/* min and max numbers on the scale */
+	int step, int step5, int step10,	/* steps for minor, submajor and major dashes */
+	int redlo1, int redhi1,			/* first red zone start and end */
+	int redlo2, int redhi2,			/* second red zone start and end */
+	int grnlo, int grnhi,			/* green zone start and end */
+	double value, 				/* UPS variable value to draw */
+	const char *format			/* printf style format to be used when rendering summary text */
+)
+	__attribute__((noreturn));
+
 static void drawbar(
 	int lvllo, int lvlhi,			/* min and max numbers on the scale */
 	int step, int step5, int step10,	/* steps for minor, submajor and major dashes */
@@ -257,7 +271,19 @@ static void drawbar(
 		bar_color);
 
 	/* stick the text version of the value at the bottom center */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(text, sizeof(text), format, value);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	gdImageString(im, gdFontMediumBold,
 		(width - strlen(text)*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
@@ -270,6 +296,9 @@ static void drawbar(
 
 /* draws the error image */
 static void noimage(const char *fmt, ...)
+	__attribute__((noreturn));
+
+static void noimage(const char *fmt, ...)
 {
 	gdImagePtr	im;
 	int		back_color, summary_color;
@@ -278,7 +307,19 @@ static void noimage(const char *fmt, ...)
 	va_list		ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(msg, sizeof(msg), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	width = get_imgarg("width");
@@ -304,6 +345,12 @@ static void noimage(const char *fmt, ...)
 
 	drawimage(im);
 
+	/* NOTE: Earlier code called noimage() and then exit(EXIT_FAILURE);
+	 * to signal an error via process exit code. Now that drawimage()
+	 * always ends with exit(EXIT_SUCCESS) - which might make webserver
+	 * feel good - the command-line use if any suffers no error returns.
+	 */
+
 	/* NOTREACHED */
 }
 
@@ -311,6 +358,10 @@ static void noimage(const char *fmt, ...)
    UPS variable can be determined.
    deviation < 0 means that values below nom should be grey instead of
    green */
+static void drawgeneralbar(double var, int min, int nom, int max,
+		int deviation, 	const char *format)
+	__attribute__((noreturn));
+
 static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 {
@@ -372,6 +423,10 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 /* draws input and output voltage bar style indicators */
 static void draw_utility(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_utility(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	/* hack: deal with hardware that doesn't have known transfer points */
 	if (min == -1) {
@@ -413,9 +468,17 @@ static void draw_utility(double var, int min, int nom, int max,
 }
 
 /* draws battery.percent bar style indicator */
-static void draw_battpct(double var, int min, int nom, int max,
-		int deviation, const char *format)
+static void draw_battpct(double var, int min, int nom,
+		int max, int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_battpct(double var, int min, int nom,
+		int max, int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(max);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	if (min < 0) {
 		min = 50;
 	}
@@ -424,6 +487,10 @@ static void draw_battpct(double var, int min, int nom, int max,
 }
 
 /* draws battery.voltage bar style indicator */
+static void draw_battvolt(double var, int min, int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
 static void draw_battvolt(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
@@ -458,7 +525,7 @@ static void draw_battvolt(double var, int min, int nom, int max,
 	}
 
 	if (nom < min || nom > max)
-	    	nom = -1;
+		nom = -1;
 
 
 	deviation = -(nom*0.05); /* 5% deviation from nominal voltage */
@@ -470,18 +537,35 @@ static void draw_battvolt(double var, int min, int nom, int max,
 }
 
 /* draws ups.load bar style indicator */
-static void draw_upsload(double var, int min, int nom, int max,
+static void draw_upsload(double var, int min,
+		int nom, int max,
+		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_upsload(double var, int min,
+		int nom, int max,
 		int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(min);
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(max);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, var, format);
 }
 
 /* draws temperature bar style indicator */
 static void draw_temperature(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_temperature(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	int	hi = get_imgarg("tempmax");
 	int	lo = get_imgarg("tempmin");
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(deviation);
 
 	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
 }
@@ -489,7 +573,14 @@ static void draw_temperature(double var, int min, int nom, int max,
 /* draws humidity bar style indicator */
 static void draw_humidity(double var, int min, int nom, int max,
 		int deviation, const char *format)
+	__attribute__((noreturn));
+
+static void draw_humidity(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, var, format);
 }
 
@@ -523,6 +614,8 @@ int main(int argc, char **argv)
 	char	str[SMALLBUF];
 	int	i, min, nom, max;
 	double	var = 0;
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 
 	extractcgiargs();
 
@@ -537,13 +630,17 @@ int main(int argc, char **argv)
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
 		noimage("Invalid UPS definition (upsname[@hostname[:port]])\n");
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
-		exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	for (i = 0; imgvar[i].name; i++)
@@ -553,7 +650,9 @@ int main(int argc, char **argv)
 			   registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* get the variable value */
@@ -564,7 +663,9 @@ int main(int argc, char **argv)
 				snprintf(str, sizeof(str), "%s N/A",
 					imgvar[i].name);
 				noimage(str);
-				exit(EXIT_FAILURE);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 			}
 
 			/* when getting minimum, nominal and maximum values,
@@ -617,7 +718,9 @@ int main(int argc, char **argv)
 		}
 
 	noimage("Unknown display");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 	exit(EXIT_FAILURE);
+#endif
 }
 
 imgvar_t imgvar[] = {

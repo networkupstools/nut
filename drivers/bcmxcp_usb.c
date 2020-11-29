@@ -42,7 +42,7 @@ void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
-int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
+static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, int size);
 
 /* usb_set_descriptor() for Powerware devices */
@@ -52,6 +52,7 @@ static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned 
 }
 
 static void *powerware_ups(USBDevice_t *device) {
+	NUT_UNUSED_VARIABLE(device);
 	usb_set_descriptor = &usb_set_powerware;
 	return NULL;
 }
@@ -59,10 +60,13 @@ static void *powerware_ups(USBDevice_t *device) {
 /* usb_set_descriptor() for Phoenixtec devices */
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
+	NUT_UNUSED_VARIABLE(index);
+	NUT_UNUSED_VARIABLE(type);
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
+	NUT_UNUSED_VARIABLE(device);
 	usb_set_descriptor = &usb_set_phoenixtec;
 	return NULL;
 }
@@ -79,7 +83,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f01), &phoenixtec_ups },
 	/* T750 */
 	{ USB_DEVICE(HP_VENDORID, 0x1f02), &phoenixtec_ups },
-	
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -90,7 +94,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 #define XCP_USB_TIMEOUT 5000
 
 /* global variables */
-usb_dev_handle *upsdev = NULL;
+static usb_dev_handle *upsdev = NULL;
 extern int exit_flag;
 static unsigned int comm_failures = 0;
 
@@ -191,7 +195,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		if (need_data > 0) /* We need more data */
-		    continue;
+			continue;
 
 		/* Now validate XCP frame */
 		/* Check header */
@@ -200,7 +204,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			/* Sometime we read something wrong. bad cables? bad ports? */
 			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
-			    return -1;
+				return -1;
 		}
 
 		/* Read block number byte */
@@ -259,9 +263,9 @@ int get_answer(unsigned char *data, unsigned char command)
 		end_length += length;
 		tail = bytes_read - (length + PW_HEADER_SIZE);
 		if (tail > 0)
-		    my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
+			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
 		else if (tail == 0)
-		    my_buf = &buf[0];
+			my_buf = &buf[0];
 		bytes_read = tail;
 	}
 
@@ -274,7 +278,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
 		bytes_read = get_answer(data, command);
@@ -342,6 +346,9 @@ void upsdrv_reconnect(void)
 
 /* USB functions */
 static void nutusb_open_error(const char *port)
+	__attribute__((noreturn));
+
+static void nutusb_open_error(const char *port)
 {
 	printf("Unable to find POWERWARE UPS device on USB bus (%s)\n\n", port);
 
@@ -356,14 +363,14 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static usb_dev_handle *open_powerware_usb(void)
 {
-	struct usb_bus *busses = usb_get_busses();  
+	struct usb_bus *busses = usb_get_busses();
 	struct usb_bus *bus;
 	USBDevice_t curDevice;
 
 	for (bus = busses; bus; bus = bus->next)
 	{
 		struct usb_device *dev;
-    
+
 		for (dev = bus->devices; dev; dev = dev->next)
 		{
 			if (dev->descriptor.bDeviceClass != USB_CLASS_PER_INTERFACE) {
@@ -428,7 +435,7 @@ usb_dev_handle *nutusb_open(const char *port)
 			{
 				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
 				if (dev_claimed)
-				    usb_release_interface(dev_h, 0);
+					usb_release_interface(dev_h, 0);
 				usb_reset(dev_h);
 				sleep(5);	/* Wait reconnect */
 				errout = 1;
@@ -466,12 +473,14 @@ usb_dev_handle *nutusb_open(const char *port)
 /* FIXME: this part can go into common... */
 int nutusb_close(usb_dev_handle *dev_h, const char *port)
 {
+	NUT_UNUSED_VARIABLE(port);
+
 	if (dev_h)
 	{
 		usb_release_interface(dev_h, 0);
 		return usb_close(dev_h);
 	}
-	
+
 	return 0;
 }
 

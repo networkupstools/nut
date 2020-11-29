@@ -67,10 +67,12 @@ static unsigned int	comm_failures = 0;
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
 	char *requested_vendor;
+	NUT_UNUSED_VARIABLE(privdata);
+
 	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
-		if(!device->Vendor) { 
+		if(!device->Vendor) {
 			upsdebugx(1, "Couldn't retrieve USB string descriptor for vendor. Check permissions?");
 			requested_vendor = getval("vendor");
 			if(requested_vendor) {
@@ -78,7 +80,7 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					upsdebugx(3, "Matched device with NULL vendor string.");
 					return 1;
 				}
-			}	
+			}
 			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
 			return 0;
 		}
@@ -163,7 +165,19 @@ static void usb_comm_fail(const char *fmt, ...)
 	}
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why))) {
@@ -179,7 +193,7 @@ static void usb_comm_good(void)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "Communications with UPS re-established");	
+	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
 
@@ -192,6 +206,8 @@ static void usb_comm_good(void)
  */
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (usb_set_configuration(handle, 1) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
 		return -1;
@@ -246,7 +262,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
@@ -272,7 +288,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = strdup(bus->dirname);
-			
+
 			if (dev->descriptor.iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, dev->descriptor.iManufacturer,
@@ -308,7 +324,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
 
 			for (m = matcher; m; m = m->next) {
-				
+
 				switch (m->match_function(device, m->privdata))
 				{
 				case 0:
@@ -316,7 +332,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
@@ -446,8 +471,12 @@ void upsdrv_updateinfo(void)
 		case 2:
 			upsdebugx(2, "reply[0] = 0x%02x -> LB", reply[0]);
 			status_set("LB");
+			goto fallthrough_LB_means_OB;
+			/* Note: the comment below existed for years, so wondering
+			 * if this device CAN set independently LB and OB? */
 			/* fall through */
 		case 1:
+		fallthrough_LB_means_OB:
 			upsdebugx(2, "reply[0] = 0x%02x -> OB", reply[0]);
 			status_set("OB");
 			break;
@@ -466,7 +495,8 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	/* Not "const" because this mismatches arg type of usb_interrupt_write() */
+	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
 	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);

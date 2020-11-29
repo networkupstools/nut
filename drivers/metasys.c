@@ -18,8 +18,8 @@
 */
 
 /* Uncomment if you want to read additional Meta System UPS data */
-/* 
-#define EXTRADATA 
+/*
+#define EXTRADATA
 */
 
 #include "main.h"
@@ -38,8 +38,8 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* Autorestart flag */
-int autorestart = 0;
-int nominal_power = 0;
+static int autorestart = 0;
+static int nominal_power = 0;
 
 /* ups commands */
 #define UPS_INFO 			0x00
@@ -68,14 +68,14 @@ static int instcmd(const char *cmdname, const char *extra);
 	DATA_LENGTH is number of data bytes + the checksum byte
 	DATA ......
 	CHECKSUM is the sum modulus 256 of all DATA bytes + DATA_LENGTH
-	
+
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
 */
-int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
+static int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
 	unsigned char a, b;
 	int result;
-	
+
 	a = buffer[0];
 	b = buffer[1];
 	result = b*256 + a;
@@ -83,7 +83,7 @@ int get_word(unsigned char *buffer) {		/* return an integer reading a word in th
 }
 
 
-long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
+static long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
 	unsigned char a, b, c, d;
 	long int result;
 	a=buffer[0];
@@ -94,7 +94,7 @@ long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 by
 	return result;
 }
 
-void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
+static void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
 
 	memset(buf, '\0', sizeof(buf));
@@ -104,17 +104,17 @@ void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be u
 
 
 /* was used just for the debug process */
-void dump_buffer(unsigned char *buffer, int buf_len) {
+static void dump_buffer(unsigned char *buffer, int buf_len) {
 	int i;
-	for (i = 0; i < buf_len; i++) { 
-		printf("byte %d: %x\n", i, buffer[i]);	
+	for (i = 0; i < buf_len; i++) {
+		printf("byte %d: %x\n", i, buffer[i]);
 	}
 	return;
 }
 
 /* send a read command to the UPS, it retries 5 times before give up
    it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
-void send_read_command(char command) {
+static void send_read_command(char command) {
 	int retry, sent;
 	unsigned char buf[4];
 	retry = 0;
@@ -130,10 +130,10 @@ void send_read_command(char command) {
 	}
 }
 
-/* send a write command to the UPS, the write command and the value to be written are passed 
-   with a char* buffer 
+/* send a write command to the UPS, the write command and the value to be written are passed
+   with a char* buffer
    it retries 5 times before give up */
-void send_write_command(unsigned char *command, int command_length) {
+static void send_write_command(unsigned char *command, int command_length) {
 	int i, retry, sent, checksum;
 	unsigned char raw_buf[255];
 
@@ -160,44 +160,43 @@ void send_write_command(unsigned char *command, int command_length) {
 	}
 }
 
-
 /* get the answer of a command from the ups */
-int get_answer(unsigned char *data) {
+static int get_answer(unsigned char *data) {
 	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
 	int packet_length, checksum, i, res;
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
 		ser_comm_fail("Receive error (STX): %d!!!\n", res);
-		return -1;	
+		return -1;
 	}
 	if (my_buf[0] != 0x02) {
 		ser_comm_fail("Receive error (STX): packet not on start!!\n");
-		return -1;	
+		return -1;
 	}
 	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
 		ser_comm_fail("Receive error (length): %d!!!\n", res);
-		return -1;	
+		return -1;
 	}
 	packet_length = my_buf[0];
 	if (packet_length < 2) {
 		ser_comm_fail("Receive error (length): packet length %d!!!\n", packet_length);
-		return -1;	
+		return -1;
 	}
 	/* Try to read all the remainig bytes (packet_length) */
 	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
 	if (res != packet_length) {
 		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_length);
-		return -1;	
+		return -1;
 	}
 
-	/* now we have the whole answer from the ups, we can checksum it 
+	/* now we have the whole answer from the ups, we can checksum it
 	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
 	   (no STX no checksum byte itself) */
 	checksum = packet_length;
-	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];  
+	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];
 	checksum = checksum % 256;
 	if (my_buf[packet_length-1] != checksum) {
 		ser_comm_fail("checksum error! got %x instead of %x, received %d bytes \n", my_buf[packet_length - 1], checksum, packet_length);
@@ -212,7 +211,7 @@ int get_answer(unsigned char *data) {
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-int command_read_sequence(unsigned char command, unsigned char *data) {
+static int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
 
@@ -234,10 +233,10 @@ int command_read_sequence(unsigned char command, unsigned char *data) {
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
+static int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_write_command(command, command_length);
 		bytes_read = get_answer(answer);
@@ -269,7 +268,7 @@ void upsdrv_initinfo(void)
 	 dstate_setinfo("output.current", "%d", -1);
 	dstate_setflags("output.current", ST_FLAG_RW);
 #ifdef EXTRADATA
-	 dstate_setinfo("output.current.peak", "%2.2f", -1);	
+	 dstate_setinfo("output.current.peak", "%2.2f", -1);
 	dstate_setflags("output.current.peak", ST_FLAG_RW);
 	 dstate_setinfo("input.power", "%d", -1);
 	dstate_setflags("input.power", ST_FLAG_RW);
@@ -279,7 +278,7 @@ void upsdrv_initinfo(void)
 #ifdef EXTRADATA
 	 dstate_setinfo("input.current", "%2.2f", -1);
 	dstate_setflags("input.current", ST_FLAG_RW);
-	 dstate_setinfo("input.current.peak", "%2.2f", -1);	
+	 dstate_setinfo("input.current.peak", "%2.2f", -1);
 	dstate_setflags("input.current.peak", ST_FLAG_RW);
 #endif
 	 dstate_setinfo("battery.voltage", "%d", -1);
@@ -315,15 +314,15 @@ void upsdrv_initinfo(void)
 	 dstate_setinfo("ups.test.result", "not yet done...");
 	dstate_setflags("ups.test.result", ST_FLAG_STRING | ST_FLAG_RW);
 	  dstate_setaux("ups.test.result", 20);
-	
+
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-	/* the manufacturer is hard coded into the driver, the model type is in the second 
+	/* the manufacturer is hard coded into the driver, the model type is in the second
 		byte of the answer, the third byte identifies the model version */
 	dstate_setinfo("ups.mfr", "Meta System");
 	i = my_answer[1] * 10 + my_answer[2];
-	switch (i) {	
+	switch (i) {
 		case 11:
 			dstate_setinfo("ups.model", "%s", "HF Line (1 board)");
 			nominal_power = 630;
@@ -343,31 +342,31 @@ void upsdrv_initinfo(void)
 		case 21:
 			dstate_setinfo("ups.model", "%s", "ECO Network 750/1000");
 			nominal_power = 500;
-			break;	
+			break;
 		case 22:
 			dstate_setinfo("ups.model", "%s", "ECO Network 1050/1500");
 			nominal_power = 700;
-			break;	
+			break;
 		case 23:
 			dstate_setinfo("ups.model", "%s", "ECO Network 1500/2000");
 			nominal_power = 1000;
-			break;	
+			break;
 		case 24:
 			dstate_setinfo("ups.model", "%s", "ECO Network 1800/2500");
 			nominal_power = 1200;
-			break;	
+			break;
 		case 25:
 			dstate_setinfo("ups.model", "%s", "ECO Network 2100/3000");
 			nominal_power = 1400;
-			break;	
+			break;
 		case 31:
 			dstate_setinfo("ups.model", "%s", "ECO 308");
 			nominal_power = 500;
-			break;	
+			break;
 		case 32:
 			dstate_setinfo("ups.model", "%s", "ECO 311");
 			nominal_power = 700;
-			break;	
+			break;
 		case 44:
 			dstate_setinfo("ups.model", "%s", "HF Line (4 boards)/2");
 			nominal_power = 2520;
@@ -535,20 +534,19 @@ void upsdrv_initinfo(void)
 
 		default:
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
-			break;
-	} 
-		
+	}
+
 	/* Get the serial number */
 	memcpy(serial, my_answer + 7, res - 7);
 	/* serial number start from the 8th byte */
 	serial[12]=0;		/* terminate string */
 	dstate_setinfo("ups.serial", "%s", serial);
-	
+
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
 	dstate_setinfo("ups.firmware", "%u.%u", my_answer[5], my_answer[6]);
 
 	printf("Detected %s [%s] v.%s on %s\n", dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"), dstate_getinfo("ups.firmware"), device_path);
-	
+
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
@@ -573,7 +571,7 @@ void upsdrv_updateinfo(void)
 	float float_num;
 	long int long_num;
 	unsigned char my_answer[255];
-	
+
 	/* GET Output data */
 	res = command_read_sequence(UPS_OUTPUT_DATA, my_answer);
 	if (res < 0) {
@@ -587,7 +585,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%2.1f", float_num);
 		} else {
 			dstate_setinfo("ups.load", "%s", "not available");
-		}	
+		}
 #ifdef EXTRADATA
 		dstate_setinfo("output.power", "%d", int_num);
 #endif
@@ -613,10 +611,10 @@ void upsdrv_updateinfo(void)
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current.peak", "%2.2f", float_num);
 		}
-		
+
 #endif
 	}
-		
+
 	/* GET Input data */
 	res = command_read_sequence(UPS_INPUT_DATA, my_answer);
 	if (res < 0){
@@ -654,8 +652,8 @@ void upsdrv_updateinfo(void)
 		}
 #endif
 	}
-	
-	
+
+
 	/* GET Battery data */
 	res = command_read_sequence(UPS_BATTERY_DATA, my_answer);
 	if (res < 0) {
@@ -677,7 +675,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.voltage.exhaust", "%2.2f", float_num);
 #endif
 	}
-	
+
 #ifdef EXTRADATA
 	/* GET history data */
 	res = command_read_sequence(UPS_HISTORY_DATA, my_answer);
@@ -694,7 +692,7 @@ void upsdrv_updateinfo(void)
 		minute = (int)(long_num / 60);
 		long_num -= (minute*60);
 		dstate_setinfo("ups.total.runtime", "%d days %dh %dm %lds", day, hour, minute, long_num);
-		
+
 		/* ups inverter runtime */
 		long_num = get_long(&my_answer[5]);
 		day = (int)(long_num / 86400);
@@ -718,7 +716,7 @@ void upsdrv_updateinfo(void)
 		if (int_num >= 0) dstate_setinfo("ups.overheatings", "%d", int_num);
 	}
 #endif
-	
+
 	/* GET times on battery */
 	res = command_read_sequence(UPS_GET_TIMES_ON_BATTERY, my_answer);
 	if (res < 0) {
@@ -727,8 +725,8 @@ void upsdrv_updateinfo(void)
 	} else {
 		autorestart = my_answer[5];
 	}
-	
-	
+
+
 	/* GET schedule */
 	res = command_read_sequence(UPS_GET_SCHEDULING, my_answer);
 	if (res < 0) {
@@ -738,20 +736,20 @@ void upsdrv_updateinfo(void)
 		/* time remaining to shutdown */
 		long_num = get_long(&my_answer[1]);
 		if (long_num == -1) {
-			dstate_setinfo("ups.delay.shutdown", "%d", 120);	
+			dstate_setinfo("ups.delay.shutdown", "%d", 120);
 		} else {
 			dstate_setinfo("ups.delay.shutdown", "%ld", long_num);
 		}
 		/* time remaining to restart  */
 		long_num = get_long(&my_answer[5]);
 		if (long_num == -1) {
-			dstate_setinfo("ups.delay.start", "%d", 0);	
+			dstate_setinfo("ups.delay.start", "%d", 0);
 		} else {
 			dstate_setinfo("ups.delay.start", "%ld", long_num);
-		}	
+		}
 	}
-	
-	
+
+
 	/* GET ups status */
 	res = command_read_sequence(UPS_STATUS, my_answer);
 	if (res < 0) {
@@ -764,7 +762,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.temperature", "%d", my_answer[3]);
 		} else {
 			dstate_setinfo("ups.temperature", "%s", "not available");
-		}	
+		}
 		/* Status */
 		status_init();
 		switch (my_answer[1]) {	/* byte 1 = STATUS */
@@ -784,7 +782,7 @@ void upsdrv_updateinfo(void)
 			default:
 				printf("status unknown \n");
 				break;
-		} 
+		}
 		switch (my_answer[2]) {		/* byte 2 = FAULTS */
 			case 0x00:				/* all right */
 				break;
@@ -815,22 +813,22 @@ void upsdrv_shutdown(void)
 	unsigned char command[10], answer[10];
 
 	/* Ensure that the ups is configured for automatically
-	   restart after a complete battery discharge 
+	   restart after a complete battery discharge
 	   and when the power comes back after a shutdown */
 	if (! autorestart) {
 		command[0]=UPS_SET_TIMES_ON_BATTERY;
-		command[1]=0x00;					/* max time on  */ 
+		command[1]=0x00;					/* max time on  */
 		command[2]=0x00;					/* battery */
-		
+
 		command[3]=0x00;					/* max time after */
 		command[4]=0x00;					/* battery reserve */
-		
+
 		command[5]=0x01;					/* autorestart after battery depleted enabled */
 		command_write_sequence(command, 6, answer);
 	}
 
 	/* shedule a shutdown in 120 seconds */
-	command[0]=UPS_SET_SCHEDULING;		
+	command[0]=UPS_SET_SCHEDULING;
 	command[1]=0x96;					/* remaining  */
 	command[2]=0x00;					/* time		 */
 	command[3]=0x00;					/* to */
@@ -876,7 +874,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* Same stuff as upsdrv_shutdown() */
 		if (! autorestart) {
 			command[0]=UPS_SET_TIMES_ON_BATTERY;
-			command[1]=0x00;					/* max time on  */ 
+			command[1]=0x00;					/* max time on  */
 			command[2]=0x00;					/* battery */
 			command[3]=0x00;					/* max time after */
 			command[4]=0x00;					/* battery reserve */
@@ -884,7 +882,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			command_write_sequence(command, 6, answer);
 		}
 		/* shedule a shutdown in 30 seconds */
-		command[0]=UPS_SET_SCHEDULING;		
+		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */
 		command[3]=0x00;					/* to */
@@ -900,12 +898,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* shedule a shutdown in 30 seconds with no restart (-1) */
-		command[0]=UPS_SET_SCHEDULING;		
+		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0x1e;					/* remaining  */
 		command[2]=0x00;					/* time		 */
 		command[3]=0x00;					/* to */
 		command[4]=0x00;					/* shutdown 150 secs */
-				
+
 		command[5]=0xff;					/* programmed */
 		command[6]=0xff;					/* time		 */
 		command[7]=0xff;					/* to */
@@ -916,12 +914,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		/* set shutdown and restart time to -1 (no shutdown, no restart) */
-		command[0]=UPS_SET_SCHEDULING;		
+		command[0]=UPS_SET_SCHEDULING;
 		command[1]=0xff;					/* remaining  */
 		command[2]=0xff;					/* time		 */
 		command[3]=0xff;					/* to */
 		command[4]=0xff;					/* shutdown -1 (no shutdown) */
-				
+
 		command[5]=0xff;					/* programmed */
 		command[6]=0xff;					/* time		 */
 		command[7]=0xff;					/* to */
@@ -932,8 +930,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		/* force ups on battery power */
-		command[0]=UPS_SET_BATTERY_TEST;	
-		command[1]=0x01;					
+		command[0]=UPS_SET_BATTERY_TEST;
+		command[1]=0x01;
 		/* 0 = perform battery test
 		   1 = force UPS on battery power
 		   2 = restore standard mode (mains power) */
@@ -944,7 +942,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
 		/* restore standard mode (mains power) */
 		command[0]=UPS_SET_BATTERY_TEST;
-		command[1]=0x02;					
+		command[1]=0x02;
 		/* 0 = perform battery test
 		   1 = force UPS on battery power
 		   2 = restore standard mode (mains power) */
@@ -954,8 +952,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		/* launch battery test */
-		command[0]=UPS_SET_BATTERY_TEST;		
-		command[1]=0x00;					
+		command[0]=UPS_SET_BATTERY_TEST;
+		command[1]=0x00;
 		/* 0 = perform battery test
 		   1 = force UPS on battery power
 		   2 = restore standard mode (mains power) */
@@ -966,22 +964,22 @@ static int instcmd(const char *cmdname, const char *extra)
 			case 0x00:				/* all right */
 				dstate_setinfo("ups.test.result", "OK");
 				break;
-			case 0x01:				
+			case 0x01:
 				dstate_setinfo("ups.test.result", "Battery charge: 20%%");
 				break;
-			case 0x02:				
+			case 0x02:
 				dstate_setinfo("ups.test.result", "Battery charge: 40%%");
 				break;
-			case 0x03:				
+			case 0x03:
 				dstate_setinfo("ups.test.result", "Battery charge: 60%%");
 				break;
-			case 0x04:				
+			case 0x04:
 				dstate_setinfo("ups.test.result", "Battery charge: 80%%");
 				break;
-			case 0x05:				
+			case 0x05:
 				dstate_setinfo("ups.test.result", "Battery charge: 100%%");
 				break;
-			case 0xfe:				
+			case 0xfe:
 				dstate_setinfo("ups.test.result", "Bad battery pack: replace");
 				break;
 			default:
@@ -996,8 +994,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		/* set buzzer to not muted */
-		command[0]=UPS_SET_BUZZER_MUTE;		
-		command[1]=0x00;					
+		command[0]=UPS_SET_BUZZER_MUTE;
+		command[1]=0x00;
 		/* 0 = not muted
 		   1 = muted
 		   2 = read current status */
@@ -1007,8 +1005,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "beeper.mute")) {
 		/* set buzzer to muted */
-		command[0]=UPS_SET_BUZZER_MUTE;		
-		command[1]=0x01;					
+		command[0]=UPS_SET_BUZZER_MUTE;
+		command[1]=0x01;
 		/* 0 = not muted
 		   1 = muted
 		   2 = read current status */
@@ -1016,7 +1014,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -1038,12 +1036,12 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	upsfd = ser_open(device_path); 
-	ser_set_speed(upsfd, device_path, B2400); 
+	upsfd = ser_open(device_path);
+	ser_set_speed(upsfd, device_path, B2400);
 	send_zeros();
 }
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path); 
+	ser_close(upsfd, device_path);
 }

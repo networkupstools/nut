@@ -17,7 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-struct {
+#ifndef NUT_GENERICUPS_H_SEEN
+#define NUT_GENERICUPS_H_SEEN 1
+
+static struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
 	const	char	*desc;			/* used in -h listing	*/
@@ -56,7 +59,7 @@ struct {
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
 	  TIOCM_DTR|TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
-	
+
 	/* Type 3 */
 	{ "PowerTech",
 	  "Comp1000",
@@ -100,7 +103,7 @@ struct {
 	/* Type 7 */
 	{ "CyberPower",
 	  "Power99",
-	  "CyberPower Power99", 
+	  "CyberPower Power99",
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
@@ -156,7 +159,7 @@ struct {
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
 	  TIOCM_DTR			/* shutdown: raise DTR		*/
 	},
-	
+
 	/* Type 13 */
 	{ "RPT",
           "Repoteck",
@@ -248,7 +251,7 @@ struct {
 	  TIOCM_CD, 0,                  /* low battery: CD off		*/
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
-	
+
 	/* Type 22 (duplicate from 7)*/
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",
@@ -270,3 +273,5 @@ struct {
 	  0
 	}
 };
+
+#endif	/* NUT_GENERICUPS_H_SEEN */

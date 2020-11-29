@@ -29,14 +29,14 @@
 	static	char	*ups_section;
 
 /* handle arguments separated by parseconf */
-static void conf_args(int numargs, char **arg)
+static void conf_args(size_t numargs, char **arg)
 {
 	if (numargs < 1)
 		return;
 
 	/* look for section headers - [upsname] */
 	if ((arg[0][0] == '[') && (arg[0][strlen(arg[0])-1] == ']')) {
-		
+
 		free(ups_section);
 
 		arg[0][strlen(arg[0])-1] = '\0';

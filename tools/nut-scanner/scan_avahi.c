@@ -86,7 +86,8 @@ static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
 static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -270,7 +271,7 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 			}
 
 			if( port != PORT) {
-				/* +5+1+1+1 is for : 
+				/* +5+1+1+1 is for :
 				 - port number (max 65535 so 5 characters),
 				 - '@' and ':' characters
 				 - terminating 0 */
@@ -298,10 +299,10 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 				nutscan_free_device(dev);
 			}
 			device = strtok_r(NULL,";",&device_saveptr);
-		};
+		}
 
 		phrase = strtok_r(NULL,"\"",&t_saveptr);
-	};
+	}
 	free(t);
 
 	/* If no device published in avahi data, try to get the device by
@@ -348,8 +349,8 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 
 static void resolve_callback(
 	AvahiServiceResolver *r,
-	AVAHI_GCC_UNUSED AvahiIfIndex interface,
-	AVAHI_GCC_UNUSED AvahiProtocol protocol,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
 	AvahiResolverEvent event,
 	const char *name,
 	const char *type,
@@ -359,9 +360,14 @@ static void resolve_callback(
 	uint16_t port,
 	AvahiStringList *txt,
 	AvahiLookupResultFlags flags,
-	AVAHI_GCC_UNUSED void* userdata) {
+	void* userdata)
+{
 
 	assert(r);
+
+	NUT_UNUSED_VARIABLE(interface);
+	NUT_UNUSED_VARIABLE(protocol);
+	NUT_UNUSED_VARIABLE(userdata);
 
 	/* Called whenever a service has been resolved successfully or timed out */
 
@@ -377,6 +383,8 @@ static void resolve_callback(
 
 			(*nut_avahi_address_snprint)(a, sizeof(a), address);
 			t = (*nut_avahi_string_list_to_string)(txt);
+
+			NUT_UNUSED_VARIABLE(flags);
 /*
 			fprintf(stderr,
 				"\t%s:%u (%s)\n"
@@ -412,11 +420,14 @@ static void browse_callback(
 		const char *name,
 		const char *type,
 		const char *domain,
-		AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
-		void* userdata) {
+		AvahiLookupResultFlags flags,
+		void* userdata)
+{
 
 	AvahiClient *c = userdata;
 	assert(b);
+
+	NUT_UNUSED_VARIABLE(flags);
 
 	/* Called whenever a new services becomes available on the LAN or is removed from the LAN */
 
@@ -435,7 +446,19 @@ static void browse_callback(
 			   the callback function is called the server will free
 			   the resolver for us. */
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wassign-enum"
+#endif
+			/* It seems that avahi-common/defs.h only defines the flags in a
+			 * manner similar to bitmask flags to request certain features,
+			 * but lacks a value in that enum for lack of flags (unconstrained
+			 * lookup). So we have to silence a warning here...
+			 */
 			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic pop
+#endif
 				fprintf(stderr, "Failed to resolve service '%s': %s\n", name, (*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 
 			break;
@@ -452,8 +475,9 @@ static void browse_callback(
 	}
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void client_callback(AvahiClient *c, AvahiClientState state, void * userdata) {
 	assert(c);
+	NUT_UNUSED_VARIABLE(userdata);
 
 	/* Called whenever the client or server state changes */
 
@@ -465,7 +489,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
-	/* Example service publication 
+	/* Example service publication
 	 * $ avahi-publish -s nut _upsd._tcp 3493 txtvers=1 protovers=1.0.0 device_list="dev1;dev2"
 	 */
 	AvahiClient *client = NULL;
@@ -485,7 +509,19 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	}
 
 	/* Allocate a new client */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wassign-enum"
+#endif
+	/* It seems that avahi-common/defs.h only defines the flags in a
+	 * manner similar to bitmask flags to request certain features,
+	 * but lacks a value in that enum for lack of flags (unconstrained
+	 * lookup). So we have to silence a warning here...
+	 */
 	client = (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, &error);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Check wether creating the client object succeeded */
 	if (!client) {
@@ -494,7 +530,15 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	}
 
 	/* Create the service browser */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wassign-enum"
+#endif
+	/* See comments about flags just a bit above */
 	if (!(sb = (*nut_avahi_service_browser_new)(client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_upsd._tcp", NULL, 0, browse_callback, client))) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic pop
+#endif
 		fprintf(stderr, "Failed to create service browser: %s\n", (*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}
@@ -520,6 +564,8 @@ fail:
 /* stub function */
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
+	NUT_UNUSED_VARIABLE(usec_timeout);
+
 	return NULL;
 }
 #endif /* WITH_AVAHI */

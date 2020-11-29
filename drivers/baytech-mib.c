@@ -2,7 +2,7 @@
  *
  *  Copyright (C) 2009
  *  			Opengear <support@opengear.com>
- * 				Arnaud Quette <arnaud.quette@free.fr>
+ *  			Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,11 +31,11 @@
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
 static info_lkp_t outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+	{ -1, "error", NULL, NULL },
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "cycling", NULL, NULL }, /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */
@@ -89,4 +89,4 @@ static snmp_info_t baytech_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib };
+mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib, BAYTECH_OID_MIB, NULL };

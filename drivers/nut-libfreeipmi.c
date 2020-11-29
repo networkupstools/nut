@@ -58,18 +58,19 @@
 #define IPMI_FRU_CUSTOM_FIELDS 64
 
 /* FreeIPMI contexts and configuration*/
-ipmi_ctx_t ipmi_ctx = NULL;
-ipmi_monitoring_ctx_t mon_ctx = NULL;
-struct ipmi_monitoring_ipmi_config ipmi_config;
+static ipmi_ctx_t ipmi_ctx = NULL;
+static ipmi_monitoring_ctx_t mon_ctx = NULL;
+/* static struct ipmi_monitoring_ipmi_config ipmi_config; */
 
 /* SDR management API has changed with 1.1.X and later */
 #ifdef HAVE_FREEIPMI_11X_12X
-  ipmi_sdr_ctx_t sdr_ctx = NULL;
-  ipmi_fru_ctx_t fru_ctx = NULL;
+  static ipmi_sdr_ctx_t sdr_ctx = NULL;
+  static ipmi_fru_ctx_t fru_ctx = NULL;
   #define SDR_PARSE_CTX sdr_ctx
   #define NUT_IPMI_SDR_CACHE_DEFAULTS                              IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT
 #else
-  ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
+  /* NOTE: Maybe declare the vars in lines below also as static? */
+  static ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
   ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
   #define SDR_PARSE_CTX sdr_parse_ctx
   ipmi_fru_parse_ctx_t fru_ctx = NULL;
@@ -112,7 +113,7 @@ struct ipmi_monitoring_ipmi_config ipmi_config;
 static const char* libfreeipmi_getfield (uint8_t language_code,
 	ipmi_fru_field_t *field);
 
-static void libfreeipmi_cleanup();
+static void libfreeipmi_cleanup(void);
 
 static int libfreeipmi_get_psu_info (const void *areabuf,
 	uint8_t area_length, IPMIDevice_t *ipmi_dev);
@@ -171,7 +172,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 		libfreeipmi_cleanup();
 		fatal_with_errno(EXIT_FAILURE, "ipmi_fru_ctx_create()");
 	}
-      
+
 	/* lots of motherboards calculate checksums incorrectly */
 	if (ipmi_fru_ctx_set_flags (fru_ctx, IPMI_FRU_FLAGS_SKIP_CHECKSUM_CHECKS) < 0)
 	{
@@ -206,7 +207,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 											IPMI_FRU_AREA_SIZE_MAX) < 0)
 		{
 			libfreeipmi_cleanup();
-			fatal_with_errno(EXIT_FAILURE, 
+			fatal_with_errno(EXIT_FAILURE,
 				"ipmi_fru_read_data_area: %s\n",
 				ipmi_fru_ctx_errormsg (fru_ctx));
 		}
@@ -661,7 +662,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 	if (ipmi_sdr_cache_first (sdr_ctx) < 0)
 	{
-		fprintf (stderr, "ipmi_sdr_cache_first: %s\n", 
+		fprintf (stderr, "ipmi_sdr_cache_first: %s\n",
 			ipmi_sdr_ctx_errormsg (sdr_ctx));
 		goto cleanup;
 	}
@@ -861,7 +862,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 		 * if ((sensor_state = ipmi_monitoring_sensor_read_sensor_state (mon_ctx)) < 0)
 		 * ... */
 
-		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) < 0)
+		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_reading() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));
@@ -881,7 +882,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 			continue;
 		}
 
-		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) < 0)
+		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_bitmask_strings() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));
@@ -989,7 +990,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 				break;
 		}
 	}
-	
+
 	/* Process status if needed */
 	if (psu_status != PSU_STATUS_UNKNOWN) {
 
@@ -1011,7 +1012,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 				retval = 0;
 				break;
 		}
-	
+
 		status_commit();
 	}
 #endif /* HAVE_FREEIPMI_MONITORING */

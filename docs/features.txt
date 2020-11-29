@@ -19,7 +19,7 @@ Multiple manufacturer and device support
 ----------------------------------------
 
 - Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
-manufacturers with a unified interface 
+manufacturers with a unified interface
 (link:stable-hcl.html[Hardware Compatibility List]).
 
 - Various communication types and many protocols are supported with the same
@@ -31,11 +31,12 @@ common interface:
 Multiple architecture support
 -----------------------------
 
-- Cross-platform - different flavors of Unix can be managed together with a
+- Cross-platform -- different flavors of Unix can be managed together with a
 common set of tools, even crossing architectures.
 
-- This software has been reported to run on Linux distributions, the BSDs, Apple's
-OS X, Solaris, IRIX, HP/UX, Tru64 Unix, and AIX.
+- This software has been reported to run on Linux distributions, the BSDs,
+Apple's OS X, commercial Solaris and open-source illumos distros, IRIX,
+HP/UX, Tru64 Unix, and AIX.
 
 - Windows users may be able to build it directly with Cygwin.
 There is also a port of the client-side monitoring to Windows called WinNUT.
@@ -60,8 +61,8 @@ WARNING: Be sure to plug your network's physical hardware (switches, hubs,
 routers, bridges, ...) into the UPS!
 
 
-Redundancy support - Hot swap/high availability power supplies
---------------------------------------------------------------
+Redundancy support -- Hot swap/high availability power supplies
+---------------------------------------------------------------
 
 - upsmon can handle high-end servers which receive power from multiple UPSes
 simultaneously.
@@ -70,14 +71,18 @@ simultaneously.
 source UPSes becomes critical (on battery and low battery).
 
 - You can lose a UPS completely as long as you still have at least the minimum
-number of sources available. The minimum value is configurable. 
+number of sources available. The minimum value is configurable.
 
 Security and access control
 ---------------------------
 
 - Manager functions are granted with per-user granularity. The admin can have
-full powers, while the admin's helper can only do specific non-destructive tasks
-such as a battery test.
+full powers, while the admin's helper can only do specific non-destructive
+tasks such as a battery test (beware that with a worn-out battery whose
+replacement is a few years overdue, a "capacity/remaining runtime" test can
+still be destructive by powering off the load abruptly -- and also such a
+test can cause hosts to hide into graceful shutdowns when the battery state
+does get critical as part of the test).
 
 - The drivers, server, and monitoring client (upsmon) can all run as separate
 user IDs if this is desired for privilege separation.
@@ -91,8 +96,8 @@ shutdown command. In any other case, the privileged process exits.
 This was inspired by the auth mechanism in Solar Designer's excellent popa3d.
 
 - The drivers and network server may be run in a chroot jail for further
-security benefits. This is supported directly since version 1.4 and beyond with
-the 'chroot=' configuration directive. 
+security benefits. This is supported directly since version 1.4 and beyond
+with the 'chroot=' configuration directive.
 
 - IP-based access control relies on the local firewall and
 link:http://en.wikipedia.org/wiki/TCP_Wrapper[TCP Wrapper].
@@ -106,9 +111,9 @@ Web-based monitoring
 - Comes stock with CGI-based web interface tools for UPS monitoring and
 management, including graphical status displays.
 
-- Custom status web pages may be generated with the CGI programs, since they use
-templates to create the pages. This allows you to have status pages which fit
-the look and feel of the rest of your site. 
+- Custom status web pages may be generated with the CGI programs, since they
+use templates to create the pages. This allows you to have status pages which
+fit the look and feel of the rest of your site.
 
 Free software
 -------------
@@ -116,26 +121,30 @@ Free software
 - That's free beer and free speech. Licensed under the GNU General Public
 License version 2 or later.
 
-- Know your systems - all source code is available for inspection, so there are
-no mysteries or secrets in your critical monitoring tools. 
+- Know your systems -- all source code is available for inspection, so there are
+no mysteries or secrets in your critical monitoring tools.
 
 UPS management and control
 --------------------------
 
-- Writable variables may be edited on higher end equipment for local customization
+- Writable variables may be edited on higher end equipment for local
+customization
 
-- Status monitoring can generate notifications (email/pager/SMS/...) on alert conditions
+- Status monitoring can generate notifications (email/pager/SMS/...) on alert
+conditions
 
-- Alert notices may be dampened to only trigger after a condition persists. This
-avoids the usual pager meltdown when something happens and no delay is used.
+- Alert notices may be dampened to only trigger after a condition persists.
+This avoids the usual pager meltdown when something happens and no delay
+is used.
 
 - Maintenance actions such as battery runtime calibration are available where
 supported by the UPS hardware.
 
-- Power statistics can be logged in custom formats for later retrieval and analysis
+- Power statistics can be logged in custom formats for later retrieval and
+analysis
 
-- All drivers are started and stopped with one common program. Starting one is
-as easy as starting ten: 'upsdrvctl start'.
+- All drivers are started and stopped with one common program. Starting one
+is as easy as starting ten: `upsdrvctl start`.
 
 - For operating systems with a supported service management framework, you can
 manage the NUT drivers wrapped into independent service instances using the
@@ -143,17 +152,17 @@ manage the NUT drivers wrapped into independent service instances using the
 possibility to define further dependencies between your OS components.
 
 - Shutdowns and other procedures may be tested without stressing actual UPS
-hardware by simulating status values with the dummy-ups pseudo-driver. Anything
-which can happen in a driver can be replicated with dummy-ups.
+hardware by simulating status values with the dummy-ups pseudo-driver.
+Anything that can happen in a driver can be replicated with dummy-ups.
 
 Monitoring diagrams
 -------------------
 
-These are the most common situations for monitoring UPS hardware. Other ways are
-possible, but they are mostly variants on these four.
+These are the most common situations for monitoring UPS hardware. Other ways
+are possible, but they are mostly variations of these four.
 
-NOTE: these examples show serial communications for simplicity, but USB or SNMP
-or any other monitoring is also possible.
+NOTE: these examples show serial communications for simplicity, but USB or
+SNMP or any other monitoring is also possible.
 
 "Simple" configuration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -162,8 +171,8 @@ image:images/simple.png[]
 
 One UPS, one computer. This is also known as "Standalone" configuration.
 
-This is the configuration that most users will use. You need at least a driver,
-upsd, and upsmon running.
+This is the configuration that most users will use. You need at least a
+driver, `upsd`, and `upsmon` running.
 
 "Advanced" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,60 +180,70 @@ upsd, and upsmon running.
 image:images/advanced.png[]
 
 One UPS, multiple computers. Only one of them can actually talk to the UPS
-directly. That's where the network comes in. The Master system runs the driver,
-upsd, and upsmon in master mode. The Slave systems only run upsmon in slave mode.
+directly. That's where the network comes in. The Master system runs the
+relevant driver, `upsd`, and `upsmon` in master mode. The Slave systems
+only run `upsmon` in slave mode.
 
-This is useful when you have a very large UPS that's capable of running multiple
-systems simultaneously. There is no longer the need to buy a bunch of individual
-UPSes or "sharing" hardware, since this software will handle the sharing for you.
+This is useful when you have a very large UPS that's capable of running
+multiple systems simultaneously. There is no longer the need to buy a bunch
+of individual UPSes or "sharing" hardware, since this software will handle
+the sharing for you.
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 *FIXME* remainder
 === One UPS, many clients ===
 
-- Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
+- Multiple systems may monitor a single UPS using only their network
+connections -- no special "UPS sharing" hardware is required.
 
-- "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power. 
+- "Slave and master" monitoring design synchronizes shutdowns so that
+slaves can bring down their operating systems cleanly before the master
+switches off the power.
 
 === Many UPSes, many clients ===
 
 - Each upsd process can serve status data for multiple UPSes to many clients.
 
-- Each upsmon process can monitor multiple UPSes for status data. 
+- Each upsmon process can monitor multiple UPSes for status data.
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 "Big Box" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/bigbox.png[]
 
-Some systems have multiple power supplies and cords. You typically find this on
-high-end servers that allow hot-swap and other fun features. In this case, you
-run multiple drivers (one per UPS), a single upsd, and a single upsmon (as
-master for both UPS 1 and UPS 2)
+Some systems have multiple power supplies and cords. You typically find
+this on high-end servers that allow hot-swap and other fun features.
+In this case, you run multiple drivers (one per UPS), a single `upsd`,
+and a single `upsmon` (as a master for both UPS 1 and UPS 2)
 
-This software understands that some of these servers can also run with some of
-the supplies gone. For this reason, every UPS is assigned a "power value" - the
-quantity of power supplies that it feeds on a system.
-The total available "power value" is compared to the minimum that is required
-for that hardware. For example, if you have 3 power supplies and 3 UPSes, but
-only 2 supplies must be running at any given moment, the minimum would be 2.
-This means that you can safely lose any one UPS and the software will handle it
-properly by remaining online.
+This software understands that some of these servers can also run with
+some of the supplies gone. For this reason, every UPS is assigned a
+"power value" -- the quantity of power supplies that it feeds on this
+system.
+
+The total available "power value" is compared to the minimum that is
+required for that hardware. For example, if you have 3 power supplies
+and 3 UPSes, but only 2 supplies must be running at any given moment,
+the minimum would be 2.
+
+This means that you can safely lose any one UPS and the software will
+handle it properly by remaining online and not causing a shut down.
 
 "Bizarre" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/bizarre.png[]
 
-You can even have a UPS that has the serial port connected to a system that it's
-not feeding. Sometimes a PC will be close to a UPS that needs to be monitored,
-so it's drafted to supply a serial port for the purpose. This PC may in fact be
-getting power from some other UPS. This is not a problem.
+You can even have a UPS that has the serial port connected to a system that
+it's not feeding. Sometimes a PC will be close to a UPS that needs to be
+monitored, so it's drafted to supply a serial port for the purpose.
+This PC may in fact be getting its own power from some other UPS. This is
+not a problem for the set-up.
 
-The first system ("mixed") is a Master for UPS 1, but is only monitoring UPS 2.
-The other systems are Slaves of UPS 2.
+The first system ("mixed") is a Master for UPS 1, but is only monitoring
+UPS 2. The other systems are Slaves of UPS 2.
 
 Image credits
 -------------

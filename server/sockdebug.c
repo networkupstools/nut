@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/un.h> 
+#include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -98,7 +98,7 @@ static void read_sock(int fd)
 	}
 
 	if (ret < 0) {
-		perror("read sockfd"); 
+		perror("read sockfd");
 		exit(EXIT_FAILURE);
 	}
 

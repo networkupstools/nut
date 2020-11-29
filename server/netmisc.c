@@ -22,7 +22,7 @@
 #include "common.h"
 
 #include "upsd.h"
-#include "sstate.h" 
+#include "sstate.h"
 #include "state.h"
 #include "user.h"		/* for user_checkaction */
 #include "neterr.h"
@@ -31,6 +31,7 @@
 
 void net_ver(nut_ctype_t *client, int numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -42,6 +43,7 @@ void net_ver(nut_ctype_t *client, int numarg, const char **arg)
 
 void net_netver(nut_ctype_t *client, int numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -52,6 +54,7 @@ void net_netver(nut_ctype_t *client, int numarg, const char **arg)
 
 void net_help(nut_ctype_t *client, int numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -77,13 +80,13 @@ void net_fsd(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	/* make sure this user is allowed to do FSD */	
+	/* make sure this user is allowed to do FSD */
 	if (!user_checkaction(client->username, client->password, "FSD")) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}
 
-	upslogx(LOG_INFO, "Client %s@%s set FSD on UPS [%s]", 
+	upslogx(LOG_INFO, "Client %s@%s set FSD on UPS [%s]",
 		client->username, client->addr, ups->name);
 
 	ups->fsd = 1;

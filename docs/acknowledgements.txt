@@ -53,7 +53,7 @@ blazer_ser and blazer_usb
 - Martin Loyer: has worked a bit on mge-utalk
 - Jonathan Dion: MGE internship (summer 2006), who has worked on configuration
 - Doug Reynolds: has worked on CyberPower support (powerpanel driver)
-- Jon Gough: has worked on porting the megatec driver to USB (megatec_usb) 
+- Jon Gough: has worked on porting the megatec driver to USB (megatec_usb)
 - Dominique Lallement: Consultant (chairman of the USB/HID PDC Forum)
 - Julius Malkiewicz: junior developer
 - Tomas Smetana: former Redhat packager (2007-2008)
@@ -93,8 +93,8 @@ revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
 
 * link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
-created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial devices.
-They also proposes NUT as an alternative to its software for
+created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial
+devices. The company also proposes NUT as an alternative to its software for
 link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 
 * link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
@@ -144,20 +144,21 @@ the libhid projects, ... through Arnaud Quette (who was also an MGE employee).
 All the MGE supporters have gone with Eaton (through MGE Office Protection
 Systems), which was temporarily the new NUT sponsor.
 
-- Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
-stance and quick responses to technical inquiries were appreciated for 
+- Fenton Technologies contributed a PowerPal 660 to the project.  Their open
+stance and quick responses to technical inquiries were appreciated for
 making the development of the fentonups driver possible.
-Fenton has since been acquired by link:http://www.metapo.com[Metapo]. 
+Fenton has since been acquired by link:http://www.metapo.com[Metapo].
 
-- Bo Kersey of link:http://www.vircio.com[VirCIO] provided a Best Power Fortress
-750 to facilitate the bestups driver.  
+- Bo Kersey of link:http://www.vircio.com[VirCIO] provided a Best Power
+Fortress 750 to facilitate the bestups driver.
 
 - Invensys Energy Systems provided the SOLA/Best "Phoenixtec" protocol
 document. SOLA has since been acquired by Eaton.
 
 - PowerKinetics technical support provided documentation on their MiniCOL
 protocol, which is archived in the NUT protocol library.
-PowerKinetics was acquired by the link:http://www.jst.cc[JST Group] in June 2003.
+PowerKinetics was acquired by the link:http://www.jst.cc[JST Group]
+in June 2003.
 
 - link:http://www.cyberpowersystems.com[Cyber Power Systems] contributed a
 700AVR model for testing and development of the cyberpower driver.
@@ -167,7 +168,12 @@ and a UPStation GXT2 with the Web/SNMP card for development of the liebert
 driver and expansion of the existing snmp-ups driver.
 Liebert has since been acquired by link:http://www.emerson.com[Emerson].
 
-NOTE: If a company or individual isn't listed here, then we probably don't have
-enough information about the situation. Developers are requested to report vendor
-contributions to the NUT team so this list may reflect their help.
-If we have left you out, send us some mail.
+NOTE: If a company or individual isn't listed here, then we probably don't
+have enough information about the situation. Developers are kindly requested
+to report vendor contributions to the NUT team so this list may reflect their
+help, as well as convey a sense of official support (at least, that drivers
+were proposed according to the know-how coming from specs and knowledge about
+hardware and firmware capabilities, and not acquired via reverse engineering
+with a certain degree of unreliability and incompleteness). If we have left
+you out, please send us some mail or post a pull request to update this
+document in GitHub.

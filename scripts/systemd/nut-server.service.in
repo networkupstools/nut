@@ -18,6 +18,7 @@ Before=nut-monitor.service
 PartOf=nut.target
 
 [Service]
+EnvironmentFile=-@CONFPATH@/nut.conf
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
 Type=forking

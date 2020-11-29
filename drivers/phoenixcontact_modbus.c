@@ -33,7 +33,7 @@
 modbus_t *ctx = NULL;
 int errcount = 0;
 
-static int mrir(modbus_t * ctx, int addr, int nb, uint16_t * dest);
+static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -177,10 +177,10 @@ void upsdrv_cleanup(void)
 }
 
 /* Modbus Read Input Registers */
-static int mrir(modbus_t * ctx, int addr, int nb, uint16_t * dest)
+static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest)
 {
 	int r;
-	r = modbus_read_input_registers(ctx, addr, nb, dest);
+	r = modbus_read_input_registers(arg_ctx, addr, nb, dest);
 	if (r == -1) {
 		upslogx(LOG_ERR, "mrir: modbus_read_input_registers(addr:%d, count:%d): %s (%s)", addr, nb, modbus_strerror(errno), device_path);
 		errcount++;

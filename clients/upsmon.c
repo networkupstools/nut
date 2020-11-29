@@ -45,7 +45,7 @@ static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
 static	int	pollfreq = 5, pollfreqalert = 5;
 
 	/* slave hosts are given 15 sec by default to logout from upsd */
-static	int	hostsync = 15;  
+static	int	hostsync = 15;
 
 	/* sum of all power values from config file */
 static	int	totalpv = 0;
@@ -90,7 +90,7 @@ static void setflag(int *val, int flag)
 	*val |= flag;
 }
 
-static void clearflag(int *val, int flag)  
+static void clearflag(int *val, int flag)
 {
 	*val ^= (*val & flag);
 }
@@ -113,9 +113,9 @@ static void wall(const char *text)
 
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
-} 
+}
 
-static void notify(const char *notice, int flags, const char *ntype, 
+static void notify(const char *notice, int flags, const char *ntype,
 			const char *upsname)
 {
 	char	exec[LARGEBUF];
@@ -173,11 +173,24 @@ static void do_notify(const utype_t *ups, int ntype)
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (notifylist[i].type == ntype) {
-			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype, 
+			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
 				notifylist[i].name);
-			snprintf(msg, sizeof(msg), notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg, 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+			snprintf(msg, sizeof(msg),
+				notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
 				ups ? ups->sys : "");
-			notify(msg, notifylist[i].flags, notifylist[i].name, 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+			notify(msg, notifylist[i].flags, notifylist[i].name,
 				upsname);
 			return;
 		}
@@ -216,12 +229,12 @@ static int checkmaster(utype_t *ups)
 
 		/* not ERR, but not caught by readline either? */
 
-		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]", 
+		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Response: [%s]", buf);
 	}
 	else {	/* something caught by readraw's parsing call */
-		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]", 
+		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Reason: %s", upscli_strerror(&ups->conn));
 	}
@@ -367,7 +380,7 @@ static void ups_on_batt(utype_t *ups)
 
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
-	ups->linestate = 0;	
+	ups->linestate = 0;
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -418,6 +431,9 @@ static void set_pdflag(void)
 }
 
 /* the actual shutdown procedure */
+static void doshutdown(void)
+	__attribute__((noreturn));
+
 static void doshutdown(void)
 {
 	int	ret;
@@ -501,7 +517,14 @@ static void set_alarm(void)
 
 static void clear_alarm(void)
 {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGALRM, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	alarm(0);
 }
 
@@ -559,7 +582,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %d args, need at least %d)", 
+			"(got %d args, need at least %d)",
 			var, numa, numq);
 		return -1;
 	}
@@ -613,6 +636,9 @@ static void slavesync(void)
 		usleep(250000);
 	}
 }
+
+static void forceshutdown(void)
+	__attribute__((noreturn));
 
 static void forceshutdown(void)
 {
@@ -800,13 +826,13 @@ static void drop_connection(utype_t *ups)
 }
 
 /* change some UPS parameters during reloading */
-static void redefine_ups(utype_t *ups, int pv, const char *un, 
+static void redefine_ups(utype_t *ups, int pv, const char *un,
 		const char *pw, const char *master)
 {
 	ups->retain = 1;
 
 	if (ups->pv != pv) {
-		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %d", 
+		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %d",
 			ups->sys, pv);
 		ups->pv = pv;
 	}
@@ -822,14 +848,14 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			ups->un = xstrdup(un);
 
-			/* 
+			/*
 			 * if not logged in force a reconnection since this
 			 * may have been redefined to make a login work
 			 */
 
 			if (!flag_isset(ups->status, ST_LOGIN)) {
 				upslogx(LOG_INFO, "UPS [%s]: retrying connection",
-					ups->sys);	
+					ups->sys);
 
 				drop_connection(ups);
 			}
@@ -850,7 +876,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			if (!flag_isset(ups->status, ST_LOGIN)) {
 				upslogx(LOG_INFO, "UPS [%s]: retrying connection",
-					ups->sys);	
+					ups->sys);
 
 				drop_connection(ups);
 			}
@@ -897,7 +923,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 	}
 }
 
-static void addups(int reloading, const char *sys, const char *pvs, 
+static void addups(int reloading, const char *sys, const char *pvs,
 		const char *un, const char *pw, const char *master)
 {
 	int	pv;
@@ -914,7 +940,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	pv = strtol(pvs, (char **) NULL, 10);
 
 	if (pv < 0) {
-		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%s]", 
+		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%s]",
 			sys, pvs);
 		return;
 	}
@@ -944,10 +970,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	/* build this up so the user doesn't run with bad settings */
 	totalpv += tmp->pv;
 
-	if (un)
-		tmp->un = xstrdup(un);
-	else
-		tmp->un = NULL;
+	tmp->un = xstrdup(un);
 
 	tmp->pw = xstrdup(pw);
 	tmp->status = 0;
@@ -973,7 +996,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		firstups = tmp;
 
 	if (tmp->pv)
-		upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys, 
+		upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
 			flag_isset(tmp->status, ST_MASTER) ? "master" : "slave",
 			tmp->pv);
 	else
@@ -981,7 +1004,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	tmp->upsname = tmp->hostname = NULL;
 
-	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname, 
+	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname,
 		&tmp->port) != 0) {
 		upslogx(LOG_ERR, "Error: unable to split UPS name [%s]",
 			tmp->sys);
@@ -990,7 +1013,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	if (!tmp->upsname)
 		upslogx(LOG_WARNING, "Warning: UPS [%s]: no upsname set!",
 			tmp->sys);
-}		
+}
 
 static void set_notifymsg(const char *name, const char *msg)
 {
@@ -1060,7 +1083,7 @@ static void set_notifyflag(const char *ntype, char *flags)
 }
 
 /* in split mode, the parent doesn't hear about reloads */
-static void checkmode(char *cfgentry, char *oldvalue, char *newvalue, 
+static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 			int reloading)
 {
 	/* nothing to do if in "all as root" mode */
@@ -1111,7 +1134,7 @@ static int parse_conf_arg(int numargs, char **arg)
 				arg[1]);
 
 		return 1;
-	}		
+	}
 
 	/* NOTIFYCMD <cmd> */
 	if (!strcmp(arg[0], "NOTIFYCMD")) {
@@ -1208,7 +1231,7 @@ static int parse_conf_arg(int numargs, char **arg)
 	if (!strcmp(arg[0], "NOTIFYFLAG")) {
 		set_notifyflag(arg[1], arg[2]);
 		return 1;
-	}	
+	}
 
 	/* CERTIDENT <name> <passwd> */
 	if (!strcmp(arg[0], "CERTIDENT")) {
@@ -1218,7 +1241,7 @@ static int parse_conf_arg(int numargs, char **arg)
 		certpasswd = xstrdup(arg[2]);
 		return 1;
 	}
-	
+
 	/* using up to arg[4] below */
 	if (numargs < 5)
 		return 0;
@@ -1285,25 +1308,25 @@ static void loadconfig(void)
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
-			snprintf(errmsg, sizeof(errmsg), 
+			snprintf(errmsg, sizeof(errmsg),
 				"%s line %d: invalid directive",
 				configfile, ctx.linenum);
 
 			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
+				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 	}
 
-	pconf_finish(&ctx);		
+	pconf_finish(&ctx);
 }
 
 /* SIGPIPE handler */
 static void sigpipe(int sig)
 {
-	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing...");
+	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing after signal %i...", sig);
 }
 
 /* SIGQUIT, SIGTERM handler */
@@ -1359,12 +1382,16 @@ static void user_fsd(int sig)
 
 static void set_reload_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	reload_flag = 1;
 }
 
 /* handler for alarm when getupsvarfd times out */
 static void read_timeout(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* don't do anything here, just return */
 }
 
@@ -1401,7 +1428,7 @@ static void setup_signals(void)
 static void update_crittimer(utype_t *ups)
 {
 	/* if !OB, !LB, or CAL, then it's not critical, so log the time */
-	if ((!flag_isset(ups->status, ST_ONBATT))  || 
+	if ((!flag_isset(ups->status, ST_ONBATT))  ||
 		(!flag_isset(ups->status, ST_LOWBATT)) ||
 		(flag_isset(ups->status, ST_CAL))) {
 
@@ -1422,7 +1449,7 @@ static int try_connect(utype_t *ups)
 	clearflag(&ups->status, ST_CONNECTED);
 
 	/* force it if configured that way, just try it otherwise */
-	if (forcessl == 1) 
+	if (forcessl == 1)
 		flags |= UPSCLI_CONN_REQSSL;
 	else
 		flags |= UPSCLI_CONN_TRYSSL;
@@ -1531,7 +1558,7 @@ static void parse_status(utype_t *ups, char *status)
 		update_crittimer(ups);
 
 		statword = ptr;
-	} 
+	}
 }
 
 /* see what the status of the UPS is and handle any changes */
@@ -1566,12 +1593,12 @@ static void pollups(utype_t *ups)
 
 		case UPSCLI_ERR_UNKNOWNUPS:
 			upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
-			"does not exist on server %s", 
+			"does not exist on server %s",
 			ups->sys, ups->upsname,	ups->hostname);
 
 			break;
 		default:
-			upslogx(LOG_ERR, "Poll UPS [%s] failed - %s", 
+			upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
 				ups->sys, upscli_strerror(&ups->conn));
 			break;
 	}
@@ -1608,7 +1635,7 @@ static int pdflag_status(void)
 	fclose(pdf);
 
 	/* reasoning: say upsmon.conf is world-writable (!) and some nasty
-	 * user puts something "important" as the power flag file.  This 
+	 * user puts something "important" as the power flag file.  This
 	 * keeps upsmon from utterly trashing it when starting up or powering
 	 * down at the expense of not shutting down the UPS.
 	 *
@@ -1619,7 +1646,7 @@ static int pdflag_status(void)
 		return 1;	/* exists and looks good */
 
 	return -1;	/* error: something else is in there */
-}	
+}
 
 /* only remove the flag file if it's actually from us */
 static void clear_pdflag(void)
@@ -1670,12 +1697,15 @@ static int check_pdflag(void)
 	return EXIT_SUCCESS;
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
-	printf("usage: %s [OPTIONS]\n\n", progname);
-	printf("  -c <cmd>	send command to running process\n");	
+	printf("usage: %s [OPTIONS]\n\n", arg_progname);
+	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all master UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
@@ -1692,14 +1722,24 @@ static void help(const char *progname)
 }
 
 static void runparent(int fd)
+	__attribute__((noreturn));
+
+static void runparent(int fd)
 {
 	int	ret;
 	char	ch;
 
 	/* handling signals is the child's job */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 	ret = read(fd, &ch, 1);
 
@@ -1746,7 +1786,9 @@ static void start_pipe(void)
 		close(pipefd[1]);
 		runparent(pipefd[0]);
 
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* NOTREACHED */
+#endif
 	}
 
 	close(pipefd[0]);
@@ -1791,7 +1833,7 @@ static void delete_ups(utype_t *target)
 
 	/* shouldn't happen */
 	upslogx(LOG_ERR, "delete_ups: UPS not found");
-}	
+}
 
 /* see if we can open a file */
 static int check_file(const char *fn)
@@ -1885,7 +1927,7 @@ static void check_parent(void)
 	time(&now);
 
 	/* complain every 2 minutes */
-	if ((now - lastwarn) < 120) 
+	if ((now - lastwarn) < 120)
 		return;
 
 	lastwarn = now;
@@ -1895,7 +1937,7 @@ static void check_parent(void)
 	upslogx(LOG_ALERT, "Parent died - shutdown impossible");
 }
 
-int main(int argc, char *argv[])  
+int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
 	int	i, cmd = 0, checking_flag = 0;
@@ -1932,7 +1974,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 			case 'K':
 				checking_flag = 1;
 				break;
@@ -1954,7 +1998,9 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 		}
 	}
 
@@ -2006,7 +2052,7 @@ int main(int argc, char *argv[])
 	} else {
 		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
-	
+
 	/* only do the pipe stuff if the user hasn't disabled it */
 	if (use_pipe) {
 		struct passwd	*new_uid = get_user_pwent(run_as_user);
@@ -2020,14 +2066,14 @@ int main(int argc, char *argv[])
 		become_user(new_uid);
 	} else {
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
-		
+
 		writepid(prog);
 	}
-	
+
 	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
 		exit(EXIT_FAILURE);
 	}
-	
+
 	/* prep our signal handlers */
 	setup_signals();
 
