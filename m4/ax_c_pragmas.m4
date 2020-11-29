@@ -109,6 +109,18 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcovered-switch-default"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-align"],
+    [ax_cv__pragma__gcc__diags_ignored_cast_align],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wcast-align"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_align=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_align=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_align" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align"])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstrict-prototypes"],
     [ax_cv__pragma__gcc__diags_ignored_strict_prototypes],
     [AC_COMPILE_IFELSE(
