@@ -701,7 +701,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q\r", 0x07, '\r' },
 		{ "C\r", 0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
@@ -803,7 +803,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 		{ "I\r",	0x0c, },	/* Vendor infos */
 		{ "Q\r",	0x07, },	/* Beeper toggle */
 		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
-		{ NULL }
+		{ NULL, 0 }
 	};
 	int	i, ret, index = 0;
 
@@ -901,7 +901,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q1",	47 },
 		{ "F",	22 },
 		{ "I",	39 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	/*
@@ -1872,7 +1872,7 @@ void	upsdrv_initups(void)
 			{ "reverse",	0, 1 },
 			{ "both",	1, 1 },
 			{ "none",	0, 0 },
-			{ NULL }
+			{ NULL, 0, 0 }
 		};
 
 		int		i;
@@ -1946,7 +1946,7 @@ void	upsdrv_initups(void)
 			{ "fabula", &fabula_command },
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
-			{ NULL }
+			{ NULL, NULL }
 		};
 
 		int	ret, langid;
