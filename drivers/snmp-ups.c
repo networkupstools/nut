@@ -2705,9 +2705,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
 				 || !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
 					/* Convert from three phase line-to-line voltage to line-to-neutral voltage */
-					double value = atof(buf);
-					value = value * 0.707;
-					snprintf(buf, sizeof(buf), "%.2f", value);
+					double tmp_dvalue = atof(buf);
+					tmp_dvalue = tmp_dvalue * 0.707;
+					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
 		}
