@@ -278,7 +278,7 @@ void upsdrv_updateinfo(void)
 		vout = bcd2i(&fstring[28], 4);
 
 		/* Battery voltage.	 int times 10 */
-		vbatt = ((double)bcd2i(&fstring[50], 4) / 10.0);
+		vbatt = ((double)(bcd2i(&fstring[50], 4)) / 10.0);
 
 		/* Alarm status reg 1.	Bitmask */
 		alstat = bcd2i(&fstring[20], 2);
@@ -287,14 +287,14 @@ void upsdrv_updateinfo(void)
 		alstat = alstat | (bcd2i(&fstring[22], 2) << 8);
 
 		/* AC line frequency */
-		acfreq = ((double)bcd2i(&fstring[54], 4) / 100.0);
+		acfreq = ((double)(bcd2i(&fstring[54], 4)) / 100.0);
 
 		/* Runtime remaining (UPS reports minutes) */
 		btimeleft = bcd2i(&fstring[58], 4) * 60;
 
 		if (fc.model != FDxxxx) {
 			/* Iout.  int times 10 */
-			ampsout = ((double)bcd2i(&fstring[36], 4) / 10.0);
+			ampsout = ((double)(bcd2i(&fstring[36], 4)) / 10.0);
 
 			/* Volt-amps out.  int	*/
 			vaout = bcd2i(&fstring[40], 6);
@@ -305,7 +305,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		if (fc.model != LIxxxx) {
-			upstemp = (double) bcd2i(&fstring[62], 4);
+			upstemp = (double)(bcd2i(&fstring[62], 4));
 		}
 
 		/* Percent Load */
@@ -715,13 +715,13 @@ static void upsdrv_init_fc(const char *fcstring)
 			fc.watts = bcd2i(&fcstring[16], 5);
 
 			/* determine shutdown battery voltage */
-			fc.emptyvolts= ((double)bcd2i(&fcstring[57], 4) / 10.0);
+			fc.emptyvolts= ((double)(bcd2i(&fcstring[57], 4)) / 10.0);
 
 			/* determine fully charged battery voltage */
-			fc.lowvolts= ((double)bcd2i(&fcstring[53], 4) / 10.0);
+			fc.lowvolts= ((double)(bcd2i(&fcstring[53], 4)) / 10.0);
 
 			/* determine fully charged battery voltage */
-			fc.fullvolts= ((double)bcd2i(&fcstring[49], 4) / 10.0);
+			fc.fullvolts= ((double)(bcd2i(&fcstring[49], 4)) / 10.0);
 
 			/* determine "ideal" voltage by a guess */
 			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
