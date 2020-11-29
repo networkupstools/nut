@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2498 utf-8
+personal_ws-1.1 en 2523 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -75,6 +75,7 @@ Axxium
 BATGNn
 BATNn
 BATTDATE
+BATTTEMP
 BATTV
 BATTVOLT
 BBBB
@@ -142,6 +143,8 @@ CAs
 CBLimit
 CCC
 CCCC
+CELLPADDING
+CELLSPACING
 CERTHOST
 CERTIDENT
 CERTREQUEST
@@ -170,6 +173,8 @@ CTB
 CUDA
 CVE
 CXR
+CXX
+CXXFLAGS
 Casar
 CentOS
 Centralion
@@ -253,6 +258,7 @@ EEPROM
 EG
 EL
 ELCD
+ENDFOR
 ENV
 EOF
 EPERM
@@ -367,6 +373,7 @@ HFILE
 HIDIOCINITREPORT
 HITRANS
 HMAC
+HOSTLINK
 HOSTSYNC
 HOWTO
 HPS
@@ -1019,6 +1026,7 @@ TIOCMBIS
 TLS
 TODO
 TRACKINGDELAY
+TREELINK
 TRYSSL
 TSR
 TST
@@ -1069,7 +1077,10 @@ UPS's
 UPSCONN
 UPSDESC
 UPSHOST
+UPSIMAGEPATH
 UPSLC
+UPSSTATSPATH
+UPSTEMP
 UPScode
 UPSes
 UPSilon
@@ -1091,6 +1102,7 @@ Unitek
 Upsonic
 Ut
 V'ger
+VALIGN
 VARDESC
 VARTYPE
 VAout
@@ -1121,6 +1133,8 @@ WS
 WSE
 WTU
 Waldie
+Werror
+Wextra
 WhizBang
 Wikipedia
 WinNUT
@@ -1297,6 +1311,7 @@ boolean
 boostvoolts
 bootable
 bp
+br
 bsv
 bt
 bti
@@ -1407,6 +1422,7 @@ cron
 crt
 crw
 cshdelay
+css
 cts
 ctypes
 cua
@@ -1532,6 +1548,7 @@ extendedhistory
 extradata
 fabula
 facto
+fallthrough
 fatalx
 faultsensitivity
 fc
@@ -1544,6 +1561,7 @@ fentonups
 ffff
 fi
 fieldset
+fightwarn
 figlineint
 figoffline
 figonline
@@ -1623,6 +1641,7 @@ hostname
 hostnames
 hotplug
 hotplugging
+href
 htaccess
 html
 htmlpath
@@ -1655,6 +1674,7 @@ ignoresab
 ignset
 illumos
 im
+img
 imv
 includedir
 inductor
@@ -2207,6 +2227,7 @@ spellcheck
 splitaddr
 splitname
 sr
+src
 srw
 ss
 ssl
@@ -2236,6 +2257,7 @@ struct
 structs
 sts
 stst
+stylesheet
 stylesheets
 su
 subcommand
@@ -2288,6 +2310,8 @@ tcpdump
 tcsetattr
 td
 tdriver
+tempmax
+tempmin
 terminal's
 termios
 testime
@@ -2416,6 +2440,7 @@ userspace
 usleep
 usr
 utalk
+utf
 uu
 uucp
 va

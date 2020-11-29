@@ -28,6 +28,9 @@
  *
  */
 
+#ifndef NUT_MGE_UTALK_H_SEEN
+#define NUT_MGE_UTALK_H_SEEN 1
+
 /* --------------------------------------------------------------- */
 /*                 Default Values for UPS Variables                */
 /* --------------------------------------------------------------- */
@@ -49,7 +52,7 @@ typedef struct {
   const char	*finalname;
 } models_name_t;
 
-models_name_t Si1_models_names [] =
+static models_name_t Si1_models_names [] =
   {
 	/* Pulsar EX */
 	{ "Pulsar EX7", "Pulsar EX 7" },
@@ -233,3 +236,5 @@ static mge_info_item_t mge_info[] = {
 	/* terminating element */
 	{ NULL, 0, 0, "\0", "\0", NONE, FALSE }
 };
+
+#endif	/* NUT_MGE_UTALK_H_SEEN */

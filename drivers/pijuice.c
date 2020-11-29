@@ -245,22 +245,41 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+/* The macros below all write into a "data" variable defined by the routine
+ * scope which calls them, with respective type of uint8_t for "byte" and
+ * uint16_t for "word" macros. Native i2c functions operate with __s32 type
+ * (currently, signed 32-bit ints?) with negative values for error returns.
+ * Note: some manpages refer to "s32" while headers on my and CI systems use
+ * a "__s32" type. Maybe this is something to determine in configure script?
+ * Code below was fixed to convert the valid values and avoid compiler
+ * warnings about comparing whether unsigned ints happened to be negative.
+ */
 #define I2C_READ_BYTE(fd, cmd, label) \
-	if ((data = i2c_smbus_read_byte_data(upsfd, cmd)) < 0 ) { \
-		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
-		return; \
+	{ \
+		__s32 sData; \
+		if ((sData = i2c_smbus_read_byte_data(upsfd, cmd)) < 0 ) { \
+			upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+			return; \
+		} ; \
+		data = (uint8_t) sData; \
 	}
 
 #define I2C_WRITE_BYTE(fd, cmd, value, label) \
-	if ((data = i2c_smbus_write_byte_data(upsfd, cmd, value)) < 0 ) { \
-		upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
-		return; \
+	{ \
+		if ( i2c_smbus_write_byte_data(upsfd, cmd, value) < 0 ) { \
+			upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
+			return; \
+		} ; \
 	}
 
 #define I2C_READ_WORD(fd, cmd, label) \
-	if ((data = i2c_smbus_read_word_data(upsfd, cmd)) < 0 ) { \
-		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
-		return; \
+	{ \
+		__s32 sData; \
+		if ((sData = i2c_smbus_read_word_data(upsfd, cmd)) < 0 ) { \
+			upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+			return; \
+		} ; \
+		data = (uint16_t) sData; \
 	}
 
 #define I2C_READ_BLOCK(fd, cmd, size, block, label) \
@@ -291,9 +310,9 @@ static void get_charge_level_hi_res()
 	uint8_t cmd = CHARGE_LEVEL_HI_RES_CMD;
 	uint16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_WORD( upsfd, cmd, __func__ )
 
 	/*
 	 * Use an external variable to allow for missed i2c bus
@@ -321,11 +340,11 @@ static void get_status()
 	uint8_t data;
 	char status_buf[ST_MAX_VALUE_LEN];
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
 	memset( status_buf, 0, ST_MAX_VALUE_LEN );
 
-	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
 	uint8_t batteryStatus = data >> 2 & 0x03;
 	switch( batteryStatus )
@@ -419,8 +438,7 @@ static void get_status()
 	     powerInput5vIo <= POWER_PRESENT )
 	{
 		if ( powerInput       == POWER_NOT_PRESENT &&
-		     ( powerInput5vIo != POWER_NOT_PRESENT &&
-		       powerInput5vIo <= POWER_PRESENT ))
+		     ( powerInput5vIo != POWER_NOT_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
@@ -522,9 +540,9 @@ static void get_battery_temperature()
 	uint8_t cmd = BATTERY_TEMPERATURE_CMD;
 	int16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_WORD( upsfd, cmd, __func__ )
 
 	upsdebugx( 1, "Battery Temperature: %d°C", data );
 	dstate_setinfo( "battery.temperature", "%d", data );
@@ -535,9 +553,9 @@ static void get_battery_voltage()
 	uint8_t cmd = BATTERY_VOLTAGE_CMD;
 	int16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_WORD( upsfd, cmd, __func__ )
 
 	upsdebugx( 1, "Battery Voltage: %0.3fV", data / 1000.0 );
 	dstate_setinfo( "battery.voltage", "%0.3f", data / 1000.0 );
@@ -548,7 +566,7 @@ static void get_battery_current()
 	uint8_t cmd = BATTERY_CURRENT_CMD;
 	int16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
 	/*
 	 * The reported current can actually be negative, so we cannot
@@ -570,9 +588,9 @@ static void get_io_voltage()
 	uint8_t cmd = IO_VOLTAGE_CMD;
 	int16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_WORD( upsfd, cmd, __func__ )
 
 	upsdebugx( 1, "Input Voltage: %.3fV", data / 1000.0 );
 	dstate_setinfo( "input.voltage", "%.3f", data / 1000.0 );
@@ -583,7 +601,7 @@ static void get_io_current()
 	uint8_t cmd = IO_CURRENT_CMD;
 	int16_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
 	/*
 	 * The reported current can actually be negative, so we cannot
@@ -606,9 +624,9 @@ static void get_firmware_version()
 	uint16_t data;
 	uint8_t major, minor;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_WORD( upsfd, cmd, __func__ )
 
 	major = data >> 4;
 	minor = ( data << 4 & 0xf0 ) >> 4;
@@ -627,9 +645,9 @@ static void get_battery_profile()
 	uint8_t cmd = BATTERY_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_BLOCK( upsfd, cmd, 14, block, __FUNCTION__ )
+	I2C_READ_BLOCK( upsfd, cmd, 14, block, __func__ )
 
 	upsdebugx( 1, "Battery Capacity: %0.3fAh", ( block[1] << 8 | block[0] ) / 1000.0 );
 	dstate_setinfo( "battery.capacity", "%0.3f", ( block[1] << 8 | block[0] ) / 1000.0 );
@@ -640,9 +658,9 @@ static void get_battery_profile_ext()
 	uint8_t cmd = BATTERY_EXT_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_BLOCK( upsfd, cmd, 17, block, __FUNCTION__ )
+	I2C_READ_BLOCK( upsfd, cmd, 17, block, __func__ )
 
 	switch( block[0] & 0xFF00 )
 	{
@@ -665,9 +683,9 @@ static void get_power_off()
 	uint8_t cmd = POWER_OFF_CMD;
 	uint8_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
 	if ( data == 255 )
 	{
@@ -682,16 +700,15 @@ static void get_power_off()
 static void set_power_off()
 {
 	uint8_t cmd = POWER_OFF_CMD;
-	uint8_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
 	/*
 	 * Acceptable values for shutdown_delay are 1-250,
 	 * use 0/255 to clear a scheduled power off command
 	 */
 
-	if ( shutdown_delay > 255 )
+	if ( shutdown_delay > 250 )
 	{
 		upslogx(
 			LOG_WARNING,
@@ -709,7 +726,7 @@ static void set_power_off()
 		shutdown_delay = 1;
 	}
 
-	I2C_WRITE_BYTE( upsfd, cmd, shutdown_delay, __FUNCTION__ )
+	I2C_WRITE_BYTE( upsfd, cmd, shutdown_delay, __func__ )
 }
 
 static void get_time()
@@ -719,9 +736,9 @@ static void get_time()
 	uint8_t second, minute, hour, day, month, subsecond;
 	uint16_t year;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_BLOCK( upsfd, cmd, 9, block, __FUNCTION__ )
+	I2C_READ_BLOCK( upsfd, cmd, 9, block, __func__ )
 
 	second     = (( (block[0] >> 4 ) & 0x07) * 10 ) + ( block[0] & 0x0F );
 	minute     = (( (block[1] >> 4 ) & 0x07) * 10 ) + ( block[1] & 0x0F );
@@ -743,9 +760,9 @@ static void get_i2c_address()
 	uint8_t cmd = I2C_ADDRESS_CMD;
 	uint8_t data;
 
-	upsdebugx( 3, __FUNCTION__ );
+	upsdebugx( 3, __func__ );
 
-	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
+	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
 	upsdebugx( 1, "I2C Address: 0x%0x", data );
 

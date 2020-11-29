@@ -109,6 +109,14 @@ static const unsigned char
 	cmd_sysLoadKey[]	= {1,156,2,1,7,167}, /* UPS SysLoadKey */
 	cmd_shutdown[]  	= {1,156,4,1,136,76,76,194}; /* UPS shutdown */
 
+/* Quiesce the compiler warnings about the fields below */
+static void NUT_UNUSED_FUNCTION_dummy_bitfields(void)
+{
+	NUT_UNUSED_VARIABLE(cmd_battestres);
+	NUT_UNUSED_VARIABLE(cmd_selftestres);
+	NUT_UNUSED_VARIABLE(cmd_bitfield7);
+}
+
 static int num_inphases = 1, num_outphases = 1;
 
 static char cksum(const char *buf, const size_t len)
@@ -160,15 +168,15 @@ void upsdrv_initinfo(void)
 		const char	*var;
 		unsigned char	len;
 	} vartab[] = {
-		{ "ups.model",15 },
-		{ "ups.firmware",8 },
-		{ "ups.serial",10 },
-		{ "ups.mfr.date",4 },
-		{ NULL }
+		{ "ups.model", 15 },
+		{ "ups.firmware", 8 },
+		{ "ups.serial", 10 },
+		{ "ups.mfr.date", 4 },
+		{ NULL, 0 }
 	};
 
 	char	buf[LARGEBUF];
-	int	i,bitn,vari,ret=0,offset=4,readok=0;
+	int	i, bitn, vari, ret=0, offset=4, readok=0;
 	char	command[6], reply[8];
 	unsigned int	value;
 
@@ -381,15 +389,27 @@ void upsdrv_updateinfo(void)
 	int	ret, i;
 
 	for (i = 0; vartab[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(vartab[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(vartab[i].var, vartab[i].fmt, val * multi[vartab[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(vartab[i].var, vartab[i].fmt, multi[vartab[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	if (num_inphases==3){
@@ -413,27 +433,51 @@ void upsdrv_updateinfo(void)
 	}
 
 	for (i = 0; cmdin_p[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(cmdin_p[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(cmdin_p[i].var, cmdin_p[i].fmt, val * multi[cmdin_p[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(cmdin_p[i].var, cmdin_p[i].fmt, multi[cmdin_p[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	for (i = 0; cmdout_p[i].var; i++) {
-		int16_t	val;
+		int16_t	intval;
 		ret = do_command(cmdout_p[i].cmd, reply, 6);
 		if (ret < 8) {
 			continue;
 		}
-		val = (unsigned char)reply[5];
-		val <<= 8;
-		val += (unsigned char)reply[6];
-		dstate_setinfo(cmdout_p[i].var, cmdout_p[i].fmt, val * multi[cmdout_p[i].multindex]);
+		intval = (unsigned char)reply[5];
+		intval <<= 8;
+		intval += (unsigned char)reply[6];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		dstate_setinfo(cmdout_p[i].var, cmdout_p[i].fmt, multi[cmdout_p[i].multindex] * intval);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	status_init();
@@ -509,10 +553,10 @@ void upsdrv_shutdown(void)
 	char reply[8];
 
 	if(!(do_command(cmd_setOutOffMode, reply, 8) != -1) &&
-	(do_command(cmd_setOutOffDelay, reply, 8) != -1) &&
-	(do_command(cmd_sysLoadKey, reply, 6) != -1) &&
-	(do_command(cmd_shutdown, reply, 8) != -1))
-	upslogx(LOG_ERR, "Failed to shutdown UPS");
+	    (do_command(cmd_setOutOffDelay, reply, 8) != -1) &&
+	    (do_command(cmd_sysLoadKey, reply, 6) != -1) &&
+	    (do_command(cmd_shutdown, reply, 8) != -1))
+			upslogx(LOG_ERR, "Failed to shutdown UPS");
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -523,7 +567,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -536,7 +580,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s] [%s]", varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -554,6 +598,9 @@ void upsdrv_initups(void)
 {
 	const char *val = getval("baudrate");
 	speed_t baudrate = B2400;
+
+	/* No-op, just made to quiesce the compiler warnings */
+	NUT_UNUSED_FUNCTION_dummy_bitfields();
 
 	if (val) {
 		switch (atoi(val))
