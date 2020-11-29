@@ -106,7 +106,7 @@ apc_cmdtab_t apc_cmdtab[] = {
 	{ "bypass.start",	NULL,	APC_CMD_BYPTOGGLE,	0 },
 	{ "bypass.stop",	NULL,	APC_CMD_BYPTOGGLE,	0 },
 
-	{ NULL }
+	{ NULL, NULL, 0, 0 }
 };
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
@@ -151,7 +151,7 @@ apc_compattab_t apc_compattab[] = {
 	 */
 	{  "set\1",	"@789ABCFGKLMNOPQRSUVWXYZ", 0 },
 
-	{ NULL }
+	{ NULL, NULL, 0 }
 };
 
 upsdrv_info_t apc_tab_info = {
