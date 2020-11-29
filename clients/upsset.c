@@ -764,11 +764,11 @@ static void do_type(const char *varname)
 	}
 }
 
-static void print_rw(const char *upsname, const char *varname)
+static void print_rw(const char *arg_upsname, const char *varname)
 {
 	const	char	*tmp;
 
-	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", upsname);
+	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", arg_upsname);
 
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
