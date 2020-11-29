@@ -66,9 +66,9 @@ upsdrv_info_t upsdrv_info = {
 
 #define LENGTH_TEMP 256
 
-int  sdwdelay = 0;  /* shutdown after 0 second */
+static int  sdwdelay = 0;  /* shutdown after 0 second */
 
-char *model_name;
+static char *model_name;
 
 static int start_is_datastale = 1;
 
@@ -210,7 +210,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else
 	{
-		upsdebugx(1, "instcmd: unknown command: %s", cmdname);
+		upsdebugx(1, "instcmd: unknown command: [%s] [%s]", cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 }

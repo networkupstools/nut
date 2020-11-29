@@ -58,14 +58,13 @@ typedef struct ttype_s {
 	struct ttype_s	*next;
 } ttype_t;
 
-	ttype_t	*thead = NULL;
-	static	conn_t	*connhead = NULL;
-	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
-	int	verbose = 0;		/* use for debugging */
+static ttype_t	*thead = NULL;
+static conn_t	*connhead = NULL;
+static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static int	verbose = 0;		/* use for debugging */
 
-
-	/* ups name and notify type (string) as received from upsmon */
-	const	char	*upsname, *notify_type;
+/* ups name and notify type (string) as received from upsmon */
+static const	char	*upsname, *notify_type;
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -339,7 +338,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	char	buf[US_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	ret = write(conn->fd, buf, strlen(buf));
@@ -669,6 +680,8 @@ static int check_parent(const char *cmd, const char *arg2)
 
 static void read_timeout(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* ignore this */
 	return;
 }
@@ -688,7 +701,7 @@ static void setup_sigalrm(void)
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i, pipefd, ret;
-	char	buf[SMALLBUF], enc[SMALLBUF];
+	char	buf[SMALLBUF], enc[SMALLBUF + 8];
 
 	/* insanity */
 	if (!arg1)
@@ -739,7 +752,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		ret = read(pipefd, buf, sizeof(buf));
 		alarm(0);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		signal(SIGALRM, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 		close(pipefd);
 
@@ -908,9 +928,15 @@ static void checkconf(void)
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = NULL;
+	/* More a use for argc to avoid warnings than a real need: */
+	if (argc > 0) {
+		xbasename(argv[0]);
+	} else {
+		xbasename("upssched");
+	}
 
-	verbose = 1;		/* TODO: remove when done testing */
+	verbose = 1;		/* TODO: remove when done testing, or add -D */
 
 	/* normally we don't have stderr, so get this going to syslog early */
 	open_syslog(prog);
