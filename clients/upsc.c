@@ -218,7 +218,9 @@ int main(int argc, char **argv)
 		{
 		case 'L':
 			verbose = 1;
+			goto fallthrough_case_l;
 		case 'l':
+		fallthrough_case_l:
 			varlist = 1;
 			break;
 		case 'c':
@@ -227,6 +229,9 @@ int main(int argc, char **argv)
 
 		case 'V':
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 		case 'h':
 		default:
