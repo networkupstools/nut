@@ -802,7 +802,7 @@ void upsdrv_initups(void)
 		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret;

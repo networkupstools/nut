@@ -1147,7 +1147,7 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* end of structure. */
-	{ NULL }
+	{ NULL, NULL, 0, NULL }
 };
 
 
@@ -1427,7 +1427,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
-	{ NULL }
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 /*

@@ -244,7 +244,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 		{ "susp",	VSUSP		},
 		{ "time",	VTIME		},
 		{ "werase",	VWERASE		},
-		{ NULL },
+		{ NULL, 0 },
 	}, *cp;
 
 	/* clear status flags so that they don't affect our binary compare */

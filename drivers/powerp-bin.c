@@ -64,34 +64,34 @@ static unsigned char	powpan_answer[SMALLBUF];
 static const valtab_t	tran_high_pr[] = {
 	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
 	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147",  0 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	tran_high_op[] = {
 	{ "140", -5 }, { "141", -4 }, { "142", -3 }, { "143", -2 }, { "144", -1 },
 	{ "145",  0 }, { "146", +1 }, { "147", +2 }, { "148", +3 }, { "149", +4 },
-	{ "150", +5 }, { NULL }
+	{ "150", +5 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	tran_low_pr[] = {
 	{ "88",  0 }, { "89", +1 }, { "90", +2 }, { "91", +3 }, { "92", +4 },
 	{ "93", +5 }, { "94", +6 }, { "95", +7 }, { "96", +8 }, { "97", +9 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	tran_low_op[] = {
 	{ "85", -5 }, { "86", -4 }, { "87", -3 }, { "88", -2 }, { "89", -1 },
 	{ "90",  0 }, { "91", +1 }, { "92", +2 }, { "93", +3 }, { "94", +4 },
-	{ "95", +5 }, { NULL }
+	{ "95", +5 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	batt_low_pr[] = {
 	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 }, { "45",  0 },
-	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL }
+	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL, 0 }
 };
 
 /* OP series */
@@ -99,23 +99,23 @@ static const valtab_t	batt_low_op[] = {
 	{ "15", -8 }, { "18", -7 }, { "19", -6 }, { "20", -5 }, { "22", -4 },
 	{ "24", -3 }, { "25", -2 }, { "26", -1 }, { "28",  0 }, { "30", +1 },
 	{ "32", +2 }, { "34", +3 }, { "35", +4 }, { "36", +5 }, { "38", +6 },
-	{ "40", +7 }, { NULL }
+	{ "40", +7 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	out_volt_pr[] = {
-	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL }
+	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	out_volt_op[] = {
 	{ "110", -2 }, { "115", -1 }, { "120",  0 }, { "124", +1 }, { "128", +2 },
-	{ "130", +3 }, { NULL }
+	{ "130", +3 }, { NULL, 0 }
 };
 
 static const valtab_t 	yes_no_info[] = {
 	{ "yes", 2 }, { "no", 0 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* Older models report the model in a numeric format 'rOnn' */
@@ -133,7 +133,7 @@ static const struct {
 	{ "rO41", "OP700AVR" },
 	{ "rO43", "OP1250AVR" },
 	{ "rO45", "OP1500AVR" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
 static const struct {
@@ -147,7 +147,7 @@ static const struct {
 	{ "battery.charge.low", "R\x08\r", "Q\x08%c\r", { batt_low_pr, batt_low_op } },
 	{ "ups.start.battery", "R\x0F\r", "Q\x0F%c\r", { yes_no_info, yes_no_info } },
 	{ "output.voltage.nominal", "R\x18\r", "Q\x18%c\r", { out_volt_pr, out_volt_op } },
-	{ NULL }
+	{ NULL, NULL, NULL, { NULL, 0 } }
 };
 
 static const struct {
@@ -163,7 +163,7 @@ static const struct {
 	 * as shutdown.return when on battery */
 	{ "shutdown.stayoff", "S\0\0W\r", 5 },
 	{ "shutdown.stop", "C\r", 2 },
-	{ NULL }
+	{ NULL, NULL, 0 }
 };
 
 /* map UPS data to (approximated) input/output voltage */

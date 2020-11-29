@@ -203,7 +203,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 ; then
+                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
