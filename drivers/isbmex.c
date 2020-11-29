@@ -40,6 +40,7 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 };
 
+/* FIXME: Replace with proper upsdebugx() et al */
 #define xDEBUG
 
 #ifdef DEBUG
@@ -52,7 +53,7 @@ upsdrv_info_t	upsdrv_info = {
 #define MAXTRIES 15
 /* #define IGNCHARS	""	*/
 
-float lagrange(unsigned int vbyte)
+static float lagrange(unsigned int vbyte)
 {
 	float f0, f1, f2, f3, f4, f5, f6;
 	float a, b, c, d, e, g, h;
@@ -100,7 +101,7 @@ float lagrange(unsigned int vbyte)
 	return a + b + c + d + e + g + h;
 }
 
-float interpol(float vbytes)
+static float interpol(float vbytes)
 {
 	const int x[7]={75,83,87,98,103,118,145};
 	const float f[7]={96.0,102.0,105.0,113.0,116.0,124.0,140.0};
@@ -294,6 +295,7 @@ void upsdrv_updateinfo(void)
 				break;
 			case 50: D(printf("TRIM ");)
 				status_set("TRIM");
+				break;
 			default: break;
 		}
 		switch (buf[(bytes_per_packet==10)?9:8]){
@@ -302,7 +304,13 @@ void upsdrv_updateinfo(void)
 				break;
 			case 50: D(printf("LB ");)
 				status_set("LB");
-			case 49: D(printf("OB ");)
+				/* break; */
+				/* FIXME? Can this device set independently LB and OB? */
+				goto fallthrough_LB_means_OB;
+				/* FALLTHRU */
+			case 49:
+			fallthrough_LB_means_OB:
+				D(printf("OB ");)
 				status_set("OB");
 				break;
 			default: break;

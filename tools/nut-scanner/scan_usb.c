@@ -44,7 +44,8 @@ static struct usb_bus * (*nut_usb_busses);
 static usb_dev_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_find_devices)(void);
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
