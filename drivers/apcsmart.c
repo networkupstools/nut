@@ -244,7 +244,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 		{ "susp",	VSUSP		},
 		{ "time",	VTIME		},
 		{ "werase",	VWERASE		},
-		{ NULL },
+		{ NULL, 0 },
 	}, *cp;
 
 	/* clear status flags so that they don't affect our binary compare */
@@ -385,39 +385,39 @@ static void alert_handler(char ch)
 {
 	switch (ch) {
 		case '!':		/* clear OL, set OB */
-			debx(1, "OB");
+			debx(1, "%s", "OB");
 			ups_status &= ~APC_STAT_OL;
 			ups_status |= APC_STAT_OB;
 			break;
 
 		case '$':		/* clear OB, set OL */
-			debx(1, "OL");
+			debx(1, "%s", "OL");
 			ups_status &= ~APC_STAT_OB;
 			ups_status |= APC_STAT_OL;
 			break;
 
 		case '%':		/* set LB */
-			debx(1, "LB");
+			debx(1, "%s", "LB");
 			ups_status |= APC_STAT_LB;
 			break;
 
 		case '+':		/* clear LB */
-			debx(1, "not LB");
+			debx(1, "%s", "not LB");
 			ups_status &= ~APC_STAT_LB;
 			break;
 
 		case '#':		/* set RB */
-			debx(1, "RB");
+			debx(1, "%s", "RB");
 			ups_status |= APC_STAT_RB;
 			break;
 
 		case '?':		/* set OVER */
-			debx(1, "OVER");
+			debx(1, "%s", "OVER");
 			ups_status |= APC_STAT_OVER;
 			break;
 
 		case '=':		/* clear OVER */
-			debx(1, "not OVER");
+			debx(1, "%s", "not OVER");
 			ups_status &= ~APC_STAT_OVER;
 			break;
 
@@ -434,11 +434,12 @@ static void alert_handler(char ch)
  * function is subtly different from generic ser_get_line_alert()
  */
 #define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
-static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
+static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
-	int	i, ret, sec = 3, usec = 0;
+	ssize_t	i, ret;
+	int	sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
 	if (upsfd == -1)
@@ -660,14 +661,19 @@ static void apc_flush(int flags)
 }
 
 /* apc specific wrappers around set/del info - to handle "packed" variables */
-void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 {
-	char name[vt->nlen0], *nidx;
+	char *name, *nidx;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_delinfo(vt->name);
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_delinfo() failed to allocate buffer");
 		return;
 	}
 
@@ -680,17 +686,29 @@ void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 	}
 
 	vt->cnt = 0;
+	free(name);
 }
 
-void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 {
-	char name[vt->nlen0], *nidx;
-	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
+	char *name, *nidx;
+	char *temp, *vidx[APC_PACK_MAX], *com, *curr;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_setinfo(vt->name, "%s", convert_data(vt, upsval));
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		return;
+	}
+
+	if ( !(temp = xmalloc(sizeof(char) * (strlen(upsval) + 1))) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		free(name);
 		return;
 	}
 
@@ -734,6 +752,9 @@ void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		else
 			dstate_setinfo(name, "N/A");
 	}
+
+	free(name);
+	free(temp);
 }
 
 static const char *preread_data(apc_vartab_t *vt)
@@ -800,7 +821,7 @@ static int update_status(void)
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		if (ret >= 0)
-			logx(LOG_WARNING, "failed");
+			logx(LOG_WARNING, "%s", "failed");
 		return 0;
 	}
 
@@ -951,7 +972,7 @@ static void apc_getcaps(int qco)
 		 * as capability support was reported earlier
 		 */
 		if (ret >= 0)
-			upslogx(LOG_WARNING, "APC cannot do capabilities but said it could !");
+			upslogx(LOG_WARNING, "%s", "APC cannot do capabilities but said it could !");
 		return;
 	}
 
@@ -1281,7 +1302,7 @@ static int do_cal(int start)
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-		upslogx(LOG_WARNING, "runtime calibration state undeterminable");
+		upslogx(LOG_WARNING, "%s", "runtime calibration state undeterminable");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
@@ -1290,13 +1311,13 @@ static int do_cal(int start)
 	if (tval & APC_STAT_CAL) {	/* calibration currently happening */
 		if (start == 1) {
 			/* requested start while calibration still running */
-			upslogx(LOG_NOTICE, "runtime calibration already in progress");
+			upslogx(LOG_NOTICE, "%s", "runtime calibration already in progress");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
 		/* stop requested */
 
-		upslogx(LOG_NOTICE, "stopping runtime calibration");
+		upslogx(LOG_NOTICE, "%s", "stopping runtime calibration");
 
 		ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1317,11 +1338,11 @@ static int do_cal(int start)
 	/* calibration not happening */
 
 	if (start == 0) {		/* stop requested */
-		upslogx(LOG_NOTICE, "runtime calibration not occurring");
+		upslogx(LOG_NOTICE, "%s", "runtime calibration not occurring");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	upslogx(LOG_NOTICE, "starting runtime calibration");
+	upslogx(LOG_NOTICE, "%s", "starting runtime calibration");
 
 	ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1354,7 +1375,7 @@ static int smartmode(void)
 	ret = apc_read(temp, sizeof(temp), 0);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-		upslogx(LOG_CRIT, "enabling smartmode failed !");
+		upslogx(LOG_CRIT, "%s", "enabling smartmode failed !");
 		return 0;
 	}
 
@@ -1419,11 +1440,11 @@ static int sdok(int ign)
 	debx(1, "got \"%s\"", temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		debx(1, "last shutdown cmd succeeded");
+		debx(1, "%s", "last shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	debx(1, "last shutdown cmd failed");
+	debx(1, "%s", "last shutdown cmd failed");
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -1444,6 +1465,7 @@ static int sdcmd_CS(const void *foo)
 	int ret, cshd = 3500000;
 	char temp[APC_SBUF];
 	const char *val;
+	NUT_UNUSED_VARIABLE(foo);
 
 	if ((val = getval("cshdelay")))
 		cshd = (int)(strtod(val, NULL) * 1000000);
@@ -1523,6 +1545,7 @@ static int sdcmd_AT(const void *str)
 static int sdcmd_K(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
 	debx(1, "issuing [%s]", prtchr(APC_CMD_SHUTDOWN));
 
@@ -1538,6 +1561,7 @@ static int sdcmd_K(const void *foo)
 static int sdcmd_Z(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
 	debx(1, "issuing [%s]", prtchr(APC_CMD_OFF));
 
@@ -1636,7 +1660,7 @@ void upsdrv_shutdown(void)
 	char temp[APC_LBUF];
 
 	if (!smartmode(1))
-		logx(LOG_WARNING, "setting SmartMode failed !");
+		logx(LOG_WARNING, "%s", "setting SmartMode failed !");
 
 	/* check the line status */
 
@@ -1644,11 +1668,11 @@ void upsdrv_shutdown(void)
 		if (apc_read(temp, sizeof(temp), SER_D1) == 1) {
 			ups_status = strtol(temp, 0, 16);
 		} else {
-			logx(LOG_WARNING, "status read failed, assuming LB+OB");
+			logx(LOG_WARNING, "%s", "status read failed, assuming LB+OB");
 			ups_status = APC_STAT_LB | APC_STAT_OB;
 		}
 	} else {
-		logx(LOG_WARNING, "status write failed, assuming LB+OB");
+		logx(LOG_WARNING, "%s", "status write failed, assuming LB+OB");
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
@@ -1669,12 +1693,12 @@ static int update_info(int all)
 			continue;
 
 		if (!poll_data(&apc_vartab[i])) {
-			debx(1, "aborting scan");
+			debx(1, "%s", "aborting scan");
 			return 0;
 		}
 	}
 
-	debx(1, "scan completed");
+	debx(1, "%s", "scan completed");
 	return 1;
 }
 
@@ -1800,12 +1824,12 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
-		logx(LOG_ERR, "short final read");
+		logx(LOG_ERR, "%s", "short final read");
 		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
-		logx(LOG_ERR, "got NO at final read");
+		logx(LOG_ERR, "%s", "got NO at final read");
 		return STAT_SET_FAILED;
 	}
 
@@ -2109,7 +2133,7 @@ void upsdrv_updateinfo(void)
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
 		if (!last_worked)
-			debx(1, "comm lost");
+			debx(1, "%s", "comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;

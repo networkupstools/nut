@@ -35,7 +35,9 @@
 
 #define DRIVER_VERSION	"0.28"
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <math.h>
 
@@ -750,7 +752,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q\r", 0x07, '\r' },
 		{ "C\r", 0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
@@ -852,7 +854,7 @@ static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunno
 		{ "I\r",	0x0c, },	/* Vendor infos */
 		{ "Q\r",	0x07, },	/* Beeper toggle */
 		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
-		{ NULL }
+		{ NULL, 0 }
 	};
 	int	i, ret, index = 0;
 
@@ -1005,7 +1007,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q1",	47 },
 		{ "F",	22 },
 		{ "I",	39 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	/*
@@ -1115,36 +1117,48 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 static void	*cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
 
 static void	*sgs_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &sgs_command;
 	return NULL;
 }
 
 static void	*ippon_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
 static void	*krauler_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
 static void	*phoenix_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &phoenix_command;
 	return NULL;
 }
 
 static void	*fabula_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fabula_command;
 	return NULL;
 }
@@ -1157,6 +1171,8 @@ static void *fabula_hunnox_subdriver(USBDevice_t *device)
 
 static void	*fuji_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fuji_command;
 	return NULL;
 }
@@ -1227,6 +1243,8 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 
 static int	device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -1636,6 +1654,9 @@ int	setvar(const char *varname, const char *val)
 
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void	upsdrv_shutdown(void)
 {
 	int		retry;
 	item_t		*item;
@@ -1965,7 +1986,7 @@ void	upsdrv_initups(void)
 			{ "reverse",	0, 1 },
 			{ "both",	1, 1 },
 			{ "none",	0, 0 },
-			{ NULL }
+			{ NULL, 0, 0 }
 		};
 
 		int		i;
@@ -2040,7 +2061,7 @@ void	upsdrv_initups(void)
 			{ "fabula-hunnox", &fabula_command_hunnox },
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
-			{ NULL }
+			{ NULL, NULL }
 		};
 
 		int	ret, langid;
@@ -2059,9 +2080,11 @@ void	upsdrv_initups(void)
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
 			/* Skip "0x" prefix and set back to hexadecimal */
-			if (sscanf(getval("langid_fix") + 2, "%x", &langid_fix) != 1) {
+			unsigned int u_langid_fix;
+			if ( (sscanf(getval("langid_fix") + 2, "%x", &u_langid_fix) != 1) || (u_langid_fix > INT_MAX)) {
 				upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 			} else {
+				langid_fix = u_langid_fix;
 				upsdebugx(2, "Language ID workaround enabled (using '0x%x')", langid_fix);
 			}
 		}
@@ -2241,9 +2264,29 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPIPE:		/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
@@ -2251,16 +2294,20 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 				break;
 			}
 	#ifdef ETIME
+			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
+		fallthrough_case_ETIME:
 	#endif	/* ETIME */
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
+			goto fallthrough_case_reconnect;
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+		case -EIO:  		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
@@ -2616,9 +2663,19 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			break;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 		default:
-
 			fatalx(EXIT_FAILURE, "%s: unknown update mode!", __func__);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 
 		}
 
@@ -2864,20 +2921,29 @@ static int	qx_process_answer(item_t *item, const int len)
 /* See header file for details. */
 int	qx_process(item_t *item, const char *command)
 {
-	char	buf[sizeof(item->answer) - 1] = "",
-		cmd[command ? (strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) : (item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF)];
+	char	buf[sizeof(item->answer) - 1] = "", *cmd;
 	int	len;
+	size_t cmdlen = command ?
+		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
+		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
+	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+
+	if ( !(cmd = xmalloc(cmdsz)) ) {
+		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
+		return -1;
+	}
 
 	/* Prepare the command to be used */
-	memset(cmd, 0, sizeof(cmd));
-	snprintf(cmd, sizeof(cmd), "%s", command ? command : item->command);
+	memset(cmd, 0, cmdsz);
+	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
 
 	/* Preprocess the command */
 	if (
 		item->preprocess_command != NULL &&
-		item->preprocess_command(item, cmd, sizeof(cmd)) == -1
+		item->preprocess_command(item, cmd, cmdsz) == -1
 	) {
 		upsdebugx(4, "%s: failed to preprocess command [%s]", __func__, item->info_type);
+		free (cmd);
 		return -1;
 	}
 
@@ -2894,9 +2960,12 @@ int	qx_process(item_t *item, const char *command)
 			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
 			/* Clear answer, preventing it from being reused by next items with same command */
 			memset(item->answer, 0, sizeof(item->answer));
+			free (cmd);
 			return -1;
 		}
 	}
+
+	free (cmd);
 
 	/* Process the answer to get the value */
 	return qx_process_answer(item, len);
@@ -2945,7 +3014,19 @@ int	ups_infoval_set(item_t *item)
 				return -1;
 			}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf(value, sizeof(value), item->dfl, strtod(value, NULL));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 
 	}
