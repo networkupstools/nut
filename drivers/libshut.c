@@ -296,7 +296,12 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
                  unsigned char *rdbuf, int rdlen))
 {
 	int ret, res;
-	unsigned char buf[20];
+	/* Below we cast this buffer as sometimes containing entried of type
+	 * "struct device_descriptor_s" or "struct my_hid_descriptor".
+	 * Currently both of these are sized "2", and I don't see a way
+	 * to require a "max()" of such sizes to align for generally.
+	 */
+	unsigned char buf[20] __attribute__((aligned(4)));
 	char string[MAX_STRING_SIZE];
 	struct my_hid_descriptor *desc;
 	struct device_descriptor_s *dev_descriptor;
