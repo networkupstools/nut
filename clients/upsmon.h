@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_UPSMON_H_SEEN
+#define NUT_UPSMON_H_SEEN 1
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
@@ -88,7 +91,10 @@ typedef struct {
 /* flags are set to NOTIFY_SYSLOG | NOTIFY_WALL at program init	*/
 /* the user can override with NOTIFYFLAGS in the upsmon.conf	*/
 
-struct {
+/* This is only used in upsmon.c, but might it also have external consumers?..
+ * To move or not to move?..
+ */
+static struct {
 	int	type;
 	const	char	*name;
 	char	*msg;		/* NULL until overridden */
@@ -125,3 +131,5 @@ struct {
 }
 /* *INDENT-ON* */
 #endif
+
+#endif	/* NUT_UPSMON_H_SEEN */
