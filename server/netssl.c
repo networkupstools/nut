@@ -35,6 +35,13 @@
 	#include <pk11pub.h>
 	#include <prinit.h>
 	#include <private/pprio.h>
+/* Note: on systems with NSS 3.x the following two lines complain non-fatally:
+ *   /usr/include/mps/key.h:9:9: note: '#pragma message: key.h is deprecated. Please include keyhi.h instead.'
+ *   /usr/include/mps/keyt.h:9:9: note: '#pragma message: keyt.h is deprecated. Please include keythi.h instead.'
+ * If this becomes a warning or error in the future, it can be addressed
+ * with a trick like done elsewhere for best pick of (sys/)types.h support
+ * for the specific build target platform.
+ */
 	#include <key.h>
 	#include <keyt.h>
 	#include <secerr.h>
@@ -145,6 +152,8 @@ static SECKEYPrivateKey *privKey;
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	if (retry) {
 		/* Force not inted to retrieve password many times. */
 		return NULL;
@@ -170,6 +179,8 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 	char buffer[256];
 	PRInt32 length;
 	PRErrorCode e;
+	NUT_UNUSED_VARIABLE(ssl);
+	NUT_UNUSED_VARIABLE(ret);
 
 	e = PR_GetError();
 	length = PR_GetErrorText(buffer);
@@ -195,6 +206,8 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 
 static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
@@ -211,6 +224,8 @@ static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 
 static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
 }

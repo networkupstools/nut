@@ -157,7 +157,23 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* FIXME (bitness-dependent?):
+	 *   error: cast from function call of type 'int' to non-matching type 'double' [-Werror,-Wbad-function-cast]
+	 */
 	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 }
 
 static int upssend(const char *fmt,...) {
@@ -168,7 +184,19 @@ static int upssend(const char *fmt,...) {
 	int d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
@@ -313,7 +341,7 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 	upssend ("p%d=%*s\r", parameter, dlen, data);
@@ -400,7 +428,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		upssend ("OFF%s\r", p);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_INFO, "instcmd: unknown command %s", cmdname);
+	upslogx(LOG_INFO, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -415,7 +443,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "max_load", "rated VA load VA");
 }
 
-struct {
+static struct {
 	const char * val;
 	speed_t speed;
 } speed_table[] = {

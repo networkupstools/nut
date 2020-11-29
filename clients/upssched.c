@@ -58,14 +58,13 @@ typedef struct ttype_s {
 	struct ttype_s	*next;
 } ttype_t;
 
-	ttype_t	*thead = NULL;
-	static	conn_t	*connhead = NULL;
-	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
-	int	verbose = 0;		/* use for debugging */
+static ttype_t	*thead = NULL;
+static conn_t	*connhead = NULL;
+static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static int	verbose = 0;		/* use for debugging */
 
-
-	/* ups name and notify type (string) as received from upsmon */
-	const	char	*upsname, *notify_type;
+/* ups name and notify type (string) as received from upsmon */
+static const	char	*upsname, *notify_type;
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -339,7 +338,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	char	buf[US_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	ret = write(conn->fd, buf, strlen(buf));
@@ -741,7 +752,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		ret = read(pipefd, buf, sizeof(buf));
 		alarm(0);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		signal(SIGALRM, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 		close(pipefd);
 

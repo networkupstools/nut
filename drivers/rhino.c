@@ -165,13 +165,13 @@ AutonomyCalc( int ia ) /* all models */
 
 	if( ia )
 	{
-		if( ( BattVoltage == 0 ) )
+		if( BattVoltage == 0 )
 			result = 0;
 		else
 		{
 					calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
 					auton = pow( calc, 1.18 );
-					if( ( auton == 0 ) )
+					if( auton == 0 )
 						result = 0;
 					else
 						{
@@ -389,7 +389,7 @@ CommReceive(const unsigned char *bufptr, int size)
 {
 	int i, i_end, CheckSum, chk;
 
-	if( ( size==37 ) )
+	if( size == 37 )
 		Waiting = 0;
 
 	printf("CommReceive size = %d waiting = %d\n", size, Waiting );
@@ -469,8 +469,15 @@ CommReceive(const unsigned char *bufptr, int size)
 static int
 send_command( int cmd )
 {
-	int i, chk, checksum = 0, iend = 18, sizes = 19, ret, kount; /*, j, uc; */
-	unsigned char ch, psend[sizes];
+	static const size_t sizes = 19, iend = 18;
+	size_t i;
+	int chk, checksum = 0, ret, kount; /*, j, uc; */
+	unsigned char ch, *psend = NULL;
+
+	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
+		upslogx(LOG_ERR, "send_command() failed to allocate buffer");
+		return -1;
+	}
 
 	/* mounting buffer to send */
 
@@ -510,6 +517,8 @@ send_command( int cmd )
 		usleep( UPSDELAY ); /* delay between sent command */
 		kount++;
 	}
+
+	free (psend);
 	return ret;
 }
 
@@ -520,8 +529,10 @@ static void sendshut( void )
 	for(i=0; i < 30000; i++)
 		usleep( UPSDELAY ); /* 15 seconds delay */
 
-	send_command( CMD_SHUT );
-	upslogx(LOG_NOTICE, "Ups shutdown command sent");
+	if ( send_command( CMD_SHUT ) < 1 )
+		upslogx(LOG_ERR, "Ups shutdown command sending failed");
+	else
+		upslogx(LOG_NOTICE, "Ups shutdown command sent");
 	printf("Ups shutdown command sent\n");
 }
 
@@ -532,10 +543,11 @@ static void getbaseinfo(void)
 	int tam, i, j=0;
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
 	const char *Model;
 
 	time( &tmt );
-	now = localtime( &tmt );
+	now = localtime_r( &tmt, &tmbuf );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -681,7 +693,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -736,13 +748,16 @@ void upsdrv_shutdown(void)
 
 	if (!SourceFail)     /* on line */
 	{
+		/* FIXME: Both legs of the if-clause send CMD_SHUT, where is the "forcing"? */
 		printf("On line, forcing shutdown command...\n");
-		send_command( CMD_SHUT );
+		/* send_command( CMD_SHUT ); */
+		sendshut();
 	}
 	else
 	{
 		printf("On battery, sending normal shutdown command...\n");
-		send_command( CMD_SHUT );
+		/* send_command( CMD_SHUT ); */
+		sendshut();
 	}
 }
 

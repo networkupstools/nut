@@ -44,22 +44,15 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
+static uint8_t gpser_error_control;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
-
-TRielloData DevData;
+static TRielloData DevData;
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
@@ -69,7 +62,7 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
-void ussleep(long usec)
+static void ussleep(long usec)
 {
 
 	if (usec == 1)
@@ -105,10 +98,10 @@ static int cypress_setfeatures()
 	return ret;
 }
 
-int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
+static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
-	int i, err, size, errno;
+	int i, err, size;
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -168,10 +161,10 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 	return (0);
 }
 
-int Get_USB_Packet(uint8_t *buffer)
+static int Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
-	int err, size, errno, ep;
+	int err, size, ep;
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
@@ -332,7 +325,7 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
+static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int ret;
 
@@ -358,11 +351,15 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	{
 	case -EBUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 	case -EPIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
@@ -405,7 +402,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	return ret;
 }
 
-int get_ups_nominal()
+static int get_ups_nominal()
 {
 
 	uint8_t length;
@@ -438,7 +435,7 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status()
+static int get_ups_status()
 {
 	uint8_t numread, length;
 	int recv;
@@ -477,7 +474,7 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended()
+static int get_ups_extended()
 {
 	uint8_t length;
 	int recv;
@@ -509,6 +506,7 @@ int get_ups_extended()
 	return 0;
 }
 
+/* Not static, exposed via header. Not used though, currently... */
 int get_ups_statuscode()
 {
 	uint8_t length;
@@ -541,7 +539,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-int riello_instcmd(const char *cmdname, const char *extra)
+static int riello_instcmd(const char *cmdname, const char *extra)
 {
 	uint8_t length;
 	int recv;
@@ -749,11 +747,11 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm()
+static int start_ups_comm()
 {
 	uint16_t length;
 	int recv;
@@ -804,7 +802,7 @@ void upsdrv_initups(void)
 		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret;
@@ -953,6 +951,9 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = riello_instcmd;
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

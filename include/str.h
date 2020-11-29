@@ -29,6 +29,15 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+/* Some compilers and/or C libraries do not handle printf("%s", NULL) correctly */
+#ifndef NUT_STRARG
+# ifdef HAVE_PRINTF_STRING_NULL
+#  define NUT_STRARG(x) x
+# else
+#  define NUT_STRARG(x) (x?x:"(null)")
+# endif
+#endif
+
 /* Remove all
  * - leading and trailing (str_trim[_m]())
  * - leading (str_ltrim[_m]())

@@ -64,7 +64,7 @@ static struct {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
 	{ "battery.charge.low", "P8\r", "C4:%02d\r" },
-	{ NULL }
+	{ NULL, NULL, NULL }
 };
 
 static struct {
@@ -79,7 +79,7 @@ static struct {
 	{ "beeper.on", NULL },
 	{ "beeper.off", NULL },
 	{ "shutdown.stop", "C\r" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
 static int powpan_command(const char *command)
@@ -152,7 +152,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -175,7 +175,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] unknown", __func__, cmdname);
+		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -183,7 +183,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -203,7 +203,19 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			dstate_setinfo(varname, "%s", val);

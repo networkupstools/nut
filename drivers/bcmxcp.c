@@ -164,19 +164,19 @@ static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
 
-const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
-const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
-const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
-/* Standard Authorization Block */
-unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
-int nphases = 0;
-int outlet_block_len = 0;
-const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
-const char *horn_stat[3] = {"disabled", "enabled", "muted"};
+/* static const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"}; */
+static const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
+static const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
 
+/* Standard Authorization Block */
+static unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
+static int nphases = 0;
+static int outlet_block_len = 0;
+static const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
+static const char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
 /* Battery test results */
-info_lkp_t batt_test_info[] = {
+static info_lkp_t batt_test_info[] = {
 	{ 0, "No test initiated", NULL, NULL },
 	{ 1, "In progress", NULL, NULL },
 	{ 2, "Done and passed", NULL, NULL },
@@ -190,7 +190,7 @@ info_lkp_t batt_test_info[] = {
 };
 
 /* Topology map results */
-info_lkp_t topology_info[] = {
+static info_lkp_t topology_info[] = {
 	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL, NULL },
 	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL, NULL },
 	{ BCMXCP_TOPOLOGY_LINEINT_UPS_2P, "Line-Interactive UPS, Two Phase", NULL, NULL },
@@ -215,7 +215,7 @@ info_lkp_t topology_info[] = {
 };
 
 /* Command map results */
-info_lkp_t command_map_info[] = {
+static info_lkp_t command_map_info[] = {
 	{ PW_INIT_BAT_TEST, "test.battery.start", NULL, NULL },
 	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL, NULL },
 	{ PW_UPS_OFF, "shutdown.stayoff", NULL, NULL },
@@ -225,7 +225,7 @@ info_lkp_t command_map_info[] = {
 };
 
 /* System test capabilities results */
-info_lkp_t system_test_info[] = {
+static info_lkp_t system_test_info[] = {
 	{ PW_SYS_TEST_GENERAL, "test.system.start", NULL, NULL },
 /*	{ PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION, "test.battery.start.delayed", NULL, NULL }, */
 /*	{ PW_SYS_TEST_ALTERNATE_AC_INPUT, "test.alternate_acinput.start", NULL, NULL }, */
@@ -576,7 +576,7 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_HEATSINK_TEMP_SENSOR_FAIL].alarm_desc = "HEATSINK_TEMP_SENSOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_OVER_125].alarm_desc = "RECTIFIER_CURRENT_OVER_125";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAULT_INTERRUPT_FAIL].alarm_desc = "RECTIFIER_FAULT_INTERRUPT_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPASITOR_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPACITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPACITOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PROGRAM_STACK_ERROR].alarm_desc = "INVERTER_PROGRAM_STACK_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BOARD_SELFTEST_FAIL].alarm_desc = "INVERTER_BOARD_SELFTEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AD_SELFTEST_FAIL].alarm_desc = "INVERTER_AD_SELFTEST_FAIL";
@@ -870,7 +870,19 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 		fValue = get_float(entry);
 		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, 127, sFormat, fValue);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 	else if (format == 0xe2) {
 		/* Seconds */
@@ -1207,7 +1219,7 @@ void init_limit(void)
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
-	if (value >= 0 && value <= 2) {
+	if (value <= 2) {
 		dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 	}
 
@@ -1523,7 +1535,7 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	unsigned char status, topology;
 	char sValue[128];
-	int iIndex, res,value;
+	int iIndex, res, value;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char *nutvalue;
@@ -1762,7 +1774,7 @@ void upsdrv_updateinfo(void)
 		/* Horn Status: */
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
 
-		if (value >= 0 && value <= 2) {
+		if (value <= 2) {
 			dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 		}
 		/* AAmbient Temperature Upper Alarm Limit  */
@@ -1801,7 +1813,7 @@ void upsdrv_updateinfo(void)
 		if (value != 0) {
 			dstate_setinfo("battery.charge.restart","%d",value);
 		}
-	};
+	}
 
 	res = command_read_sequence(PW_CONFIG_BLOCK_REQ, answer);
 	if (res <= 0) {
@@ -1886,7 +1898,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	int res, sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
-	upsdebugx(1, "entering instcmd(%s)", cmdname);
+	upsdebugx(1, "entering instcmd(%s)(%s)", cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
@@ -2064,9 +2076,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
-
-
-
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -2087,39 +2096,32 @@ static int decode_instcmd_exec(const int res, const unsigned char exec_status, c
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 	}
 }
@@ -2430,39 +2432,32 @@ static int decode_setvar_exec(const int res, const unsigned char exec_status, co
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 	}
 }

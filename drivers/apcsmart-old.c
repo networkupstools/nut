@@ -1380,13 +1380,14 @@ static int instcmd(const char *cmdname, const char *extra)
 			ct = &apc_cmdtab[i];
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmdname);
+		upslogx(LOG_WARNING, "instcmd: unknown command [%s] [%s]",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	if ((ct->flags & APC_PRESENT) == 0) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] is not supported",
-			cmdname);
+		upslogx(LOG_WARNING, "instcmd: command [%s] [%s] is not supported",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 

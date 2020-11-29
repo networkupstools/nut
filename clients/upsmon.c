@@ -175,8 +175,21 @@ static void do_notify(const utype_t *ups, int ntype)
 		if (notifylist[i].type == ntype) {
 			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
 				notifylist[i].name);
-			snprintf(msg, sizeof(msg), notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+			snprintf(msg, sizeof(msg),
+				notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
 				ups ? ups->sys : "");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 			notify(msg, notifylist[i].flags, notifylist[i].name,
 				upsname);
 			return;
@@ -419,6 +432,9 @@ static void set_pdflag(void)
 
 /* the actual shutdown procedure */
 static void doshutdown(void)
+	__attribute__((noreturn));
+
+static void doshutdown(void)
 {
 	int	ret;
 
@@ -501,7 +517,14 @@ static void set_alarm(void)
 
 static void clear_alarm(void)
 {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGALRM, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	alarm(0);
 }
 
@@ -613,6 +636,9 @@ static void slavesync(void)
 		usleep(250000);
 	}
 }
+
+static void forceshutdown(void)
+	__attribute__((noreturn));
 
 static void forceshutdown(void)
 {
@@ -1671,11 +1697,14 @@ static int check_pdflag(void)
 	return EXIT_SUCCESS;
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
-	printf("usage: %s [OPTIONS]\n\n", progname);
+	printf("usage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all master UPSes (use with caution)\n");
@@ -1693,14 +1722,24 @@ static void help(const char *progname)
 }
 
 static void runparent(int fd)
+	__attribute__((noreturn));
+
+static void runparent(int fd)
 {
 	int	ret;
 	char	ch;
 
 	/* handling signals is the child's job */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 	ret = read(fd, &ch, 1);
 
@@ -1747,7 +1786,9 @@ static void start_pipe(void)
 		close(pipefd[1]);
 		runparent(pipefd[0]);
 
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* NOTREACHED */
+#endif
 	}
 
 	close(pipefd[0]);
@@ -1933,7 +1974,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 			case 'K':
 				checking_flag = 1;
 				break;
@@ -1955,7 +1998,9 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 		}
 	}
 

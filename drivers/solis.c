@@ -682,13 +682,15 @@ static void get_base_info(void) {
 #else
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	unsigned char packet[packet_size], syncEOR;
+	unsigned char packet[PACKET_SIZE], syncEOR;
 	int i1=0, i2=0, tam, i;
 
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -827,8 +829,10 @@ static void get_update_info(void) {
 	/* time update and programable shutdown block */
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	hourn = now->tm_hour;
 	minn = now->tm_min;
 	weekn = now->tm_wday;
@@ -881,7 +885,7 @@ static int instcmd(const char *cmdname, const char *extra) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 
 }
