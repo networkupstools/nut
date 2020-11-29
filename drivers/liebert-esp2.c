@@ -168,15 +168,15 @@ void upsdrv_initinfo(void)
 		const char	*var;
 		unsigned char	len;
 	} vartab[] = {
-		{ "ups.model",15 },
-		{ "ups.firmware",8 },
-		{ "ups.serial",10 },
-		{ "ups.mfr.date",4 },
-		{ NULL }
+		{ "ups.model", 15 },
+		{ "ups.firmware", 8 },
+		{ "ups.serial", 10 },
+		{ "ups.mfr.date", 4 },
+		{ NULL, 0 }
 	};
 
 	char	buf[LARGEBUF];
-	int	i,bitn,vari,ret=0,offset=4,readok=0;
+	int	i, bitn, vari, ret=0, offset=4, readok=0;
 	char	command[6], reply[8];
 	unsigned int	value;
 
