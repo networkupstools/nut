@@ -607,7 +607,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(unsigned char *) authPassword, strlen(authPassword),
+				(const unsigned char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
 				&g_snmp_sess.securityAuthKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -634,7 +634,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(unsigned char *) privPassword, strlen(privPassword),
+				(const unsigned char *) privPassword, strlen(privPassword),
 				g_snmp_sess.securityPrivKey,
 				&g_snmp_sess.securityPrivKeyLen) !=
 				SNMPERR_SUCCESS) {
