@@ -495,7 +495,8 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	/* Not "const" because this mismatches arg type of usb_interrupt_write() */
+	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
 	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);
