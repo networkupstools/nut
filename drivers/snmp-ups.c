@@ -2865,7 +2865,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 		/* check if default value is also a template */
 		if ((su_info_p->dfl != NULL) &&
-			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
+			(strstr(tmp_info_p->dfl, "%i") != NULL))
+		{
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -2876,7 +2877,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
+			snprintf((char *)su_info_p->dfl, SU_INFOSIZE, tmp_info_p->dfl,
 				item_number);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
