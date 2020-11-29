@@ -494,7 +494,18 @@ static int powpan_updateinfo(void)
 		break;
 
 	case PR:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		dstate_setinfo("input.voltage", "%d", status.i_volt);
 		if (status.flags[0] & 0x84) {
 			dstate_setinfo("output.voltage", "%s", dstate_getinfo("output.voltage.nominal"));
