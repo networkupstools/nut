@@ -576,7 +576,7 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_HEATSINK_TEMP_SENSOR_FAIL].alarm_desc = "HEATSINK_TEMP_SENSOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_OVER_125].alarm_desc = "RECTIFIER_CURRENT_OVER_125";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAULT_INTERRUPT_FAIL].alarm_desc = "RECTIFIER_FAULT_INTERRUPT_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPASITOR_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPACITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPACITOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PROGRAM_STACK_ERROR].alarm_desc = "INVERTER_PROGRAM_STACK_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BOARD_SELFTEST_FAIL].alarm_desc = "INVERTER_BOARD_SELFTEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AD_SELFTEST_FAIL].alarm_desc = "INVERTER_AD_SELFTEST_FAIL";
@@ -870,7 +870,19 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 		fValue = get_float(entry);
 		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, 127, sFormat, fValue);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 	else if (format == 0xe2) {
 		/* Seconds */
@@ -1801,7 +1813,7 @@ void upsdrv_updateinfo(void)
 		if (value != 0) {
 			dstate_setinfo("battery.charge.restart","%d",value);
 		}
-	};
+	}
 
 	res = command_read_sequence(PW_CONFIG_BLOCK_REQ, answer);
 	if (res <= 0) {
@@ -2064,9 +2076,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
-
-
-
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -2087,39 +2096,32 @@ static int decode_instcmd_exec(const int res, const unsigned char exec_status, c
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_INSTCMD_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
-			break;
 			}
 	}
 }
@@ -2430,39 +2432,32 @@ static int decode_setvar_exec(const int res, const unsigned char exec_status, co
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
 			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
 			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
 			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
-			break;
 			}
 		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_UNRECOGNISED: {
 			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_SET_FAILED;
-			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 		default: {
 			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_SET_INVALID;
-			break;
 			}
 	}
 }

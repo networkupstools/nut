@@ -682,7 +682,7 @@ static void get_base_info(void) {
 #else
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	unsigned char packet[packet_size], syncEOR;
+	unsigned char packet[PACKET_SIZE], syncEOR;
 	int i1=0, i2=0, tam, i;
 
 	time_t tmt;

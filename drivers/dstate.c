@@ -586,7 +586,14 @@ void dstate_init(const char *prog, const char *devname)
 	char	sockname[SMALLBUF];
 
 	/* do this here for now */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGPIPE, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 	if (devname) {
 		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, devname);
@@ -1192,14 +1199,14 @@ int dstate_detect_phasecount(
 		 * tables should take care of this with converion routine and numeric
 		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
-		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		do { strncpy(bufrw_ptr, suffix, bufrw_max); \
 		  if ( (var = dstate_getinfo(buf)) ) { \
 		    if ( (var[0] == '0' && var[1] == '\0') || \
 		         (var[0] == '\0') ) { \
 		      var = NULL; \
 		    } \
 		  } \
-		} ;
+		} while(0)
 
 		dstate_getinfo_nonzero(v1,  "L1.voltage");
 		dstate_getinfo_nonzero(v2,  "L2.voltage");
@@ -1293,7 +1300,7 @@ int dstate_detect_phasecount(
 
 /* Dump the data tree (in upsc-like format) to stdout */
 /* Actual implementation */
-static int dstate_tree_dump(st_tree_t *node)
+static int dstate_tree_dump(const st_tree_t *node)
 {
 	int	ret;
 
@@ -1324,7 +1331,7 @@ void dstate_dump(void)
 {
 	upsdebugx(3, "Entering %s", __func__);
 
-	st_tree_t *node = (st_tree_t *)dstate_getroot();
+	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

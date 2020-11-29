@@ -175,7 +175,7 @@ static object_entry_t *set_object_add(
 /**
  *  \brief  SET_OBJECT: RAW POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -185,7 +185,7 @@ static object_query_t *set_object_raw(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: FORM POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return \c NULL (FORM POST mode resp. is ignored by specification)
  */
@@ -195,7 +195,7 @@ static object_query_t *set_object_form(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -799,8 +799,8 @@ static int netxml_alarm_subscribe(const char *page)
 		}
 
 		/* Range of valid values constrained above */
-		port = tmp_port;
-		secret = tmp_secret;
+		port = (int)tmp_port;
+		secret = (int)tmp_secret;
 
 	}
 
@@ -1069,7 +1069,7 @@ static void set_object_req_destroy(set_object_req_t *req) {
 /**
  *  \brief  SET_OBJECT response list entry destructor
  *
- *  \param  req  SET_OBJECT response list entry
+ *  \param  resp  SET_OBJECT response list entry
  */
 static void set_object_resp_destroy(set_object_resp_t *resp) {
 	assert(NULL != resp);
@@ -1238,8 +1238,8 @@ static object_entry_t *set_object_add(
  *  \param  buff   Buffer
  *  \param  entry  SET_OBJECT request entry
  *
- *  \retval OBJECT_OK    on success
- *  \retval OBJECT_ERROR otherwise
+ *  \return OBJECT_OK    on success
+ *  \return OBJECT_ERROR otherwise
  */
 static object_query_status_t set_object_serialise_entries(ne_buffer *buff, object_entry_t *entry) {
 	object_query_status_t status = OBJECT_OK;
@@ -1580,9 +1580,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *
  *  The function creates HTTP request, sends it and reads-out the response.
  *
- *  \param[in]   session    HTTP session
+ *  \param[in]   argsession HTTP session
  *  \param[in]   method     Request method
- *  \param[in]   uri        Request URI
+ *  \param[in]   arguri     Request URI
  *  \param[in]   ct         Request content type (optional, \c NULL accepted)
  *  \param[in]   req_body   Request body (optional, \c NULL is accepted)
  *  \param[out]  resp_body  Response body (optional, \c NULL is accepted)
@@ -1590,9 +1590,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *  \return HTTP status code if response was sent, 0 on send error
  */
 static int send_http_request(
-	ne_session *session,
+	ne_session *argsession,
 	const char *method,
-	const char *uri,
+	const char *arguri,
 	const char *ct,
 	ne_buffer  *req_body,
 	ne_buffer  *resp_body)
@@ -1602,7 +1602,7 @@ static int send_http_request(
 	ne_request *req = NULL;
 
 	/* Create request */
-	req = ne_request_create(session, method, uri);
+	req = ne_request_create(argsession, method, arguri);
 
 	/* Neon claims that request creation is always successful */
 	assert(NULL != req);

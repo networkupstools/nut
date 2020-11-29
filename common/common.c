@@ -21,6 +21,7 @@
 
 #include <ctype.h>
 #include <syslog.h>
+#include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
@@ -301,7 +302,11 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	int ret;
 
 	size--;
-	assert(len <= size);
+	if (len > size) {
+		/* Do not truncate existing string */
+		errno = ERANGE;
+		return -1;
+	}
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -327,9 +332,14 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	 * In theory it can overflow a 64-vs-32 bit range, or signed-vs-unsigned.
 	 * In practice we hope to not have gigabytes-long config strings.
 	 */
-	assert(ret >= 0);
+	if (ret < 0) {
+		return ret;
+	}
 #ifdef INT_MAX
-	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - ret));
+	if ( ( (unsigned long long)len + (unsigned long long)ret ) >= (unsigned long long)INT_MAX ) {
+		errno = ERANGE;
+		return -1;
+	}
 #endif
 	return (int)len + ret;
 }
@@ -768,7 +778,7 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -792,7 +802,7 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;

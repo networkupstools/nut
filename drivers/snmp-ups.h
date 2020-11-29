@@ -117,11 +117,11 @@ typedef struct {
    are converted according to the multiplier table
 */
 typedef struct {
-	const char   *info_type;  /* INFO_ or CMD_ element */
+	char         *info_type;  /* INFO_ or CMD_ element */
 	int           info_flags; /* flags to set in addinfo */
 	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
-	const char   *OID;        /* SNMP OID or NULL */
-	const char   *dfl;        /* default value */
+	char         *OID;        /* SNMP OID or NULL */
+	char         *dfl;        /* default value */
 	unsigned long flags;      /* snmp-ups internal flags */
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;

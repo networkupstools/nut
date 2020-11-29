@@ -285,6 +285,9 @@ static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
  */
 
 static void shutdown_halt(void)
+	__attribute__((noreturn));
+
+static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
@@ -293,6 +296,9 @@ static void shutdown_halt(void)
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 	exit (0);
 }
+
+static void shutdown_ret(void)
+	__attribute__((noreturn));
 
 static void shutdown_ret(void)
 {
@@ -314,12 +320,19 @@ static int instcmd (const char *cmdname, const char *extra)
 	    return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/* NOTE: In this context, "return" is UPS behavior after the
+		 * wall-power gets restored. The routine exits the driver anyway.
+		 */
 		shutdown_ret();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		shutdown_halt();
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		return STAT_INSTCMD_HANDLED;
+#endif
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
@@ -391,8 +404,7 @@ static int ups_getinfo(void)
 			return 0;
 		} else
 			upsdebugx(5, "Num of bytes received from UPS: %d", c);
-
-	};
+	}
 
 	/* optional dump of raw data */
 	if (nut_debug_level > 4) {
@@ -400,15 +412,15 @@ static int ups_getinfo(void)
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
 			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
-		};
-	};
+		}
+	}
 
 	/* validate raw data for correctness */
 	if (validate_raw_data() != 0) {
 		upslogx(LOG_NOTICE, "data receiving error (validation check)");
 		dstate_datastale();
 		return 0;
-	};
+	}
 	return 1;
 }
 
@@ -820,6 +832,9 @@ void upsdrv_updateinfo(void)
 
 /* shutdown UPS */
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */
 	printf("Forced UPS shutdown (and wait for power)...\n");
@@ -855,7 +870,7 @@ void upsdrv_initups(void)
 			exit (1);
 		}
 		type = i;
-	};
+	}
 
 	/* check line voltage from arguments */
 	if (getval("linevoltage") != NULL) {
@@ -863,9 +878,9 @@ void upsdrv_initups(void)
 		if (! ( (tmp >= 200 && tmp <= 240) || (tmp >= 100 && tmp <= 120) ) ) {
 			printf("Given line voltage '%d' is out of range (100-120 or 200-240 V)\n", tmp);
 			exit (1);
-		};
+		}
 		linevoltage = (unsigned int) tmp;
-	};
+	}
 
 	if (getval("numOfBytesFromUPS") != NULL) {
 		tmp = atoi(getval("numOfBytesFromUPS"));
@@ -873,7 +888,7 @@ void upsdrv_initups(void)
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
 			       tmp, MAX_NUM_OF_BYTES_FROM_UPS);
 			exit (1);
-		};
+		}
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
@@ -887,7 +902,7 @@ void upsdrv_initups(void)
 			printf("Given methodOfFlowControl '%s' isn't valid!\n",
 					getval("methodOfFlowControl"));
 			exit (1);
-		};
+		}
 		types[type].flowControl = types[i].flowControl;
 	}
 
