@@ -64,7 +64,7 @@ static struct {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
 	{ "battery.charge.low", "P8\r", "C4:%02d\r" },
-	{ NULL }
+	{ NULL, NULL, NULL }
 };
 
 static struct {
@@ -79,7 +79,7 @@ static struct {
 	{ "beeper.on", NULL },
 	{ "beeper.off", NULL },
 	{ "shutdown.stop", "C\r" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
 static int powpan_command(const char *command)
