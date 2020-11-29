@@ -1300,7 +1300,7 @@ int dstate_detect_phasecount(
 
 /* Dump the data tree (in upsc-like format) to stdout */
 /* Actual implementation */
-static int dstate_tree_dump(st_tree_t *node)
+static int dstate_tree_dump(const st_tree_t *node)
 {
 	int	ret;
 
@@ -1331,7 +1331,7 @@ void dstate_dump(void)
 {
 	upsdebugx(3, "Entering %s", __func__);
 
-	st_tree_t *node = (st_tree_t *)dstate_getroot();
+	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }
