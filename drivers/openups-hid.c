@@ -135,47 +135,47 @@ static const char *openups_scale_cdischarge_fun(double value);
 static const char *openups_temperature_fun(double value);
 
 static info_lkp_t openups_charging_info[] = {
-	{0, NULL, openups_charging_fun}
+	{0, NULL, openups_charging_fun, NULL }
 };
 
 static info_lkp_t openups_discharging_info[] = {
-	{0, NULL, openups_discharging_fun}
+	{0, NULL, openups_discharging_fun, NULL }
 };
 
 static info_lkp_t openups_online_info[] = {
-	{0, NULL, openups_online_fun}
+	{0, NULL, openups_online_fun, NULL }
 };
 
 static info_lkp_t openups_nobattery_info[] = {
-	{0, NULL, openups_nobattery_fun}
+	{0, NULL, openups_nobattery_fun, NULL }
 };
 
 static info_lkp_t openups_off_info[] = {
-	{0, NULL, openups_off_fun}
+	{0, NULL, openups_off_fun, NULL }
 };
 
 static info_lkp_t openups_vin_info[] = {
-	{0, NULL, openups_scale_vin_fun}
+	{0, NULL, openups_scale_vin_fun, NULL }
 };
 
 static info_lkp_t openups_vout_info[] = {
-	{0, NULL, openups_scale_vout_fun}
+	{0, NULL, openups_scale_vout_fun, NULL }
 };
 
 /* static info_lkp_t openups_vbat_info[] = {
-	{0, NULL, openups_scale_vbat_fun}
+	{0, NULL, openups_scale_vbat_fun, NULL }
 };*/
 
 static info_lkp_t openups_ccharge_info[] = {
-	{0, NULL, openups_scale_ccharge_fun}
+	{0, NULL, openups_scale_ccharge_fun, NULL }
 };
 
 static info_lkp_t openups_cdischarge_info[] = {
-	{0, NULL, openups_scale_cdischarge_fun}
+	{0, NULL, openups_scale_cdischarge_fun, NULL }
 };
 
 static info_lkp_t openups_temperature_info[] = {
-	{0, NULL, openups_temperature_fun}
+	{0, NULL, openups_temperature_fun, NULL }
 };
 
 static const char *openups_charging_fun(double value)

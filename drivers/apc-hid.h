@@ -31,6 +31,4 @@
 
 extern subdriver_t apc_subdriver;
 
-extern int max_report_size;
-
 #endif /* APC_HID_H */

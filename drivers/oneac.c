@@ -75,7 +75,7 @@ static char UpsFamily [3];
  *  the correct number of characters are returned.
  */
 
-int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
+static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
 {
 	int Retries = 10;		/* x/2 seconds max with 500000 USEC */
 	int return_val;
@@ -110,7 +110,7 @@ int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
     return return_val;
 }
 
-void do_battery_test(void)
+static void do_battery_test(void)
 {
 	char buffer[32];
 
@@ -130,7 +130,7 @@ void do_battery_test(void)
 	ser_send(upsfd,"%s%s%s",BAT_TEST_PREFIX,buffer,COMMAND_END);
 }
 
-int SetOutputAllow(const char* lowval, const char* highval)
+static int SetOutputAllow(const char* lowval, const char* highval)
 {
 	char buffer[32];
 
@@ -164,7 +164,7 @@ int SetOutputAllow(const char* lowval, const char* highval)
 	return 0;						/* Valid command */
 }
 
-void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
+static void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
 															const int buff2size)
 {
 	int i = 0;

@@ -72,5 +72,6 @@ typedef enum {
 } status_bit_t;
 
 extern uint32_t	ups_status;
+extern int	shutdown_duration;
 
 #endif /* NETXML_UPS_H */

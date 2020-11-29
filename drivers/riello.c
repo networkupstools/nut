@@ -32,7 +32,7 @@
 #include "main.h"
 #include "riello.h"
 
-uint8_t foundheader=0;
+static uint8_t foundheader = 0;
 uint16_t buf_ptr_length;
 
 uint8_t wait_packet = 0;
@@ -42,11 +42,11 @@ uint8_t foundbadcrc = 0;
 uint8_t commbyte;
 uint8_t requestSENTR;
 
-unsigned char LAST_DATA[6];
+static unsigned char LAST_DATA[6];
 
 uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
-	uint8_t i;
+	uint16_t i;
 	uint16_t pom, CRC_Word;
 
 	CRC_Word = 0;
@@ -769,9 +769,9 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uinp1 = buffer[35]*230/100;
 		data->Uinp2 = buffer[36]*230/100;
 		data->Uinp3 = buffer[37]*230/100;
-		data->Iinp1 = ((pom/690)*buffer[38])/100;;
-		data->Iinp2 = ((pom/690)*buffer[39])/100;;
-		data->Iinp3 = ((pom/690)*buffer[40])/100;;
+		data->Iinp1 = ((pom/690)*buffer[38])/100;
+		data->Iinp2 = ((pom/690)*buffer[39])/100;
+		data->Iinp3 = ((pom/690)*buffer[40])/100;
 		data->Finp = buffer[41]+256*buffer[42];
 
 		if (buffer[79] & 0x80) {
