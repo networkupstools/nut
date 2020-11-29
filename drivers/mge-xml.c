@@ -41,8 +41,6 @@
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
-extern int	shutdown_duration;
-
 static int	mge_ambient_value = 0;
 
 /* The number of phases is not present in XML data as a separate node,
@@ -131,9 +129,9 @@ typedef struct {
 						   NULL if no further processing is required) */
 } xml_info_t;
 
-static const char *online_info(const char *val)
+static const char *online_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(ONLINE);
 	} else {
 		STATUS_CLR(ONLINE);
@@ -142,9 +140,9 @@ static const char *online_info(const char *val)
 	return NULL;
 }
 
-static const char *discharging_info(const char *val)
+static const char *discharging_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(DISCHRG);
 		/* Workaround NMC bug: both charging and discharging set to 1 */
 		if(STATUS_BIT(CHRG)) {
@@ -157,9 +155,9 @@ static const char *discharging_info(const char *val)
 	return NULL;
 }
 
-static const char *charging_info(const char *val)
+static const char *charging_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(CHRG);
 	} else {
 		STATUS_CLR(CHRG);
@@ -168,9 +166,9 @@ static const char *charging_info(const char *val)
 	return NULL;
 }
 
-static const char *lowbatt_info(const char *val)
+static const char *lowbatt_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(LOWBATT);
 	} else {
 		STATUS_CLR(LOWBATT);
@@ -179,9 +177,9 @@ static const char *lowbatt_info(const char *val)
 	return NULL;
 }
 
-static const char *overload_info(const char *val)
+static const char *overload_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(OVERLOAD);
 	} else {
 		STATUS_CLR(OVERLOAD);
@@ -190,9 +188,9 @@ static const char *overload_info(const char *val)
 	return NULL;
 }
 
-static const char *replacebatt_info(const char *val)
+static const char *replacebatt_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(REPLACEBATT);
 	} else {
 		STATUS_CLR(REPLACEBATT);
@@ -201,9 +199,9 @@ static const char *replacebatt_info(const char *val)
 	return NULL;
 }
 
-static const char *trim_info(const char *val)
+static const char *trim_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(TRIM);
 	} else {
 		STATUS_CLR(TRIM);
@@ -212,9 +210,9 @@ static const char *trim_info(const char *val)
 	return NULL;
 }
 
-static const char *boost_info(const char *val)
+static const char *boost_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(BOOST);
 	} else {
 		STATUS_CLR(BOOST);
@@ -223,9 +221,9 @@ static const char *boost_info(const char *val)
 	return NULL;
 }
 
-static const char *bypass_aut_info(const char *val)
+static const char *bypass_aut_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(BYPASSAUTO);
 	} else {
 		STATUS_CLR(BYPASSAUTO);
@@ -234,9 +232,9 @@ static const char *bypass_aut_info(const char *val)
 	return NULL;
 }
 
-static const char *bypass_man_info(const char *val)
+static const char *bypass_man_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(BYPASSMAN);
 	} else {
 		STATUS_CLR(BYPASSMAN);
@@ -245,9 +243,9 @@ static const char *bypass_man_info(const char *val)
 	return NULL;
 }
 
-static const char *off_info(const char *val)
+static const char *off_info(const char *arg_val)
 {
-	if (val[0] == '0') {
+	if (arg_val[0] == '0') {
 		STATUS_SET(OFF);
 	} else {
 		STATUS_CLR(OFF);
@@ -259,9 +257,9 @@ static const char *off_info(const char *val)
 /* note: this value is reverted (0=set, 1=not set). We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
-static const char *nobattery_info(const char *val)
+static const char *nobattery_info(const char *arg_val)
 {
-	if (val[0] == '0') {
+	if (arg_val[0] == '0') {
 		STATUS_SET(NOBATTERY);
 	} else {
 		STATUS_CLR(NOBATTERY);
@@ -270,9 +268,9 @@ static const char *nobattery_info(const char *val)
 	return NULL;
 }
 
-static const char *fanfail_info(const char *val)
+static const char *fanfail_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(FANFAIL);
 	} else {
 		STATUS_CLR(FANFAIL);
@@ -282,9 +280,9 @@ static const char *fanfail_info(const char *val)
 }
 
 #if 0
-static const char *shutdownimm_info(const char *val)
+static const char *shutdownimm_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(SHUTDOWNIMM);
 	} else {
 		STATUS_CLR(SHUTDOWNIMM);
@@ -294,9 +292,9 @@ static const char *shutdownimm_info(const char *val)
 }
 #endif
 
-static const char *overheat_info(const char *val)
+static const char *overheat_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(OVERHEAT);
 	} else {
 		STATUS_CLR(OVERHEAT);
@@ -305,9 +303,9 @@ static const char *overheat_info(const char *val)
 	return NULL;
 }
 
-static const char *commfault_info(const char *val)
+static const char *commfault_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(COMMFAULT);
 	} else {
 		STATUS_CLR(COMMFAULT);
@@ -316,9 +314,9 @@ static const char *commfault_info(const char *val)
 	return NULL;
 }
 
-static const char *internalfailure_info(const char *val)
+static const char *internalfailure_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(INTERNALFAULT);
 	} else {
 		STATUS_CLR(INTERNALFAULT);
@@ -327,9 +325,9 @@ static const char *internalfailure_info(const char *val)
 	return NULL;
 }
 
-static const char *battvoltlo_info(const char *val)
+static const char *battvoltlo_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(BATTVOLTLO);
 	} else {
 		STATUS_CLR(BATTVOLTLO);
@@ -338,9 +336,9 @@ static const char *battvoltlo_info(const char *val)
 	return NULL;
 }
 
-static const char *battvolthi_info(const char *val)
+static const char *battvolthi_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(BATTVOLTHI);
 	} else {
 		STATUS_CLR(BATTVOLTHI);
@@ -349,9 +347,9 @@ static const char *battvolthi_info(const char *val)
 	return NULL;
 }
 
-static const char *chargerfail_info(const char *val)
+static const char *chargerfail_info(const char *arg_val)
 {
-	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
+	if ((arg_val[0] == '1') || !strncasecmp(arg_val, "Yes", 3)) {
 		STATUS_SET(CHARGERFAIL);
 	} else {
 		STATUS_CLR(CHARGERFAIL);
@@ -360,9 +358,9 @@ static const char *chargerfail_info(const char *val)
 	return NULL;
 }
 
-static const char *vrange_info(const char *val)
+static const char *vrange_info(const char *arg_val)
 {
-	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
+	if ((arg_val[0] == '1') || !strncasecmp(arg_val, "Yes", 3)) {
 		STATUS_SET(VRANGE);
 	} else {
 		STATUS_CLR(VRANGE);
@@ -371,9 +369,9 @@ static const char *vrange_info(const char *val)
 	return NULL;
 }
 
-static const char *frange_info(const char *val)
+static const char *frange_info(const char *arg_val)
 {
-	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
+	if ((arg_val[0] == '1') || !strncasecmp(arg_val, "Yes", 3)) {
 		STATUS_SET(FRANGE);
 	} else {
 		STATUS_CLR(FRANGE);
@@ -382,9 +380,9 @@ static const char *frange_info(const char *val)
 	return NULL;
 }
 
-static const char *fuse_fault_info(const char *val)
+static const char *fuse_fault_info(const char *arg_val)
 {
-	if (val[0] == '1') {
+	if (arg_val[0] == '1') {
 		STATUS_SET(FUSEFAULT);
 	} else {
 		STATUS_CLR(FUSEFAULT);
@@ -393,35 +391,35 @@ static const char *fuse_fault_info(const char *val)
 	return NULL;
 }
 
-static const char *yes_no_info(const char *val)
+static const char *yes_no_info(const char *arg_val)
 {
-	switch(val[0])
+	switch(arg_val[0])
 	{
 	case '1':
 		return "yes";
 	case '0':
 		return "no";
 	default:
-		upsdebugx(2, "%s: unexpected value [%s]", __func__, val);
+		upsdebugx(2, "%s: unexpected value [%s]", __func__, arg_val);
 		return "<unknown>";
 	}
 }
 
-static const char *on_off_info(const char *val)
+static const char *on_off_info(const char *arg_val)
 {
-	switch(val[0])
+	switch(arg_val[0])
 	{
 	case '1':
 		return "on";
 	case '0':
 		return "off";
 	default:
-		upsdebugx(2, "%s: unexpected value [%s]", __func__, val);
+		upsdebugx(2, "%s: unexpected value [%s]", __func__, arg_val);
 		return "<unknown>";
 	}
 }
 
-static const char *convert_deci(const char *val)
+static const char *convert_deci(const char *arg_val)
 {
 	/* Note: this routine was needed for original MGE devices, before the company
 	 * was bought out and split in 2007 between Eaton (1ph devices) and Schneider
@@ -440,7 +438,7 @@ static const char *convert_deci(const char *val)
 			upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are normally not decimated. This driver instance has however configured do_convert_deci in your ups.conf, so this behavior for old MGE NetXML-capable devices is preserved.", __func__);
 			mge_report_deprecation__convert_deci = 0;
 		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(arg_val));
 		return mge_scratch_buf;
 	}
 
@@ -448,57 +446,57 @@ static const char *convert_deci(const char *val)
 		upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the issue tracker at %s with details about your hardware and firmware versions. Also try to enable do_convert_deci in your ups.conf", __func__, PACKAGE_BUGREPORT );
 		mge_report_deprecation__convert_deci = 0;
 	}
-	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If this change broke your setup, please see details logged above.", __func__, val);
-	return val;
+	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If this change broke your setup, please see details logged above.", __func__, arg_val);
+	return arg_val;
 }
 
 /* Ignore a zero value if the UPS is not switched off */
-static const char *ignore_if_zero(const char *val)
+static const char *ignore_if_zero(const char *arg_val)
 {
-	if (atoi(val) == 0) {
+	if (atoi(arg_val) == 0) {
 		return NULL;
 	}
 
-	return convert_deci(val);
+	return convert_deci(arg_val);
 }
 
 /* Set the 'ups.date' from the combined value
  * (ex. 2008/03/01 15:23:26) and return the time */
-static const char *split_date_time(const char *val)
+static const char *split_date_time(const char *arg_val)
 {
 	char	*last = NULL;
 
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", val);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", arg_val);
 	dstate_setinfo("ups.date", "%s", strtok_r(mge_scratch_buf, " -", &last));
 
 	return strtok_r(NULL, " ", &last);
 }
 
-static const char *url_convert(const char *val)
+static const char *url_convert(const char *arg_val)
 {
 	char	buf[256], *last = NULL;
 
-	snprintf(buf, sizeof(buf), "%s", val);
+	snprintf(buf, sizeof(buf), "%s", arg_val);
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "/%s", strtok_r(buf, " \r\n\t", &last));
 
 	return mge_scratch_buf;
 }
 
-static const char *mge_battery_capacity(const char *val)
+static const char *mge_battery_capacity(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(val) / 3600);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 3600);
 	return mge_scratch_buf;
 }
 
-static const char *mge_powerfactor_conversion(const char *val)
+static const char *mge_powerfactor_conversion(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(val) / 100);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 100);
 	return mge_scratch_buf;
 }
 
-static const char *mge_beeper_info(const char *val)
+static const char *mge_beeper_info(const char *arg_val)
 {
-	switch (atoi(val))
+	switch (atoi(arg_val))
 	{
 	case 1:
 		return "disabled";
@@ -510,9 +508,9 @@ static const char *mge_beeper_info(const char *val)
 	return NULL;
 }
 
-static const char *mge_upstype_conversion(const char *val)
+static const char *mge_upstype_conversion(const char *arg_val)
 {
-	switch (atoi(val))
+	switch (atoi(arg_val))
 	{
 	case 1:
 		return "offline / line interactive";
@@ -528,9 +526,9 @@ static const char *mge_upstype_conversion(const char *val)
 	return NULL;
 }
 
-static const char *mge_sensitivity_info(const char *val)
+static const char *mge_sensitivity_info(const char *arg_val)
 {
-	switch (atoi(val))
+	switch (atoi(arg_val))
 	{
 	case 0:
 		return "normal";
@@ -542,10 +540,10 @@ static const char *mge_sensitivity_info(const char *val)
 	return NULL;
 }
 
-static const char *mge_test_result_info(const char *val)
+static const char *mge_test_result_info(const char *arg_val)
 {
 	STATUS_CLR(CAL);
-	switch (atoi(val))
+	switch (atoi(arg_val))
 	{
 	case 1:
 		return "done and passed";
@@ -566,12 +564,12 @@ static const char *mge_test_result_info(const char *val)
 	return NULL;
 }
 
-static const char *mge_ambient_info(const char *val)
+static const char *mge_ambient_info(const char *arg_val)
 {
 	switch (mge_ambient_value)
 	{
 	case 1:
-		return val;
+		return arg_val;
 	default:
 		return NULL;
 	}
@@ -595,9 +593,9 @@ static const char *mge_timer_shutdown(const char *delay_before_shutoff)
 	return val;
 }
 
-static const char *mge_shutdown_imminent(const char *val)
+static const char *mge_shutdown_imminent(const char *arg_val)
 {
-	const int shutdown_delay = atoi(val);
+	const int shutdown_delay = atoi(arg_val);
 
 	/* shutdown is already managed by mge_timer_shutdown, give up */
 	if(mge_shutdown_pending) {
@@ -606,7 +604,7 @@ static const char *mge_shutdown_imminent(const char *val)
 
 	/* We may have "NONE" or "-1" or ?? as value
 	 * We also double check both the string and numeric values to be zero!*/
-	if ((val) && (val[0] == '0') && (shutdown_delay == 0)) {
+	if ((arg_val) && (arg_val[0] == '0') && (shutdown_delay == 0)) {
 		STATUS_SET(SHUTDOWNIMM);
 	} else {
 		STATUS_CLR(SHUTDOWNIMM);
@@ -1120,6 +1118,8 @@ static xml_info_t mge_xml2nut[] = {
 static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts)
 {
 	int	state = _UNEXPECTED;
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
 
 	switch(parent)
 	{
@@ -1361,8 +1361,12 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			state = XC_GENERAL;
 			break;
 		}
+		/* FIXME? Is the fall-through to handling "GENERAL" intended?
+		 * was so in legacy code before the goto below... */
+		goto fallthrough_case_general;
 
 	case XC_GENERAL:
+	fallthrough_case_general:
 		if (!strcasecmp(name, "STARTUP")) {
 			/* config="CENTRALIZED" */
 			state = XC_STARTUP;
@@ -1396,6 +1400,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 /* Character data callback; may return non-zero to abort the parse. */
 static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+
 	/* skip empty lines */
 	if ((len == 1) && (cdata[0] == '\n')) {
 		upsdebugx(3, "%s: cdata ignored (state = %d)", __func__, state);
@@ -1424,6 +1430,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 {
 	xml_info_t	*info;
 	const char	*value;
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
 
 	/* ignore objects for which no value was set */
 	if (strlen(val) == 0) {
