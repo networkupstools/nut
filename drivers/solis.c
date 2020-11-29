@@ -361,7 +361,7 @@ static void scan_received_pack(void) {
 			InVoltage = RecPack[6] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
 	} else {
 		/* Code InVoltage for STAY1200_USB */
-		if ((RecPack[20] & 0x1) == 0) // IsOutVoltage 220
+		if ((RecPack[20] & 0x1) == 0) /* IsOutVoltage 220 */
 			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
 		else
 			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1] - 3.0;
@@ -403,7 +403,7 @@ static void scan_received_pack(void) {
 			if (RecPack[20] == 0) {
 				double a = RecPack[1] * 2;
 				a /= 128.0;
-				//	a = double sqrt(a);
+				/* a = double sqrt(a); */
 				OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
 			}
 		} else {
@@ -501,7 +501,8 @@ static void scan_received_pack(void) {
 	/* source return */
 	if (!SourceFail && !SourceLast) {
 		SourceReturn = true;
-		//ser_flush_in(upsfd,"",0);    /* clean port */
+		/* clean port: */
+		/* ser_flush_in(upsfd,"",0); */
 	}
 
 	if((!SourceFail) == SourceLast) {
@@ -611,7 +612,8 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 		CheckSum = CheckSum % 256;
 		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
 
-		//ser_flush_in(upsfd,"",0); /* clean port */
+		/* clean port: */
+		/* ser_flush_in(upsfd,"",0); */
 
 		/* RecPack[0] == model number below:
 		 * SOLIS = 1;
@@ -662,12 +664,12 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 			case 15:
 				scan_received_pack();
 				break;
-			case 16:      // STAY1200_USB model
+			case 16:	/* STAY1200_USB model */
 				scan_received_pack();
 				break;
 			default:
 				printf(M_UNKN);
-				scan_received_pack(); // Scan anyway.
+				scan_received_pack(); /* Scan anyway. */
 				break;
 			}
 		}
@@ -680,13 +682,15 @@ static void get_base_info(void) {
 #else
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	unsigned char packet[packet_size], syncEOR;
+	unsigned char packet[PACKET_SIZE], syncEOR;
 	int i1=0, i2=0, tam, i;
 
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -747,7 +751,8 @@ static void get_base_info(void) {
 			break;
 	}
 
-	if (syncEOR != RESP_END) { // synchronization failed
+	if (syncEOR != RESP_END) {
+		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
 		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
@@ -824,8 +829,10 @@ static void get_update_info(void) {
 	/* time update and programable shutdown block */
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	hourn = now->tm_hour;
 	minn = now->tm_min;
 	weekn = now->tm_wday;
@@ -878,7 +885,7 @@ static int instcmd(const char *cmdname, const char *extra) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 
 }

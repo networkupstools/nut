@@ -39,10 +39,10 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
-	char	*monups, *username, *password, *function, *upscommand;
+static char	*monups, *username, *password, *function, *upscommand;
 
-	/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
-	int	magic_string_set = 0;
+/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
+static int	magic_string_set = 0;
 
 static	int	port;
 static	char	*upsname, *hostname;
@@ -54,7 +54,7 @@ typedef struct {
 	void	*next;
 }	uvtype_t;
 
-	uvtype_t	*firstuv = NULL;
+static uvtype_t	*firstuv = NULL;
 
 void parsearg(char *var, char *value)
 {
@@ -255,12 +255,28 @@ static void do_pickups(const char *currfunc)
 
 static void error_page(const char *next, const char *title,
 	const char *fmt, ...)
+	__attribute__((noreturn));
+
+static void error_page(const char *next, const char *title,
+	const char *fmt, ...)
 {
 	char	msg[SMALLBUF];
 	va_list	ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(msg, sizeof(msg), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	do_header(title);
@@ -281,6 +297,9 @@ static void error_page(const char *next, const char *title,
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
+
+static void loginscreen(void)
+	__attribute__((noreturn));
 
 static void loginscreen(void)
 {
@@ -505,6 +524,9 @@ static void send_auth(const char *next)
 		error_page(next, "Can't set password",
 			"Password set failed: %s", upscli_strerror(&ups));
 }
+
+static void docmd(void)
+	__attribute__((noreturn));
 
 static void docmd(void)
 {
@@ -742,9 +764,11 @@ static void do_type(const char *varname)
 	}
 }
 
-static void print_rw(const char *upsname, const char *varname)
+static void print_rw(const char *arg_upsname, const char *varname)
 {
 	const	char	*tmp;
+
+	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", arg_upsname);
 
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
@@ -765,6 +789,9 @@ static void print_rw(const char *upsname, const char *varname)
 
 	printf("</TR>\n");
 }
+
+static void showsettings(void)
+	__attribute__((noreturn));
 
 static void showsettings(void)
 {
@@ -909,6 +936,9 @@ static int setvar(const char *var, const char *val)
 
 /* turn a form submission of settings into SET commands for upsd */
 static void savesettings(void)
+	__attribute__((noreturn));
+
+static void savesettings(void)
 {
 	int	changed = 0;
 	char	*desc;
@@ -953,6 +983,9 @@ static void savesettings(void)
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
+
+static void initial_pickups(void)
+	__attribute__((noreturn));
 
 static void initial_pickups(void)
 {
@@ -1032,6 +1065,8 @@ static void check_conf(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n\n");
@@ -1041,15 +1076,16 @@ int main(int argc, char **argv)
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {
-	    fd_set fds;
-	    struct timeval tv;
+		fd_set fds;
+		struct timeval tv;
 
-	    FD_ZERO(&fds);
-	    FD_SET(STDIN_FILENO, &fds);
-	    tv.tv_sec = 0;
-	    tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-	    if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
-		extractpostargs();
+		FD_ZERO(&fds);
+		FD_SET(STDIN_FILENO, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+
+		if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
+			extractpostargs();
 	}
 	if ((!username) || (!password) || (!function))
 		loginscreen();
