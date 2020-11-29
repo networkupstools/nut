@@ -78,7 +78,7 @@ static const struct {
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
 	{ "zinto", "Q1\r", "F\r", "FW?\r" },
-	{ NULL }
+	{ NULL, NULL, NULL, NULL }
 };
 
 
@@ -177,7 +177,7 @@ static int blazer_status(const char *cmd)
 		{ "input.frequency", "%.1f", strtod },
 		{ "battery.voltage", "%.2f", blazer_battery },
 		{ "ups.temperature", "%.1f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -317,7 +317,7 @@ static int blazer_rating(const char *cmd)
 		{ "input.current.nominal", "%.1f", strtod },
 		{ "battery.voltage.nominal", "%.1f", blazer_packs },
 		{ "input.frequency.nominal", "%.0f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -380,7 +380,7 @@ static int blazer_vendor(const char *cmd)
 		{ "ups.mfr",      15 },
 		{ "ups.model",    10 },
 		{ "ups.firmware", 10 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	char	buf[SMALLBUF];
@@ -427,7 +427,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		{ "test.battery.start.deep", "TL\r" },
 		{ "test.battery.start.quick", "T\r" },
 		{ "test.battery.stop", "CT\r" },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	char	buf[SMALLBUF] = "";
