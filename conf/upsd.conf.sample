@@ -30,6 +30,21 @@
 # amount of time, and then cleaned up.
 
 # =======================================================================
+# ALLOW_NO_DEVICE <Boolean>
+# ALLOW_NO_DEVICE true
+#
+# Normally upsd requires that at least one device section is defined in ups.conf
+# when the daemon starts, to serve its data.  For automatically managed services
+# it may be preferred to have upsd always running, and reload the configuration
+# when power devices become defined.
+#
+# Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+# refuse to start with zero device sections found in ups.conf.
+#
+# Boolean values 'false', 'no', 'off' and '0' mean that the server should refuse
+# to start if zero device sections were found in ups.conf. This is the default.
+
+# =======================================================================
 # STATEPATH <path>
 # STATEPATH /var/run/nut
 #

@@ -162,9 +162,16 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-static int subdriver_match_func(USBDevice_t *hd, void *privdata)
+static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 {
-	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
+	NUT_UNUSED_VARIABLE(privdata);
+
+	/* FIXME? Should we save "arghd" into global "hd" variable?
+	 * This was previously shadowed by function argument named "hd"...
+	 */
+	/* hd = arghd; */
+
+	switch (is_usb_device_supported(tripplite_usb_device_table, arghd))
 	{
 	case SUPPORTED:
 		return 1;
@@ -174,6 +181,8 @@ static int subdriver_match_func(USBDevice_t *hd, void *privdata)
 		if (getval("productid")) {
 			return 1;
 		}
+		return 0;
+
 	case NOT_SUPPORTED:
 	default:
 		return 0;
@@ -203,7 +212,23 @@ static int is_binary_protocol()
 	switch(tl_model) {
 	case TRIPP_LITE_SMART_3005:
 		return 1;
+	case TRIPP_LITE_SMARTPRO:
+	case TRIPP_LITE_SMART_0004:
+	case TRIPP_LITE_OMNIVS:
+	case TRIPP_LITE_OMNIVS_2001:
+	case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 }
@@ -218,7 +243,21 @@ static int is_smart_protocol()
 	case TRIPP_LITE_SMART_0004:
 	case TRIPP_LITE_SMART_3005:
 		return 1;
+	case TRIPP_LITE_OMNIVS:
+	case TRIPP_LITE_OMNIVS_2001:
+	case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 }
@@ -311,7 +350,7 @@ static int reconnect_ups(void)
  *
  * Uses toprint() macro defined above.
  */
-void toprint_str(char *str, int len)
+static void toprint_str(char *str, int len)
 {
 	int i;
 	if(len <= 0) len = strlen(str);
@@ -407,7 +446,7 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	return (char *)buf;
 }
 
-enum tl_model_t decode_protocol(unsigned int proto)
+static enum tl_model_t decode_protocol(unsigned int proto)
 {
 	switch(proto) {
 		case 0x0004:
@@ -433,7 +472,7 @@ enum tl_model_t decode_protocol(unsigned int proto)
 	return TRIPP_LITE_UNKNOWN;
 }
 
-void decode_v(const unsigned char *value)
+static void decode_v(const unsigned char *value)
 {
 	unsigned char ivn, lb;
 	int bv;
@@ -490,11 +529,11 @@ void decode_v(const unsigned char *value)
 void upsdrv_initinfo(void);
 
 /*!@brief Report a USB comm failure, and reconnect if necessary
- * 
+ *
  * @param[in] res	Result code from libusb/libhid call
  * @param[in] msg	Error message to display
  */
-void usb_comm_fail(int res, const char *msg)
+static void usb_comm_fail(int res, const char *msg)
 {
 	static int try = 0;
 
@@ -502,7 +541,9 @@ void usb_comm_fail(int res, const char *msg)
 		case -EBUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 			break;
+#endif
 
 		default:
 			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
@@ -540,6 +581,7 @@ void usb_comm_fail(int res, const char *msg)
  */
 static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 {
+	NUT_UNUSED_VARIABLE(reply_len);
 	unsigned char buffer_out[8];
 	unsigned char csum = 0;
 	int ret = 0, send_try, recv_try=0, done = 0;
@@ -576,7 +618,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 		}
 
 #if ! defined(__FreeBSD__)
-		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
+		usleep(1000*100); /* TODO: nanosleep */
 #endif
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
@@ -610,7 +652,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
  * The variables are of the form "ups.debug.X" where "X" is the command
  * character.
  */
-void debug_message(const char *msg, int len)
+static void debug_message(const char *msg, int len)
 {
 	int ret;
 	unsigned char tmp_value[9];
@@ -730,7 +772,20 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 			break;
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
 		case TRIPP_LITE_SMART_3005:
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%c", 5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
@@ -743,8 +798,35 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 			break;
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
 	return 0;
@@ -793,7 +875,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -1227,7 +1309,9 @@ void upsdrv_updateinfo(void)
 				status_set("RB");
 				break;
 			} /* else fall through: */
+			goto fallthrough_case_default;
 		default:
+		fallthrough_case_default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
 			dstate_datastale();
 			break;
@@ -1369,7 +1453,19 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
+		case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 	}

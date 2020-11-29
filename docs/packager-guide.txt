@@ -84,7 +84,7 @@ wizards
 broken due to hiddev dependencies, and usb support still
 included in the core package.
 
-[2] 
+[2]
 - snmp-ups driver is not available under Mandrake GNU/Linux,
 but its man is present. See
 http://rpms.mandrakeclub.com/rpms/mandrake/9.1/i586/Mandrake/RPMS/nut-server-1.2.1-4mdk.i586.html
@@ -109,7 +109,7 @@ The following packagers are working on this subject:
 - SUSE/Novell:	Stanislav Brabec <sbrabec@suse.cz>
 
 NOTE: the people below should be contacted to (re)launch discussions!
- 
+
 The following packagers should be interested in working on this subject:
 
 - FreeBSD: Thierry Thomas? <>
@@ -207,15 +207,15 @@ nut
 ^^^
 - Desc:
 - Files: dummy/serial/USB drivers + upsd + upslog
-- Size: 
-- Deps: 
+- Size:
+- Deps:
 
 [[pkg-libupsclient1]]
 libupsclient1
 ^^^^^^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-libupsclient1-dev]]
@@ -223,7 +223,7 @@ libupsclient1-dev
 ^^^^^^^^^^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 NOTE: the "-dev" suffix is to be replaced by "-devel" on RPM based platforms.
@@ -233,7 +233,7 @@ nut-cgi
 ^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 
@@ -242,7 +242,7 @@ nut-powerman-pdu
 ^^^^^^^^^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-nut-snmp]]
@@ -250,7 +250,7 @@ nut-snmp
 ^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-nut-xml]]
@@ -258,7 +258,7 @@ nut-xml
 ^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-nut-clients]]
@@ -266,7 +266,7 @@ nut-clients
 ^^^^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-python-pynut]]
@@ -274,7 +274,7 @@ python-pynut
 ^^^^^^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-python-nut-gui]]
@@ -284,7 +284,7 @@ python-nut-gui
 
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 [[pkg-nut-doc]]
@@ -292,7 +292,7 @@ nut-doc
 ^^^^^^^
 - Desc:
 - Files:
-- Size: 
+- Size:
 - Deps:
 
 
@@ -302,7 +302,7 @@ nut-server
 ^^^^^^^^^^
 			Desc:
 			Files: dummy/serial/USB drivers + upsd + upslog
-			Size: 
+			Size:
 			Deps: nut-client, libusb, libc/ld
 
 		B) nut-snmp
@@ -318,7 +318,7 @@ nut-server
 			Deps: libc/ld
 
 		E) nut-cgi
-			
+
 			Deps:
 			Files: snmp-ups and powernet + manpages
 

@@ -432,7 +432,7 @@ static void set_sensitivity(const char *val) {
 
 	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			snprintf(parm, sizeof(parm), "%d", i);
+			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}
@@ -514,7 +514,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -790,7 +790,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) / 
+		trsize = sizeof(test_result_names) /
 			sizeof(test_result_names[0]);
 
 		if ((r < 0) || (r >= (int) trsize))

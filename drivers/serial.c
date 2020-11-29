@@ -21,6 +21,7 @@
 #include "timehead.h"
 #include "serial.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <grp.h>
 #include <pwd.h>
@@ -35,6 +36,9 @@
 #endif
 
 	static unsigned int	comm_failures = 0;
+
+static void ser_open_error(const char *port)
+	__attribute__((noreturn));
 
 static void ser_open_error(const char *port)
 {
@@ -57,7 +61,7 @@ static void ser_open_error(const char *port)
 	user = getpwuid(getuid());
 
 	if (user)
-		printf("  Current user id: %s (%d)\n", 
+		printf("  Current user id: %s (%d)\n",
 			user->pw_name, (int) user->pw_uid);
 
 	user = getpwuid(fs.st_uid);
@@ -97,7 +101,7 @@ static void lock_set(int fd, const char *port)
 	ret = uu_lock(xbasename(port));
 
 	if (ret != 0)
-		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port), 
+		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port),
 			uu_lockerr(ret));
 
 #elif defined(HAVE_FLOCK)
@@ -125,7 +129,6 @@ static void lock_set(int fd, const char *port)
 
 /* Non fatal version of ser_open */
 int ser_open_nf(const char *port)
-
 {
 	int	fd;
 
@@ -155,6 +158,7 @@ int ser_open(const char *port)
 int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
+	NUT_UNUSED_VARIABLE(port);
 
 	if (tcgetattr(fd, &tio) != 0) {
 		return -1;
@@ -256,17 +260,29 @@ int ser_close(int fd, const char *port)
 	return 0;
 }
 
-int ser_send_char(int fd, unsigned char ch)
+ssize_t ser_send_char(int fd, unsigned char ch)
 {
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
-static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
+static ssize_t send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
 {
 	int	ret;
 	char	buf[LARGEBUF];
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	if (ret >= (int)sizeof(buf)) {
 		upslogx(LOG_WARNING, "vsnprintf needed more than %d bytes", (int)sizeof(buf));
@@ -276,14 +292,26 @@ static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_u
 }
 
 /* send the results of the format string with d_usec delay after each char */
-int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+ssize_t ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
 	va_list	ap;
 
 	va_start(ap, fmt);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = send_formatted(fd, fmt, ap, d_usec);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	va_end(ap);
 
@@ -291,14 +319,26 @@ int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
-int ser_send(int fd, const char *fmt, ...)
+ssize_t ser_send(int fd, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
 	va_list	ap;
 
 	va_start(ap, fmt);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = send_formatted(fd, fmt, ap, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	va_end(ap);
 
@@ -306,16 +346,16 @@ int ser_send(int fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-int ser_send_buf(int fd, const void *buf, size_t buflen)
+ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
 {
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
+ssize_t ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 	size_t buflen)
 {
-	int	ret;
+	ssize_t	ret;
 	size_t	sent;
 	const char	*data = buf;
 
@@ -333,12 +373,12 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 	return sent;
 }
 
-int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
+ssize_t ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 {
 	return select_read(fd, ch, 1, d_sec, d_usec);
 }
 
-int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+ssize_t ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
 	memset(buf, '\0', buflen);
 
@@ -346,9 +386,9 @@ int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
-	int	ret;
+	ssize_t	ret;
 	size_t	recv;
 	char	*data = buf;
 
@@ -368,11 +408,11 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, const char *alertset, void handler(char ch), 
+ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
+	const char *ignset, const char *alertset, void handler(char ch),
 	long d_sec, long d_usec)
 {
-	int	i, ret;
+	ssize_t	i, ret;
 	char	tmp[64];
 	char	*data = buf;
 	size_t	count = 0, maxcount;
@@ -412,16 +452,16 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
-int ser_get_line(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, long d_sec, long d_usec)
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
 }
 
-int ser_flush_in(int fd, const char *ignset, int verbose)
+ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
 {
-	int	ret, extra = 0;
+	ssize_t	ret, extra = 0;
 	char	ch;
 
 	while ((ret = ser_get_char(fd, &ch, 0, 0)) > 0) {
@@ -467,7 +507,19 @@ void ser_comm_fail(const char *fmt, ...)
 		return;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why)))

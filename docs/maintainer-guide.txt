@@ -49,16 +49,16 @@ message explaining the reason. The following can serve as a base:
 	Your message to the nut-upsXXX mailing was rejected because you must
 	suscribe to the mailing list. This is just to eradicate spam noise from
 	the mailing list.
-	
+
 	Use the following link to subscribe to this mailing list:
 	https://lists.alioth.debian.org/mailman/listinfo/nut-upsXXX
-	
+
 	where 'XXX' can be replaced by 'user', 'dev' or 'packaging'.
 
 	NUT maintainers
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 !! DRAFT !!
 
 Release process
@@ -80,13 +80,13 @@ process.
 
 SANDBOX (to be completed and pushed)
 
-• update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
-• create a GPG-signed tag v<incremented version> (ex: v2.7.3)
-• make dist
-• maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
-• push commits and tag
-• update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
-• add download hashes for tarball
+* update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
+* create a GPG-signed tag v<incremented version> (ex: v2.7.3)
+* `make dist`
+* maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
+* push commits and tag
+* update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
+* add download hashes for tarball
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////

@@ -37,7 +37,7 @@ during a transition period. The ups.* data will then be removed.
 | device.contact      | Device administrator name (opaque string)  | John Doe
 | device.location     | Device physical location (opaque string)   | 1st floor
 | device.part         | Device part number (opaque string)         | 123456789
-| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27
 | device.uptime       | Device uptime in seconds                   | 1782
 | device.count        | Total number of daisychained devices       | 1
 |=====================================================================================
@@ -62,7 +62,7 @@ ups: General unit information
 | ups.mfr               | UPS manufacturer             | APC
 | ups.mfr.date          | UPS manufacturing date
                           (opaque string)              | 10/17/96
-| ups.serial            | UPS serial number (opaque    
+| ups.serial            | UPS serial number (opaque
                           string)                      | WS9643050926
 | ups.vendorid          | Vendor ID for USB devices    | 0463
 | ups.productid         | Product ID for USB devices   | 0001
@@ -260,17 +260,17 @@ Example: `input.L1.current`
 Valid CONTEXTs
 ^^^^^^^^^^^^^^
 
- L1-L2  \
- L2-L3   \
- L3-L1    for voltage measurements
- L1-N    /
- L2-N   /
- L3-N  /
+    L1-L2  \
+    L2-L3   \
+    L3-L1    for voltage measurements
+    L1-N    /
+    L2-N   /
+    L3-N  /
 
- L1  \
- L2  for current and power measurements
- L3  /
- N  - for current measurement
+    L1  \
+    L2  for current and power measurements
+    L3  /
+    N  - for current measurement
 
 Valid SPECs
 ^^^^^^^^^^^
@@ -294,7 +294,7 @@ Valid with/without context (i.e. per phase or aggregated/averaged)
 | voltage.nominal       | Nominal voltage (V)
 | voltage.maximum       | Maximum seen voltage (V)
 | voltage.minimum       | Minimum seen voltage (V)
-| voltage.status        | Status relative to the thresholds 
+| voltage.status        | Status relative to the thresholds
 | voltage.low.warning   | Low warning threshold (V)
 | voltage.low.critical  | Low critical threshold (V)
 | voltage.high.warning  | High warning threshold (V)
@@ -325,7 +325,7 @@ Valid without context (i.e. aggregation of all phases):
 EXAMPLES
 ~~~~~~~~
 
-Partial Three phase - Three phase example:
+Partial Three phase -- Three phase example:
 
 	input.phases: 3
 	input.frequency: 50.0
@@ -335,7 +335,7 @@ Partial Three phase - Three phase example:
 	output.L1.power: 35700
 	output.powerfactor: 0.82
 
-Partial Three phase - One phase example:
+Partial Three phase -- One phase example:
 
 	input.phases: 3
 	input.L2.current: 48.2
@@ -381,7 +381,7 @@ battery: Any battery details
                                  restart after power-off (seconds)   | 120
 | battery.alarm.threshold      | Battery alarm threshold             | 0 (immediate)
 | battery.date                 | Battery change date (opaque string) | 11/14/00
-| battery.mfr.date             | Battery manufacturing date 
+| battery.mfr.date             | Battery manufacturing date
                                  (opaque string)                     | 2005/04/02
 | battery.packs                | Number of battery packs             | 001
 | battery.packs.bad            | Number of bad battery packs         | 000
@@ -488,6 +488,8 @@ of the user manual.
 |===============================================================================
 | Name                           | Description                 | Example value
 | outlet.count                   | Total number of outlets     | 12
+| outlet.switchable              | General outlet switch ability
+                                   of the unit (yes/no)        | yes
 | outlet.n.id                    | Outlet system identifier
                                    (opaque string)             | 1
 | outlet.n.name                  | Outlet name (opaque string) | A1
@@ -551,7 +553,7 @@ outlet.group: groups of smart outlets
 This is a refinement of the outlet collection, providing grouped
 management for a set of outlets. The same principles and data than the
 outlet collection apply to outlet.group, especially for the indexing 'n'
-and "outlet.group.count". 
+and "outlet.group.count".
 
 Most of the data published for outlets also apply to outlet.group,
 including: id, name (similar as outlet "desc"), status, current and
@@ -656,7 +658,7 @@ Instant commands
 | beeper.disable           | Disable UPS beeper/buzzer
 | beeper.mute              | Temporarily mute UPS beeper/buzzer
 | beeper.toggle            | Toggle UPS beeper/buzzer
-| outlet.n.shutdown.return | Turn off the outlet possibly after a delay 
+| outlet.n.shutdown.return | Turn off the outlet possibly after a delay
                              and return when power is back
 | outlet.n.load.off        | Turn off the outlet immediately
 | outlet.n.load.on         | Turn on the outlet immediately

@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
+NUT_STASH_WARNINGS
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -137,11 +138,41 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
+dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
+NUT_COMPILER_FAMILY
+AX_C_PRAGMAS
+AX_C___ATTRIBUTE__
+AX_C_PRINTF_STRING_NULL
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(fabs, [], [], [#include <math.h>])
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
+
+dnl These common routines are not available in strict C standard library
+dnl compilation modes, only in GNU, POSIX or other extension modes:
+AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+The next few tests look for required C library routines; if something is
+not found, you may need to enable a different C standard or extension macro
+version. You may also have to configure without extreme warning levels
+since autotools tests fail those on their own and assume system lacks
+stuff (although note we try to not involve standard -W* flags here).
+-----------------------------------------------------------------------])
+AC_CHECK_FUNCS(strcasecmp strncasecmp,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
+dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
+AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+dnl These routines' arg types differ in strict C standard mode
+dnl from what they use in the modes expected by NUT codebase:
+dnl   bind() :     /usr/include/x86_64-linux-gnu/sys/socket.h:123:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   accept() :   /usr/include/x86_64-linux-gnu/sys/socket.h:243:12: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   connect() :  /usr/include/x86_64-linux-gnu/sys/socket.h:137:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'const struct sockaddr *'
+dnl   sendto() :   /usr/include/x86_64-linux-gnu/sys/socket.h:163:16: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   recvfrom() : /usr/include/x86_64-linux-gnu/bits/socket2.h:64:1: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
 
 AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
@@ -243,7 +274,8 @@ AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+
 
 dnl pthread related checks
 AC_SEARCH_LIBS([pthread_create], [pthread],
@@ -346,9 +378,77 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 
 dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_serial}" != "no"; then
-  nut_with_serial="yes"
-fi
+dnl Below we try to detect if we can build serial drivers, and if we must?
+AS_IF([test "${nut_with_serial}" != "no"],
+    [AS_IF([test "${nut_with_serial}" != "yes"],[nut_with_serial="auto"])
+
+    CFLAGS_SAVED_SERIAL="${CFLAGS}"
+    AS_IF([test "${GCC}" = yes],
+        [CFLAGS_SAVED_WERROR="${CFLAGS} -Wall -Werror"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS} -Wno-error"
+        ],
+        [CFLAGS_SAVED_WERROR="${CFLAGS}"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS}"
+        ])
+
+    dnl At least recent *BSD distros have deprecated sys/termios.h and spew
+    dnl warnings that termios.h should be used instead. This is redundantly
+    dnl fatal for pedantic builds where we aim to have no warnings in code.
+    dnl So there AC_CHECK_HEADERS does find the header, but we don't really
+    dnl want to use it unless we have no choice: if there is a warning while
+    dnl trying sys/ version, try the plain header path (without fatal warnings),
+    dnl and only if that is missing - retry with the sys/ version again (and
+    dnl no warnings still).
+
+    CFLAGS="${CFLAGS_SAVED_WERROR}"
+    AC_CHECK_HEADERS(sys/termios.h, [], [
+        CFLAGS="${CFLAGS_SAVED_WNOERROR}"
+        AC_CHECK_HEADERS(termios.h, [], [
+            AC_CHECK_HEADERS(sys/termios.h, [], [], [AC_INCLUDES_DEFAULT])
+            ], [AC_INCLUDES_DEFAULT])
+        ], [AC_INCLUDES_DEFAULT])
+
+    dnl CFLAGS at this point suffice for surviving a compilation with termios.h
+
+    dnl Don't mind the stupid code below, it just probes the tokens and
+    dnl sails around compiler warnings
+    AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if defined(HAVE_SYS_TERMIOS_H)
+#  include <sys/termios.h>      /* for speed_t */
+#else
+# if defined(HAVE_TERMIOS_H)
+#  include <termios.h>
+# endif /* HAVE_TERMIOS_H */
+#endif /* HAVE_SYS_TERMIOS_H */
+void getspeed(speed_t* b) { *b = B19200; }
+],
+[struct termios tio;
+if (!tcgetattr(0, &tio)) { return 1; }
+speed_t baudrate;
+getspeed(&baudrate);
+]
+        )],
+        [AC_MSG_RESULT([ok])
+         nut_have_serial_types=yes
+        ],
+        [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
+         nut_have_serial_types=no
+        ])
+
+        dnl Restore common set-or-discovered CFLAGS
+        CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+        AC_MSG_CHECKING([whether we can build serial drivers])
+        AS_IF([test "${nut_have_serial_types}" = yes],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
+            ])
+        AS_IF([test "${nut_with_serial}" = "yes"],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])])
+    ])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
@@ -440,7 +540,7 @@ NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
 NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
 dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 
-dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipmi}" != "no"; then
    dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
    if test "${nut_with_freeipmi}" = "yes"; then
@@ -572,7 +672,7 @@ NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
    if test "${nut_with_nss}" = "yes"; then
@@ -700,16 +800,16 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 DOC_INSTALL_DISTED_MANS=no
 
 case "${nut_with_doc}" in
-	yes|all)
+	yes|all|all=yes)
 		nut_doc_build_list="man html-single html-chunked pdf"
 		;;
-	auto)
+	auto|all=auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
-	skip)
+	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
-	no)
+	no|all=no)
 		nut_doc_build_list=""
 		;;
 dnl If user passed --with-doc='' they they want nothing, right?
@@ -897,6 +997,15 @@ esac
 NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
+# To cater for less portable make's, precalculate the target list
+# for "make check" in "docs/" here...
+DOC_CHECK_LIST=""
+if test "${nut_with_doc}" = yes ; then
+    for V in $DOC_BUILD_LIST ; do
+        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+    done
+fi
+
 WITH_MANS=no
 SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
@@ -918,7 +1027,30 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
 dnl We only init libtool there to allow AC_DISABLE_STATIC
+if ( test "${GCC}" = "yes" )
+then
+	dnl # Avoid new compilers' warnings/errors about libtool distro flaws in this test like:
+	dnl #   error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+	dnl #   {"nm_test_func", (void *) &nm_test_func},
+	dnl # or ones about LTO (-flto -fno-common) as discussed and suggested
+	dnl # in https://www.mail-archive.com/libtool@gnu.org/msg14037.html -
+	dnl # all leading to undefined "global_symbol_pipe" in the generated
+	dnl # libtool script, and resulting in errors like `... | | ...` below :
+	dnl # libtool: link: /usr/bin/nm -B .libs/upsclient.o \
+	dnl #   ../common/.libs/libcommonclient.a |  | /usr/bin/sed 's/.* //' \
+	dnl #   | sort | uniq > .libs/libupsclient.exp
+	dnl # ../libtool: syntax error: `|' unexpected
+
+	CFLAGS_SAVED_NOPEDANTIC="$CFLAGS"
+	AS_CASE(["${CFLAGS}"],[*"-pedantic"*],[CFLAGS="${CFLAGS} -Wno-pedantic"])
+	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
+	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
+fi
 AC_PROG_LIBTOOL
+if ( test "${GCC}" = "yes" )
+then
+	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
+fi
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then
@@ -1365,17 +1497,22 @@ CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
-    [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
-         have_cxx11=yes],
-        [CXXFLAGS="$CXXFLAGS -std=c++0x"
-         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
-             have_cxx11=yes],
-            [AC_MSG_RESULT([no])
-             CXXFLAGS="$my_CXXFLAGS"
-             have_cxx11=no])])])
+    [AS_CASE(["${CXXFLAGS}"],
+        [*"-std="*], [
+            AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
+            have_cxx11=no,
+        ],[
+            CXXFLAGS="$CXXFLAGS -std=c++11"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+                 have_cxx11=yes],
+                [CXXFLAGS="$CXXFLAGS -std=c++0x"
+                 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                    [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+                     have_cxx11=yes],
+                    [AC_MSG_RESULT([no])
+                     CXXFLAGS="$my_CXXFLAGS"
+                     have_cxx11=no])])])])
 AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
@@ -1711,6 +1848,7 @@ AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
+AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
@@ -1744,6 +1882,8 @@ AC_SUBST(systemdshutdowndir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
+
+NUT_POP_WARNINGS
 
 AC_OUTPUT([
  clients/Makefile

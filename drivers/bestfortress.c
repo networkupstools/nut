@@ -66,16 +66,16 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.delay.shutdown", "10");	/* write only */
 
 	/* tunable via front panel: (european voltage level)
-	   parameter		factory default  range
-	   INFO_LOWXFER	196 V   p7=nnn   160-210
-	   INFO_HIGHXFER	254 V   p8=nnn   215-274
-	   INFO_LOBATTIME	2 min   p2=n     1-5
+	   parameter        factory default  range
+	   INFO_LOWXFER     196 V   p7=nnn   160-210
+	   INFO_HIGHXFER    254 V   p8=nnn   215-274
+	   INFO_LOBATTIME   2 min   p2=n     1-5
 
 	   comm mode    p6=0 dumb DONT USE (will lose access to parameter setting!)
-	   		p6=1 B1200
-			p6=2 B2400
-			P6=3 B4800
-			p6=4 B9600
+	        p6=1 B1200
+	        p6=2 B2400
+	        P6=3 B4800
+	        p6=4 B9600
 	   maybe cycle through speeds to autodetect?
 
 	   echo off     e0
@@ -116,7 +116,7 @@ static int checksum (char * s)
 	int sum;
 	for (i = 40, sum = 0; s[0] && s[1] && i > 0; i--, s += 2) {
 		sum += (fromhex (s[0]) << 4) + fromhex (s[1]);
-	} 
+	}
 	return sum;
 }
 
@@ -126,7 +126,8 @@ static inline int setinfo_int (const char *key, const char * s, size_t len)
 	char buf[10];
 	int val;
 
-	if (len > sizeof(buf)) len = sizeof(buf)-1;
+	if (len > sizeof(buf))
+		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
 	val = atoi(buf);
@@ -141,7 +142,8 @@ static inline void setinfo_int_minutes (const char *key, const char * s, size_t 
 {
 	char buf[10];
 
-	if (len > sizeof(buf)) len = sizeof(buf)-1;
+	if (len > sizeof(buf))
+		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
 	dstate_setinfo (key, "%d", 60*atoi (buf));
@@ -151,21 +153,50 @@ static inline void setinfo_int_minutes (const char *key, const char * s, size_t 
 static inline void setinfo_float (const char *key, const char * fmt, const char * s, size_t len, double factor)
 {
 	char buf[10];
-	if (len > sizeof(buf)) len = sizeof(buf)-1;
+	if (len > sizeof(buf))
+		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* FIXME (bitness-dependent?):
+	 *   error: cast from function call of type 'int' to non-matching type 'double' [-Werror,-Wbad-function-cast]
+	 */
 	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 }
 
 static int upssend(const char *fmt,...) {
-	int	ret;
+	int ret;
 	char buf[1024], *p;
-	va_list	ap;
+	va_list ap;
 	unsigned int	sent = 0;
 	int d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
@@ -187,11 +218,12 @@ static int upssend(const char *fmt,...) {
 static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 {
 	return ser_get_line(upsfd, buf, bufsize - 1, ec, ic,
-			SER_WAIT_SEC, SER_WAIT_USEC);
+	                    SER_WAIT_SEC, SER_WAIT_USEC);
 }
 
-static int upsflushin(int f,int verbose,const char *ignset)
+static int upsflushin(int f, int verbose, const char *ignset)
 {
+	NUT_UNUSED_VARIABLE(f);
 	return ser_flush_in(upsfd, ignset, verbose);
 }
 
@@ -309,7 +341,7 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 	upssend ("p%d=%*s\r", parameter, dlen, data);
@@ -396,7 +428,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		upssend ("OFF%s\r", p);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_INFO, "instcmd: unknown command %s", cmdname);
+	upslogx(LOG_INFO, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -411,7 +443,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "max_load", "rated VA load VA");
 }
 
-struct {
+static struct {
 	const char * val;
 	speed_t speed;
 } speed_table[] = {

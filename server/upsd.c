@@ -1,4 +1,4 @@
-/* upsd.c - watches ups state files and answers queries 
+/* upsd.c - watches ups state files and answers queries
 
    Copyright (C)
 	1999		Russell Kroll <rkroll@exploits.org>
@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <poll.h>
+#include <signal.h>
 
 #include "user.h"
 #include "nut_ctype.h"
@@ -47,32 +48,38 @@ int	allow_severity = LOG_INFO;
 int	deny_severity = LOG_WARNING;
 #endif	/* HAVE_WRAP */
 
-	/* externally-visible settings and pointers */
+/* externally-visible settings and pointers */
 
-	upstype_t	*firstups = NULL;
+upstype_t	*firstups = NULL;
 
-	/* default 15 seconds before data is marked stale */
-	int	maxage = 15;
+/* default 15 seconds before data is marked stale */
+int	maxage = 15;
 
-	/* default to 1h before cleaning up status tracking entries */
-	int	tracking_delay = 3600;
+/* default to 1h before cleaning up status tracking entries */
+int	tracking_delay = 3600;
 
-	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-	int	maxconn = 0;
+/*
+ * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
+ * (with higher prio for envvar); defaults to disabled for legacy compat.
+ */
+int allow_no_device = 0;
 
-	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
-	char	*statepath = NULL;
+/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
+int	maxconn = 0;
 
-	/* preloaded to DATADIR in main, can be overridden via upsd.conf */
-	char	*datapath = NULL;
+/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
+char	*statepath = NULL;
 
-	/* everything else */
-	const char	*progname;
+/* preloaded to DATADIR in main, can be overridden via upsd.conf */
+char	*datapath = NULL;
+
+/* everything else */
+static const char	*progname;
 
 nut_ctype_t	*firstclient = NULL;
 /* static nut_ctype_t	*lastclient = NULL; */
 
-	/* default is to listen on all local interfaces */
+/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
 
 static int 	opt_af = AF_UNSPEC;
@@ -235,7 +242,7 @@ static void setuptcp(stype_t *server)
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
-		
+
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
@@ -359,7 +366,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 #ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		res = write(client->sock_fd, ans, len);
@@ -427,7 +434,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, nut_ctype_t *client, int numarg, 
+static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -488,7 +495,7 @@ static void parse_net(nut_ctype_t *client)
 static void client_connect(stype_t *server)
 {
 	struct	sockaddr_storage csock;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	clen;
 #else
 	socklen_t	clen;
@@ -542,7 +549,7 @@ static void client_readline(nut_ctype_t *client)
 #ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
@@ -602,7 +609,7 @@ void server_load(void)
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
 	}
-	
+
 	/* check if we have at least 1 valid LISTEN interface */
 	if (firstaddr->sock_fd < 0) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
@@ -640,7 +647,7 @@ static void client_free(void)
 	}
 }
 
-void driver_free(void)
+static void driver_free(void)
 {
 	upstype_t	*ups, *unext;
 
@@ -673,7 +680,7 @@ static void upsd_cleanup(void)
 
 	user_flush();
 	desc_free();
-	
+
 	server_free();
 	client_free();
 	driver_free();
@@ -689,7 +696,7 @@ static void upsd_cleanup(void)
 	free(handler);
 }
 
-void poll_reload(void)
+static void poll_reload(void)
 {
 	int	ret;
 
@@ -1036,9 +1043,22 @@ static void mainloop(void)
 			case SERVER:
 				upsdebugx(2, "%s: server disconnected", __func__);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upsdebugx(2, "%s: <unknown> disconnected", __func__);
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
+
 			}
 
 			continue;
@@ -1057,9 +1077,21 @@ static void mainloop(void)
 			case SERVER:
 				client_connect((stype_t *)handler[i].data);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upsdebugx(2, "%s: <unknown> has data available", __func__);
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			}
 
 			continue;
@@ -1067,10 +1099,13 @@ static void mainloop(void)
 	}
 }
 
-static void help(const char *progname) 
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", progname);
+	printf("usage: %s [OPTIONS]\n", arg_progname);
 
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
@@ -1091,6 +1126,7 @@ static void help(const char *progname)
 
 static void set_reload_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
 	reload_flag = 1;
 }
 
@@ -1108,7 +1144,14 @@ static void setup_signals(void)
 	sa.sa_flags = 0;
 
 	/* basic signal setup to ignore SIGPIPE */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	sigaction(SIGPIPE, &sa, NULL);
 
 	/* handle shutdown signals */
@@ -1141,7 +1184,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, cmdret = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1159,23 +1202,27 @@ int main(int argc, char **argv)
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
-			case 'h':
-				help(progname);
-				break;
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+					exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
+
 			case 'q':
 				nut_log_level++;
 				break;
+
 			case 'r':
 				chroot_path = optarg;
 				break;
+
 			case 'u':
 				user = optarg;
 				break;
+
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
@@ -1203,15 +1250,15 @@ int main(int argc, char **argv)
 				opt_af = AF_INET6;
 				break;
 
+			case 'h':
 			default:
 				help(progname);
-				break;
 		}
 	}
 
 	if (cmd) {
-		sendsignalfn(pidfn, cmd);
-		exit(EXIT_SUCCESS);
+		cmdret = sendsignalfn(pidfn, cmd);
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
@@ -1252,6 +1299,28 @@ int main(int argc, char **argv)
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
 
+	{ // scope
+	/* As documented above, the ALLOW_NO_DEVICE can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NO_DEVICE");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 0;
+		}
+	}
+	} // scope
+
 	/* start server */
 	server_load();
 
@@ -1270,7 +1339,11 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		if (allow_no_device) {
+			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
+		} else {
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		}
 	}
 
 	/* try to bring in the var/cmd descriptions */

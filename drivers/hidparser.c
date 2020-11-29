@@ -91,7 +91,7 @@ static void ResetLocalState(HIDParser_t* pParser)
 /*
  * GetReportOffset
  *
- * Return pointer on current offset value for Report designed by 
+ * Return pointer on current offset value for Report designed by
  * ReportID/ReportType
  * -------------------------------------------------------------------------- */
 static uint8_t *GetReportOffset(HIDParser_t* pParser, const uint8_t ReportID, const uint8_t ReportType)
@@ -143,7 +143,7 @@ static long FormatValue(long Value, uint8_t Size)
  * HIDParse(HIDParser_t* pParser, HIDData_t *pData)
  *
  * Analyse Report descriptor stored in HIDParser struct and store local and
- * global context. 
+ * global context.
  * Return in pData the last object found.
  * Return -1 when there is no other Item to parse, 1 if a new object was found
  * or 0 if a continuation of a previous object was found.
@@ -157,7 +157,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		if (pParser->Count == 0) {
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-#if WORDS_BIGENDIAN
+#if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
 			{
 				int	i;
 				unsigned long	valTmp = 0;
@@ -202,7 +202,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if (pParser->UsageSize > 0) {
 				int	i;
-			
+
 				for (i = 0; i < pParser->UsageSize; i++) {
 					pParser->UsageTab[i] = pParser->UsageTab[i+1];
 				}
@@ -222,15 +222,15 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_END_COLLECTION :
 			pParser->Data.Path.Size--;
-			
+
 			/* Remove Index if any */
 			if((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000) == 0x00ff0000) {
 				pParser->Data.Path.Size--;
 			}
-			
+
 			ResetLocalState(pParser);
 			break;
-			
+
 		case ITEM_FEATURE:
 		case ITEM_INPUT:
 		case ITEM_OUTPUT:
@@ -241,7 +241,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 				/* It is a continuation of a previous object */
 				Found = 0;
 			}
-			
+
 			/* Get new pParser->Count from global value */
 			if(pParser->Count == 0) {
 				pParser->Count = pParser->ReportCount;
@@ -250,87 +250,87 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
-			
+
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if(pParser->UsageSize > 0) {
 				int i;
-				
+
 				for (i = 0; i < pParser->UsageSize; i++) {
 					pParser->UsageTab[i] = pParser->UsageTab[i+1];
 				}
 				/* Remove Usage */
 				pParser->UsageSize--;
 			}
-			
+
 			/* Copy data type */
 			pParser->Data.Type = (uint8_t)(pParser->Item & ITEM_MASK);
-			
+
 			/* Copy data attribute */
 			pParser->Data.Attribute = (uint8_t)pParser->Value;
-			
+
 			/* Store offset */
 			pParser->Data.Offset = *GetReportOffset(pParser, pParser->Data.ReportID, (uint8_t)(pParser->Item & ITEM_MASK));
-			
+
 			/* Get Object in pData */
 			/* -------------------------------------------------------------------------- */
 			memcpy(pData, &pParser->Data, sizeof(HIDData_t));
 			/* -------------------------------------------------------------------------- */
-			
+
 			/* Increment Report Offset */
 			*GetReportOffset(pParser, pParser->Data.ReportID, (uint8_t)(pParser->Item & ITEM_MASK)) += pParser->Data.Size;
-			
+
 			/* Remove path last node */
 			pParser->Data.Path.Size--;
-			
+
 			/* Decrement count */
 			pParser->Count--;
-			
+
 			if (pParser->Count == 0) {
 				ResetLocalState(pParser);
 			}
 			break;
-			
+
 		case ITEM_REP_ID :
 			pParser->Data.ReportID = (uint8_t)pParser->Value;
 			break;
-			
+
 		case ITEM_REP_SIZE :
 			pParser->Data.Size = (uint8_t)pParser->Value;
 			break;
-			
+
 		case ITEM_REP_COUNT :
 			pParser->ReportCount = (uint8_t)pParser->Value;
 			break;
-			
+
 		case ITEM_UNIT_EXP :
 			pParser->Data.UnitExp = (int8_t)pParser->Value;
 			if (pParser->Data.UnitExp > 7) {
 				pParser->Data.UnitExp |= 0xF0;
 			}
 			break;
-			
+
 		case ITEM_UNIT :
 			pParser->Data.Unit = pParser->Value;
 			break;
-			
+
 		case ITEM_LOG_MIN :
 			pParser->Data.LogMin = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
 			break;
-			
+
 		case ITEM_LOG_MAX :
 			pParser->Data.LogMax = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
 			break;
-			
+
 		case ITEM_PHY_MIN :
 			pParser->Data.PhyMin=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
 			pParser->Data.have_PhyMin = 1;
 			break;
-			
+
 		case ITEM_PHY_MAX :
 			pParser->Data.PhyMax=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
 			pParser->Data.have_PhyMax = 1;
 			break;
-			
+
 		case ITEM_LONG :
 			/* can't handle long items, but should at least skip them */
 			pParser->Pos += (uint8_t)(pParser->Value & 0xff);
@@ -344,8 +344,13 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		upslogx(LOG_ERR, "%s: Report descriptor too big", __func__);
 	if(pParser->UsageSize >= USAGE_TAB_SIZE)
 		upslogx(LOG_ERR, "%s: HID Usage too high", __func__);
+
+	/* FIXME: comparison is always false due to limited range of data type [-Werror=type-limits]
+	 * with ReportID beint uint8_t and MAX_REPORT being 500 currently */
+	/*
 	if(pParser->Data.ReportID >= MAX_REPORT)
 		upslogx(LOG_ERR, "%s: Too many HID reports", __func__);
+	*/
 
 	return Found;
 }
@@ -358,11 +363,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
 {
 	HIDData_t	*pFoundData = FindObject_with_Path(pDesc, &pData->Path, pData->Type);
-	
+
 	if (!pFoundData) {
 		return 0;
 	}
-	
+
 	memcpy(pData, pFoundData, sizeof(*pData));
 	return 1;
 }
@@ -377,18 +382,18 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
-		
+
 		if (pData->Type != Type) {
 			continue;
 		}
-		
+
 		if (memcmp(pData->Path.Node, Path->Node, (Path->Size) * sizeof(HIDNode_t))) {
 			continue;
 		}
-		
+
 		return pData;
 	}
-	
+
 	return NULL;
 }
 
@@ -403,22 +408,22 @@ HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
-		
+
 		if (pData->ReportID != ReportID) {
 			continue;
 		}
-		
+
 		if (pData->Type != Type) {
 			continue;
 		}
- 
+
 		if (pData->Offset != Offset) {
 			continue;
 		}
-		
+
 		return pData;
 	}
-	
+
 	return NULL;
 }
 
@@ -435,10 +440,10 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	long	range, mask, signbit, b, m;
 
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
-	
+
 	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {
 		int	State = Buf[Bit >> 3] & (1 << (Bit & 7));
-		
+
 		if(State) {
 			value += (1 << Weight);
 		}
@@ -527,7 +532,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
 {
 	int	Weight, Bit;
-	
+
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
 	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {

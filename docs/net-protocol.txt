@@ -25,7 +25,7 @@ an older version of the software.
 Command reference
 -----------------
 
-Multi-word elements are contained within "quotes" for easier parsing.  
+Multi-word elements are contained within "quotes" for easier parsing.
 Embedded quotes are escaped with backslashes.  Embedded backslashes are
 also escaped by representing them as \\.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
@@ -134,12 +134,14 @@ Response:
 - 'RW': this variable may be set to another value with SET
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
-- 'RANGE': this is an numeric, either integer or float, comprised in the range (see LIST RANGE)
+- 'RANGE': this is an numeric, either integer or float, comprised in the
+range (see LIST RANGE)
 - 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
-The default <type>, when omitted, is numeric, so either integer or float.  Each
-driver is then responsible for handling values as either integer or float.
+The default <type>, when omitted, is numeric, so either integer or float.
+Each driver is then responsible for handling values as either integer or
+float.
 
 Note that float values are expressed using decimal (base 10) english-based
 representation, so using a dot, in non-scientific notation.  So hexadecimal,
@@ -481,7 +483,7 @@ NOTE: This requires "upsmon slave" or "upsmon master" in upsd.users
 
 Use this to log the fact that a system is drawing power from this UPS.
 The upsmon master will wait until the count of attached systems reaches
-1 - itself.  This allows the slaves to shut down first.
+1 -- itself.  This allows the slaves to shut down first.
 
 NOTE: You probably shouldn't send this command unless you are upsmon,
 or a upsmon replacement.
@@ -530,7 +532,7 @@ power disappears.
 Setting this flag makes "FSD" appear in a STATUS request for this UPS.
 Finding "FSD" in a status request should be treated just like a "OB LB".
 
-It should be noted that FSD is currently a latch - once set, there is  
+It should be noted that FSD is currently a latch -- once set, there is
 no way to clear it short of restarting upsd or dropping then re-adding
 it in the ups.conf.  This may cause issues when upsd is running on a
 system that is not shut down due to the UPS event.
@@ -644,13 +646,13 @@ sending a valid command like GET with an invalid subcommand.
 
 - 'INSTCMD-FAILED'
 +
-upsd failed to deliver the instant command request to the driver. 
+upsd failed to deliver the instant command request to the driver.
 No further information is available to the client.  This typically
 indicates a dead or broken driver.
 
 - 'SET-FAILED'
 +
-upsd failed to deliver the set request to the driver.  This is 
+upsd failed to deliver the set request to the driver.  This is
    just like INSTCMD-FAILED above.
 
 - 'READONLY'
@@ -679,7 +681,7 @@ start it again.
 - 'DRIVER-NOT-CONNECTED'
 +
 upsd can't perform the requested command, since the driver for that
-UPS is not connected.  This usually means that the driver is not 
+UPS is not connected.  This usually means that the driver is not
 running, or if it is, the ups.conf is misconfigured.
 
 - 'DATA-STALE'
@@ -700,7 +702,7 @@ There is presently a limit of one LOGIN record per connection.
 
 - 'INVALID-PASSWORD'
 +
-The client sent an invalid PASSWORD - perhaps an empty one.
+The client sent an invalid PASSWORD -- perhaps an empty one.
 
 - 'ALREADY-SET-PASSWORD'
 +
@@ -736,7 +738,7 @@ receiving this response.
 
 - 'INVALID-VALUE'
 +
-The value specified in the request is not valid.  This usually 
+The value specified in the request is not valid.  This usually
 applies to a SET of an ENUM type which is using a value which is
 not in the list of allowed values.
 

@@ -35,6 +35,13 @@
 	#include <pk11pub.h>
 	#include <prinit.h>
 	#include <private/pprio.h>
+/* Note: on systems with NSS 3.x the following two lines complain non-fatally:
+ *   /usr/include/mps/key.h:9:9: note: '#pragma message: key.h is deprecated. Please include keyhi.h instead.'
+ *   /usr/include/mps/keyt.h:9:9: note: '#pragma message: keyt.h is deprecated. Please include keythi.h instead.'
+ * If this becomes a warning or error in the future, it can be addressed
+ * with a trick like done elsewhere for best pick of (sys/)types.h support
+ * for the specific build target platform.
+ */
 	#include <key.h>
 	#include <keyt.h>
 	#include <secerr.h>
@@ -142,9 +149,11 @@ static int ssl_error(SSL *ssl, int ret)
 static CERTCertificate *cert;
 static SECKEYPrivateKey *privKey;
 
-static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
+static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	if (retry) {
 		/* Force not inted to retrieve password many times. */
 		return NULL;
@@ -170,7 +179,9 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 	char buffer[256];
 	PRInt32 length;
 	PRErrorCode e;
-	
+	NUT_UNUSED_VARIABLE(ssl);
+	NUT_UNUSED_VARIABLE(ret);
+
 	e = PR_GetError();
 	length = PR_GetErrorText(buffer);
 	if (length > 0 && length < 256) {
@@ -195,13 +206,15 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 
 static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
-	 */ 
+	 */
 	return certrequest==NETSSL_CERTREQ_REQUIRE?SECFailure:SECSuccess;
 #else /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 	/* Always accept clients. */
@@ -211,6 +224,8 @@ static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 
 static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
 }
@@ -226,7 +241,10 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	SECStatus	status;
 	PRFileDesc	*socket;
 #endif /* WITH_OPENSSL | WITH_NSS */
-	
+
+	NUT_UNUSED_VARIABLE(numarg);
+	NUT_UNUSED_VARIABLE(arg);
+
 	if (client->ssl) {
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
 		return;
@@ -238,8 +256,8 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		return;
 	}
-	
-#ifdef WITH_OPENSSL	
+
+#ifdef WITH_OPENSSL
 	if (!ssl_ctx)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	if (!NSS_IsInitialized())
@@ -249,12 +267,12 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		ssl_initialized = 0;
 		return;
 	}
-	
+
 	if (!sendback(client, "OK STARTTLS\n")) {
 		return;
 	}
 
-#ifdef WITH_OPENSSL	
+#ifdef WITH_OPENSSL
 
 	client->ssl = SSL_new(ssl_ctx);
 
@@ -269,7 +287,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		ssl_debug();
 		return;
 	}
-	
+
 	ret = SSL_accept(client->ssl);
 	switch (ret)
 	{
@@ -277,7 +295,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		client->ssl_connected = 1;
 		upsdebugx(3, "SSL connected (%s)", SSL_get_version(client->ssl));
 		break;
-		
+
 	case 0:
 		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
 		ssl_error(client->ssl, ret);
@@ -287,7 +305,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		ssl_error(client->ssl, ret);
 		break;
 	}
-	
+
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
@@ -303,13 +321,13 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
-	
+
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
 		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
-	
+
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
@@ -319,21 +337,21 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
-	
+
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
-	
+
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
-	
+
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not inialize SSL connection");
@@ -428,7 +446,7 @@ void ssl_init(void)
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
 	ssl_initialized = 1;
-		
+
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	if (!certname || certname[0]==0 ) {
@@ -437,9 +455,9 @@ void ssl_init(void)
 	}
 
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-	
+
 	PK11_SetPasswordFunc(nss_password_callback);
-	
+
 	if (certfile)
 		/* Note: this call can generate memory leaks not resolvable
 		 * by any release function.
@@ -450,10 +468,10 @@ void ssl_init(void)
 		status = NSS_NoDB_Init(NULL);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
-		nss_error("upscli_init / NSS_[NoDB]_Init");	
+		nss_error("upscli_init / NSS_[NoDB]_Init");
 		return;
 	}
-	
+
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
@@ -468,7 +486,7 @@ void ssl_init(void)
 		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
 		return;
 	}
-	
+
 	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable SSLv3");
@@ -489,7 +507,7 @@ void ssl_init(void)
 		return;
 	}
 
-	if (certrequest == NETSSL_CERTREQ_REQUEST || 
+	if (certrequest == NETSSL_CERTREQ_REQUEST ||
 		certrequest == NETSSL_CERTREQ_REQUIRE ) {
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
@@ -508,21 +526,21 @@ void ssl_init(void)
 		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
-	
+
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
 		upslogx(LOG_ERR, "Can not find server certificate");
 		nss_error("upscli_init / PK11_FindCertFromNickname");
 		return;
 	}
-	
+
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
 	if(privKey==NULL){
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
 		nss_error("upscli_init / PK11_FindKeyByAnyCert");
 		return;
 	}
-		
+
 	ssl_initialized = 1;
 #else /* WITH_OPENSSL | WITH_NSS */
 	upslogx(LOG_ERR, "ssl_init called but SSL wasn't compiled in");
@@ -531,7 +549,7 @@ void ssl_init(void)
 
 int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
-	int	ret;
+	int	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;
