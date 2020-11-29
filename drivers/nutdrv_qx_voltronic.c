@@ -2473,7 +2473,7 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_
 		{ "advanced_eco_mode",		advanced_eco_mode },
 		{ "constant_phase_angle",	constant_phase_angle },
 		{ "limited_runtime_on_battery",	limited_runtime_on_battery },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	for (i = 0; capability[i].type; i++) {
