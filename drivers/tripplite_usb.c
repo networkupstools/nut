@@ -217,7 +217,18 @@ static int is_binary_protocol()
 	case TRIPP_LITE_OMNIVS:
 	case TRIPP_LITE_OMNIVS_2001:
 	case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 }
@@ -235,7 +246,18 @@ static int is_smart_protocol()
 	case TRIPP_LITE_OMNIVS:
 	case TRIPP_LITE_OMNIVS_2001:
 	case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 }
@@ -793,7 +815,18 @@ static int control_outlet(int outlet_id, int state)
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
 		case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
 	return 0;
@@ -1421,7 +1454,18 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 		case TRIPP_LITE_UNKNOWN:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 	}
