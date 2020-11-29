@@ -243,7 +243,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q\r",  0x07, '\r' },
 		{ "C\r",  0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
@@ -537,7 +537,7 @@ void upsdrv_initups(void)
 		{ "phoenix", &phoenix_command },
 		{ "ippon", &ippon_command },
 		{ "krauler", &krauler_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret, langid;
