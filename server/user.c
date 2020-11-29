@@ -28,9 +28,9 @@
 #include "user.h"
 #include "user-data.h"
 
-	ulist_t	*users = NULL;
+static ulist_t	*users = NULL;
 
-	static	ulist_t	*curr_user;
+static	ulist_t	*curr_user;
 
 /* create a new user entry */
 static void user_add(const char *un)
