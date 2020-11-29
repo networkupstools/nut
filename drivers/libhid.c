@@ -90,13 +90,13 @@ void free_report_buffer(reportbuf_t *rbuf)
 /* allocate a new report buffer. Return pointer on success, else NULL
    with errno set. The returned data structure must later be freed
    with free_report_buffer(). */
-reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
+reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
 	int		i, id;
 
-	if (!pDesc)
+	if (!arg_pDesc)
 		return NULL;
 
 	rbuf = calloc(1, sizeof(*rbuf));
@@ -105,9 +105,9 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 	}
 
 	/* now go through all items that are part of this report */
-	for (i=0; i<pDesc->nitems; i++) {
+	for (i=0; i<arg_pDesc->nitems; i++) {
 
-		pData = &pDesc->item[i];
+		pData = &arg_pDesc->item[i];
 
 		id = pData->ReportID;
 
@@ -116,7 +116,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 			continue;
 
 		/* first byte holds id */
-		rbuf->len[id] = pDesc->replen[id] + 1;
+		rbuf->len[id] = arg_pDesc->replen[id] + 1;
 
 		/* skip zero length reports */
 		if (rbuf->len[id] < 1) {

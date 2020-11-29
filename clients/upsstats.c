@@ -195,9 +195,10 @@ static int do_date(const char *buf)
 {
 	char	datebuf[SMALLBUF];
 	time_t	tod;
+	struct tm tmbuf;
 
 	time(&tod);
-	if (strftime(datebuf, sizeof(datebuf), buf, localtime(&tod))) {
+	if (strftime(datebuf, sizeof(datebuf), buf, localtime_r(&tod, &tmbuf))) {
 		printf("%s", datebuf);
 		return 1;
 	}
@@ -1041,6 +1042,9 @@ static void display_single(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
+
 	extractcgiargs();
 
 	printf("Content-type: text/html\n");

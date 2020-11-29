@@ -70,7 +70,7 @@ typedef struct nutscan_device {
 	struct nutscan_device * next;
 } nutscan_device_t;
 
-nutscan_device_t * nutscan_new_device();
+nutscan_device_t * nutscan_new_device(void);
 void nutscan_free_device(nutscan_device_t * device);
 void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
