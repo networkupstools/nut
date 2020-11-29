@@ -21,6 +21,9 @@
  *
  */
 
+#ifndef NUT_POWERCOM_H_SEEN
+#define NUT_POWERCOM_H_SEEN 1
+
 /* C-libary includes */
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -97,3 +100,5 @@ struct type {
 	 */
 	float         voltage[4];
 };
+
+#endif	/* NUT_POWERCOM_H_SEEN */
