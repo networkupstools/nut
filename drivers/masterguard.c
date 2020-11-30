@@ -56,11 +56,11 @@ static char    firmware[6];
  * Returns NULL on reaching the end of the string.
  *
  ********************************************************************/
-static char *StringSplit( char *source, char *word, int maxlen )
+static char *StringSplit( char *source, char *word, size_t maxlen )
 {
-	int     i;
-	int     len;
-	int     wc=0;
+	size_t  i;
+	size_t  len;
+	size_t  wc=0;
 
 	word[0] = '\0';
 	len = strlen( source );
@@ -88,9 +88,9 @@ static char *StringSplit( char *source, char *word, int maxlen )
  ********************************************************************/
 static void StringStrip( char *source, char *word )
 {
-	int     wc=0;
-	int     i;
-	int     len;
+	size_t  wc=0;
+	size_t  i;
+	size_t  len;
 
 	word[0] = '\0';
 	len = strlen( source );
