@@ -617,7 +617,10 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int t
 #ifdef WITH_OPENSSL
 		ret = SSL_read(ups->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Read(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Read(ups->ssl, buf, (PRInt32)buflen);
 #endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
@@ -678,7 +681,10 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigne
 #ifdef WITH_OPENSSL
 		ret = SSL_write(ups->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Write(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Write(ups->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
