@@ -471,7 +471,7 @@ send_command( int cmd )
 {
 	static const size_t sizes = 19, iend = 18;
 	size_t i;
-	int chk, checksum = 0, ret, kount; /*, j, uc; */
+	int chk, checksum = 0, ret = -1, kount; /*, j, uc; */
 	unsigned char ch, *psend = NULL;
 
 	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
