@@ -434,6 +434,9 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	int bcc;
 	byte_t *tail;
 
+	if ( (f.end - f.begin) < 2 )
+		return -1;
+
 	if (*f.begin!=STX)
 		return -1;
 
@@ -444,7 +447,7 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	if (tail[0]!=ETX)
 		return -1;
 
-	bcc = compute_bcc(f.begin+1, (f.end - f.begin) - 2/*STX & BCC*/);
+	bcc = compute_bcc(f.begin+1, (size_t)(f.end - f.begin) - 2 /*STX & BCC*/);
 	if (bcc!= tail[1])
 		return -1;
 
@@ -584,9 +587,11 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	for (i=0; i<io_head->len; ++i)
 		*(io_buf->end++) = reply[11+i];
 
-	reverse_bits(io_buf->begin, (io_buf->end - io_buf->begin) );
+	assert(io_buf->end - io_buf->begin >= 0);
+	size_t io_buf_len = (size_t)(io_buf->end - io_buf->begin);
+	reverse_bits(io_buf->begin, io_buf_len );
 
-	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, (io_buf->end - io_buf->begin));
+	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, io_buf_len);
 
 	return 0;	/* all ok */
 }
@@ -689,17 +694,20 @@ static void flush_rx_queue()
  */
 static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 {
-	int err;
+	ssize_t err;
 
-	upsdebug_ascii(3, dmsg, frame.begin, (frame.end - frame.begin));
+	assert(frame.end - frame.begin >= 0);
+	size_t frame_len = (size_t)(frame.end - frame.begin);
 
-	err = ser_send_buf(upsfd, frame.begin, (frame.end - frame.begin) );
+	upsdebug_ascii(3, dmsg, frame.begin, frame_len);
+
+	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
 		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
 		return -1;
 	}
 
-	if (err != (frame.end - frame.begin)) {
+	if (err != (ssize_t)frame_len) {
 		upslogx(LOG_ERR, "sent incomplete frame to PRS");
 		return -1;
 	}
@@ -815,7 +823,8 @@ static int recv_command_ack()
 	ack.end += 7;
 
 	/* frame constructed - let's verify it */
-	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (ack.end - ack.begin));
+	assert (ack.end - ack.begin >= 0);
+	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (size_t)(ack.end - ack.begin));
 
 	/* generic layout */
 	err = comli_check_frame(ack);
@@ -860,7 +869,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.end += 10;
 
-	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (reply_head.end - reply_head.begin));
+	assert (reply_head.end - reply_head.begin >= 0);
+	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (size_t)(reply_head.end - reply_head.begin));
 
 
 	/* 3:  check header, extract IO info */
@@ -877,8 +887,11 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
 
-	memcpy(reply.end, reply_head.begin, (reply_head.end - reply_head.begin));
-	reply.end += (reply_head.end - reply_head.begin);
+	assert (reply_head.end - reply_head.begin >= 0);
+	size_t reply_head_len = (size_t)(reply_head.end - reply_head.begin);
+
+	memcpy(reply.end, reply_head.begin, reply_head_len);
+	reply.end += reply_head_len;
 
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
@@ -891,7 +904,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 
 	/* frame constructed, let's verify it */
-	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (reply.end - reply.begin));
+	assert (reply.end - reply.begin >= 0);
+	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (size_t)(reply.end - reply.begin));
 
 	/* generic layout */
 	err = comli_check_frame(reply);
