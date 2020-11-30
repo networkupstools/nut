@@ -218,7 +218,7 @@ static struct {
 static ssize_t do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count;
+	size_t	count;
 	ssize_t	ret;
 
 	ser_flush_io(upsfd);
@@ -265,7 +265,13 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		buffer[ret] = '\0';
 		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, buffer);
 
-		count = atoi(buffer);
+		int c = atoi(buffer);
+		if (c < 0) {
+			upsdebugx(3, "do_command: response not expected to be a negative count!");
+			return -1;
+		}
+
+		count = (size_t)c;
 		if (count >= MAX_RESPONSE_LENGTH) {
 			upsdebugx(3, "do_command: response exceeds expected size!");
 			return -1;
