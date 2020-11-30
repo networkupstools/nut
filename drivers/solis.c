@@ -39,9 +39,9 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <math.h>
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
 #include "solis.h"
 #include "timehead.h"
 
@@ -485,8 +485,8 @@ static void scan_received_pack(void) {
 
 	if (AppPower < 0) /* charge pf */
 		ChargePowerFactor = 0;
-	else  {
-		if( AppPower == 0 )
+	else {
+		if( d_equal(AppPower, 0) )
 			ChargePowerFactor = 100;
 		else
 			ChargePowerFactor = (( UtilPower / AppPower) * 100);
