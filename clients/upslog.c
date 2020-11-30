@@ -289,8 +289,9 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 /* turn the format string into a list of function calls with args */
 static void compile_format(void)
 {
-	unsigned int	i;
-	int	j, found, ofs;
+	size_t	i;
+	int	j, found;
+	size_t	ofs;
 	char	*cmd, *arg, *ptr;
 
 	for (i = 0; i < strlen(logformat); i++) {
