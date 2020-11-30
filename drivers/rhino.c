@@ -28,10 +28,10 @@
 */
 
 #include <stdio.h>
-#include <math.h>
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
 #include "timehead.h"
 
 #define DRIVER_NAME		"Microsol Rhino UPS driver"
@@ -165,13 +165,13 @@ AutonomyCalc( int ia ) /* all models */
 
 	if( ia )
 	{
-		if( BattVoltage == 0 )
+		if( d_equal(BattVoltage, 0) )
 			result = 0;
 		else
 		{
 					calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
 					auton = pow( calc, 1.18 );
-					if( auton == 0 )
+					if( d_equal(auton, 0) )
 						result = 0;
 					else
 						{
