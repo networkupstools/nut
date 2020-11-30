@@ -144,7 +144,21 @@ AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
-AC_CHECK_FUNCS(fabs, [], [], [#include <math.h>])
+
+AC_CHECK_HEADER([float.h],
+    [AC_DEFINE([HAVE_FLOAT_H], [1],
+        [Define to 1 if you have <float.h>.])])
+AC_CHECK_HEADER([math.h],
+    [AC_DEFINE([HAVE_MATH_H], [1],
+        [Define to 1 if you have <math.h>.])])
+AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
+[#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+#ifdef HAVE_FLOAT_H
+# include <float.h>
+#endif])
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
