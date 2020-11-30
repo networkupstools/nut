@@ -40,6 +40,7 @@
 #include "upsclient.h"
 #include "cgilib.h"
 #include <stdlib.h>
+#include <limits.h>
 #include <gd.h>
 #include <gdfontmb.h>
 
@@ -60,7 +61,7 @@ static	UPSCONN_t	ups;
 
 void parsearg(char *var, char *value)
 {
-	int	i, v;
+	long long	i, v;	/* Be big enough to fit all expected inputs; truncate later */
 
 	/* avoid bogus junk from evil people */
 	if ((strlen(var) > MAX_CGI_STRLEN) || (strlen(value) > MAX_CGI_STRLEN))
@@ -91,8 +92,11 @@ void parsearg(char *var, char *value)
 				imgarg[i].val = imgarg[i].min;
 			else if (v > imgarg[i].max)
 				imgarg[i].val = imgarg[i].max;
-			else
-				imgarg[i].val = v;
+			else {
+				assert (v < INT_MAX);
+				assert (v > INT_MIN);
+				imgarg[i].val = (int)v;
+			}
 			return;
 		}
 	}
