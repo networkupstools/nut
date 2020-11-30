@@ -3078,7 +3078,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 /* FIXME: the below functions can be removed since these were for loading
  * the mib2nut information from a file instead of the .h definitions... */
 /* return 1 if usable, 0 if not */
-static int parse_mibconf_args(int numargs, char **arg)
+static int parse_mibconf_args(size_t numargs, char **arg)
 {
 	bool_t ret;
 
