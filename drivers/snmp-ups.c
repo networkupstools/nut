@@ -3113,11 +3113,13 @@ static int parse_mibconf_args(size_t numargs, char **arg)
 
 	return 1;
 }
+
 /* called for fatal errors in parseconf like malloc failures */
 static void mibconf_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf (*mib.conf): %s", errmsg);
 }
+
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
