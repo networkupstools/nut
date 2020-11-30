@@ -363,15 +363,15 @@ static void fakeWH(void)
 		printf( "Name = %s, Firmware Version = %s\n", name, firmware );
 }
 
-static int ups_ident( void )
+static ssize_t ups_ident( void )
 {
 	char    buf[255];
-	int     ret;
+	ssize_t ret;
 
 	/* Check presence of Q1 */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q1\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret != 46 )
 	{
 		/* No Q1 response found */
@@ -388,7 +388,7 @@ static int ups_ident( void )
 	/* Check presence of Q3 */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q3\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret == 70 )
 	{
 		if( DEBUG )
@@ -399,7 +399,7 @@ static int ups_ident( void )
 	/* Check presence of WH ( Who am I ) */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "WH\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret == 112 )
 	{
 		if( DEBUG )
@@ -469,7 +469,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	char    buf[255];
-	int     ret;
+	ssize_t ret;
 	int     lenRSP=0;
 
 	if( DEBUG )
@@ -497,7 +497,7 @@ void upsdrv_updateinfo(void)
 
 	buf[0] = '\0';
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 
 	if( ret != lenRSP )
 	{
