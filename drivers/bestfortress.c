@@ -346,10 +346,10 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-static int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, size_t dlen, const char * data)
 {
 	char reply[80];
-	upssend ("p%d=%*s\r", parameter, dlen, data);
+	upssend ("p%zu=%*s\r", parameter, dlen, data);
 	if (upsrecv (reply, sizeof(reply), ENDCHAR, "") < 0) return 0;
 	return strncmp (reply, "OK", 2) == 0;
 }
@@ -375,7 +375,7 @@ static void autorestart (int restart)
 /* set UPS parameters */
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
-	int len = strlen(data);
+	size_t len = strlen(data);
 	upsdebugx(1, "Setvar: %s %s", var, data);
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
