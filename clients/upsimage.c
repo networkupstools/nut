@@ -207,8 +207,9 @@ static void drawscale(
 		if (level % step10 == 0) {
 			y = scale_height * (lvlhi - level) / range;
 			snprintf(lbltxt, sizeof(lbltxt), "%d", level);
-			gdImageString(im, gdFontMediumBold, width - strlen(lbltxt)*gdFontMediumBold->w, y,
-				(unsigned char *) lbltxt, scale_num_color);
+			gdImageString(im, gdFontMediumBold,
+				width - (int)(strlen(lbltxt)) * gdFontMediumBold->w,
+				y, (unsigned char *) lbltxt, scale_num_color);
 		}
 	}
 }
@@ -289,7 +290,7 @@ static void drawbar(
 #pragma GCC diagnostic pop
 #endif
 	gdImageString(im, gdFontMediumBold,
-		(width - strlen(text)*gdFontMediumBold->w)/2,
+		(width - (int)(strlen(text))*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
 		(unsigned char *) text, summary_color);
 
@@ -338,13 +339,13 @@ static void noimage(const char *fmt, ...)
 
 	if (width > height)
 		gdImageString(im, gdFontMediumBold,
-			(width - strlen(msg)*gdFontMediumBold->w)/2,
+			(width - (int)(strlen(msg))*gdFontMediumBold->w)/2,
 			(height - gdFontMediumBold->h)/2,
 			(unsigned char *) msg, 	summary_color);
 	else
 		gdImageStringUp(im, gdFontMediumBold,
 			(width - gdFontMediumBold->h)/2,
-			(height + strlen(msg)*gdFontMediumBold->w)/2,
+			(height + (int)(strlen(msg))*gdFontMediumBold->w)/2,
 			(unsigned char *) msg, summary_color);
 
 	drawimage(im);
