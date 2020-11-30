@@ -233,7 +233,8 @@ void upsdrv_updateinfo(void)
 	char temp[256];
 	char *p = NULL;
 	int loadva;
-	int len = -1, recv;
+	size_t len = 0;
+	int recv;
 	int retry;
 	char ch;
 	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
@@ -287,7 +288,7 @@ void upsdrv_updateinfo(void)
 		sleep(SER_WAIT_SEC);
 	}
 
-	if (!p || len < 0 || checksum_ok < 0) {
+	if (!p || len < 1 || checksum_ok < 0) {
 		upsdebugx(2, "pointer to data not initialized after processing");
 		dstate_datastale();
 		return;
@@ -295,7 +296,7 @@ void upsdrv_updateinfo(void)
 
 	if (!checksum_ok) {
 		upsdebugx(2, "checksum corruption");
-		upsdebug_hex(3, "buffer", temp, len);
+		upsdebug_hex(3, "buffer", temp, (int)len);
 		dstate_datastale();
 		return;
 	}
