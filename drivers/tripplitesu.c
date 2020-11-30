@@ -555,7 +555,7 @@ static int setvar(const char *varname, const char *val)
 
 static int init_comm(void)
 {
-	int i, bit;
+	size_t i, bit;
 	char response[MAX_RESPONSE_LENGTH];
 
 	ups.commands_available = 0;
