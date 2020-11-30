@@ -565,7 +565,7 @@ static void do_upsimgpath(const char *s) {
 static void do_temp(const char *var)
 {
 	char	tempc[SMALLBUF];
-	float	tempf;
+	double	tempf;
 
 	if (!get_var(var, tempc, sizeof(tempc), 1))
 		return;
