@@ -167,10 +167,7 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	/* FIXME (bitness-dependent?):
-	 *   error: cast from function call of type 'int' to non-matching type 'double' [-Werror,-Wbad-function-cast]
-	 */
-	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+	dstate_setinfo (key, fmt, factor * (double)(atoi (buf)));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
