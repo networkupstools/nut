@@ -558,7 +558,10 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 #ifdef WITH_OPENSSL
 	ret = SSL_read(client->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Read(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Read(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	if (ret < 1) {
@@ -580,7 +583,10 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 #ifdef WITH_OPENSSL
 	ret = SSL_write(client->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Write(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upsdebugx(5, "ssl_write ret=%d", ret);
