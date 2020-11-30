@@ -692,7 +692,7 @@ void blazer_initinfo(void)
 
 	for (proto = 0; command[proto].status; proto++) {
 
-		int	ret;
+		int	ret = -1;
 
 		if (protocol && strcasecmp(protocol, command[proto].name)) {
 			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
@@ -724,7 +724,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].rating && !testvar("norating")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -744,7 +744,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].vendor && !testvar("novendor")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
