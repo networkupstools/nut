@@ -682,7 +682,7 @@ static void get_base_info(void) {
 #else
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	unsigned char packet[PACKET_SIZE], syncEOR;
+	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
 	int i1=0, i2=0, tam, i;
 
 	time_t tmt;
@@ -747,11 +747,12 @@ static void get_base_info(void) {
 	*/
 	for (i = 0; i < packet_size*3; i++) {
 		ser_get_char(upsfd, &syncEOR, 3, 0);
+		syncEOR_was_read = 1;
 		if(syncEOR == RESP_END)
 			break;
 	}
 
-	if (syncEOR != RESP_END) {
+	if (syncEOR != RESP_END || !syncEOR_was_read) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
