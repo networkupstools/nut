@@ -1167,9 +1167,9 @@ static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 }
 
 static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
-	int numarg, const char **arg)
+	size_t numarg, const char **arg)
 {
-	int	i;
+	size_t	i;
 	size_t	len;
 	char	enc[UPSCLI_NETBUF_LEN];
 	const char	*format;
