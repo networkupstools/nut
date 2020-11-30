@@ -808,7 +808,8 @@ static int do_command(char *cmd)
 static void parse_line(const char *buf)
 {
 	char	cmd[SMALLBUF];
-	int	i, len, do_cmd = 0;
+	size_t	i, len;
+	char	do_cmd = 0;
 
 	for (i = 0; buf[i]; i += len) {
 
