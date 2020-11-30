@@ -516,7 +516,7 @@ int main(int argc, char **argv)
 
 		if (nextpoll > now) {
 			/* there is still time left, so sleep it off */
-			sleep(difftime(nextpoll, now));
+			sleep((unsigned int)(difftime(nextpoll, now)));
 			nextpoll += interval;
 		} else {
 			/* we spent more time in polling than the interval allows */
