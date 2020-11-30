@@ -228,12 +228,12 @@ static int upsflushin(int f, int verbose, const char *ignset)
 void upsdrv_updateinfo(void)
 {
 	char temp[256];
-	char *p;
+	char *p = NULL;
 	int loadva;
-	int len, recv;
+	int len = -1, recv;
 	int retry;
 	char ch;
-	int checksum_ok, is_online=1, is_off, low_batt, trimming, boosting;
+	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
 
 	upsdebugx(1, "upsdrv_updateinfo");
 
@@ -266,7 +266,7 @@ void upsdrv_updateinfo(void)
 		/* last bytes are a checksum:
 		   interpret response as hex string, sum of all bytes must be zero
 		 */
-		checksum_ok = (checksum (temp+2) & 0xff) == 0;
+		checksum_ok = ( (checksum (temp+2) & 0xff) == 0 );
 		/* setinfo (INFO_, ""); */
 
 		/* I can't figure out why this is missing the first two chars.
@@ -284,12 +284,19 @@ void upsdrv_updateinfo(void)
 		sleep(SER_WAIT_SEC);
 	}
 
+	if (!p || len < 0 || checksum_ok < 0) {
+		upsdebugx(2, "pointer to data not initialized after processing");
+		dstate_datastale();
+		return;
+	}
+
 	if (!checksum_ok) {
 		upsdebugx(2, "checksum corruption");
 		upsdebug_hex(3, "buffer", temp, len);
 		dstate_datastale();
 		return;
 	}
+
 	/* upslogx(LOG_INFO, "updateinfo: %s", p); */
 
 	setinfo_int ("input.voltage", p+24,4);
