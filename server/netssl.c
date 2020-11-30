@@ -61,7 +61,7 @@ static int	ssl_initialized = 0;
 #ifndef WITH_SSL
 
 /* stubs for non-ssl compiles */
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
@@ -233,7 +233,7 @@ static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 #ifdef WITH_OPENSSL
 	int ret;
