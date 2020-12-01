@@ -22,6 +22,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include <limits.h>
 
 #define UPSDELAY 50000	/* 50 ms delay required for reliable operation */
 #define SER_WAIT_SEC	2	/* allow 2.0 sec for ser_get calls */
@@ -391,8 +392,9 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		return STAT_SET_UNKNOWN;
 	}
 	ups_setsuper (1);
+	assert (len < INT_MAX);
 	if (setparam (parameter, len, data)) {
-		dstate_setinfo (var, "%*s", len, data);
+		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
 	return STAT_SET_HANDLED;
