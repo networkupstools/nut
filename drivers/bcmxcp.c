@@ -1705,7 +1705,7 @@ void upsdrv_updateinfo(void)
 		 *  Powerware 9130 output:
 		 *   03 0a d7 25 42 0a d7 25 42 00 9a 19 6d 43 cd cc 4c 3e 01 00 01 03
 		 */
-		upsdebug_hex(2, "Battery Status", answer, res);
+		upsdebug_hex(2, "Battery Status", answer, (size_t)res);
 		batt_status = answer[BCMXCP_BATTDATA_BLOCK_BATT_TEST_STATUS];
 
 		if ((nutvalue = nut_find_infoval(batt_test_info, batt_status, TRUE)) != NULL) {
