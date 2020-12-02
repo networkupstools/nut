@@ -752,7 +752,7 @@ static void get_base_info(void) {
 			break;
 	}
 
-	if (syncEOR != RESP_END || !syncEOR_was_read) {
+	if (!syncEOR_was_read || syncEOR != RESP_END) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
