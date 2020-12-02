@@ -2,7 +2,7 @@
  * nut_float.h - Network UPS Tools include files for floating point routines
  * and ways to compare if non-integers are close enough to assume equal
  *
- * Copyright (C) 2011	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C) 2020	Jim Klimov <jimklimov@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
