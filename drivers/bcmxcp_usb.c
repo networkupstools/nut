@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <usb.h>
+#include <limits.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
 #define SUBDRIVER_VERSION "0.22"
@@ -138,8 +139,9 @@ void send_write_command(unsigned char *command, int command_length)
 int get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
-	int length, end_length, res, endblock, bytes_read, ellapsed_time, need_data;
+	int res, endblock, ellapsed_time, need_data;
 	int tail;
+	size_t bytes_read, end_length, length;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
 
@@ -189,7 +191,7 @@ int get_answer(unsigned char *data, unsigned char command)
 				continue;
 			}
 			/* Else, we got some input bytes */
-			bytes_read += res;
+			bytes_read += (size_t)res;
 			need_data -= res;
 			upsdebug_hex(1, "get_answer", buf, bytes_read);
 		}
@@ -213,8 +215,8 @@ int get_answer(unsigned char *data, unsigned char command)
 
 		/* Check data length byte (remove the header length) */
 		length = my_buf[2];
-		upsdebugx(3, "get_answer: data length = %d", length);
-		if (bytes_read - (length + PW_HEADER_SIZE) < 0) {
+		upsdebugx(3, "get_answer: data length = %zu", length);
+		if (bytes_read < (length + PW_HEADER_SIZE)) {
 			if (need_data < 0) --need_data; /* count zerro byte too */
 			need_data += length + 1; /* packet lenght + checksum */
 			upsdebugx(2, "get_answer: need to read %d more data", need_data);
@@ -261,16 +263,25 @@ int get_answer(unsigned char *data, unsigned char command)
 		memcpy(data+end_length, my_buf + 4, length);
 		/* increment pointers to process the next sequence */
 		end_length += length;
-		tail = bytes_read - (length + PW_HEADER_SIZE);
+
+		/* Work around signedness of comparison result: */
+		tail = (int)bytes_read;
+		tail -= (int)(length + PW_HEADER_SIZE);
 		if (tail > 0)
-			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
+			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
-		bytes_read = tail;
+		else if (tail < 0) {
+			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %d", tail);
+			return -1;
+		}
+
+		bytes_read = (size_t)tail;
 	}
 
 	upsdebug_hex (5, "get_answer", data, end_length);
-	return end_length;
+	assert (end_length < INT_MAX);
+	return (int)end_length;
 }
 
 /* Sends a single command (length=1). and get the answer */
