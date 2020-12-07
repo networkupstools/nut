@@ -3,6 +3,7 @@
 #include "bcmxcp_io.h"
 #include "bcmxcp_ser.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
@@ -260,11 +261,37 @@ static void pw_comm_setup(const char *port)
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
 	unsigned char id_command = PW_ID_BLOCK_REQ;
 	unsigned char answer[256];
-	int i = 0, baud, mybaud = 0, ret = -1;
+	int i = 0, ret = -1;
+	speed_t mybaud = 0, baud;
 
 	if (getval("baud_rate") != NULL)
 	{
-		baud = atoi(getval("baud_rate"));
+		int br = atoi(getval("baud_rate"));
+		/* Note that atoi() behavior on erroneous input is undefined */
+		if (br < 0) {
+			upslogx(LOG_ERR, "baud_rate option is invalid");
+			return;
+		}
+
+		/* FIXME: speed_t does not define a SPEED_MAX value nor
+		 * guarantee that it is an int (just a typedef from
+		 * termios.h happens to say that on some systems)...
+		 * But since we convert this setting from int, we assume...
+		 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+		switch(sizeof(speed_t)) {
+			case 8:	assert (br < INT64_MAX); break;
+			case 4:	assert (br < INT32_MAX); break;
+			case 2:	assert (br < INT16_MAX); break;
+			default:	assert (br < INT_MAX);
+		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS)
+# pragma GCC diagnostic pop
+#endif
+		baud = (speed_t)br;
 
 		for(i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
@@ -312,11 +339,11 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 			return;
 		}
 
-		upsdebugx(2, "No response from UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+		upsdebugx(2, "No response from UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 	}
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
