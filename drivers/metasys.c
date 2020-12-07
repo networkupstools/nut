@@ -25,6 +25,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_float.h"
+#include <limits.h>
 
 #define DRIVER_NAME	"Metasystem UPS driver"
 #define DRIVER_VERSION	"0.07"
@@ -134,8 +135,9 @@ static void send_read_command(char command) {
 /* send a write command to the UPS, the write command and the value to be written are passed
    with a char* buffer
    it retries 5 times before give up */
-static void send_write_command(unsigned char *command, int command_length) {
-	int i, retry, sent, checksum;
+static void send_write_command(unsigned char *command, size_t command_length) {
+	int retry, sent, checksum;
+	size_t i;
 	unsigned char raw_buf[255];
 
 	/* prepares the raw data */
@@ -151,12 +153,14 @@ static void send_write_command(unsigned char *command, int command_length) {
 	raw_buf[command_length] = (unsigned char)checksum;
 	command_length +=1;
 
+	assert (command_length < INT_MAX);
 	retry = 0;
 	sent = 0;
-	while ((sent != (command_length)) && (retry < 5)) {
+	while ((sent != (int)(command_length)) && (retry < 5)) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset... */
 		sent = ser_send_buf(upsfd, raw_buf, (command_length));
-		if (sent != (command_length)) printf("Error sending command %d\n", raw_buf[2]);
+		if (sent < 0) ser_comm_fail("Error sending command %d\n", raw_buf[2]);
+		if (sent != (int)(command_length)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
 	}
 }
@@ -234,7 +238,7 @@ static int command_read_sequence(unsigned char command, unsigned char *data) {
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-static int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
+static int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 
