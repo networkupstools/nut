@@ -80,7 +80,8 @@ void send_write_command(unsigned char *command, int command_length)
 int get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char	my_buf[128]; /* packet has a maximum length of 121+5 bytes */
-	int		length, end_length = 0, res, endblock = 0, start = 0;
+	int		res;
+	size_t	length, end_length = 0, endblock = 0, start = 0;
 	unsigned char	block_number, sequence, pre_sequence = 0;
 
 	while (endblock != 1){
@@ -168,10 +169,14 @@ int get_answer(unsigned char *data, unsigned char command)
 
 		pre_sequence = sequence;
 
-		/* Try to read all the remainig bytes */
+		/* Try to read all the remaining bytes */
 		res = ser_get_buf_len(upsfd, my_buf+4, length, 1, 0);
+		if (res < 0) {
+			ser_comm_fail("%s(): ser_get_buf_len() returned error code %d", __func__, res);
+			return res;
+		}
 
-		if (res != length) {
+		if ((size_t)res != length) {
 			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, length);
 			return -1;
 		}
@@ -198,7 +203,8 @@ int get_answer(unsigned char *data, unsigned char command)
 	upsdebug_hex (5, "get_answer", data, end_length);
 	ser_comm_good();
 
-	return end_length;
+	assert(end_length < INT_MAX);
+	return (int)end_length;
 }
 
 static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
