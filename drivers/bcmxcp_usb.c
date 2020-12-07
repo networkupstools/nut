@@ -44,12 +44,13 @@ void nutusb_comm_fail(const char *fmt, ...)
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
 static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
-	unsigned char index, void *buf, int size);
+	unsigned char index, void *buf, size_t size);
 
 /* usb_set_descriptor() for Powerware devices */
-static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
-	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+	assert (size < INT_MAX);
+	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, (int)size, 1000);
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -59,11 +60,12 @@ static void *powerware_ups(USBDevice_t *device) {
 }
 
 /* usb_set_descriptor() for Phoenixtec devices */
-static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	NUT_UNUSED_VARIABLE(index);
 	NUT_UNUSED_VARIABLE(type);
-	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
+	assert (size < INT_MAX);
+	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, (int)size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
@@ -114,7 +116,7 @@ void send_read_command(unsigned char command)
 	}
 }
 
-void send_write_command(unsigned char *command, int command_length)
+void send_write_command(unsigned char *command, size_t command_length)
 {
 	unsigned char sbuf[128];
 
@@ -306,7 +308,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer)
+int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
 	int bytes_read = 0;
 	int retry = 0;

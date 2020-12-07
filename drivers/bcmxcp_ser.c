@@ -34,10 +34,16 @@ pw_baud_rate_t pw_baud_rates[] = {
 /* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
 unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
-static void send_command(unsigned char *command, int command_length)
+static void send_command(unsigned char *command, size_t command_length)
 {
-	int retry = 0, sent;
+	int retry = 0;
+	ssize_t sent;
 	unsigned char sbuf[128];
+
+	if (command_length > UCHAR_MAX) {
+		upsdebugx (3, "%s: ERROR: command_length too long for the character protocol", __func__);
+		return;
+	}
 
 	/* Prepare the send buffer */
 	sbuf[0] = PW_COMMAND_START_BYTE;
@@ -60,7 +66,12 @@ static void send_command(unsigned char *command, int command_length)
 
 		sent = ser_send_buf(upsfd, sbuf, command_length);
 
-		if (sent == command_length) {
+		if (sent < 0) {
+			upslogx(LOG_ERR, "%s(): error reading from ser_send_buf()", __func__);
+			return;
+		}
+
+		if ((size_t)sent == command_length) {
 			return;
 		}
 	}
@@ -71,7 +82,7 @@ void send_read_command(unsigned char command)
 	send_command(&command, 1);
 }
 
-void send_write_command(unsigned char *command, int command_length)
+void send_write_command(unsigned char *command, size_t command_length)
 {
 	send_command(command, command_length);
 }
@@ -144,7 +155,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		length = (unsigned char)my_buf[2];
 
 		if (length < 1) {
-			ser_comm_fail("Receive error (length): packet length %x!!!\n", length);
+			ser_comm_fail("Receive error (length): packet length %zx!!!\n", length);
 			return -1;
 		}
 
@@ -177,7 +188,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		if ((size_t)res != length) {
-			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, length);
+			ser_comm_fail("Receive error (data): got %d bytes instead of %zu!!!\n", res, length);
 			return -1;
 		}
 
@@ -207,7 +218,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	return (int)end_length;
 }
 
-static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
+static int command_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
 	int bytes_read, retry = 0;
 
@@ -244,7 +255,7 @@ int command_read_sequence(unsigned char command, unsigned char *answer)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
+int command_write_sequence(unsigned char *command, size_t command_length, unsigned	char *answer)
 {
 	int bytes_read;
 
