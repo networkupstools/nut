@@ -36,6 +36,7 @@
 
 /* NUT SNMP common functions */
 #include "main.h"
+#include "nut_float.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 
@@ -2730,9 +2731,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			else {
 				/* Check if there is a need to publish decimal too,
 				 * i.e. if switching to integer does not cause a
-				 * loss of precision */
+				 * loss of precision.
+				 * FIXME: Use remainder? is (dvalue%1.0)>0 cleaner?
+				 */
 				dvalue = value * su_info_p->info_len;
-				if ((int)dvalue == dvalue)
+				if (f_equal((int)dvalue, dvalue))
 					snprintf(buf, sizeof(buf), "%i", (int)dvalue);
 				else
 					snprintf(buf, sizeof(buf), "%.2f", (float)dvalue);

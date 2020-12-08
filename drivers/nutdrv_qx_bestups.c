@@ -24,9 +24,9 @@
  */
 
 #include "main.h"
+#include "nut_float.h"
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_blazer-common.h"
-
 #include "nutdrv_qx_bestups.h"
 
 #define BESTUPS_VERSION "BestUPS 0.06"
@@ -365,7 +365,7 @@ static int	bestups_process_setvar(item_t *item, char *value, const size_t valuel
 
 	if (!strcasecmp(item->info_type, "pins_shutdown_mode")) {
 
-		if (val == pins_shutdown_mode) {
+		if (d_equal(val, pins_shutdown_mode)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
