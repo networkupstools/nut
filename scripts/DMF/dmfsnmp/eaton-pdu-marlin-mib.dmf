@@ -1,40 +1,9 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="marlin_threshold_voltage_alarms_info">
-		<lookup_info oid="0" value=""/>
-		<lookup_info oid="1" value="low voltage warning!"/>
-		<lookup_info oid="2" value="low voltage critical!"/>
-		<lookup_info oid="3" value="high voltage warning!"/>
-		<lookup_info oid="4" value="high voltage critical!"/>
-	</lookup>
-	<lookup name="marlin_ambient_presence_info">
-		<lookup_info oid="-1" value="unknown"/>
-		<lookup_info oid="0" value="no"/>
-		<lookup_info oid="1" value="yes"/>
-	</lookup>
-	<lookup name="marlin_outlet_group_type_info">
-		<lookup_info oid="0" value="unknown"/>
-		<lookup_info oid="1" value="breaker1pole"/>
-		<lookup_info oid="2" value="breaker2pole"/>
-		<lookup_info oid="3" value="breaker3pole"/>
-		<lookup_info oid="4" value="outlet-section"/>
-		<lookup_info oid="5" value="user-defined"/>
-	</lookup>
-	<lookup name="marlin_outlet_status_info">
-		<lookup_info oid="0" value="off"/>
-		<lookup_info oid="1" value="on"/>
-		<lookup_info oid="2" value="pendingOff"/>
-		<lookup_info oid="3" value="pendingOn"/>
-	</lookup>
 	<lookup name="marlin_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
 		<lookup_info oid="0" value="opened"/>
 		<lookup_info oid="1" value="closed"/>
-	</lookup>
-	<lookup name="emp002_ambient_presence_info">
-		<lookup_info oid="0" value="unknown"/>
-		<lookup_info oid="2" value="yes"/>
-		<lookup_info oid="3" value="no"/>
 	</lookup>
 	<lookup name="marlin_outlet_type_info">
 		<lookup_info oid="0" value="unknown"/>
@@ -62,9 +31,27 @@
 		<lookup_info oid="3" value="high current warning!"/>
 		<lookup_info oid="4" value="high current critical!"/>
 	</lookup>
-	<lookup name="marlin_threshold_frequency_status_info">
-		<lookup_info oid="0" value="good"/>
-		<lookup_info oid="1" value="out-of-range"/>
+	<lookup name="marlin_outletgroups_status_info">
+		<lookup_info oid="0" value="off"/>
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="rebooting"/>
+		<lookup_info oid="3" value="mixed"/>
+	</lookup>
+	<lookup name="ambient_drycontacts_polarity_info">
+		<lookup_info oid="0" value="normal-opened"/>
+		<lookup_info oid="1" value="normal-closed"/>
+	</lookup>
+	<lookup name="emp002_ambient_presence_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="2" value="yes"/>
+		<lookup_info oid="3" value="no"/>
+	</lookup>
+	<lookup name="marlin_unit_switchability_info">
+		<lookup_info oid="0" value="no"/>
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="no"/>
+		<lookup_info oid="3" value="yes"/>
+		<lookup_info oid="4" value="no"/>
 	</lookup>
 	<lookup name="marlin_threshold_temperature_alarms_info">
 		<lookup_info oid="0" value=""/>
@@ -73,30 +60,33 @@
 		<lookup_info oid="3" value="high temperature warning!"/>
 		<lookup_info oid="4" value="high temperature critical!"/>
 	</lookup>
-	<lookup name="marlin_threshold_status_info">
-		<lookup_info oid="0" value="good"/>
-		<lookup_info oid="1" value="warning-low"/>
-		<lookup_info oid="2" value="critical-low"/>
-		<lookup_info oid="3" value="warning-high"/>
-		<lookup_info oid="4" value="critical-high"/>
-	</lookup>
-	<lookup name="marlin_outletgroups_status_info">
-		<lookup_info oid="0" value="off"/>
-		<lookup_info oid="1" value="on"/>
-		<lookup_info oid="2" value="rebooting"/>
-		<lookup_info oid="3" value="mixed"/>
-	</lookup>
-	<lookup name="marlin_outlet_switchability_info">
+	<lookup name="marlin_ambient_presence_info">
+		<lookup_info oid="-1" value="unknown"/>
+		<lookup_info oid="0" value="no"/>
 		<lookup_info oid="1" value="yes"/>
-		<lookup_info oid="2" value="no"/>
 	</lookup>
-	<lookup name="ambient_drycontacts_state_info">
-		<lookup_info oid="0" value="active"/>
-		<lookup_info oid="1" value="inactive"/>
+	<lookup name="marlin_threshold_frequency_status_info">
+		<lookup_info oid="0" value="good"/>
+		<lookup_info oid="1" value="out-of-range"/>
 	</lookup>
-	<lookup name="ambient_drycontacts_polarity_info">
-		<lookup_info oid="0" value="normal-opened"/>
-		<lookup_info oid="1" value="normal-closed"/>
+	<lookup name="marlin_threshold_voltage_alarms_info">
+		<lookup_info oid="0" value=""/>
+		<lookup_info oid="1" value="low voltage warning!"/>
+		<lookup_info oid="2" value="low voltage critical!"/>
+		<lookup_info oid="3" value="high voltage warning!"/>
+		<lookup_info oid="4" value="high voltage critical!"/>
+	</lookup>
+	<lookup name="marlin_outlet_group_type_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="1" value="breaker1pole"/>
+		<lookup_info oid="2" value="breaker2pole"/>
+		<lookup_info oid="3" value="breaker3pole"/>
+		<lookup_info oid="4" value="outlet-section"/>
+		<lookup_info oid="5" value="user-defined"/>
+	</lookup>
+	<lookup name="g2_unit_outlet_switchability_info">
+		<lookup_info oid="-1" value="yes"/>
+		<lookup_info oid="0" value="yes"/>
 	</lookup>
 	<lookup name="marlin_outlet_group_phase_info">
 		<lookup_info oid="0" value="unknown"/>
@@ -108,6 +98,36 @@
 		<lookup_info oid="6" value="2-3"/>
 		<lookup_info oid="7" value="3-1"/>
 	</lookup>
+	<lookup name="marlin_threshold_frequency_alarm_info">
+		<lookup_info oid="0" value=""/>
+		<lookup_info oid="1" value="frequency out of range!"/>
+	</lookup>
+	<lookup name="marlin_threshold_status_info">
+		<lookup_info oid="0" value="good"/>
+		<lookup_info oid="1" value="warning-low"/>
+		<lookup_info oid="2" value="critical-low"/>
+		<lookup_info oid="3" value="warning-high"/>
+		<lookup_info oid="4" value="critical-high"/>
+	</lookup>
+	<lookup name="eaton_sensor_temperature_unit_info">
+		<lookup_info oid="0" value="kelvin"/>
+		<lookup_info oid="1" value="celsius"/>
+		<lookup_info oid="2" value="fahrenheit"/>
+	</lookup>
+	<lookup name="marlin_outlet_status_info">
+		<lookup_info oid="0" value="off"/>
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="pendingOff"/>
+		<lookup_info oid="3" value="pendingOn"/>
+	</lookup>
+	<lookup name="marlin_outlet_switchability_info">
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="no"/>
+	</lookup>
+	<lookup name="ambient_drycontacts_state_info">
+		<lookup_info oid="0" value="active"/>
+		<lookup_info oid="1" value="inactive"/>
+	</lookup>
 	<lookup name="marlin_threshold_humidity_alarms_info">
 		<lookup_info oid="0" value=""/>
 		<lookup_info oid="1" value="low humidity warning!"/>
@@ -115,27 +135,11 @@
 		<lookup_info oid="3" value="high humidity warning!"/>
 		<lookup_info oid="4" value="high humidity critical!"/>
 	</lookup>
-	<lookup name="eaton_sensor_temperature_unit_info">
-		<lookup_info oid="0" value="kelvin"/>
-		<lookup_info oid="1" value="celsius"/>
-		<lookup_info oid="2" value="fahrenheit"/>
-	</lookup>
 	<lookup name="marlin_input_type_info">
 		<lookup_info oid="1" value="1"/>
 		<lookup_info oid="2" value="2"/>
 		<lookup_info oid="3" value="3"/>
 		<lookup_info oid="4" value="3"/>
-	</lookup>
-	<lookup name="marlin_threshold_frequency_alarm_info">
-		<lookup_info oid="0" value=""/>
-		<lookup_info oid="1" value="frequency out of range!"/>
-	</lookup>
-	<lookup name="marlin_unit_switchability_info">
-		<lookup_info oid="0" value="no"/>
-		<lookup_info oid="1" value="yes"/>
-		<lookup_info oid="2" value="no"/>
-		<lookup_info oid="3" value="yes"/>
-		<lookup_info oid="4" value="no"/>
 	</lookup>
 	<snmp name="eaton_marlin_mib">
 		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
@@ -285,7 +289,8 @@
 		<snmp_info default="0" flag_ok="yes" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i" static="yes"/>
 		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
 		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
-		<snmp_info default="no" lookup="marlin_unit_switchability_info" multiplier="128.0" name="outlet.switchable" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.10.%i" power_status="yes" string="yes"/>
+		<snmp_info default="no" lookup="marlin_unit_switchability_info" multiplier="128.0" name="outlet.switchable" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.10.%i" static="yes" string="yes" unique="yes"/>
+		<snmp_info default="no" flag_ok="yes" lookup="g2_unit_outlet_switchability_info" multiplier="128.0" name="outlet.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.1" outlet="yes" static="yes" string="yes" type_daisy="1" unique="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.frequency" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1" power_status="yes"/>
 		<snmp_info multiplier="0.01" name="outlet.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.1" power_status="yes"/>
@@ -318,7 +323,8 @@
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.6.%i.%i" outlet="yes" positive="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i" outlet="yes" positive="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.power" oid=".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i" outlet="yes" type_daisy="1"/>
-		<snmp_info default="no" lookup="marlin_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.9.%i.%i" outlet="yes" string="yes" type_daisy="1"/>
+		<snmp_info default="no" lookup="marlin_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.9.%i.%i" outlet="yes" string="yes" type_daisy="1" unique="yes"/>
+		<snmp_info default="no" flag_ok="yes" lookup="g2_unit_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" static="yes" string="yes" type_daisy="1" unique="yes"/>
 		<snmp_info default="unknown" lookup="marlin_outlet_type_info" multiplier="128.0" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.1.1.5.%i.%i" outlet="yes" static="yes" string="yes" type_daisy="1"/>
 		<snmp_info default="0" multiplier="1.0" name="outlet.group.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.21.%i" static="yes" type_daisy="1"/>
 		<snmp_info multiplier="128.0" name="outlet.group.%i.id" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
@@ -365,6 +371,6 @@
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.on.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.cycle.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.55"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.56"/>
 </nut>
 
