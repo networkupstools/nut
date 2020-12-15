@@ -62,7 +62,7 @@
 #include "nutscan-snmp.h"
 
 /* Address API change */
-#ifndef usmAESPrivProtocol
+#if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
 #define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
 #else
 #define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
