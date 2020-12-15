@@ -627,7 +627,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
 		else
-			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
 		/* set the privacy key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
