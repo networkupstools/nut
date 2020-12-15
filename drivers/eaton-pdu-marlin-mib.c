@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.64"
+#define EATON_MARLIN_MIB_VERSION	"0.65"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -823,6 +823,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.%i.model", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorSerialNumber.n */
 	{ "ambient.%i.serial", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	/* sensorUuid.n */
+	{ "ambient.%i.id", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	/* sensorAddress.n */
+	{ "ambient.%i.address", 0, 1, ".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorFirmwareVersion.n */
 	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureUnit.1
