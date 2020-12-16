@@ -262,6 +262,7 @@
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.serial" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.id" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.address" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i" type_daisy="3"/>
+		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.parent.serial" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.5.%i" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.firmware" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" lookup="eaton_sensor_temperature_unit_info" multiplier="1.0" name="ambient.%i.temperature.unit" oid=".1.3.6.1.4.1.534.6.8.1.2.5.0" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="0.1" name="ambient.%i.temperature" oid=".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1" type_daisy="3"/>
