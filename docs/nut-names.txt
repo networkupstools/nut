@@ -560,6 +560,8 @@ of the user manual.
                                         (opaque string)             | 80f09325-2838-5637-b62a-cef9cbe2747
 | ambient.n.address                   | Ambient sensor address
                                         (opaque string)             | 1
+| ambient.n.parent.serial             | Ambient sensor parent serial number
+                                        (opaque string)             | U603E34000
 | ambient.n.mfr                       | Ambient sensor manufacturer | EATON
 | ambient.n.model                     | Ambient sensor model        | EMPDT1H1C2
 | ambient.n.firmware                  | Ambient sensor firmware     | 01.03.0011
