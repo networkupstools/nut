@@ -556,6 +556,10 @@ of the user manual.
 | Name                                | Description                 | Example value
 | ambient.count                       | Total number of sensors     | 2
 | ambient.n.name                      | Ambient sensor name         | sensor 1
+| ambient.n.id                        | Ambient sensor identifier
+                                        (opaque string)             | 80f09325-2838-5637-b62a-cef9cbe2747
+| ambient.n.address                   | Ambient sensor address
+                                        (opaque string)             | 1
 | ambient.n.mfr                       | Ambient sensor manufacturer | EATON
 | ambient.n.model                     | Ambient sensor model        | EMPDT1H1C2
 | ambient.n.firmware                  | Ambient sensor firmware     | 01.03.0011
