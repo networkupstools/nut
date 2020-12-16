@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.55"
+#define EATON_MARLIN_MIB_VERSION	"0.56"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -53,6 +53,15 @@ static info_lkp_t marlin_outletgroups_status_info[] = {
 	{ 1, "on" },
 	{ 2, "rebooting" }, /* transitional status */
 	{ 3, "mixed" },     /* transitional status, not sure what it means! */
+	{ 0, NULL }
+};
+
+/* Ugly hack for older G2 ePDU:
+ * having the matching OID present means that the outlet/unit is
+ * switchable. So, it should not require this value lookup */
+static info_lkp_t g2_unit_outlet_switchability_info[] = {
+	{ -1, "yes" },
+	{ 0, "yes" },
 	{ 0, NULL }
 };
 
@@ -801,10 +810,14 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* UnitType
-	 * used to depict the overall outlets switchability of the unit */
+	 * used to depict the overall outlets switchability of the unit on G3 and newer ePDU*/
 	{ "outlet.switchable", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.10.%i",
-		"no", 0, &marlin_unit_switchability_info[0] },
+		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE, &marlin_unit_switchability_info[0] },
+	/* Ugly hack for older G2 ePDU: check the first outlet to determine unit switchability */
+	{ "outlet.switchable", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.1",
+		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &g2_unit_outlet_switchability_info[0] },
 	/* The below ones are the same as the input.* equivalent */
 	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
 	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
@@ -929,7 +942,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* outletControlSwitchable */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.9.%i.%i",
-		"no", SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_switchability_info[0] },
+		"no", SU_OUTLET | SU_FLAG_UNIQUE | SU_TYPE_DAISY_1, &marlin_outlet_switchability_info[0] },
+	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &g2_unit_outlet_switchability_info[0] },
 	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.5.%i.%i",
 		"unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_type_info[0] },
