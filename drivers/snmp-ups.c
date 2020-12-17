@@ -1006,8 +1006,6 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			snprintf(buf, buf_len, "%s", oid_leaf+1);
 			upsdebugx(3, "Fallback value: %s", buf);
 		}
-		else
-			snprintf(buf, buf_len, "%s", tmp_buf);
 		break;
 	default:
 		return FALSE;
