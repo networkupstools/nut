@@ -51,6 +51,12 @@ Update wrapping of devices into services
 Update wrapping of devices into services in an infinite loop;
 Default freq is 60 sec.
 
+*nut-driver-enumerator.sh --daemon-after(=freq)*::
+Update wrapping of devices into services in an infinite loop;
+first do one run of the loop though, then daemonize (this way
+service unit is deemed started only when NUT config and driver
+instances are in sync). Default freq is 60 sec.
+
 *nut-driver-enumerator.sh --reconfigure*::
 Stop and un-register all service instances and recreate them
 (e.g. if new dependency template was defined in a new

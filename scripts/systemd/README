@@ -4,9 +4,17 @@ Service Manager.
 These files are automatically installed, upon detection (at configure time)
 of a systemd enabled system.
 
-This also uses the nut-driver-enumerator.sh (service and implementation
-method) and upsdrvsvcctl (tool) to manage NUT drivers as service instances
-located in ../upsdrvsvcctl/ source subdirectory.
+This also uses the `nut-driver-enumerator.sh` (service and implementation
+method) and `upsdrvsvcctl` (tool) to manage NUT drivers as service instances
+located in `../upsdrvsvcctl/` source subdirectory. Two service bundles are
+provided for this: a set of `nut-driver-enumerator-daemon*` units starts
+the script as a daemon to regularly inspect and apply the NUT configuration
+to OS service unit wrappings (mainly intended for monitoring systems with
+a dynamic set of monitored power devices, or for systems where filesystem
+events monitoring is not a clockwork-reliable mechanism to 100% rely on);
+the other `nut-driver-enumerator.*` units run the script once per triggering
+of the service (usually during boot-up; configuration file changes can be
+detected and propagated by systemd most of the time).
 
 Contributed by Michal Hlavinka <mhlavink@redhat.com>
 Updated 2016-2018 by Michal Hrusecky and Jim Klimov <EvgenyKlimov@eaton.com>
