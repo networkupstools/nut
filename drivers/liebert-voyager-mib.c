@@ -28,6 +28,32 @@
 
 #define LIEBERT_VOYAGER_SYSOID       ".1.3.6.1.4.1.476.1.1.1.14"
 
+
+static info_lkp_t liebert_voyager_alarm_ob[] = {
+	{ 1, "OB" },
+	{ 0, NULL }
+} ;
+
+static info_lkp_t liebert_voyager_alarm_lb[] = {
+	{ 1, "LB" },
+	{ 0, NULL }
+} ;
+
+static info_lkp_t liebert_voyager_alarm_lb[] = {
+	{ 1, "LB" },
+	{ 0, NULL }
+} ;
+static info_lkp_t liebert_voyager_alarm_off[] = {
+	{ 1, "OFF" },
+	{ 0, NULL }
+} ;
+
+static info_lkp_t liebert_voyager_bypass_info[] = {
+	/* { 1, "??"}, */
+	{ 2, "BYPASS" },
+	{ 0, NULL }
+} ;
+
 /* LIEBERT_VOYAGER Snmp2NUT lookup table */
 static snmp_info_t liebert_voyager_mib[] = {
 
@@ -52,6 +78,24 @@ static snmp_info_t liebert_voyager_mib[] = {
 	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.476.1.1.1.1.7.2.0", NULL, SU_FLAG_OK, NULL },
 	/* lcUpsIdentManufactureDate.0 = STRING: "05JUL02 " */
 	/* { "unmapped.lcUpsIdentManufactureDate", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.476.1.1.1.1.1.7.0", NULL, SU_FLAG_OK, NULL },*/
+
+	/* OL is the default for the UPS and has no explicit OID in the MIB.
+	 * It can be inferred by a lack of the lcUpsAlarmOnBattery alarm, lcUpsAlarmUpsOff
+	 * alarm and the lcUpsInverter state of on(2).
+	 * OB is indicated by the alarm lcUpsAlarmOnBattery */
+	/* FIXME: also check for lcUpsInverter==on */
+	/* lcUpsAlarmOnBattery */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.476.1.1.1.1.6.3.10", "OL",
+		SU_STATUS_BATT, &liebert_voyager_alarm_ob[0] },
+	/* lcUpsAlarmLowBatteryWarning */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.476.1.1.1.1.6.3.1", "",
+		SU_STATUS_BATT, &liebert_voyager_alarm_lb[0] },
+	/* lcUpsOnBypass */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.476.1.1.1.1.13.1", "",
+		SU_STATUS_BATT, &liebert_voyager_bypass_info[0] },
+	/* lcUpsAlarmUpsOff */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.476.1.1.1.1.6.3.12", "",
+		SU_STATUS_BATT, &liebert_voyager_alarm_off[0] },
 
 	/* Battery Page */
 	/* lcUpsBatTimeRemaining.0 = INTEGER: 19 */
