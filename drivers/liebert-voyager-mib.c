@@ -39,10 +39,6 @@ static info_lkp_t liebert_voyager_alarm_lb[] = {
 	{ 0, NULL }
 } ;
 
-static info_lkp_t liebert_voyager_alarm_lb[] = {
-	{ 1, "LB" },
-	{ 0, NULL }
-} ;
 static info_lkp_t liebert_voyager_alarm_off[] = {
 	{ 1, "OFF" },
 	{ 0, NULL }
