@@ -43,7 +43,16 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
  solaris-usb.txt
 
-NUT_SPELL_DICT = nut.dict
+# Callers to spellcheck from other locations or git modules
+# may need to specify all of these filenames:
+### Short name relative to this dir:
+NUT_SPELL_DICT ?= nut.dict
+### Absolute paths for CWD agnostic calls to aspell and helper recipes
+### (some might write the files => into builddir); note we have to be
+### portable and so can not quickly use GNU extensions like "$(<F)":
+NUT_SPELL_DICT_ABS_SRC ?= $(abs_top_srcdir)/docs/$(NUT_SPELL_DICT)
+NUT_SPELL_DICT_ABS_BLD ?= $(abs_top_builddir)/docs/$(NUT_SPELL_DICT)
+
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  common.xsl xhtml.xsl chunked.xsl asciidoc.txt
@@ -202,12 +211,12 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # For Travis CI in particular, see ci_build.sh in NUT codebase root.
 SPELLCHECK_ERROR_FATAL = yes
 SPELLCHECK_ENV_DEBUG = no
-ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
+ASPELL_NUT_COMMON_ARGS = -p $(NUT_SPELL_DICT_ABS_SRC)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
-spellcheck: 
+spellcheck:
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
@@ -244,30 +253,30 @@ spellcheck:
 # can edit the documentation errors and/or add words to custom dictionary).
 # Note that here we do not restrain reported issues, so this might catch more
 # than the automated test above.
-spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
+spellcheck-sortdict: $(NUT_SPELL_DICT_ABS_BLD).sorted
 
 # Note that the source file may be not overwritable (distcheck, cdrom, ...),
 # so we'd ignore that failure. But the practical use-case is a developer's
 # in-tree workspace, so we want the working copy of the dictionary fixed up
 # for easy `git diff`ing if possible.
 # Note also that "$(<F)" is not POSIX portable, so we spell out the name var :(
-$(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
+$(NUT_SPELL_DICT_ABS_BLD).sorted: $(NUT_SPELL_DICT_ABS_SRC)
+	@cp -pf $(NUT_SPELL_DICT_ABS_SRC) $(NUT_SPELL_DICT_ABS_BLD).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
 	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
 	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
 	 ) > "$@"
-	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
+	@cp -f "$@" "$(NUT_SPELL_DICT_ABS_BLD)"
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
 	    cp -f "$@" "$<" || true ; \
-	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
+	    cp -f "$(NUT_SPELL_DICT_ABS_BLD).bak-pre-sorting" "$(NUT_SPELL_DICT_ABS_SRC).bak-pre-sorting" || true ; \
 	 fi
 
-DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+DISTCLEANFILES += $(NUT_SPELL_DICT_ABS_BLD).bak-pre-sorting .$(NUT_SPELL_DICT_ABS_BLD).sorted $(NUT_SPELL_DICT_ABS_BLD).sorted
 
-spellcheck-interactive: 
+spellcheck-interactive:
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
 		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
