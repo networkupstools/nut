@@ -15,7 +15,7 @@ Units and Solar Controllers.
 NUT provides many control and monitoring <<Features,features>>, with a uniform
 control and management interface.
 
-More than 100 different manufacturers, and several thousands models are
+More than 140 different manufacturers, and several thousands of models are
 <<HCL,compatible>>.
 
 This software is the combined effort of many
