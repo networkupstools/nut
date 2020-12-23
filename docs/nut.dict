@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2520 utf-8
+personal_ws-1.1 en 2523 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -217,6 +217,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DHEA
 DISCHRG
 DN
 DOCTYPE
@@ -1126,6 +1127,7 @@ Vout
 Václav
 WALKMODE
 WELI
+WHAD
 WMNut
 WS
 WSE
@@ -1604,6 +1606,7 @@ getVariable
 getenv
 getopt
 getvar
+github
 gitignore
 gitk
 gmail
