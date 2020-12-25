@@ -256,6 +256,13 @@ void upsdrv_comm_good()
 	ser_comm_good();
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic push
+#endif
+
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
 static void pw_comm_setup(const char *port)
 {
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
@@ -351,6 +358,9 @@ static void pw_comm_setup(const char *port)
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic pop
+#endif
 
 void upsdrv_initups(void)
 {
