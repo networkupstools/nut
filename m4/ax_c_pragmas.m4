@@ -149,6 +149,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtype-limits" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunreachable-code-break"],
     [ax_cv__pragma__gcc__diags_ignored_unreachable_code_break],
     [AC_COMPILE_IFELSE(
