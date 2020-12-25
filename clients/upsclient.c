@@ -153,7 +153,7 @@ static char* nsscertpasswd = NULL;
 
 static void ssl_debug(void)
 {
-	int	e;
+	unsigned long	e;
 	char	errmsg[SMALLBUF];
 
 	while ((e = ERR_get_error()) != 0) {
@@ -615,7 +615,15 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int t
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_read(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_read(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
@@ -679,7 +687,15 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigne
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_write(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_write(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
