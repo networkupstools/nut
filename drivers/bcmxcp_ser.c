@@ -286,6 +286,10 @@ static void pw_comm_setup(const char *port)
 		 * But since we convert this setting from int, we assume...
 		 */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS)
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
