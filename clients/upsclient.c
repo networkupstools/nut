@@ -1474,7 +1474,10 @@ ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const 
 				return -1;
 			}
 
-			ups->readlen = ret;
+			/* Here ret is safe to cast since it is >=1 and certainly
+			 * fits under SIZE_MAX being it signed sibling
+			 */
+			ups->readlen = (size_t)ret;
 			ups->readidx = 0;
 		}
 
