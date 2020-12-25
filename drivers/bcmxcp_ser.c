@@ -296,6 +296,9 @@ static void pw_comm_setup(const char *port)
 # pragma GCC diagnostic push
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
 # pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
