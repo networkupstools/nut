@@ -316,11 +316,14 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, baud);
+			/* Cast baud into max length unsigned, despite the POSIX
+			 * standard some systems vary in definition of this type
+			 */
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 			return;
 		}
 
-		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %d", port, baud);
+		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 	}
 
 	upslogx(LOG_INFO, "Attempting to autodect baudrate");
