@@ -1634,8 +1634,41 @@ void	upsdrv_shutdown(void)
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
+#ifdef QX_USB
+	#ifndef TESTING
+		const struct {
+			const char	*name;
+			int		(*command)(const char *cmd, char *buf, size_t buflen);
+		} usbsubdriver[] = {
+			{ "cypress", &cypress_command },
+			{ "phoenix", &phoenix_command },
+			{ "ippon", &ippon_command },
+			{ "krauler", &krauler_command },
+			{ "fabula", &fabula_command },
+			{ "fuji", &fuji_command },
+			{ "sgs", &sgs_command },
+			{ NULL, NULL }
+		};
+    #endif
+#endif
+
+
 void	upsdrv_help(void)
 {
+#ifdef QX_USB
+	#ifndef TESTING
+    printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+    size_t i;
+
+    for (i = 0; usbsubdriver[i].name != NULL; i++) {
+        if (i>0)
+            printf(", ");
+        printf("%s", usbsubdriver[i].name);
+    }
+    printf("\n\n");
+    #endif
+#endif
+
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
@@ -1933,21 +1966,6 @@ void	upsdrv_initups(void)
 #ifdef QX_USB
 
 	#ifndef TESTING
-
-		const struct {
-			const char	*name;
-			int		(*command)(const char *cmd, char *buf, size_t buflen);
-		} usbsubdriver[] = {
-			{ "cypress", &cypress_command },
-			{ "phoenix", &phoenix_command },
-			{ "ippon", &ippon_command },
-			{ "krauler", &krauler_command },
-			{ "fabula", &fabula_command },
-			{ "fuji", &fuji_command },
-			{ "sgs", &sgs_command },
-			{ NULL, NULL }
-		};
-
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
 		char	*regex_array[6];

@@ -508,9 +508,33 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 #endif	/* TESTING */
 }
 
+#ifndef TESTING
+const struct subdriver_t {
+	const char	*name;
+	int		(*command)(const char *cmd, char *buf, size_t buflen);
+} subdriver[] = {
+	{ "cypress", &cypress_command },
+	{ "phoenix", &phoenix_command },
+	{ "ippon", &ippon_command },
+	{ "krauler", &krauler_command },
+	{ NULL, NULL }
+};
+#endif	/* TESTING */
 
 void upsdrv_help(void)
 {
+#ifndef TESTING
+    printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+    size_t i;
+
+    for (i = 0; subdriver[i].name != NULL; i++) {
+        if (i>0)
+            printf(", ");
+        printf("%s", subdriver[i].name);
+    }
+    printf("\n\n");
+#endif	/* TESTING */
+
 	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
@@ -529,17 +553,6 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 #ifndef TESTING
-	const struct {
-		const char	*name;
-		int		(*command)(const char *cmd, char *buf, size_t buflen);
-	} subdriver[] = {
-		{ "cypress", &cypress_command },
-		{ "phoenix", &phoenix_command },
-		{ "ippon", &ippon_command },
-		{ "krauler", &krauler_command },
-		{ NULL, NULL }
-	};
-
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
 	char	*regex_array[6];
