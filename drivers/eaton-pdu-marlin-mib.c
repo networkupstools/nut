@@ -58,9 +58,9 @@ static info_lkp_t marlin_outletgroups_status_info[] = {
  * having the matching OID present means that the outlet/unit is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t g2_unit_outlet_switchability_info[] = {
-	{ -1, "yes" },
-	{ 0, "yes" },
-	{ 0, NULL }
+	{ -1, "yes", NULL, NULL },
+	{ 0, "yes", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_outlet_switchability_info[] = {
