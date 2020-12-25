@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2525 utf-8
+personal_ws-1.1 en 2526 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1813,6 +1813,7 @@ macaddr
 macosx
 mailx
 maintainer's
+maintainership
 maj
 makevartable
 mandir
