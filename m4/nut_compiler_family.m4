@@ -31,10 +31,10 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes])
 
   AC_CACHE_CHECK([if CC compiler family is clang],
-    [nut_cv_CLANG],
+    [nut_cv_CLANGCC],
     [AS_IF([test -n "$CC"],
         [AS_IF([$CC --version 2>&1 | grep 'clang version' > /dev/null],
-            [nut_cv_CLANG=yes],[nut_cv_CLANG=no])],
+            [nut_cv_CLANGCC=yes],[nut_cv_CLANGCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
 
