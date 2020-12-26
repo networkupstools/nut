@@ -259,7 +259,7 @@ static void drawbar(
 	summary_color	= color_alloc(im, get_imgarg("summary_col"));
 
 	/* rescale UPS value to fit in the scale */
-	bar_y = (1 - (value - lvllo) / (lvlhi - lvllo)) * scale_height;
+	bar_y = (int)((1.0 - (value - lvllo) / (lvlhi - lvllo)) * scale_height);
 
 	/* sanity checks: */
 
@@ -465,7 +465,7 @@ static void draw_utility(double var, int min, int nom, int max,
 
 	/* Acceptable range of voltage is 85%-110% of nominal voltage
 	 * in EU at least. Be conservative and say +-10% */
-	deviation = nom*0.1;
+	deviation = (int)(nom * 0.1);
 
 	drawgeneralbar(var, min, nom, max, deviation, format);
 
@@ -522,18 +522,17 @@ static void draw_battvolt(double var, int min, int nom, int max,
 	}
 
 	if(min == -1) {
-		min = nom/2*1.6+1; /* Assume a 2V cell is dead at 1.6V */
+		min = (int)(nom/2*1.6+1); /* Assume a 2V cell is dead at 1.6V */
 	}
 
 	if(max == -1) {
-		max = nom/2*2.3+1; /* Assume 2.3V float charge voltage */
+		max = (int)(nom/2*2.3+1); /* Assume 2.3V float charge voltage */
 	}
 
 	if (nom < min || nom > max)
 		nom = -1;
 
-
-	deviation = -(nom*0.05); /* 5% deviation from nominal voltage */
+	deviation = (int)(-nom*0.05); /* 5% deviation from nominal voltage */
 	if(deviation==0) {
 		deviation = -1;
 	}
