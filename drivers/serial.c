@@ -26,6 +26,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <limits.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -355,13 +356,14 @@ ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
 ssize_t ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 	size_t buflen)
 {
-	ssize_t	ret;
-	size_t	sent;
+	ssize_t	ret = 0;
+	ssize_t	sent;
 	const char	*data = buf;
 
-	for (sent = 0; sent < buflen; sent += ret) {
-
-		ret = write(fd, &data[sent], (d_usec == 0) ? (buflen - sent) : 1);
+	assert(buflen < SSIZE_MAX);
+	for (sent = 0; sent < (ssize_t)buflen; sent += ret) {
+		/* Conditions above ensure that (buflen - sent) > 0 below */
+		ret = write(fd, &data[sent], (d_usec == 0) ? (size_t)((ssize_t)buflen - sent) : 1);
 
 		if (ret < 1) {
 			return ret;
@@ -389,14 +391,15 @@ ssize_t ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
 	ssize_t	ret;
-	size_t	recv;
+	ssize_t	recv;
 	char	*data = buf;
 
+	assert(buflen < SSIZE_MAX);
 	memset(buf, '\0', buflen);
 
-	for (recv = 0; recv < buflen; recv += ret) {
+	for (recv = 0; recv < (ssize_t)buflen; recv += ret) {
 
-		ret = select_read(fd, &data[recv], buflen - recv, d_sec, d_usec);
+		ret = select_read(fd, &data[recv], (size_t)((ssize_t)buflen - recv), d_sec, d_usec);
 
 		if (ret < 1) {
 			return ret;
@@ -415,11 +418,12 @@ ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	ssize_t	i, ret;
 	char	tmp[64];
 	char	*data = buf;
-	size_t	count = 0, maxcount;
+	ssize_t	count = 0, maxcount;
 
+	assert(buflen < SSIZE_MAX && buflen > 0);
 	memset(buf, '\0', buflen);
 
-	maxcount = buflen - 1;		/* for trailing \0 */
+	maxcount = (ssize_t)buflen - 1;		/* for trailing \0 */
 
 	while (count < maxcount) {
 		ret = select_read(fd, tmp, sizeof(tmp), d_sec, d_usec);
