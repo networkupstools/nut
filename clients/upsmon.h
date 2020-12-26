@@ -51,7 +51,7 @@ typedef struct {
 	char	*hostname;		/* just hostname		*/
 	int	port;			/* just the port		*/
 
-	int	pv;			/* power value from conf	*/
+	unsigned int	pv;			/* power value from conf	*/
 	char	*un;			/* username (optional for now)	*/
 	char	*pw;  			/* password from conf		*/
 	int	status;			/* status (see flags above)	*/
