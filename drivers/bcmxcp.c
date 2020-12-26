@@ -112,6 +112,7 @@ TODO List:
 #include "main.h"
 #include <math.h>       /* For ldexp() */
 #include <float.h>      /*for FLT_MAX */
+#include <limits.h>
 #include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
@@ -152,7 +153,7 @@ static void init_ext_vars(void);
 static void init_topology(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
-static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex);
+static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const unsigned int mapIndex, const unsigned int bitmask, const unsigned int alarmMapIndex, const unsigned int alarmBlockIndex);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static int init_outlet(unsigned char len);
 static void init_system_test_capabilities(void);
@@ -930,7 +931,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
 	unsigned int iIndex = 0;
-	int alarm = 0;
+	unsigned int alarm = 0;
 
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported");
@@ -966,12 +967,19 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	upsdebugx(2, "\n");
 }
 
-bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex) {
+bool_t set_alarm_support_in_alarm_map(
+	const unsigned char *map,
+	const unsigned int mapIndex,
+	const unsigned int bitmask,
+	const unsigned int alarmMapIndex,
+	const unsigned int alarmBlockIndex
+) {
 		/* Check what the alarm block tells about the support for the alarm */
 		if (map[mapIndex] & bitmask)
 		{
 			/* Set alarm active */
-			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = alarmBlockIndex;
+			assert (alarmBlockIndex < INT_MAX);
+			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = (int)alarmBlockIndex;
 		}
 		else
 		{
