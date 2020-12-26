@@ -1923,6 +1923,12 @@ AS_CASE(["${nut_enable_warnings}"],
 AC_MSG_RESULT(["${nut_enable_warnings}"])
 
 dnl FIXME: At the moment there is no major difference of hard vs easy presets
+dnl Nothing special for gcc - we tend to survive it with GNU standard >= 99
+dnl ### Special picks for clang:
+dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use, gotta be fatal right?
+dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_, __EXTENSIONS__ etc.
+dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
+dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr as requested by newer linters, and C++98 does not
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"

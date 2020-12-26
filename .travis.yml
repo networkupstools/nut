@@ -913,9 +913,6 @@ _matrix_osx_gnustd_nowarn:
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
-# -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_, __EXTENSIONS__ etc.
-# -Wno-unused-macros -- system headers define a lot of stuff we do not use, gotta be fatal right?
-# -Wno-padded -- NSPR and NSS headers get to issue lots of that
 _matrix_osx_gnustd_warn:
   include: &_matrix_osx_gnustd_warn
   - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
