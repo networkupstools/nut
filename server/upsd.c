@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <poll.h>
+#include <limits.h>
 #include <signal.h>
 
 #include "user.h"
@@ -346,12 +347,15 @@ static void client_disconnect(nut_ctype_t *client)
 	return;
 }
 
-/* send the buffer <sendbuf> of length <sendlen> to host <dest> */
+/* send the buffer <sendbuf> of length <sendlen> to host <dest>
+ * returns effectively a boolean: 0 = failed, 1 = sent ok
+ */
 int sendback(nut_ctype_t *client, const char *fmt, ...)
 {
-	int	res, len;
-	char ans[NUT_NET_ANSWER_MAX+1];
-	va_list ap;
+	ssize_t	res;
+	size_t	len;
+	char	ans[NUT_NET_ANSWER_MAX+1];
+	va_list	ap;
 
 	if (!client) {
 		return 0;
@@ -363,6 +367,11 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
+	/* System write() and our ssl_write() have a loophole that they write a
+	 * size_t amount of bytes and upon success return that in ssize_t value
+	 */
+	assert(len < SSIZE_MAX);
+
 #ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
@@ -372,9 +381,9 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%zu] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
-	if (len != res) {
+	if (res < 0 || len != (size_t)res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
 		client->last_heard = 0;
 		return 0;	/* failed */
