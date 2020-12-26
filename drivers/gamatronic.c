@@ -198,8 +198,8 @@ static void update_pseudovars( void )
 }
 
 static void sec_poll ( int pollflag ) {
-	int msglen,f,q;
-	char retbuf[140],*n,*r;
+	int msglen, f, q;
+	char retbuf[140], *n, *r;
 
 	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
 		if (sec_querylist[q].command == NULL) break;
@@ -236,7 +236,7 @@ static void sec_poll ( int pollflag ) {
 void upsdrv_initinfo(void)
 {
 	int msglen, v;
-	char *a,*p,avail_list[300];
+	char *a, *p, avail_list[300];
 
 	/* find out which variables/commands this UPS supports */
 	msglen = 0;
@@ -246,7 +246,6 @@ void upsdrv_initinfo(void)
 	msglen = 0;
 	sec_cmd(SEC_POLLCMD, SEC_AVAILP2, p, &msglen);
 	*(p+msglen) = '\0';
-
 
 	if (strlen(avail_list) == 0) {
 		fatalx(EXIT_FAILURE, "No available variables found!");
@@ -324,11 +323,11 @@ void upsdrv_makevartable(void)
 static void setup_serial(const char *port)
 {
 	char temp[140];
-	int i,ret;
+	int i, ret;
 
 	/* Detect the ups baudrate  */
 	for (i=0; i<5; i++) {
-		ser_set_speed(upsfd, device_path,baud_rates[i].rate);
+		ser_set_speed(upsfd, device_path, baud_rates[i].rate);
 		ret = ser_send(upsfd, "^P003MAN");
 		ret = sec_upsrecv(temp);
 		if (ret >= -1) break;
