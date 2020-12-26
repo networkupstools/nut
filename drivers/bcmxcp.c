@@ -974,30 +974,30 @@ bool_t set_alarm_support_in_alarm_map(
 	const unsigned int alarmMapIndex,
 	const unsigned int alarmBlockIndex
 ) {
-		/* Check what the alarm block tells about the support for the alarm */
-		if (map[mapIndex] & bitmask)
-		{
-			/* Set alarm active */
-			assert (alarmBlockIndex < INT_MAX);
-			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = (int)alarmBlockIndex;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
-		}
+	/* Check what the alarm block tells about the support for the alarm */
+	if (map[mapIndex] & bitmask)
+	{
+		/* Set alarm active */
+		assert (alarmBlockIndex < INT_MAX);
+		bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = (int)alarmBlockIndex;
+	}
+	else
+	{
+		/* Set alarm inactive */
+		bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
+	}
 
-		/* Return if the alarm was supported or not */
-		if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
-			return TRUE;
+	/* Return if the alarm was supported or not */
+	if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
+		/* Debug info */
+		upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+		return TRUE;
 		}
-		else {
-			/* Debug info */
-			upsdebugx(3, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
-			return FALSE;
-		}
+	else {
+		/* Debug info */
+		upsdebugx(3, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+		return FALSE;
+	}
 }
 
 int init_outlet(unsigned char len)
