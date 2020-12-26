@@ -39,10 +39,13 @@
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
 static	char	*powerdownflag = NULL, *configfile = NULL;
 
-static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
+static	unsigned int	minsupplies = 1, sleepval = 5;
+
+	/* default TTL of a device gone AWOL, 3 x polling interval = 15 sec */
+static	int deadtime = 15;
 
 	/* default polling interval = 5 sec */
-static	int	pollfreq = 5, pollfreqalert = 5;
+static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
@@ -57,7 +60,7 @@ static	int	rbwarntime = 43200;
 static	int	nocommwarntime = 300;
 
 	/* default interval between the shutdown warning and the shutdown */
-static	int	finaldelay = 5;
+static	unsigned int	finaldelay = 5;
 
 	/* set by SIGHUP handler, cleared after reload finishes */
 static	int	reload_flag = 0;
@@ -1171,13 +1174,23 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 	/* POLLFREQ <num> */
 	if (!strcmp(arg[0], "POLLFREQ")) {
-		pollfreq = atoi(arg[1]);
+		int ipollfreq = atoi(arg[1]);
+		if (ipollfreq < 0) {
+			upsdebugx(0, "Ignoring invalid POLLFREQ value: %d", ipollfreq);
+		} else {
+			pollfreq = (unsigned int)ipollfreq;
+		}
 		return 1;
 	}
 
 	/* POLLFREQALERT <num> */
 	if (!strcmp(arg[0], "POLLFREQALERT")) {
-		pollfreqalert = atoi(arg[1]);
+		int ipollfreqalert = atoi(arg[1]);
+		if (ipollfreqalert < 0) {
+			upsdebugx(0, "Ignoring invalid POLLFREQALERT value: %d", ipollfreqalert);
+		} else {
+			pollfreqalert = (unsigned int)ipollfreqalert;
+		}
 		return 1;
 	}
 
@@ -1213,7 +1226,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 	/* FINALDELAY <num> */
 	if (!strcmp(arg[0], "FINALDELAY")) {
-		finaldelay = atoi(arg[1]);
+		int ifinaldelay = atoi(arg[1]);
+		if (ifinaldelay < 0) {
+			upsdebugx(0, "Ignoring invalid FINALDELAY value: %d", ifinaldelay);
+		} else {
+			finaldelay = (unsigned int)ifinaldelay;
+		}
 		return 1;
 	}
 
