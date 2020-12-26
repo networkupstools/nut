@@ -103,7 +103,7 @@ static SSL_CTX	*ssl_ctx = NULL;
 
 static void ssl_debug(void)
 {
-	int	e;
+	unsigned long	e;
 	char	errmsg[SMALLBUF];
 
 	while ((e = ERR_get_error()) != 0) {
@@ -547,6 +547,15 @@ void ssl_init(void)
 #endif /* WITH_OPENSSL | WITH_NSS */
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	int	ret = -1;
@@ -556,7 +565,13 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	}
 
 #ifdef WITH_OPENSSL
-	ret = SSL_read(client->ssl, buf, buflen);
+	/* SSL_* routines deal with int type for return and buflen
+	 * We might need to window our I/O if we exceed 2GB (in
+	 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+	 * but smaller systems with 16-bits might be endangered :)
+	 */
+	assert(buflen <= INT_MAX);
+	ret = SSL_read(client->ssl, buf, (int)buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -581,7 +596,13 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	}
 
 #ifdef WITH_OPENSSL
-	ret = SSL_write(client->ssl, buf, buflen);
+	/* SSL_* routines deal with int type for return and buflen
+	 * We might need to window our I/O if we exceed 2GB (in
+	 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+	 * but smaller systems with 16-bits might be endangered :)
+	 */
+	assert(buflen <= INT_MAX);
+	ret = SSL_write(client->ssl, buf, (int)buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -593,6 +614,9 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void ssl_finish(nut_ctype_t *client)
 {
