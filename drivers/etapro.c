@@ -52,6 +52,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include <limits.h>
 
 #define DRIVER_NAME	"ETA PRO driver"
 #define DRIVER_VERSION	"0.04"
@@ -112,7 +113,10 @@ etapro_get_response(const char *resp_type)
 		upslogx(LOG_ERR, "bad response format (%s)", tmp);
 		return -1;
 	}
-	return val;
+	if (val > INT_MAX) {
+		upslogx(LOG_WARNING, "got value too big in response");
+	}
+	return (int)val;
 }
 
 static void
