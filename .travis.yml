@@ -1068,8 +1068,8 @@ _matrix_required_linux:
   - *_matrix_required_linux_pass1_quick
   - *_matrix_required_linux_pass2_shell
   - *_matrix_required_linux_pass3_large
-  - *_matrix_linux_gnustd_nowarn
   - *_matrix_linux_gnustd_warn_viable
+  - *_matrix_linux_gnustd_nowarn
   - *_matrix_linux_gnustd_nowarn_x86_32bit
   - *_matrix_linux_gnustd_nowarn_arm_64bit_viable
   - *_matrix_linux_gnustd_nowarn_s390x_64bit_viable
