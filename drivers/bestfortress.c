@@ -204,8 +204,8 @@ static int upssend(const char *fmt,...) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
 
-		if (d_usec)
-			usleep(d_usec);
+		if (d_usec > 0)
+			usleep((useconds_t)d_usec);
 
 		sent++;
 		if (sent >= INT_MAX) {
