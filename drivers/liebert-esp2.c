@@ -117,7 +117,7 @@ static void NUT_UNUSED_FUNCTION_dummy_bitfields(void)
 	NUT_UNUSED_VARIABLE(cmd_bitfield7);
 }
 
-static int num_inphases = 1, num_outphases = 1;
+static unsigned int num_inphases = 1, num_outphases = 1;
 
 static char cksum(const char *buf, const size_t len)
 {
