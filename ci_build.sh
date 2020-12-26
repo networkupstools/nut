@@ -352,7 +352,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             ;;
         "default-all-errors")
             RES=0
-            if pkg-config --exists nss && pkg-config --exists openssl ; then
+            if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
                 # Try builds for both cases as they are ifdef-ed
 
                 echo "=== Building with SSL=openssl..."
