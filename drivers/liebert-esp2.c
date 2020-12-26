@@ -131,7 +131,7 @@ static char cksum(const char *buf, const size_t len)
 	return sum;
 }
 
-static int do_command(const unsigned char *command, char *reply, int cmd_len)
+static int do_command(const unsigned char *command, char *reply, size_t cmd_len)
 {
 	int	ret;
 
@@ -139,7 +139,7 @@ static int do_command(const unsigned char *command, char *reply, int cmd_len)
 	if (ret < 0) {
 		upsdebug_with_errno(2, "send");
 		return -1;
-	} else if (ret < cmd_len) {
+	} else if ((size_t)ret < cmd_len) {
 		upsdebug_hex(2, "send: truncated", command, (size_t)ret);
 		return -1;
 	}
