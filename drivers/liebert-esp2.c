@@ -140,25 +140,25 @@ static int do_command(const unsigned char *command, char *reply, int cmd_len)
 		upsdebug_with_errno(2, "send");
 		return -1;
 	} else if (ret < cmd_len) {
-		upsdebug_hex(2, "send: truncated", command, ret);
+		upsdebug_hex(2, "send: truncated", command, (size_t)ret);
 		return -1;
 	}
 
-	upsdebug_hex(2, "send", command, ret);
+	upsdebug_hex(2, "send", command, (size_t)ret);
 
 	ret = ser_get_buf_len(upsfd, reply, 8, 1, 0); /* it needs that this driver works with USB to Serial cable */
 	if (ret < 0) {
 		upsdebug_with_errno(2, "read");
 		return -1;
 	} else if (ret < 6) {
-		upsdebug_hex(2, "read: truncated", reply, ret);
+		upsdebug_hex(2, "read: truncated", reply, (size_t)ret);
 		return -1;
 	} else if (reply[7] != cksum(reply, 7)) {
-		upsdebug_hex(2, "read: checksum error", reply, ret);
+		upsdebug_hex(2, "read: checksum error", reply, (size_t)ret);
 		return -1;
 	}
 
-	upsdebug_hex(2, "read", reply, ret);
+	upsdebug_hex(2, "read", reply, (size_t)ret);
 	return ret;
 }
 
@@ -187,19 +187,19 @@ void upsdrv_initinfo(void)
 
 		for (i = 0; i < vartab[vari].len; i++) {
 			snprintf(command, sizeof(command), "\x01\x88\x02\x01%c", i+offset);
-		command[5] = cksum(command, 5);
+			command[5] = cksum(command, 5);
 
-		ret = do_command((unsigned char *)command, reply, 6);
+			ret = do_command((unsigned char *)command, reply, 6);
 			if (ret < 8) {
-				upsdebug_hex(2, "send: truncated", command, ret);
+				upsdebug_hex(2, "send: truncated", command, (size_t)ret);
 				break;
 			}
 
 			buf[i<<1] = reply[6];
 			buf[(i<<1)+1] = reply[5];
-	}
+		}
 
-	buf[i<<1] = 0;
+		buf[i<<1] = 0;
 		upsdebugx(1, "return: %d (8=success)", ret);
 
 		if (ret == 8) { /* last command successful */
@@ -216,7 +216,7 @@ void upsdrv_initinfo(void)
 	memcpy(command,cmd_upstype,6);
 	ret = do_command((unsigned char *)command, reply, 6);
 	if (ret < 8) {
-		upsdebug_hex(2, "send: phase detection: truncated", command, ret);
+		upsdebug_hex(2, "send: phase detection: truncated", command, (size_t)ret);
 	}
 	else {
 		/* input: from bit 0 to bit 1 (2 bits) */
@@ -252,7 +252,7 @@ void upsdrv_initinfo(void)
 	memcpy(command,cmd_scaling1,6);
 	ret = do_command((unsigned char *)command, reply, 6);
 	if (ret < 8) {
-		upsdebug_hex(2, "send: scaling detection: truncated", command, ret);
+		upsdebug_hex(2, "send: scaling detection: truncated", command, (size_t)ret);
 	}
 	else { /* add here multipliers that differentiate between models */
 		switch (reply[6]) {
