@@ -607,6 +607,15 @@ static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, 
 	return read(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
 static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
 {
@@ -654,6 +663,9 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long tim
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
@@ -679,6 +691,15 @@ static ssize_t upscli_select_write(const int fd, const void *buf, const size_t b
 	return write(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
 static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
 {
@@ -726,6 +747,9 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const l
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 
 #ifdef WITH_SSL
