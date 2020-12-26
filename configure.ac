@@ -1930,7 +1930,7 @@ AS_CASE(["${nut_enable_warnings}"],
         ],
     [clang-hard], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
