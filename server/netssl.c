@@ -67,13 +67,13 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	return;
 }
 
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
+ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
+ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;
@@ -556,9 +556,9 @@ void ssl_init(void)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
+ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -571,7 +571,9 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	ret = SSL_read(client->ssl, buf, (int)buflen);
+	int iret = SSL_read(client->ssl, buf, (int)buflen);
+	assert(iret <= SSIZE_MAX);
+	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -587,9 +589,9 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	return ret;
 }
 
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
+ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
-	int	ret;
+	ssize_t	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -602,7 +604,9 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	ret = SSL_write(client->ssl, buf, (int)buflen);
+	int iret = SSL_write(client->ssl, buf, (int)buflen);
+	assert(iret <= SSIZE_MAX);
+	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -610,7 +614,7 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%d", ret);
+	upsdebugx(5, "ssl_write ret=%zd", ret);
 
 	return ret;
 }
