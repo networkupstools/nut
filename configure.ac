@@ -217,15 +217,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
-
-dnl
-dnl Only use these when compiling with gcc
-dnl
-if ( test "${GCC}" = "yes" )
-then
-  CFLAGS="${CFLAGS} -Wall -Wsign-compare"
-fi
-
 case ${target_os} in
    solaris2* )
       dnl On Solaris, this allows errno to use thread local storage
@@ -346,6 +337,8 @@ dnl the usual builds can pass by default on systems without asciidoc.
 nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-hard, clang-minimal, clang-hard, all; auto-choosers: hard, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [no])
+NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -1897,6 +1890,69 @@ AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
+dnl Filter through known variants first, so automatic choices can be made.
+dnl Note that clang identifies as gcc-compatible so should be probed first.
+dnl TODO: Flip this default to "hard" when we clear existing codebase.
+nut_warning_difficulty="minimal"
+AC_MSG_CHECKING([whether to pre-set warnings])
+AS_CASE(["${nut_enable_warnings}"],
+    [no|all|gcc-minimal|clang-minimal|gcc-hard|clang-hard], [],
+    [gcc|clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
+    [yes|auto|""], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-${nut_warning_difficulty}"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-${nut_warning_difficulty}"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [hard|auto-hard|auto=hard], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-hard"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-hard"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [minimal|auto-minimal|auto=minimal], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-minimal"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-minimal"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [AC_MSG_WARN([Unsupported variant for --enable-warnings=${nut_enable_warnings}, ignored])
+     nut_enable_warnings="no"
+    ]
+)
+AC_MSG_RESULT(["${nut_enable_warnings}"])
+
+dnl FIXME: At the moment there is no major difference of hard vs easy presets
+AS_CASE(["${nut_enable_warnings}"],
+    [all], [
+        CFLAGS="${CFLAGS} -Wall"
+        CXXFLAGS="${CXXFLAGS} -Wall"
+        ],
+    [clang-hard], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
+        ],
+    [clang-minimal], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        ],
+    [gcc-minimal|gcc-hard], [
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
+        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        ]
+)
+
+AC_MSG_CHECKING([whether to make warnings fatal])
+AS_CASE(["${nut_enable_Werror}"],
+    [yes|auto], [
+        CFLAGS="${CFLAGS} -Werror"
+        CXXFLAGS="${CXXFLAGS} -Werror"
+        ],
+    [no], [
+        CFLAGS="${CFLAGS} -Wno-error"
+        CXXFLAGS="${CXXFLAGS} -Wno-error"
+        ]
+)
+AC_MSG_RESULT(["${nut_enable_Werror}"])
+
+dnl Finally restore warnings setings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
 AC_OUTPUT([
