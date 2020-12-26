@@ -1922,8 +1922,9 @@ AS_CASE(["${nut_enable_warnings}"],
 )
 AC_MSG_RESULT(["${nut_enable_warnings}"])
 
-dnl FIXME: At the moment there is no major difference of hard vs easy presets
-dnl Nothing special for gcc - we tend to survive it with GNU standard >= 99
+dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
+dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
+dnl # make a difference.
 dnl ### Special picks for clang:
 dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use, gotta be fatal right?
 dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_, __EXTENSIONS__ etc.
@@ -1939,8 +1940,8 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal|gcc-hard], [
