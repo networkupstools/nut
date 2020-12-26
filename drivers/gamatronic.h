@@ -69,8 +69,8 @@
 
 /* Some baud rates for setup_serial() */
 static struct {
-    int rate;
-    int name;
+    speed_t rate;	/* Value like B19200 defined in termios.h; note: NOT the bitrate numerically */
+    size_t name;	/* Actual rate... WHY is this "name" - number to print interactively? */
 } baud_rates[] = {
     { B1200,  1200 },
     { B2400,  2400 },
