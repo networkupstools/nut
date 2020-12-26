@@ -291,6 +291,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
+    if [ -n "${BUILD_WARNOPT-}" ]; then
+        CONFIG_OPTS+=("--enable-warnings=${BUILD_WARNOPT}")
+    fi
+
+    if [ -n "${BUILD_WARNFATAL-}" ]; then
+        CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
