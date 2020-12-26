@@ -253,7 +253,7 @@ void upsdrv_updateinfo(void)
 		} while (temp[2] == 0);
 
 		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
-		upsdebug_hex(5, "buffer", temp, recv);
+		upsdebug_hex(5, "buffer", temp, (size_t)recv);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
@@ -294,7 +294,7 @@ void upsdrv_updateinfo(void)
 
 	if (!checksum_ok) {
 		upsdebugx(2, "checksum corruption");
-		upsdebug_hex(3, "buffer", temp, (int)len);
+		upsdebug_hex(3, "buffer", temp, (size_t)len);
 		dstate_datastale();
 		return;
 	}
