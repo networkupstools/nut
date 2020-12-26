@@ -66,7 +66,7 @@ int	tracking_delay = 3600;
 int allow_no_device = 0;
 
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-int	maxconn = 0;
+long	maxconn = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -707,19 +707,34 @@ static void upsd_cleanup(void)
 
 static void poll_reload(void)
 {
-	int	ret;
+	long	ret;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
 	if (ret < maxconn) {
 		fatalx(EXIT_FAILURE,
-			"Your system limits the maximum number of connections to %d\n"
-			"but you requested %d. The server won't start until this\n"
+			"Your system limits the maximum number of connections to %ld\n"
+			"but you requested %ld. The server won't start until this\n"
 			"problem is resolved.\n", ret, maxconn);
 	}
 
-	fds = xrealloc(fds, maxconn * sizeof(*fds));
-	handler = xrealloc(handler, maxconn * sizeof(*handler));
+	if (0 > maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %ld as maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n", maxconn);
+	}
+
+	/* How many items can we stuff into the array? */
+	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	if ((unsigned long long)maxalloc < (unsigned long long)maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %ld as maximum number of connections, but we can only allocate %zu.\n"
+			"The server won't start until this problem is resolved.\n", maxconn, maxalloc);
+	}
+
+	/* The checks above effectively limit that maxconn is in size_t range */
+	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
+	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
 }
 
 /* instant command and setvar status tracking */
