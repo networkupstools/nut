@@ -27,13 +27,14 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <limits.h>
 
 #include "upsclient.h"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			tracking_enabled = 0;
-static unsigned int		timeout = DEFAULT_TRACKING_TIMEOUT;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -197,7 +198,8 @@ static void do_cmd(char **argv, const int argc)
 			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
 
 		/* and get status tracking reply */
-		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+		assert(timeout < LONG_MAX);
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
 			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 
 		if (strncmp(buf, "PENDING", 7))
