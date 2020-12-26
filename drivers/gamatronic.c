@@ -108,7 +108,7 @@ static int sec_cmd(const char mode, const char *command, char *msgbuf, int *bufl
 
 	if (ret < 0) return -1;
 
-	strncpy(msgbuf, msg, ret);
+	strncpy(msgbuf, msg, (size_t)ret);
 	upsdebugx(1, "UPS<--PC: \"%s\"",msg);
 
 /*
@@ -342,7 +342,8 @@ static void setup_serial(const char *port)
 		exit (1);
 	}
 	else
-		printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
+		printf("Connected to UPS on %s baudrate: %zu\n",
+			port, baud_rates[i].name);
 }
 
 void upsdrv_initups(void)
