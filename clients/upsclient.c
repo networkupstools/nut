@@ -1226,9 +1226,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 }
 
 /* make sure upsd is giving us what we asked for */
-static int verify_resp(int num, const char **q, char **a)
+static int verify_resp(unsigned int num, const char **q, char **a)
 {
-	int	i;
+	unsigned int	i;
 
 	for (i = 0; i < num; i++) {
 		if (strcasecmp(q[i], a[i]) != 0) {
