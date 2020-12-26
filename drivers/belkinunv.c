@@ -285,7 +285,8 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 	if (n+len > bufsize) {
 		return -1;
 	}
-	r = ser_get_buf_len(upsfd, &buf[4], len, 3, 0);
+	/* Casting is okay, len is range-limited to unsigned char */
+	r = ser_get_buf_len(upsfd, &buf[4], (size_t)len, 3, 0);
 	if (r!=len) {
 		upslogx(LOG_ERR, "Short read from UPS");
 		return -1;
@@ -304,7 +305,8 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
    failure, else an allocated string. */
 static char *belkin_nut_read_str(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
-	int len, r;
+	int r;
+	size_t len;
 	char *str;
 
 	/* send the request */
@@ -335,6 +337,10 @@ static char *belkin_nut_read_str(unsigned char reg) {
 	}
 
 	/* convert the answer to a string */
+	if (buf[2] < 1) {
+		upslogx(LOG_ERR, "Invalid response from UPS: string too short to be true");
+		return NULL;
+	}
 	len = buf[2]-1;
 	str = (char *)xmalloc(len+1);
 	memcpy(str, &buf[4], len);
@@ -522,7 +528,7 @@ static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
 	int tries = 0;
 
 	while (count < n) {
-		r = read(fd, &buf[count], n-count);
+		r = read(fd, &buf[count], (size_t)(n-count));
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
@@ -546,7 +552,7 @@ static int belkin_std_upswrite(int fd, unsigned char *buf, int n) {
 	int tries = 0;
 
 	while (count < n) {
-		r = write(fd, &buf[count], n-count);
+		r = write(fd, &buf[count], (size_t)(n-count));
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
