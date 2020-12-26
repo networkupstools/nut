@@ -200,7 +200,7 @@ static int upssend(const char *fmt,...) {
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
 				"than %d bytes", (int)sizeof(buf));
-	for (p = buf; *p; p++) {
+	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
 
@@ -208,9 +208,12 @@ static int upssend(const char *fmt,...) {
 			usleep(d_usec);
 
 		sent++;
+		if (sent >= INT_MAX) {
+			upslogx(LOG_WARNING, "ser_send_pace: sent more than INT_MAX, aborting");
+		}
 	}
 
-	return sent;
+	return (int)sent;
 }
 
 static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
