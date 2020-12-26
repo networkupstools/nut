@@ -337,7 +337,7 @@ dnl the usual builds can pass by default on systems without asciidoc.
 nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
-NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-hard, clang-minimal, clang-hard, all; auto-choosers: hard, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [no])
+NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-hard, clang-minimal, clang-hard, all; auto-choosers: hard, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
 NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
 dnl ----------------------------------------------------------------------
@@ -1893,10 +1893,12 @@ AC_SUBST(udevdir)
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
+dnl Note: the "gcc-legacy" option is intentionally undocumented, it acts as
+dnl least-surprise default if caller did not specify any --enable-warnings.
 nut_warning_difficulty="minimal"
 AC_MSG_CHECKING([whether to pre-set warnings])
 AS_CASE(["${nut_enable_warnings}"],
-    [no|all|gcc-minimal|clang-minimal|gcc-hard|clang-hard], [],
+    [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-hard|clang-hard], [],
     [gcc|clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
     [yes|auto|""], [
         AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-${nut_warning_difficulty}"],
@@ -1913,6 +1915,7 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-minimal"], [nut_enable_warnings="all"])
             ])
         ],
+    [legacy], [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-legacy"], [nut_enable_warnings="no"])],
     [AC_MSG_WARN([Unsupported variant for --enable-warnings=${nut_enable_warnings}, ignored])
      nut_enable_warnings="no"
     ]
@@ -1933,6 +1936,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
+    [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal|gcc-hard], [
         CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
