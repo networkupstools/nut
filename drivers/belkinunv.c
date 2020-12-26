@@ -302,7 +302,7 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 
 /* read the value of a string register from UPS. Return NULL on
    failure, else an allocated string. */
-static char *belkin_nut_read_str(int reg) {
+static char *belkin_nut_read_str(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
 	int len, r;
 	char *str;
@@ -344,7 +344,7 @@ static char *belkin_nut_read_str(int reg) {
 
 /* read the value of an integer register from UPS. Return -1 on
    failure. */
-static int belkin_nut_read_int(int reg) {
+static int belkin_nut_read_int(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
 	int len, r;
 
@@ -389,7 +389,7 @@ static int belkin_nut_read_int(int reg) {
 
 /* write the value of an integer register to UPS. Return -1 on
    failure, else 0 */
-static int belkin_nut_write_int(int reg, int val) {
+static int belkin_nut_write_int(unsigned char reg, int val) {
 	unsigned char buf[MAXMSGSIZE];
 	int r;
 
@@ -612,7 +612,7 @@ static int belkin_std_receive(int fd, unsigned char *buf, int bufsize) {
 
 /* read the value of an integer register from UPS. Return -1 on
    failure. */
-static int belkin_std_read_int(int fd, int reg) {
+static int belkin_std_read_int(int fd, unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
 	int len, r;
 
@@ -654,7 +654,7 @@ static int belkin_std_read_int(int fd, int reg) {
 
 /* write the value of an integer register to UPS. Return -1 on
    failure, else 0 */
-static int belkin_std_write_int(int fd, int reg, int val) {
+static int belkin_std_write_int(int fd, unsigned char reg, int val) {
 	unsigned char buf[MAXMSGSIZE];
 	int r;
 
