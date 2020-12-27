@@ -1925,11 +1925,20 @@ AC_MSG_RESULT(["${nut_enable_warnings}"])
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
 dnl # make a difference.
-dnl ### Special picks for clang:
-dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use, gotta be fatal right?
-dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_, __EXTENSIONS__ etc.
+dnl # Majority of sanity checks are enabled by "-Wextra" on both GCC and CLANG
+dnl # and "-Weverything" additionally on CLANG. They are impractically picky,
+dnl # especially with fallout from system headers that we can not impact anyway
+dnl # so the "difficulty level" pre-sets exclude certain warning classes from
+dnl # that report.
+dnl ### Special exclusion picks for clang-hard:
+dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use,
+dnl #    gotta be fatal right?
+dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_,
+dnl #    __EXTENSIONS__ etc. which are underscored and reserved for compilers
 dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
-dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr as requested by newer linters, and C++98 does not
+dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
+dnl #    as requested by newer linters, and C++98 does not. We require C++11
+dnl #    or newer anyway, and skip building C++ library and test otherwise.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
