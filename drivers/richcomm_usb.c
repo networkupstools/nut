@@ -24,6 +24,7 @@
 
 #include "main.h"
 #include "usb-common.h"
+#include <limits.h>
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
@@ -85,6 +86,15 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL
 };
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static int execute_and_retrieve_query(char *query, char *reply)
 {
 	int	ret;
@@ -97,7 +107,10 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "send", query, ret);
+	if ((unsigned int)ret > SIZE_MAX) {
+		upsdebugx(3, "send: ret=%d exceeds SIZE_MAX", ret);
+	}
+	upsdebug_hex(3, "send", query, (size_t)ret);
 
 	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
 
@@ -106,9 +119,15 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "read", reply, ret);
+	if ((unsigned int)ret > SIZE_MAX) {
+		upsdebugx(3, "read: ret=%d exceeds SIZE_MAX", ret);
+	}
+	upsdebug_hex(3, "read", reply, (size_t)ret);
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static int query_ups(char *reply)
 {
