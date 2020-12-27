@@ -229,19 +229,19 @@ Values to note include:
 
 * `--enable-warnings(=.../no)` -- enable certain warning presets:
 
-** `gcc-hard`, `clang-hard`, `gcc-minimal`, `clang-minimal`, `all` --
-   actual definitions that are compiler-dependent (the latter just adds
-   `-Wall` which may be relatively portable);
+** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
+   `clang-minimal`, `all` -- actual definitions that are compiler-dependent
+   (the latter just adds `-Wall` which may be relatively portable);
 
-** `hard` or `minimal` - if current compiler is detected as CLANG or GCC,
-   apply corresponding setting from above (or `all` otherwise);
+** `hard`, `medium` or `minimal` -- if current compiler is detected as
+   CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
 
-** `gcc` or `clang` - apply the set of options (regardless of detected
+** `gcc` or `clang` -- apply the set of options (regardless of detected
    compiler) with default "difficulty" hard-coded in `configure` script,
    to tweak as our codebase becomes cleaner;
 
 ** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
-   without an `=ARG` part) - if current compiler is detected as CLANG
+   without an `=ARG` part) -- if current compiler is detected as CLANG
    or GCC, apply corresponding setting with default "difficulty" from
    above (or `all` otherwise).
 
