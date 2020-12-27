@@ -175,12 +175,88 @@ compilers and C standard revisions, e.g. save a local file like this:
 fixing bugs file-by-file running a `make` after each save to confirm
 your solutions and uncover the next issue to address :-)
 
+Note that while spelling out sets of warnings can help in a quest to
+fix certain bugs during development (if only by removing noise from
+classes of warnings not relevant to the issue one is working on), there
+is a reasonable set of warnings which NUT codebase actively tries to
+be clean about (and checks in CI), detailed in the next section.
+
+For the `ci_build.sh` usage like above, one can instead pass the setting
+via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
+for their build, e.g.:
+
+	$ cat _fightwarn-clang9-gnu11.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
+	CFLAGS="-std=gnu11" \
+	CXXFLAGS="-std=gnu++11" \
+	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
+		./ci_build.sh
+
 As a rule of thumb, new contributions must not emit any warnings when
-built in GNU99 mode. Technically they must survive the part of test
-matrix across the several platforms tested by Travis CI and marked
-as required to pass, to be accepted for pull request merge.
+built in GNU99 mode with a `minimal` "difficulty" level of warnings.
+Technically they must survive the part of test matrix across the several
+platforms tested by Travis CI and marked in project settings as required
+to pass, to be accepted for a pull request merge.
+
+Developers aiming to post successful pull requests to improve NUT can
+pass the `--enable-warnings` option to the `configure` script in local
+builds to see how that behaves and ensure that at least in some set-up
+their contribution is viable. Note that different compiler versions and
+vendors (gcc/clang/...), building against different OS and third-party
+dependencies, with different CPU architectures and different language
+specification revisions, might all complain about different issues --
+and catching this in as diverse range of set-ups as possible is why we
+have CI tests.
+
+It can be beneficial for serial developers to set up a local BuildBot
+or a Jenkins instance with a matrix test job, to test their local git
+repository branches with whatever systems they have available.
 
 * https://github.com/networkupstools/nut/issues/823
+
+Pre-set warning options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The options chosen into pre-sets that can be selected by `configure`
+script options are ones we use for different layers of CI tests.
+
+Values to note include:
+
+* `--enable-Werror(=yes/no)` -- make warnings fatal;
+
+* `--enable-warnings(=.../no)` -- enable certain warning presets:
+
+** `gcc-hard`, `clang-hard`, `gcc-minimal`, `clang-minimal`, `all` --
+   actual definitions that are compiler-dependent (the latter just adds
+   `-Wall` which may be relatively portable);
+
+** `hard` or `minimal` - if current compiler is detected as CLANG or GCC,
+   apply corresponding setting from above (or `all` otherwise);
+
+** `gcc` or `clang` - apply the set of options (regardless of detected
+   compiler) with default "difficulty" hard-coded in `configure` script,
+   to tweak as our codebase becomes cleaner;
+
+** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
+   without an `=ARG` part) - if current compiler is detected as CLANG
+   or GCC, apply corresponding setting with default "difficulty" from
+   above (or `all` otherwise).
+
+Note that for backwards-compatibility reasons and to help filter out
+introduction of blatant errors, builds with compilers that claim GCC
+compatibility can enable a few easy warning presets by default. This
+can be avoided with an explicit argument to `--disable-warnings` (or
+`--enable-warnings=no`).
+
+Hopefully this mechanism is extensible enough if we would need to add
+more compilers and/or "difficulty levels" in the future.
+
+Finally, note that such pre-set warnings can be mixed with options
+passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
+run, but it is up to your compiler how it interprets the resulting mix.
 
 Coding style
 ------------
