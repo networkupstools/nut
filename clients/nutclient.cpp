@@ -98,7 +98,13 @@ std::string SystemException::err()
 	}
 }
 
-/* Implemented out-of-line to avoid "Weak vtables" warnings and related overheads */
+/* Implemented out-of-line to avoid "Weak vtables" warnings and related overheads
+ * But now with clang-9 C++11 linter (though not C++17) they complain with
+ *   error: definition of implicit copy constructor for 'NutException'
+ *          is deprecated because it has a user-declared destructor
+ * This is fixed in header with declarations like:
+ *   NutException(const NutException&) = default;
+ */
 NutException::~NutException() {}
 SystemException::~SystemException() {}
 IOException::~IOException() {}
