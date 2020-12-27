@@ -514,7 +514,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 }
 
 #ifndef TESTING
-const struct subdriver_t {
+static const struct subdriver_t {
 	const char	*name;
 	int		(*command)(const char *cmd, char *buf, size_t buflen);
 } subdriver[] = {
