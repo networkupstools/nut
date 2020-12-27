@@ -1953,7 +1953,7 @@ void	upsdrv_shutdown(void)
 
 #ifdef QX_USB
 	#ifndef TESTING
-		const struct {
+		static const struct {
 			const char	*name;
 			int		(*command)(const char *cmd, char *buf, size_t buflen);
 		} usbsubdriver[] = {
