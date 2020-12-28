@@ -210,6 +210,7 @@
 
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
+"Cyber Power Systems"	"ups"	"3"	"BR1000ELCD"	"USB"	"usbhid-ups" # https://www.cyberpower.com/eu/en/product/sku/BR1000ELCD
 "Cyber Power Systems"	"ups"	"1"	"CPS1100AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"CPS1200AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"CPS1250AVR"	""	"powerpanel"
