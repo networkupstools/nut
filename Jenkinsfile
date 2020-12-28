@@ -110,7 +110,7 @@ pipeline {
                             catchError {
                                 sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
-    *openindiana*) BUILD_SSL_ONCE=true ;;
+    *openindiana*) BUILD_SSL_ONCE=true ; BUILD_LIBGD_CGI=auto ; export BUILD_LIBGD_CGI ;;
     *) BUILD_SSL_ONCE=false ;;
 esac
 export BUILD_SSL_ONCE
@@ -188,7 +188,7 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                             catchError {
                                 sh """ echo "Building with CLANG-${CLANGVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
-    *openindiana*) BUILD_SSL_ONCE=true ;;
+    *openindiana*) BUILD_SSL_ONCE=true ; BUILD_LIBGD_CGI=auto ; export BUILD_LIBGD_CGI ;;
     *) BUILD_SSL_ONCE=false ;;
 esac
 export BUILD_SSL_ONCE
