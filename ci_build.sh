@@ -65,13 +65,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     LC_ALL=C
     export LANG LC_ALL
 
-    if [ -d "./tmp" ]; then
-        rm -rf ./tmp
+    if [ -d "./tmp/" ]; then
+        rm -rf ./tmp/
     fi
-    if [ -d "./.inst" ]; then
-        rm -rf ./.inst
+    if [ -d "./.inst/" ]; then
+        rm -rf ./.inst/
     fi
-    mkdir -p tmp .inst
+    mkdir -p tmp/ .inst/
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
 
@@ -97,7 +97,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     if which ccache && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
-    mkdir -p "${CCACHE_DIR}" || HAVE_CCACHE=no
+    mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
     if [ "$HAVE_CCACHE" = yes ] && [ -d "$CCACHE_DIR" ]; then
         echo "CCache stats before build:"
