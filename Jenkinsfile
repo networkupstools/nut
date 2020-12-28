@@ -107,7 +107,8 @@ pipeline {
                     }
                     stage('GCC Build and test') {
                         steps {
-                            sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
+                            catchError {
+                                sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
     *openindiana*) BUILD_SSL_ONCE=true ;;
     *) BUILD_SSL_ONCE=false ;;
@@ -125,6 +126,7 @@ CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++\${STDXXVER}" \
 CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
 ./ci_build.sh
 """
+                            }
                         }
                     }
                 }
@@ -183,7 +185,8 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                     }
                     stage('CLANG Build and test') {
                         steps {
-                            sh """ echo "Building with CLANG-${CLANGVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
+                            catchError {
+                                sh """ echo "Building with CLANG-${CLANGVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
     *openindiana*) BUILD_SSL_ONCE=true ;;
     *) BUILD_SSL_ONCE=false ;;
@@ -201,6 +204,7 @@ CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++\${STDXXVER}" \
 CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 ./ci_build.sh
 """
+                            }
                         }
                     }
                 }
@@ -260,12 +264,16 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     stage('Shellcheck') {
                         steps {
-                            sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
+                            catchError {
+                                sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
+                            }
                         }
                     }
                     stage('NDE check') {
                         steps {
-                            sh """ BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS="${SHELL_PROGS}" ./ci_build.sh """
+                            catchError {
+                                sh """ BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS="${SHELL_PROGS}" ./ci_build.sh """
+                            }
                         }
                     }
                 }
@@ -299,7 +307,9 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     stage('Test BUILD_TYPE') {
                         steps {
-                            sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
+                            catchError {
+                                sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
+                            }
                         }
                     }
                 }
@@ -329,7 +339,9 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                         }
                         stage('Check') {
                             steps {
-                                sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
+                                catchError {
+                                    sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
+                                }
                             }
                         }
                     }
