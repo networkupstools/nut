@@ -242,6 +242,7 @@
 "Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"VP1200ELCD (ValueII_1200E)"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP 1500C"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP1000PFCLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP1500EPFCLCD"	"USB"	"usbhid-ups"	# http://www.cyberpower-eu.com/products/ups_systems/pfc-sinewave/cp1500epfclcd.htm
