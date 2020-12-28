@@ -159,6 +159,82 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                 } // stage for matrix BuildAndTest-CLANG
 
+                stage('Spellcheck') {
+                    agent { label "OS=openindiana" }
+                    steps {
+                        sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
+                    }
+                }
+
+                stage('Shell-script checks') {
+                    matrix {
+                        agent { label "OS=platform" }
+                        axes {
+                            axis {
+                                name 'PLATFORM'
+                                values 'linux', 'openindiana'
+                            }
+                            axis {
+                                name 'SHELL_PROGS'
+                                values 'bash', 'ksh', 'zsh', 'dash', 'ash', 'busybox sh'
+                            }
+                        }
+                        excludes {
+                            exclude {
+                                axis {
+                                    name 'PLATFORM'
+                                    values 'linux'
+                                }
+                                axis {
+                                    name 'SHELL_PROGS'
+                                    values 'ksh', 'zsh'
+                                }
+                            }
+                            exclude {
+                                axis {
+                                    name 'PLATFORM'
+                                    values 'openindiana'
+                                }
+                                axis {
+                                    name 'SHELL_PROGS'
+                                    values 'busybox sh', 'ash'
+                                }
+                            }
+                        }
+                        stages {
+                            stage('Shellcheck') {
+                                steps {
+                                    sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
+                                }
+                            }
+                            stage('NDE check') {
+                                steps {
+                                    sh """ BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS="${SHELL_PROGS}" ./ci_build.sh """
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Distchecks') {
+                    agent { label "OS=linux" }
+                    matrix {
+                        axes {
+                            axis {
+                                name 'BUILD_TYPE'
+                                values 'default-tgt:distcheck-light', 'default-tgt:distcheck-valgrind'
+                            }
+                        }
+                        stages {
+                            stage('Test BUILD_TYPE') {
+                                steps {
+                                    sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
+                                }
+                            }
+                        }
+                    }
+                }
+
             } // parallel
         } // obligatory one stage
     } // obligatory stages
