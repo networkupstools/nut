@@ -135,7 +135,7 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
 
         stage("BuildAndTest-CLANG") {
             matrix {
-                agent { label "OS=${PLATFORM} && ${CLANGVER}" }
+                agent { label "OS=${PLATFORM} && CLANGVER=${CLANGVER}" }
                 axes {
                     axis {
                         name 'PLATFORM'
@@ -213,7 +213,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 
         stage('Shell-script checks') {
             matrix {
-                agent { label "OS=platform" }
+                agent { label "OS=${PLATFORM}" }
                 axes {
                     axis {
                         name 'PLATFORM'
@@ -282,8 +282,12 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 
         stage('Distchecks') {
             matrix {
-                agent { label "OS=linux" }
+                agent { label "OS=${PLATFORM}" }
                 axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'linux'
+                    }
                     axis {
                         name 'BUILD_TYPE'
                         values 'default-tgt:distcheck-light', 'default-tgt:distcheck-valgrind'
