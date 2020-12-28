@@ -1,6 +1,16 @@
 pipeline {
     agent none
+    options {
+        skipDefaultCheckout()
+    }
     stages {
+        stage("Stash source for workers") {
+            agent { label "jimoi" }
+            steps {
+                checkout scm
+                stash 'NUT-checkedout'
+            }
+        }
         stage("BuildAndTest-GCC") {
             matrix {
             agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
@@ -80,6 +90,21 @@ pipeline {
                     }
                 }
                 stages {
+                    stage('Unstash SRC') {
+                        steps {
+                            /* clean up our workspace */
+                            deleteDir()
+                            /* clean up tmp directory */
+                            dir("${workspace}@tmp") {
+                                deleteDir()
+                            }
+                            /* clean up script directory */
+                            dir("${workspace}@script") {
+                                deleteDir()
+                            }
+                            unstash 'NUT-checkedout'
+                        }
+                    }
                     stage('GCC Build and test') {
                         steps {
                             sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
@@ -136,6 +161,21 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                     }
                 }
                 stages {
+                    stage('Unstash SRC') {
+                        steps {
+                            /* clean up our workspace */
+                            deleteDir()
+                            /* clean up tmp directory */
+                            dir("${workspace}@tmp") {
+                                deleteDir()
+                            }
+                            /* clean up script directory */
+                            dir("${workspace}@script") {
+                                deleteDir()
+                            }
+                            unstash 'NUT-checkedout'
+                        }
+                    }
                     stage('CLANG Build and test') {
                         steps {
                             sh """ echo "Building with CLANG-${CLANGVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
@@ -193,6 +233,21 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                 }
                 stages {
+                    stage('Unstash SRC') {
+                        steps {
+                            /* clean up our workspace */
+                            deleteDir()
+                            /* clean up tmp directory */
+                            dir("${workspace}@tmp") {
+                                deleteDir()
+                            }
+                            /* clean up script directory */
+                            dir("${workspace}@script") {
+                                deleteDir()
+                            }
+                            unstash 'NUT-checkedout'
+                        }
+                    }
                     stage('Shellcheck') {
                         steps {
                             sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
@@ -217,6 +272,21 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                 }
                 stages {
+                    stage('Unstash SRC') {
+                        steps {
+                            /* clean up our workspace */
+                            deleteDir()
+                            /* clean up tmp directory */
+                            dir("${workspace}@tmp") {
+                                deleteDir()
+                            }
+                            /* clean up script directory */
+                            dir("${workspace}@script") {
+                                deleteDir()
+                            }
+                            unstash 'NUT-checkedout'
+                        }
+                    }
                     stage('Test BUILD_TYPE') {
                         steps {
                             sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
@@ -228,14 +298,35 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 
         stage('Unclassified tests') {
             parallel {
+
                 stage('Spellcheck') {
                     agent { label "OS=openindiana" }
-                    steps {
-                        sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
+                    stages {
+                        stage('Unstash SRC') {
+                            steps {
+                                /* clean up our workspace */
+                                deleteDir()
+                                /* clean up tmp directory */
+                                dir("${workspace}@tmp") {
+                                    deleteDir()
+                                }
+                                /* clean up script directory */
+                                dir("${workspace}@script") {
+                                    deleteDir()
+                                }
+                                unstash 'NUT-checkedout'
+                            }
+                        }
+                        stage('Check') {
+                            steps {
+                                sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
+                            }
+                        }
                     }
-                }
+                } // spellcheck
 
             } // parallel
         } // obligatory one stage
     } // obligatory stages
 } // pipeline
+
