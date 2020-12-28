@@ -114,9 +114,14 @@ case "${PLATFORM}" in
 esac
 export BUILD_SSL_ONCE
 
+case "${STDVER}" in
+    99) STDXXVER="98" ;;
+    *) STDXXVER="${STDVER}" ;;
+esac
+
 BUILD_TYPE=default-all-errors \
 BUILD_WARNOPT="${BUILD_WARNOPT}" BUILD_WARNFATAL=yes \
-CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++${STDVER}" \
+CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++\${STDXXVER}" \
 CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
 ./ci_build.sh
 """
@@ -185,9 +190,14 @@ case "${PLATFORM}" in
 esac
 export BUILD_SSL_ONCE
 
+case "${STDVER}" in
+    99) STDXXVER="98" ;;
+    *) STDXXVER="${STDVER}" ;;
+esac
+
 BUILD_TYPE=default-all-errors \
 BUILD_WARNOPT="${BUILD_WARNOPT}" BUILD_WARNFATAL=yes \
-CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++${STDVER}" \
+CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++\${STDXXVER}" \
 CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 ./ci_build.sh
 """
