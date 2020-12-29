@@ -322,7 +322,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                 axes {
                     axis {
                         name 'PLATFORM'
-                        values 'linux'
+                        values 'linux', 'openindiana'
                     }
                     axis {
                         name 'BUILD_TYPE'
