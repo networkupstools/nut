@@ -1,8 +1,38 @@
 pipeline {
     agent none
+
+    parameters {
+        booleanParam (
+            name: 'DO_MATRIX_GCC',
+            defaultValue: true,
+            description: 'Check builds with GCC'
+        )
+        booleanParam (
+            name: 'DO_MATRIX_CLANG',
+            defaultValue: true,
+            description: 'Check builds with CLANG'
+        )
+        booleanParam (
+            name: 'DO_MATRIX_DISTCHECK',
+            defaultValue: true,
+            description: 'Check Makefile EXTRA_DIST and other nuances for usable dist archive creation'
+        )
+        booleanParam (
+            name: 'DO_MATRIX_SHELL',
+            defaultValue: true,
+            description: 'Check shell script syntax'
+        )
+        booleanParam (
+            name: 'DO_SPELLCHECK',
+            defaultValue: true,
+            description: 'Check spelling'
+        )
+    }
+
     options {
         skipDefaultCheckout()
     }
+
     stages {
         stage("Stash source for workers") {
 /*
@@ -30,6 +60,7 @@ pipeline {
         }
 
         stage("BuildAndTest-GCC") {
+            when { expression { params.DO_MATRIX_GCC } }
             matrix {
                 agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
                 axes {
@@ -123,6 +154,7 @@ pipeline {
         } // stage for matrix BuildAndTest-GCC
 
         stage("BuildAndTest-CLANG") {
+            when { expression { params.DO_MATRIX_CLANG } }
             matrix {
                 agent { label "OS=${PLATFORM} && CLANGVER=${CLANGVER}" }
                 axes {
@@ -186,6 +218,7 @@ pipeline {
         } // stage for matrix BuildAndTest-CLANG
 
         stage('Shell-script checks') {
+            when { expression { params.DO_MATRIX_SHELL } }
             matrix {
                 agent { label "OS=${PLATFORM}" }
                 axes {
@@ -250,6 +283,7 @@ pipeline {
         } // stage for matrix Shell-script checks
 
         stage('Distchecks') {
+            when { expression { params.DO_MATRIX_DISTCHECK } }
             matrix {
                 agent { label "OS=${PLATFORM}" }
                 axes {
@@ -281,6 +315,7 @@ pipeline {
             parallel {
 
                 stage('Spellcheck') {
+                    when { expression { params.DO_SPELLCHECK } }
                     agent { label "OS=openindiana" }
                     stages {
                         stage('Unstash SRC') {
