@@ -13,7 +13,7 @@ pipeline {
         }
         stage("BuildAndTest-GCC") {
             matrix {
-            agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
+                agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
                 axes {
                     axis {
                         name 'PLATFORM'
@@ -28,7 +28,7 @@ pipeline {
                         values '99', '11', '17', '2x'
                     }
                     axis {
-                    name 'BUILD_WARNOPT'
+                        name 'BUILD_WARNOPT'
                         values 'hard'
                     }
                     axis {
