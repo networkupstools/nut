@@ -107,7 +107,7 @@ pipeline {
                     }
                     stage('GCC Build and test') {
                         steps {
-                            catchError {
+                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
     *openindiana*) BUILD_SSL_ONCE=true ; BUILD_LIBGD_CGI=auto ; export BUILD_LIBGD_CGI ;;
@@ -185,7 +185,7 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                     }
                     stage('CLANG Build and test') {
                         steps {
-                            catchError {
+                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ echo "Building with CLANG-${CLANGVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
 case "${PLATFORM}" in
     *openindiana*) BUILD_SSL_ONCE=true ; BUILD_LIBGD_CGI=auto ; export BUILD_LIBGD_CGI ;;
@@ -264,14 +264,14 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     stage('Shellcheck') {
                         steps {
-                            catchError {
+                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
                             }
                         }
                     }
                     stage('NDE check') {
                         steps {
-                            catchError {
+                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS="${SHELL_PROGS}" ./ci_build.sh """
                             }
                         }
@@ -311,7 +311,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     stage('Test BUILD_TYPE') {
                         steps {
-                            catchError {
+                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
                             }
                         }
@@ -343,7 +343,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                         }
                         stage('Check') {
                             steps {
-                                catchError {
+                                warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                     sh """ BUILD_TYPE=default-spellcheck ./ci_build.sh """
                                 }
                             }
