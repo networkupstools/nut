@@ -1,3 +1,5 @@
+def issueAnalysis = []
+
 pipeline {
     agent none
     options {
@@ -28,6 +30,7 @@ pipeline {
                 stash 'NUT-checkedout'
             }
         }
+
         stage("BuildAndTest-GCC") {
             matrix {
                 agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
@@ -144,6 +147,12 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
 ./ci_build.sh
 """
                             }
+                            script {
+                                def id = "GCC-${GCCVER}:STD=${STD}${STDVER}:WARN=${BUILD_WARNOPT}@${PLATFORM}"
+                                def i = scanForIssues tool: gcc(name: id)
+                                issueAnalysis << i
+                                publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
+                            }
                         }
                     }
                 }
@@ -235,6 +244,12 @@ CFLAGS="-std=${STD}${STDVER}" CXXFLAGS="-std=${STD}++\${STDXXVER}" \
 CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 ./ci_build.sh
 """
+                            }
+                            script {
+                                def id = "CLANG-${CLANGVER}:STD=${STD}${STDVER}:WARN=${BUILD_WARNOPT}@${PLATFORM}"
+                                def i = scanForIssues tool: clang(name: id)
+                                issueAnalysis << i
+                                publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
                             }
                         }
                     }
@@ -350,6 +365,14 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                             warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
                                 sh """ BUILD_TYPE="${BUILD_TYPE}" ./ci_build.sh """
                             }
+                            script {
+                                def id = "Distcheck:${BUILD_TYPE}@${PLATFORM}"
+                                def i = scanForIssues tool: gcc(name: id)
+                                issueAnalysis << i
+                                //def i = scanForIssues tool: clang(name: id)
+                                //issueAnalysis << i
+                                publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
+                            }
                         }
                     }
                 }
@@ -390,5 +413,18 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
             } // parallel
         } // obligatory one stage
     } // obligatory stages
+
+    post {
+        always {
+            script {
+                def reference = env.JOB_NAME.replace(env.BRANCH_NAME, "develop")
+                publishIssues id: 'analysis', name: 'All Issues',
+                    referenceJobName: reference,
+                    issues: issueAnalysis,
+                    filters: [includePackage('io.jenkins.plugins.analysis.*')]
+            }
+        }
+    }
+
 } // pipeline
 
