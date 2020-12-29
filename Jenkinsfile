@@ -252,7 +252,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     axis {
                         name 'SHELL_PROGS'
-                        values 'bash', 'ksh', 'zsh', 'dash', 'ash', 'busybox_sh'
+                        values 'bash', 'ksh', 'dash', 'ash', 'busybox_sh'
                     }
                 }
                 excludes {
@@ -263,7 +263,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                         }
                         axis {
                             name 'SHELL_PROGS'
-                            values 'ksh', 'zsh'
+                            values 'ksh' // not all of my linux buildhosts have it
                         }
                     }
                     exclude {
