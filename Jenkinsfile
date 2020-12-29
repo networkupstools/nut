@@ -5,6 +5,13 @@ pipeline {
     }
     stages {
         stage("Stash source for workers") {
+/*
+ * NOTE: For quicker builds, it is recommended to set up the pipeline job
+ * using this Jenkinsfile to refer to a local copy of the NUT repository
+ * maintained on the stashing worker (as a Reference Repo), and do just
+ * shallow checkouts (depth=1). Longer history may make sense for release
+ * builds with changelog generation, but not for quick test iterations.
+ */
             agent { label "jimoi" }
             steps {
                 /* clean up our workspace */
