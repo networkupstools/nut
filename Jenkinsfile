@@ -252,7 +252,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     }
                     axis {
                         name 'SHELL_PROGS'
-                        values 'bash', 'ksh', 'zsh', 'dash', 'ash', 'busybox sh'
+                        values 'bash', 'ksh', 'zsh', 'dash', 'ash', 'busybox_sh'
                     }
                 }
                 excludes {
@@ -273,7 +273,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                         }
                         axis {
                             name 'SHELL_PROGS'
-                            values 'busybox sh', 'ash'
+                            values 'busybox_sh', 'ash'
                         }
                     }
                 }
