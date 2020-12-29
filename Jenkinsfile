@@ -296,6 +296,11 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     stage('Shellcheck') {
                         steps {
                             warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
+                                /* Note: currently `make check-scripts-syntax`
+                                 * uses current system shell of the build/test
+                                 * host, or bash where script says explicitly.
+                                 * So currently SHELL_PROGS does not apply here.
+                                 */
                                 sh """ BUILD_TYPE=default-shellcheck ./ci_build.sh """
                             }
                         }
