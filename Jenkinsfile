@@ -146,6 +146,10 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                         values '8', '9'
                     }
                     axis {
+                        name 'STDVER'
+                        values '99', '11', '17', '2x'
+                    }
+                    axis {
                         name 'BUILD_WARNOPT'
                         values 'minimal', 'medium', 'hard'
                     }
@@ -164,6 +168,16 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
                         axis {
                             name 'CLANGVER'
                             values '8', '9'
+                        }
+                    }
+                    exclude {
+                        axis {
+                            name 'CLANGVER'
+                            values '8'
+                        }
+                        axis {
+                            name 'STDVER'
+                            values '2x'
                         }
                     }
                 }
