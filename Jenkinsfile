@@ -7,6 +7,16 @@ pipeline {
         stage("Stash source for workers") {
             agent { label "jimoi" }
             steps {
+                /* clean up our workspace */
+                deleteDir()
+                /* clean up tmp directory */
+                dir("${workspace}@tmp") {
+                    deleteDir()
+                }
+                /* clean up script directory */
+                dir("${workspace}@script") {
+                    deleteDir()
+                }
                 checkout scm
                 stash 'NUT-checkedout'
             }
