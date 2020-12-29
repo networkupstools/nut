@@ -348,7 +348,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
                     stage('Test BUILD_TYPE') {
                         steps {
                             warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
-                                sh """ BUILD_TYPE=default-distcheck-light ./ci_build.sh """
+                                sh """ BUILD_TYPE="${BUILD_TYPE}" ./ci_build.sh """
                             }
                         }
                     }
