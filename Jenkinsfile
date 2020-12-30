@@ -272,17 +272,7 @@ pipeline {
                     }
                     stage('Test BUILD_TYPE') {
                         steps {
-                            warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
-                                sh """ BUILD_TYPE="${BUILD_TYPE}" ./ci_build.sh """
-                            }
-                            script {
-                                def id = "Distcheck:${BUILD_TYPE}@${PLATFORM}"
-                                def i = scanForIssues tool: gcc(name: id)
-                                issueAnalysis << i
-                                //def i = scanForIssues tool: clang(name: id)
-                                //issueAnalysis << i
-                                publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
-                            }
+                            doMatrixDistcheck("${BUILD_TYPE}", "${PLATFORM}")
                         }
                     }
                 }
@@ -397,6 +387,21 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
     }
 } // doMatrixCLANG()
 
+void doMatrixDistcheck(String BUILD_TYPE, String PLATFORM) {
+    warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
+        sh """ BUILD_TYPE="${BUILD_TYPE}" ./ci_build.sh """
+    }
+    script {
+        def id = "Distcheck:${BUILD_TYPE}@${PLATFORM}"
+        def i = scanForIssues tool: gcc(name: id)
+        issueAnalysis << i
+        //def i = scanForIssues tool: clang(name: id)
+        //issueAnalysis << i
+        publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
+    }
+} // doMatrixDistcheck()
+
+/* Other repetitive code: */
 void unstashCleanNUTsrc() {
     /* clean up our workspace */
     deleteDir()
