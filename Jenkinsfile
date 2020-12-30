@@ -1,5 +1,3 @@
-def issueAnalysis = []
-
 pipeline {
     agent none
     options {
@@ -321,6 +319,10 @@ pipeline {
 //   https://issues.jenkins.io/browse/JENKINS-37984
 //   https://issues.jenkins.io/browse/JENKINS-56500
 //   https://support.cloudbees.com/hc/en-us/articles/360039361371-Method-Code-Too-Large-Error
+
+// Collect reports from Warnings NG for each sub-build in this array:
+def issueAnalysis = []
+
 void doMatrixGCC(String GCCVER, String STD, String STDVER, String PLATFORM, String BUILD_WARNOPT) {
     warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
         sh """ echo "Building with GCC-${GCCVER} STD=${STD}${STDVER} WARN=${BUILD_WARNOPT} on ${PLATFORM}"
