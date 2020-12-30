@@ -112,17 +112,7 @@ pipeline {
                 stages {
                     stage('Unstash SRC') {
                         steps {
-                            /* clean up our workspace */
-                            deleteDir()
-                            /* clean up tmp directory */
-                            dir("${workspace}@tmp") {
-                                deleteDir()
-                            }
-                            /* clean up script directory */
-                            dir("${workspace}@script") {
-                                deleteDir()
-                            }
-                            unstash 'NUT-checkedout'
+                            unstashCleanNUTsrc()
                         }
                     }
                     stage('GCC Build and test') {
@@ -185,17 +175,7 @@ pipeline {
                 stages {
                     stage('Unstash SRC') {
                         steps {
-                            /* clean up our workspace */
-                            deleteDir()
-                            /* clean up tmp directory */
-                            dir("${workspace}@tmp") {
-                                deleteDir()
-                            }
-                            /* clean up script directory */
-                            dir("${workspace}@script") {
-                                deleteDir()
-                            }
-                            unstash 'NUT-checkedout'
+                            unstashCleanNUTsrc()
                         }
                     }
                     stage('CLANG Build and test') {
@@ -245,17 +225,7 @@ pipeline {
                 stages {
                     stage('Unstash SRC') {
                         steps {
-                            /* clean up our workspace */
-                            deleteDir()
-                            /* clean up tmp directory */
-                            dir("${workspace}@tmp") {
-                                deleteDir()
-                            }
-                            /* clean up script directory */
-                            dir("${workspace}@script") {
-                                deleteDir()
-                            }
-                            unstash 'NUT-checkedout'
+                            unstashCleanNUTsrc()
                         }
                     }
                     stage('Shellcheck') {
@@ -297,17 +267,7 @@ pipeline {
                 stages {
                     stage('Unstash SRC') {
                         steps {
-                            /* clean up our workspace */
-                            deleteDir()
-                            /* clean up tmp directory */
-                            dir("${workspace}@tmp") {
-                                deleteDir()
-                            }
-                            /* clean up script directory */
-                            dir("${workspace}@script") {
-                                deleteDir()
-                            }
-                            unstash 'NUT-checkedout'
+                            unstashCleanNUTsrc()
                         }
                     }
                     stage('Test BUILD_TYPE') {
@@ -337,17 +297,7 @@ pipeline {
                     stages {
                         stage('Unstash SRC') {
                             steps {
-                                /* clean up our workspace */
-                                deleteDir()
-                                /* clean up tmp directory */
-                                dir("${workspace}@tmp") {
-                                    deleteDir()
-                                }
-                                /* clean up script directory */
-                                dir("${workspace}@script") {
-                                    deleteDir()
-                                }
-                                unstash 'NUT-checkedout'
+                                unstashCleanNUTsrc()
                             }
                         }
                         stage('Check') {
@@ -446,4 +396,18 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
         publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
     }
 } // doMatrixCLANG()
+
+def unstashCleanNUTsrc() {
+    /* clean up our workspace */
+    deleteDir()
+    /* clean up tmp directory */
+    dir("${workspace}@tmp") {
+        deleteDir()
+    }
+    /* clean up script directory */
+    dir("${workspace}@script") {
+        deleteDir()
+    }
+    unstash 'NUT-checkedout'
+} // unstashCleanNUTsrc()
 
