@@ -14,7 +14,7 @@ pipeline {
  * shallow checkouts (depth=1). Longer history may make sense for release
  * builds with changelog generation, but not for quick test iterations.
  */
-            agent { label "jimoi" }
+            agent { label "master-worker" }
             steps {
                 /* clean up our workspace */
                 deleteDir()
