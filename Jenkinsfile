@@ -321,7 +321,7 @@ pipeline {
 //   https://support.cloudbees.com/hc/en-us/articles/360039361371-Method-Code-Too-Large-Error
 
 // Collect reports from Warnings NG for each sub-build in this array:
-def issueAnalysis = []
+//def issueAnalysis = []
 
 void doMatrixGCC(String GCCVER, String STD, String STDVER, String PLATFORM, String BUILD_WARNOPT) {
     warnError(message: 'Build-and-check step failed, proceeding to cover whole matrix') {
@@ -348,7 +348,7 @@ CC=gcc-${GCCVER} CXX=g++-${GCCVER} \
     script {
         def id = "GCC-${GCCVER}:STD=${STD}${STDVER}:WARN=${BUILD_WARNOPT}@${PLATFORM}"
         def i = scanForIssues tool: gcc(name: id)
-        issueAnalysis << i
+//        issueAnalysis << i
         publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
     }
 } // doMatrixGCC()
@@ -379,7 +379,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
     script {
         def id = "CLANG-${CLANGVER}:STD=${STD}${STDVER}:WARN=${BUILD_WARNOPT}@${PLATFORM}"
         def i = scanForIssues tool: clang(name: id)
-        issueAnalysis << i
+//        issueAnalysis << i
         publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
     }
 } // doMatrixCLANG()
@@ -391,7 +391,7 @@ void doMatrixDistcheck(String BUILD_TYPE, String PLATFORM) {
     script {
         def id = "Distcheck:${BUILD_TYPE}@${PLATFORM}"
         def i = scanForIssues tool: gcc(name: id)
-        issueAnalysis << i
+//        issueAnalysis << i
         //def i = scanForIssues tool: clang(name: id)
         //issueAnalysis << i
         publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
@@ -399,6 +399,7 @@ void doMatrixDistcheck(String BUILD_TYPE, String PLATFORM) {
 } // doMatrixDistcheck()
 
 void doSummarizeIssues(String JOB_NAME, String BRANCH_NAME) {
+/*
     script {
         def reference = JOB_NAME.replace(BRANCH_NAME, "master")
         publishIssues id: 'analysis', name: 'All Issues',
@@ -406,6 +407,7 @@ void doSummarizeIssues(String JOB_NAME, String BRANCH_NAME) {
             issues: issueAnalysis,
             filters: [includePackage('io.jenkins.plugins.analysis.*')]
     }
+*/
 }
 
 /* Other repetitive code: */
