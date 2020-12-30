@@ -306,13 +306,7 @@ pipeline {
 
     post {
         always {
-            script {
-                def reference = env.JOB_NAME.replace(env.BRANCH_NAME, "develop")
-                publishIssues id: 'analysis', name: 'All Issues',
-                    referenceJobName: reference,
-                    issues: issueAnalysis,
-                    filters: [includePackage('io.jenkins.plugins.analysis.*')]
-            }
+            doSummarizeIssues(env.JOB_NAME, env.BRANCH_NAME)
         }
     }
 
@@ -379,6 +373,7 @@ CC=clang-${CLANGVER} CXX=clang++-${CLANGVER} CPP=clang-cpp \
 ./ci_build.sh
 """
     }
+
     script {
         def id = "CLANG-${CLANGVER}:STD=${STD}${STDVER}:WARN=${BUILD_WARNOPT}@${PLATFORM}"
         def i = scanForIssues tool: clang(name: id)
@@ -400,6 +395,16 @@ void doMatrixDistcheck(String BUILD_TYPE, String PLATFORM) {
         publishIssues issues: [i], filters: [includePackage('io.jenkins.plugins.analysis.*')]
     }
 } // doMatrixDistcheck()
+
+void doSummarizeIssues(String JOB_NAME, String BRANCH_NAME) {
+    script {
+        def reference = JOB_NAME.replace(BRANCH_NAME, "master")
+        publishIssues id: 'analysis', name: 'All Issues',
+            referenceJobName: reference,
+            issues: issueAnalysis,
+            filters: [includePackage('io.jenkins.plugins.analysis.*')]
+    }
+}
 
 /* Other repetitive code: */
 void unstashCleanNUTsrc() {
