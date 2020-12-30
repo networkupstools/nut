@@ -60,8 +60,8 @@ pipeline {
         }
 
         stage("BuildAndTest-GCC") {
-            when { expression { params.DO_MATRIX_GCC } }
             matrix {
+                when { expression { params.DO_MATRIX_GCC } }
                 agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
                 axes {
                     axis {
@@ -154,8 +154,8 @@ pipeline {
         } // stage for matrix BuildAndTest-GCC
 
         stage("BuildAndTest-CLANG") {
-            when { expression { params.DO_MATRIX_CLANG } }
             matrix {
+                when { expression { params.DO_MATRIX_CLANG } }
                 agent { label "OS=${PLATFORM} && CLANGVER=${CLANGVER}" }
                 axes {
                     axis {
@@ -218,8 +218,8 @@ pipeline {
         } // stage for matrix BuildAndTest-CLANG
 
         stage('Shell-script checks') {
-            when { expression { params.DO_MATRIX_SHELL } }
             matrix {
+                when { expression { params.DO_MATRIX_SHELL } }
                 agent { label "OS=${PLATFORM}" }
                 axes {
                     axis {
@@ -283,8 +283,8 @@ pipeline {
         } // stage for matrix Shell-script checks
 
         stage('Distchecks') {
-            when { expression { params.DO_MATRIX_DISTCHECK } }
             matrix {
+                when { expression { params.DO_MATRIX_DISTCHECK } }
                 agent { label "OS=${PLATFORM}" }
                 axes {
                     axis {
