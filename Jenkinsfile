@@ -154,14 +154,12 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('Unstash SRC') {
+                    stage('Unstash SRC + GCC Build and test') {
                         steps {
-                            script { HelperScript.unstashCleanNUTsrc() }
-                        }
-                    }
-                    stage('GCC Build and test') {
-                        steps {
-                            script { HelperScript.doMatrixGCC("${GCCVER}", "${STD}", "${STDVER}", "${PLATFORM}", "${BUILD_WARNOPT}") }
+                            script {
+                                HelperScript.unstashCleanNUTsrc()
+                                HelperScript.doMatrixGCC("${GCCVER}", "${STD}", "${STDVER}", "${PLATFORM}", "${BUILD_WARNOPT}")
+                            }
                         }
                     }
                 }
@@ -222,14 +220,12 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('Unstash SRC') {
+                    stage('Unstash SRC + CLANG Build and test') {
                         steps {
-                            script { HelperScript.unstashCleanNUTsrc() }
-                        }
-                    }
-                    stage('CLANG Build and test') {
-                        steps {
-                            script { HelperScript.doMatrixCLANG("${CLANGVER}", "${STD}", "${STDVER}", "${PLATFORM}", "${BUILD_WARNOPT}") }
+                            script {
+                                HelperScript.unstashCleanNUTsrc()
+                                HelperScript.doMatrixCLANG("${CLANGVER}", "${STD}", "${STDVER}", "${PLATFORM}", "${BUILD_WARNOPT}")
+                            }
                         }
                     }
                 }
@@ -324,14 +320,12 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('Unstash SRC') {
+                    stage('Unstash SRC + Test BUILD_TYPE') {
                         steps {
-                            script { HelperScript.unstashCleanNUTsrc() }
-                        }
-                    }
-                    stage('Test BUILD_TYPE') {
-                        steps {
-                            script { HelperScript.doMatrixDistcheck("${BUILD_TYPE}", "${PLATFORM}") }
+                            script {
+                                HelperScript.unstashCleanNUTsrc()
+                                HelperScript.doMatrixDistcheck("${BUILD_TYPE}", "${PLATFORM}")
+                            }
                         }
                     }
                 }
