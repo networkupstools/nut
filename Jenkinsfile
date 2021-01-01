@@ -1,4 +1,12 @@
-def HelperScript = null
+/* Loader of shared library from current repo as a shim git subrepo.
+ * https://code-held.com/2020/01/22/jenkins-local-shared-library/
+ * config Pipeline Shared Library in NUT MBP job or global config
+ * replica at https://github.com/jimklimov/jenkins-library-subfolder-loader
+ */
+@Library('subfolder-library@1.0') _
+
+/* provides HelperScript.methods() */
+loadLocalLibrary scm, "builds/jenkinslib"
 
 pipeline {
     agent none
