@@ -10,6 +10,10 @@
 //   https://support.cloudbees.com/hc/en-us/articles/360039361371-Method-Code-Too-Large-Error
 
 // Collect reports from Warnings NG for each sub-build in this array:
+
+// Per https://www.jenkins.io/doc/book/pipeline/shared-libraries/#defining-global-variables
+// we need to annotate the following declaration to share that variable:
+//@groovy.transform.Field
 //def issueAnalysis = []
 
 void doMatrixGCC(String GCCVER, String STD, String STDVER, String PLATFORM, String BUILD_WARNOPT) {
