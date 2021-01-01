@@ -64,9 +64,11 @@ pipeline {
             }
         }
 
-        stage("BuildAndTest-GCC") {
+        stage("pick BuildAndTest-GCC?") {
             when { expression { params.DO_MATRIX_GCC } }
-            matrix {
+            stages {
+             stage("BuildAndTest-GCC") {
+               matrix {
                 agent { label "OS=${PLATFORM} && GCCVER=${GCCVER}" }
                 axes {
                     axis {
@@ -155,12 +157,16 @@ pipeline {
                         }
                     }
                 }
+               }
+              }
             }
         } // stage for matrix BuildAndTest-GCC
 
-        stage("BuildAndTest-CLANG") {
+        stage("pick BuildAndTest-CLANG?") {
             when { expression { params.DO_MATRIX_CLANG } }
-            matrix {
+            stages {
+             stage("BuildAndTest-CLANG") {
+              matrix {
                 agent { label "OS=${PLATFORM} && CLANGVER=${CLANGVER}" }
                 axes {
                     axis {
@@ -219,12 +225,16 @@ pipeline {
                         }
                     }
                 }
+               }
+              }
             }
         } // stage for matrix BuildAndTest-CLANG
 
-        stage('Shell-script checks') {
+        stage('pick Shell-script checks?') {
             when { expression { params.DO_MATRIX_SHELL } }
-            matrix {
+            stages {
+             stage("Shell-script checks") {
+              matrix {
                 agent { label "OS=${PLATFORM}" }
                 axes {
                     axis {
@@ -284,12 +294,16 @@ pipeline {
                         }
                     }
                 }
+               }
+              }
             }
         } // stage for matrix Shell-script checks
 
-        stage('Distchecks') {
+        stage('pick Distchecks?') {
             when { expression { params.DO_MATRIX_DISTCHECK } }
-            matrix {
+            stages {
+             stage("Distchecks") {
+              matrix {
                 agent { label "OS=${PLATFORM}" }
                 axes {
                     axis {
@@ -313,6 +327,8 @@ pipeline {
                         }
                     }
                 }
+               }
+              }
             }
         } // stage for matrix Distchecks
 
