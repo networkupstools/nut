@@ -1107,7 +1107,7 @@ static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 }
 
 /* returns 1 if used, 0 if not, so we can complain about bogus configs */
-static int parse_conf_arg(int numargs, char **arg)
+static int parse_conf_arg(size_t numargs, char **arg)
 {
 	/* using up to arg[1] below */
 	if (numargs < 2)

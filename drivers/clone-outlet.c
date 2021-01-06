@@ -66,7 +66,7 @@ static int	dumpdone = 0;
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_heard = 0, last_ping = 0, last_connfail = 0;
 
-static int parse_args(int numargs, char **arg)
+static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
 		return 0;

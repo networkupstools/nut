@@ -723,15 +723,15 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 3);
 	if (ptr)
 		dstate_setinfo("output.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 1);
 	if (ptr)
 		dstate_setinfo("output.frequency", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 4);
 	if (ptr)
 		dstate_setinfo("output.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 
 	low_battery = 0;
 	if (do_command(POLL, STATUS_BATTERY, "", response) <= 0) {
@@ -758,11 +758,11 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 6);
 	if (ptr)
 		dstate_setinfo("battery.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 7);
 	if (ptr)
 		dstate_setinfo("battery.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	if (low_battery)
 		status_set("LB");
 
@@ -778,11 +778,11 @@ void upsdrv_updateinfo(void)
 		ptr = field(response, 2);
 		if (ptr)
 			dstate_setinfo("input.voltage", "%03.1f",
-			               (double) atoi(ptr) / 10.0);
+			               (double) (atoi(ptr)) / 10.0);
 		ptr = field(response, 1);
 		if (ptr)
-			dstate_setinfo("input.frequency",
-				       "%03.1f", (double) atoi(ptr) / 10.0);
+			dstate_setinfo("input.frequency", "%03.1f",
+			               (double) (atoi(ptr)) / 10.0);
 	}
 
 	if (do_command(POLL, TEST_RESULT, "", response) > 0) {

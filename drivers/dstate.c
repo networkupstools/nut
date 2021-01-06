@@ -391,7 +391,7 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 	send_to_one(conn, "TRACKING %s %i\n", id, value);
 }
 
-static int sock_arg(conn_t *conn, int numarg, char **arg)
+static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 	if (numarg < 1) {
 		return 0;
