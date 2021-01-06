@@ -217,15 +217,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
-
-dnl
-dnl Only use these when compiling with gcc
-dnl
-if ( test "${GCC}" = "yes" )
-then
-  CFLAGS="${CFLAGS} -Wall -Wsign-compare"
-fi
-
 case ${target_os} in
    solaris2* )
       dnl On Solaris, this allows errno to use thread local storage
@@ -346,6 +337,8 @@ dnl the usual builds can pass by default on systems without asciidoc.
 nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
+NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -1897,6 +1890,105 @@ AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
+dnl Filter through known variants first, so automatic choices can be made.
+dnl Note that clang identifies as gcc-compatible so should be probed first.
+dnl TODO: Flip this default to "hard" when we clear existing codebase.
+dnl Note: the "gcc-legacy" option is intentionally undocumented, it acts as
+dnl least-surprise default if caller did not specify any --enable-warnings.
+nut_warning_difficulty="minimal"
+AC_MSG_CHECKING([whether to pre-set warnings])
+AS_CASE(["${nut_enable_warnings}"],
+    [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
+    [gcc|clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
+    [yes|auto|""], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-${nut_warning_difficulty}"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-${nut_warning_difficulty}"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [hard|auto-hard|auto=hard], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-hard"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-hard"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [medium|auto-medium|auto=medium], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-medium"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-medium"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [minimal|auto-minimal|auto=minimal], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-minimal"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-minimal"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [legacy], [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-legacy"], [nut_enable_warnings="no"])],
+    [AC_MSG_WARN([Unsupported variant for --enable-warnings=${nut_enable_warnings}, ignored])
+     nut_enable_warnings="no"
+    ]
+)
+AC_MSG_RESULT(["${nut_enable_warnings}"])
+
+dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
+dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
+dnl # make a difference.
+dnl # Majority of sanity checks are enabled by "-Wextra" on both GCC and CLANG
+dnl # and "-Weverything" additionally on CLANG. They are impractically picky,
+dnl # especially with fallout from system headers that we can not impact anyway
+dnl # so the "difficulty level" pre-sets exclude certain warning classes from
+dnl # that report.
+dnl ### Special exclusion picks for clang-hard:
+dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use,
+dnl #    gotta be fatal right?
+dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_,
+dnl #    __EXTENSIONS__ etc. which are underscored and reserved for compilers
+dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
+dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
+dnl #    as requested by newer linters, and C++98 does not. We require C++11
+dnl #    or newer anyway, and skip building C++ library and test otherwise.
+dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
+dnl # -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion
+dnl #    -- reduce noise due to floating-point literals like "3.14" being a C
+dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
+dnl #    float variables. Also variadic functions like printf() cast their
+dnl #    floating-point arguments into double (and small integer types into
+dnl #    "int") which then confuses pedantic checks of printf("%f", floatval).
+AS_CASE(["${nut_enable_warnings}"],
+    [all], [
+        CFLAGS="${CFLAGS} -Wall"
+        CXXFLAGS="${CXXFLAGS} -Wall"
+        ],
+    [clang-hard], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        ],
+    [clang-medium], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        ],
+    [clang-minimal], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra"
+        ],
+    [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
+    [gcc-minimal|gcc-medium|gcc-hard], [
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
+        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        ]
+)
+
+AC_MSG_CHECKING([whether to make warnings fatal])
+AS_CASE(["${nut_enable_Werror}"],
+    [yes|auto], [
+        CFLAGS="${CFLAGS} -Werror"
+        CXXFLAGS="${CXXFLAGS} -Werror"
+        ],
+    [no], [
+        CFLAGS="${CFLAGS} -Wno-error"
+        CXXFLAGS="${CXXFLAGS} -Wno-error"
+        ]
+)
+AC_MSG_RESULT(["${nut_enable_Werror}"])
+
+dnl Finally restore warnings setings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
 AC_OUTPUT([
