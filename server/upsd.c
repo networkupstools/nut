@@ -32,11 +32,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <poll.h>
-#include <limits.h>
 #include <signal.h>
 
 #include "user.h"
 #include "nut_ctype.h"
+#include "nut_stdint.h"
 #include "stype.h"
 #include "netssl.h"
 #include "sstate.h"

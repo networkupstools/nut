@@ -29,10 +29,10 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include "serial.h"
-#include <limits.h>
 
 /* nut includes */
+#include "serial.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
 

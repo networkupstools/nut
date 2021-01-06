@@ -26,7 +26,6 @@
 #include <grp.h>
 #include <pwd.h>
 #include <ctype.h>
-#include <limits.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -35,6 +34,8 @@
 #ifdef HAVE_UU_LOCK
 #include <libutil.h>
 #endif
+
+#include "nut_stdint.h"
 
 	static unsigned int	comm_failures = 0;
 

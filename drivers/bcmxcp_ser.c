@@ -4,7 +4,6 @@
 #include "bcmxcp_ser.h"
 #include "serial.h"
 #include "nut_stdint.h"
-#include <limits.h>
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
 #define SUBDRIVER_VERSION "0.20"

@@ -25,7 +25,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_float.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
 #define DRIVER_VERSION	"0.07"

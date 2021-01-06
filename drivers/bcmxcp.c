@@ -112,7 +112,7 @@ TODO List:
 #include "main.h"
 #include <math.h>       /* For ldexp() */
 #include <float.h>      /*for FLT_MAX */
-#include <limits.h>
+
 #include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"

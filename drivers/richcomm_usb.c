@@ -24,7 +24,7 @@
 
 #include "main.h"
 #include "usb-common.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"

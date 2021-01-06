@@ -27,8 +27,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <limits.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 
 static char			*upsname = NULL, *hostname = NULL;

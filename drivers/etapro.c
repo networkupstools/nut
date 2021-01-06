@@ -52,7 +52,7 @@
 
 #include "main.h"
 #include "serial.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
 #define DRIVER_VERSION	"0.04"

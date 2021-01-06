@@ -26,8 +26,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <limits.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "upsmon.h"
 #include "parseconf.h"

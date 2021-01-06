@@ -26,7 +26,7 @@
 #include "timehead.h"
 #include "upsstats.h"
 #include "upsimagearg.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16

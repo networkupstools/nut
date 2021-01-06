@@ -26,8 +26,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <limits.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "extstate.h"
 

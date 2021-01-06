@@ -40,10 +40,10 @@
 #include "upsclient.h"
 #include "cgilib.h"
 #include <stdlib.h>
-#include <limits.h>
 #include <gd.h>
 #include <gdfontmb.h>
 
+#include "nut_stdint.h"
 #include "upsimagearg.h"
 
 #define MAX_CGI_STRLEN 64

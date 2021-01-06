@@ -46,7 +46,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "nut_stdint.h"
 typedef	uint8_t byte_t;

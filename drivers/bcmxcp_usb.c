@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <usb.h>
-#include <limits.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
 #define SUBDRIVER_VERSION "0.22"

@@ -35,7 +35,6 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 #include <stdio.h>
-#include <limits.h>
 
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */

@@ -22,7 +22,7 @@
 #include "main.h"
 #include "serial.h"
 #include "genericups.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
 #define DRIVER_VERSION	"1.36"

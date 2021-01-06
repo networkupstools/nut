@@ -22,7 +22,7 @@
 
 #include "main.h"
 #include "serial.h"
-#include <limits.h>
+#include "nut_stdint.h"
 
 #define UPSDELAY 50000	/* 50 ms delay required for reliable operation */
 #define SER_WAIT_SEC	2	/* allow 2.0 sec for ser_get calls */
