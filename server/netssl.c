@@ -30,6 +30,7 @@
 #include "upsd.h"
 #include "neterr.h"
 #include "netssl.h"
+#include "nut_stdint.h"
 
 #ifdef WITH_NSS
 	#include <pk11pub.h>
