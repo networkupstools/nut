@@ -165,6 +165,10 @@ AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 # include <float.h>
 #endif])
 
+AC_CHECK_HEADER([limits.h],
+    [AC_DEFINE([HAVE_LIMITS_H], [1],
+        [Define to 1 if you have <limits.h>.])])
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
