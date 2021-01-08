@@ -4,8 +4,8 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -149,7 +149,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.12"
+#define DRIVER_VERSION		"1.15"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3002,7 +3002,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			}
 		}
 		/* Actually apply the new value */
-		if (su_info_p->flags & SU_TYPE_TIME) {
+		if (SU_TYPE(su_info_p) == SU_TYPE_TIME) {
 			status = nut_snmp_set_time(su_info_p->OID, value);
 		}
 		else {
