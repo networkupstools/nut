@@ -111,6 +111,8 @@ DTR:: Data Terminal Ready.  Sent by the PC.
 
 ST:: Send a BREAK on the transmit data line
 
+CHRG:: UPS is charging
+
 A "-" in front of a signal name (like -RNG) means that the indicated 
 condition is signaled with an active low signal.  For example, [LB=-RNG] 
 means the battery is low when the ring indicate line goes low, and that 
