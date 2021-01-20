@@ -30,30 +30,90 @@
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t apc_ats_sensitivity_info[] = {
-	{ 1, "high", NULL, NULL },
-	{ 2, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_output_status_info[] = {
-	{ 1, "OFF", NULL, NULL }, /* fail */
-	{ 2, "OL", NULL, NULL },  /* ok */
-	{ 0, NULL, NULL, NULL }
+	{ 1, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* fail */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* ok */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_outletgroups_name_info[] = {
-	{ 1, "total", NULL, NULL },
-	{ 2, "bank1", NULL, NULL },
-	{ 3, "bank2", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "total"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "bank1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "bank2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_outletgroups_status_info[] = {
-	{ 1, "OL", NULL, NULL },   /* normal */
-	{ 2, "", NULL, NULL },     /* lowload */
-	{ 3, "", NULL, NULL },     /* nearoverload */
-	{ 4, "OVER", NULL, NULL }, /* overload */
-	{ 0, NULL, NULL, NULL }
+	{ 1, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* normal */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* lowload */
+	{ 3, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* nearoverload */
+	{ 4, "OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* overload */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* APC ATS Snmp2NUT lookup table */
