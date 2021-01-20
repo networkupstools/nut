@@ -35,9 +35,21 @@
 #define BESTPOWER_SYSOID	BESTPOWER_OID_MODEL_NAME
 
 static info_lkp_t bestpower_power_status[] = {
-	{ 1, "OL", NULL, NULL },
-	{ 2, "OB", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 /* Snmp2NUT lookup table for Best Power MIB */
