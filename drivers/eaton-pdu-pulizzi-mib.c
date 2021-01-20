@@ -53,16 +53,40 @@
 
 
 static info_lkp_t pulizzi_sw_outlet_status_info[] = {
-	{ 1, "on", NULL, NULL },
-	{ 2, "off", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* simply remap the above status to "yes" */
 static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
