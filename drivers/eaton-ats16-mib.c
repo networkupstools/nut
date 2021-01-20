@@ -32,51 +32,171 @@
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
 
 static info_lkp_t eaton_ats16_source_info[] = {
-	{ 1, "init", NULL, NULL },
-	{ 2, "diagnosis", NULL, NULL },
-	{ 3, "off", NULL, NULL },
-	{ 4, "1", NULL, NULL },
-	{ 5, "2", NULL, NULL },
-	{ 6, "safe", NULL, NULL },
-	{ 7, "fault", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "init"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "diagnosis"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "safe"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "fault"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_sensitivity_info[] = {
-	{ 1, "normal", NULL, NULL },
-	{ 2, "high", NULL, NULL },
-	{ 3, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "normal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
-	{ 1, "good", NULL, NULL },          /* No threshold triggered */
-	{ 2, "out-of-range", NULL, NULL },  /* Frequency out of range triggered */
-	{ 0, NULL, NULL, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "out-of-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Frequency out of range triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
-	{ 1, "good", NULL, NULL },          /* No threshold triggered */
-	{ 2, "derated-range", NULL, NULL }, /* Voltage derated */
-	{ 3, "out-of-range", NULL, NULL },  /* Voltage out of range triggered */
-	{ 4, "unknown", NULL, NULL },       /* "missing" */
-	{ 0, NULL, NULL, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "derated-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Voltage derated */
+	{ 3, "out-of-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Voltage out of range triggered */
+	{ 4, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* "missing" */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_test_result_info[] = {
-	{ 1, "done and passed", NULL, NULL },
-	{ 2, "done and warning", NULL, NULL },
-	{ 3, "done and error", NULL, NULL },
-	{ 4, "aborted", NULL, NULL },
-	{ 5, "in progress", NULL, NULL },
-	{ 6, "no test initiated", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "done and passed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "done and warning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "done and error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "aborted"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "in progress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "no test initiated"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_output_status_info[] = {
-	{ 1, "OFF", NULL, NULL }, /* Output not powered */
-	{ 2, "OL", NULL, NULL },  /* Output powered */
-	{ 0, NULL, NULL, NULL }
+	{ 1, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Output not powered */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Output powered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
