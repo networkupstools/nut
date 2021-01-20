@@ -64,75 +64,251 @@
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
 static info_lkp_t apcc_batt_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "", NULL, NULL },	/* batteryNormal */
-	{ 3, "LB", NULL, NULL },	/* batteryLow */
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryNormal */
+	{ 3, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryLow */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
 static info_lkp_t apcc_pwr_info[] = {
-    { 1, "", NULL, NULL },          /* unknown  */
-    { 2, "OL", NULL, NULL },        /* onLine */
-    { 3, "OB", NULL, NULL },        /* onBattery */
-    { 4, "OL BOOST", NULL, NULL },     /* onSmartBoost */
-    { 5, "OFF", NULL, NULL },       /* timedSleeping */
-    { 6, "OFF", NULL, NULL },       /* softwareBypass  */
-    { 7, "OFF", NULL, NULL },       /* off */
-    { 8, "", NULL, NULL },          /* rebooting */
-    { 9, "BYPASS", NULL, NULL },    /* switchedBypass */
-    { 10, "BYPASS", NULL, NULL },   /* hardwareFailureBypass */
-    { 11, "OFF", NULL, NULL },      /* sleepingUntilPowerReturn */
-    { 12, "OL TRIM", NULL, NULL },     /* onSmartTrim */
-    { 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* unknown  */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* onLine */
+	{ 3, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* onBattery */
+	{ 4, "OL BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* onSmartBoost */
+	{ 5, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* timedSleeping */
+	{ 6, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* softwareBypass  */
+	{ 7, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* off */
+	{ 8, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* rebooting */
+	{ 9, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* switchedBypass */
+	{ 10, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* hardwareFailureBypass */
+	{ 11, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* sleepingUntilPowerReturn */
+	{ 12, "OL TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* onSmartTrim */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
 static info_lkp_t apcc_cal_info[] = {
-    { 1, "", NULL, NULL },          /* Calibration Successful */
-    { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
-    { 3, "CAL", NULL, NULL },       /* Calibration in progress */
-    { 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration Successful */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration not done, battery capacity below 100% */
+	{ 3, "CAL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* Calibration in progress */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
 static info_lkp_t apcc_battrepl_info[] = {
-    { 1, "", NULL, NULL },          /* No battery needs replacing */
-    { 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
-    { 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No battery needs replacing */
+	{ 2, "RB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* Batteries need to be replaced */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
 static info_lkp_t apcc_testdiag_results[] = {
-    { 1, "Ok", NULL, NULL },
-    { 2, "Failed", NULL, NULL },
-    { 3, "InvalidTest", NULL, NULL },
-    { 4, "TestInProgress", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	{ 1, "Ok"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "Failed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "InvalidTest"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "TestInProgress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
 static info_lkp_t apcc_sensitivity_modes[] = {
-    { 1, "auto", NULL, NULL },
-    { 2, "low", NULL, NULL },
-    { 3, "medium", NULL, NULL },
-    { 4, "high", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	{ 1, "auto"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "medium"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 #define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
 static info_lkp_t apcc_transfer_reasons[] = {
-    { 1, "noTransfer", NULL, NULL },
-    { 2, "highLineVoltage", NULL, NULL },
-    { 3, "brownout", NULL, NULL },
-    { 4, "blackout", NULL, NULL },
-    { 5, "smallMomentarySag", NULL, NULL },
-    { 6, "deepMomentarySag", NULL, NULL },
-    { 7, "smallMomentarySpike", NULL, NULL },
-    { 8, "largeMomentarySpike", NULL, NULL },
-    { 9, "selfTest", NULL, NULL },
-    { 10, "rateOfVoltageChange", NULL, NULL }
+	{ 1, "noTransfer"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "highLineVoltage"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "brownout"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "blackout"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "smallMomentarySag"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "deepMomentarySag"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "smallMomentarySpike"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 8, "largeMomentarySpike"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 9, "selfTest"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "rateOfVoltageChange"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* --- */
