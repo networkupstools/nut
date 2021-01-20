@@ -30,20 +30,64 @@
 #define EATON_ATS30_MODEL        ".1.3.6.1.4.1.534.10.1.2.1.0"
 
 static info_lkp_t eaton_ats30_source_info[] = {
-	{ 1, "init", NULL, NULL },
-	{ 2, "diagnosis", NULL, NULL },
-	{ 3, "off", NULL, NULL },
-	{ 4, "1", NULL, NULL },
-	{ 5, "2", NULL, NULL },
-	{ 6, "safe", NULL, NULL },
-	{ 7, "fault", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "init"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "diagnosis"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "safe"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "fault"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats30_input_sensitivity[] = {
-	{ 1, "high", NULL, NULL },
-	{ 2, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /*
@@ -55,23 +99,91 @@ static info_lkp_t eaton_ats30_input_sensitivity[] = {
  * 4 atsFailureOverTemperature N/A
  */
 static info_lkp_t eaton_ats30_status_info[] = {
-	{ 0, "OL", NULL, NULL },
-	{ 1, "OL", NULL, NULL }, /* SwitchFault */
-	{ 2, "OFF", NULL, NULL }, /* NoOutput */
-	{ 3, "OFF", NULL, NULL }, /* SwitchFault + NoOutput */
-	{ 4, "OL OVER", NULL, NULL }, /* OutputOC */
-	{ 5, "OL OVER", NULL, NULL }, /* OutputOC + SwitchFault */
-	{ 6, "OFF OVER", NULL, NULL }, /* OutputOC + NoOutput */
-	{ 7, "OFF OVER", NULL, NULL }, /* OutputOC + SwitchFault + NoOutput */
-	{ 8, "OL", NULL, NULL }, /* OverTemperature */
-	{ 9, "OL", NULL, NULL }, /* OverTemperature + SwitchFault */
-	{ 10, "OFF", NULL, NULL }, /* OverTemperature + NoOutput */
-	{ 11, "OFF", NULL, NULL }, /* OverTemperature + SwitchFault + NoOutput */
-	{ 12, "OL OVER", NULL, NULL }, /* OverTemperature + OutputOC */
-	{ 13, "OL OVER", NULL, NULL }, /* OverTemperature + OutputOC + SwitchFault */
-	{ 14, "OFF OVER", NULL, NULL }, /* OverTemperature + OutputOC + NoOutput */
-	{ 15, "OFF OVER", NULL, NULL }, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
-	{ 0, NULL, NULL, NULL }
+	{ 0, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* SwitchFault */
+	{ 2, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* NoOutput */
+	{ 3, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* SwitchFault + NoOutput */
+	{ 4, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC */
+	{ 5, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + SwitchFault */
+	{ 6, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + NoOutput */
+	{ 7, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + SwitchFault + NoOutput */
+	{ 8, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature */
+	{ 9, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + SwitchFault */
+	{ 10, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + NoOutput */
+	{ 11, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + SwitchFault + NoOutput */
+	{ 12, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC */
+	{ 13, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + SwitchFault */
+	{ 14, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + NoOutput */
+	{ 15, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* EATON_ATS30 Snmp2NUT lookup table */
