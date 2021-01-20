@@ -60,19 +60,73 @@
 #endif
 
 static info_lkp_t avocent_outlet_status_info[] = {
-	{ 1, "off", NULL, NULL },
-	{ 2, "on", NULL, NULL },
-/*	{ 3, "offLocked", NULL, NULL },
-	{ 4, "onLocked", NULL, NULL },
-	{ 5, "offCycle", NULL, NULL },
-	{ 6, "onPendingOff", NULL, NULL },
-	{ 7, "offPendingOn", NULL, NULL },
-	{ 8, "onPendingCycle", NULL, NULL },
-	{ 9, "notSet", NULL, NULL },
-	{ 10, "onFixed", NULL, NULL },
-	{ 11, "offShutdown", NULL, NULL },
-	{ 12, "tripped", NULL, NULL },*/
-	{ 0, NULL, NULL, NULL }
+	{ 1, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+/*
+	{ 3, "offLocked"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "onLocked"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "offCycle"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "onPendingOff"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "offPendingOn"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 8, "onPendingCycle"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 9, "notSet"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "onFixed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 11, "offShutdown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 12, "tripped"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+*/
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static snmp_info_t emerson_avocent_pdu_mib[] = {
