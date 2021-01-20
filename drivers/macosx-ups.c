@@ -18,7 +18,9 @@
  *
  */
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <regex.h>
 
@@ -115,6 +117,7 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "upsdrv_initinfo()");
 
 	dstate_setinfo("device.mfr", "(unknown)");
+	dstate_setinfo("ups.mfr", "(unknown)");
 
 	power_dictionary = copy_power_dictionary(g_power_source_name);
 
@@ -139,6 +142,7 @@ void upsdrv_initinfo(void)
 	CFRelease(device_name_cfstr);
 
 	dstate_setinfo("device.model", "%s", device_name);
+	dstate_setinfo("ups.model", "%s", device_name);
 
 	max_capacity = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSMaxCapacityKey));
 	if(max_capacity) {
@@ -256,6 +260,9 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 	CFRelease(power_dictionary);
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

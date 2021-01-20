@@ -39,11 +39,31 @@
 #define DO_CYCLE	"2"
 
 static info_lkp_t raritan_pdu_outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+	{ -1, "error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "cycling"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* transitional status */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for Raritan MIB */
@@ -121,4 +141,4 @@ static snmp_info_t raritan_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID };
+mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID, NULL };

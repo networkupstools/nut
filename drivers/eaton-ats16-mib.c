@@ -32,51 +32,171 @@
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
 
 static info_lkp_t eaton_ats16_source_info[] = {
-	{ 1, "init" },
-	{ 2, "diagnosis" },
-	{ 3, "off" },
-	{ 4, "1" },
-	{ 5, "2" },
-	{ 6, "safe" },
-	{ 7, "fault" },
-	{ 0, NULL }
+	{ 1, "init"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "diagnosis"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "safe"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "fault"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_sensitivity_info[] = {
-	{ 1, "normal" },
-	{ 2, "high" },
-	{ 3, "low" },
-	{ 0, NULL }
+	{ 1, "normal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "out-of-range" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "out-of-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Frequency out of range triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "derated-range" }, /* Voltage derated */
-	{ 3, "out-of-range" },  /* Voltage out of range triggered */
-	{ 4, "unknown" },       /* "missing" */
-	{ 0, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "derated-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Voltage derated */
+	{ 3, "out-of-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Voltage out of range triggered */
+	{ 4, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* "missing" */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "done and warning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "done and error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "aborted"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "in progress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "no test initiated"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_output_status_info[] = {
-	{ 1, "OFF" }, /* Output not powered */
-	{ 2, "OL" },  /* Output powered */
-	{ 0, NULL }
+	{ 1, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Output not powered */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Output powered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
@@ -262,10 +382,10 @@ static snmp_info_t eaton_ats16_mib[] = {
 /* Note: keep the legacy definition intact, to avoid breaking compatibility */
 
 /* FIXME: The lines below are duplicated to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
-/*mib2nut_info_t  eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1 }; */
-mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1 };
-/*mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2 };*/
-mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2 };
+/*mib2nut_info_t  eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1, NULL }; */
+mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1, NULL };
+/*mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2, NULL };*/
+mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2, NULL };
 /* Note:
  * * newer Network-M2 communication cards, with a fixed sysOID (above)
  * * due to a bug in tools/nut-snmpinfo.py, prepending a 2nd mib2nut_info_t

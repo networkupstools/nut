@@ -53,16 +53,40 @@
 
 
 static info_lkp_t pulizzi_sw_outlet_status_info[] = {
-	{ 1, "on" },
-	{ 2, "off" },
-	{ 0, NULL }
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* simply remap the above status to "yes" */
 static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
@@ -132,5 +156,5 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 
 
 /*mib2nut_info_t	pulizzi_monitored = { "pulizzi_monitored", EATON_PULIZZI_MIB_VERSION, NULL, PULIZZI1_OID_MODEL_NAME, eaton_pulizzi_monitored_mib, PULIZZI1_OID_MIB };*/
-mib2nut_info_t	pulizzi_switched1 = { "pulizzi_switched1", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED1_SYSOID };
-mib2nut_info_t	pulizzi_switched2 = { "pulizzi_switched2", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED2_SYSOID };
+mib2nut_info_t	pulizzi_switched1 = { "pulizzi_switched1", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED1_SYSOID, NULL };
+mib2nut_info_t	pulizzi_switched2 = { "pulizzi_switched2", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED2_SYSOID, NULL };

@@ -30,18 +30,47 @@
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
+ * static info_lkp_t xpcc_onbatt_info[] = {
+ * 	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
  * };
  */
 
 /* upsBaseBatteryStatus */
 static info_lkp_t xpcc_onbatt_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" }	/* batteryLow */
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryNormal */
+	{ 3, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryLow */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /*
@@ -58,15 +87,56 @@ upsBaseOutputStatus OBJECT-TYPE
 			onBuck(9) }
 */
 static info_lkp_t xpcc_power_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "OL" },	/* onLine */
-	{ 3, "OB" },	/* onBattery */
-	{ 4, "OL BOOST" },	/* onBoost */
-	{ 5, "OFF" },	/* sleeping */
-	{ 6, "BYPASS"},	/* onBypass */
-	{ 7, "" },	/* rebooting */
-	{ 8, "OFF" },	/* standBy */
-	{ 9, "OL TRIM"}	/* onBuck */
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onLine */
+	{ 3, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBattery */
+	{ 4, "OL BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBoost */
+	{ 5, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* sleeping */
+	{ 6, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBypass */
+	{ 7, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* rebooting */
+	{ 8, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* standBy */
+	{ 9, "OL TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBuck */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* XPPC Snmp2NUT lookup table */
@@ -86,11 +156,11 @@ static snmp_info_t xppc_mib[] = {
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, xpcc_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t xpcc_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
 	 * 	{ 0, NULL }
@@ -122,4 +192,4 @@ static snmp_info_t xppc_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID };
+mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID, NULL };

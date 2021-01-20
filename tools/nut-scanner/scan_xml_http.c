@@ -62,9 +62,9 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-long g_usec_timeout ;
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -176,7 +176,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
-	char buf[SMALLBUF];
+	char buf[SMALLBUF + 8];
 	char string[SMALLBUF];
 	ssize_t recv_size;
 	int i;
@@ -302,7 +302,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				if (parserFailed == 0) {
 					nut_dev->driver = strdup("netxml-ups");
-					sprintf(buf,"http://%s",string);
+					sprintf(buf, "http://%s", string);
 					nut_dev->port = strdup(buf);
 					upsdebugx(3,"nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
@@ -347,7 +347,7 @@ end:
 
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
-        int pass = 1;
+	int pass = 1;
 	nutscan_xml_t * tmp_sec = NULL;
 	nutscan_device_t * result = NULL;
 	int i;
@@ -378,69 +378,67 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-			g_usec_timeout = usec_timeout;
-
 			ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
 
 			while(ip_str != NULL) {
 #ifdef HAVE_PTHREAD
-                            if(thread_array == NULL) {
-                                sem_wait(semaphore);
-                                pass=1;
-                            } else {
-                                pass = (sem_trywait(semaphore) == 0);
-                            }
-#endif
-                            if(pass) {
-				tmp_sec = malloc(sizeof(nutscan_xml_t));
-				if (tmp_sec == NULL) {
-					fprintf(stderr,"Memory allocation \
-						error\n");
-					return NULL;
+				if(thread_array == NULL) {
+					sem_wait(semaphore);
+					pass=1;
+				} else {
+					pass = (sem_trywait(semaphore) == 0);
 				}
-				memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
-				tmp_sec->peername = ip_str;
-				if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
+#endif
+				if(pass) {
+					tmp_sec = malloc(sizeof(nutscan_xml_t));
+					if (tmp_sec == NULL) {
+						fprintf(stderr,"Memory allocation \
+							error\n");
+						return NULL;
+					}
+					memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
+					tmp_sec->peername = ip_str;
+					if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
 
 #ifdef HAVE_PTHREAD
-				if (pthread_create(&thread,NULL,nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
-					thread_count++;
-					pthread_t *new_thread_array = realloc(thread_array,
+					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
+						thread_count++;
+						pthread_t *new_thread_array = realloc(thread_array,
 								thread_count*sizeof(pthread_t));
-					if (new_thread_array == NULL) {
-						upsdebugx(1, "%s: Failed to realloc thread", __func__);
-						break;
+						if (new_thread_array == NULL) {
+							upsdebugx(1, "%s: Failed to realloc thread", __func__);
+							break;
+						}
+						else {
+							thread_array = new_thread_array;
+						}
+						thread_array[thread_count-1] = thread;
 					}
-					else {
-						thread_array = new_thread_array;
-					}
-					thread_array[thread_count-1] = thread;
-				}
 #else
-				nutscan_scan_xml_http_generic((void *)tmp_sec);
+					nutscan_scan_xml_http_generic((void *)tmp_sec);
 #endif
-/*				free(ip_str); */ /* One of these free()s seems to cause a double-free */
-				ip_str = nutscan_ip_iter_inc(&ip);
-/*				free(tmp_sec); */
+/*					free(ip_str); */ /* One of these free()s seems to cause a double-free */
+					ip_str = nutscan_ip_iter_inc(&ip);
+/*					free(tmp_sec); */
 #ifdef HAVE_PTHREAD
-                            } else {
-				if (thread_array != NULL) {
-					for (i=0; i < thread_count; i++) {
-						pthread_join(thread_array[i],NULL);
-						sem_post(semaphore);
+				} else {
+					if (thread_array != NULL) {
+						for (i=0; i < thread_count; i++) {
+							pthread_join(thread_array[i],NULL);
+							sem_post(semaphore);
+						}
+						thread_count = 0;
+						free(thread_array);
+						thread_array = NULL;
 					}
-					thread_count = 0;
-					free(thread_array);
-					thread_array = NULL;
-				}
 #endif
-                            }
-			};
+				}
+			}
 
 #ifdef HAVE_PTHREAD
 			if (thread_array != NULL) {
-				for ( i=0; i < thread_count ; i++) {
-						pthread_join(thread_array[i],NULL);
+				for (i=0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
 				}
 				free(thread_array);
 			}
@@ -475,6 +473,10 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #else /* WITH_NEON */
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
+	NUT_UNUSED_VARIABLE(start_ip);
+	NUT_UNUSED_VARIABLE(end_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
 	return NULL;
 }
 #endif /* WITH_NEON */

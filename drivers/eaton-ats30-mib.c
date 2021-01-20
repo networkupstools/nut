@@ -30,20 +30,64 @@
 #define EATON_ATS30_MODEL        ".1.3.6.1.4.1.534.10.1.2.1.0"
 
 static info_lkp_t eaton_ats30_source_info[] = {
-	{ 1, "init" },
-	{ 2, "diagnosis" },
-	{ 3, "off" },
-	{ 4, "1" },
-	{ 5, "2" },
-	{ 6, "safe" },
-	{ 7, "fault" },
-	{ 0, NULL }
+	{ 1, "init"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "diagnosis"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "safe"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "fault"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t eaton_ats30_input_sensitivity[] = {
-	{ 1, "high" },
-	{ 2, "low" },
-	{ 0, NULL }
+	{ 1, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /*
@@ -55,23 +99,91 @@ static info_lkp_t eaton_ats30_input_sensitivity[] = {
  * 4 atsFailureOverTemperature N/A
  */
 static info_lkp_t eaton_ats30_status_info[] = {
-	{ 0, "OL" },
-	{ 1, "OL" }, /* SwitchFault */
-	{ 2, "OFF" }, /* NoOutput */
-	{ 3, "OFF" }, /* SwitchFault + NoOutput */
-	{ 4, "OL OVER" }, /* OutputOC */
-	{ 5, "OL OVER" }, /* OutputOC + SwitchFault */
-	{ 6, "OFF OVER" }, /* OutputOC + NoOutput */
-	{ 7, "OFF OVER" }, /* OutputOC + SwitchFault + NoOutput */
-	{ 8, "OL" }, /* OverTemperature */
-	{ 9, "OL" }, /* OverTemperature + SwitchFault */
-	{ 10, "OFF" }, /* OverTemperature + NoOutput */
-	{ 11, "OFF" }, /* OverTemperature + SwitchFault + NoOutput */
-	{ 12, "OL OVER" }, /* OverTemperature + OutputOC */
-	{ 13, "OL OVER" }, /* OverTemperature + OutputOC + SwitchFault */
-	{ 14, "OFF OVER" }, /* OverTemperature + OutputOC + NoOutput */
-	{ 15, "OFF OVER" }, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
-	{ 0, NULL }
+	{ 0, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* SwitchFault */
+	{ 2, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* NoOutput */
+	{ 3, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* SwitchFault + NoOutput */
+	{ 4, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC */
+	{ 5, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + SwitchFault */
+	{ 6, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + NoOutput */
+	{ 7, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OutputOC + SwitchFault + NoOutput */
+	{ 8, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature */
+	{ 9, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + SwitchFault */
+	{ 10, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + NoOutput */
+	{ 11, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + SwitchFault + NoOutput */
+	{ 12, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC */
+	{ 13, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + SwitchFault */
+	{ 14, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + NoOutput */
+	{ 15, "OFF OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* EATON_ATS30 Snmp2NUT lookup table */
@@ -369,4 +481,4 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	eaton_ats30 = { "eaton_ats30", EATON_ATS30_MIB_VERSION, NULL, EATON_ATS30_MODEL, eaton_ats30_mib, EATON_ATS30_SYSOID };
+mib2nut_info_t	eaton_ats30 = { "eaton_ats30", EATON_ATS30_MIB_VERSION, NULL, EATON_ATS30_MODEL, eaton_ats30_mib, EATON_ATS30_SYSOID, NULL };

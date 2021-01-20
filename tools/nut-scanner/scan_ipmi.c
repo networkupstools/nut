@@ -115,7 +115,8 @@ static void (*nut_ipmi_ctx_destroy) (ipmi_ctx_t ctx);
 /* Internal functions */
 static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 
-/* Return 0 on error */
+/* Return 0 on error; visible externally */
+int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -285,7 +286,7 @@ static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
 }
 
 /* Return 1 if supported, 0 otherwise */
-int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
+static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 {
 	int ret = -1;
 	unsigned int area_type = 0;
@@ -600,7 +601,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 			}
 			/* Prepare the next iteration */
 			ip_str = nutscan_ip_iter_inc(&ip);
-		};
+		}
 	}
 
 	return nutscan_rewind_device(current_nut_dev);
@@ -609,6 +610,10 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 /* stub function */
 nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec)
 {
+	NUT_UNUSED_VARIABLE(startIP);
+	NUT_UNUSED_VARIABLE(stopIP);
+	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 #endif /* WITH_IPMI */

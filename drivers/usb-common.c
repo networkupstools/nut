@@ -79,27 +79,41 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 {
 	USBDevice_t	*data = (USBDevice_t *)privdata;
 
+	upsdebugx(3, "%s: matching a device...", __func__);
+
 	if (hd->VendorID != data->VendorID) {
+		upsdebugx(2, "%s: failed match of %s: %4x != %4x",
+		    __func__, "VendorID", hd->VendorID, data->VendorID);
 		return 0;
 	}
 
 	if (hd->ProductID != data->ProductID) {
+		upsdebugx(2, "%s: failed match of %s: %4x != %4x",
+		    __func__, "ProductID", hd->ProductID, data->ProductID);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Vendor, data->Vendor) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "Vendor", hd->Vendor, data->Vendor);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Product, data->Product) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "Product", hd->Product, data->Product);
 		return 0;
 	}
 
 	if (strcmp_null(hd->Serial, data->Serial) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "Serial", hd->Serial, data->Serial);
 		return 0;
 	}
 #ifdef DEBUG_EXACT_MATCH_BUS
 	if (strcmp_null(hd->Bus, data->Bus) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "Bus", hd->Bus, data->Bus);
 		return 0;
 	}
 #endif
@@ -280,33 +294,71 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 	regex_matcher_data_t	*data = (regex_matcher_data_t *)privdata;
 	int r;
 
+	upsdebugx(3, "%s: matching a device...", __func__);
+
 	r = match_regex_hex(data->regex[0], hd->VendorID);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %4x !~ %s",
+		    __func__, "VendorID", hd->VendorID, data->regex[0]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %4x",
+		    __func__, "VendorID", hd->VendorID);
 		return r;
 	}
 
 	r = match_regex_hex(data->regex[1], hd->ProductID);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %4x !~ %s",
+		    __func__, "ProductID", hd->ProductID, data->regex[1]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %4x",
+		    __func__, "ProductID", hd->ProductID);
 		return r;
 	}
 
 	r = match_regex(data->regex[2], hd->Vendor);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Vendor", hd->Vendor, data->regex[2]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Vendor", hd->Vendor);
 		return r;
 	}
 
 	r = match_regex(data->regex[3], hd->Product);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Product", hd->Product, data->regex[3]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Product", hd->Product);
 		return r;
 	}
 
 	r = match_regex(data->regex[4], hd->Serial);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Serial", hd->Serial, data->regex[4]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Serial", hd->Serial);
 		return r;
 	}
 
 	r = match_regex(data->regex[5], hd->Bus);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Bus", hd->Bus, data->regex[5]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Bus", hd->Bus);
 		return r;
 	}
 	return 1;

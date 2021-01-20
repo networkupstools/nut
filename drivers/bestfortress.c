@@ -157,7 +157,20 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
-	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	dstate_setinfo (key, fmt, factor * (double)(atoi (buf)));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 }
 
 static int upssend(const char *fmt,...) {
@@ -168,7 +181,19 @@ static int upssend(const char *fmt,...) {
 	int d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
@@ -193,8 +218,9 @@ static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 	                    SER_WAIT_SEC, SER_WAIT_USEC);
 }
 
-static int upsflushin(int f,int verbose,const char *ignset)
+static int upsflushin(int f, int verbose, const char *ignset)
 {
+	NUT_UNUSED_VARIABLE(f);
 	return ser_flush_in(upsfd, ignset, verbose);
 }
 
@@ -202,12 +228,13 @@ static int upsflushin(int f,int verbose,const char *ignset)
 void upsdrv_updateinfo(void)
 {
 	char temp[256];
-	char *p;
+	char *p = NULL;
 	int loadva;
-	int len, recv;
+	size_t len = 0;
+	int recv;
 	int retry;
 	char ch;
-	int checksum_ok, is_online=1, is_off, low_batt, trimming, boosting;
+	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
 
 	upsdebugx(1, "upsdrv_updateinfo");
 
@@ -240,7 +267,7 @@ void upsdrv_updateinfo(void)
 		/* last bytes are a checksum:
 		   interpret response as hex string, sum of all bytes must be zero
 		 */
-		checksum_ok = (checksum (temp+2) & 0xff) == 0;
+		checksum_ok = ( (checksum (temp+2) & 0xff) == 0 );
 		/* setinfo (INFO_, ""); */
 
 		/* I can't figure out why this is missing the first two chars.
@@ -258,12 +285,19 @@ void upsdrv_updateinfo(void)
 		sleep(SER_WAIT_SEC);
 	}
 
-	if (!checksum_ok) {
-		upsdebugx(2, "checksum corruption");
-		upsdebug_hex(3, "buffer", temp, len);
+	if (!p || len < 1 || checksum_ok < 0) {
+		upsdebugx(2, "pointer to data not initialized after processing");
 		dstate_datastale();
 		return;
 	}
+
+	if (!checksum_ok) {
+		upsdebugx(2, "checksum corruption");
+		upsdebug_hex(3, "buffer", temp, (int)len);
+		dstate_datastale();
+		return;
+	}
+
 	/* upslogx(LOG_INFO, "updateinfo: %s", p); */
 
 	setinfo_int ("input.voltage", p+24,4);
@@ -312,7 +346,7 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 	upssend ("p%d=%*s\r", parameter, dlen, data);
@@ -399,7 +433,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		upssend ("OFF%s\r", p);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_INFO, "instcmd: unknown command %s", cmdname);
+	upslogx(LOG_INFO, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -414,7 +448,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "max_load", "rated VA load VA");
 }
 
-struct {
+static struct {
 	const char * val;
 	speed_t speed;
 } speed_table[] = {

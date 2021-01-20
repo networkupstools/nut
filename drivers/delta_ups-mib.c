@@ -31,32 +31,106 @@
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
+ * static info_lkp_t delta_onbatt_info[] = {
+ * 	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
  * };
  */
 
 static info_lkp_t delta_ups_upstype_info[] = {
-	{ 1, "on-line" },
-	{ 2, "off-line" },
-	{ 3, "line-interactive" },
-	{ 4, "3phase" },
-	{ 5, "splite-phase" },
-	{ 0, NULL }
+	{ 1, "on-line"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "off-line"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "line-interactive"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "3phase"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "splite-phase"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
-    { 0, "OL" },        /* normal  */
-    { 1, "OB" },        /* battery  */
-    { 2, "BYPASS" },    /* bypass */
-    { 3, "TRIM" },      /* reducing */
-    { 4, "BOOST" },     /* boosting */
-    { 5, "BYPASS" },    /* manualBypass */
-    /*{ 6, "NULL" },*/      /* other  */
-    { 7, "OFF" },      /* none */
-    { 0, NULL }
+	{ 0, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* normal  */
+	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* battery  */
+	{ 2, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* bypass */
+	{ 3, "TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* reducing */
+	{ 4, "BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* boosting */
+	{ 5, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* manualBypass */
+/*
+	{ 6, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+*/       /* other  */
+	{ 7, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* none */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
@@ -76,11 +150,11 @@ static snmp_info_t delta_ups_mib[] = {
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, delta_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t delta_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
 	 * 	{ 0, NULL }
@@ -357,4 +431,4 @@ static snmp_info_t delta_ups_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID };
+mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID, NULL };

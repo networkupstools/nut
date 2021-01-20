@@ -25,8 +25,7 @@
 
 #include "main.h"
 #include "blazer.h"
-
-#include <math.h>
+#include "nut_float.h"
 
 static int	ondelay = 3;	/* minutes */
 static int	offdelay = 30;	/* seconds */
@@ -78,7 +77,7 @@ static const struct {
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
 	{ "zinto", "Q1\r", "F\r", "FW?\r" },
-	{ NULL }
+	{ NULL, NULL, NULL, NULL }
 };
 
 
@@ -177,7 +176,7 @@ static int blazer_status(const char *cmd)
 		{ "input.frequency", "%.1f", strtod },
 		{ "battery.voltage", "%.2f", blazer_battery },
 		{ "ups.temperature", "%.1f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -211,7 +210,20 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+
 	}
 
 	if (!val) {
@@ -304,7 +316,7 @@ static int blazer_rating(const char *cmd)
 		{ "input.current.nominal", "%.1f", strtod },
 		{ "battery.voltage.nominal", "%.1f", blazer_packs },
 		{ "input.frequency.nominal", "%.0f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -338,7 +350,20 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+
 	}
 
 	return 0;
@@ -354,7 +379,7 @@ static int blazer_vendor(const char *cmd)
 		{ "ups.mfr",      15 },
 		{ "ups.model",    10 },
 		{ "ups.firmware", 10 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	char	buf[SMALLBUF];
@@ -401,7 +426,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		{ "test.battery.start.deep", "TL\r" },
 		{ "test.battery.start.quick", "T\r" },
 		{ "test.battery.stop", "CT\r" },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	char	buf[SMALLBUF] = "";
@@ -573,7 +598,7 @@ static void blazer_initbattery(void)
 
 	/* If no values were provided by the user in ups.conf, try to guesstimate
 	 * battery.charge, but announce it! */
-	if ((batt.volt.nom != 1) && ((batt.volt.high == -1) || (batt.volt.low == -1))) {
+	if ( (!d_equal(batt.volt.nom, 1)) && ((d_equal(batt.volt.high, -1)) || (d_equal(batt.volt.low, -1)))) {
 		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
 
 		/* Basic formula, which should cover most cases */
@@ -666,7 +691,7 @@ void blazer_initinfo(void)
 
 	for (proto = 0; command[proto].status; proto++) {
 
-		int	ret;
+		int	ret = -1;
 
 		if (protocol && strcasecmp(protocol, command[proto].name)) {
 			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
@@ -698,7 +723,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].rating && !testvar("norating")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -718,7 +743,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].vendor && !testvar("novendor")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -808,6 +833,8 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

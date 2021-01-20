@@ -29,148 +29,532 @@
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
 static info_lkp_t hpe_pdu_outlet_status_info[] = {
-	{ 1, "off" },
-	{ 2, "on" },
-	{ 3, "pendingOff" }, /* transitional status */
-	{ 4, "pendingOn" },  /* transitional status */
-	{ 0, NULL }
+	{ 1, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "pendingOff"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* transitional status */
+	{ 4, "pendingOn"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* transitional status */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_outletgroups_status_info[] = {
-	{ 1, "N/A" }, /* notApplicable, if group.type == outlet-section */
-	{ 2, "on" },  /* breakerOn */
-	{ 3, "off" }, /* breakerOff */
-	{ 0, NULL }
+	{ 1, "N/A"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* notApplicable, if group.type == outlet-section */
+	{ 2, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* breakerOn */
+	{ 3, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* breakerOff */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* The physical type of outlet */
 static info_lkp_t hpe_pdu_outlet_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "iecC13" },
-	{ 2, "iecC19" },
-	{ 10, "uk" },
-	{ 11, "french" },
-	{ 12, "schuko" },
-	{ 20, "nema515" },
-	{ 21, "nema51520" },
-	{ 22, "nema520" },
-	{ 23, "nemaL520" },
-	{ 24, "nemaL530" },
-	{ 25, "nema615" },
-	{ 26, "nema620" },
-	{ 27, "nemaL620" },
-	{ 28, "nemaL630" },
-	{ 29, "nemaL715" },
-	{ 30, "rf203p277" },
-	{ 0, NULL }
+	{ 0, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "iecC13"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "iecC19"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "uk"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 11, "french"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 12, "schuko"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 20, "nema515"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 21, "nema51520"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 22, "nema520"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 23, "nemaL520"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 24, "nemaL530"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 25, "nema615"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 26, "nema620"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 27, "nemaL620"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 28, "nemaL630"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 29, "nemaL715"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 30, "rf203p277"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_ambient_presence_info[] = {
-	{ -1, "unknown" },
-	{ 1, "no" },  /* disconnected */
-	{ 2, "yes" }, /* connected */
-	{ 0, NULL }
+	{ -1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* disconnected */
+	{ 2, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* connected */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "warning-low" },   /* Warning low threshold triggered */
-	{ 3, "critical-low" },  /* Critical low threshold triggered */
-	{ 4, "warning-high" },  /* Warning high threshold triggered */
-	{ 5, "critical-high" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "warning-low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* Warning low threshold triggered */
+	{ 3, "critical-low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Critical low threshold triggered */
+	{ 4, "warning-high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Warning high threshold triggered */
+	{ 5, "critical-high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Critical high threshold triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_frequency_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "out-of-range" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, "good"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No threshold triggered */
+	{ 2, "out-of-range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Frequency out of range triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_ambient_drycontacts_info[] = {
-	{ -1, "unknown" },
-	{ 0, "unknown" },
-	{ 1, "open" },
-	{ 2, "closed" },
-	{ 3, "bad" }, /* FIXME: what to do with that? */
-	{ 0, NULL }
+	{ -1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "open"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "bad"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* FIXME: what to do with that? */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_voltage_alarms_info[] = {
-	{ 1, "" },                       /* No threshold triggered */
-	{ 2, "low voltage warning!" },   /* Warning low threshold triggered */
-	{ 3, "low voltage critical!" },  /* Critical low threshold triggered */
-	{ 4, "high voltage warning!" },  /* Warning high threshold triggered */
-	{ 5, "high voltage critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                       /* No threshold triggered */
+	{ 2, "low voltage warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* Warning low threshold triggered */
+	{ 3, "low voltage critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Critical low threshold triggered */
+	{ 4, "high voltage warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Warning high threshold triggered */
+	{ 5, "high voltage critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Critical high threshold triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_current_alarms_info[] = {
-	{ 1, "" },                       /* No threshold triggered */
-	{ 2, "low current warning!" },   /* Warning low threshold triggered */
-	{ 3, "low current critical!" },  /* Critical low threshold triggered */
-	{ 4, "high current warning!" },  /* Warning high threshold triggered */
-	{ 5, "high current critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                       /* No threshold triggered */
+	{ 2, "low current warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* Warning low threshold triggered */
+	{ 3, "low current critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Critical low threshold triggered */
+	{ 4, "high current warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Warning high threshold triggered */
+	{ 5, "high current critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Critical high threshold triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_frequency_alarm_info[] = {
-	{ 1, "" },                         /* No threshold triggered */
-	{ 2, "frequency out of range!" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                         /* No threshold triggered */
+	{ 2, "frequency out of range!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Frequency out of range triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_temperature_alarms_info[] = {
-	{ 1, "" },                           /* No threshold triggered */
-	{ 2, "low temperature warning!" },   /* Warning low threshold triggered */
-	{ 3, "low temperature critical!" },  /* Critical low threshold triggered */
-	{ 4, "high temperature warning!" },  /* Warning high threshold triggered */
-	{ 5, "high temperature critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                           /* No threshold triggered */
+	{ 2, "low temperature warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* Warning low threshold triggered */
+	{ 3, "low temperature critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Critical low threshold triggered */
+	{ 4, "high temperature warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Warning high threshold triggered */
+	{ 5, "high temperature critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Critical high threshold triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_threshold_humidity_alarms_info[] = {
-	{ 1, "" },                        /* No threshold triggered */
-	{ 2, "low humidity warning!" },   /* Warning low threshold triggered */
-	{ 3, "low humidity critical!" },  /* Critical low threshold triggered */
-	{ 4, "high humidity warning!" },  /* Warning high threshold triggered */
-	{ 5, "high humidity critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                        /* No threshold triggered */
+	{ 2, "low humidity warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* Warning low threshold triggered */
+	{ 3, "low humidity critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Critical low threshold triggered */
+	{ 4, "high humidity warning!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Warning high threshold triggered */
+	{ 5, "high humidity critical!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* Critical high threshold triggered */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_outlet_group_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "unknown" },
-	{ 2, "breaker1pole" },
-	{ 3, "breaker2pole" },
-	{ 4, "breaker3pole" },
-	{ 5, "outlet-section" },
-	{ 0, NULL }
+	{ 0, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "breaker1pole"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "breaker2pole"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "breaker3pole"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "outlet-section"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_input_type_info[] = {
-	{ 1, "1" }, /* singlePhase     */
-	{ 2, "2" }, /* splitPhase      */
-	{ 3, "3" }, /* threePhaseDelta */
-	{ 4, "3" }, /* threePhaseWye   */
-	{ 0, NULL }
+	{ 1, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* singlePhase     */
+	{ 2, "2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* splitPhase      */
+	{ 3, "3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* threePhaseDelta */
+	{ 4, "3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* threePhaseWye   */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t hpe_pdu_outlet_group_phase_info[] = {
-	{ 1, "L1" }, /* singlePhase */
-	{ 2, "L1" }, /* phase1toN   */
-	{ 3, "L2" }, /* phase2toN   */
-	{ 4, "L3" }, /* phase3toN   */
-	{ 5, "L1" }, /* phase1to2   */
-	{ 6, "L2" }, /* phase2to3   */
-	{ 7, "L3" }, /* phase3to1   */
-	{ 0, NULL }
+	{ 1, "L1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* singlePhase */
+	{ 2, "L1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase1toN   */
+	{ 3, "L2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase2toN   */
+	{ 4, "L3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase3toN   */
+	{ 5, "L1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase1to2   */
+	{ 6, "L2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase2to3   */
+	{ 7, "L3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* phase3to1   */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for HPE PDU MIB */
@@ -891,5 +1275,4 @@ static snmp_info_t hpe_pdu_mib[] = {
 };
 
 
-mib2nut_info_t	hpe_pdu = { "hpe_epdu", HPE_EPDU_MIB_VERSION, NULL, HPE_EPDU_OID_MODEL_NAME, hpe_pdu_mib, HPE_EPDU_MIB_SYSOID };
-
+mib2nut_info_t	hpe_pdu = { "hpe_epdu", HPE_EPDU_MIB_VERSION, NULL, HPE_EPDU_OID_MODEL_NAME, hpe_pdu_mib, HPE_EPDU_MIB_SYSOID, NULL };

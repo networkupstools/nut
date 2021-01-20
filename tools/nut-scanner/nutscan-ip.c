@@ -104,12 +104,30 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			return NULL;
 		}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		memcpy(&ip->start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
 	else {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in = (struct sockaddr_in *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		ip->start = s_in->sin_addr;
 		freeaddrinfo(res);
 	}
@@ -122,7 +140,16 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			return NULL;
 		}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in = (struct sockaddr_in *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		ip->stop = s_in->sin_addr;
 		freeaddrinfo(res);
 	}
@@ -132,7 +159,16 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			fprintf(stderr,"Invalid address : %s\n",stopIP);
 			return NULL;
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		memcpy(&ip->stop6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
@@ -258,12 +294,30 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 			return 0;
 		}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		memcpy(&ip.start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
 	else {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in = (struct sockaddr_in *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		ip.start = s_in->sin_addr;
 		freeaddrinfo(res);
 	}
@@ -304,7 +358,16 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		if(getaddrinfo(first_ip,NULL,&hints,&res) != 0) {
 			return 0;
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+		/* Note: we receive a pointer to res above, so have
+		 * no control about alignment of its further data */
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 		memcpy(&ip.stop6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
 

@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
+#include <limits.h>
 
 #include "nut_stdint.h"
 typedef	uint8_t byte_t;
@@ -115,7 +115,7 @@ typedef struct {
  * @param  size	size in bytes
  * @return xmalloc'ed memory as raw_data
  */
-raw_data_t raw_xmalloc(size_t size)
+static raw_data_t raw_xmalloc(size_t size)
 {
 	raw_data_t data;
 
@@ -132,7 +132,7 @@ raw_data_t raw_xmalloc(size_t size)
  * free raw_data buffer
  * @param  buf	raw_data buffer to free
  */
-void raw_free(raw_data_t *buf)
+static void raw_free(raw_data_t *buf)
 {
 	free(buf->buf);
 
@@ -191,7 +191,7 @@ typedef struct {
 /**
  * convert hex string to int
  * @param  head  input string
- * @param  count string length
+ * @param  len   string length
  * @return parsed value (>=0) if success, -1 on error
  */
 static long from_hex(const byte_t *head, unsigned len)
@@ -397,7 +397,24 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	data[0] = cmd;
 	data[1] = subcmd;
 
-	snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3);
+	/* FIXME? One CI testcase builder claims here that
+	 *   warning: '%2X' directive output may be truncated writing
+	 *   between 2 and 4 bytes into a region of size between 3 and 5
+	 *   [-Wformat-truncation=]
+	 * but none others do, and I can't figure out how it thinks so :/
+	 *
+	 * Per https://stackoverflow.com/questions/51534284/how-to-circumvent-format-truncation-warning-in-gcc
+	 * https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg521037.html
+	 * and simlar googlable sources, this seems to be a bug-or-feature
+	 * linked to non-zero optimization level and/or not checking for the
+	 * return value (conveys runtime errors if any do happen).
+	 */
+	assert (pr1 <= UINT8_MAX);
+	assert (pr2 <= UINT8_MAX);
+	assert (pr3 <= UINT8_MAX);
+	if (0 > snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3)) {
+		data[8] = '\0';
+	}
 
 	comli_prepare(dest, &h, data, 8);
 }
@@ -993,6 +1010,26 @@ typedef int VV_t;	/* voltage */
 
 #define	ACT int
 
+/* Declare to keep compiler happy even if some routines below are not used currently */
+ACT	TOGGLE_PRS_ONOFF	(void);
+ACT	CANCEL_BOOST		(void);
+ACT	STOP_BATTERY_TEST	(void);
+ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes);
+ACT	SET_FLOAT_VOLTAGE	(VV_t v);
+ACT	SET_BOOST_VOLTAGE	(VV_t v);
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow);
+ACT	SET_DISCONNECT_LEVEL_AND_DELAY	(VV_t level, mm_t delay);
+ACT	RESET_ALARMS		(void);
+ACT	CHANGE_COMM_PROTOCOL	(void);
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
+ACT	SWITCH_TEMP_COMP	(int on);
+ACT	SWITCH_SYM_ALARM	(void);
+
+/* Implement */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
@@ -1204,6 +1241,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
@@ -1247,7 +1287,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -75,8 +75,8 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
         int value, int index,
         unsigned char *bytes, unsigned size, int timeout)
 {
-        return usb_control_msg(dev, requesttype, request, value, index,
-                (char *) bytes, (int) size, timeout);
+	return usb_control_msg(dev, requesttype, request, value, index,
+		(char *) bytes, (int) size, timeout);
 }
 
 /* invoke matcher against device */
@@ -173,7 +173,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	libusb_close(*udevp);
 #endif
 
-	upsdebugx(3, "usb_busses=%p", usb_busses);
+	upsdebugx(3, "usb_busses=%p", (void*)usb_busses);
 
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
@@ -251,7 +251,16 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 					goto next_device;
 				} else if (ret==-1) {
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");
 					goto next_device;
@@ -307,7 +316,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			/* FIRST METHOD: ask for HID descriptor directly. */
 			/* res = usb_get_descriptor(udev, USB_DT_HID, hid_desc_index, buf, 0x9); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-					      (USB_DT_HID << 8) + hid_desc_index, 0, buf, 0x9, USB_TIMEOUT);
+					(USB_DT_HID << 8) + hid_desc_index, 0, buf, 0x9, USB_TIMEOUT);
 
 			if (res < 0) {
 				upsdebugx(2, "Unable to get HID descriptor (%s)", usb_strerror());

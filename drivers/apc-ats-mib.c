@@ -30,30 +30,90 @@
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t apc_ats_sensitivity_info[] = {
-	{ 1, "high" },
-	{ 2, "low" },
-	{ 0, NULL }
+	{ 1, "high"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "low"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_output_status_info[] = {
-	{ 1, "OFF" }, /* fail */
-	{ 2, "OL" },  /* ok */
-	{ 0, NULL }
+	{ 1, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* fail */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* ok */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_outletgroups_name_info[] = {
-	{ 1, "total" },
-	{ 2, "bank1" },
-	{ 3, "bank2" },
-	{ 0, NULL }
+	{ 1, "total"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "bank1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "bank2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_ats_outletgroups_status_info[] = {
-	{ 1, "OL" },   /* normal */
-	{ 2, "" },     /* lowload */
-	{ 3, "" },     /* nearoverload */
-	{ 4, "OVER" }, /* overload */
-	{ 0, NULL }
+	{ 1, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* normal */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* lowload */
+	{ 3, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* nearoverload */
+	{ 4, "OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* overload */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* APC ATS Snmp2NUT lookup table */
@@ -445,4 +505,4 @@ static snmp_info_t apc_ats_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID };
+mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID, NULL };

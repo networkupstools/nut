@@ -245,7 +245,7 @@ info_lkp_new (int oid, const char *value
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
 			"so the provided value is effectively ignored: "
 			"fun_l2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_l2s='%p'",
-			fun_l2s, nuf_s2l, fun_s2l, nuf_l2s);
+			(void*)fun_l2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_l2s);
 	}
 	self->fun_l2s = NULL;
 	self->nuf_s2l = NULL;
@@ -641,8 +641,8 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 		}
 		for(i = 0; i < self->sublist_elements; i++)
 		{
-		if(self->list[i])
-			alist_destroy( &(self->list[i]) );
+			if(self->list[i])
+				alist_destroy( &(self->list[i]) );
 			self->list[i] = NULL;
 		}
 		free(self->list);

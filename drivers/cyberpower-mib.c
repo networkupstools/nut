@@ -31,34 +31,110 @@
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL" },
-	{ 3, "OB" },
-	{ 4, "OL BOOST" },
-	{ 5, "OFF" },
-	{ 7, "OL" },
-	{ 1, "NULL" },
-	{ 6, "OFF" },
-	{ 0, NULL }
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "OL BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 static info_lkp_t cyberpower_battery_status[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" },	/* batteryLow */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryNormal */
+	{ 3, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryLow */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 static info_lkp_t cyberpower_cal_status[] = {
-	{ 1, "" },          /* Calibration Successful */
-	{ 2, "" },          /* Calibration Invalid */
-	{ 3, "CAL" },       /* Calibration in progress */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration Successful */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration Invalid */
+	{ 3, "CAL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* Calibration in progress */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t cyberpower_battrepl_status[] = {
-	{ 1, "" },          /* No battery needs replacing */
-	{ 2, "RB" },        /* Batteries need to be replaced */
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* No battery needs replacing */
+	{ 2, "RB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* Batteries need to be replaced */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for CyberPower MIB */
@@ -147,4 +223,4 @@ static snmp_info_t cyberpower_mib[] = {
 } ;
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
-	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID };
+	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID, NULL };

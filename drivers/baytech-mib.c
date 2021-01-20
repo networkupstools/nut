@@ -31,11 +31,31 @@
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
 static info_lkp_t baytech_outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+	{ -1, "error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "cycling"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* transitional status */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */
@@ -89,4 +109,4 @@ static snmp_info_t baytech_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib };
+mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib, BAYTECH_OID_MIB, NULL };

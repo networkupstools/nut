@@ -38,60 +38,176 @@
 #define MGE_OID_MODEL_NAME	MGE_BASE_OID ".1.1.0"
 
 static info_lkp_t mge_lowbatt_info[] = {
-	{ 1, "LB" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_onbatt_info[] = {
-	{ 1, "OB" },
-	{ 2, "OL" },
-	{ 0, NULL }
+	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_bypass_info[] = {
-	{ 1, "BYPASS" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_boost_info[] = {
-	{ 1, "BOOST" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_trim_info[] = {
-	{ 1, "TRIM" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_overload_info[] = {
-	{ 1, "OVER" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 
 static info_lkp_t mge_replacebatt_info[] = {
-	{ 1, "RB" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "RB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_output_util_off_info[] = {
-	{ 1, "OFF" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_transfer_reason_info[] = {
-	{ 1, "" },
-	{ 2, "input voltage out of range" },
-	{ 3, "input frequency out of range" },
-	{ 4, "utility off" },
-	{ 0, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "input voltage out of range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "input frequency out of range"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "utility off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Note: This is currently identical to ietf_test_result_info from IETF MIB
@@ -99,48 +215,152 @@ static info_lkp_t mge_transfer_reason_info[] = {
  * b) avoid namespace conflicts, especially with DMF loader of named objects
  */
 static info_lkp_t mge_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "done and warning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "done and error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "aborted"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "in progress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "no test initiated"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_beeper_status_info[] = {
-	{ 1, "disabled" },
-	{ 2, "enabled" },
-	{ 3, "muted" },
-	{ 0, NULL }
+	{ 1, "disabled"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "enabled"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "muted"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_yes_no_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
  * addressed by the driver, as for usbhid-ups! */
 static info_lkp_t mge_power_source_info[] = {
-	{ 1, "" /* other */ },
-	{ 2, "OFF" /* none */ },
-#if 0
-	{ 3, "OL" /* normal */ },
+	{ 1, "" /* other */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
 #endif
-	{ 4, "BYPASS" /* bypass */ },
-	{ 5, "OB" /* battery */ },
-	{ 6, "BOOST" /* booster */ },
-	{ 7, "TRIM" /* reducer */ },
-	{ 0, NULL }
+	},
+	{ 2, "OFF" /* none */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+#if 0
+	{ 3, "OL" /* normal */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+#endif
+	{ 4, "BYPASS" /* bypass */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "OB" /* battery */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "BOOST" /* booster */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "TRIM" /* reducer */
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t mge_ambient_drycontacts_info[] = {
-	{ -1, "unknown" },
-	{ 1, "closed" },
-	{ 2, "opened" },
-	{ 0, NULL }
+	{ -1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "opened"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Parameters default values */
@@ -285,4 +505,4 @@ static snmp_info_t mge_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, NULL, MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID };
+mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, NULL, MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID, NULL };

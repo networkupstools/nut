@@ -30,38 +30,150 @@
 
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
-info_lkp_t raritanpx2_outlet_status_info[] = {
-    { -1, "unavailable" },
-    {  0, "open" },
-    {  1, "closed" },
-    {  2, "belowLowerCritical" },
-    {  3, "belowLowerWarning" },
-    {  4, "normal" },
-    {  5, "aboveUpperWarning" },
-    {  6, "aboveUpperCritical" },
-    {  7, "on" },
-    {  8, "off" },
-    {  9, "detected" },
-    { 10, "notDetected" },
-    { 11, "alarmed" },
-    { 12, "ok" },
-    { 13, "marginal" },
-    { 14, "fail" },
-    { 15, "yes" },
-    { 16, "no" },
-    { 17, "standby" },
-    { 18, "one" },
-    { 19, "two" },
-    { 20, "inSync" },
-    { 21, "outOfSync" },
-	{ 0, "NULL" }
+static info_lkp_t raritanpx2_outlet_status_info[] = {
+	{ -1, "unavailable"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  0, "open"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  1, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  2, "belowLowerCritical"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  3, "belowLowerWarning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  4, "normal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  5, "aboveUpperWarning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  6, "aboveUpperCritical"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  7, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  8, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  9, "detected"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "notDetected"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 11, "alarmed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 12, "ok"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 13, "marginal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 14, "fail"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 15, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 16, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 17, "standby"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 18, "one"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 19, "two"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 20, "inSync"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 21, "outOfSync"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t raritanpx2_outlet_switchability_info[] = {
-	{ -1, "yes" },
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ -1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* PDU2-MIB Snmp2NUT lookup table */
@@ -97,8 +209,8 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* Input data:
 	 * Units are given in inletSensorUnits.1.1.%i
 	 * Value should be scaled by inletSensorDecimalDigits.1.1.%i
-     * For example, if the value is 1 and inletSensorDecimalDigits is 2, then actual value is 0.01. */
- 	/* measurementsInletSensorValue.1.1.rmsCurrent = Gauge32: 10 (A) */
+	 * For example, if the value is 1 and inletSensorDecimalDigits is 2, then actual value is 0.01. */
+	/* measurementsInletSensorValue.1.1.rmsCurrent = Gauge32: 10 (A) */
 	{ "input.load", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.1", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.rmsVoltage = Gauge32: 119 (V) */
 	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.4", NULL, SU_FLAG_OK, NULL },
@@ -133,7 +245,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* FIXME: need RFC and standardization
 	 * { "outlet.%i.type", 0, 1, ".1.3.6.1.4.1.13742.6.3.5.3.1.4.1.%i", NULL, SU_OUTLET | SU_FLAG_OK, NULL }, */
 
-    /* RMS Current (divide by 10). e.g. 5 == 0.5A */
+	/* RMS Current (divide by 10). e.g. 5 == 0.5A */
 	/* measurementsOutletSensorValue.1.%i.rmsCurrent = Gauge32: 10 */
 	{ "outlet.%i.current", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.1", NULL, SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.rmsVoltage = Gauge32: 119 */
@@ -578,4 +690,4 @@ static snmp_info_t raritan_px2_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	raritan_px2 = { "raritan-px2", RARITAN_PX2_MIB_VERSION, NULL, RARITAN_PX2_OID_MODEL_NAME, raritan_px2_mib, RARITAN_PX2_MIB_SYSOID };
+mib2nut_info_t	raritan_px2 = { "raritan-px2", RARITAN_PX2_MIB_VERSION, NULL, RARITAN_PX2_OID_MODEL_NAME, raritan_px2_mib, RARITAN_PX2_MIB_SYSOID, NULL };

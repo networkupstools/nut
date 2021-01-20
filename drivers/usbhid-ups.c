@@ -98,7 +98,7 @@ static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0 };
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
 #ifndef SHUT_MODE
 static HIDDeviceMatcher_t *exact_matcher = NULL;
@@ -126,7 +126,7 @@ static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen);
+static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen);
 #ifdef DEBUG
 static double interval(void);
 #endif
@@ -203,178 +203,178 @@ static status_lkp_t status_info[] = {
    separately)  */
 
 info_lkp_t online_info[] = {
-	{ 1, "online", NULL },
-	{ 0, "!online", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "online", NULL, NULL },
+	{ 0, "!online", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t discharging_info[] = {
-	{ 1, "dischrg", NULL },
-	{ 0, "!dischrg", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "dischrg", NULL, NULL },
+	{ 0, "!dischrg", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t charging_info[] = {
-	{ 1, "chrg", NULL },
-	{ 0, "!chrg", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "chrg", NULL, NULL },
+	{ 0, "!chrg", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t lowbatt_info[] = {
-	{ 1, "lowbatt", NULL },
-	{ 0, "!lowbatt", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "lowbatt", NULL, NULL },
+	{ 0, "!lowbatt", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t overload_info[] = {
-	{ 1, "overload", NULL },
-	{ 0, "!overload", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "overload", NULL, NULL },
+	{ 0, "!overload", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t replacebatt_info[] = {
-	{ 1, "replacebatt", NULL },
-	{ 0, "!replacebatt", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "replacebatt", NULL, NULL },
+	{ 0, "!replacebatt", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t trim_info[] = {
-	{ 1, "trim", NULL },
-	{ 0, "!trim", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "trim", NULL, NULL },
+	{ 0, "!trim", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t boost_info[] = {
-	{ 1, "boost", NULL },
-	{ 0, "!boost", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "boost", NULL, NULL },
+	{ 0, "!boost", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t bypass_auto_info[] = {
-	{ 1, "bypassauto", NULL },
-	{ 0, "!bypassauto", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "bypassauto", NULL, NULL },
+	{ 0, "!bypassauto", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t bypass_manual_info[] = {
-	{ 1, "bypassman", NULL },
-	{ 0, "!bypassman", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "bypassman", NULL, NULL },
+	{ 0, "!bypassman", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
    off" rather than "being on", so that devices that don't implement
    this variable are "on" by default */
 info_lkp_t off_info[] = {
-	{ 0, "off", NULL },
-	{ 1, "!off", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "off", NULL, NULL },
+	{ 1, "!off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t calibration_info[] = {
-	{ 1, "cal", NULL },
-	{ 0, "!cal", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "cal", NULL, NULL },
+	{ 0, "!cal", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
 info_lkp_t nobattery_info[] = {
-	{ 1, "!nobattery", NULL },
-	{ 0, "nobattery", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "!nobattery", NULL, NULL },
+	{ 0, "nobattery", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t fanfail_info[] = {
-	{ 1, "fanfail", NULL },
-	{ 0, "!fanfail", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "fanfail", NULL, NULL },
+	{ 0, "!fanfail", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t shutdownimm_info[] = {
-	{ 1, "shutdownimm", NULL },
-	{ 0, "!shutdownimm", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "shutdownimm", NULL, NULL },
+	{ 0, "!shutdownimm", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t overheat_info[] = {
-	{ 1, "overheat", NULL },
-	{ 0, "!overheat", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "overheat", NULL, NULL },
+	{ 0, "!overheat", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t awaitingpower_info[] = {
-	{ 1, "awaitingpower", NULL },
-	{ 0, "!awaitingpower", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "awaitingpower", NULL, NULL },
+	{ 0, "!awaitingpower", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t commfault_info[] = {
-	{ 1, "commfault", NULL },
-	{ 0, "!commfault", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "commfault", NULL, NULL },
+	{ 0, "!commfault", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t timelimitexpired_info[] = {
-	{ 1, "timelimitexp", NULL },
-	{ 0, "!timelimitexp", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "timelimitexp", NULL, NULL },
+	{ 0, "!timelimitexp", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t battvoltlo_info[] = {
-	{ 1, "battvoltlo", NULL },
-	{ 0, "!battvoltlo", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "battvoltlo", NULL, NULL },
+	{ 0, "!battvoltlo", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t battvolthi_info[] = {
-	{ 1, "battvolthi", NULL },
-	{ 0, "!battvolthi", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "battvolthi", NULL, NULL },
+	{ 0, "!battvolthi", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t chargerfail_info[] = {
-	{ 1, "chargerfail", NULL },
-	{ 0, "!chargerfail", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "chargerfail", NULL, NULL },
+	{ 0, "!chargerfail", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
-	{ 1, "fullycharged", NULL },
-	{ 0, "!fullycharged", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "fullycharged", NULL, NULL },
+	{ 0, "!fullycharged", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t depleted_info[] = {
-	{ 1, "depleted", NULL },
-	{ 0, "!depleted", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "depleted", NULL, NULL },
+	{ 0, "!depleted", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t vrange_info[] = {
-	{ 0, "!vrange", NULL },
-	{ 1, "vrange", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "!vrange", NULL, NULL },
+	{ 1, "vrange", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t frange_info[] = {
-	{ 0, "!frange", NULL },
-	{ 1, "frange", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "!frange", NULL, NULL },
+	{ 1, "frange", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t test_write_info[] = {
-	{ 0, "No test", NULL },
-	{ 1, "Quick test", NULL },
-	{ 2, "Deep test", NULL },
-	{ 3, "Abort test", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "No test", NULL, NULL },
+	{ 1, "Quick test", NULL, NULL },
+	{ 2, "Deep test", NULL, NULL },
+	{ 3, "Abort test", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t test_read_info[] = {
-	{ 1, "Done and passed", NULL },
-	{ 2, "Done and warning", NULL },
-	{ 3, "Done and error", NULL },
-	{ 4, "Aborted", NULL },
-	{ 5, "In progress", NULL },
-	{ 6, "No test initiated", NULL },
-	{ 7, "Test scheduled", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Done and passed", NULL, NULL },
+	{ 2, "Done and warning", NULL, NULL },
+	{ 3, "Done and error", NULL, NULL },
+	{ 4, "Aborted", NULL, NULL },
+	{ 5, "In progress", NULL, NULL },
+	{ 6, "No test initiated", NULL, NULL },
+	{ 7, "Test scheduled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t beeper_info[] = {
-	{ 1, "disabled", NULL },
-	{ 2, "enabled", NULL },
-	{ 3, "muted", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "disabled", NULL, NULL },
+	{ 2, "enabled", NULL, NULL },
+	{ 3, "muted", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t yes_no_info[] = {
-	{ 0, "no", NULL },
-	{ 1, "yes", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "no", NULL, NULL },
+	{ 1, "yes", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t on_off_info[] = {
-	{ 0, "off", NULL },
-	{ 1, "on", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -397,8 +397,9 @@ static const char *date_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t date_conversion[] = {
-	{ 0, NULL, date_conversion_fun }
+	{ 0, NULL, date_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -412,8 +413,9 @@ static const char *hex_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t hex_conversion[] = {
-	{ 0, NULL, hex_conversion_fun }
+	{ 0, NULL, hex_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -425,8 +427,9 @@ static const char *stringid_conversion_fun(double value)
 	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t stringid_conversion[] = {
-	{ 0, NULL, stringid_conversion_fun }
+	{ 0, NULL, stringid_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -440,8 +443,9 @@ static const char *divide_by_10_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t divide_by_10_conversion[] = {
-	{ 0, NULL, divide_by_10_conversion_fun }
+	{ 0, NULL, divide_by_10_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -465,8 +469,9 @@ static const char *kelvin_celsius_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t kelvin_celsius_conversion[] = {
-	{ 0, NULL, kelvin_celsius_conversion_fun }
+	{ 0, NULL, kelvin_celsius_conversion_fun, NULL }
 };
 
 /*!
@@ -477,12 +482,17 @@ info_lkp_t kelvin_celsius_conversion[] = {
 #ifndef SHUT_MODE
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
+	NUT_UNUSED_VARIABLE(privdata);
+
+	upsdebugx(2, "%s (non-SHUT mode): matching a device...", __func__);
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {
 			return 1;
 		}
 	}
+
+	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver to vendor and/or product ID", __func__);
 	return 0;
 }
 
@@ -764,12 +774,14 @@ void upsdrv_updateinfo(void)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
@@ -927,8 +939,14 @@ void upsdrv_initups(void)
 		break;
 	case -1:
 		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 	}
 
 	/* link the matchers */
@@ -1022,7 +1040,7 @@ void upsdrv_cleanup(void)
  * Support functions
  *********************************************************************/
 
-void possibly_supported(const char *mfr, HIDDevice_t *hd)
+void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 {
 	upsdebugx(0,
 "This %s device (%04x:%04x) is not (or perhaps not yet) supported\n"
@@ -1030,7 +1048,7 @@ void possibly_supported(const char *mfr, HIDDevice_t *hd)
 "this does not fix the problem, try running the driver with the\n"
 "'-x productid=%04x' option. Please report your results to the NUT user's\n"
 "mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-	mfr, hd->VendorID, hd->ProductID, hd->ProductID);
+	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
 }
 
 /* Update ups_status to remember this status item. Interpretation is
@@ -1064,7 +1082,7 @@ static void process_boolean_info(const char *nutvalue)
 	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
+static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
@@ -1073,6 +1091,10 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+
+	/* Save the global "hd" for this driver instance */
+	hd = arghd;
+	udev = argudev;
 
 	/* Parse Report Descriptor */
 	Free_ReportDesc(pDesc);
@@ -1254,9 +1276,20 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 			break;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 
 #ifndef SHUT_MODE
 		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
@@ -1273,12 +1306,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
@@ -1580,7 +1615,19 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(item->info_type, item->dfl, value);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	return 1;

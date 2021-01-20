@@ -28,18 +28,43 @@
 #define APC_PDU_MIB_SYSOID_RPDU      ".1.3.6.1.4.1.318.1.3.4.4"
 #define APC_PDU_MIB_SYSOID_RPDU2     ".1.3.6.1.4.1.318.1.3.4.5"
 #define APC_PDU_MIB_SYSOID_MSP       ".1.3.6.1.4.1.318.1.3.4.6"
+#define APC_PDU_DEVICE_MODEL         ".1.3.6.1.4.1.318.1.1.4.1.4.0"
 
 
 static info_lkp_t apc_pdu_sw_outlet_status_info[] = {
-	{ 1, "on" },
-	{ 2, "off" },
-	{ 0, NULL }
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t apc_pdu_sw_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* POWERNET-MIB Snmp2NUT lookup table */
@@ -966,7 +991,6 @@ static snmp_info_t apc_pdu_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-#define APC_PDU_DEVICE_MODEL ".1.3.6.1.4.1.318.1.1.4.1.4.0"
-mib2nut_info_t apc_pdu_rpdu = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU };
-mib2nut_info_t apc_pdu_rpdu2 = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU2 };
-mib2nut_info_t apc_pdu_msp = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_MSP };
+mib2nut_info_t apc_pdu_rpdu = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU, NULL };
+mib2nut_info_t apc_pdu_rpdu2 = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU2, NULL };
+mib2nut_info_t apc_pdu_msp = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_MSP, NULL };
