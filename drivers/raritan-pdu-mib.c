@@ -39,11 +39,31 @@
 #define DO_CYCLE	"2"
 
 static info_lkp_t raritan_pdu_outlet_status_info[] = {
-	{ -1, "error", NULL, NULL },
-	{ 0, "off", NULL, NULL },
-	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status */
-	{ 0, NULL, NULL, NULL }
+	{ -1, "error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "cycling"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* transitional status */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table for Raritan MIB */
