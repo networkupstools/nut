@@ -824,7 +824,7 @@ static info_lkp_t marlin_device_count_info[] = {
 		, NULL, NULL, marlin_device_count_fun, NULL
 #endif
 	},
-	{ 0, NULL, NULL, NULL
+	{ 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
