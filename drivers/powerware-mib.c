@@ -307,7 +307,7 @@ static info_lkp_t pw_ambient_drycontacts_state_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t emp002_ambient_presence_info[] = {
+static info_lkp_t pw_emp002_ambient_presence_info[] = {
 	{ 0, "unknown" },
 	{ 2, "yes" },     /* communicationOK */
 	{ 3, "no" },      /* communicationLost */
@@ -572,7 +572,7 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "", 0, NULL },
 	/* CommunicationStatus.n */
 	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
-		NULL, SU_AMBIENT_TEMPLATE, &emp002_ambient_presence_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE, &pw_emp002_ambient_presence_info[0] },
 	/* sensorName.n: OctetString EMPDT1H1C2 @1 */
 	{ "ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE, NULL },
 	/* sensorManufacturer.n */
