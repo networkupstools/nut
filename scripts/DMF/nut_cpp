@@ -22,8 +22,13 @@ set -o pipefail
 
 echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
 
+do_filter() {
+
 # tee temp-cpp-orig.tmp | \
-$CPP $CFLAGS $CPPFLAGS "${@}" | \
+sed \
+    -e '/^[ \t]*$/d' \
+    -e 's/^[ \t]*;/;/g' | \
+perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
     -e 's/ __asm(.*)$/;/' \
     -e 's/__asm__ (.*);/;/' \
@@ -53,7 +58,14 @@ sed \
     -e 's/_Float[0-9]*x*/float/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
-    -e 's/__builtin_va_list/int/' #| tee temp-cpp-filt.tmp
+    -e 's/__builtin_va_list/int/'
+}
+
+# Repeat same filter a few times to strip appearing blank lines and trailing semicolons
+$CPP $CFLAGS $CPPFLAGS "${@}" | \
+    do_filter | \
+    do_filter | \
+    do_filter #| tee temp-cpp-filt.tmp
 
 RET=$?
 if [ "$RET" = 0 ]; then
