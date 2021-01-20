@@ -305,13 +305,13 @@ static info_lkp_t eaton_sensor_temperature_unit_info[] = {
 #endif // WITH_SNMP_LKP_FUN
 
 /* Extracted from powerware-mib.c ; try to commonalize */
-static info_lkp_t ambient_drycontacts_polarity_info[] = {
+static info_lkp_t marlin_ambient_drycontacts_polarity_info[] = {
 	{ 0, "normal-opened", NULL, NULL },
 	{ 1, "normal-closed", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ambient_drycontacts_state_info[] = {
+static info_lkp_t marlin_ambient_drycontacts_state_info[] = {
 	{ 0, "active", NULL, NULL },
 	{ 1, "inactive", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -855,11 +855,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	{ "ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* digitalInputPolarity.n */
-	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &ambient_drycontacts_polarity_info[0] },
-	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_polarity_info[0] },
 	/* XUPS-MIB::xupsContactState.n */
-	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &ambient_drycontacts_state_info[0] },
-	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_state_info[0] },
 
 	/* Outlet collection */
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i",
