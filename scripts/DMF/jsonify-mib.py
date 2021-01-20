@@ -66,6 +66,12 @@ def widen_tuples(iter, width, default=None):
             item = tuple(item)
         yield item
 
+def dumper(obj):
+    # From https://blender.stackexchange.com/a/1880
+    for attr in dir(obj):
+        if hasattr( obj, attr ):
+            warn( "obj.%s = %s" % (attr, getattr(obj, attr)))
+
 class Visitor(c_ast.NodeVisitor):
 
     def __init__(self, *args, **kwargs):
@@ -279,10 +285,19 @@ class Visitor(c_ast.NodeVisitor):
         ret ["snmp_info"] = kids [4].name
 
         # 6 alarms_info
+        ### Note: Previously the entry in sources was only present if
+        ### it referenced an alarms_info_t[]; now with correctness of
+        ### codebase enforced better (and initializers in particular)
+        ### the field should be always here but contains a NULL most
+        ### of the time.
         if len (kids) == 6:
             warn ("alarms_info_t is missing for %s" % node.name)
         elif len (kids) > 6:
-            ret ["alarms_info"] = kids [6].name
+            try:
+                ret ["alarms_info"] = kids [6].name
+            except Exception as e:
+                warn ("alarms_info_t is missing (or NULL) for %s with error %s" % (node.name, e))
+                ### dumper (kids[6])
         return ret
 
     def _visit_alarms_info_t (self, node):
