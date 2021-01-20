@@ -30,72 +30,260 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t huawei_onbatt_info[] = {
- * 	{ 1, "OB", NULL, NULL },
- * 	{ 2, "OL", NULL, NULL },
- * 	{ 0, NULL, NULL, NULL }
+ * 	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
  * };
  */
 
 static info_lkp_t huawei_supplymethod_info[] = {
-	{ 1, "", NULL, NULL },		/* no supply */
-	{ 2, "OL BYPASS", NULL, NULL },
-	{ 3, "OL", NULL, NULL },
-	{ 4, "OB", NULL, NULL },
-	{ 5, "", NULL, NULL },		/* combined */
-	{ 6, "OL ECO", NULL, NULL },
-	{ 7, "OB ECO", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* no supply */
+	{ 2, "OL BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* combined */
+	{ 6, "OL ECO"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "OB ECO"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t huawei_battstate_info[] = {
-	{ 1, "", NULL, NULL },		/* not connected */
-	{ 2, "", NULL, NULL },		/* not charging or discharging */
-	{ 3, "", NULL, NULL },		/* hibernation */
-	{ 4, "", NULL, NULL },		/* float */
-	{ 5, "CHRG", NULL, NULL },		/* equalized charging */
-	{ 6, "DISCHRG", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* not connected */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* not charging or discharging */
+	{ 3, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* hibernation */
+	{ 4, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* float */
+	{ 5, "CHRG"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},		/* equalized charging */
+	{ 6, "DISCHRG"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t huawei_phase_info[] = {
-	{ 1, "1", NULL, NULL },
-	{ 2, "3", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t huawei_voltrating_info[] = {
-	{ 1, "200", NULL, NULL },
-	{ 2, "208", NULL, NULL },
-	{ 3, "220", NULL, NULL },
-	{ 4, "380", NULL, NULL },
-	{ 5, "400", NULL, NULL },
-	{ 6, "415", NULL, NULL },
-	{ 7, "480", NULL, NULL },
-	{ 8, "600", NULL, NULL },
-	{ 9, "690", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "200"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "208"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "220"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "380"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "400"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "415"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "480"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 8, "600"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 9, "690"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t huawei_freqrating_info[] = {
-	{ 1, "50", NULL, NULL },
-	{ 2, "60", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "50"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "60"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t huawei_pwrrating_info[] = {
-	{ 1, "80000", NULL, NULL },
-	{ 2, "100000", NULL, NULL },
-	{ 3, "120000", NULL, NULL },
-	{ 4, "160000", NULL, NULL },
-	{ 5, "200000", NULL, NULL },
-	{ 6, "30000", NULL, NULL },
-	{ 7, "40000", NULL, NULL },
-	{ 8, "60000", NULL, NULL },
-	{ 9, "2400000", NULL, NULL },
-	{ 10, "2500000", NULL, NULL },
-	{ 11, "2800000", NULL, NULL },
-	{ 12, "3000000", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "80000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "100000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "120000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "160000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "200000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "30000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 7, "40000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 8, "60000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 9, "2400000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "2500000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 11, "2800000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 12, "3000000"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Note: This is currently identical to ietf_test_result_info from IETF MIB
@@ -103,13 +291,41 @@ static info_lkp_t huawei_pwrrating_info[] = {
  * b) avoid namespace conflicts, especially with DMF loader of named objects
  */
 static info_lkp_t huawei_test_result_info[] = {
-	{ 1, "done and passed", NULL, NULL },
-	{ 2, "done and warning", NULL, NULL },
-	{ 3, "done and error", NULL, NULL },
-	{ 4, "aborted", NULL, NULL },
-	{ 5, "in progress", NULL, NULL },
-	{ 6, "no test initiated", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "done and passed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "done and warning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "done and error"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "aborted"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "in progress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "no test initiated"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 
