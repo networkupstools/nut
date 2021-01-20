@@ -31,37 +31,149 @@
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
 static info_lkp_t raritanpx2_outlet_status_info[] = {
-	{ -1, "unavailable", NULL, NULL },
-	{  0, "open", NULL, NULL },
-	{  1, "closed", NULL, NULL },
-	{  2, "belowLowerCritical", NULL, NULL },
-	{  3, "belowLowerWarning", NULL, NULL },
-	{  4, "normal", NULL, NULL },
-	{  5, "aboveUpperWarning", NULL, NULL },
-	{  6, "aboveUpperCritical", NULL, NULL },
-	{  7, "on", NULL, NULL },
-	{  8, "off", NULL, NULL },
-	{  9, "detected", NULL, NULL },
-	{ 10, "notDetected", NULL, NULL },
-	{ 11, "alarmed", NULL, NULL },
-	{ 12, "ok", NULL, NULL },
-	{ 13, "marginal", NULL, NULL },
-	{ 14, "fail", NULL, NULL },
-	{ 15, "yes", NULL, NULL },
-	{ 16, "no", NULL, NULL },
-	{ 17, "standby", NULL, NULL },
-	{ 18, "one", NULL, NULL },
-	{ 19, "two", NULL, NULL },
-	{ 20, "inSync", NULL, NULL },
-	{ 21, "outOfSync", NULL, NULL },
-	{ 0, "NULL", NULL, NULL }
+	{ -1, "unavailable"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  0, "open"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  1, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  2, "belowLowerCritical"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  3, "belowLowerWarning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  4, "normal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  5, "aboveUpperWarning"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  6, "aboveUpperCritical"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  7, "on"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  8, "off"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{  9, "detected"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 10, "notDetected"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 11, "alarmed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 12, "ok"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 13, "marginal"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 14, "fail"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 15, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 16, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 17, "standby"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 18, "one"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 19, "two"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 20, "inSync"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 21, "outOfSync"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t raritanpx2_outlet_switchability_info[] = {
-	{ -1, "yes", NULL, NULL },
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ -1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "yes"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "no"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* PDU2-MIB Snmp2NUT lookup table */
