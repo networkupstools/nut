@@ -29,8 +29,9 @@
 
 #include "netmisc.h"
 
-void net_ver(nut_ctype_t *client, int numarg, const char **arg)
+void net_ver(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -40,8 +41,9 @@ void net_ver(nut_ctype_t *client, int numarg, const char **arg)
 		UPS_VERSION);
 }
 
-void net_netver(nut_ctype_t *client, int numarg, const char **arg)
+void net_netver(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -50,8 +52,9 @@ void net_netver(nut_ctype_t *client, int numarg, const char **arg)
 	sendback(client, "%s\n", NUT_NETVERSION);
 }
 
-void net_help(nut_ctype_t *client, int numarg, const char **arg)
+void net_help(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -61,7 +64,7 @@ void net_help(nut_ctype_t *client, int numarg, const char **arg)
 		" USERNAME PASSWORD STARTTLS\n");
 }
 
-void net_fsd(nut_ctype_t *client, int numarg, const char **arg)
+void net_fsd(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 

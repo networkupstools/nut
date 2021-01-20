@@ -32,6 +32,7 @@
 #include "dstate.h"
 #include "state.h"
 #include "parseconf.h"
+#include "attribute.h"
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
@@ -43,6 +44,9 @@
 	struct ups_handler	upsh;
 
 /* this may be a frequent stumbling point for new users, so be verbose here */
+static void sock_fail(const char *fn)
+	__attribute__((noreturn));
+
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
@@ -169,7 +173,19 @@ static void send_to_all(const char *fmt, ...)
 	conn_t	*conn, *cnext;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if (ret < 1) {
@@ -198,7 +214,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	char	buf[ST_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
@@ -310,7 +338,7 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 
 	/* provide any auxiliary data */
 	if (node->aux) {
-		if (!send_to_one(conn, "SETAUX %s %d\n", node->var, node->aux)) {
+		if (!send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux)) {
 			return 0;
 		}
 	}
@@ -363,7 +391,7 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 	send_to_one(conn, "TRACKING %s %i\n", id, value);
 }
 
-static int sock_arg(conn_t *conn, int numarg, char **arg)
+static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 	if (numarg < 1) {
 		return 0;
@@ -558,7 +586,14 @@ void dstate_init(const char *prog, const char *devname)
 	char	sockname[SMALLBUF];
 
 	/* do this here for now */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGPIPE, SIG_IGN);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 
 	if (devname) {
 		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, devname);
@@ -665,7 +700,19 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	va_list	ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(value, sizeof(value), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	ret = state_setinfo(&dtree_root, var, value);
@@ -684,7 +731,19 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	va_list	ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(value, sizeof(value), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	ret = state_addenum(dtree_root, var, value);
@@ -790,7 +849,7 @@ void dstate_delflags(const char *var, const int delflags)
 	dstate_setflags(var, flags);
 }
 
-void dstate_setaux(const char *var, int aux)
+void dstate_setaux(const char *var, long aux)
 {
 	st_tree_t	*sttmp;
 
@@ -809,7 +868,7 @@ void dstate_setaux(const char *var, int aux)
 	sttmp->aux = aux;
 
 	/* update listeners */
-	send_to_all("SETAUX %s %d\n", var, aux);
+	send_to_all("SETAUX %s %ld\n", var, aux);
 }
 
 const char *dstate_getinfo(const char *var)
@@ -1148,14 +1207,14 @@ int dstate_detect_phasecount(
 		 * tables should take care of this with converion routine and numeric
 		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
-		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		do { strncpy(bufrw_ptr, suffix, bufrw_max); \
 		  if ( (var = dstate_getinfo(buf)) ) { \
 		    if ( (var[0] == '0' && var[1] == '\0') || \
 		         (var[0] == '\0') ) { \
 		      var = NULL; \
 		    } \
 		  } \
-		} ;
+		} while(0)
 
 		dstate_getinfo_nonzero(v1,  "L1.voltage");
 		dstate_getinfo_nonzero(v2,  "L2.voltage");
@@ -1249,7 +1308,7 @@ int dstate_detect_phasecount(
 
 /* Dump the data tree (in upsc-like format) to stdout */
 /* Actual implementation */
-static int dstate_tree_dump(st_tree_t *node)
+static int dstate_tree_dump(const st_tree_t *node)
 {
 	int	ret;
 
@@ -1280,7 +1339,7 @@ void dstate_dump(void)
 {
 	upsdebugx(3, "Entering %s", __func__);
 
-	st_tree_t *node = (st_tree_t *)dstate_getroot();
+	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

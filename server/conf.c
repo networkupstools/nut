@@ -25,8 +25,8 @@
 #include "netssl.h"
 #include <ctype.h>
 
-	ups_t	*upstable = NULL;
-	int	num_ups = 0;
+static ups_t	*upstable = NULL;
+int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -114,7 +114,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 }
 
 /* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)

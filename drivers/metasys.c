@@ -24,6 +24,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
 #define DRIVER_VERSION	"0.07"
@@ -38,8 +39,8 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* Autorestart flag */
-int autorestart = 0;
-int nominal_power = 0;
+static int autorestart = 0;
+static int nominal_power = 0;
 
 /* ups commands */
 #define UPS_INFO 			0x00
@@ -72,7 +73,7 @@ static int instcmd(const char *cmdname, const char *extra);
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
 */
-int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
+static int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
 	unsigned char a, b;
 	int result;
 
@@ -83,7 +84,7 @@ int get_word(unsigned char *buffer) {		/* return an integer reading a word in th
 }
 
 
-long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
+static long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
 	unsigned char a, b, c, d;
 	long int result;
 	a=buffer[0];
@@ -94,7 +95,7 @@ long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 by
 	return result;
 }
 
-void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
+static void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
 
 	memset(buf, '\0', sizeof(buf));
@@ -104,7 +105,7 @@ void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be u
 
 
 /* was used just for the debug process */
-void dump_buffer(unsigned char *buffer, int buf_len) {
+static void dump_buffer(unsigned char *buffer, int buf_len) {
 	int i;
 	for (i = 0; i < buf_len; i++) {
 		printf("byte %d: %x\n", i, buffer[i]);
@@ -114,7 +115,7 @@ void dump_buffer(unsigned char *buffer, int buf_len) {
 
 /* send a read command to the UPS, it retries 5 times before give up
    it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
-void send_read_command(char command) {
+static void send_read_command(char command) {
 	int retry, sent;
 	unsigned char buf[4];
 	retry = 0;
@@ -133,7 +134,7 @@ void send_read_command(char command) {
 /* send a write command to the UPS, the write command and the value to be written are passed
    with a char* buffer
    it retries 5 times before give up */
-void send_write_command(unsigned char *command, int command_length) {
+static void send_write_command(unsigned char *command, int command_length) {
 	int i, retry, sent, checksum;
 	unsigned char raw_buf[255];
 
@@ -160,9 +161,8 @@ void send_write_command(unsigned char *command, int command_length) {
 	}
 }
 
-
 /* get the answer of a command from the ups */
-int get_answer(unsigned char *data) {
+static int get_answer(unsigned char *data) {
 	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
 	int packet_length, checksum, i, res;
 	/* Read STX byte */
@@ -212,7 +212,7 @@ int get_answer(unsigned char *data) {
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-int command_read_sequence(unsigned char command, unsigned char *data) {
+static int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
 
@@ -234,7 +234,7 @@ int command_read_sequence(unsigned char command, unsigned char *data) {
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
+static int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 
@@ -535,7 +535,6 @@ void upsdrv_initinfo(void)
 
 		default:
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
-			break;
 	}
 
 	/* Get the serial number */
@@ -598,8 +597,8 @@ void upsdrv_updateinfo(void)
 		if (int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
 		/* current */
 		float_num = get_word(&my_answer[5]);
-		if (float_num == -1) dstate_setinfo("output.current", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current", "%s", "not available");
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current", "%2.2f", float_num);
@@ -607,8 +606,8 @@ void upsdrv_updateinfo(void)
 #ifdef EXTRADATA
 		/* peak current */
 		float_num = get_word(&my_answer[7]);
-		if (float_num == -1) dstate_setinfo("output.current.peak", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current.peak", "%s", "not available");
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current.peak", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current.peak", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current.peak", "%2.2f", float_num);
@@ -1016,7 +1015,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

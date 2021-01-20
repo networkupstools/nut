@@ -34,7 +34,7 @@ const char * nutscan_device_type_strings[TYPE_END - 1] = {
 	"IPMI",
 	"Avahi",
 	"serial",
-	};
+};
 
 nutscan_device_t * nutscan_new_device()
 {
@@ -77,7 +77,7 @@ static void deep_free_device(nutscan_device_t * device)
 		}
 
 		free(current);
-	};
+	}
 
 	if(device->prev) {
 		device->prev->next = device->next;

@@ -311,7 +311,7 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 {
 	st_tree_t	*sttmp;
-	int	aux;
+	long	aux;
 
 	/* find the tree node for var */
 	sttmp = state_tree_find(root, var);
@@ -404,9 +404,9 @@ const range_t *state_getrangelist(st_tree_t *root, const char *var)
 	return sttmp->range_list;
 }
 
-void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
+void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flag)
 {
-	int	i;
+	size_t	i;
 	st_tree_t	*sttmp;
 
 	/* find the tree node for var */

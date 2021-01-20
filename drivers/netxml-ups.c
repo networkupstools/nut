@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include <ne_request.h>
 #include <ne_basic.h>
@@ -174,7 +175,7 @@ static object_entry_t *set_object_add(
 /**
  *  \brief  SET_OBJECT: RAW POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -184,7 +185,7 @@ static object_query_t *set_object_raw(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: FORM POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return \c NULL (FORM POST mode resp. is ignored by specification)
  */
@@ -194,7 +195,7 @@ static object_query_t *set_object_form(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -228,7 +229,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle);
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
-int			shutdown_duration = 120;
+int		shutdown_duration = 120;
 static int		shutdown_timer = 0;
 int			do_convert_deci = 0; /* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
 static time_t		lastheard = 0;
@@ -446,9 +447,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
-
 */
-	upslogx(LOG_NOTICE, "%s: unknown command [%s]", __func__, cmdname);
+
+	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -795,15 +796,34 @@ static int netxml_alarm_subscribe(const char *page)
 	/* due to different formats used by the various NMCs, we need to\
 	   break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);
 
-		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
+		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%lli", &tmp_port) != 1)) {
 			return NE_RETRY;
 		}
 
-		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%u", &secret) != 1)) {
+		/* FIXME? Does a port==0 make sense here? Or should the test below be for port<1?
+		 * Legacy code until a fix here used sscanf() above to get a '%u' value...
+		 */
+		if (tmp_port < 0 || tmp_port > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad port value", __func__);
 			return NE_RETRY;
 		}
+
+		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%lli", &tmp_secret) != 1)) {
+			return NE_RETRY;
+		}
+
+		if (tmp_secret < 0 || tmp_secret > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad secret value", __func__);
+			return NE_RETRY;
+		}
+
+		/* Range of valid values constrained above */
+		port = (int)tmp_port;
+		secret = (int)tmp_secret;
+
 	}
 
 	if ((port == -1) || (secret == -1)) {
@@ -910,6 +930,8 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 /* Supply the 'login' and 'password' when authentication is required */
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+
 	char	*val;
 
 	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
@@ -1069,7 +1091,7 @@ static void set_object_req_destroy(set_object_req_t *req) {
 /**
  *  \brief  SET_OBJECT response list entry destructor
  *
- *  \param  req  SET_OBJECT response list entry
+ *  \param  resp  SET_OBJECT response list entry
  */
 static void set_object_resp_destroy(set_object_resp_t *resp) {
 	assert(NULL != resp);
@@ -1238,8 +1260,8 @@ static object_entry_t *set_object_add(
  *  \param  buff   Buffer
  *  \param  entry  SET_OBJECT request entry
  *
- *  \retval OBJECT_OK    on success
- *  \retval OBJECT_ERROR otherwise
+ *  \return OBJECT_OK    on success
+ *  \return OBJECT_ERROR otherwise
  */
 static object_query_status_t set_object_serialise_entries(ne_buffer *buff, object_entry_t *entry) {
 	object_query_status_t status = OBJECT_OK;
@@ -1519,6 +1541,9 @@ static int set_object_raw_resp_end_element(
 	const char *nspace,
 	const char *name)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
+
 	/* OBJECT (as a SET_OBJECT child) */
 	if (NE_XML_STATEROOT + 2 == state) {
 		assert(0 == strcasecmp(name, "OBJECT"));
@@ -1577,9 +1602,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *
  *  The function creates HTTP request, sends it and reads-out the response.
  *
- *  \param[in]   session    HTTP session
+ *  \param[in]   argsession HTTP session
  *  \param[in]   method     Request method
- *  \param[in]   uri        Request URI
+ *  \param[in]   arguri     Request URI
  *  \param[in]   ct         Request content type (optional, \c NULL accepted)
  *  \param[in]   req_body   Request body (optional, \c NULL is accepted)
  *  \param[out]  resp_body  Response body (optional, \c NULL is accepted)
@@ -1587,9 +1612,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *  \return HTTP status code if response was sent, 0 on send error
  */
 static int send_http_request(
-	ne_session *session,
+	ne_session *argsession,
 	const char *method,
-	const char *uri,
+	const char *arguri,
 	const char *ct,
 	ne_buffer  *req_body,
 	ne_buffer  *resp_body)
@@ -1599,7 +1624,7 @@ static int send_http_request(
 	ne_request *req = NULL;
 
 	/* Create request */
-	req = ne_request_create(session, method, uri);
+	req = ne_request_create(argsession, method, arguri);
 
 	/* Neon claims that request creation is always successful */
 	assert(NULL != req);

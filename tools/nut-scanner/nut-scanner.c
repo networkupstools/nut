@@ -70,46 +70,47 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-// TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
-const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
+/* TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load */
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
-const struct option longopts[] =
-	{{ "timeout",required_argument,NULL,'t' },
+static const struct option longopts[] = {
+	{ "timeout", required_argument, NULL, 't' },
 	{ "thread", required_argument, NULL, 'T' },
-	{ "start_ip",required_argument,NULL,'s' },
-	{ "end_ip",required_argument,NULL,'e' },
-	{ "eaton_serial",required_argument,NULL,'E' },
-	{ "mask_cidr",required_argument,NULL,'m' },
-	{ "community",required_argument,NULL,'c' },
-	{ "secLevel",required_argument,NULL,'l' },
-	{ "secName",required_argument,NULL,'u' },
-	{ "authPassword",required_argument,NULL,'W' },
-	{ "privPassword",required_argument,NULL,'X' },
-	{ "authProtocol",required_argument,NULL,'w' },
-	{ "privProtocol",required_argument,NULL,'x' },
-	{ "username",required_argument,NULL,'b' },
-	{ "password",required_argument,NULL,'B' },
-	{ "authType",required_argument,NULL,'d' },
-	{ "cipher_suite_id",required_argument,NULL,'L' },
-	{ "port",required_argument,NULL,'p' },
-	{ "complete_scan",no_argument,NULL,'C' },
-	{ "usb_scan",no_argument,NULL,'U' },
-	{ "snmp_scan",no_argument,NULL,'S' },
-	{ "xml_scan",no_argument,NULL,'M' },
-	{ "oldnut_scan",no_argument,NULL,'O' },
-	{ "avahi_scan",no_argument,NULL,'A' },
-	{ "ipmi_scan",no_argument,NULL,'I' },
-	{ "disp_nut_conf",no_argument,NULL,'N' },
-	{ "disp_parsable",no_argument,NULL,'P' },
-	{ "quiet",no_argument,NULL,'q' },
-	{ "help",no_argument,NULL,'h' },
-	{ "version",no_argument,NULL,'V' },
-	{ "available",no_argument,NULL,'a' },
+	{ "start_ip", required_argument, NULL, 's' },
+	{ "end_ip", required_argument, NULL, 'e' },
+	{ "eaton_serial", required_argument, NULL, 'E' },
+	{ "mask_cidr", required_argument, NULL, 'm' },
+	{ "community", required_argument, NULL, 'c' },
+	{ "secLevel", required_argument, NULL, 'l' },
+	{ "secName", required_argument, NULL, 'u' },
+	{ "authPassword", required_argument, NULL, 'W' },
+	{ "privPassword", required_argument, NULL, 'X' },
+	{ "authProtocol", required_argument, NULL, 'w' },
+	{ "privProtocol", required_argument, NULL, 'x' },
+	{ "username", required_argument, NULL, 'b' },
+	{ "password", required_argument, NULL, 'B' },
+	{ "authType", required_argument, NULL, 'd' },
+	{ "cipher_suite_id", required_argument, NULL, 'L' },
+	{ "port", required_argument, NULL, 'p' },
+	{ "complete_scan", no_argument, NULL, 'C' },
+	{ "usb_scan", no_argument, NULL, 'U' },
+	{ "snmp_scan", no_argument, NULL, 'S' },
+	{ "xml_scan", no_argument, NULL, 'M' },
+	{ "oldnut_scan", no_argument, NULL, 'O' },
+	{ "avahi_scan", no_argument, NULL, 'A' },
+	{ "ipmi_scan", no_argument, NULL, 'I' },
+	{ "disp_nut_conf", no_argument, NULL, 'N' },
+	{ "disp_parsable", no_argument, NULL, 'P' },
+	{ "quiet", no_argument, NULL, 'q' },
+	{ "help", no_argument, NULL, 'h' },
+	{ "version", no_argument, NULL, 'V' },
+	{ "available", no_argument, NULL, 'a' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
-	{NULL,0,NULL,0}};
+	{ NULL, 0, NULL, 0 }
+};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c)
 #endif /* HAVE_GETOPT_LONG */
@@ -126,8 +127,10 @@ static char * serial_ports = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
-static void * run_usb(void * arg)
+static void * run_usb(void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
@@ -148,14 +151,18 @@ static void * run_xml(void * arg)
 	return NULL;
 }
 
-static void * run_nut_old(void * arg)
+static void * run_nut_old(void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
 	return NULL;
 }
 
-static void * run_avahi(void * arg)
+static void * run_avahi(void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
@@ -168,15 +175,17 @@ static void * run_ipmi(void * arg)
 	return NULL;
 }
 
-static void * run_eaton_serial(void * arg)
+static void * run_eaton_serial(void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
 	return NULL;
 }
 
 #endif /* HAVE_PTHREAD */
 
-void show_usage()
+static void show_usage()
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
@@ -533,6 +542,7 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
+				goto display_help;
 				/* Fall through to usage and error exit */
 			case 'h':
 			default:

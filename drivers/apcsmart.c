@@ -139,7 +139,7 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 
 	/* this should never happen */
 	if (strlen(upsval) >= sizeof(temp)) {
-		logx(LOG_CRIT, "the length of [%s] is too big", vt->name);
+		upslogx(LOG_CRIT, "%s: the length of [%s] is too big", __func__, vt->name);
 		memcpy(temp, upsval, sizeof(temp) - 1);
 		temp[sizeof(temp) - 1] = '\0';
 		return temp;
@@ -188,7 +188,7 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 	}
 
 	/* this should never happen */
-	logx(LOG_CRIT, "unable to convert [%s]", vt->name);
+	upslogx(LOG_CRIT, "%s: unable to convert [%s]", __func__, vt->name);
 	strcpy(temp, upsval);
 	return temp;
 }
@@ -244,7 +244,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 		{ "susp",	VSUSP		},
 		{ "time",	VTIME		},
 		{ "werase",	VWERASE		},
-		{ NULL },
+		{ NULL, 0 },
 	}, *cp;
 
 	/* clear status flags so that they don't affect our binary compare */
@@ -296,9 +296,9 @@ static void apc_ser_set(void)
 	val = getval("cable");
 	if (val && !strcasecmp(val, ALT_CABLE_1)) {
 		if (ser_set_dtr(upsfd, 1) == -1)
-			fatx("ser_set_dtr(%s) failed", device_path);
+			fatalx(EXIT_FAILURE, "%s: ser_set_dtr(%s) failed", __func__, device_path);
 		if (ser_set_rts(upsfd, 0) == -1)
-			fatx("ser_set_rts(%s) failed", device_path);
+			fatalx(EXIT_FAILURE, "%s: ser_set_rts(%s) failed", __func__, device_path);
 	}
 
 	/*
@@ -313,7 +313,7 @@ static void apc_ser_set(void)
 	errno = 0;
 
 	if (tcgetattr(upsfd, &tio))
-		fate("tcgetattr(%s)", device_path);
+		fatal_with_errno(EXIT_FAILURE, "%s: tcgetattr(%s)", __func__, device_path);
 
 	/* set port mode: common stuff, canonical processing */
 
@@ -337,7 +337,7 @@ static void apc_ser_set(void)
 #endif
 
 	if (tcflush(upsfd, TCIOFLUSH))
-		fate("tcflush(%s)", device_path);
+		fatal_with_errno(EXIT_FAILURE, "%s: tcflush(%s)", __func__, device_path);
 
 	/*
 	 * warn:
@@ -346,11 +346,11 @@ static void apc_ser_set(void)
 	 * test.
 	 */
 	if (tcsetattr(upsfd, TCSANOW, &tio))
-		fate("tcsetattr(%s)", device_path);
+		fatal_with_errno(EXIT_FAILURE, "%s: tcsetattr(%s)", __func__, device_path);
 
 	memset(&tio_chk, 0, sizeof(tio_chk));
 	if (tcgetattr(upsfd, &tio_chk))
-		fate("tcgetattr(%s)", device_path);
+		fatal_with_errno(EXIT_FAILURE, "%s: tcgetattr(%s)", __func__, device_path);
 
 	apc_ser_diff(&tio, &tio_chk);
 }
@@ -385,44 +385,44 @@ static void alert_handler(char ch)
 {
 	switch (ch) {
 		case '!':		/* clear OL, set OB */
-			debx(1, "OB");
+			upsdebugx(1, "%s: %s", __func__, "OB");
 			ups_status &= ~APC_STAT_OL;
 			ups_status |= APC_STAT_OB;
 			break;
 
 		case '$':		/* clear OB, set OL */
-			debx(1, "OL");
+			upsdebugx(1, "%s: %s", __func__, "OL");
 			ups_status &= ~APC_STAT_OB;
 			ups_status |= APC_STAT_OL;
 			break;
 
 		case '%':		/* set LB */
-			debx(1, "LB");
+			upsdebugx(1, "%s: %s", __func__, "LB");
 			ups_status |= APC_STAT_LB;
 			break;
 
 		case '+':		/* clear LB */
-			debx(1, "not LB");
+			upsdebugx(1, "%s: %s", __func__, "not LB");
 			ups_status &= ~APC_STAT_LB;
 			break;
 
 		case '#':		/* set RB */
-			debx(1, "RB");
+			upsdebugx(1, "%s: %s", __func__, "RB");
 			ups_status |= APC_STAT_RB;
 			break;
 
 		case '?':		/* set OVER */
-			debx(1, "OVER");
+			upsdebugx(1, "%s: %s", __func__, "OVER");
 			ups_status |= APC_STAT_OVER;
 			break;
 
 		case '=':		/* clear OVER */
-			debx(1, "not OVER");
+			upsdebugx(1, "%s: %s", __func__, "not OVER");
 			ups_status &= ~APC_STAT_OVER;
 			break;
 
 		default:
-			debx(1, "got 0x%02x (unhandled)", ch);
+			upsdebugx(1, "%s: got 0x%02x (unhandled)", __func__, ch);
 			break;
 	}
 
@@ -434,11 +434,12 @@ static void alert_handler(char ch)
  * function is subtly different from generic ser_get_line_alert()
  */
 #define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
-static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
+static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
-	int	i, ret, sec = 3, usec = 0;
+	ssize_t	i, ret;
+	int	sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
 	if (upsfd == -1)
@@ -660,14 +661,19 @@ static void apc_flush(int flags)
 }
 
 /* apc specific wrappers around set/del info - to handle "packed" variables */
-void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 {
-	char name[vt->nlen0], *nidx;
+	char *name, *nidx;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_delinfo(vt->name);
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_delinfo() failed to allocate buffer");
 		return;
 	}
 
@@ -680,17 +686,29 @@ void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 	}
 
 	vt->cnt = 0;
+	free(name);
 }
 
-void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 {
-	char name[vt->nlen0], *nidx;
-	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
+	char *name, *nidx;
+	char *temp, *vidx[APC_PACK_MAX], *com, *curr;
 	int c;
 
 	/* standard not packed var */
 	if (!(vt->flags & APC_PACK)) {
 		dstate_setinfo(vt->name, "%s", convert_data(vt, upsval));
+		return;
+	}
+
+	if ( !(name = xmalloc(sizeof(char) * vt->nlen0)) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		return;
+	}
+
+	if ( !(temp = xmalloc(sizeof(char) * (strlen(upsval) + 1))) ) {
+		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
+		free(name);
 		return;
 	}
 
@@ -734,6 +752,9 @@ void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		else
 			dstate_setinfo(name, "N/A");
 	}
+
+	free(name);
+	free(temp);
 }
 
 static const char *preread_data(apc_vartab_t *vt)
@@ -741,7 +762,7 @@ static const char *preread_data(apc_vartab_t *vt)
 	int ret;
 	static char temp[APC_LBUF];
 
-	debx(1, "%s [%s]", vt->name, prtchr(vt->cmd));
+	upsdebugx(1, "%s: %s [%s]", __func__, vt->name, prtchr(vt->cmd));
 
 	apc_flush(0);
 	ret = apc_write(vt->cmd);
@@ -753,7 +774,7 @@ static const char *preread_data(apc_vartab_t *vt)
 
 	if (ret < 1 || !strcmp(temp, "NA")) {
 		if (ret >= 0)
-			logx(LOG_ERR, "%s [%s] timed out or not supported", vt->name, prtchr(vt->cmd));
+			upslogx(LOG_ERR, "%s: %s [%s] timed out or not supported", __func__, vt->name, prtchr(vt->cmd));
 		return 0;
 	}
 
@@ -767,7 +788,7 @@ static int poll_data(apc_vartab_t *vt)
 	if (!(vt->flags & APC_PRESENT))
 		return 1;
 
-	debx(1, "%s [%s]", vt->name, prtchr(vt->cmd));
+	upsdebugx(1, "%s: %s [%s]", __func__, vt->name, prtchr(vt->cmd));
 
 	apc_flush(SER_AA);
 	if (apc_write(vt->cmd) != 1)
@@ -777,7 +798,7 @@ static int poll_data(apc_vartab_t *vt)
 
 	/* automagically no longer supported by the hardware somehow */
 	if (!strcmp(temp, "NA")) {
-		logx(LOG_WARNING, "verified variable %s [%s] returned NA, removing", vt->name, prtchr(vt->cmd));
+		upslogx(LOG_WARNING, "%s: verified variable %s [%s] returned NA, removing", __func__, vt->name, prtchr(vt->cmd));
 		vt->flags &= ~APC_PRESENT;
 		apc_dstate_delinfo(vt, 0);
 	} else
@@ -791,7 +812,7 @@ static int update_status(void)
 	int	ret;
 	char	buf[APC_LBUF];
 
-	debx(1, "[%s]", prtchr(APC_STATUS));
+	upsdebugx(1, "%s: [%s]", __func__, prtchr(APC_STATUS));
 
 	apc_flush(SER_AA);
 	if (apc_write(APC_STATUS) != 1)
@@ -800,7 +821,7 @@ static int update_status(void)
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		if (ret >= 0)
-			logx(LOG_WARNING, "failed");
+			upslogx(LOG_WARNING, "%s: %s", __func__, "failed");
 		return 0;
 	}
 
@@ -951,7 +972,7 @@ static void apc_getcaps(int qco)
 		 * as capability support was reported earlier
 		 */
 		if (ret >= 0)
-			upslogx(LOG_WARNING, "APC cannot do capabilities but said it could !");
+			upslogx(LOG_WARNING, "%s", "APC cannot do capabilities but said it could !");
 		return;
 	}
 
@@ -1281,7 +1302,7 @@ static int do_cal(int start)
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-		upslogx(LOG_WARNING, "runtime calibration state undeterminable");
+		upslogx(LOG_WARNING, "%s", "runtime calibration state undeterminable");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
@@ -1290,13 +1311,13 @@ static int do_cal(int start)
 	if (tval & APC_STAT_CAL) {	/* calibration currently happening */
 		if (start == 1) {
 			/* requested start while calibration still running */
-			upslogx(LOG_NOTICE, "runtime calibration already in progress");
+			upslogx(LOG_NOTICE, "%s", "runtime calibration already in progress");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
 		/* stop requested */
 
-		upslogx(LOG_NOTICE, "stopping runtime calibration");
+		upslogx(LOG_NOTICE, "%s", "stopping runtime calibration");
 
 		ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1317,11 +1338,11 @@ static int do_cal(int start)
 	/* calibration not happening */
 
 	if (start == 0) {		/* stop requested */
-		upslogx(LOG_NOTICE, "runtime calibration not occurring");
+		upslogx(LOG_NOTICE, "%s", "runtime calibration not occurring");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	upslogx(LOG_NOTICE, "starting runtime calibration");
+	upslogx(LOG_NOTICE, "%s", "starting runtime calibration");
 
 	ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1354,7 +1375,7 @@ static int smartmode(void)
 	ret = apc_read(temp, sizeof(temp), 0);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-		upslogx(LOG_CRIT, "enabling smartmode failed !");
+		upslogx(LOG_CRIT, "%s", "enabling smartmode failed !");
 		return 0;
 	}
 
@@ -1416,14 +1437,14 @@ static int sdok(int ign)
 	if (ret < 0)
 		return STAT_INSTCMD_FAILED;
 
-	debx(1, "got \"%s\"", temp);
+	upsdebugx(1, "%s: got \"%s\"", __func__, temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		debx(1, "last shutdown cmd succeeded");
+		upsdebugx(1, "%s: %s", __func__, "last shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	debx(1, "last shutdown cmd failed");
+	upsdebugx(1, "%s: %s", __func__, "last shutdown cmd failed");
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -1432,7 +1453,7 @@ static int sdcmd_S(const void *foo)
 {
 	apc_flush(0);
 	if (!foo)
-		debx(1, "issuing [%s]", prtchr(APC_CMD_SOFTDOWN));
+		upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_SOFTDOWN));
 	if (apc_write(APC_CMD_SOFTDOWN) != 1)
 		return STAT_INSTCMD_FAILED;
 	return sdok(0);
@@ -1444,14 +1465,15 @@ static int sdcmd_CS(const void *foo)
 	int ret, cshd = 3500000;
 	char temp[APC_SBUF];
 	const char *val;
+	NUT_UNUSED_VARIABLE(foo);
 
 	if ((val = getval("cshdelay")))
 		cshd = (int)(strtod(val, NULL) * 1000000);
 
-	debx(1, "issuing CS 'hack' [%s+%s] with %2.1f sec delay", prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN), (double)cshd / 1000000);
+	upsdebugx(1, "%s: issuing CS 'hack' [%s+%s] with %2.1f sec delay", __func__, prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN), (double)cshd / 1000000);
 	if (ups_status & APC_STAT_OL) {
 		apc_flush(0);
-		debx(1, "issuing [%s]", prtchr(APC_CMD_SIMPWF));
+		upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_SIMPWF));
 		ret = apc_write(APC_CMD_SIMPWF);
 		if (ret != 1) {
 			return STAT_INSTCMD_FAILED;
@@ -1491,8 +1513,8 @@ static int sdcmd_AT(const void *str)
 	}
 	strcpy(ptr, awd);
 
-	debx(1, "issuing [%s] with %d minutes of additional wakeup delay",
-			prtchr(APC_CMD_GRACEDOWN), (int)strtol(awd, NULL, 10)*6);
+	upsdebugx(1, "%s: issuing [%s] with %d minutes of additional wakeup delay",
+			__func__, prtchr(APC_CMD_GRACEDOWN), (int)strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
@@ -1523,8 +1545,9 @@ static int sdcmd_AT(const void *str)
 static int sdcmd_K(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
-	debx(1, "issuing [%s]", prtchr(APC_CMD_SHUTDOWN));
+	upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_SHUTDOWN));
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_SHUTDOWN);
@@ -1538,8 +1561,9 @@ static int sdcmd_K(const void *foo)
 static int sdcmd_Z(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
-	debx(1, "issuing [%s]", prtchr(APC_CMD_OFF));
+	upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_OFF));
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_OFF);
@@ -1559,7 +1583,8 @@ static void upsdrv_shutdown_simple(void)
 	if ((val = getval("sdtype")))
 		sdtype = strtol(val, NULL, 10);
 
-	debx(1, "currently: %s, sdtype: %d", (ups_status & APC_STAT_OL) ? "on-line" : "on battery", sdtype);
+	upsdebugx(1, "%s: currently: %s, sdtype: %d", __func__,
+		(ups_status & APC_STAT_OL) ? "on-line" : "on battery", sdtype);
 
 	switch (sdtype) {
 
@@ -1610,7 +1635,8 @@ static void upsdrv_shutdown_advanced(void)
 	val = getval("advorder");
 	len = strlen(val);
 
-	debx(1, "currently: %s, advorder: %s", (ups_status & APC_STAT_OL) ? "on-line" : "on battery", val);
+	upsdebugx(1, "%s: currently: %s, advorder: %s", __func__,
+		(ups_status & APC_STAT_OL) ? "on-line" : "on battery", val);
 
 	/*
 	 * try each method in the list with a little bit of handling in certain
@@ -1636,7 +1662,7 @@ void upsdrv_shutdown(void)
 	char temp[APC_LBUF];
 
 	if (!smartmode(1))
-		logx(LOG_WARNING, "setting SmartMode failed !");
+		upslogx(LOG_WARNING, "%s: %s", __func__, "setting SmartMode failed !");
 
 	/* check the line status */
 
@@ -1644,11 +1670,11 @@ void upsdrv_shutdown(void)
 		if (apc_read(temp, sizeof(temp), SER_D1) == 1) {
 			ups_status = strtol(temp, 0, 16);
 		} else {
-			logx(LOG_WARNING, "status read failed, assuming LB+OB");
+			upslogx(LOG_WARNING, "%s: %s", __func__, "status read failed, assuming LB+OB");
 			ups_status = APC_STAT_LB | APC_STAT_OB;
 		}
 	} else {
-		logx(LOG_WARNING, "status write failed, assuming LB+OB");
+		upslogx(LOG_WARNING, "%s: %s", __func__, "status write failed, assuming LB+OB");
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
@@ -1662,19 +1688,19 @@ static int update_info(int all)
 {
 	int i;
 
-	debx(1, "starting scan%s", all ? " (all vars)" : "");
+	upsdebugx(1, "%s: starting scan%s", __func__, all ? " (all vars)" : "");
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		if (!all && (apc_vartab[i].flags & APC_POLL) == 0)
 			continue;
 
 		if (!poll_data(&apc_vartab[i])) {
-			debx(1, "aborting scan");
+			upsdebugx(1, "%s: %s", __func__, "aborting scan");
 			return 0;
 		}
 	}
 
-	debx(1, "scan completed");
+	upsdebugx(1, "%s: %s", __func__, "scan completed");
 	return 1;
 }
 
@@ -1697,8 +1723,8 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	/* suppress redundant changes - easier on the eeprom */
 	if (!strcmp(ptr, val)) {
-		logx(LOG_INFO, "ignoring SET %s='%s' (unchanged value)",
-			vt->name, val);
+		upslogx(LOG_INFO, "%s: ignoring SET %s='%s' (unchanged value)",
+			__func__, vt->name, val);
 
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
@@ -1730,10 +1756,10 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		ptr = convert_data(vt, temp);
 
-		debx(1, "rotate - got [%s], want [%s]", ptr, val);
+		upsdebugx(1, "%s: rotate - got [%s], want [%s]", __func__, ptr, val);
 
 		if (!strcmp(ptr, val)) {	/* got it */
-			logx(LOG_INFO, "SET %s='%s'", vt->name, val);
+			upslogx(LOG_INFO, "%s: SET %s='%s'", __func__, vt->name, val);
 
 			/* refresh data from the hardware */
 			poll_data(vt);
@@ -1743,13 +1769,13 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		/* check for wraparound */
 		if (!strcmp(ptr, orig)) {
-			logx(LOG_ERR, "variable %s wrapped", vt->name);
+			upslogx(LOG_ERR, "%s: variable %s wrapped", __func__, vt->name);
 
 			return STAT_SET_FAILED;
 		}
 	}
 
-	logx(LOG_ERR, "gave up after 6 tries for %s", vt->name);
+	upslogx(LOG_ERR, "%s: gave up after 6 tries for %s", __func__, vt->name);
 
 	/* refresh data from the hardware */
 	poll_data(vt);
@@ -1765,7 +1791,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* sanitize length */
 	if (strlen(val) > APC_STRLEN) {
-		logx(LOG_ERR, "value (%s) too long", val);
+		upslogx(LOG_ERR, "%s: value (%s) too long", __func__, val);
 		return STAT_SET_FAILED;
 	}
 
@@ -1780,8 +1806,8 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* suppress redundant changes - easier on the eeprom */
 	if (!strcmp(temp, val)) {
-		logx(LOG_INFO, "ignoring SET %s='%s' (unchanged value)",
-			vt->name, val);
+		upslogx(LOG_INFO, "%s: ignoring SET %s='%s' (unchanged value)",
+			__func__, vt->name, val);
 
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
@@ -1800,19 +1826,19 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
-		logx(LOG_ERR, "short final read");
+		upslogx(LOG_ERR, "%s: %s", __func__, "short final read");
 		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
-		logx(LOG_ERR, "got NO at final read");
+		upslogx(LOG_ERR, "%s: %s", __func__, "got NO at final read");
 		return STAT_SET_FAILED;
 	}
 
 	/* refresh data from the hardware */
 	poll_data(vt);
 
-	logx(LOG_INFO, "SET %s='%s'", vt->name, val);
+	upslogx(LOG_INFO, "%s: SET %s='%s'", __func__, vt->name, val);
 
 	return STAT_SET_HANDLED;	/* FUTURE: success */
 }
@@ -1827,7 +1853,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 
 	if ((vt->flags & APC_RW) == 0) {
-		logx(LOG_WARNING, "[%s] is not writable", varname);
+		upslogx(LOG_WARNING, "%s: [%s] is not writable", __func__, varname);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -1837,7 +1863,7 @@ static int setvar(const char *varname, const char *val)
 	if (vt->flags & APC_STRING)
 		return setvar_string(vt, val);
 
-	logx(LOG_WARNING, "unknown type for [%s]", varname);
+	upslogx(LOG_WARNING, "%s: unknown type for [%s]", __func__, varname);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -1845,7 +1871,7 @@ static int setvar(const char *varname, const char *val)
 static int do_loadon(void)
 {
 	apc_flush(0);
-	debx(1, "issuing [%s]", prtchr(APC_CMD_ON));
+	upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_ON));
 
 	if (apc_write_rep(APC_CMD_ON) != 2)
 		return STAT_INSTCMD_FAILED;
@@ -1856,7 +1882,7 @@ static int do_loadon(void)
 	 * the next status update)
 	 */
 
-	debx(1, "[%s] completed", prtchr(APC_CMD_ON));
+	upsdebugx(1, "%s: [%s] completed", __func__, prtchr(APC_CMD_ON));
 	return STAT_INSTCMD_HANDLED;
 }
 
@@ -1886,13 +1912,13 @@ static int do_cmd(const apc_cmdtab_t *ct)
 		return STAT_INSTCMD_FAILED;
 
 	if (strcmp(temp, "OK")) {
-		logx(LOG_WARNING, "got [%s] after command [%s]",
-			temp, ct->name);
+		upslogx(LOG_WARNING, "%s: got [%s] after command [%s]",
+			__func__, temp, ct->name);
 
 		return STAT_INSTCMD_FAILED;
 	}
 
-	logx(LOG_INFO, "%s completed", ct->name);
+	upslogx(LOG_INFO, "%s: %s completed", __func__, ct->name);
 	return STAT_INSTCMD_HANDLED;
 }
 
@@ -1910,8 +1936,8 @@ static int instcmd_chktime(apc_cmdtab_t *ct, const char *ext)
 
 	/* you have to hit this in a small window or it fails */
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
-		debx(1, "outside window for [%s %s] (%2.0f)",
-				ct->name, ext ? ext : "\b", elapsed);
+		upsdebugx(1, "%s: outside window for [%s %s] (%2.0f)",
+				__func__, ct->name, ext ? ext : "\b", elapsed);
 		return 0;
 	}
 
@@ -1941,14 +1967,14 @@ static int instcmd(const char *cmd, const char *ext)
 	}
 
 	if (!ct) {
-		logx(LOG_WARNING, "unknown command [%s %s]", cmd,
+		upslogx(LOG_WARNING, "%s: unknown command [%s %s]", __func__, cmd,
 				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		logx(LOG_WARNING, "command [%s %s] recognized, but"
-		       " not supported by your UPS model", cmd,
+		upslogx(LOG_WARNING, "%s: command [%s %s] recognized, but"
+		       " not supported by your UPS model", __func__, cmd,
 				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
@@ -2109,7 +2135,7 @@ void upsdrv_updateinfo(void)
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
 		if (!last_worked)
-			debx(1, "comm lost");
+			upsdebugx(1, "%s: %s", __func__, "comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
@@ -2118,7 +2144,7 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
-		debx(1, "nudging ups with 'Y', iteration #%d ...", last_worked);
+		upsdebugx(1, "%s: nudging ups with 'Y', iteration #%d ...", __func__, last_worked);
 		if (!smartmode(1))
 			return;
 

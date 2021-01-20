@@ -24,8 +24,9 @@
 #include "common.h"
 #include <stdio.h>
 #include "nutscan-device.h"
+#include "nut-scan.h"
 
-char * nutscan_device_type_string[TYPE_END]= {
+static char * nutscan_device_type_string[TYPE_END] = {
 	"NONE",
 	"USB",
 	"SNMP",
@@ -33,7 +34,8 @@ char * nutscan_device_type_string[TYPE_END]= {
 	"NUT",
 	"IPMI",
 	"AVAHI",
-	"EATON_SERIAL" };
+	"EATON_SERIAL"
+};
 
 void nutscan_display_ups_conf(nutscan_device_t * device)
 {
@@ -115,4 +117,3 @@ void nutscan_display_parsable(nutscan_device_t * device)
 	}
 	while( current_dev != NULL );
 }
-

@@ -28,9 +28,9 @@
 #include "user.h"
 #include "user-data.h"
 
-	ulist_t	*users = NULL;
+static ulist_t	*users = NULL;
 
-	static	ulist_t	*curr_user;
+static	ulist_t	*curr_user;
 
 /* create a new user entry */
 static void user_add(const char *un)
@@ -370,9 +370,9 @@ static void parse_var(char *var, char *val)
 }
 
 /* parse first var+val pair, then flip through remaining vals */
-static void parse_rest(char *var, char *fval, char **arg, int next, int left)
+static void parse_rest(char *var, char *fval, char **arg, size_t next, size_t left)
 {
-	int	i;
+	size_t	i;
 
 	/* no globals supported yet, so there's no sense in continuing */
 	if (!curr_user) {
@@ -390,7 +390,7 @@ static void parse_rest(char *var, char *fval, char **arg, int next, int left)
 	}
 }
 
-static void user_parse_arg(int numargs, char **arg)
+static void user_parse_arg(size_t numargs, char **arg)
 {
 	char	*ep;
 
@@ -414,7 +414,7 @@ static void user_parse_arg(int numargs, char **arg)
 		/*      0       1       2  ... */
 		/* foo=bar <rest1> <rest2> ... */
 
-		parse_rest(arg[0], ep+1, arg, 1, numargs - 1);
+		parse_rest(arg[0], ep+1, arg, 1, (numargs < 2) ? 0 : (numargs - 1));
 		return;
 	}
 
@@ -448,7 +448,7 @@ static void user_parse_arg(int numargs, char **arg)
 
 		/* parse first var/val, plus subsequent values (if any) */
 
-		parse_rest(arg[0], arg[2], arg, 3, numargs - 3);
+		parse_rest(arg[0], arg[2], arg, 3, (numargs < 4) ? 0 : (numargs - 3));
 		return;
 	}
 

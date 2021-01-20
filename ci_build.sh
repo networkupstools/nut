@@ -24,6 +24,40 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+configure_nut() {
+    local CONFIGURE_SCRIPT=./configure
+    if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then
+        find . -ls
+        CONFIGURE_SCRIPT=./configure.bat
+    fi
+
+    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}"
+    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+    || { RES=$?
+        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
+        echo "    (or press Ctrl+C to abort now if running interactively)" >&2
+        sleep 5
+        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
+        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+        exit $RES
+       }
+}
+
+build_to_only_catch_errors() {
+    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+      $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+      $CI_TIME make VERBOSE=1 all -k ) || return $?
+
+    echo "`date`: Starting a 'make check' for quick sanity test of the products built with the current compiler and standards"
+    $CI_TIME make VERBOSE=0 check \
+    && echo "`date`: SUCCESS" \
+    || return $?
+
+    return 0
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
 default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
@@ -31,13 +65,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     LC_ALL=C
     export LANG LC_ALL
 
-    if [ -d "./tmp" ]; then
-        rm -rf ./tmp
+    if [ -d "./tmp/" ]; then
+        rm -rf ./tmp/
     fi
-    if [ -d "./.inst" ]; then
-        rm -rf ./.inst
+    if [ -d "./.inst/" ]; then
+        rm -rf ./.inst/
     fi
-    mkdir -p tmp .inst
+    mkdir -p tmp/ .inst/
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
 
@@ -63,7 +97,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     if which ccache && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
-    mkdir -p "${CCACHE_DIR}" || HAVE_CCACHE=no
+    mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
     if [ "$HAVE_CCACHE" = yes ] && [ -d "$CCACHE_DIR" ]; then
         echo "CCache stats before build:"
@@ -134,7 +168,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
-    CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}")
+    else
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+    fi
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
@@ -162,10 +200,18 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ "$TRAVIS_OS_NAME" != "windows" ]] ; then
+            if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] && [ "${BUILD_LIBGD_CGI-}" != "auto" ] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                CONFIG_OPTS+=("--with-cgi=yes")
+                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
+                    CONFIG_OPTS+=("--with-cgi=yes")
+                else
+                    # Note: CI-wise, our goal IS to test as much as we can
+                    # with this build, so environments should be set up to
+                    # facilitate that as much as feasible. But reality is...
+                    echo "WARNING: Seems libgd{,2,3} is not present, CGI build may be skipped!" >&2
+                    CONFIG_OPTS+=("--with-cgi=auto")
+                fi
             else
                 # No prereq dll and headers on win so far
                 CONFIG_OPTS+=("--with-cgi=auto")
@@ -246,6 +292,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
+    if [ -n "${BUILD_WARNOPT-}" ]; then
+        CONFIG_OPTS+=("--enable-warnings=${BUILD_WARNOPT}")
+    fi
+
+    if [ -n "${BUILD_WARNFATAL-}" ]; then
+        CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
@@ -254,16 +308,16 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
-        $CI_TIME ./autogen.sh 2>/dev/null
+        $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
 
-    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    if [ "$BUILD_TYPE" != "default-all-errors" ] ; then
+        configure_nut
+    fi
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
@@ -307,11 +361,28 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             exit $?
             ;;
         "default-all-errors")
-            ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-              $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 ; ) || \
-            ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-              $CI_TIME make VERBOSE=1 all -k )
-            exit $?
+            RES=0
+            if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+                # Try builds for both cases as they are ifdef-ed
+
+                echo "=== Building with SSL=openssl..."
+                ( CONFIG_OPTS+=("--with-openssl")
+                  configure_nut
+                  build_to_only_catch_errors ) || RES=$?
+
+                echo "=== Clean the sandbox..."
+                make distclean -k || true
+
+                echo "=== Building with SSL=nss..."
+                ( CONFIG_OPTS+=("--with-nss")
+                  configure_nut
+                  build_to_only_catch_errors ) || RES=$?
+            else
+                # Build what we can configure
+                configure_nut
+                build_to_only_catch_errors || RES=$?
+            fi
+            exit $RES
             ;;
     esac
 

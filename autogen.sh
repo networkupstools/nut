@@ -48,4 +48,7 @@ echo "Regenerating the list of legacy *-mib.c files in current codebase to produ
 
 # now we can safely call autoreconf
 echo "Calling autoreconf..."
-autoreconf -i
+autoreconf -iv && {
+    sh -n configure 2>/dev/null >/dev/null \
+    || { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+}

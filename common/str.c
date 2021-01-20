@@ -253,7 +253,7 @@ int	str_to_short(const char *string, short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (short)num;
 	return 1;
 }
 
@@ -274,7 +274,7 @@ int	str_to_short_strict(const char *string, short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (short)num;
 	return 1;
 }
 
@@ -292,7 +292,7 @@ int	str_to_ushort(const char *string, unsigned short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned short)num;
 	return 1;
 }
 
@@ -310,7 +310,7 @@ int	str_to_ushort_strict(const char *string, unsigned short *number, const int b
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned short)num;
 	return 1;
 }
 
