@@ -32,31 +32,105 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t delta_onbatt_info[] = {
- * 	{ 1, "OB", NULL, NULL },
- * 	{ 2, "OL", NULL, NULL },
- * 	{ 0, NULL, NULL, NULL }
+ * 	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
  * };
  */
 
 static info_lkp_t delta_ups_upstype_info[] = {
-	{ 1, "on-line", NULL, NULL },
-	{ 2, "off-line", NULL, NULL },
-	{ 3, "line-interactive", NULL, NULL },
-	{ 4, "3phase", NULL, NULL },
-	{ 5, "splite-phase", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "on-line"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "off-line"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "line-interactive"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "3phase"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "splite-phase"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
-    { 0, "OL", NULL, NULL },        /* normal  */
-    { 1, "OB", NULL, NULL },        /* battery  */
-    { 2, "BYPASS", NULL, NULL },    /* bypass */
-    { 3, "TRIM", NULL, NULL },      /* reducing */
-    { 4, "BOOST", NULL, NULL },     /* boosting */
-    { 5, "BYPASS", NULL, NULL },    /* manualBypass */
-    /*{ 6, "NULL", NULL, NULL },*/      /* other  */
-    { 7, "OFF", NULL, NULL },      /* none */
-    { 0, NULL, NULL, NULL }
+	{ 0, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* normal  */
+	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* battery  */
+	{ 2, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* bypass */
+	{ 3, "TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* reducing */
+	{ 4, "BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},     /* boosting */
+	{ 5, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* manualBypass */
+/*
+	{ 6, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+*/       /* other  */
+	{ 7, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* none */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
