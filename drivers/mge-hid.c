@@ -1468,7 +1468,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * Model not found or NULL (use default) so construct
 		 * model name by concatenation of iProduct and iModel
 		 */
-		char	buf[SMALLBUF];
+		char	buf[SMALLBUF * 2 + 4];
 		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
 		return strdup(buf);
 	}
