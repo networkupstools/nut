@@ -39,19 +39,55 @@
 /* UPS Battery */
 #define NETVISION_OID_BATTERYSTATUS		".1.3.6.1.4.1.4555.1.1.1.1.2.1.0"
 static info_lkp_t netvision_batt_info[] = {
-	{ 2, "", NULL, NULL },        /* battery normal      */
-	{ 3, "LB", NULL, NULL },      /* battery low         */
-	{ 4, "LB", NULL, NULL },      /* battery depleted    */
-	{ 5, "DISCHRG", NULL, NULL }, /* battery discharging */
-	{ 6, "RB", NULL, NULL },      /* battery failure     */
-	{ 0, NULL, NULL, NULL }
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* battery normal      */
+	{ 3, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* battery low         */
+	{ 4, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* battery depleted    */
+	{ 5, "DISCHRG"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* battery discharging */
+	{ 6, "RB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* battery failure     */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Battery status: upsAlarmOnBattery */
 static info_lkp_t netvision_onbatt_info[] = {
-	{ 0, "OL", NULL, NULL },      /* Online      */
-	{ 1, "OB", NULL, NULL },      /* On battery  */
-	{ 0, NULL, NULL, NULL }
+	{ 0, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* Online      */
+	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},      /* On battery  */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 #define NETVISION_OID_SECONDSONBATTERY		".1.3.6.1.4.1.4555.1.1.1.1.2.2.0"
@@ -101,16 +137,56 @@ static info_lkp_t netvision_onbatt_info[] = {
 #define NETVISION_OID_CONTROL_SHUTDOWN_DELAY ".1.3.6.1.4.1.4555.1.1.1.1.8.2"
 
 static info_lkp_t netvision_output_info[] = {
-	{ 1, "", NULL, NULL },          /* output source other   */
-	{ 2, "", NULL, NULL },          /* output source none    */
-	{ 3, "OL", NULL, NULL },        /* output source normal  */
-	{ 4, "OL BYPASS", NULL, NULL }, /* output source bypass  */
-	{ 5, "OB", NULL, NULL },        /* output source battery */
-	{ 6, "OL BOOST", NULL, NULL },  /* output source booster */
-	{ 7, "OL TRIM", NULL, NULL },   /* output source reducer */
-	{ 8, "OL", NULL, NULL },        /* output source standby */
-	{ 9, "", NULL, NULL },          /* output source ecomode */
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* output source other   */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* output source none    */
+	{ 3, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* output source normal  */
+	{ 4, "OL BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* output source bypass  */
+	{ 5, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* output source battery */
+	{ 6, "OL BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* output source booster */
+	{ 7, "OL TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* output source reducer */
+	{ 8, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},        /* output source standby */
+	{ 9, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* output source ecomode */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* Snmp2NUT lookup table */
