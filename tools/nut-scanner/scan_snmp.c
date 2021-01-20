@@ -107,6 +107,7 @@ static oid *nut_usmDESPrivProtocol;
 
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
+
 int nutscan_load_snmp_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -247,14 +248,15 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname_path, dl_error);
+	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
 }
 /* end of dynamic link library stuff */
 
-static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response,char * mib)
+static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response, char * mib)
 {
 	nutscan_device_t * dev = NULL;
 	struct snmp_session * session;
@@ -399,7 +401,8 @@ static void try_all_oid(void * arg, const char * mib_found)
 		/* add device only if not yet detected with the same mib */
 		if (mib_found == NULL || (strcmp(mib_found, snmp_device_table[index].mib) != 0)) {
 			scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
-			upsdebugx(3, "Found another match for device with MIB '%s'", snmp_device_table[index].mib);
+			upsdebugx(3, "Found another match for device with MIB '%s'",
+				snmp_device_table[index].mib);
 		}
 		else {
 			upsdebugx(3, "Skip duplicated device %s", snmp_device_table[index].mib);
@@ -463,7 +466,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			case SNMP_SEC_LEVEL_AUTHNOPRIV:
 				if (sec->authPassword == NULL) {
 					fprintf(stderr,
-			"authPassword is required for SNMPv3 in %s mode\n",
+						"authPassword is required "
+						"for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
@@ -472,7 +476,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 				if ((sec->authPassword == NULL) ||
 					(sec->privPassword == NULL)) {
 					fprintf(stderr,
-	"authPassword and privPassword are required for SNMPv3 in %s mode\n",
+						"authPassword and privPassword are "
+						"required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
@@ -518,7 +523,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityAuthKeyLen)
 					!= SNMPERR_SUCCESS) {
 							fprintf(stderr,
-		"Error generating Ku from authentication pass phrase\n");
+							"Error generating Ku from "
+							"authentication pass phrase\n");
 							return 0;
 		}
 
@@ -560,7 +566,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityPrivKeyLen)
 					!= SNMPERR_SUCCESS) {
 							fprintf(stderr,
-		"Error generating Ku from private pass phrase\n");
+							"Error generating Ku from "
+							"private pass phrase\n");
 							return 0;
 		}
 
@@ -689,7 +696,8 @@ try_SysOID_free:
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
+                                     long usec_timeout, nutscan_snmp_t * sec)
 {
 	int i;
 	nutscan_snmp_t * tmp_sec;
@@ -746,8 +754,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	}
 
 #ifdef HAVE_PTHREAD
-	for ( i=0; i < thread_count ; i++) {
-		pthread_join(thread_array[i],NULL);
+	for (i=0; i < thread_count ; i++) {
+		pthread_join(thread_array[i], NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
@@ -757,7 +765,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	return result;
 }
 #else /* WITH_SNMP */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
+                                     long usec_timeout, nutscan_snmp_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(stop_ip);
