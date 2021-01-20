@@ -641,8 +641,8 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 		}
 		for(i = 0; i < self->sublist_elements; i++)
 		{
-		if(self->list[i])
-			alist_destroy( &(self->list[i]) );
+			if(self->list[i])
+				alist_destroy( &(self->list[i]) );
 			self->list[i] = NULL;
 		}
 		free(self->list);
