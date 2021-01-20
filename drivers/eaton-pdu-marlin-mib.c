@@ -231,7 +231,7 @@ static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 		if (phases_nb == 1) {
 			return "L1";
 		}
-		else { /* 3ph assumed, 2ph PDU don't exist! */
+		else { // 3ph assumed, 2ph PDU don't exist!
 			if (outlet_group_nb > 3)
 				phases_nb = (outlet_group_nb - 3);
 			else
