@@ -31,18 +31,46 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t xpcc_onbatt_info[] = {
- * 	{ 1, "OB", NULL, NULL },
- * 	{ 2, "OL", NULL, NULL },
- * 	{ 0, NULL, NULL, NULL }
+ * 	{ 1, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+ * 	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
  * };
  */
 
 /* upsBaseBatteryStatus */
 static info_lkp_t xpcc_onbatt_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "", NULL, NULL },	/* batteryNormal */
-	{ 3, "LB", NULL, NULL },	/* batteryLow */
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryNormal */
+	{ 3, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryLow */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /*
@@ -59,16 +87,56 @@ upsBaseOutputStatus OBJECT-TYPE
 			onBuck(9) }
 */
 static info_lkp_t xpcc_power_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "OL", NULL, NULL },	/* onLine */
-	{ 3, "OB", NULL, NULL },	/* onBattery */
-	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
-	{ 5, "OFF", NULL, NULL },	/* sleeping */
-	{ 6, "BYPASS", NULL, NULL },	/* onBypass */
-	{ 7, "", NULL, NULL },	/* rebooting */
-	{ 8, "OFF", NULL, NULL },	/* standBy */
-	{ 9, "OL TRIM", NULL, NULL },	/* onBuck */
-	{ 0, NULL, NULL, NULL }
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+	{ 2, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onLine */
+	{ 3, "OB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBattery */
+	{ 4, "OL BOOST"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBoost */
+	{ 5, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* sleeping */
+	{ 6, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBypass */
+	{ 7, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* rebooting */
+	{ 8, "OFF"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* standBy */
+	{ 9, "OL TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBuck */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
 /* XPPC Snmp2NUT lookup table */
