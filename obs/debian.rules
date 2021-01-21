@@ -178,7 +178,7 @@ common-install-indep::
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc
 
 binary-install/nut-monitor::
-	dh_python2 -pnut-monitor
+	dh_python2 -pnut-monitor || dh_python3 -pnut-monitor || dh_python -pnut-monitor
 
 DEB_DH_INSTALLINIT_ARGS_nut-server := --init-script=nut-server --restart-after-upgrade
 DEB_DH_INSTALLINIT_ARGS_nut-client := --init-script=nut-client --restart-after-upgrade
