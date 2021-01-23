@@ -80,6 +80,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1003), battery_scale_0dot1 },
 	/* e.g. TrippLite AVR750U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1007), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3024), smart1500lcdt_scale },
 	/* e.g. TrippLite ECO550UPS */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1009), battery_scale_0dot1 },
