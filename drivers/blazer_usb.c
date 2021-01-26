@@ -502,7 +502,6 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	if (udev == NULL) {
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
-		
 		if (ret < 1) {
 			return ret;
 		}
