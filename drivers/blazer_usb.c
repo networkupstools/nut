@@ -324,6 +324,79 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
+static int snr_command(const char *cmd, char *buf, size_t buflen)
+{
+	/*
+	 * Still not implemented:
+	 * 0x6	T<n>	(don't know how to pass the parameter)
+	 * 0x68 and 0x69 both cause shutdown after an undefined interval
+	*/
+	const struct {
+		const char	*str;		/* Megatec command */
+		const int	index;	/* SNR string index for this command */
+		const char	prefix;	/* character to replace the first byte in reply */
+	}  command[] = {
+		{ "Q1\r", 0x03, '(' },
+		{ "F\r",  0x0d, '#' },
+		{ "I\r",  0x0c, '#' },
+		{ "T\r",  0x04, '\r' },
+		{ "TL\r", 0x05, '\r' },
+		{ "Q\r",  0x07, '\r' },
+		{ "C\r",  0x0b, '\r' },
+		{ "CT\r", 0x0b, '\r' },
+		{ NULL, 0, '\0' }
+	};
+
+	int	i;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	for (i = 0; command[i].str; i++) {
+		int	retry;
+
+		if (strcmp(cmd, command[i].str)) {
+			continue;
+		}
+
+		for (retry = 0; retry < 10; retry++) {
+			int	ret;
+
+			/* reset buffer */
+			usb_control_msg(udev, 0x80, USB_REQ_GET_DESCRIPTOR, 0x0303, 0x0409, buf, 102, 1000);
+			usb_interrupt_read(udev, 0x81, buf, 102, 1000);
+				
+			ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+
+			if (ret <= 0) {
+				upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+				return ret;
+			}
+
+			/* this may serve in the future */
+			upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+			/* "UPS No Ack" has a special meaning */
+			if (!strcasecmp(buf, "UPS No Ack")) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+				continue;
+			}
+
+			/* Replace the first byte of what we received with the correct one */
+			buf[0] = command[i].prefix;
+
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+			return ret;
+		}
+
+		return 0;
+	}
+
+	/* echo the unknown command back */
+	upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+	return snprintf(buf, buflen, "%s", cmd);
+}
+
+
 static void *cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -360,9 +433,19 @@ static void *phoenix_subdriver(USBDevice_t *device)
 }
 
 
+static void *snr_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &snr_command;
+	return NULL;
+}
+
+
 static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(0x0001, 0x0000), &snr_subdriver },		/* SNR UPS LID600 */
 	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
 	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
@@ -517,6 +600,7 @@ const struct subdriver_t {
 	{ "phoenix", &phoenix_command },
 	{ "ippon", &ippon_command },
 	{ "krauler", &krauler_command },
+	{ "snr", &snr_command },
 	{ NULL, NULL }
 };
 #endif	/* TESTING */
