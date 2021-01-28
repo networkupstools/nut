@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
+#include <limits.h>
 
 #include "nut_stdint.h"
 typedef	uint8_t byte_t;
@@ -402,8 +402,19 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	 *   between 2 and 4 bytes into a region of size between 3 and 5
 	 *   [-Wformat-truncation=]
 	 * but none others do, and I can't figure out how it thinks so :/
+	 *
+	 * Per https://stackoverflow.com/questions/51534284/how-to-circumvent-format-truncation-warning-in-gcc
+	 * https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg521037.html
+	 * and simlar googlable sources, this seems to be a bug-or-feature
+	 * linked to non-zero optimization level and/or not checking for the
+	 * return value (conveys runtime errors if any do happen).
 	 */
-	snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3);
+	assert (pr1 <= UINT8_MAX);
+	assert (pr2 <= UINT8_MAX);
+	assert (pr3 <= UINT8_MAX);
+	if (0 > snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3)) {
+		data[8] = '\0';
+	}
 
 	comli_prepare(dest, &h, data, 8);
 }

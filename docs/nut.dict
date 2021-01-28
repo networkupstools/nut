@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2520 utf-8
+personal_ws-1.1 en 2532 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -135,6 +135,7 @@ Brabec
 Breiland
 Brownell
 Bs
+BuildBot
 Buildbot
 Bxx
 ByPass
@@ -164,6 +165,7 @@ COMMOK
 CONTEXTs
 CPAN
 CPM
+CPP
 CPUs
 CRC
 CREAD
@@ -218,6 +220,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DHEA
 DISCHRG
 DN
 DOCTYPE
@@ -291,6 +294,7 @@ EqlzInvl
 EqlzTm
 Erikson
 Eriksson
+Evgeny
 FEMEA
 FFF
 FH
@@ -423,6 +427,7 @@ IPs
 IPv
 IRIX
 ITEMP
+ITy
 IVT
 IZ
 Infosec
@@ -1128,7 +1133,10 @@ Viktor
 Vout
 Václav
 WALKMODE
+WARNFATAL
+WARNOPT
 WELI
+WHAD
 WMNut
 WS
 WSE
@@ -1409,11 +1417,13 @@ constantitime
 constantvtime
 constatus
 contdisplay
+contrib
 contstatus
 coreutils
 cout
 coverity
 cp
+cpp
 cpqpower
 cpsups
 cr
@@ -1607,6 +1617,7 @@ getVariable
 getenv
 getopt
 getvar
+github
 gitignore
 gitk
 gmail
@@ -1811,6 +1822,7 @@ macaddr
 macosx
 mailx
 maintainer's
+maintainership
 maj
 makevartable
 mandir

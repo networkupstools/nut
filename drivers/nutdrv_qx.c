@@ -38,8 +38,7 @@
 #include "config.h"
 #include "main.h"
 #include "attribute.h"
-
-#include <math.h>
+#include "nut_float.h"
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
@@ -220,7 +219,7 @@ static int	qx_battery(void)
 
 	batt.volt.act = batt.packs * strtod(val, NULL);
 
-	if (batt.chrg.act == -1 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+	if (d_equal(batt.chrg.act, -1) && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
 		batt.chrg.act = 100 * (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
 
@@ -283,7 +282,7 @@ static void	qx_initbattery(void)
 		}
 
 		/* If no values are available for both battery.voltage.{low,high} either from the UPS or provided by the user in ups.conf, try to guesstimate them, but announce it! */
-		if (batt.volt.nom != -1 && (batt.volt.low == -1 || batt.volt.high == -1)) {
+		if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
 
 			upslogx(LOG_INFO, "No values for battery high/low voltages");
 
@@ -305,7 +304,7 @@ static void	qx_initbattery(void)
 		} else {
 
 			/* qx_battery -> batt.volt.act */
-			if (!qx_battery() && batt.volt.nom != -1) {
+			if (!qx_battery() && (!d_equal(batt.volt.nom, -1))) {
 
 				const double	packs[] = { 120, 100, 80, 60, 48, 36, 30, 24, 18, 12, 8, 6, 4, 3, 2, 1, 0.5, -1 };
 				int		i;
@@ -370,7 +369,7 @@ static void	qx_initbattery(void)
 		}
 
 		val = dstate_getinfo("battery.charge");
-		if (!val && batt.volt.nom != -1) {
+		if (!val && (!d_equal(batt.volt.nom, -1))) {
 			batt.volt.low = batt.volt.nom;
 			batt.volt.high = 1.15 * batt.volt.nom;
 
@@ -1635,8 +1634,41 @@ void	upsdrv_shutdown(void)
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
+#ifdef QX_USB
+	#ifndef TESTING
+		const struct {
+			const char	*name;
+			int		(*command)(const char *cmd, char *buf, size_t buflen);
+		} usbsubdriver[] = {
+			{ "cypress", &cypress_command },
+			{ "phoenix", &phoenix_command },
+			{ "ippon", &ippon_command },
+			{ "krauler", &krauler_command },
+			{ "fabula", &fabula_command },
+			{ "fuji", &fuji_command },
+			{ "sgs", &sgs_command },
+			{ NULL, NULL }
+		};
+    #endif
+#endif
+
+
 void	upsdrv_help(void)
 {
+#ifdef QX_USB
+	#ifndef TESTING
+    printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+    size_t i;
+
+    for (i = 0; usbsubdriver[i].name != NULL; i++) {
+        if (i>0)
+            printf(", ");
+        printf("%s", usbsubdriver[i].name);
+    }
+    printf("\n\n");
+    #endif
+#endif
+
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
@@ -1934,21 +1966,6 @@ void	upsdrv_initups(void)
 #ifdef QX_USB
 
 	#ifndef TESTING
-
-		const struct {
-			const char	*name;
-			int		(*command)(const char *cmd, char *buf, size_t buflen);
-		} usbsubdriver[] = {
-			{ "cypress", &cypress_command },
-			{ "phoenix", &phoenix_command },
-			{ "ippon", &ippon_command },
-			{ "krauler", &krauler_command },
-			{ "fabula", &fabula_command },
-			{ "fuji", &fuji_command },
-			{ "sgs", &sgs_command },
-			{ NULL, NULL }
-		};
-
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
 		char	*regex_array[6];
@@ -2644,7 +2661,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	}
 
 	/* Update battery guesstimation */
-	if (mode == QX_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
+	if (mode == QX_WALKMODE_FULL_UPDATE && (d_equal(batt.runt.act, -1) || d_equal(batt.chrg.act, -1))) {
 
 		if (getval("runtimecal")) {
 
@@ -2670,10 +2687,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			}
 
-			if (batt.chrg.act == -1)
+			if (d_equal(batt.chrg.act, -1))
 				dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
 
-			if (batt.runt.act == -1 && !qx_load())
+			if (d_equal(batt.runt.act, -1) && !qx_load())
 				dstate_setinfo("battery.runtime", "%.0f", batt.runt.est / load.eff);
 
 			battery_lastpoll = battery_now;

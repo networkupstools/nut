@@ -486,11 +486,15 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
 	NUT_UNUSED_VARIABLE(privdata);
 
+	upsdebugx(2, "%s (non-SHUT mode): matching a device...", __func__);
+
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {
 			return 1;
 		}
 	}
+
+	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver to vendor and/or product ID", __func__);
 	return 0;
 }
 

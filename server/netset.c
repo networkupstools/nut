@@ -166,7 +166,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		sendback(client, "OK\n");
 }
 
-void net_set(nut_ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	char	tracking_id[UUID4_LEN] = "";
 
