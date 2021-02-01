@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.101"
+#define PW_MIB_VERSION "0.102"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -315,8 +315,8 @@ static info_lkp_t pw_ambient_drycontacts_polarity_info[] = {
 };
 
 static info_lkp_t pw_ambient_drycontacts_state_info[] = {
-	{ 0, "active", NULL, NULL },
-	{ 1, "inactive", NULL, NULL },
+	{ 0, "inactive", NULL, NULL },
+	{ 1, "active", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
