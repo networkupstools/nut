@@ -151,6 +151,7 @@ common-install-arch::
 
 	# Add a symlink to mask the LSB initscript for nut-client:
 	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-client.service
+	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/ups-monitor.service
 
 	# Install tmpfiles config file to create /run/nut directory
 	install -m 644 -D $(CURDIR)/debian/nut-common.tmpfiles \
