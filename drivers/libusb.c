@@ -63,6 +63,7 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 }
 
@@ -200,11 +201,13 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			free(curDevice->Product);
 			free(curDevice->Serial);
 			free(curDevice->Bus);
+			free(curDevice->Device);
 			memset(curDevice, '\0', sizeof(*curDevice));
 
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = strdup(bus->dirname);
+			curDevice->Device = strdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
@@ -237,6 +240,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {

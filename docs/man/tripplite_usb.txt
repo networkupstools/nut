@@ -75,6 +75,11 @@ problems.
 This regular expression is used to match the USB bus (as seen in
 `/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
 
+*device*::
+
+This regular expression is used to match the USB device (as seen in
+`/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
+
 *product*::
 
 A regular expression to match the product string for the UPS.  This would be
@@ -131,15 +136,14 @@ please re-run the driver with `-DDD` to increase the verbosity.
 
 So far, the Tripp Lite UPSes do not seem to have a serial number or other
 globally unique identifier accessible through USB. Thus, when monitoring
-several Tripp Lite USB UPSes, you should use either the 'bus' or 'product'
-configuration options to uniquely specify which UPS a given driver instance
-should control.
+several Tripp Lite USB UPSes, you should use either the 'bus', 'device' or
+'product' configuration options to uniquely specify which UPS a given driver
+instance should control.
 
 For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
 same time, since they have different USB Product ID strings. If you have two
-SMART1500RM2U units, you would have to find which USB bus number each unit is
-on (via lsusb(8)), which may result in ambiguities if the available USB ports
-are on the same bus.
+SMART1500RM2U units, you would have to find which USB bus and device number
+each unit is on (via lsusb(8)).
 
 Some of the SMART*2U models have an ID number, but because this ID is not
 exposed as a USB string descriptor, there is no easy way to use this ID to

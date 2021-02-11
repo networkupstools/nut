@@ -117,6 +117,13 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 		return 0;
 	}
 #endif
+#ifdef DEBUG_EXACT_MATCH_DEVICE
+	if (strcmp_null(hd->Device, data->Device) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "Device", hd->Device, data->Device);
+		return 0;
+	}
+#endif
 	return 1;
 }
 
@@ -152,6 +159,9 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 #ifdef DEBUG_EXACT_MATCH_BUS
 	data->Bus = hd->Bus ? strdup(hd->Bus) : NULL;
 #endif
+#ifdef DEBUG_EXACT_MATCH_DEVICE
+	data->Device = hd->Device ? strdup(hd->Device) : NULL;
+#endif
 	*matcher = m;
 
 	return 0;
@@ -173,6 +183,9 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher)
 	free(data->Serial);
 #ifdef DEBUG_EXACT_MATCH_BUS
 	free(data->Bus);
+#endif
+#ifdef DEBUG_EXACT_MATCH_DEVICE
+	free(data->Device);
 #endif
 	free(data);
 	free(matcher);
@@ -285,7 +298,7 @@ static int match_regex_hex(regex_t *preg, int n)
 
 /* private data type: hold a set of compiled regular expressions. */
 typedef struct regex_matcher_data_s {
-	regex_t	*regex[6];
+	regex_t	*regex[7];
 } regex_matcher_data_t;
 
 /* private callback function for regex matches */
@@ -361,18 +374,23 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 		    __func__, "Bus", hd->Bus);
 		return r;
 	}
+
+	r = match_regex(data->regex[6], hd->Device);
+	if (r != 1) {
+		return r;
+	}
 	return 1;
 }
 
 /* constructor: create a regular expression matcher. This matcher is
- * based on six regular expression strings in regex_array[0..5],
+ * based on seven regular expression strings in regex_array[0..6],
  * corresponding to: vendorid, productid, vendor, product, serial,
- * bus. Any of these strings can be NULL, which matches
+ * bus, device. Any of these strings can be NULL, which matches
  * everything. Cflags are as in regcomp(3). Typical values for cflags
  * are REG_ICASE (case insensitive matching) and REG_EXTENDED (use
  * extended regular expressions).  On success, return 0 and store the
  * matcher in *matcher. On error, return -1 with errno set, or return
- * i=1--6 to indicate that the regular expression regex_array[i-1] was
+ * i=1--7 to indicate that the regular expression regex_array[i-1] was
  * ill-formed (an error message can then be retrieved with
  * regerror(3)).
  */
@@ -397,7 +415,7 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	m->privdata = (void *)data;
 	m->next = NULL;
 
-	for (i=0; i<6; i++) {
+	for (i=0; i<7; i++) {
 		r = compile_regex(&data->regex[i], regex[i], cflags);
 		if (r == -2) {
 			r = i+1;
@@ -424,7 +442,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 
 	data = (regex_matcher_data_t *)matcher->privdata;
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 7; i++) {
 		if (!data->regex[i]) {
 			continue;
 		}

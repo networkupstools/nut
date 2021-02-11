@@ -30,7 +30,7 @@
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
- * the 5 pieces of information by which a USB device identifies
+ * the pieces of information by which a USB device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client
@@ -44,6 +44,7 @@ typedef struct USBDevice_s {
 	char		*Product;  /*!< Device's Product Name */
 	char		*Serial;   /*!< Product serial number */
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
+	char		*Device;   /*!< Device name, e.g. "001"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 } USBDevice_t;
 
