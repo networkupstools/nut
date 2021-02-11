@@ -16,6 +16,8 @@
  *  blazer_usb.c - Copyright (C)
  *    2003-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
+ *  Masterguard additions
+ *    2020-2021 Edgar Fuß, Mathematisches Institut der Universität Bonn <ef@math.uni-bonn.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +41,8 @@
 #include "main.h"
 #include "attribute.h"
 #include "nut_float.h"
+
+#include <vis.h>
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
@@ -73,6 +77,7 @@
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
+#include "nutdrv_qx_masterguard.h"
 
 /* Master list of available subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -85,6 +90,7 @@ static subdriver_t	*subdriver_list[] = {
 	&mecer_subdriver,
 	&megatec_subdriver,
 	&zinto_subdriver,
+	&masterguard_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -99,7 +105,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Arnaud Quette <arnaud.quette@gmail.com>" \
 	"John Stamp <kinsayder@hotmail.com>" \
 	"Peter Selinger <selinger@users.sourceforge.net>" \
-	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>" \
+	"Edgar Fuß <ef@math.uni-bonn.de>",
 	DRV_BETA,
 #ifdef QX_USB
 	{ &comm_upsdrv_info, NULL }
@@ -1008,6 +1015,68 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	return (int)strlen(buf);
 }
 
+/* Phoenixtec (Masterguard) communication subdriver */
+static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
+{
+	int ret;
+	char *p, *e;
+	char *vis;
+	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
+	char **lp;
+
+	if (nut_debug_level >= 4) {
+		stravis(&vis, cmd, VIS_NL | VIS_CSTYLE);
+		upsdebugx(4, "> %s", vis);
+		free(vis);
+	}
+	if ((ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT, 0x0d, 0, 0, (char *)cmd, strlen(cmd), 1000)) <= 0) {
+		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		*buf = '\0';
+		return ret;
+	}
+
+	for (lp = l; *lp != NULL; lp++) {
+		const char *q;
+		int b;
+
+		p = *lp; q = cmd; b = 1;
+		while (*p != '\0') {
+			if (*p++ != *q++) {
+				b = 0;
+				break;
+			}
+		}
+		if (b && *q >= 'A' && *q <= 'Z') b = 0; /* "M" not to match "MSO" */
+		if (b) {
+			upsdebugx(4, "command %s returns no answer", *lp);
+			*buf = '\0';
+			return 0;
+		}
+	}
+
+	for (p = buf; p < buf + buflen; p += ret) {
+		if ((ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, p, buf + buflen - p, 1000)) <= 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			*buf = '\0';
+			return ret;
+		}
+		if ((e = memchr(p, '\r', ret)) != NULL) break;
+	}
+	if (e != NULL && ++e < buf + buflen) {
+		*e = '\0';
+		if (nut_debug_level >= 4) {
+			stravis(&vis, buf, VIS_NL | VIS_CSTYLE);
+			upsdebugx(4, "< %s", vis);
+			free(vis);
+		}
+		return e - buf;
+	} else {
+		upsdebugx(3, "read: buflen %zd too small", buflen);
+		*buf = '\0';
+		return 0;
+	}
+}
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -1056,6 +1125,14 @@ static void	*fabula_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*phoenixtec_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &phoenixtec_command;
+	return NULL;
+}
+
 static void	*fuji_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -1078,6 +1155,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
 	{ USB_DEVICE(0x06da, 0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
@@ -1641,6 +1719,7 @@ void	upsdrv_shutdown(void)
 			int		(*command)(const char *cmd, char *buf, size_t buflen);
 		} usbsubdriver[] = {
 			{ "cypress", &cypress_command },
+			{ "phoenixtec", &phoenixtec_command },
 			{ "phoenix", &phoenix_command },
 			{ "ippon", &ippon_command },
 			{ "krauler", &krauler_command },
