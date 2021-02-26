@@ -326,7 +326,9 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 {
 	int	i;
+    int iii;
 	int	len;
+    int idx;
 	char	tmp[64];
 	char    tmpryy[64];
 
@@ -343,7 +345,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 		tmp[0] = 0x05;
 		tmp[1] = 0;
 		tmp[2] = 1 + (char)strcspn(cmd, "\r");
-		for (int iii = 0 ; iii < tmp[2] ; iii++)
+		for (iii = 0 ; iii < tmp[2] ; iii++)
 		{
 			tmp[3+iii] = cmd[iii];
 		}
@@ -358,7 +360,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
 
 		len = 0;
-		for (int idx = 0 ; idx < 47 ; idx++)
+		for (idx = 0 ; idx < 47 ; idx++)
 		{
 			buf[idx] = tmpryy[idx];
 			if (tmpryy[idx] == '\r')
