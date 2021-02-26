@@ -59,6 +59,8 @@ static struct {
 } load = { 0, 0.1, 1 };
 
 static time_t	lastpoll = 0;
+static int ablerexQ5Vb = -1;
+static int ablerex_ext_command = -1;
 
 /*
  * This little structure defines the various flavors of the Megatec protocol.
@@ -80,6 +82,60 @@ static const struct {
 	{ NULL, NULL, NULL, NULL }
 };
 
+static double ablerex_battery_charge(double BattIn)
+{
+	const double onlineP[] = {
+		2.22, 2.21, 2.20, 2.19, 2.18, 2.17, 2.16, 2.15, 2.14, 2.13,
+		2.12, 2.11, 2.10, 2.09, 2.08, 2.07, 2.06, 2.05, 2.04, 2.03,
+		2.02, 2.01, 2.00, 1.99, 1.98, 1.97, 1.96, 1.95, 1.94, 1.93,
+		1.92, 1.91, 1.90, 1.89, 1.88, 1.87, 1.86, 1.85, 1.84, 1.83,
+		1.82, 1.81, 1.80, 1.79, 1.78, 1.77, 1.76, 1.75, 1.74, 1.73,
+		1.72, 1.71, 1.70, 1.69, 1.68, 1.67 
+	};
+	const int onlineC[] = {
+		100, 90, 88, 87, 85, 83, 82, 80, 78, 77,
+		75, 73, 72, 70, 68, 65, 65, 62, 62, 58,
+		58, 55, 55, 53, 52, 50, 48, 47, 45, 43,
+		42, 40, 38, 37, 35, 33, 32, 30, 28, 27,
+		25, 23, 22, 20, 18, 17, 15, 13, 12, 10,
+		8, 7, 5, 3, 2, 0, -1
+	};	
+	const double offlineP[] = {
+		13.5, 13.3, 13.2, 13.1, 13, 12.9, 12.8, 12.7, 12.6, 12.5,
+		12.4, 12.3, 12.2, 12.1, 12, 11.9, 11.8, 11.7, 11.6, 11.5,
+		11.4, 11.3, 11.2, 11.1, 11, 10.9, 10.8, 10.7, 10.6, 10.5,
+		10.4, 10.3, 10.2, 10.1, 10
+	};
+	const int offlineC[] = {
+		100, 90, 88, 86, 83, 80, 77, 74, 72, 69,
+		66, 63, 61, 58, 55, 52, 49, 47, 44, 41,
+		38, 36, 33, 30, 27, 24, 22, 19, 16, 13,
+		11, 8, 5, 2, 0, -1
+	};
+	
+	int charge = 0;
+	int i;
+	
+	if (BattIn < 3.0) {
+		for (i = 0; onlineC[i] > 0; i++) {
+			if (BattIn >= onlineP[i]) {
+				charge = onlineC[i];
+				break;
+			}
+		}
+	} else {
+		double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+		double battV = BattIn / (nomBattV / 12);
+		
+		for (i = 0; offlineC[i] > 0; i++) {
+			if (BattIn >= offlineP[i]) {
+				charge = offlineC[i];
+				break;
+			}
+		}
+	}
+	return charge;
+}
 
 /*
  * Do whatever we think is needed when we read a battery voltage from the UPS.
@@ -88,6 +144,27 @@ static const struct {
  */
 static double blazer_battery(const char *ptr, char **endptr)
 {
+	if (ablerex_ext_command > -1) {
+		double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+		double BattV = strtod(ptr, endptr);
+		if (ablerexQ5Vb > -1) {
+			batt.volt.act = ablerexQ5Vb * nomBattV / 1200;
+		} else {
+			if (BattV > 3.0) {
+				batt.volt.act = BattV;
+			} else {
+				batt.volt.act = BattV * 6 * nomBattV / 12;
+			}
+		}
+		if (BattV > 3.0) {
+			BattV = BattV / (nomBattV / 12);
+		}		
+		double BattP = ablerex_battery_charge(BattV);
+		dstate_setinfo("battery.charge", "%.0f", BattP);
+		
+		return batt.volt.act;
+	}
+	
 	batt.volt.act = batt.packs * strtod(ptr, endptr);
 
 	if ((!getval("runtimecal") || !dstate_getinfo("battery.charge")) &&
@@ -161,6 +238,56 @@ static double blazer_packs(const char *ptr, char **endptr)
 	return batt.volt.nom;
 }
 
+static int ablerex_status()
+{
+	int funcsupport = 0;
+	int Q5_Vbc = 0;
+	
+	char	buf[SMALLBUF];
+        if (blazer_command("Q5\r", buf, sizeof(buf)) < 1) {
+                upsdebugx(2, "%s: short reply", __func__);
+        }
+        if ((buf[0] == '(') && (buf[21] == '\r')) {
+			funcsupport += 1;
+            int Q5_Fout = (unsigned char)buf[1] * 256 + (unsigned char)buf[2];
+            int Q5_Vb = (unsigned char)buf[7] * 256 + (unsigned char)buf[8];
+            Q5_Vbc = (unsigned char)buf[9] * 256 + (unsigned char)buf[10];
+            int Q5_InvW = (unsigned char)buf[11] * 256 + (unsigned char)buf[12];
+            int Q5_Err = (unsigned char)buf[13] * 256 + (unsigned char)buf[14];
+            int Q5_O_Cur = (unsigned char)buf[15] * 256 + (unsigned char)buf[16];
+			ablerexQ5Vb = Q5_Vb;
+            dstate_setinfo("output.frequency", "%.1f", 0.1*Q5_Fout);
+            dstate_setinfo("ups.alarm", "%d", Q5_Err);
+            dstate_setinfo("output.current", "%.1f", 0.1*Q5_O_Cur);
+            upsdebugx(2, "Q5: %.1f %d %.1f", 0.1*Q5_Fout, Q5_Err, 0.1*Q5_O_Cur);
+        }
+        if (blazer_command("At\r", buf, sizeof(buf)) < 1) {
+            upsdebugx(2, "%s: short reply", __func__);
+        }
+        if ((buf[0] == '(') && (buf[5] == '\r')) {
+			funcsupport += 2;
+            int At = (unsigned char)buf[1] * 65536 * 256 + (unsigned char)buf[2] * 65536 + (unsigned char)buf[3] * 256 + (unsigned char)buf[4];
+            upsdebugx(2, "At: %d %d %d %d %d %d", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+            upsdebugx(2, "At: %d", At);
+            dstate_setinfo("battery.runtime", "%d", At);
+        }
+        if (blazer_command("TR\r", buf, sizeof(buf)) < 1) {
+            upsdebugx(2, "%s: short reply", __func__);
+        }
+        if ((buf[0] == '#') && (buf[5] == '\r')){
+			funcsupport += 4;
+            char TR[8];
+            TR[0] = buf[1];
+            TR[1] = buf[2];
+            TR[2] = buf[3];
+            TR[3] = buf[4];
+            TR[4] = 0;
+
+            dstate_setinfo("ups.test.result", "%s", TR);
+            upsdebugx(2, "TR: %s", TR);
+        }
+	return Q5_Vbc;
+}
 
 static int blazer_status(const char *cmd)
 {
@@ -269,17 +396,35 @@ static int blazer_status(const char *cmd)
 		vi = strtod(dstate_getinfo("input.voltage"),  NULL);
 		vo = strtod(dstate_getinfo("output.voltage"), NULL);
 
-		if (vo < 0.5 * vi) {
-			upsdebugx(2, "%s: output voltage too low", __func__);
-		} else if (vo < 0.95 * vi) {
-			status_set("TRIM");
-		} else if (vo < 1.05 * vi) {
-			status_set("BYPASS");
-		} else if (vo < 1.5 * vi) {
-			status_set("BOOST");
-		} else {
-			upsdebugx(2, "%s: output voltage too high", __func__);
-		}
+        if (ablerex_ext_command > -1) {
+    		if (val[4] == '1') {/* UPS Type is Standby (0 is On_line) */
+    			if (vo < 0.5 * vi) {
+    				upsdebugx(2, "%s: output voltage too low", __func__);
+    			} else if (vo < 0.95 * vi) {
+    				status_set("TRIM");
+    			} else if (vo < 1.05 * vi) {
+    				status_set("BYPASS");
+    			} else if (vo < 1.5 * vi) {
+    				status_set("BOOST");
+    			} else {
+    				upsdebugx(2, "%s: output voltage too high", __func__);
+    			}
+    		} else {
+    			status_set("BYPASS");
+    		}
+        } else {
+    		if (vo < 0.5 * vi) {
+    			upsdebugx(2, "%s: output voltage too low", __func__);
+    		} else if (vo < 0.95 * vi) {
+    			status_set("TRIM");
+    		} else if (vo < 1.05 * vi) {
+    			status_set("BYPASS");
+    		} else if (vo < 1.5 * vi) {
+    			status_set("BOOST");
+    		} else {
+    			upsdebugx(2, "%s: output voltage too high", __func__);
+    		}        
+        }
 	}
 
 	if (val[5] == '1') {	/* Test in Progress */
@@ -287,10 +432,23 @@ static int blazer_status(const char *cmd)
 	}
 
 	alarm_init();
+	
+    if (ablerex_ext_command > -1) {
+    	if (val[3] == '1') {	/* Battery abnormal */
+    		status_set("RB");
+    	}
 
-	if (val[3] == '1') {	/* UPS Failed */
-		alarm_set("UPS selftest failed!");
-	}
+    	double vout = strtod(dstate_getinfo("output.voltage"), NULL);
+    	
+    	if (vout < 50.0) {
+    		status_set("OFF");
+    	}
+    } else {
+    	if (val[3] == '1') {	/* UPS Failed */
+    		alarm_set("UPS selftest failed!");
+    	}    
+    }
+	
 
 	if (val[6] == '1') {	/* Shutdown Active */
 		alarm_set("Shutdown imminent!");
@@ -369,6 +527,56 @@ static int blazer_rating(const char *cmd)
 	return 0;
 }
 
+static int ablerex_rating(const char *cmd)
+{
+	const struct {
+		const char	*var;
+		const char	*fmt;
+		double		(*conv)(const char *, char **);
+	} rating[] = {
+		{ "output.voltage.nominal", "%.1f", strtod },
+		{ "output.current.nominal", "%.0f", strtod },
+		{ "battery.voltage.nominal", "%.1f", strtod },
+		{ "output.frequency.nominal", "%.1f", strtod },
+		{ NULL }
+	};
+
+	char	buf[SMALLBUF], *val, *last = NULL;
+	int	i;
+
+	/*
+	 * > [F\r]
+	 * < [#220.0 000 024.0 50.0\r]
+	 *    0123456789012345678901
+	 *    0         1         2
+	 */
+	if (blazer_command(cmd, buf, sizeof(buf)) < 22) {
+		upsdebugx(2, "%s: short reply", __func__);
+		return -1;
+	}
+
+	if (buf[0] != '#') {
+		upsdebugx(2, "%s: invalid start character [%02x]", __func__, buf[0]);
+		return -1;
+	}
+
+	for (i = 0, val = strtok_r(buf+1, " ", &last); rating[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
+
+		if (!val) {
+			upsdebugx(2, "%s: parsing failed", __func__);
+			return -1;
+		}
+
+		if (strspn(val, "0123456789.") != strlen(val)) {
+			upsdebugx(2, "%s: non numerical value [%s]", __func__, val);
+			continue;
+		}
+
+		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
+	}
+
+	return 0;
+}
 
 static int blazer_vendor(const char *cmd)
 {
@@ -683,11 +891,43 @@ static void blazer_initbattery(void)
 	}
 }
 
+static void ablerex_initbattery(void)
+{
+	const char	*val;
+	
+	int Q5_Vbc = ablerex_status();
+	
+	/* If no values were provided by the user in ups.conf, try to guesstimate
+	 * battery.charge, but announce it! */
+	if ((batt.volt.nom != 1) && ((batt.volt.high == -1) || (batt.volt.low == -1))) {
+		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
+
+		/* Basic formula, which should cover most cases */
+		
+		double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+		if (Q5_Vbc > 0) {
+			batt.volt.low = Q5_Vbc * nomBattV / 1200;
+		} else {
+			batt.volt.low = 960 * nomBattV / 1200;
+		}
+		batt.volt.high = 1365 * nomBattV / 1200;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+		
+		upslogx(LOG_INFO, "Using 'ablerex_ext' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+	}
+
+	return;
+}
 
 void blazer_initinfo(void)
 {
 	const char	*protocol = getval("protocol");
 	int	retry;
+	const char	*valv;
+	const char	*valp;
 
 	for (proto = 0; command[proto].status; proto++) {
 
@@ -722,12 +962,27 @@ void blazer_initinfo(void)
 		fatalx(EXIT_FAILURE, "No supported UPS detected");
 	}
 
+	valv = dstate_getinfo("ups.vendorid");
+	valp = dstate_getinfo("ups.productid");
+	if ((!strcasecmp(valv, "ffff"))
+	 && (!strcasecmp(valp, "0000"))) {
+		ablerex_ext_command = 1;
+	}
+	if ((!strcasecmp(valv, "1cb0"))
+	 && (!strcasecmp(valp, "0035"))) {
+		ablerex_ext_command = 1;
+	}
+	
 	if (command[proto].rating && !testvar("norating")) {
 		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
-
-			ret = blazer_rating(command[proto].rating);
+			
+			if (ablerex_ext_command > -1) {
+				ret = ablerex_rating(command[proto].rating);
+			} else {
+				ret = blazer_rating(command[proto].rating);
+			}
 			if (ret < 0) {
 				upsdebugx(1, "Rating read %d failed", retry);
 				continue;
@@ -762,7 +1017,11 @@ void blazer_initinfo(void)
 		}
 	}
 
-	blazer_initbattery();
+	if (ablerex_ext_command > -1) {
+		ablerex_initbattery();
+	} else {
+		blazer_initbattery();
+	}
 
 	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
 	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
@@ -799,6 +1058,10 @@ void upsdrv_updateinfo(void)
 		}
 
 		return;
+	}
+	
+	if (ablerex_ext_command > -1) {
+		ablerex_status();
 	}
 
 	if (getval("runtimecal")) {

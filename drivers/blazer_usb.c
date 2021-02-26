@@ -323,6 +323,76 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 	return snprintf(buf, buflen, "%s", cmd);
 }
 
+static int ablerex_command(const char *cmd, char *buf, size_t buflen)
+{
+	int	i;
+	int	len;
+	char	tmp[64];
+	char    tmpryy[64];
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+
+	int	retry;
+
+
+	for (retry = 0; retry < 3; retry++) {
+		int	ret;
+
+
+		tmp[0] = 0x05;
+		tmp[1] = 0;
+		tmp[2] = 1 + (char)strcspn(cmd, "\r");
+		for (int iii = 0 ; iii < tmp[2] ; iii++)
+		{
+			tmp[3+iii] = cmd[iii];
+		}
+		ret = usb_control_msg(udev, 0x21, 0x09, 0x305, 0, &tmp, 47, 1000);
+
+
+		upsdebugx(3, "R11 read: %s", ret ? usb_strerror() : "timeout");
+
+		usleep(500000);
+		tmpryy[0] = 0x05;
+		ret = usb_control_msg(udev, 0xA1, 0x01, 0x305, 0, &tmpryy, 47, 1000);
+		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
+
+		len = 0;
+		for (int idx = 0 ; idx < 47 ; idx++)
+		{
+			buf[idx] = tmpryy[idx];
+			if (tmpryy[idx] == '\r')
+			{
+				len = idx;
+				break;
+			}
+		}
+		upsdebugx(3, "R3 read%d: %.*s", len, len, tmpryy);
+
+		if (len > 0) {
+			len ++;
+		}
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			return ret;
+		}
+
+		upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+		if ((!strcasecmp(cmd, "Q1\r")) && len != 47) continue;
+		if ((!strcasecmp(cmd, "I\r")) && len != 39) continue;
+		if ((!strcasecmp(cmd, "F\r")) && len != 22) continue;
+		if ((!strcasecmp(cmd, "Q5\r")) && len != 22) continue;
+
+		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+		return len;
+	}
+
+	return 0;
+
+
+}
+
 
 static void *cypress_subdriver(USBDevice_t *device)
 {
@@ -359,11 +429,20 @@ static void *phoenix_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void *ablerex_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+		
+	subdriver_command = &ablerex_command;
+	return NULL;
+}
+
 
 static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0xffff, 0x0000), &ablerex_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0x1cb0, 0x0035), &ablerex_subdriver },	/* Ablerex Dk+ 6kVA USB */
 	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
 	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
@@ -517,6 +596,7 @@ const struct subdriver_t {
 	{ "phoenix", &phoenix_command },
 	{ "ippon", &ippon_command },
 	{ "krauler", &krauler_command },
+	{ "ablerex", &ablerex_command },
 	{ NULL, NULL }
 };
 #endif	/* TESTING */
