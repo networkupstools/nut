@@ -35,8 +35,8 @@
 		<lookup_info oid="4" value="high humidity critical!"/>
 	</lookup>
 	<lookup name="pw_ambient_drycontacts_state_info">
-		<lookup_info oid="0" value="active"/>
-		<lookup_info oid="1" value="inactive"/>
+		<lookup_info oid="0" value="inactive"/>
+		<lookup_info oid="1" value="active"/>
 	</lookup>
 	<lookup name="pw_alarm_ob">
 		<lookup_info oid="1" value="OB"/>

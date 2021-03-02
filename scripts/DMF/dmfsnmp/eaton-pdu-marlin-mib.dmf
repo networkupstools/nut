@@ -77,8 +77,8 @@
 		<lookup_info oid="4" value="high voltage critical!"/>
 	</lookup>
 	<lookup name="marlin_ambient_drycontacts_state_info">
-		<lookup_info oid="0" value="active"/>
-		<lookup_info oid="1" value="inactive"/>
+		<lookup_info oid="0" value="inactive"/>
+		<lookup_info oid="1" value="active"/>
 	</lookup>
 	<lookup name="marlin_outlet_group_type_info">
 		<lookup_info oid="0" value="unknown"/>
