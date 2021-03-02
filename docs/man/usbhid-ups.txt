@@ -26,6 +26,7 @@ At the present time, usbhid-ups supports:
  - the newer Eaton USB models,
  - all MGE USB models,
  - all Dell USB models,
+ - all AMETEK Powervar UPM models,
  - some APC models,
  - some Belkin models,
  - some Cyber Power Systems models,
