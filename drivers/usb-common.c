@@ -377,6 +377,12 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 
 	r = match_regex(data->regex[6], hd->Device);
 	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Device", hd->Device, data->regex[6]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Device", hd->Device);
 		return r;
 	}
 	return 1;
