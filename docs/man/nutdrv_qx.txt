@@ -150,7 +150,7 @@ MASTERGUARD PROTOCOL
 
 *slave_addr =* 'value'::
 Make the claim function verify it's talking to the specified 'slave address' (*ups.id*).
-Safeguard agains talking to the wrong of several identical UPSen on the same USB bus.
+Safeguard against talking to the wrong one of several identical UPSen on the same USB bus.
 Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
 
 
