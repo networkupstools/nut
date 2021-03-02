@@ -79,6 +79,8 @@ This regular expression is used to match the USB bus (as seen in
 
 This regular expression is used to match the USB device (as seen in
 `/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
+Note that device numbers need not to be stable across re-boots or
+device re-plugging.
 
 *product*::
 
