@@ -326,21 +326,18 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 {
 	int	i;
-    int iii;
+	int	iii;
 	int	len;
-    int idx;
+	int	idx;
 	char	tmp[64];
-	char    tmpryy[64];
+	char	tmpryy[64];
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
-
 	int	retry;
-
 
 	for (retry = 0; retry < 3; retry++) {
 		int	ret;
-
 
 		tmp[0] = 0x05;
 		tmp[1] = 0;
@@ -350,7 +347,6 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 			tmp[3+iii] = cmd[iii];
 		}
 		ret = usb_control_msg(udev, 0x21, 0x09, 0x305, 0, &tmp, 47, 1000);
-
 
 		upsdebugx(3, "R11 read: %s", ret ? usb_strerror() : "timeout");
 
@@ -374,6 +370,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 		if (len > 0) {
 			len ++;
 		}
+
 		if (ret <= 0) {
 			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 			return ret;
@@ -391,8 +388,6 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return 0;
-
-
 }
 
 
@@ -434,7 +429,7 @@ static void *phoenix_subdriver(USBDevice_t *device)
 static void *ablerex_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
-		
+
 	subdriver_command = &ablerex_command;
 	return NULL;
 }
