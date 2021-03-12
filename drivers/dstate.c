@@ -36,7 +36,7 @@
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[LARGEBUF];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
 	static cmdlist_t *cmdhead = NULL;
@@ -1061,10 +1061,20 @@ void alarm_init(void)
 
 void alarm_set(const char *buf)
 {
+	int ret;
 	if (strlen(alarm_buf) > 0) {
-		snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	} else {
-		snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+	}
+
+	if (ret < 0) {
+		/* Should we also try to print the potentially unusable buf? likely not */
+		upslogx(LOG_ERR, "%s: error setting alarm_buf", __func__);
+	}
+
+	if (ret > sizeof(alarm_buf)) {
+		upslogx(LOG_WARNING, "%s: result was truncated while setting alarm_buf", __func__);
 	}
 }
 
