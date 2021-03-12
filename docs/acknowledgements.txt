@@ -117,6 +117,10 @@ list, and the rest of the information is available via the
 link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
 archives].
 
+- link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed
+the ablerex subdriver for blazer_usb, handling Ablerex 625L and Ablerex Dk+
+6kVA models.
+
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -172,10 +176,6 @@ in June 2003.
 and a UPStation GXT2 with the Web/SNMP card for development of the liebert
 driver and expansion of the existing snmp-ups driver.
 Liebert has since been acquired by link:http://www.emerson.com[Emerson].
-
-- link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed
-the ablerex subdriver for blaser_usb, handling Ablerex 625L and Ablerex Dk+
-6kVA models.
 
 NOTE: If a company or individual isn't listed here, then we probably don't
 have enough information about the situation. Developers are kindly requested
