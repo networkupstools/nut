@@ -841,7 +841,8 @@ Example configuration
 For the examples in this section, we will use a server with four power supplies
 installed.
 
-Two UPS, 'Alpha' and 'Beta', are each driving two of the power supplies.
+Two UPSes, 'Alpha' and 'Beta', are each driving two of the power supplies
+(by adding up, we know about the four power supplies of the current system).
 This means that either 'Alpha' *or* 'Beta' can totally shut down and the
 server will be able to keep running.
 
@@ -866,7 +867,8 @@ on battery and low battery).
 NOTE: we could have used a 'Power Value' of 1 for both UPS, and MINSUPPLIES
 set to 1 too. These values are purely arbitrary, so you are free to use your
 own rules. Here, we have linked these values to the number of power supplies
-that each UPS is feeding (2).
+that each UPS is feeding (2) since this maps better to physical topology and
+allows to throw a third or fourth UPS into the mix without much headache.
 
 
 Multiple UPS shutdowns ordering
