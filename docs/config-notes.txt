@@ -578,6 +578,10 @@ In such cases, refer to the User Manual:
 - <<BigServers,typical setups for big servers>>,
 - <<DataRoom,typical setups for data rooms>>.
 
+Note that the power value may also be 0 for a monitoring system which
+only observes the UPS status but is not impacted by its power events,
+and so does not shut down when the UPS does.
+
 References: linkman:upsmon[8], linkman:upsmon.conf[5]
 
 Define a SHUTDOWNCMD for upsmon
