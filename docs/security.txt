@@ -691,7 +691,7 @@ confpath and the state path.  I recommend deleting the 'real'
 You can also do this with your confpath and point `/usr/local/ups/etc` (or
 equivalent on your system) at `/chroot/nut/usr/local/ups/etc` unless you're
 worried about something hurting the files inside that directory.  In that
-case, you should maintain a 'master' copy and push it into the chroot path
+case, you should maintain a 'golden' copy and push it into the chroot path
 after making changes.
 
 The `upsdrvctl` itself does not chroot, so the `ups.conf` still needs to be
