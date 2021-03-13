@@ -98,6 +98,13 @@
 # reduce the 'snmp-ups' or 'netxml-ups' driver polling rate, or dedicate a
 # "master" server and set up the rest as "slave" systems.
 #
+# In case of such large setups as mentioned above, beware also that shutdown
+# times of the rack done all at once can substantially differ from smaller
+# scale experiments with single-server shutdowns, since systems can compete
+# for shared storage and other limited resources as they go down (and also
+# not everyone may safely shut down simultaneously - e.g. a NAS or DB server
+# would better go down after all its clients).
+#
 # Examples:
 #
 # MONITOR myups@bigserver 1 monmaster blah master
