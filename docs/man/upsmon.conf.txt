@@ -130,16 +130,26 @@ without shutting down when it goes critical.
 The 'username' and 'password' on this line must match an entry in
 the `upsd` server system's linkman:upsd.users[5] file.
 
-If your username is "upswired" and your password is "blah", the
-MONITOR line might look like this:
+If your username is "observer" and your password is "abcd", the MONITOR
+line might look like this (likely on a remote subordinate system):
 
-+MONITOR myups@bigserver 1 upswired blah manager+
++MONITOR myups@bigserver 1 observer abcd subordinate+
 
 Meanwhile, the `upsd.users` on `bigserver` would look like this:
 
+	[observer]
+		password = abcd
+		upsmon subordinate
+	
 	[upswired]
 		password = blah
 		upsmon manager
+
+And the copy of upsmon on that bigserver would run with the manager
+configuration:
+
++MONITOR myups@bigserver 1 upswired blah manager+
+
 
 The 'type' refers to the relationship with linkman:upsd[8].  It can
 be either "manager" or "subordinate".  See linkman:upsmon[8] for more
