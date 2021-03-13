@@ -292,7 +292,13 @@ first have disconnected or a critical threshold was passed.
 
 If your UPS is plugged directly into a system's serial or USB port, the
 `upsmon` process on that system should define its relation to that UPS
-as a manager.
+as a manager. It may be more complicated for higher-end UPSes with a
+shared network management capability (typically via SNMP) or several
+serial/USB ports that can be used simultaneously, and depends on what
+vendors and drivers implement. Setups with several competing managers
+(for redundancy) are technically possible, if each one runs its own
+full stack of NUT, but results can be random (currently NUT does not
+provide a way to coordinate several managers of the same device).
 
 For a typical home user, there's one computer connected to one UPS.
 That means you would run on the same computer the whole NUT stack --
