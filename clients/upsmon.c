@@ -672,7 +672,10 @@ static int is_ups_critical(utype_t *ups)
 {
 	time_t	now;
 
-	/* FSD = the master is forcing a shutdown */
+	/* FSD = the master is forcing a shutdown, or a driver forwarded the flag
+	 * from a smarter UPS depending on vendor protocol, ability and settings
+	 * (e.g. is charging but battery too low to guarantee safety to the load)
+	 */
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
 
