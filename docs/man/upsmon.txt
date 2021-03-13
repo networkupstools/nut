@@ -419,9 +419,13 @@ by calling upsmon again to set the flag, i.e.:
 
 +upsmon -c fsd+
 
-After that, the master and the slaves will do their usual shutdown sequence
-as if the battery had gone critical.  This is much easier on your UPS
-equipment, and it beats crawling under a desk to find the plug.
+After that, the master and the slaves will do their usual shutdown
+sequence as if the battery had gone critical, while you can time how long
+it takes for them.  This is much easier on your UPS equipment, and it beats
+crawling under a desk to find the plug.
+
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the
+systems would shut down at this point, without actually disrupting their work.
 
 FILES
 -----
