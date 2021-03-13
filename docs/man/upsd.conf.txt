@@ -104,7 +104,7 @@ When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
 Certificates are stored in a dedicated database (data split in 3 files).
 Specify the path of the database directory.
-    
+
 "CERTIDENT 'certificate name' 'database password'"::
 
 When compiled with SSL support with NSS backend, you can specify the

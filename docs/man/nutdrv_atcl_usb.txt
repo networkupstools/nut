@@ -7,7 +7,7 @@ nutdrv_atcl_usb - Driver for 'ATCL FOR UPS' equipment
 
 NOTE
 ----
-This man page only documents the specific features of the nutdrv_atcl_usb 
+This man page only documents the specific features of the nutdrv_atcl_usb
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -44,7 +44,7 @@ The time between the shutdown command and removal of power seems to be fixed at
 in the shutdown procedure (in case some services take longer than others to
 clean up).
 
-Most contact-closure UPSes will not power down the load if the line power 
+Most contact-closure UPSes will not power down the load if the line power
 is present. This can create a race when using slave linkman:upsmon[8] systems.
 See the linkman:upsmon[8] man page for more information. The solution to this
 problem is to upgrade to a smart protocol UPS of some kind that allows

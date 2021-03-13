@@ -25,18 +25,18 @@ CONFIGURATION DIRECTIVES
 upsmon allows a UPS to go missing for this many seconds before declaring
 it "dead".  The default is 15 seconds.
 +
-upsmon requires a UPS to provide status information every few seconds 
+upsmon requires a UPS to provide status information every few seconds
 (see POLLFREQ and POLLFREQALERT) to keep things updated.  If the status
-fetch fails, the UPS is marked stale.  If it stays stale for more than 
+fetch fails, the UPS is marked stale.  If it stays stale for more than
 DEADTIME seconds, the UPS is marked dead.
 +
 A dead UPS that was last known to be on battery is assumed to have
-changed to a low battery condition.  This may force a shutdown if it is 
+changed to a low battery condition.  This may force a shutdown if it is
 providing a critical amount of power to your system.  This seems
 disruptive, but the alternative is barreling ahead into oblivion and
 crashing when you run out of power.
 +
-Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT. 
+Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT.
 Otherwise,  you'll have "dead" UPSes simply because upsmon isn't polling
 them quickly enough.  Rule of thumb: take the larger of the two POLLFREQ
 values, and multiply by 3.
@@ -51,8 +51,8 @@ If you need to let your users do something in between those events,
 increase this number.  Remember, at this point your UPS battery is
 almost depleted, so don't make this too big.
 +
-Alternatively, you can set this very low so you don't wait around when 
-it's time to shut down.  Some UPSes don't give much warning for low 
+Alternatively, you can set this very low so you don't wait around when
+it's time to shut down.  Some UPSes don't give much warning for low
 battery and will require a value of 0 here for a safe shutdown.
 +
 NOTE: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
@@ -126,7 +126,7 @@ doesn't actually supply power to this system.  This is useful when you
 want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
-The 'username' and 'password' on this line must match an entry 
+The 'username' and 'password' on this line must match an entry
 in that system's linkman:upsd.users[5].  If your username is "monmaster"
 and your password is "blah", the MONITOR line might look like this:
 
@@ -154,7 +154,7 @@ seconds.
 
 upsmon calls this to send messages when things happen.
 +
-This command is called with the full text of the message as one 
+This command is called with the full text of the message as one
 argument.  The environment string NOTIFYTYPE will contain the type
 string of whatever caused this event to happen.
 +
@@ -211,13 +211,13 @@ SHUTDOWN;; The system is being shutdown
 
 REPLBATT;; The UPS battery is bad and needs to be replaced
 
-NOCOMM;; A UPS is unavailable (can't be contacted for monitoring) 
+NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 
 *NOTIFYFLAG* 'type' 'flag'[\+'flag'][+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)
 via /bin/wall and writes to the syslog when things happen.  You can
-change this. 
+change this.
 +
 Examples:
 +
@@ -276,7 +276,7 @@ process.  This usually does not work well on contact-closure UPSes that
 use the genericups driver.
 +
 See the config-notes.txt file in the docs subdirectory for more information.
-Refer to the section: 
+Refer to the section:
 [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
 or refer to the online version.
 
@@ -306,7 +306,7 @@ privileges and an impossible password.
 Then, tell upsmon to run as that user, and make `upsmon.conf` readable by it.
 Your reloads will work, and your config file will stay secure.
 +
-This file should not be writable by the upsmon user, as it would be 
+This file should not be writable by the upsmon user, as it would be
 possible to exploit a hole, change the SHUTDOWNCMD to something
 malicious, then wait for upsmon to be restarted.
 
@@ -355,7 +355,7 @@ must be secure.
 
 *CERTVERIFY* '0 | 1'::
 
-When compiled with SSL support, make upsmon verify all connections with 
+When compiled with SSL support, make upsmon verify all connections with
 certificates.
 +
 Without this, there is no guarantee that the upsd is the right host.
@@ -364,7 +364,7 @@ This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
 +
-When compiled with NSS support of SSL, can be overridden for host 
+When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
 *FORCESSL* '0 | 1'::
@@ -377,7 +377,7 @@ that nobody can sniff your sessions without a large effort. Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 +
-When compiled with NSS support of SSL, can be overridden for host 
+When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
 SEE ALSO
