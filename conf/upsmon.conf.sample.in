@@ -112,7 +112,7 @@
 # put "1" in this field.
 #
 # Large/expensive server type systems usually have more, and can run with
-# a few missing.  The HP NetServer LH4 can run with 2 out of 4, for example,
+# a few missing.  Some of these can run with 2 out of 4, for example,
 # so you'd set that to 2.  The idea is to keep the box running as long
 # as possible, right?
 #
