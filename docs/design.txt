@@ -135,11 +135,11 @@ This scenario requires some configuration, obviously:
 
 	[monuser]
 		password = somepass
-		upsmon master
+		upsmon manager
 
 4. upsmon is set to monitor this UPS in upsmon.conf.
 
-	MONITOR myups@localhost 1 monuser somepass master
+	MONITOR myups@localhost 1 monuser somepass manager
 
 5. upsmon is set to EXEC the NOTIFYCMD for the ONBATT condition in
    upsmon.conf.

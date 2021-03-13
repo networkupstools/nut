@@ -43,7 +43,7 @@ values, and multiply by 3.
 
 *FINALDELAY* 'seconds'::
 
-When running in master mode, upsmon waits this long after sending the
+When running in manager mode, upsmon waits this long after sending the
 NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
 runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
 +
@@ -55,28 +55,29 @@ Alternatively, you can set this very low so you don't wait around when
 it's time to shut down.  Some UPSes don't give much warning for low
 battery and will require a value of 0 here for a safe shutdown.
 +
-NOTE: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
-the master will give up waiting for the slave to disconnect.
+NOTE: If FINALDELAY on the subordinate is greater than HOSTSYNC on the
+manager, the manager will give up waiting for that subordinate upsmon
+to disconnect.
 
 *HOSTSYNC* 'seconds'::
 
-upsmon will wait up to this many seconds in master mode for the slaves
+upsmon will wait up to this many seconds in manager mode for the subordinates
 to disconnect during a shutdown situation.  By default, this is 15
 seconds.
 +
 When a UPS goes critical (on battery + low battery, or "FSD": forced
-shutdown), the slaves are supposed to disconnect and shut down right
-away.  The HOSTSYNC timer keeps the master upsmon from sitting there
-forever if one of the slaves gets stuck.
+shutdown), the subordinate systems are supposed to disconnect and shut
+down right away.  The HOSTSYNC timer keeps the manager upsmon from sitting
+there forever if one of the subordinates gets stuck.
 +
-This value is also used to keep slave systems from getting stuck if
-the master fails to respond in time.  After a UPS becomes critical,
-the slave will wait up to HOSTSYNC seconds for the master to set the
-FSD flag.  If that timer expires, the slave will assume that the master
-is broken and will shut down anyway.
+This value is also used to keep subordinate systems from getting stuck if
+the manager fails to respond in time.  After a UPS becomes critical, the
+subordinate will wait up to HOSTSYNC seconds for the manager to set the
+FSD flag.  If that timer expires, the subordinate will assume that the
+manager (or communications path to it) is broken and will shut down anyway.
 +
-This keeps the slaves from shutting down during a short-lived status
-change to "OB LB" that the slaves see but the master misses.
+This keeps the subordinates from shutting down during a short-lived status
+change to "OB LB" and back that the subordinates see but the manager misses.
 
 *MINSUPPLIES* 'num'::
 
@@ -126,22 +127,24 @@ doesn't actually supply power to this system.  This is useful when you
 want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
-The 'username' and 'password' on this line must match an entry
-in that system's linkman:upsd.users[5].  If your username is "monmaster"
-and your password is "blah", the MONITOR line might look like this:
+The 'username' and 'password' on this line must match an entry in
+the `upsd` server system's linkman:upsd.users[5] file.
 
-+MONITOR myups@bigserver 1 monmaster blah master+
+If your username is "upswired" and your password is "blah", the
+MONITOR line might look like this:
+
++MONITOR myups@bigserver 1 upswired blah manager+
 
 Meanwhile, the `upsd.users` on `bigserver` would look like this:
 
-	[monmaster]
-		password  = blah
-		upsmon master #  (or slave)
+	[upswired]
+		password = blah
+		upsmon manager
 
 The 'type' refers to the relationship with linkman:upsd[8].  It can
-be either "master" or "slave".  See linkman:upsmon[8] for more information
-on the meaning of these modes.  The mode you pick here also goes in
-the `upsd.users` file, as seen in the example above.
+be either "manager" or "subordinate".  See linkman:upsmon[8] for more
+information on the meaning of these modes.  The mode you pick here
+also goes in the `upsd.users` file, as seen in the example above.
 
 *NOCOMMWARNTIME* 'seconds'::
 
@@ -201,7 +204,7 @@ ONBATT;; UPS is on battery
 
 LOWBATT;; UPS is on battery and has a low battery (is critical)
 
-FSD;; UPS is being shutdown by the master (FSD = "Forced Shutdown")
+FSD;; UPS is being shutdown by the manager (FSD = "Forced Shutdown")
 
 COMMOK;; Communications established with the UPS
 
@@ -266,12 +269,12 @@ also apply here.
 
 *POWERDOWNFLAG* 'filename'::
 
-upsmon creates this file when running in master mode when the UPS needs
+upsmon creates this file when running in manager mode when the UPS needs
 to be powered off.  You should check for this file in your shutdown
 scripts and call `upsdrvctl shutdown` if it exists.
 +
-This is done to forcibly reset the slaves, so they don't get stuck at
-the "halted" stage even if the power returns during the shutdown
+This is done to forcibly reset the subordinate systems, so they don't get
+stuck at the "halted" stage even if the power returns during the shutdown
 process.  This usually does not work well on contact-closure UPSes that
 use the genericups driver.
 +
@@ -313,10 +316,10 @@ malicious, then wait for upsmon to be restarted.
 *SHUTDOWNCMD* 'command'::
 
 upsmon runs this command when the system needs to be brought down.  If
-it is a slave, it will do that immediately whenever the current overall
-power value drops below the MINSUPPLIES value above.
+it is a subordinate, it will do that immediately whenever the current
+overall power value drops below the MINSUPPLIES value above.
 +
-When upsmon is a master, it will allow any slaves to log out before
+When upsmon is a manager, it will allow any subordinates to log out before
 starting the local shutdown procedure.
 +
 Note that the command needs to be one element in the config file.  If

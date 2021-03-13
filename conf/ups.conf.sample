@@ -30,13 +30,14 @@
 #
 # If you have a UPS called snoopy, your section header would be "[snoopy]".
 # On a system called "doghouse", the line in your upsmon.conf to monitor
-# it would look something like this:
+# and manage it would look something like this:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword master
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword manager
 #
-# It might look like this if monitoring in slave mode:
+# It might look like this if monitoring in subordinate mode from a different
+# system:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword slave
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword subordinate
 #
 # Configuration directives
 # ------------------------

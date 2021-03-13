@@ -226,7 +226,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	else if (!strcasecmp(cmdname, "load.off"))
 	{
 		/* You do realize this will kill power to ourself.  Would probably only
-		 *   be useful for killing power for a slave computer */
+		 *   be useful for killing power for a subordinate computer */
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );

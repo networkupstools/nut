@@ -451,24 +451,25 @@ The exact behavior depends on the specific device, and is related to:
    - battery.charge and battery.charge.low
    - battery.runtime and battery.runtime.low
 
-3. The upsmon master notices and sets "FSD" -- the "forced shutdown"
-   flag to tell all slave systems that it will soon power down the load.
+3. The upsmon manager notices and sets "FSD" -- the "forced shutdown"
+   flag to tell all subordinate systems that it will soon power down
+   the load.
 +
-(If you have no slaves, skip to step 6)
+(If you have no subordinate systems, skip to step 6)
 
-4. upsmon slave systems see "FSD" and:
+4. upsmon subordinate systems see "FSD" and:
 
    - generate a NOTIFY_SHUTDOWN event
    - wait FINALDELAY seconds -- typically 5
    - call their SHUTDOWNCMD
    - disconnect from upsd
 
-5. The upsmon master system waits up to HOSTSYNC seconds (typically 15)
-   for the slaves to disconnect from upsd.  If any are connected after
-   this time, upsmon stops waiting and proceeds with the shutdown
-   process.
+5. The upsmon manager system waits up to HOSTSYNC seconds (typically 15)
+   for the subordinate systems to disconnect from upsd.  If any are still
+   connected after this time, upsmon manager stops waiting and proceeds
+   with the shutdown process.
 
-6. The upsmon master:
+6. The upsmon manager:
 
    - generates a NOTIFY_SHUTDOWN event
    - waits FINALDELAY seconds -- typically 5
@@ -482,7 +483,7 @@ The exact behavior depends on the specific device, and is related to:
    POWERDOWNFLAG, finds it, and tells the UPS driver(s) to power off
    the load.
 
-9. The system loses power.
+9. All the systems lose power.
 
 10. Time passes.  The power returns, and the UPS switches back on.
 
@@ -504,8 +505,8 @@ authenticate.  This example is for a user called "monuser":
 
 	[monuser]
 		password = mypass
-		upsmon master
-		# or upsmon slave
+		upsmon manager
+		# or upsmon subordinate
 
 References: linkman:upsd[8], linkman:upsd.users[5]
 
@@ -559,21 +560,22 @@ Create a MONITOR directive for upsmon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Edit upsmon.conf and create a MONITOR line with the UPS definition
-(<upsname>@<hostname>), username and password from the <<NUT_user_creation, NUT user creation>>
-step, and the master or slave setting.
+(<upsname>@<hostname>), username and password from the
+<<NUT_user_creation, NUT user creation>> step, and the
+manager or subordinate setting.
 
-If it's the master (i.e., it's connected to this UPS directly):
+If it's the manager (i.e., it's connected to this UPS directly):
 
-	MONITOR myupsname@mybox 1 monuser mypass master
+	MONITOR myupsname@mybox 1 monuser mypass manager
 
-If it's just monitoring this UPS over the network, and some other system is the
-master:
+If it's just monitoring this UPS over the network, and some other
+system is the manager:
 
-	MONITOR myupsname@mybox 1 monuser mypass slave
+	MONITOR myupsname@mybox 1 monuser mypass subordinate
 
-The number "1" here is the power value.  This should always be set to 1 unless
-you have a very special (read: expensive) system with redundant power supplies.
-In such cases, refer to the User Manual:
+The number "1" here is the power value.  This should always be set
+to 1 unless you have a very special (read: expensive) system with
+redundant power supplies. In such cases, refer to the User Manual:
 
 - <<BigServers,typical setups for big servers>>,
 - <<DataRoom,typical setups for data rooms>>.
@@ -804,8 +806,8 @@ Once you identify a system's type, use this list to decide which of the
 programs need to be run for monitoring:
 
 - A: driver and upsd
-- B: upsmon (as slave)
-- C: driver, upsd, and upsmon (as master)
+- B: upsmon (in subordinate mode)
+- C: driver, upsd, and upsmon (as manager)
 
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
@@ -834,8 +836,8 @@ image:images/bigbox.png[]
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
-For the examples in this section, we will use a server with four power supplies
-installed.
+For the examples in this section, we will use a server with four power
+supplies installed and locally running the full NUT stack as the UPS manager.
 
 Two UPS, 'Alpha' and 'Beta', are each driving two of the power supplies.
 This means that either 'Alpha' *or* 'Beta' can totally shut down and the
@@ -843,8 +845,8 @@ server will be able to keep running.
 
 The upsmon.conf configuration that reflect this is the following:
 
-	MONITOR ups-alpha@myhost 2 monuser mypass master
-	MONITOR ups-beta@myhost 2 monuser mypass master
+	MONITOR ups-alpha@myhost 2 monuser mypass manager
+	MONITOR ups-beta@myhost 2 monuser mypass manager
 	MINSUPPLIES 2
 
 With that configuration, upsmon will only shut down when both UPS reaches
@@ -852,8 +854,8 @@ a critical (on battery + low battery) condition, since 'Alpha' and 'Beta'
 provide the same power value.
 
 As an added bonus, this means you can move a running server from one UPS
-to another (for maintenance purpose for example) without bringing it down since
-the minimum power will be provided at all times.
+to another (for maintenance purpose for example) without bringing it down
+since the minimum sufficient power will be provided at all times.
 
 The MINSUPPLIES line tells upsmon that we need at least 2 power supplies
 to be receiving power from a good UPS (on line or on battery, just not

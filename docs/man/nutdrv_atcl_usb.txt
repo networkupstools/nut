@@ -36,19 +36,20 @@ devices, such as linkman:nutdrv_qx[8].
 BUGS
 ----
 The UPS returns the same code for "load power is off" as for "on line power".
-This condition will not be observed if the NUT master is powered by the UPS,
-but may be an issue if the UPS is monitored by a remote system.
+This condition will not be observed if the NUT `upsmon` in manager mode runs
+on the box powered by the UPS, but may be an issue if the UPS is monitored
+by a remote (subordinate) system.
 
 The time between the shutdown command and removal of power seems to be fixed at
 30 seconds. Ensure that the NUT shutdown script is invoked as late as possible
 in the shutdown procedure (in case some services take longer than others to
 clean up).
 
-Most contact-closure UPSes will not power down the load if the line power
-is present. This can create a race when using slave linkman:upsmon[8] systems.
-See the linkman:upsmon[8] man page for more information. The solution to this
-problem is to upgrade to a smart protocol UPS of some kind that allows
-detection and proper load cycling on command.
+Most contact-closure UPSes will not power down the load if the line power is
+present. This can create a race when using subordinate linkman:upsmon[8]
+systems. See the linkman:upsmon[8] man page for more information.
+The solution to this problem is to upgrade to a smart protocol UPS of some
+kind that allows detection and proper load cycling on command.
 
 AUTHORS
 -------

@@ -40,8 +40,9 @@ is drawing power from this UPS.
 The *nutclient_get_device_num_logins()* function retrieve the number of clients
 which have been logged for this device.
 
-The *nutclient_device_master()* function make sure that master-level
-functions like FSD are available if necessary.
+The *nutclient_device_master()* function make sure that manager-level
+functions like FSD are available if necessary. (Note: API change may be
+pending to rename/alias the deprecated function name)
 
 The *nutclient_device_forced_shutdown()* function sets the "forced shutdown" flag on the device.
 

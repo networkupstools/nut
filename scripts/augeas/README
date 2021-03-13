@@ -240,7 +240,7 @@ a.set(("/files/etc/nut/upsd.users/%s/instcmds" % user), "ALL")
 monuser = "monuser"
 monpasswd = "******"
 a.set(("/files/etc/nut/upsd.users/%s/password" % monuser), monpasswd)
-a.set(("/files/etc/nut/upsd.users/%s/upsmon" % monuser), "master")
+a.set(("/files/etc/nut/upsd.users/%s/upsmon" % monuser), "manager")
 
 # Generate upsmon.conf
 a.set("/files/etc/nut/upsmon.conf/MONITOR/system/upsname", device_name)
@@ -250,7 +250,7 @@ a.set("/files/etc/nut/upsmon.conf/MONITOR/system/upsname", device_name)
 a.set("/files/etc/nut/upsmon.conf/MONITOR/powervalue", "1")
 a.set("/files/etc/nut/upsmon.conf/MONITOR/username", monuser)
 a.set("/files/etc/nut/upsmon.conf/MONITOR/password", monpasswd)
-a.set("/files/etc/nut/upsmon.conf/MONITOR/type", "master")
+a.set("/files/etc/nut/upsmon.conf/MONITOR/type", "manager")
 
 # FIXME: glitch on the generated content
 a.set("/files/etc/nut/upsmon.conf/SHUTDOWNCMD", "/sbin/shutdown -h +0")

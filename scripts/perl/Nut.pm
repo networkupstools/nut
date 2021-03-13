@@ -164,7 +164,7 @@ sub _initialize {
 # Author: Kit Peters
   my $self = shift;
   my %arg = @_;
-  my $host = $arg{HOST}     || 'localhost'; # Host running master upsd
+  my $host = $arg{HOST}     || 'localhost'; # Host running manager upsd
   my $port = $arg{PORT}     || '3493'; # 3493 is IANA assigned port for NUT
   my $proto = $arg{PROTO}   || 'tcp'; # use tcp unless user tells us to
   my $user = $arg{USERNAME} || undef; # username passed to upsd

@@ -250,8 +250,8 @@ Just be sure to cancel this timer if you go back ONLINE before then.
 
 The best way to do this is to use the upsmon callback feature.  You can
 make upsmon set the "forced shutdown" (FSD) flag on the upsd so your
-slave systems shut down early too.  Just do something like this in your
-CMDSCRIPT:
+subordinate systems shut down early too.  Just do something like this
+in your CMDSCRIPT:
 
 	/sbin/upsmon -c fsd
 
@@ -262,8 +262,8 @@ link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy S
 (so `/sbin/upsmon`).
 
 It's not a good idea to call your system's shutdown routine directly
-from the CMDSCRIPT, since there's no synchronization with the slave
-systems hooked to the same UPS.  FSD is the master's way of saying
+from the CMDSCRIPT, since there's no synchronization with the subordinate
+systems hooked to the same UPS.  FSD is the manager's way of saying
 "we're shutting down *now* like it or not, so you'd better get ready".
 
 

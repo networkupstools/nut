@@ -22,7 +22,7 @@ OB, and LB.  See also linkman:genericups[8].
 BUGS
 ----
 Most contact-closure UPSes will not power down the load if the line power
-is present.  This can create a race when using slave linkman:upsmon[8]
+is present.  This can create a race when using subordinate linkman:upsmon[8]
 systems.  See the linkman:upsmon[8] man page for more information.
 
 The solution to both of these problems is to upgrade to a smart protocol

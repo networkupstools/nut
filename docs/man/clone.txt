@@ -75,8 +75,8 @@ socket that the "real" UPS driver is using. For example:
 
 IMPORTANT
 ---------
-Unlike a real UPS, you should *not* configure a upsmon master for this
-driver.  When a upsmon master sees the OB LB flags and tells the upsd server
+Unlike a real UPS, you should *not* configure a upsmon manager for this
+driver.  When a upsmon manager sees the OB LB flags and tells the upsd server
 it is OK to initiate the shutdown sequence, the server will latch the FSD
 status and it will not be possible to restart the systems connected without
 restarting the upsd server.
@@ -84,7 +84,7 @@ restarting the upsd server.
 This will be a problem if the power returns after the clone UPS initiated
 the shutdown sequence on it's outlet, but returns before the real UPS begins
 shutting down. The solution is in the clone driver, that will insert the
-FSD flag if needed without the help of a upsmon master.
+FSD flag if needed without the help of a upsmon manager.
 
 CAVEATS
 -------

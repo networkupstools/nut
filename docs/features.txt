@@ -180,9 +180,9 @@ driver, `upsd`, and `upsmon` running.
 image:images/advanced.png[]
 
 One UPS, multiple computers. Only one of them can actually talk to the UPS
-directly. That's where the network comes in. The Master system runs the
-relevant driver, `upsd`, and `upsmon` in master mode. The Slave systems
-only run `upsmon` in slave mode.
+directly. That's where the network comes in. The Manager system runs the
+relevant driver, `upsd`, and `upsmon` in manager mode. The Subordinate systems
+only run `upsmon` in subordinate mode which all connect to `upsd` on Manager.
 
 This is useful when you have a very large UPS that's capable of running
 multiple systems simultaneously. There is no longer the need to buy a bunch
@@ -196,15 +196,18 @@ the sharing for you.
 - Multiple systems may monitor a single UPS using only their network
 connections -- no special "UPS sharing" hardware is required.
 
-- "Slave and master" monitoring design synchronizes shutdowns so that
-slaves can bring down their operating systems cleanly before the master
-switches off the power.
+- "Subordinate and manager" monitoring design synchronizes shutdowns so that
+subordinate systems can bring down their operating systems cleanly before
+the manager switches off the power.
 
 === Many UPSes, many clients ===
 
-- Each upsd process can serve status data for multiple UPSes to many clients.
+- Each `upsd` process can serve status data for multiple UPSes to many clients.
+Multiple NUT drivers need to be configured and running locally on the system
+with `upsd` then, and have appropriate media connections to the power devices.
 
-- Each upsmon process can monitor multiple UPSes for status data.
+- Each `upsmon` process can monitor multiple UPSes, possibly from multiple
+`upsd` hosts, for status data.
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -216,7 +219,7 @@ image:images/bigbox.png[]
 Some systems have multiple power supplies and cords. You typically find
 this on high-end servers that allow hot-swap and other fun features.
 In this case, you run multiple drivers (one per UPS), a single `upsd`,
-and a single `upsmon` (as a master for both UPS 1 and UPS 2)
+and a single `upsmon` (as a manager for both UPS 1 and UPS 2)
 
 This software understands that some of these servers can also run with
 some of the supplies gone. For this reason, every UPS is assigned a
@@ -242,8 +245,8 @@ monitored, so it's drafted to supply a serial port for the purpose.
 This PC may in fact be getting its own power from some other UPS. This is
 not a problem for the set-up.
 
-The first system ("mixed") is a Master for UPS 1, but is only monitoring
-UPS 2. The other systems are Slaves of UPS 2.
+The first system ("mixed") is a Manager for UPS 1, but is only monitoring
+UPS 2. The other systems are Subordinates of UPS 2.
 
 Image credits
 -------------

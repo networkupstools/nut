@@ -30,13 +30,13 @@ Here are some examples to get you started:
 		instcmds = test.panel.start
 		instcmds = test.panel.stop
 
-	[monmaster]
+	[upswired]
 		password = blah
-		upsmon master
+		upsmon manager
 
-	[monslave]
+	[observer]
 		password = abcd
-		upsmon slave
+		upsmon subordinate
 
 FIELDS
 ------
@@ -72,7 +72,7 @@ of most of the known command names.
 *upsmon*::
 
 Add the necessary actions for a upsmon process to work.  This is either
-set to "master" or "slave".
+set to "manager" or "subordinate".
 +
 Do not attempt to assign actions to upsmon by hand, as you may miss
 something important.  This method of designating a "upsmon user" was

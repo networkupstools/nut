@@ -317,19 +317,19 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	return 0;	/* fail */
 }
 
-/* handle "upsmon master" and "upsmon slave" for nicer configurations */
+/* handle "upsmon manager" and "upsmon subordinate" for nicer configurations */
 static void set_upsmon_type(char *type)
 {
-	/* master: login, master, fsd */
-	if (!strcasecmp(type, "master")) {
+	/* manager: login, master, fsd */
+	if (!strcasecmp(type, "master") || !strcasecmp(type, "manager")) {
 		user_add_action("login");
-		user_add_action("master");
+		user_add_action("master"); /* Note: this is linked to "MASTER" API command permision */
 		user_add_action("fsd");
 		return;
 	}
 
-	/* slave: just login */
-	if (!strcasecmp(type, "slave")) {
+	/* subordinate: just login */
+	if (!strcasecmp(type, "slave") || !strcasecmp(type, "subordinate")) {
 		user_add_action("login");
 		return;
 	}
