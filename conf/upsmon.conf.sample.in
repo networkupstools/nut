@@ -76,7 +76,8 @@
 # "master" means this system will shutdown last, allowing the slaves
 # time to shutdown first.
 #
-# "slave" means this system shuts down immediately when power goes critical.
+# "slave" means this system shuts down immediately when power goes
+# critical and less than MINSUPPLIES power sources have reliable input feeds.
 #
 # The general assumption is that the "master" system is the one with direct
 # connection to an UPS (such as serial or USB cable), so the master system
