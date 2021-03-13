@@ -507,6 +507,10 @@ NOTE: This requires "upsmon manager" in upsd.users
 This function doesn't do much by itself.  It is used by upsmon to make
 sure that manager-level functions like FSD are available if necessary.
 
+NOTE: This command will be eventually renamed to "MANAGER" with the older
+name "MASTER" kept as deprecated alias for compatibility; a protocol bump
+or special backwards-compatibility handling may be needed for that however.
+
 
 FSD
 ---

@@ -591,6 +591,8 @@ sub Master { # check for MASTER level access
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
+# TODO: API change pending to replace MASTER with MANAGER
+# (and backwards-compatible alias handling)
   my $self = shift;
 
   my $req = "MASTER $self->{name}"; # build request
@@ -840,6 +842,9 @@ It is automatically done if connection closed.
 
 Use this to find out whether or not we have MASTER privileges for
 this UPS. Returns 1 if we have MASTER privileges, returns 0 otherwise.
+
+TODO: API change pending to replace MASTER with MANAGER
+(and backwards-compatible alias handling)
 
 =item ListVar($variable, ...)
 

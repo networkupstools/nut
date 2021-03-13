@@ -200,6 +200,9 @@ static void do_notify(const utype_t *ups, int ntype)
 }
 
 /* check for master permissions on the server for this ups */
+/* TODO: API change pending to replace deprecated MASTER with MANAGER
+ * and SLAVE with SUBORDINATE (and backwards-compatible alias handling)
+ */
 static int checkmaster(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -244,6 +247,9 @@ static int checkmaster(utype_t *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
+/* TODO: API change pending to replace deprecated MASTER with MANAGER
+ * and SLAVE with SUBORDINATE (and backwards-compatible alias handling)
+ */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -592,6 +598,9 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 	return 0;
 }
 
+/* TODO: API change pending to replace deprecated MASTER with MANAGER
+ * and SLAVE with SUBORDINATE (and backwards-compatible alias handling)
+ */
 static void slavesync(void)
 {
 	utype_t	*ups;
