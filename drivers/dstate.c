@@ -1069,12 +1069,38 @@ void alarm_set(const char *buf)
 	}
 
 	if (ret < 0) {
-		/* Should we also try to print the potentially unusable buf? likely not */
-		upslogx(LOG_ERR, "%s: error setting alarm_buf", __func__);
+		/* Should we also try to print the potentially unusable buf?
+		 * Generally - likely not. But if it is short enough...
+		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
+		 * size before PR #986.
+		 */
+		char alarm_tmp[LARGEBUF];
+		memset(alarm_tmp, 0, sizeof(alarm_tmp));
+		int buflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		if (buflen < 0) {
+			alarm_tmp[0] = 'N';
+			alarm_tmp[1] = '/';
+			alarm_tmp[2] = 'A';
+			alarm_tmp[3] = '\0';
+		}
+		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
+			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	}
 
 	if (ret > sizeof(alarm_buf)) {
-		upslogx(LOG_WARNING, "%s: result was truncated while setting alarm_buf", __func__);
+		char alarm_tmp[LARGEBUF];
+		memset(alarm_tmp, 0, sizeof(alarm_tmp));
+		int buflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		if (buflen < 0) {
+			alarm_tmp[0] = 'N';
+			alarm_tmp[1] = '/';
+			alarm_tmp[2] = 'A';
+			alarm_tmp[3] = '\0';
+		}
+		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
+			"alarm_buf (limited to %zu bytes), with message: %s%s",
+			__func__, sizeof(alarm_buf), alarm_tmp,
+			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" ));
 	}
 }
 
