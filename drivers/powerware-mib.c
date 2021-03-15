@@ -764,12 +764,12 @@ static info_lkp_t pw_ambient_drycontacts_polarity_info[] = {
 };
 
 static info_lkp_t pw_ambient_drycontacts_state_info[] = {
-	{ 0, "active"
+	{ 0, "inactive"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	},
-	{ 1, "inactive"
+	{ 1, "active"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif

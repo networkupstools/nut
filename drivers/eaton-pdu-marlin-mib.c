@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.57"
+#define EATON_MARLIN_MIB_VERSION	"0.58"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -791,12 +791,12 @@ static info_lkp_t marlin_ambient_drycontacts_polarity_info[] = {
 };
 
 static info_lkp_t marlin_ambient_drycontacts_state_info[] = {
-	{ 0, "active"
+	{ 0, "inactive"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	},
-	{ 1, "inactive"
+	{ 1, "active"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
