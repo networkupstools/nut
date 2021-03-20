@@ -32,7 +32,7 @@ endif
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
- mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
+ mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
@@ -126,6 +126,8 @@ masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
+microsol_apc_SOURCES = microsol-apc.c microsol-common.c
+microsol_apc_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
