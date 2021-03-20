@@ -34,7 +34,7 @@
 #define false 0
 #define true 1
 #define RESP_END    0xFE
-#define ENDCHAR     13	/* replies end with CR */
+#define ENDCHAR     13		/* replies end with CR */
 /* solis commands */
 #define CMD_UPSCONT 0xCC
 #define CMD_SHUT    0xDD
@@ -104,7 +104,8 @@ int load_power_factor, nominal_power;
  * Convert standard days string to firmware format
  * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
  */
-static char* convert_days(char *cop) {
+static char *convert_days(char *cop)
+{
 	static char alt[8];
 
 	int ish, fim;
@@ -121,20 +122,21 @@ static char* convert_days(char *cop) {
 	if (ish > 0)
 		memcpy(&alt[fim], cop, ish);
 
-	alt[7] = 0; /* string terminator */
+	alt[7] = 0;		/* string terminator */
 
 	return alt;
 }
 
 /** Convert bitstring (e.g. 1100101) to binary */
-static int bitstring_to_binary( char *binStr ) {
+static int bitstring_to_binary(char *binStr)
+{
 	int result = 0;
 	int i;
 
 	for (i = 0; i < 7; ++i) {
 		char ch = binStr[i];
 		if (ch == '1' || ch == '0')
-			result += ( (ch - '0') << (6 - i) );
+			result += ((ch - '0') << (6 - i));
 		else
 			return 0;
 	}
@@ -146,58 +148,61 @@ static int bitstring_to_binary( char *binStr ) {
  * Revert firmware format to standard string binary days
  * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
  */
-static unsigned char revert_days(unsigned char firmware_week) {
+static unsigned char revert_days(unsigned char firmware_week)
+{
 	char ordered_week[8];
 	int i;
 
 	for (i = 0; i < (6 - host_week); ++i)
 		ordered_week[i] = (firmware_week >> (5 - host_week - i)) & 0x01;
 
-	for (i = 0; i < host_week+1; ++i)
+	for (i = 0; i < host_week + 1; ++i)
 		ordered_week[i + (6 - host_week)] = (firmware_week >> (6 - i)) & 0x01;
 
-	for (i=0; i < 7; i++)
+	for (i = 0; i < 7; i++)
 		ordered_week[i] += '0';
 
-	ordered_week[7] = 0; /* string terminator */
+	ordered_week[7] = 0;	/* string terminator */
 
 	return bitstring_to_binary(ordered_week);
 }
 
 /** Parse time string from parameters and store their values */
-static bool_t set_schedule_time(char *hour, bool_t off_time) {
+static bool_t set_schedule_time(char *hour, bool_t off_time)
+{
 	int string_hour, string_minute;
 
-	if ((strlen(hour) != 5) ||
-		(sscanf(hour, "%d:%d", &string_hour, &string_minute) != 2))
+	if ((strlen(hour) != 5) || (sscanf(hour, "%d:%d", &string_hour, &string_minute) != 2))
 		return 0;
 
 	if (off_time) {
-		power_off_hour   = string_hour;
+		power_off_hour = string_hour;
 		power_off_minute = string_minute;
 	} else {
-		power_on_hour   = string_hour;
+		power_on_hour = string_hour;
 		power_on_minute = string_minute;
 	}
 	return 1;
 }
 
 /** Send immediate shutdown command to UPS */
-static void send_shutdown( void ) {
+static void send_shutdown(void)
+{
 	int i;
 
 	for (i = 0; i < 10; i++)
-	  ser_send_char(upsfd, CMD_SHUT );
+		ser_send_char(upsfd, CMD_SHUT);
 
 	upslogx(LOG_NOTICE, "UPS shutdown command sent");
 }
 
 /** Store clock updates and shutdown schedules to UPS */
-static void save_ups_config( void ) {
+static void save_ups_config(void)
+{
 	int checksum = 0;
-  unsigned char configuration_packet[12];
+	unsigned char configuration_packet[12];
 
-  /* Prepare configuration packet */
+	/* Prepare configuration packet */
 	configuration_packet[0] = 0xCF;
 	configuration_packet[1] = host_hour;
 	configuration_packet[2] = host_minute;
@@ -209,124 +214,123 @@ static void save_ups_config( void ) {
 	configuration_packet[8] = host_week << 5;
 	configuration_packet[8] = configuration_packet[8] | host_day;
 	configuration_packet[9] = host_month << 4;
-	configuration_packet[9] = configuration_packet[9] | ( host_year - BASE_YEAR );
+	configuration_packet[9] = configuration_packet[9] | (host_year - BASE_YEAR);
 	configuration_packet[10] = device_days_off;
 
 	/* MSB zero */
 	configuration_packet[10] = configuration_packet[10] & (~(0x80));
 
-  /* Calculate packet content checksum */
-  for (int i = 0; i < 11; i++) {
-	  checksum += configuration_packet[i];
-  }
+	/* Calculate packet content checksum */
+	for (int i = 0; i < 11; i++) {
+		checksum += configuration_packet[i];
+	}
 	configuration_packet[11] = checksum % 256;
 
-  /* Send final packet and checksum to serial port */
+	/* Send final packet and checksum to serial port */
 	for (int i = 0; i < 12; i++) {
 		ser_send_char(upsfd, configuration_packet[i]);
-  }
+	}
 }
 
 /** Log shut-down schedule data stored in UPS */
-static void print_info( void ) {
+static void print_info(void)
+{
 	/* sunday, monday, tuesday, wednesday, thursday, friday, saturday */
-	char week_days[7] = {0, 0, 0, 0, 0, 0, 0};
+	char week_days[7] = { 0, 0, 0, 0, 0, 0, 0 };
 	unsigned int i;
 
-  upslogx(LOG_NOTICE, UPS_DATE, device_year, device_month, device_day);
-  upslogx(LOG_NOTICE, UPS_TIME, device_hour, device_minute, device_second);
+	upslogx(LOG_NOTICE, UPS_DATE, device_year, device_month, device_day);
+	upslogx(LOG_NOTICE, UPS_TIME, device_hour, device_minute, device_second);
 
 	if (prgups > 0) {
 		/* this is the string to binary standard */
 		for (i = 0; i < 7; i++) {
 			week_days[i] = (days_to_shutdown >> (6 - i)) & 0x01;
-    }
+		}
 
 		if (prgups == 3)
 			upslogx(LOG_NOTICE, PRG_ONOU);
 		else
 			upslogx(LOG_NOTICE, PRG_ONON);
 
-    upslogx(LOG_NOTICE, TIME_ON, power_on_hour, power_on_minute);
-    upslogx(LOG_NOTICE, TIME_OFF, power_off_hour, power_off_minute);
+		upslogx(LOG_NOTICE, TIME_ON, power_on_hour, power_on_minute);
+		upslogx(LOG_NOTICE, TIME_OFF, power_off_hour, power_off_minute);
 
 		upslogx(LOG_NOTICE, PRG_DAYS);
 
-    upslogx(LOG_NOTICE, FMT_DAYS,
-			week_days[0], week_days[1], week_days[2],
-			week_days[3], week_days[4], week_days[5],
-			week_days[6]);
+		upslogx(LOG_NOTICE, FMT_DAYS, week_days[0], week_days[1], week_days[2], week_days[3], week_days[4], week_days[5], week_days[6]);
 	} else {
 		upslogx(LOG_NOTICE, PRG_ONOF);
-  }
+	}
 }
 
 /** Parses received packet with UPS readings and configuration. */
-static void scan_received_pack(void) {
+static void scan_received_pack(void)
+{
 	/* UPS internal time */
-	device_year  = (received_packet[19] & 0x0F) + BASE_YEAR;
+	device_year = (received_packet[19] & 0x0F) + BASE_YEAR;
 	device_month = (received_packet[19] & 0xF0) >> 4;
-	device_day   = (received_packet[18] & 0x1F);
+	device_day = (received_packet[18] & 0x1F);
 
-	device_hour   = received_packet[11];
+	device_hour = received_packet[11];
 	device_minute = received_packet[10];
 	device_second = received_packet[9];
 
 	/* UPS power cycle schedule if in programmed shutdown mode */
 	if (prgups == 3) {
-	  device_days_on = received_packet[17];
+		device_days_on = received_packet[17];
 		days_to_shutdown = revert_days(device_days_on);
 
 		/* Automatic UPS power-off time */
-		power_off_hour   = received_packet[15];
+		power_off_hour = received_packet[15];
 		power_off_minute = received_packet[16];
 
 		/* Automatic UPS power-on time */
-		power_on_hour   = received_packet[13];
+		power_on_hour = received_packet[13];
 		power_on_minute = received_packet[14];
 	}
 
-  /* These UPS have 110V- or 220V-output models */
+	/* These UPS have 110V- or 220V-output models */
 	if ((0x01 & received_packet[20]) == 0x01) {
 		output_220v = 1;
-  }
+	}
 
-  /* UPS state flags */
+	/* UPS state flags */
 	critical_battery = (0x04 & received_packet[20]) == 0x04;
 	inverter_working = (0x08 & received_packet[20]) == 0x08;
-	overheat         = (0x10 & received_packet[20]) == 0x10;
-	line_unpowered   = (0x20 & received_packet[20]) == 0x20;
-	overload         = (0x80 & received_packet[20]) == 0x80;
+	overheat = (0x10 & received_packet[20]) == 0x10;
+	line_unpowered = (0x20 & received_packet[20]) == 0x20;
+	overload = (0x80 & received_packet[20]) == 0x80;
 
-  recharging       = (0x02 & received_packet[20]) == 0x02;
-  if (line_unpowered) {
-    recharging = false;
-  }
+	recharging = (0x02 & received_packet[20]) == 0x02;
+	if (line_unpowered) {
+		recharging = false;
+	}
 
-  /* Check if input voltage is 110V or 220V */
-	if ((0x40  & received_packet[20]) == 0x40) {
+	/* Check if input voltage is 110V or 220V */
+	if ((0x40 & received_packet[20]) == 0x40) {
 		input_220v = 1;
-  }	else {
+	} else {
 		input_220v = 0;
-  }
+	}
 
-  /* Internal battery temperature */
+	/* Internal battery temperature */
 	temperature = 0x7F & received_packet[4];
 	if (0x80 & received_packet[4]) {
 		temperature -= 128;
-  }
+	}
 
 	/* Parse model-specific data (current and voltages).
-   * Doing it here as these values are used for the next calculations. */
-  scan_received_pack_model_specific();
+	 * Doing it here as these values are used for the next calculations. */
+	scan_received_pack_model_specific();
 
 	/* model independent data */
-	battery_charge = ( (100.0 * battery_autonomy) / maximum_battery_autonomy );
-	ups_load = ( apparent_power / nominal_power ) * 100.0;
+	battery_charge = ((100.0 * battery_autonomy) / maximum_battery_autonomy);
+	ups_load = (apparent_power / nominal_power) * 100.0;
 
 	if (battery_charge > 100.0) {
 		battery_charge = 100.0;
-  }
+	}
 
 	output_frequency = 60;
 	if (!inverter_working) {
@@ -340,14 +344,14 @@ static void scan_received_pack(void) {
 	if (apparent_power < 0)
 		load_power_factor = 0;
 	else {
-		if( d_equal(apparent_power, 0) )
+		if (d_equal(apparent_power, 0))
 			load_power_factor = 100;
 		else
-			load_power_factor = (( real_power / apparent_power) * 100);
+			load_power_factor = ((real_power / apparent_power) * 100);
 
 		if (load_power_factor > 100) {
-		  load_power_factor = 100;
-    }
+			load_power_factor = 100;
+		}
 	}
 
 	/* input 110V or 220v */
@@ -356,7 +360,7 @@ static void scan_received_pack(void) {
 		input_high_limit = 150;
 	} else {
 		input_low_limit = 150;
-    input_high_limit = 300;
+		input_high_limit = 300;
 	}
 }
 
@@ -388,7 +392,8 @@ static void scan_received_pack(void) {
  *  Byte 24: Packet checksum
  *  Byte 25: Packet delimiter, always 0xFE
  */
-static void comm_receive(const unsigned char *bufptr,  int size) {
+static void comm_receive(const unsigned char *bufptr, int size)
+{
 	if (size == PACKET_SIZE) {
 		int checksum = 0;
 
@@ -397,86 +402,87 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 		/* Calculate packet checksum */
 		for (int i = 0; i < PACKET_SIZE - 2; i++) {
 			checksum += bufptr[i];
-    }
+		}
 		checksum = checksum % 256;
 		upsdebugx(4, "%s: calculated checksum = 0x%02x, bufptr[23] = 0x%02x", __func__, checksum, bufptr[23]);
 
-    /* Only proceed if checksum matches and packet delimiter is found */
-    if (checksum == bufptr[23] && bufptr[24] == 254) {
-      upsdebugx(4, "%s: valid packet received", __func__);
-		  memcpy(received_packet, bufptr, PACKET_SIZE);
+		/* Only proceed if checksum matches and packet delimiter is found */
+		if (checksum == bufptr[23] && bufptr[24] == 254) {
+			upsdebugx(4, "%s: valid packet received", __func__);
+			memcpy(received_packet, bufptr, PACKET_SIZE);
 
-		  if ((received_packet[0] & 0xF0) == 0xA0 || (received_packet[0] & 0xF0) == 0xB0) {
-        /* If UPS still not detected, compare with available lists */
-			  if (!detected) {
-          ups_model = received_packet[0];
+			if ((received_packet[0] & 0xF0) == 0xA0 || (received_packet[0] & 0xF0) == 0xB0) {
+				/* If UPS still not detected, compare with available lists */
+				if (!detected) {
+					ups_model = received_packet[0];
 
-				  detected = true;
-			  }
+					detected = true;
+				}
 
-        if (!ups_model_defined()) {
-          upslogx(LOG_DEBUG, M_UNKN);
-        }
+				if (!ups_model_defined()) {
+					upslogx(LOG_DEBUG, M_UNKN);
+				}
 
-			  scan_received_pack();
-		  }
-	  }
-  }
+				scan_received_pack();
+			}
+		}
+	}
 }
 
 /** Refresh host time variables */
-static void refresh_host_time(void) {
-  time_t epoch;
-	struct tm *now;
+static void refresh_host_time(void)
+{
+	const time_t epoch = time(NULL);
+	struct tm now;
 
-	epoch = time(NULL);
-	now = localtime(&epoch);
-  host_year   = now->tm_year + 1900;
-	host_month  = now->tm_mon + 1;
-	host_day    = now->tm_mday;
-	host_week   = now->tm_wday;
-	host_hour   = now->tm_hour;
-	host_minute = now->tm_min;
-	host_second = now->tm_sec;
+	localtime_r(&epoch, &now);
+	host_year = now.tm_year + 1900;
+	host_month = now.tm_mon + 1;
+	host_day = now.tm_mday;
+	host_week = now.tm_wday;
+	host_hour = now.tm_hour;
+	host_minute = now.tm_min;
+	host_second = now.tm_sec;
 }
 
 /** Query shut-down schedule configuration */
-static void setup_poweroff_schedule(void) {
-  int i1 = 0, i2 = 0;
-  char *daysoff;
+static void setup_poweroff_schedule(void)
+{
+	int i1 = 0, i2 = 0;
+	char *daysoff;
 
-  refresh_host_time ();
+	refresh_host_time();
 
-  if (testvar("prgshut")) {
+	if (testvar("prgshut")) {
 		prgups = atoi(getval("prgshut"));
-  }
+	}
 
 	if (prgups > 0 && prgups < 3) {
 		if (testvar("daysweek")) {
 			device_days_on = bitstring_to_binary(convert_days(getval("daysweek")));
-    }
+		}
 
 		if (testvar("daysoff")) {
 			daysoff = getval("daysoff");
 			days_to_shutdown = bitstring_to_binary(daysoff);
-			device_days_off = bitstring_to_binary( convert_days(daysoff));
+			device_days_off = bitstring_to_binary(convert_days(daysoff));
 		}
 
 		if (testvar("houron")) {
 			i1 = set_schedule_time(getval("houron"), 0);
-    }
+		}
 
 		if (testvar("houroff")) {
-			i2 =  set_schedule_time(getval("houroff"), 1);
-    }
+			i2 = set_schedule_time(getval("houroff"), 1);
+		}
 
 		if (i1 && i2 && (device_days_on > 0)) {
 			isprogram = 1;
 
-      /* If configured to shut-down UPS, push schedule to internal configuration */
+			/* If configured to shut-down UPS, push schedule to internal configuration */
 			if (prgups == 2) {
 				save_ups_config();
-      }
+			}
 		} else {
 			if (i2 == 1 && device_days_off > 0) {
 				isprogram = 1;
@@ -487,35 +493,37 @@ static void setup_poweroff_schedule(void) {
 }
 
 /** Check shut-down schedule and sets system to shut down if needed */
-static void check_shutdown_schedule(void) {
-  bool_t is_shutdown_day = 0;
+static void check_shutdown_schedule(void)
+{
+	bool_t is_shutdown_day = 0;
 
 	if (isprogram || prgups == 3) {
-    refresh_host_time ();
+		refresh_host_time();
 
-    is_shutdown_day = (days_to_shutdown >> (6 - host_week)) & 0x01;
+		is_shutdown_day = (days_to_shutdown >> (6 - host_week)) & 0x01;
 
 		if (is_shutdown_day) {
 			upslogx(LOG_NOTICE, TODAY_DD, hourshut, minshut);
 
-		  if (host_hour == hourshut && host_minute >= minshut) {
-			  upslogx(LOG_NOTICE, SHUT_NOW);
-			  progshut = 1;
-		  }
-    }
+			if (host_hour == hourshut && host_minute >= minshut) {
+				upslogx(LOG_NOTICE, SHUT_NOW);
+				progshut = 1;
+			}
+		}
 	}
 }
 
 /** Synchronize packet receiving and setup basic variables */
-static void get_base_info(void) {
+static void get_base_info(void)
+{
 	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
 	int tam, i;
 
 	if (testvar("battext")) {
 		battery_extension = atoi(getval("battext"));
-  }
+	}
 
-  setup_poweroff_schedule();
+	setup_poweroff_schedule();
 
 	/* dummy read attempt to sync - throw it out */
 	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
@@ -525,11 +533,11 @@ static void get_base_info(void) {
 	 * - Read until end-of-response character (0xFE):
 	 * read up to 3 packets in size before giving up
 	 * synchronizing with the device.
-	*/
+	 */
 	for (i = 0; i < PACKET_SIZE * 3; i++) {
 		ser_get_char(upsfd, &syncEOR, 3, 0);
 		syncEOR_was_read = 1;
-		if(syncEOR == RESP_END)
+		if (syncEOR == RESP_END)
 			break;
 	}
 
@@ -547,32 +555,32 @@ static void get_base_info(void) {
 	}
 
 	if (!detected) {
-		fatalx(EXIT_FAILURE,  NO_SOLIS );
-  }
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	}
 
-  set_ups_model();
+	set_ups_model();
 
-  /* Setup power-off times */
-  if (prgups != 0) {
-	  if (prgups == 1) {
-      /* If only this host is meant to be powered off, use proper time. */
-		  hourshut = power_off_hour;
-		  minshut = power_off_minute;
-	  } else {
-      /* If the UPS is to be powered off too, give a 5-minute grace time to shutdown hosts */
-		  if (power_off_minute < 5) {
-			  if (power_off_hour > 1)
-				  hourshut = power_off_hour - 1;
-			  else
-				  hourshut = 23;
+	/* Setup power-off times */
+	if (prgups != 0) {
+		if (prgups == 1) {
+			/* If only this host is meant to be powered off, use proper time. */
+			hourshut = power_off_hour;
+			minshut = power_off_minute;
+		} else {
+			/* If the UPS is to be powered off too, give a 5-minute grace time to shutdown hosts */
+			if (power_off_minute < 5) {
+				if (power_off_hour > 1)
+					hourshut = power_off_hour - 1;
+				else
+					hourshut = 23;
 
-			  minshut = 60 - ( 5 - power_off_minute );
-		  } else {
-			  hourshut = power_off_hour;
-			  minshut = power_off_minute - 5;
-		  }
-	  }
-  }
+				minshut = 60 - (5 - power_off_minute);
+			} else {
+				hourshut = power_off_hour;
+				minshut = power_off_minute - 5;
+			}
+		}
+	}
 
 	/* manufacturer */
 	dstate_setinfo("ups.mfr", "%s", "APC");
@@ -590,35 +598,37 @@ static void get_base_info(void) {
 }
 
 /** Retrieves new packet from serial connection and parses it */
-static void get_updated_info(void) {
+static void get_updated_info(void)
+{
 	unsigned char temp[256];
 	unsigned int tam;
 
 	check_shutdown_schedule();
 
 	/* get update package */
-	temp[0] = 0; /* flush temp buffer */
+	temp[0] = 0;		/* flush temp buffer */
 
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, temp, PACKET_SIZE, 3, 0);
 
 	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-	if(tam > 0 && nut_debug_level >= 4)
+	if (tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
 
 	comm_receive(temp, tam);
 }
 
-static int instcmd(const char *cmdname, const char *extra) {
+static int instcmd(const char *cmdname, const char *extra)
+{
 	/* Power-cycle UPS */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		ser_send_char(upsfd, CMD_SHUTRET); /* 0xDE */
+		ser_send_char(upsfd, CMD_SHUTRET);	/* 0xDE */
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	/* Power-off UPS */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
+		ser_send_char(upsfd, CMD_SHUT);	/* 0xDD */
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -626,13 +636,15 @@ static int instcmd(const char *cmdname, const char *extra) {
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-void upsdrv_initinfo(void) {
+void upsdrv_initinfo(void)
+{
 	get_base_info();
 
 	upsh.instcmd = instcmd;
 }
 
-void upsdrv_updateinfo(void) {
+void upsdrv_updateinfo(void)
+{
 	get_updated_info();
 
 	dstate_setinfo("output.voltage", "%03.1f", output_voltage);
@@ -645,37 +657,37 @@ void upsdrv_updateinfo(void) {
 	dstate_setinfo("input.frequency", "%2.1f", input_frequency);
 	dstate_setinfo("ups.load", "%03.1f", ups_load);
 
-  status_init();
+	status_init();
 
 	if (!line_unpowered) {
 		status_set("OL");	/* On line */
-  } else {
+	} else {
 		status_set("OB");	/* On battery */
-  }
+	}
 
-  if (overload) {
-    status_set("OVER"); /* Overload */
-  }
+	if (overload) {
+		status_set("OVER");	/* Overload */
+	}
 
-  if (overheat) {
-    status_set("OVERHEAT"); /* Overheat */
-  }
+	if (overheat) {
+		status_set("OVERHEAT");	/* Overheat */
+	}
 
-  if (recharging) {
-    status_set("CHRG"); /* Charging battery */
-  }
+	if (recharging) {
+		status_set("CHRG");	/* Charging battery */
+	}
 
 	if (critical_battery) {
 		status_set("LB");	/* Critically low battery */
-  }
+	}
 
 	if (progshut) {
-    /* Software-based shutdown now */
-		if( prgups == 2 )
-			send_shutdown(); /* Send command to shutdown UPS in 4-5 minutes */
+		/* Software-based shutdown now */
+		if (prgups == 2)
+			send_shutdown();	/* Send command to shutdown UPS in 4-5 minutes */
 
 		/* Workaround for triggering servers' power-off before UPS power-off */
-    status_set("LB");
+		status_set("LB");
 	}
 
 	status_commit();
@@ -688,17 +700,19 @@ void upsdrv_updateinfo(void) {
  *  - on battery: send normal shutdown, UPS will return by itself on utility
  *  - on line: send shutdown+return, UPS will cycle and return soon.
  */
-void upsdrv_shutdown(void) {
-	if (!line_unpowered) {     /* on line */
+void upsdrv_shutdown(void)
+{
+	if (!line_unpowered) {	/* on line */
 		upslogx(LOG_NOTICE, "On line, sending power cycle command...");
-		ser_send_char(upsfd, CMD_SHUTRET );
+		ser_send_char(upsfd, CMD_SHUTRET);
 	} else {
 		upslogx(LOG_NOTICE, "On battery, sending power off command...");
 		ser_send_char(upsfd, CMD_SHUT);
 	}
 }
 
-void upsdrv_help(void) {
+void upsdrv_help(void)
+{
 	printf("\nAPC/Microsol options\n\n");
 	printf(" Battery extension (AH)\n");
 	printf("  battext = 80\n\n");
@@ -718,16 +732,18 @@ void upsdrv_help(void) {
 	printf(" These are valid only if prgshut = 2 or 3\n");
 }
 
-void upsdrv_makevartable(void) {
-	addvar(VAR_VALUE, "battext",  "Battery extension (0-80AH)");
-	addvar(VAR_VALUE, "prgshut",  "Scheduled power-off mode (0-3)");
+void upsdrv_makevartable(void)
+{
+	addvar(VAR_VALUE, "battext", "Battery extension (0-80AH)");
+	addvar(VAR_VALUE, "prgshut", "Scheduled power-off mode (0-3)");
 	addvar(VAR_VALUE, "daysweek", "Days of week for UPS shutdown");
-	addvar(VAR_VALUE, "daysoff",  "Days of week for driver-induced shutdown");
-	addvar(VAR_VALUE, "houron",   "Power on hour (hh:mm)");
-	addvar(VAR_VALUE, "houroff",  "Power off hour (hh:mm)");
+	addvar(VAR_VALUE, "daysoff", "Days of week for driver-induced shutdown");
+	addvar(VAR_VALUE, "houron", "Power on hour (hh:mm)");
+	addvar(VAR_VALUE, "houroff", "Power off hour (hh:mm)");
 }
 
-void upsdrv_initups(void) {
+void upsdrv_initups(void)
+{
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
 
@@ -735,7 +751,7 @@ void upsdrv_initups(void) {
 	ser_set_rts(upsfd, 0);
 }
 
-void upsdrv_cleanup(void) {
+void upsdrv_cleanup(void)
+{
 	ser_close(upsfd, device_path);
 }
-

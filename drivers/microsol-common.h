@@ -62,5 +62,4 @@ extern void autonomy_calc(unsigned int);
 extern void set_ups_model(void);
 extern bool_t ups_model_defined(void);
 
-#endif /* INCLUDED_MICROSOL_COMMON_H */
-
+#endif				/* INCLUDED_MICROSOL_COMMON_H */
