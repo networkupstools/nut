@@ -150,6 +150,20 @@ void scan_received_pack_model_specific(void)
 		/* Special calculation for BZ1500 on battery */
 		output_voltage = battery_voltage * sqrt(output_voltage / 64.0) * OUTPUT_VOLTAGE_MULTIPLIER_A[model_index][line_unpowered][relay_state]
 		    - output_current * OUTPUT_VOLTAGE_MULTIPLIER_B[model_index][line_unpowered][relay_state];
+		output_voltage = 1.5091 * output_voltage + 1.5823;
+
+		if (output_current > 4.0)
+			output_voltage += output_current * 4.0;
+
+		if (output_current > 3.0)
+			output_voltage += output_current * 2.0;
+		else if (output_voltage > 0.9)
+			output_voltage += output_current / 3.0;
+		else
+			output_voltage -= 5.0;
+
+		if (output_voltage < 100.0)
+			output_voltage = 100;
 	} else {
 		output_voltage = OUTPUT_VOLTAGE_MULTIPLIER_A[model_index][line_unpowered][relay_state] * output_voltage + OUTPUT_VOLTAGE_MULTIPLIER_B[model_index][line_unpowered][relay_state];
 	}
