@@ -131,7 +131,7 @@ static char *convert_days(char *cop)
 static int bitstring_to_binary(char *binStr)
 {
 	int result = 0;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < 7; ++i) {
 		char ch = binStr[i];
@@ -151,7 +151,7 @@ static int bitstring_to_binary(char *binStr)
 static unsigned char revert_days(unsigned char firmware_week)
 {
 	char ordered_week[8];
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < (6 - host_week); ++i)
 		ordered_week[i] = (firmware_week >> (5 - host_week - i)) & 0x01;
@@ -188,7 +188,7 @@ static bool_t set_schedule_time(char *hour, bool_t off_time)
 /** Send immediate shutdown command to UPS */
 static void send_shutdown(void)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < 10; i++)
 		ser_send_char(upsfd, CMD_SHUT);
@@ -199,6 +199,7 @@ static void send_shutdown(void)
 /** Store clock updates and shutdown schedules to UPS */
 static void save_ups_config(void)
 {
+	unsigned int i;
 	int checksum = 0;
 	unsigned char configuration_packet[12];
 
@@ -221,13 +222,13 @@ static void save_ups_config(void)
 	configuration_packet[10] = configuration_packet[10] & (~(0x80));
 
 	/* Calculate packet content checksum */
-	for (int i = 0; i < 11; i++) {
+	for (i = 0; i < 11; i++) {
 		checksum += configuration_packet[i];
 	}
 	configuration_packet[11] = checksum % 256;
 
 	/* Send final packet and checksum to serial port */
-	for (int i = 0; i < 12; i++) {
+	for (i = 0; i < 12; i++) {
 		ser_send_char(upsfd, configuration_packet[i]);
 	}
 }
@@ -394,13 +395,15 @@ static void scan_received_pack(void)
  */
 static void comm_receive(const unsigned char *bufptr, int size)
 {
+	unsigned int i;
+
 	if (size == PACKET_SIZE) {
 		int checksum = 0;
 
 		upsdebug_hex(3, "comm_receive: bufptr", bufptr, size);
 
 		/* Calculate packet checksum */
-		for (int i = 0; i < PACKET_SIZE - 2; i++) {
+		for (i = 0; i < PACKET_SIZE - 2; i++) {
 			checksum += bufptr[i];
 		}
 		checksum = checksum % 256;
@@ -647,14 +650,19 @@ void upsdrv_updateinfo(void)
 {
 	get_updated_info();
 
-	dstate_setinfo("output.voltage", "%03.1f", output_voltage);
-	dstate_setinfo("input.voltage", "%03.1f", input_voltage);
-	dstate_setinfo("battery.voltage", "%02.1f", battery_voltage);
 	dstate_setinfo("battery.charge", "%03.1f", battery_charge);
+	dstate_setinfo("battery.voltage", "%02.1f", battery_voltage);
+
+	dstate_setinfo("input.frequency", "%2.1f", input_frequency);
+	dstate_setinfo("input.voltage", "%03.1f", input_voltage);
+
 	dstate_setinfo("output.current", "%03.1f", output_current);
+	dstate_setinfo("output.power", "%03.1f", apparent_power);
+	dstate_setinfo("output.powerfactor", "%0.2f", load_power_factor / 100.0);
+	dstate_setinfo("output.realpower", "%03.1f", real_power);
+	dstate_setinfo("output.voltage", "%03.1f", output_voltage);
 
 	dstate_setinfo("ups.temperature", "%2.2f", temperature);
-	dstate_setinfo("input.frequency", "%2.1f", input_frequency);
 	dstate_setinfo("ups.load", "%03.1f", ups_load);
 
 	status_init();
