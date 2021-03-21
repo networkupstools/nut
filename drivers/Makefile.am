@@ -278,7 +278,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
- mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
+ mge-xml.h microdowell.h microsol-apc.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
