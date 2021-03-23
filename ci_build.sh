@@ -394,6 +394,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     echo "==="
     if [ -n "`git status -s`" ]; then
         echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+        git diff || true
+        echo "==="
         exit 1
     fi
 
