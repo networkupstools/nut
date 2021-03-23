@@ -95,7 +95,7 @@ double output_voltage, output_current, output_frequency;
 
 double input_low_limit, input_high_limit;
 
-int battery_autonomy, battery_extension, maximum_battery_autonomy;
+int battery_extension;
 double battery_voltage, temperature, battery_charge;
 
 double apparent_power, real_power, ups_load;
@@ -326,12 +326,12 @@ static void scan_received_pack(void)
 	 * Doing it here as these values are used for the next calculations. */
 	scan_received_pack_model_specific();
 
-	/* model independent data */
-	battery_charge = ((100.0 * battery_autonomy) / maximum_battery_autonomy);
 	ups_load = (apparent_power / nominal_power) * 100.0;
 
 	if (battery_charge > 100.0) {
 		battery_charge = 100.0;
+	} else if (battery_charge < 0.0) {
+		battery_charge = 0.0;
 	}
 
 	output_frequency = 60;

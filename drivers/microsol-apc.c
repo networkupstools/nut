@@ -86,32 +86,6 @@ void set_ups_model(void)
 	}
 }
 
-/** Calculate remaining battery time in minutes. */
-void autonomy_calc(unsigned int model_index)
-{
-	float aux;
-	unsigned int i;
-
-	aux = battery_voltage;
-	if (MODELS[model_index] == 190) {
-		aux = received_packet[3];
-	}
-
-	battery_autonomy = 0;
-	for (i = 0; AUTONOMY_POWER_THRESHOLD[model_index][i] != 0 && i < 8; i++) {
-		if (real_power < AUTONOMY_POWER_THRESHOLD[model_index][i]) {
-			battery_autonomy = AUTONOMY_CURVES_A[model_index][i] * aux * aux + AUTONOMY_CURVES_B[model_index][i] * aux + AUTONOMY_CURVES_C[model_index][i];
-			maximum_battery_autonomy = AUTONOMY_VALUE_LIMITS[model_index][i];
-
-			if (battery_autonomy > maximum_battery_autonomy) {
-				battery_autonomy = maximum_battery_autonomy;
-			}
-
-			break;
-		}
-	}
-}
-
 /**
  * Parse received packet with UPS instantaneous data.
  * This function parses model-specific values, such as voltage and battery times.
@@ -122,6 +96,7 @@ void scan_received_pack_model_specific(void)
 	unsigned int model_index;
 	float real_power_curve_1, real_power_curve_2, real_power_curve_3;
 	float power_difference_1, power_difference_2, power_difference_3;
+	bool_t recharging;
 
 	/* Extract unprocessed data from packet */
 	input_voltage = received_packet[2];
@@ -204,5 +179,6 @@ void scan_received_pack_model_specific(void)
 
 	input_current = 1.1 * apparent_power / input_voltage;
 
-	autonomy_calc(model_index);
+	recharging = (0x02 & received_packet[20]) == 0x02;
+	battery_charge = (100.0 * (battery_voltage - MIN_BATTERY_VOLTAGE[model_index])) / (MAX_BATTERY_VOLTAGE[model_index][recharging] - MIN_BATTERY_VOLTAGE[model_index]);
 }

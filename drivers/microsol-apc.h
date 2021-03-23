@@ -207,35 +207,21 @@ static const float REAL_POWER_MULTIPLIER_B3[MODEL_COUNT][8] = {
 	{ -31.115, -33.777, -33.826, 0.0, -59.513, -57.729, 0.0, -41.333 }	/* Model 191 */
 };
 
-/* Battery autonomy curves */
-static const float AUTONOMY_POWER_THRESHOLD[MODEL_COUNT][8] = {
-	{ 103, 242, 350, 470, 617, 810, 1006, 1270 } /* Model 183 */ ,
-	{ 120, 230, 330, 430, 1500, 0, 0, 0 } /* Model 190 */ ,
-	{ 103, 242, 350, 470, 617, 810, 1006, 1270 }	/* Model 191 */
+/**
+ * Maximum battery voltage, used to estimate battery charge
+ * Second index: Recharging battery flag: charging (1) or charged/discharging (0)
+ */
+static const float MAX_BATTERY_VOLTAGE[MODEL_COUNT][2] = {
+  { 27.0, 29.5 } /* Model 183 */ ,
+	{ 27.0, 29.5 } /* Model 190 */ ,
+	{ 27.0, 29.5 }	/* Model 191 */
 };
 
-static const float AUTONOMY_VALUE_LIMITS[MODEL_COUNT][8] = {
-	{ 68, 32, 16, 14, 12, 9, 4, 4 } /* Model 183 */ ,
-	{ 60, 30, 13, 10, 6, 0, 0, 0 } /* Model 190 */ ,
-	{ 68, 32, 16, 14, 12, 9, 4, 4 }	/* Model 191 */
-};
-
-static const float AUTONOMY_CURVES_A[MODEL_COUNT][8] = {
-	{ 4.0561, 1.4616, -0.4561, 0.4426, 0.2526, 0.187, -0.0116, -0.048 } /* Model 183 */ ,
-	{ 0.0982, 0.0663, 0.0225, 9.0E-4, 0.5711, 0.0091, 9.0E-4, 0 } /* Model 190 */ ,
-	{ 4.0561, 1.4616, -0.4561, 0.4426, 0.2526, 0.187, -0.0116, -0.048 }	/* Model 191 */
-};
-
-static const float AUTONOMY_CURVES_B[MODEL_COUNT][8] = {
-	{ -175.36, -60.009, 25.521, -16.549, -8.4266, -6.4851, 0.9699, 3.0226 } /* Model 183 */ ,
-	{ -27.131, -18.252, -5.9113, 3.3172, -23.484, -2.3133, -1.422, 0 } /* Model 190 */ ,
-	{ -175.36, -60.009, 25.521, -16.549, -8.4266, -6.4851, 0.9699, 3.0226 }	/* Model 191 */
-};
-
-static const float AUTONOMY_CURVES_C[MODEL_COUNT][8] = {
-	{ 1899.4, 617.29, -336.49, 152.03, 66.345, 54.985, -14.325, -40.889 } /* Model 183 */ ,
-	{ 1875.18, 1257.2, 389.08, -272.34, 241.81, 147.62, 136.22 } /* Model 190 */ ,
-	{ 1899.4, 617.29, -336.49, 152.03, 66.345, 54.985, -14.325, -40.889 }	/* Model 191 */
+/** Minimum battery voltage, used to estimate battery charge */
+static const float MIN_BATTERY_VOLTAGE[MODEL_COUNT] = {
+  20 /* Model 183 */ ,
+	20 /* Model 190 */ ,
+	20 /* Model 191 */
 };
 
 #endif				/* INCLUDED_MICROSOL_APC_H */

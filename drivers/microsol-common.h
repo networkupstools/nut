@@ -50,8 +50,8 @@ extern double input_minimum_voltage, input_maximum_voltage, input_nominal_voltag
 extern double output_voltage, output_current, output_frequency;
 
 /* Battery group */
-extern int battery_autonomy, battery_extension, maximum_battery_autonomy;
-extern double battery_voltage;
+extern int battery_extension;
+extern double battery_voltage, battery_charge;
 
 /* Power group */
 extern double apparent_power, real_power, ups_load;
