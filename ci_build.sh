@@ -392,6 +392,10 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
     git status -s || true
     echo "==="
+    if [ -n "`git status -s`" ]; then
+        echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+        exit 1
+    fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
