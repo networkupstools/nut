@@ -88,6 +88,7 @@ bool_t detected = 0;
 bool_t line_unpowered, overheat;
 bool_t overload;
 bool_t recharging, critical_battery, inverter_working;
+bool_t packet_parsed = false;
 
 double input_voltage, input_current, input_frequency;
 double output_voltage, output_current, output_frequency;
@@ -151,7 +152,7 @@ static int bitstring_to_binary(char *binStr)
 static unsigned char revert_days(unsigned char firmware_week)
 {
 	char ordered_week[8];
-	unsigned int i;
+	int i;
 
 	for (i = 0; i < (6 - host_week); ++i)
 		ordered_week[i] = (firmware_week >> (5 - host_week - i)) & 0x01;
@@ -516,11 +517,36 @@ static void check_shutdown_schedule(void)
 	}
 }
 
+/** Resynchronizes packet boundaries */
+static void resynchronize_packet(void) {
+	unsigned char sync_received_byte = 0;
+	unsigned short i;
+
+	/* Flush serial port buffers */
+	ser_flush_io(upsfd);
+
+	upsdebugx(3, "%s: Synchronizing packet boundaries...", __func__);
+
+	/*
+	 * - Read until end-of-response character (0xFE):
+	 * read up to 3 packets in size before giving up
+	 * synchronizing with the device.
+	 */
+	for (i = 0; i < PACKET_SIZE * 3 && sync_received_byte != RESP_END; i++) {
+		ser_get_char(upsfd, &sync_received_byte, 3, 0);
+	}
+
+	/* If no packet boundary was found, terminate communication */
+	if (sync_received_byte != RESP_END) {
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	}
+}
+
 /** Synchronize packet receiving and setup basic variables */
 static void get_base_info(void)
 {
-	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
-	int tam, i;
+	unsigned char packet[PACKET_SIZE];
+	unsigned int tam;
 
 	if (testvar("battext")) {
 		battery_extension = atoi(getval("battext"));
@@ -529,33 +555,18 @@ static void get_base_info(void)
 	setup_poweroff_schedule();
 
 	/* dummy read attempt to sync - throw it out */
-	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
+	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR", __func__);
 	ser_send(upsfd, "%c%c", CMD_UPSCONT, ENDCHAR);
 
-	/*
-	 * - Read until end-of-response character (0xFE):
-	 * read up to 3 packets in size before giving up
-	 * synchronizing with the device.
-	 */
-	for (i = 0; i < PACKET_SIZE * 3; i++) {
-		ser_get_char(upsfd, &syncEOR, 3, 0);
-		syncEOR_was_read = 1;
-		if (syncEOR == RESP_END)
-			break;
-	}
+	resynchronize_packet ();
 
-	if (!syncEOR_was_read || syncEOR != RESP_END) {
-		/* synchronization failed */
-		fatalx(EXIT_FAILURE, NO_SOLIS);
-	} else {
-		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
-		tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
-		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-		if (tam > 0 && nut_debug_level >= 4) {
-			upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
-		}
-		comm_receive(packet, tam);
+	upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
+	tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
+	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	if (tam > 0 && nut_debug_level >= 4) {
+		upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
 	}
+	comm_receive(packet, tam);
 
 	if (!detected) {
 		fatalx(EXIT_FAILURE, NO_SOLIS);
@@ -618,7 +629,18 @@ static void get_updated_info(void)
 	if (tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
 
-	comm_receive(temp, tam);
+	packet_parsed = false;
+	if (temp[24] == RESP_END) {
+		/* Packet boundary found, process packet */
+		comm_receive(temp, tam);
+
+		packet_parsed = true;
+	} else {
+		/* Malformed packet received, possible boundary desynchronization. */
+		upsdebugx(3, "%s: Malformed packet received, trying to resynchronize...", __func__);
+
+		resynchronize_packet ();
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -650,57 +672,65 @@ void upsdrv_updateinfo(void)
 {
 	get_updated_info();
 
-	dstate_setinfo("battery.charge", "%03.1f", battery_charge);
-	dstate_setinfo("battery.voltage", "%02.1f", battery_voltage);
+	if (packet_parsed) {
+		dstate_setinfo("battery.charge", "%03.1f", battery_charge);
+		dstate_setinfo("battery.voltage", "%02.1f", battery_voltage);
 
-	dstate_setinfo("input.frequency", "%2.1f", input_frequency);
-	dstate_setinfo("input.voltage", "%03.1f", input_voltage);
+		dstate_setinfo("input.frequency", "%2.1f", input_frequency);
+		dstate_setinfo("input.voltage", "%03.1f", input_voltage);
 
-	dstate_setinfo("output.current", "%03.1f", output_current);
-	dstate_setinfo("output.power", "%03.1f", apparent_power);
-	dstate_setinfo("output.powerfactor", "%0.2f", load_power_factor / 100.0);
-	dstate_setinfo("output.realpower", "%03.1f", real_power);
-	dstate_setinfo("output.voltage", "%03.1f", output_voltage);
+		dstate_setinfo("output.current", "%03.1f", output_current);
+		dstate_setinfo("output.power", "%03.1f", apparent_power);
+		dstate_setinfo("output.powerfactor", "%0.2f", load_power_factor / 100.0);
+		dstate_setinfo("output.realpower", "%03.1f", real_power);
+		dstate_setinfo("output.voltage", "%03.1f", output_voltage);
 
-	dstate_setinfo("ups.temperature", "%2.2f", temperature);
-	dstate_setinfo("ups.load", "%03.1f", ups_load);
+		dstate_setinfo("ups.temperature", "%2.2f", temperature);
+		dstate_setinfo("ups.load", "%03.1f", ups_load);
 
-	status_init();
+		status_init();
 
-	if (!line_unpowered) {
-		status_set("OL");	/* On line */
+		if (!line_unpowered) {
+			status_set("OL");	/* On line */
+		} else {
+			status_set("OB");	/* On battery */
+		}
+
+		if (overload) {
+			status_set("OVER");	/* Overload */
+		}
+
+		if (overheat) {
+			status_set("OVERHEAT");	/* Overheat */
+		}
+
+		if (recharging) {
+			status_set("CHRG");	/* Charging battery */
+		}
+
+		if (critical_battery) {
+			status_set("LB");	/* Critically low battery */
+		}
+
+		if (progshut) {
+			/* Software-based shutdown now */
+			if (prgups == 2)
+				send_shutdown();	/* Send command to shutdown UPS in 4-5 minutes */
+
+			/* Workaround for triggering servers' power-off before UPS power-off */
+			status_set("LB");
+		}
+
+		status_commit();
+
+		dstate_dataok();
 	} else {
-		status_set("OB");	/* On battery */
+		/*
+		 * If no packet was processed, report data as stale.
+		 * Most likely to be fixed on next received packet.
+		 */
+		dstate_datastale ();
 	}
-
-	if (overload) {
-		status_set("OVER");	/* Overload */
-	}
-
-	if (overheat) {
-		status_set("OVERHEAT");	/* Overheat */
-	}
-
-	if (recharging) {
-		status_set("CHRG");	/* Charging battery */
-	}
-
-	if (critical_battery) {
-		status_set("LB");	/* Critically low battery */
-	}
-
-	if (progshut) {
-		/* Software-based shutdown now */
-		if (prgups == 2)
-			send_shutdown();	/* Send command to shutdown UPS in 4-5 minutes */
-
-		/* Workaround for triggering servers' power-off before UPS power-off */
-		status_set("LB");
-	}
-
-	status_commit();
-
-	dstate_dataok();
 }
 
 /*! @brief Power down the attached load immediately.
