@@ -18,7 +18,7 @@ This driver should recognize the NET *-DPC and AP *-PRO models.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the    
+This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 BUGS

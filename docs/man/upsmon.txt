@@ -52,7 +52,7 @@ times for more details.
 *-K*::
 Test for the shutdown flag.  If it exists and contains the magic string
 from upsmon, then upsmon will exit with `EXIT_SUCCESS`.  Any other condition
-will make upsmon exit with `EXIT_FAILURE`.  
+will make upsmon exit with `EXIT_FAILURE`.
 +
 You can test for a successful exit from `upsmon -K` in your shutdown
 scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
@@ -93,7 +93,7 @@ examples follow:
  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
 
- - "fenton@bigbox:5678" is a UPS called "fenton" on a system called 
+ - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
 "bigbox" which runs linkman:upsd[8] on port "5678".
 
 The 'powervalue' refers to how many power supplies on this system are
@@ -102,7 +102,7 @@ on power values below.
 
 The 'username' is a section in your linkman:upsd.users[5] file.
 Whatever password you set in that section must match the 'password'
-set in this file.  
+set in this file.
 
 The type set in that section must also match the 'type' here--
 *master* or *slave*.  In general, a master process is one
@@ -149,7 +149,7 @@ NOTIFY COMMAND
 --------------
 
 In linkman:upsmon.conf[5], you can configure a program called the NOTIFYCMD
-that will handle events that occur.  
+that will handle events that occur.
 
 +NOTIFYCMD+ "'path to program'"
 
@@ -227,11 +227,11 @@ number.  If a UPS is critical (on battery and low battery) or has been
 put into "forced shutdown" mode, it no longer contributes.
 
 A "power value" on a MONITOR line in the config file is the number of
-power supplies that the UPS runs on the current system.  
+power supplies that the UPS runs on the current system.
 
 +MONITOR+ 'upsname' 'powervalue' 'username' 'password' 'type'
 
-Normally, you only have one power supply, so it will be set to 1.  
+Normally, you only have one power supply, so it will be set to 1.
 
 +MONITOR myups@myhost 1 username mypassword master+
 
@@ -252,11 +252,11 @@ to shut down for its own reasons.
 +MONITOR faraway@anotherbox 0 username mypassword slave+
 
 The "minimum power value" is the number of power supplies that must be
-receiving power in order to keep the computer running.  
+receiving power in order to keep the computer running.
 
 +MINSUPPLIES+ 'value'
 
-Typical PCs only have 1, so most users will leave this at the default. 
+Typical PCs only have 1, so most users will leave this at the default.
 
 +MINSUPPLIES 1+
 
@@ -290,7 +290,7 @@ linkman:upsd[8] server, the master upsmon will start its own shutdown
 process.  Your slaves must all shut down before the master turns off the
 power or filesystem damage may result.
 
-upsmon deals with slaves that get wedged, hang, or otherwise fail to 
+upsmon deals with slaves that get wedged, hang, or otherwise fail to
 disconnect from linkman:upsd[8] in a timely manner with the HOSTSYNC
 timer.  During a shutdown situation, the master upsmon will give up after
 this interval and it will shut down anyway.  This keeps the master from

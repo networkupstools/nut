@@ -1,7 +1,7 @@
 Desc: APC UPS cable - for Back-UPS RS 500
 File: apc-rs500-serial.txt
 Date: 14 July 2004
-Auth: Russell Kroll <rkroll@exploits.org>, Martin Edlman <edlman@fortech.cz> 
+Auth: Russell Kroll <rkroll@exploits.org>, Martin Edlman <edlman@fortech.cz>
 
 This document was constructed from a mail from Martin.  He figured out
 the pinouts to make the Back-UPS RS 500 work with a normal serial port.

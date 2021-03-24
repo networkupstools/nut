@@ -10,7 +10,7 @@ SYNOPSIS
 --------
 *upsd* -h
 
-*upsd* ['OPTIONS'] 
+*upsd* ['OPTIONS']
 
 DESCRIPTION
 -----------
@@ -158,7 +158,7 @@ linkman:everups[8], linkman:genericups[8],
 linkman:isbmex[8], linkman:liebert[8], linkman:masterguard[8],
 linkman:mge-shut[8], linkman:mge-utalk[8], linkman:oneac[8],
 linkman:powercom[8], linkman:safenet[8], linkman:snmp-ups[8],
-linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8], 
+linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8],
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
