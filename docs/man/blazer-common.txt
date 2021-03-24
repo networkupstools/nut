@@ -150,9 +150,10 @@ connected (e.g. bus="002", bus="00[2-3]").
 
 *subdriver =* 'string'::
 
-Select a serial-over-USB subdriver to use. You have a choice between *phoenix*,
-*ippon*, *cypress*, and *krauler*. When using this option, it is mandatory to also
-specify the *vendorid* and *productid*.
+Select a serial-over-USB subdriver to use. You have a choice between
+*ablerex*, *cypress*, *ippon*, *krauler*, and *phoenix*.
+When using this option, it is mandatory to also specify the *vendorid*
+and *productid* values.
 
 *langid_fix =* 'value'::
 
