@@ -35,7 +35,6 @@ ATTRS{idVendor}=="09ae", ENV{UPOWER_VENDOR}="TrippLite"
 ATTRS{idVendor}=="0d9f", ENV{UPOWER_VENDOR}="PowerCOM"
 ATTRS{idVendor}=="10af", ENV{UPOWER_VENDOR}="Liebert"
 ATTRS{idVendor}=="2b2d", ENV{UPOWER_VENDOR}="AEG"
-ATTRS{idVendor}=="4234", ENV{UPOWER_VENDOR}="Powervar"
 
 # Hewlett Packard
 ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"
@@ -147,8 +146,5 @@ ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0008", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # AEG
 ATTRS{idVendor}=="2b2d", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
-
-# Powervar
-ATTRS{idVendor}=="4234", ATTRS{idProduct}=="0002", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 LABEL="up_hid_end"
