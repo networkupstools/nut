@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#   Copyright (C) 2011-2019 Eaton
+#   Copyright (C) 2011-2021 Eaton
 # 		Authors:	Frederic Bohe <FredericBohe@Eaton.com>
 #   				Arnaud Quette <ArnaudQuette@Eaton.com>
 #
@@ -44,7 +44,11 @@ def expand_define(filename,constant):
 			line_without_carriage_return  = re.sub("[\n\r]", "", line)
 			line_with_single_blank = re.sub("[ \t]+", " ", line_without_carriage_return)
 			line_without_eol_comments = line_with_single_blank
+			# Note: per precedent in code, this assumes a single-line /* ... */ trailing comment
 			i = line_without_eol_comments.find('/*')
+			if i >= 0:
+				line_without_eol_comments = line_without_eol_comments[:i]
+			i = line_without_eol_comments.find('//')
 			if i >= 0:
 				line_without_eol_comments = line_without_eol_comments[:i]
 			line_without_eol_comments = line_without_eol_comments.strip()
