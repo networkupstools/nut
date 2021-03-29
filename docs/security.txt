@@ -137,9 +137,16 @@ Firewall
 
 NUT has its own official IANA port: 3493/tcp.
 
-The `upsmon` process on slave systems, as well as any other NUT client (such
-as `upsc`, `upscmd`, `upsrw`, NUT-Monitor, ...) connects to the `upsd` process
-on the master system via this TCP port. The `upsd` process does not connect out.
+The `upsmon` process on slave systems, as well as any other NUT client
+(such as `upsc`, `upscmd`, `upsrw`, NUT-Monitor, ...) connects to the `upsd`
+process on the system which manages the UPS, via this TCP port. Usually an
+`upsmon` process runs on the latter system in "master" mode for the devices
+connected to it.
+
+The `upsd` process does not initiate outgoing connections.
+
+Certain NUT drivers (for network-managed devices) can initiate their own
+connections to various ports according to corresponding vendor protocol.
 
 You should use this to restrict network access.
 

@@ -76,7 +76,8 @@
 # "master" means this system will shutdown last, allowing the slaves
 # time to shutdown first.
 #
-# "slave" means this system shuts down immediately when power goes critical.
+# "slave" means this system shuts down immediately when power goes
+# critical and less than MINSUPPLIES power sources have reliable input feeds.
 #
 # The general assumption is that the "master" system is the one with direct
 # connection to an UPS (such as serial or USB cable), so the master system
@@ -98,6 +99,14 @@
 # reduce the 'snmp-ups' or 'netxml-ups' driver polling rate, or dedicate a
 # "master" server and set up the rest as "slave" systems.
 #
+# In case of such large setups as mentioned above, beware also that shutdown
+# times of the rack done all at once can substantially differ from smaller
+# scale experiments with single-server shutdowns, since systems can compete
+# for shared storage and other limited resources as they go down (and also
+# not everyone may safely shut down simultaneously - e.g. a NAS or DB server
+# would better go down after all its clients). You would be well served by
+# higher-end UPSes with manageable thresholds to declare a critical state.
+#
 # Examples:
 #
 # MONITOR myups@bigserver 1 monmaster blah master
@@ -112,7 +121,7 @@
 # put "1" in this field.
 #
 # Large/expensive server type systems usually have more, and can run with
-# a few missing.  The HP NetServer LH4 can run with 2 out of 4, for example,
+# a few missing.  Some of these can run with 2 out of 4, for example,
 # so you'd set that to 2.  The idea is to keep the box running as long
 # as possible, right?
 #
@@ -319,7 +328,9 @@ NOCOMMWARNTIME 300
 # On a master, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
 # before executing your SHUTDOWNCMD.  If you need to do something in between
 # those events, increase this number.  Remember, at this point your UPS is
-# almost depleted, so don't make this too high.
+# almost depleted, so don't make this too high.  If needed, on high-end UPS
+# devices you can usually configure when the low-battery state is announced
+# based on estimated remaining run-time or on charge level of the batteries.
 #
 # Alternatively, you can set this very low so you don't wait around when
 # it's time to shut down.  Some UPSes don't give much warning for low
