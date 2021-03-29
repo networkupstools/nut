@@ -54,13 +54,13 @@ let upsd_users = "
 		instcmds = test.panel.start
 		instcmds = test.panel.stop
 
-	[monmaster]
+	[upswired]
 		password = blah
-		upsmon master
+		upsmon primary
 
-	[monslave]
+	[observer]
 		password = abcd
-		upsmon slave
+		upsmon secondary
 "
 
 test NutUpsdUsers.upsd_users_lns get upsd_users = 
@@ -77,16 +77,16 @@ test NutUpsdUsers.upsd_users_lns get upsd_users =
 		{ "instcmds" = "test.panel.start" }
 		{ "instcmds" = "test.panel.stop" }
 		{ }  }
-	{ "monmaster"
+	{ "upswired"
 		{ "password" = "blah" }
-		{ "upsmon" = "master" }
+		{ "upsmon" = "primary" }
 		{ }  }
-	{ "monslave"
+	{ "observer"
 		{ "password" = "abcd" }
-		{ "upsmon" = "slave" } }
+		{ "upsmon" = "secondary" } }
 
 let upsmon_conf = "
-MONITOR testups@localhost 1 monmaster blah master
+MONITOR testups@localhost 1 upswired blah primary
 
 MINSUPPLIES 1
 SHUTDOWNCMD /sbin/shutdown -h +0
@@ -107,9 +107,9 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 		{ "upsname"  = "testups"    }
 		{ "hostname" = "localhost" } }
 		{ "powervalue" = "1"                }
-		{ "username"   = "monmaster"          }
+		{ "username"   = "upswired"          }
 		{ "password"   = "blah"           }
-		{ "type"       = "master"           } }
+		{ "type"       = "primary"           } }
 	{ }
 	{ "MINSUPPLIES"   = "1"  }
 	{ "SHUTDOWNCMD"   = "/sbin/shutdown -h +0" }

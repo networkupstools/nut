@@ -30,7 +30,7 @@
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
-# MONITOR <system> <powervalue> <username> <password> ("master"|"slave")
+# MONITOR <system> <powervalue> <username> <password> ("primary"|"secondary")
 #
 # List systems you want to monitor.  Not all of these may supply power
 # to the system running upsmon, but if you want to watch it, it has to
@@ -66,38 +66,41 @@
 # changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "monmaster" and your password is
+# upsd.users.  If your username is "upsmon" and your password is
 # "blah", the upsd.users would look like this:
 #
-#	[monmaster]
+#	[upsmon]
 #		password  = blah
-#		upsmon master 	(or slave)
+#		upsmon primary 	# (or secondary)
 #
-# "master" means this system will shutdown last, allowing the slaves
-# time to shutdown first.
+# "primary" means this system will shutdown last, allowing the secondary
+# systems time to shutdown first.
 #
-# "slave" means this system shuts down immediately when power goes
+# "secondary" means this system shuts down immediately when power goes
 # critical and less than MINSUPPLIES power sources have reliable input feeds.
 #
-# The general assumption is that the "master" system is the one with direct
-# connection to an UPS (such as serial or USB cable), so the master system
-# can manage the device, and would often tell the UPS to completely power
-# itself off as a step in power-race avoidance (see POWERDOWNFLAG for details).
-# Also, since the master system stays up the longest, it suffers higher risks
+# The general assumption is that the "primary" system is the one with direct
+# connection to an UPS (such as serial or USB cable), so the primary system
+# runs the NUT driver and 'upsd' server locally and can manage the device,
+# and it would often tell the UPS to completely power itself off as a step
+# in power-race avoidance (see POWERDOWNFLAG for details).
+#
+# Also, since the primary system stays up the longest, it suffers higher risks
 # of ungraceful shutdown if the estimation of remaining runtime (or of the
 # time it takes to shut down this system) was guessed wrong. By consequence,
-# the "slave" systems typically monitor the power environment state through
-# the 'upsd' processes running on the "master" systems and do not directly
-# interact with an UPS (no local NUT drivers are running on slaves). As such,
-# slaves typically shut down as soon as there is a sufficiently long power
-# outage, or a low-battery alert from the UPS, or a loss of connection to
-# the master while the power was last known to be missing.
+# the "secondary" systems typically monitor the power environment state
+# through the 'upsd' processes running on the remote (often "primary") systems
+# and do not directly interact with an UPS (no local NUT drivers are running
+# on the secondary systems). As such, secondaries typically shut down as
+# soon as there is a sufficiently long power outage, or a low-battery alert
+# from the UPS, or a loss of connection to the primary while the power was
+# last known to be missing.
 #
 # This assumption and configuration can also make sense for networked UPSes,
 # where a rack full of servers might overload the communications capacity
 # of the networked management card on the UPS - in this case you might either
 # reduce the 'snmp-ups' or 'netxml-ups' driver polling rate, or dedicate a
-# "master" server and set up the rest as "slave" systems.
+# "primary" server and set up the rest as "secondary" systems.
 #
 # In case of such large setups as mentioned above, beware also that shutdown
 # times of the rack done all at once can substantially differ from smaller
@@ -109,9 +112,9 @@
 #
 # Examples:
 #
-# MONITOR myups@bigserver 1 monmaster blah master
-# MONITOR su700@server.example.com 1 upsmon secretpass slave
-# MONITOR myups@localhost 1 upsmon pass master	(or slave)
+# MONITOR myups@bigserver 1 upswired blah primary
+# MONITOR su700@server.example.com 1 upsmon secretpass secondary
+# MONITOR myups@localhost 1 upsmon pass primary	# (or secondary)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
@@ -192,17 +195,17 @@ POLLFREQALERT 5
 # --------------------------------------------------------------------------
 # HOSTSYNC - How long upsmon will wait before giving up on another upsmon
 #
-# The master upsmon process uses this number when waiting for slaves to
-# disconnect once it has set the forced shutdown (FSD) flag.  If they
-# don't disconnect after this many seconds, it goes on without them.
+# The primary upsmon process uses this number when waiting for secondary
+# systems to disconnect once it has set the forced shutdown (FSD) flag.
+# If they don't disconnect after this many seconds, it goes on without them.
 #
-# Similarly, upsmon slave processes wait up to this interval for the
-# master upsmon to set FSD when a UPS they are monitoring goes critical -
-# that is, on battery and low battery.  If the master doesn't do its job,
-# the slaves will shut down anyway to avoid damage to the file systems.
+# Similarly, upsmon secondary processes wait up to this interval for the
+# primary upsmon to set FSD when an UPS they are monitoring goes critical -
+# that is, on battery and low battery.  If the primary doesn't do its job,
+# the secondaries will shut down anyway to avoid damage to the file systems.
 #
 # This "wait for FSD" is done to avoid races where the status changes
-# to critical and back between polls by the master.
+# to critical and back between polls by the primary.
 
 HOSTSYNC 15
 
@@ -226,11 +229,12 @@ HOSTSYNC 15
 DEADTIME 15
 
 # --------------------------------------------------------------------------
-# POWERDOWNFLAG - Flag file for forcing UPS shutdown on the master system
+# POWERDOWNFLAG - Flag file for forcing UPS shutdown on the primary system
 #
-# upsmon will create a file with this name in master mode when it's time
+# upsmon will create a file with this name in primary mode when it's time
 # to shut down the load.  You should check for this file's existence in
-# your shutdown scripts and run 'upsdrvctl shutdown' if it exists.
+# your shutdown scripts and run 'upsdrvctl shutdown' if it exists, to tell
+# the UPS(es) to power off.
 #
 # See the config-notes.txt file in the docs subdirectory for more information.
 # Refer to the section:
@@ -264,7 +268,7 @@ POWERDOWNFLAG /etc/killpower
 # ONLINE   : UPS is back online
 # ONBATT   : UPS is on battery
 # LOWBATT  : UPS has a low battery (if also on battery, it's "critical")
-# FSD      : UPS is being shutdown by the master (FSD = "Forced Shutdown")
+# FSD      : UPS is being shutdown by the primary (FSD = "Forced Shutdown")
 # COMMOK   : Communications established with the UPS
 # COMMBAD  : Communications lost to the UPS
 # SHUTDOWN : The system is being shutdown
@@ -325,7 +329,7 @@ NOCOMMWARNTIME 300
 # --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system
 #
-# On a master, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
+# On a primary, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
 # before executing your SHUTDOWNCMD.  If you need to do something in between
 # those events, increase this number.  Remember, at this point your UPS is
 # almost depleted, so don't make this too high.  If needed, on high-end UPS
@@ -336,8 +340,9 @@ NOCOMMWARNTIME 300
 # it's time to shut down.  Some UPSes don't give much warning for low
 # battery and will require a value of 0 here for a safe shutdown.
 #
-# Note: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
-# the master will give up waiting for the slave to disconnect.
+# Note: If FINALDELAY on the secondary is greater than HOSTSYNC on the
+# primary, the primary will give up waiting for that secondary system
+# to disconnect.
 
 FINALDELAY 5
 
