@@ -541,6 +541,20 @@ no way to clear it short of restarting upsd or dropping then re-adding
 it in the ups.conf.  This may cause issues when upsd is running on a
 system that is not shut down due to the UPS event.
 
+Note also that certain drivers can propagate the "FSD" state declared by
+the smarter UPSes themselves, e.g. when an UPS is charging after an outage
+and its battery level is below the "safe for load" threshold configured on
+the device itself. In this case the device usually does not power up its
+outlets automatically, but it can be forced by the systems administrator.
+The rationale behind such FSD during charging allows enough power to be
+guaranteed for systems to both boot and shut down safely, if the wall
+power disappears again, trading off prolonged unavailability of the shut
+down servers for the safety of their data. In such cases, administrators
+should be ready to disarm their upsmon clients until the batteries are
+charged, to avoid quick shutdowns of quickly restored servers -- but only
+if they are sure about the wall power being restored for good (e.g. outage
+was due to maintenance).
+
 
 PASSWORD
 --------
