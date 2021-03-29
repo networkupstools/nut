@@ -802,7 +802,7 @@ void TcpClient::deviceLogin(const std::string& dev)
 	detectError(sendQuery("LOGIN " + dev));
 }
 
-/* FIXME: Protocol update needed to handle master/manager alias
+/* FIXME: Protocol update needed to handle master/primary alias
  * and probably an API bump also, to rename/alias the routine.
  */
 void TcpClient::deviceMaster(const std::string& dev)
@@ -1304,7 +1304,7 @@ void Device::login()
 	getClient()->deviceLogin(getName());
 }
 
-/* FIXME: Protocol update needed to handle master/manager alias
+/* FIXME: Protocol update needed to handle master/primary alias
  * and probably an API bump also, to rename/alias the routine.
  */
 void Device::master()
@@ -1711,7 +1711,7 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev)
 	return -1;
 }
 
-/* FIXME: Protocol update needed to handle master/manager alias
+/* FIXME: Protocol update needed to handle master/primary alias
  * and probably an API bump also, to rename/alias the routine.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev)

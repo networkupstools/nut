@@ -155,13 +155,12 @@ This is also when the web pages moved from the old
 at `http://www.exploits.org/nut/` to coincide with the name change.
 
 More drivers were written and the hardware support continued to grow. upsmon
-picked up the concepts of what is now known as "manager" and "subordinate",
+picked up the concepts of what is now known as "primary" and "secondary",
 and could now handle environments where multiple systems get power from a
 single UPS.
 
 Manager mode was added to allow changing the value of read/write variables
-in certain UPS models (Note: not related to "manager" in the multiple-system
-setup mentioned above).
+in certain UPS models.
 
 June 2001: common driver core
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -310,7 +310,7 @@ public:
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
-	/* FIXME: Protocol update needed to handle master/manager alias
+	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	virtual void deviceMaster(const std::string& dev) = 0;
@@ -420,7 +420,7 @@ public:
 	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
 
  	virtual void deviceLogin(const std::string& dev);
-	/* FIXME: Protocol update needed to handle master/manager alias
+	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	virtual void deviceMaster(const std::string& dev);
@@ -591,7 +591,7 @@ public:
 	 * Login current client's user for the device.
 	 */
 	void login();
-	/* FIXME: Protocol update needed to handle master/manager alias
+	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	void master();
@@ -850,7 +850,7 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
-/* FIXME: Protocol update needed to handle master/manager alias
+/* FIXME: Protocol update needed to handle master/primary alias
  * and probably an API bump also, to rename/alias the routine.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);

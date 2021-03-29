@@ -267,7 +267,7 @@ Returns OK on success or raises an error
 
 Returns OK on success or raises an error
 
-TODO: API change pending to replace MASTER with MANAGER
+TODO: API change pending to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
 

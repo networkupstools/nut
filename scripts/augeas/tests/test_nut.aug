@@ -56,11 +56,11 @@ let upsd_users = "
 
 	[upswired]
 		password = blah
-		upsmon manager
+		upsmon primary
 
 	[observer]
 		password = abcd
-		upsmon subordinate
+		upsmon secondary
 "
 
 test NutUpsdUsers.upsd_users_lns get upsd_users = 
@@ -79,14 +79,14 @@ test NutUpsdUsers.upsd_users_lns get upsd_users =
 		{ }  }
 	{ "upswired"
 		{ "password" = "blah" }
-		{ "upsmon" = "manager" }
+		{ "upsmon" = "primary" }
 		{ }  }
 	{ "observer"
 		{ "password" = "abcd" }
-		{ "upsmon" = "subordinate" } }
+		{ "upsmon" = "secondary" } }
 
 let upsmon_conf = "
-MONITOR testups@localhost 1 upswired blah manager
+MONITOR testups@localhost 1 upswired blah primary
 
 MINSUPPLIES 1
 SHUTDOWNCMD /sbin/shutdown -h +0
@@ -109,7 +109,7 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 		{ "powervalue" = "1"                }
 		{ "username"   = "upswired"          }
 		{ "password"   = "blah"           }
-		{ "type"       = "manager"           } }
+		{ "type"       = "primary"           } }
 	{ }
 	{ "MINSUPPLIES"   = "1"  }
 	{ "SHUTDOWNCMD"   = "/sbin/shutdown -h +0" }

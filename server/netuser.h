@@ -1,4 +1,4 @@
-/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER[MANAGER] handlers for upsd
+/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER[PRIMARY] handlers for upsd
 
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
@@ -33,7 +33,7 @@ extern "C" {
 
 void net_login(nut_ctype_t *client, size_t numarg, const char **arg);
 void net_logout(nut_ctype_t *client, size_t numarg, const char **arg);
-/* FIXME: Protocol update needed to handle master/manager alias
+/* FIXME: Protocol update needed to handle master/primary alias
  * and probably an API bump also, to rename/alias the routine.
  */
 void net_master(nut_ctype_t *client, size_t numarg, const char **arg);

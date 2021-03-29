@@ -180,9 +180,13 @@ driver, `upsd`, and `upsmon` running.
 image:images/advanced.png[]
 
 One UPS, multiple computers. Only one of them can actually talk to the UPS
-directly. That's where the network comes in. The Manager system runs the
-relevant driver, `upsd`, and `upsmon` in manager mode. The Subordinate systems
-only run `upsmon` in subordinate mode which all connect to `upsd` on Manager.
+directly. That's where the network comes in:
+
+- The Primary system runs the relevant driver, `upsd`, and `upsmon` in
+"primary" mode.
+
+- The Secondary systems only run `upsmon` in "secondary" mode which all
+connect to `upsd` on Primary.
 
 This is useful when you have a very large UPS that's capable of running
 multiple systems simultaneously. There is no longer the need to buy a bunch
@@ -196,9 +200,9 @@ the sharing for you.
 - Multiple systems may monitor a single UPS using only their network
 connections -- no special "UPS sharing" hardware is required.
 
-- "Subordinate and manager" monitoring design synchronizes shutdowns so that
-subordinate systems can bring down their operating systems cleanly before
-the manager switches off the power.
+- "Secondaries and a primary" monitoring design synchronizes shutdowns so that
+secondary systems can bring down their operating systems cleanly before
+the primary tells the UPS to switch off the power.
 
 === Many UPSes, many clients ===
 
@@ -219,7 +223,7 @@ image:images/bigbox.png[]
 Some systems have multiple power supplies and cords. You typically find
 this on high-end servers that allow hot-swap and other fun features.
 In this case, you run multiple drivers (one per UPS), a single `upsd`,
-and a single `upsmon` (as a manager for both UPS 1 and UPS 2)
+and a single `upsmon` (as a primary for both UPS 1 and UPS 2)
 
 This software understands that some of these servers can also run with
 some of the supplies gone. For this reason, every UPS is assigned a
@@ -245,8 +249,8 @@ monitored, so it's drafted to supply a serial port for the purpose.
 This PC may in fact be getting its own power from some other UPS. This is
 not a problem for the set-up.
 
-The first system ("mixed") is a Manager for UPS 1, but is only monitoring
-UPS 2. The other systems are Subordinates of UPS 2.
+The first system ("mixed") is a Primary for UPS 1, but is only monitoring
+UPS 2. The other systems are Secondaries of UPS 2.
 
 Image credits
 -------------

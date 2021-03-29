@@ -32,12 +32,12 @@
 # On a system called "doghouse", the line in your upsmon.conf to monitor
 # and manage it would look something like this:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword manager
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword primary
 #
-# It might look like this if monitoring in subordinate mode from a different
-# system:
+# It might look like this if monitoring in "secondary" mode (without any
+# ability to directly manage the UPS) from a different system:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword subordinate
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword secondary
 #
 # Configuration directives
 # ------------------------

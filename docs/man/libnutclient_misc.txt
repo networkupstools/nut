@@ -40,7 +40,7 @@ is drawing power from this UPS.
 The *nutclient_get_device_num_logins()* function retrieves the number of
 clients which have been logged for this device.
 
-The *nutclient_device_master()* function makes sure that manager-level
+The *nutclient_device_master()* function makes sure that primary-mode
 functions like FSD are available if necessary. (Note: API change may be
 pending to rename/alias the deprecated function name)
 

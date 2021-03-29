@@ -164,7 +164,7 @@ sub _initialize {
 # Author: Kit Peters
   my $self = shift;
   my %arg = @_;
-  my $host = $arg{HOST}     || 'localhost'; # Host running manager upsd
+  my $host = $arg{HOST}     || 'localhost'; # Host running upsd and probably drivers
   my $port = $arg{PORT}     || '3493'; # 3493 is IANA assigned port for NUT
   my $proto = $arg{PROTO}   || 'tcp'; # use tcp unless user tells us to
   my $user = $arg{USERNAME} || undef; # username passed to upsd
@@ -591,7 +591,7 @@ sub Master { # check for MASTER level access
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
-# TODO: API change pending to replace MASTER with MANAGER
+# TODO: API change pending to replace MASTER with PRIMARY
 # (and backwards-compatible alias handling)
   my $self = shift;
 
@@ -843,7 +843,7 @@ It is automatically done if connection closed.
 Use this to find out whether or not we have MASTER privileges for
 this UPS. Returns 1 if we have MASTER privileges, returns 0 otherwise.
 
-TODO: API change pending to replace MASTER with MANAGER
+TODO: API change pending to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
 
 =item ListVar($variable, ...)
