@@ -302,6 +302,9 @@ testsuite() {
 
 # If no args...
 for USE_SHELL in $SHELL_PROGS ; do
+    case "$USE_SHELL" in
+        busybox|busybox_sh) USE_SHELL="busybox sh" ;;
+    esac
     testsuite
 done
 # End of loop over shells
