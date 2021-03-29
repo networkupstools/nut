@@ -4,8 +4,8 @@
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
-LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
-LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
+LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
+LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -109,6 +109,7 @@ bcmxcp_LDADD = $(LDADD) -lm
 belkin_SOURCES = belkin.c
 belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
+bestfortress_SOURCES = bestfortress.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
@@ -198,7 +199,6 @@ richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
@@ -253,7 +253,7 @@ nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
 nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
-nutdrv_qx_LDADD += $(SERLIBS) serial.o
+nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
 endif
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
@@ -291,5 +291,8 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
-EXTRA_LIBRARIES = libdummy.a
-libdummy_a_SOURCES = main.c dstate.c serial.c
+EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
+libdummy_la_SOURCES = main.c dstate.c
+libdummy_la_LDFLAGS = -no-undefined -static
+libdummy_serial_la_SOURCES = serial.c
+libdummy_serial_la_LDFLAGS = -no-undefined -static
