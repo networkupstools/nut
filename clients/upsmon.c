@@ -199,12 +199,13 @@ static void do_notify(const utype_t *ups, int ntype)
 	/* not found ?! */
 }
 
-/* check for master permissions on the server for this ups */
-/* TODO: API change pending to replace deprecated MASTER with PRIMARY
- * and SLAVE with SECONDARY (and backwards-compatible alias handling)
+/* check if we need "primary" mode (managerial permissions)
+ * on the server for this ups, and apply for them then.
+ * Returns 0 in case of error, 1 otherwise (including when
+ * we do not need to try becoming a primary). This currently
+ * propagates further as the return value of do_upsd_auth().
  */
-/* TODO: Rename routine */
-static int checkmaster(utype_t *ups)
+static int apply_for_primary(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
@@ -329,8 +330,7 @@ static int do_upsd_auth(utype_t *ups)
 	setflag(&ups->status, ST_LOGIN);
 
 	/* now see if we also need to test primary managerial-mode permissions */
-	/* TODO: Rename routine */
-	return checkmaster(ups);
+	return apply_for_primary(ups);
 }
 
 /* set flags and make announcements when a UPS has been checked successfully */
@@ -600,11 +600,11 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 	return 0;
 }
 
-/* TODO: API change pending to replace deprecated MASTER with PRIMARY
- * and SLAVE with SECONDARY (and backwards-compatible alias handling)
+/* Called by upsmon which is the primary on some UPS(es) to wait
+ * until all secondaries log out from it on the shared upsd server
+ * or the HOSTSYNC timeout expires
  */
-/* TODO: Rename routine */
-static void slavesync(void)
+static void sync_secondaries(void)
 {
 	utype_t	*ups;
 	char	temp[SMALLBUF];
@@ -618,7 +618,7 @@ static void slavesync(void)
 
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 
-			/* only check login count on our primary(ies) */
+			/* only check login count on devices we are the primary for */
 			if (!flag_isset(ups->status, ST_PRIMARY))
 				continue;
 
@@ -679,8 +679,7 @@ static void forceshutdown(void)
 	upsdebugx(1, "This system is a primary... waiting for secondaries to logout...");
 
 	/* wait up to HOSTSYNC seconds for secondaries to logout */
-	/* TODO: Rename routine */
-	slavesync();
+	sync_secondaries();
 
 	/* time expired or all the secondaries are gone, so shutdown */
 	doshutdown();
