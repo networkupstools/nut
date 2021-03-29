@@ -74,7 +74,7 @@
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
 
-/* Master list of available subdrivers */
+/* Reference list of available subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
 	&voltronic_qs_subdriver,

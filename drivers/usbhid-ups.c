@@ -52,7 +52,7 @@
 	#include "powervar-hid.h"
 #endif
 
-/* master list of avaiable subdrivers */
+/* Reference list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
