@@ -33,6 +33,7 @@
 #include "state.h"
 #include "parseconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
@@ -1076,26 +1077,41 @@ void alarm_set(const char *buf)
 		 */
 		char alarm_tmp[LARGEBUF];
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int buflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		if (buflen < 0) {
+		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
+		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		size_t buflen;
+		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
 			alarm_tmp[2] = 'A';
 			alarm_tmp[3] = '\0';
+			buflen = strlen(alarm_tmp);
+		} else {
+			if ((unsigned long long int)ibuflen < SIZE_MAX) {
+				buflen = (size_t)ibuflen;
+			} else {
+				buflen = SIZE_MAX;
+			}
 		}
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
-	}
-
-	if (ret > sizeof(alarm_buf)) {
+	} else if ((size_t)ret > sizeof(alarm_buf)) {
 		char alarm_tmp[LARGEBUF];
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int buflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		if (buflen < 0) {
+		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		size_t buflen;
+		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
 			alarm_tmp[2] = 'A';
 			alarm_tmp[3] = '\0';
+			buflen = strlen(alarm_tmp);
+		} else {
+			if ((unsigned long long int)ibuflen < SIZE_MAX) {
+				buflen = (size_t)ibuflen;
+			} else {
+				buflen = SIZE_MAX;
+			}
 		}
 		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
 			"alarm_buf (limited to %zu bytes), with message: %s%s",
