@@ -1353,7 +1353,8 @@ void upsdrv_initinfo(void)
 	char outlet_name[64];
 	char power_rating[10];
 	int res;
-	int ncpu = 0, buf;
+	unsigned int ncpu = 0;
+	size_t buf;
 	uint16_t iRating = 0, iIndex = 0, len;
 	uint16_t conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
 	bool_t got_cmd_list = FALSE;
@@ -1386,6 +1387,7 @@ void upsdrv_initinfo(void)
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
 
+	/* No overflow checks, len value is byte-sized here */
 	buf = len * 11;
 	pTmp = xmalloc(buf+1);
 
