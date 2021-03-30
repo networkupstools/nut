@@ -1525,6 +1525,7 @@ AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
@@ -1541,6 +1542,18 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
         have_cppunit=no]
 )
+AC_MSG_RESULT(${have_cppunit})
+
+dnl # By default keep the originally detected have_cppunit value
+AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
+AC_ARG_ENABLE(cppunit,
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_CASE(["${enableval}"],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["no"], [have_cppunit=no]
+	)])
+AC_MSG_RESULT(${have_cppunit})
+
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
