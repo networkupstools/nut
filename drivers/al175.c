@@ -1014,8 +1014,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
  * see 8. ACTIVATE COMMANDS
  */
 
-typedef int mm_t;	/* minutes */
-typedef int VV_t;	/* voltage */
+typedef uint16_t mm_t;	/* minutes */
+typedef uint16_t VV_t;	/* voltage */
 
 #define	Z1  , 0
 #define Z2  , 0, 0
@@ -1027,7 +1027,7 @@ typedef int VV_t;	/* voltage */
 ACT	TOGGLE_PRS_ONOFF	(void);
 ACT	CANCEL_BOOST		(void);
 ACT	STOP_BATTERY_TEST	(void);
-ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes);
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes);
 ACT	SET_FLOAT_VOLTAGE	(VV_t v);
 ACT	SET_BOOST_VOLTAGE	(VV_t v);
 ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
@@ -1039,14 +1039,14 @@ ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
 ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
-ACT	SWITCH_TEMP_COMP	(int on);
+ACT	SWITCH_TEMP_COMP	(uint16_t on);
 ACT	SWITCH_SYM_ALARM	(void);
 
 /* Implement */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
 ACT	SET_FLOAT_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x80, v			Z2);	}
@@ -1066,7 +1066,7 @@ ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
-ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
+ACT	SWITCH_TEMP_COMP	(uint16_t on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
 ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
 
