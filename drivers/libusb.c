@@ -48,7 +48,7 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_REPORT_SIZE         0x1800
 
 /* Used for Powervar UPS to make sure we use the right interface in the Composite device */
-int hid_rep_index = 0;
+static int hid_rep_index = 0;
 
 static void libusb_close(usb_dev_handle *udev);
 
