@@ -253,14 +253,14 @@ static void reverse_bits(byte_t *buf, size_t count)
 
 	while (count!=0) {
 		x = *buf;
-		x = ( (x & 0x80) >> 7 )  |
-		    ( (x & 0x40) >> 5 )  |
-		    ( (x & 0x20) >> 3 )  |
-		    ( (x & 0x10) >> 1 )  |
-		    ( (x & 0x08) << 1 )  |
-		    ( (x & 0x04) << 3 )  |
-		    ( (x & 0x02) << 5 )  |
-		    ( (x & 0x01) << 7 );
+		x = (byte_t)( (x & 0x80) >> 7 )  |
+		    (byte_t)( (x & 0x40) >> 5 )  |
+		    (byte_t)( (x & 0x20) >> 3 )  |
+		    (byte_t)( (x & 0x10) >> 1 )  |
+		    (byte_t)( (x & 0x08) << 1 )  |
+		    (byte_t)( (x & 0x04) << 3 )  |
+		    (byte_t)( (x & 0x02) << 5 )  |
+		    (byte_t)( (x & 0x01) << 7 );
 		*buf = x;
 
 		++buf;
