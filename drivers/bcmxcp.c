@@ -1365,10 +1365,18 @@ void upsdrv_initinfo(void)
 	init_alarm_map();
 
 	/* Get vars from ups.conf */
-	if (getval("shutdown_delay") != NULL)
-		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
-	else
+	if (getval("shutdown_delay") != NULL) {
+		int tmp = atoi(getval("shutdown_delay"));
+		if (tmp >= 0) {
+			bcmxcp_status.shutdowndelay = (unsigned int)tmp;
+		} else {
+			fatal_with_errno(EXIT_FAILURE,
+				"Invalid setting for shutdown_delay: %s",
+				getval("shutdown_delay"));
+		}
+	} else {
 		bcmxcp_status.shutdowndelay = 120;
+	}
 
 	/* Get information on UPS from UPS ID block */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
