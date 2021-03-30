@@ -392,9 +392,10 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	h.io.len	= 8;
 
 	/* NOTE: doc says we should use ASCII coding here, but the actual
-	 *       values are > 0x80, so we use binary coding	*/
-	data[0] = cmd;
-	data[1] = subcmd;
+	 *       values are > 0x80, so we use binary coding. And have to
+	 *       make this "fit" into the char array required by snprintf */
+	data[0] = (char)cmd;
+	data[1] = (char)subcmd;
 
 	/* FIXME? One CI testcase builder claims here that
 	 *   warning: '%2X' directive output may be truncated writing
