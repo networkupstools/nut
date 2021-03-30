@@ -500,15 +500,19 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 		return -1;		/* wrong type	*/
 	}
 
-	io_addr = from_hex(&reply_head[5], 4);
-	if (io_addr==-1UL)  {
-		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__, reply_head[5],reply_head[6],reply_head[7],reply_head[8]);
+	/* Avoid signed/unsigned implicit conversion warnings
+	 * At least, when shuffling a signed long into unsigned long,
+	 * don't have to worry about overflows */
+	io_addr = (unsigned long)from_hex(&reply_head[5], 4);
+	if (io_addr == -1UL)  {
+		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__,
+			reply_head[5], reply_head[6], reply_head[7], reply_head[8]);
 		return -1;		/* wrong addr	*/
 	}
 
-	io_len = from_hex(&reply_head[9], 2);
-	if (io_len==-1UL)   {
-		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9],reply_head[10]);
+	io_len = (unsigned long)from_hex(&reply_head[9], 2);
+	if (io_len == -1UL)   {
+		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9], reply_head[10]);
 		return -1;		/* wrong NOB	*/
 	}
 
