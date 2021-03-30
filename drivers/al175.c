@@ -674,7 +674,11 @@ static void ser_disable_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	/* Clumsy rewrite of a one-liner
+	 *   tio.c_iflag &= ~ (IXON | IXOFF);
+	 * to avoid type conversion warnings */
+	tcflag_t x = (IXON | IXOFF);
+	tio.c_iflag &= ~ x;
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
