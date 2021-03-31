@@ -560,13 +560,15 @@ void upsdrv_initinfo(void)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	memcpy(serial, my_answer + 7, (size_t)(res - 7));
 	/* serial number start from the 8th byte */
-	serial[12]=0;		/* terminate string */
+	serial[12]='\0';		/* terminate string */
 	dstate_setinfo("ups.serial", "%s", serial);
 
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
 	dstate_setinfo("ups.firmware", "%u.%u", my_answer[5], my_answer[6]);
 
-	printf("Detected %s [%s] v.%s on %s\n", dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"), dstate_getinfo("ups.firmware"), device_path);
+	printf("Detected %s [%s] v.%s on %s\n",
+		dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"),
+		dstate_getinfo("ups.firmware"), device_path);
 
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
