@@ -74,9 +74,9 @@ static int instcmd(const char *cmdname, const char *extra);
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
 */
-static int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
+static uint16_t get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
 	unsigned char a, b;
-	int result;
+	uint16_t result;
 
 	a = buffer[0];
 	b = buffer[1];
@@ -85,9 +85,9 @@ static int get_word(unsigned char *buffer) {		/* return an integer reading a wor
 }
 
 
-static long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
+static uint32_t get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
 	unsigned char a, b, c, d;
-	long int result;
+	uint32_t result;
 	a=buffer[0];
 	b=buffer[1];
 	c=buffer[2];
@@ -569,12 +569,13 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int res, int_num;
+	int res;
+	uint16_t int_num;
 #ifdef EXTRADATA
 	int day, hour, minute;
 #endif
 	float float_num;
-	long int long_num;
+	uint32_t long_num;
 	unsigned char my_answer[255];
 
 	/* GET Output data */
@@ -592,15 +593,15 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%s", "not available");
 		}
 #ifdef EXTRADATA
-		dstate_setinfo("output.power", "%d", int_num);
+		dstate_setinfo("output.power", "%u", int_num);
 #endif
 		/* voltage */
 		int_num = get_word(&my_answer[3]);
-		if (int_num > 0) dstate_setinfo("output.voltage", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("output.voltage", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("output.voltage", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("output.voltage", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
 		/* current */
-		float_num = get_word(&my_answer[5]);
+		float_num = (float)(int16_t)get_word(&my_answer[5]);
 		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current", "%s", "overrange");
 		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current", "%s", "not available");
 		if (float_num > 0) {
@@ -609,7 +610,7 @@ void upsdrv_updateinfo(void)
 		}
 #ifdef EXTRADATA
 		/* peak current */
-		float_num = get_word(&my_answer[7]);
+		float_num = (float)(int16_t)get_word(&my_answer[7]);
 		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current.peak", "%s", "overrange");
 		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current.peak", "%s", "not available");
 		if (float_num > 0) {
@@ -629,18 +630,18 @@ void upsdrv_updateinfo(void)
 #ifdef EXTRADATA
 		/* Active power */
 		int_num = get_word(&my_answer[1]);
-		if (int_num > 0) dstate_setinfo("input.power", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("input.power", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("input.power", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("input.power", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("input.power", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("input.power", "%s", "not available");
 #endif
 		/* voltage */
 		int_num = get_word(&my_answer[3]);
-		if (int_num > 0) dstate_setinfo("input.voltage", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("input.voltage", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("input.voltage", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("input.voltage", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("input.voltage", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("input.voltage", "%s", "not available");
 #ifdef EXTRADATA
 		/* current */
-		float_num = get_word(&my_answer[5]);
+		float_num = (float)(int16_t)get_word(&my_answer[5]);
 		if (float_num == -1) dstate_setinfo("input.current", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current", "%s", "not available");
 		if (float_num > 0) {
@@ -648,7 +649,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("input.current", "%2.2f", float_num);
 		}
 		/* peak current */
-		float_num = get_word(&my_answer[7]);
+		float_num = (float)(int16_t)get_word(&my_answer[7]);
 		if (float_num == -1) dstate_setinfo("input.current.peak", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current.peak", "%s", "not available");
 		if (float_num > 0) {
@@ -666,16 +667,16 @@ void upsdrv_updateinfo(void)
 		dstate_datastale();
 	} else {
 		/* Actual value */
-		float_num = get_word(&my_answer[1]);
+		float_num = (float)(int16_t)get_word(&my_answer[1]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage", "%2.2f", float_num);
 #ifdef EXTRADATA
 		/* reserve threshold */
-		float_num = get_word(&my_answer[3]);
+		float_num = (float)(int16_t)get_word(&my_answer[3]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.low", "%2.2f", float_num);
 		/* exhaust threshold */
-		float_num = get_word(&my_answer[5]);
+		float_num = (float)(int16_t)get_word(&my_answer[5]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.exhaust", "%2.2f", float_num);
 #endif
@@ -696,7 +697,7 @@ void upsdrv_updateinfo(void)
 		long_num -= (long)(hour*3600);
 		minute = (int)(long_num / 60);
 		long_num -= (minute*60);
-		dstate_setinfo("ups.total.runtime", "%d days %dh %dm %lds", day, hour, minute, long_num);
+		dstate_setinfo("ups.total.runtime", "%d days %dh %dm %lus", day, hour, minute, long_num);
 
 		/* ups inverter runtime */
 		long_num = get_long(&my_answer[5]);
@@ -706,19 +707,19 @@ void upsdrv_updateinfo(void)
 		long_num -= (long)(hour*3600);
 		minute = (int)(long_num / 60);
 		long_num -= (minute*60);
-		dstate_setinfo("ups.inverter.runtime", "%d days %dh %dm %lds", day, hour, minute, long_num);
+		dstate_setinfo("ups.inverter.runtime", "%d days %dh %dm %lus", day, hour, minute, long_num);
 		/* ups inverter interventions */
-		dstate_setinfo("ups.inverter.interventions", "%d", get_word(&my_answer[9]));
+		dstate_setinfo("ups.inverter.interventions", "%u", get_word(&my_answer[9]));
 		/* battery full discharges */
-		dstate_setinfo("battery.full.discharges", "%d", get_word(&my_answer[11]));
+		dstate_setinfo("battery.full.discharges", "%u", get_word(&my_answer[11]));
 		/* ups bypass / stabilizer interventions */
 		int_num = get_word(&my_answer[13]);
-		if (int_num == -2) dstate_setinfo("ups.bypass.interventions", "%s", "not avaliable");
-		if (int_num >= 0) dstate_setinfo("ups.bypass.interventions", "%d", int_num);
+		if ((int16_t)int_num == -2) dstate_setinfo("ups.bypass.interventions", "%s", "not avaliable");
+		if ((int16_t)int_num >= 0) dstate_setinfo("ups.bypass.interventions", "%u", int_num);
 		/* ups overheatings */
 		int_num = get_word(&my_answer[15]);
-		if (int_num == -2) dstate_setinfo("ups.overheatings", "%s", "not avalilable");
-		if (int_num >= 0) dstate_setinfo("ups.overheatings", "%d", int_num);
+		if ((int16_t)int_num == -2) dstate_setinfo("ups.overheatings", "%s", "not avalilable");
+		if ((int16_t)int_num >= 0) dstate_setinfo("ups.overheatings", "%u", int_num);
 	}
 #endif
 
@@ -740,17 +741,17 @@ void upsdrv_updateinfo(void)
 	} else {
 		/* time remaining to shutdown */
 		long_num = get_long(&my_answer[1]);
-		if (long_num == -1) {
+		if ((int32_t)long_num == -1) {
 			dstate_setinfo("ups.delay.shutdown", "%d", 120);
 		} else {
-			dstate_setinfo("ups.delay.shutdown", "%ld", long_num);
+			dstate_setinfo("ups.delay.shutdown", "%lu", (unsigned long)long_num);
 		}
 		/* time remaining to restart  */
 		long_num = get_long(&my_answer[5]);
-		if (long_num == -1) {
+		if ((int32_t)long_num == -1) {
 			dstate_setinfo("ups.delay.start", "%d", 0);
 		} else {
-			dstate_setinfo("ups.delay.start", "%ld", long_num);
+			dstate_setinfo("ups.delay.start", "%lu", (unsigned long)long_num);
 		}
 	}
 
