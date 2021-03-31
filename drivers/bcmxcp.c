@@ -2075,7 +2075,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		/*if -1 then use global shutdown_delay from ups.conf*/
-		if (sddelay == -1) sddelay=bcmxcp_status.shutdowndelay;
+		if (sddelay == -1) sddelay = (int)bcmxcp_status.shutdowndelay;
 
 		outlet_num = cmdname[NUT_OUTLET_POSITION] - '0';
 		if (outlet_num < 1 || outlet_num > 9)
