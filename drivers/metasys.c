@@ -96,6 +96,18 @@ static uint32_t get_long(unsigned char *buffer) {	/* return a long integer readi
 	return result;
 }
 
+static float get_word_float(unsigned char *buffer) {
+	/* return a float converted after reading a word in the supplied buffer */
+	/* NOTE: This started as a wrapper for legacy logic that directly assigned
+	 *   float_num = get_word(...)
+	 * in code below. No idea if the protocol really sends 16-bit floats.
+	 * FWIW, bcmxcp.c copied get_word() and get_long() from metasys.c but did
+	 * implement a get_float() for IEEE-754 32-bit values.
+	 */
+	return (float)(int16_t)get_word(buffer);
+}
+
+
 static void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
 
@@ -601,7 +613,7 @@ void upsdrv_updateinfo(void)
 		if ((int16_t)int_num == -1) dstate_setinfo("output.voltage", "%s", "overrange");
 		if ((int16_t)int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
 		/* current */
-		float_num = (float)(int16_t)get_word(&my_answer[5]);
+		float_num = get_word_float(&my_answer[5]);
 		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current", "%s", "overrange");
 		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current", "%s", "not available");
 		if (float_num > 0) {
@@ -610,7 +622,7 @@ void upsdrv_updateinfo(void)
 		}
 #ifdef EXTRADATA
 		/* peak current */
-		float_num = (float)(int16_t)get_word(&my_answer[7]);
+		float_num = get_word_float(&my_answer[7]);
 		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current.peak", "%s", "overrange");
 		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current.peak", "%s", "not available");
 		if (float_num > 0) {
@@ -641,7 +653,7 @@ void upsdrv_updateinfo(void)
 		if ((int16_t)int_num == -2) dstate_setinfo("input.voltage", "%s", "not available");
 #ifdef EXTRADATA
 		/* current */
-		float_num = (float)(int16_t)get_word(&my_answer[5]);
+		float_num = get_word_float(&my_answer[5]);
 		if (float_num == -1) dstate_setinfo("input.current", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current", "%s", "not available");
 		if (float_num > 0) {
@@ -649,7 +661,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("input.current", "%2.2f", float_num);
 		}
 		/* peak current */
-		float_num = (float)(int16_t)get_word(&my_answer[7]);
+		float_num = get_word_float(&my_answer[7]);
 		if (float_num == -1) dstate_setinfo("input.current.peak", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current.peak", "%s", "not available");
 		if (float_num > 0) {
@@ -667,16 +679,16 @@ void upsdrv_updateinfo(void)
 		dstate_datastale();
 	} else {
 		/* Actual value */
-		float_num = (float)(int16_t)get_word(&my_answer[1]);
+		float_num = get_word_float(&my_answer[1]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage", "%2.2f", float_num);
 #ifdef EXTRADATA
 		/* reserve threshold */
-		float_num = (float)(int16_t)get_word(&my_answer[3]);
+		float_num = get_word_float(&my_answer[3]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.low", "%2.2f", float_num);
 		/* exhaust threshold */
-		float_num = (float)(int16_t)get_word(&my_answer[5]);
+		float_num = get_word_float(&my_answer[5]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.exhaust", "%2.2f", float_num);
 #endif
