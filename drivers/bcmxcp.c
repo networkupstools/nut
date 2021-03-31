@@ -2083,8 +2083,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
-		cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
-		cbuf[3] = outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
+		cbuf[2] = (unsigned char)(sddelay >> 8);     /* high byte of the 2 byte time argument */
+		cbuf[3] = (unsigned char)outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
 		res = command_write_sequence(cbuf, 4, answer);
 
@@ -2105,7 +2105,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 
 		cbuf[0] = (cmdname[NUT_OUTLET_POSITION+8] == 'n')?PW_UPS_ON:PW_UPS_OFF;        /* Cmd oN or not*/
-		cbuf[1] = outlet_num;                           /* Outlet number */
+		cbuf[1] = (unsigned char)outlet_num;                           /* Outlet number */
 
 		res = command_write_sequence(cbuf, 2, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
@@ -2177,7 +2177,7 @@ int setvar (const char *varname, const char *val)
 	unsigned char answer[128], cbuf[5];
 	char namebuf[MAX_NUT_NAME_LENGTH];
 	char success_msg[SMALLBUF];
-	int res, sec, outlet_num,tmp;
+	int res, sec, outlet_num, tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
 	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
@@ -2195,7 +2195,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_LOW_DEV_LIMIT;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " BOOST threshold volage set to %d V", tmp);
@@ -2217,7 +2217,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_HIGH_DEV_LIMIT;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " TRIM threshold volage set to %d V", tmp);
@@ -2238,7 +2238,7 @@ int setvar (const char *varname, const char *val)
 
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_LOW_BATT;
-		cbuf[2]=tmp;
+		cbuf[2]=tmp&0xff;
 		cbuf[3]=0x0;
 
 		res = command_write_sequence(cbuf, 4, answer);
@@ -2261,7 +2261,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_RETURN_DELAY;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " Mains return delay set to %d sec", tmp);
@@ -2328,7 +2328,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_NOMINAL_OUT_VOLTAGE;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " Nominal output voltage set to %d V", tmp);
@@ -2394,7 +2394,7 @@ int setvar (const char *varname, const char *val)
 
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_BATT_STRINGS;
-		cbuf[2]=tmp;
+		cbuf[2]=tmp&0xff;
 		cbuf[3]=0x0;
 
 		res = command_write_sequence(cbuf, 4, answer);
@@ -2436,11 +2436,11 @@ int setvar (const char *varname, const char *val)
 			return STAT_SET_INVALID;
 		}
 
-		cbuf[0] = PW_SET_OUTLET_COMMAND;	/* Cmd */
-		cbuf[1] = onOff_setting;			/* Set Auto Off (1) or On (2) Delay */
-		cbuf[2] = outlet_num;				/* Outlet number */
-		cbuf[3] = sec&0xff;					/* Delay in seconds LSB */
-		cbuf[4] = sec>>8;					/* Delay in seconds MSB */
+		cbuf[0] = PW_SET_OUTLET_COMMAND;		/* Cmd */
+		cbuf[1] = (unsigned char)onOff_setting;	/* Set Auto Off (1) or On (2) Delay */
+		cbuf[2] = (unsigned char)outlet_num;	/* Outlet number */
+		cbuf[3] = sec&0xff;						/* Delay in seconds LSB */
+		cbuf[4] = (unsigned char)(sec>>8);		/* Delay in seconds MSB */
 
 		res = command_write_sequence(cbuf, 5, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d %s delay set to %d sec",
