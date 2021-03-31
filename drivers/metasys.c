@@ -128,7 +128,7 @@ static void dump_buffer(unsigned char *buffer, int buf_len) {
 
 /* send a read command to the UPS, it retries 5 times before give up
    it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
-static void send_read_command(char command) {
+static void send_read_command(unsigned char command) {
 	int retry, sent;
 	unsigned char buf[4];
 	retry = 0;
