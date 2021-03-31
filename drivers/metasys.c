@@ -180,7 +180,9 @@ static void send_write_command(unsigned char *command, size_t command_length) {
 /* get the answer of a command from the ups */
 static int get_answer(unsigned char *data) {
 	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
-	int packet_length, checksum, i, res;
+	unsigned char packet_length, checksum, i;
+	ssize_t res;
+
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
