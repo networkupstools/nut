@@ -555,8 +555,10 @@ void upsdrv_initinfo(void)
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
 	}
 
-	/* Get the serial number */
-	memcpy(serial, my_answer + 7, res - 7);
+	/* Get the serial number; res >=0 per check above */
+	if (res < 7 || (long long)res > SIZE_MAX)
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+	memcpy(serial, my_answer + 7, (size_t)(res - 7));
 	/* serial number start from the 8th byte */
 	serial[12]=0;		/* terminate string */
 	dstate_setinfo("ups.serial", "%s", serial);
