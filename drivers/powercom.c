@@ -503,14 +503,14 @@ static float output_voltage(void)
 			if (statAVR == 0) {
 				// FIXME: miss test "if (iUPS == 1) {"
 				if (linevoltage >= 200) {
-					if (linevoltage <= 625)
+					if (model <= 625)
 						tmp = 1.79*raw_data[OUTPUT_VOLTAGE] + 3.35;
 					else if (model<2000)
 						tmp = 1.61*raw_data[OUTPUT_VOLTAGE];
 					else
 						tmp = 1.625*raw_data[OUTPUT_VOLTAGE];
 				} else {
-					if (linevoltage <= 625)
+					if (model <= 625)
 						tmp = 0.89 * raw_data[OUTPUT_VOLTAGE] + 6.18;
 					else if (model<2000)
 						tmp = 1.61 * raw_data[OUTPUT_VOLTAGE] / 2.0;
