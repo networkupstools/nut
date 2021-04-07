@@ -34,6 +34,7 @@ AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
     [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
+     have_PKG_CONFIG=no
      dummy_RES=0
      ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
      ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
@@ -41,10 +42,12 @@ AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
         [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
          dnl The m4 macro below may be not defined if pkg-config package is not
          dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
-         dnl allows to avoid shell syntax errors in generated configure script.
-         ifdef([PKG_CHECK_MODULES], [PKG_CHECK_MODULES ([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes], [have_PKG_CONFIG=no])], [have_PKG_CONFIG=no])
-        ], [have_PKG_CONFIG=no])]
-)
+         dnl allows to avoid shell syntax errors in generated configure script
+         dnl by defining a dummy macro in-place.
+         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
+        ])
+])
 AS_IF([test x"$have_PKG_CONFIG" = xno],
     [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
 
