@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2537 utf-8
+personal_ws-1.1 en 2539 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -932,6 +932,7 @@ SMT
 SMTP
 SMX
 SNMPv
+SNR
 SOCKADDR
 SOCKLEN
 SOFF
@@ -2229,6 +2230,7 @@ snmpv
 snmpwalk
 snprintf
 snprintfcat
+snr
 sockdebug
 solaris
 solis
