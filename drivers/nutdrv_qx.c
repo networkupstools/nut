@@ -1027,6 +1027,11 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
+	if (buflen < 102) {
+		upsdebugx(4, "size of buf less than 102 byte!");
+		return 0;
+	}
+
 	for (i = 0; command[i].str; i++) {
 
 		int	retry;
@@ -1038,7 +1043,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		for (retry = 0; retry < 10; retry++) {
 
 			int	ret;
-
+	
 			ret = usb_get_string(udev, command[i].index, langid_fix, buf, 102);
 
 			if (ret <= 0) {
