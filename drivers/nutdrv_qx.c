@@ -1043,7 +1043,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		for (retry = 0; retry < 10; retry++) {
 
 			int	ret;
-	
+
 			ret = usb_get_string(udev, command[i].index, langid_fix, buf, 102);
 
 			if (ret <= 0) {
