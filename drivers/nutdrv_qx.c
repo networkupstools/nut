@@ -2790,6 +2790,19 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 				}
 
 			}
+			
+			double voltage_battery_charge = (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
+			if (voltage_battery_charge > 1) {
+					voltage_battery_charge = 1;
+			}
+			if (voltage_battery_charge < 0) {
+					voltage_battery_charge = 0;
+			}
+
+			/* Correct estimated runtime remaining for old batteries */
+			if(voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+				batt.runt.est = voltage_battery_charge * batt.runt.nom;
+			}
 
 			if (d_equal(batt.chrg.act, -1))
 				dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
