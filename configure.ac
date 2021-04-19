@@ -34,14 +34,20 @@ AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
     [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     PKG_PROG_PKG_CONFIG
-     dummy_RES=$?
-     AS_IF([test $dummy_RES = 0],
+     have_PKG_CONFIG=no
+     dummy_RES=0
+     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
+     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
+     AS_IF([test "${dummy_RES}" = 0],
         [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
-            [], [have_PKG_CONFIG=no])
-        ], [have_PKG_CONFIG=no])]
-)
+         dnl The m4 macro below may be not defined if pkg-config package is not
+         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
+         dnl allows to avoid shell syntax errors in generated configure script
+         dnl by defining a dummy macro in-place.
+         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
+        ])
+])
 AS_IF([test x"$have_PKG_CONFIG" = xno],
     [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
 
@@ -1525,11 +1531,12 @@ AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
     [AS_IF([test x"${have_cxx11}" = xyes],
-        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+        [ifdef([PKG_CHECK_MODULES], [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)], [have_cppunit=no])
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
@@ -1541,6 +1548,18 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
         have_cppunit=no]
 )
+AC_MSG_RESULT(${have_cppunit})
+
+dnl # By default keep the originally detected have_cppunit value
+AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
+AC_ARG_ENABLE(cppunit,
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_CASE(["${enableval}"],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["no"], [have_cppunit=no]
+	)])
+AC_MSG_RESULT(${have_cppunit})
+
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 

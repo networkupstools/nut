@@ -71,7 +71,7 @@ ERROR CHECKING
 --------------
 This function will check your query against the response from
 linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
-will expect to see those at the beginning of the response. 
+will expect to see those at the beginning of the response.
 
 If the results from *upsd* do not pass this case-insensitive test
 against your request, this function will return an error.   When this
@@ -90,7 +90,7 @@ which were returned by the most recent call.  You also must not attempt
 to use more than 'numa' elements in 'answer'.  Such behavior is
 undefined, and may yield bogus data or a crash.
 
-The array will be deleted after calling linkman:upscli_disconnect[3].  Any 
+The array will be deleted after calling linkman:upscli_disconnect[3].  Any
 access after that point is also undefined.
 
 RETURN VALUE

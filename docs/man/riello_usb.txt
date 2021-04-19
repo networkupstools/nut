@@ -1,4 +1,4 @@
-RIELLO_USB(8) 
+RIELLO_USB(8)
 ===========
 
 NAME
