@@ -1,7 +1,8 @@
-/* nutdrv_qx_zinto.c - Subdriver for Zinto protocol based UPSes
+/* nutdrv_qx_hunnox.c - Subdriver for Hunnox protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
+ *   2020 Mariano Jan https://marianojan.com
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
