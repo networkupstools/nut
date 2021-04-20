@@ -1292,7 +1292,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850 */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	/* End of list */
