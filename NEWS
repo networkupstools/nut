@@ -10,16 +10,26 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
- - Travis CI in addition to Buildbot build testing
-   * spellcheck target with a custom NUT dictionary
-   * cppunit testing with valgrind
+ - Add support for ALLOW_NO_DEVICE=true (as upsd.conf flag or envvar) to
+   allow starting the data server initially without any device configurations
+   and reloading it later to apply config changes on the fly [PR #766]
 
- - Implement status tracking for instant commands (instcmd) and variables
-   settings (setvar): this allows to get the actual execution status from the
-   driver, and is available in libraries and upscmd / upsrw
+ - Improve support for upsdrvctl for managing of numerous device configs,
+   including default "maxretry=3" and a "nowait" option to complete the
+   "start of everything" mode after triggering the drivers and not waiting
+   for them to complete initializing. This matters on systems that monitor
+   from dozens to hundreds of devices.
 
- - Add support for extra parameter for instant commands, both in library and
-   in upscmd
+ - Improvements for device discovery or driver "lock-picking", including
+   general support for:
+   * "Standalone" mode (`-s` option), to monitor a device which is not
+     detailed or mentioned in ups.conf
+   * NUT_ALTPIDPATH or NUT_STATEPATH envvars to override paths built into
+     the driver binary [PRs #473 and #507]
+   * "Driver data dump" mode (`-d` option), to poll a device for one or
+     few ('update_count' ) loops, report discovered values (dump the data
+     tree in upsc-like format), and exit. This complements the `nut-scanner`
+     for finding and identifying devices.
 
  - support for new devices:
    * IBM 6000 VA LCD 4U Rack UPS; 5396-1Kx (USB)
@@ -27,6 +37,19 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
    * Emerson Avocent PM3000 PDU (SNMP)
    * HPE ePDU (SNMP)
+   * nutdrv_qx: "snr" subdriver with USB connection, for SNR-UPS-LID-XXXX
+     [PR #1008].
+     Note that end-users should reference explicitly the `snr` subdriver
+     in their `ups.conf` settings because of USB chip using the same
+     values of VendorID/ProductID as fabula_subdriver, fuji_subdriver,
+     and krauler_subdriver.
+   * nutdrv_qx: "hunnox" subdriver, as a dialect of earlier "fabula" [PR #638]
+     adds support for Hunnox HNX-850 with USB connection and reported to work
+     for Powercool, Iron Guardian, ARES devices and possibly many others from
+     discussions linking to the pull request which introduced the driver.
+
+ - pijuice: added new i2c bus driver for PiJuice HAT, a battery UPS module
+   for the Raspberry Pi systems [PR #730]
 
  - add devices to HCL/DDL:
    * APC Back-UPS CS (USB)
@@ -45,6 +68,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Python 3 compatibility in development scripts
 
+ - Added Russian translation for NUT-Monitor GUI client [PR #806]
+
  - usbhid-ups:
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
@@ -53,6 +78,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * add IBM USB VID
    * add deep battery test for CyberPower OL3000RMXL2U
    * report the libusb version used
+   * add Delta UPS Amplon R Series, tested on R1K and R3K model [PR #987]
+   * add AMETEK Powervar UPM [PR #733]
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
@@ -73,9 +100,16 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * improve ALARM flag handling
    * add firmware version for new HPE Network card
    * add ups.load, battery.charge, input.{voltage,frequency} and output.voltage
-     for CyberPower
+     for CyberPower, as well as shutdown and other instant commands
+   * several rounds of updates for Eaton devices, including new ATS and ePDU
+     hardware families
+
+ - netxml-ups: Report calibration status
 
  - solis: various improvements and fixes
+
+ - liebert-esp2: Correct battery V scaling, update docs, implement split-phase
+   unit support [PR #412]
 
  - libnutclient: introduce getDevicesVariableValues() to improve performances
    when querying many devices (up to 15 times faster)
@@ -93,31 +127,69 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - nut-scanner: various improvements, including the detection of libraries at
    runtime and tracing information
 
- - all drivers: add support for dumping the data tree (in upsc-like format)
-   after running the driver update loop for 'update_count' times and exit.
-   This complements the nut-scanner for finding and identifying devices.
-
  - systemd support improvements:
    * POWEROFF_WAIT
    * reload support for upsd
 
  - upsrw: display the variable type beside ENUM / RANGE
 
+ - Implement status tracking for instant commands (instcmd) and variables
+   settings (setvar): this allows to get the actual execution status from the
+   driver, and is available in libraries and upscmd / upsrw [PR #659]
+
+ - Add support for extra parameter for instant commands, both in library and
+   in upscmd
+
  - new protocol variables:
    * `input.phase.shift`
    * `outlet.N.name`
    * `outlet.N.type`
 
- - As usual, more bugfixes, cleanup and improvements, on both source code
-   and documentation.
-
----------------------------------------------------------------------------
-Release notes for NUT 2.7.5 (brewing) - what's new since 2.7.4:
-
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
    modes of upsmon client. Respective keywords in the configuration are
    supported as backwards-compatible settings, but obsoleted values are
-   no longer documented.
+   no longer documented. [issue #840 and several PRs]
+
+ - Build fixes:
+   * In general, numerous fixes were applied to ensure portability and avoid
+     warnings (fixing a number of real bugs that caused them); CI was extended
+     to keep the codebase free of those types of warnings which we have got
+     rid of, requiring builds to succeed cleanly in several dozen combinations
+     of compiler versions, C standard revisions (C99 upwards, though on many
+     OSes with GNU99+ extensions), operating systems and CPU architectures.
+   * Public CI introduced to automatically test every contribution (PR) and
+     resulting increment of main NUT codebase, including Travis CI and LGTM.com
+     services, and a Jenkins farm on virtual hardware donated by Fosshost.org;
+     this augments testing earlier provided for some branches by Buildbot.
+   * Added cppunit testing with valgrind for the C++ client library
+   * Make targets added for shell script syntax checks for helper and service
+     scripts
+   * Make targets added for spellcheck and maintenance of the dictionary
+   * The AsciiDoc detection has been reworked to allow NUT to be built from
+     source without requiring asciidoc/a2x (using pre-built man pages from
+     the distribution tarball, for instance)
+   * Makefile contents rearranged for more resilient out-of-tree and in-tree
+     builds beside those made from the root workspace directory
+   * More use of `pkg-config` to detect dependencies at configure time, as
+     well as fail-safe detection of presence of pkg-config (and its macros)
+     to survive and build without it too
+   * "slibtool" pedantics supported, allowing an alternative to GNU libtool
+   * Dynamic library loading used in certain programs and use-cases improved,
+     especially for 64-bit vs 32-bit builds on multiple-bitness OSes
+   * Numerous classes of compilation warnings eradicated, many of those being
+     potential issues with implicit data type conversions and varied numeric
+     type width, signedness, string buffer size, uninitialized variables or
+     structure fields; some more in progress
+   * Several logical errors found and fixed during this walk over codebase.
+   * Cases where compilers were overly zealous and particular code was written
+     the way wit was intentionally, including some comparisons that help with
+     different-bitness builds but indeed seem superfluous in a certain single
+     bitness, were commented and encased in pragmas to disable the warnings
+   * Basic coding style (indentations, lack of trailing white space) applied
+     per developer guide, but not automatically enforced/checked yet.
+
+ - As usual, more bugfixes, cleanup and improvements, on both source code
+   and documentation.
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.7.4 - what's new since 2.7.3:
