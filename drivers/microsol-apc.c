@@ -1,4 +1,4 @@
-/* microsol-apc.c - Driver for APC Back-UPS BR UPS hardware
+/* microsol-apc.c - APC Back-UPS BR series UPS driver
 
    Copyright (C) 2004  Silvino B. Magalhães    <sbm2yk@gmail.com>
                  2019  Roberto Panerai Velloso <rvelloso@gmail.com>
@@ -32,7 +32,7 @@
 #include "microsol-common.h"
 #include "microsol-apc.h"
 
-#define DRIVER_NAME	"APC Back-UPS BZ series UPS driver"
+#define DRIVER_NAME	"APC Back-UPS BR series UPS driver"
 #define DRIVER_VERSION	"0.68"
 
 /* driver description structure */
