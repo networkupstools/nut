@@ -1,4 +1,4 @@
-NUT-IPMIPSU(8) 
+NUT-IPMIPSU(8)
 ==============
 
 NAME

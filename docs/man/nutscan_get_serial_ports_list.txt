@@ -33,8 +33,8 @@ The *nutscan_get_serial_ports_list()* function returns NULL if an error occurred
 
 SEE ALSO
 --------
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3], 
-linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3], 
-linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3], 
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
+linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
 linkman:nutscan_scan_eaton_serial[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_display_ups_conf[3]
