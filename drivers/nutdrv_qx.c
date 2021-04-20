@@ -1021,6 +1021,9 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 
 		// Seems that if we inform a large buffer, the USB locks.
 		// This value was captured from the Windows "official" client.
+		// Note this should not be a problem programmatically: it just
+		// means that the caller reserved a longer buffer that we need
+		// in practice to write a response into.
 		if (buflen > 102) {
 			buflen = 102;
 		}
