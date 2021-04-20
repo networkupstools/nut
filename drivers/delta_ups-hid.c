@@ -25,6 +25,8 @@
 #include "usb-common.h"
 
 #define DELTA_UPS_HID_VERSION "Delta UPS HID 0.1"
+
+/* Delta UPS */
 #define DELTA_UPS_VENDORID 0x05dd
 
 static usb_device_id_t delta_ups_usb_device_table[] = {
