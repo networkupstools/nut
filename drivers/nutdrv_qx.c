@@ -842,8 +842,110 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Fabula communication subdriver */
-static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunnox_patch)
+static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 {
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* Fabula string index for this command */
+	} commands[] = {
+		{ "Q1\r",	0x03, },	/* Status */
+		{ "F\r",	0x0d, },	/* Ratings */
+		{ "I\r",	0x0c, },	/* Vendor infos */
+		{ "Q\r",	0x07, },	/* Beeper toggle */
+		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
+		{ NULL, 0 }
+	};
+	int	i, ret, index = 0;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	for (i = 0; commands[i].str; i++) {
+
+		if (strcmp(cmd, commands[i].str))
+			continue;
+
+		index = commands[i].index;
+		break;
+
+	}
+
+	if (!index) {
+
+		int	val2 = -1;
+		double	val1 = -1;
+
+		/* Shutdowns */
+		if (
+			sscanf(cmd, "S%lfR%d\r", &val1, &val2) == 2 ||
+			sscanf(cmd, "S%lf\r", &val1) == 1
+		) {
+
+			double	delay;
+
+			/* 0x(1+)0 -> shutdown.stayoff (SnR0000)
+			 * 0x(1+)8 -> shutdown.return (Sn[Rm], m != 0) [delay before restart is always 10 seconds]
+			 * +0x10 (16dec) = next megatec delay (min .5 = hex 0x1*; max 10 = hex 0xF*) -> n < 1 ? -> n += .1; n >= 1 ? -> n += 1 */
+
+			/* delay: [.5..10] (-> seconds: [30..600]) */
+			delay = val1 < .5 ? .5 : val1 > 10 ? 10 : val1;
+
+			if (delay < 1)
+				index = 16 + round((delay - .5) * 10) * 16;
+			else
+				index = 96 + (delay - 1) * 16;
+
+			/* shutdown.return (Sn[Rm], m != 0) */
+			if (val2)
+				index += 8;
+
+		/* Unknown commands */
+		} else {
+
+			/* Echo the unknown command back */
+			upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+
+		}
+
+	}
+
+	upsdebugx(4, "command index: 0x%02x", index);
+
+	/* Send command/Read reply */
+	ret = usb_get_string_simple(udev, index, buf, buflen);
+
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		return ret;
+	}
+
+	upsdebug_hex(5, "read", buf, ret);
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
+	if (
+		strcspn(buf, "\r") == 10 &&
+		!strncasecmp(buf, "UPS No Ack", 10)
+	) {
+		/* ..because of that, always return 0 (with buf empty, as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
+		memset(buf, 0, buflen);
+		return 0;
+	}
+
+	return ret;
+}
+
+/* Hunnox communication subdriver, based on Fabula code above so repeats
+ * much of it currently. Possible future optimization is to refactor shared
+ * code into new routines to be called from both (or more) methods.*/
+static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
+{
+	/* The hunnox_patch was an argument in initial implementation of PR #638
+	 * which added "hunnox" support; keeping it fixed here helps to visibly
+	 * track the modifications compared to original fabula_command() e.g. to
+	 * facilitate refactoring commented above, in the future.
+	 */
+	char hunnox_patch = 1;
 	const struct {
 		const char	*str;	/* Megatec command */
 		const int	index;	/* Fabula string index for this command */
@@ -978,16 +1080,6 @@ static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunno
 	}
 
 	return ret;
-}
-
-static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
-{
-	return _fabula_command(cmd, buf, buflen, TRUE);
-}
-
-static int	fabula_command(const char *cmd, char *buf, size_t buflen)
-{
-	return _fabula_command(cmd, buf, buflen, FALSE);
 }
 
 /* Fuji communication subdriver */
