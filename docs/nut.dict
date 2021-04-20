@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2536 utf-8
+personal_ws-1.1 en 2546 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -401,6 +401,7 @@ Hlavinka
 Holger
 Hoogervorst
 Hough
+Hunnox
 Hurd
 Håvard
 IANA
@@ -460,6 +461,7 @@ KRT
 Kain
 Kaminski
 Kanji
+Kazancev
 Kazutoshi
 Kebo
 Keor
@@ -802,6 +804,7 @@ PowerVault
 PowerWalker
 PowerWare
 Powerchute
+Powercool
 Powervar
 Powerwell
 Prachi
@@ -892,6 +895,7 @@ Rodríguez
 Rucelf
 RxD
 RxHs
+Ryabov
 SAI
 SCM
 SCO
@@ -933,6 +937,7 @@ SMT
 SMTP
 SMX
 SNMPv
+SNR
 SOCKADDR
 SOCKLEN
 SOFF
@@ -1272,6 +1277,7 @@ automessage
 autoreconf
 autorestart
 autosaving
+autoscan
 autostart
 autowidth
 auxdata
@@ -1664,6 +1670,7 @@ http
 httpd
 https
 huawei
+hunnox
 iBox
 iDowell
 iManufacturer
@@ -1952,6 +1959,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noscanlangid
 notAfter
 notifyme
 notifytype
@@ -2102,6 +2110,7 @@ qgs
 qpi
 qs
 queequeg
+quiesce
 qx
 qx's
 qxflags
@@ -2232,6 +2241,7 @@ snmpv
 snmpwalk
 snprintf
 snprintfcat
+snr
 sockdebug
 solaris
 solis
@@ -2437,6 +2447,7 @@ upsset
 upsstats
 upstype
 upsuser
+upswired
 uptime
 urpmi
 usb

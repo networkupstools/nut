@@ -50,9 +50,10 @@
 	#include "idowell-hid.h"
 	#include "openups-hid.h"
 	#include "powervar-hid.h"
+	#include "delta_ups-hid.h"
 #endif
 
-/* master list of avaiable subdrivers */
+/* Reference list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
@@ -68,6 +69,7 @@ static subdriver_t *subdriver_list[] = {
 	&idowell_subdriver,
 	&openups_subdriver,
 	&powervar_subdriver,
+	&delta_ups_subdriver,
 #endif
 	NULL
 };

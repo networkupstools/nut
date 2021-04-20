@@ -44,6 +44,24 @@ ifndef::website[]
 - link:http://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 
+Data dumps for the DDL
+----------------------
+
+Note: both developers contributing a driver and users using an existing driver
+for device not previously documented as supported by it, are welcome to report
+new data for the Devices Dumps Library (DDL) mentioned above. Best of all such
+"data dump" reports can be prepared by the
+ifdef::website[]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-ddl-dump.sh[tools/nut-ddl-dump.sh]
+endif::website[]
+ifndef::website[]
+`./tools/nut-ddl-dump.sh`
+endif::website[]
+script from the main NUT codebase, and reported on the NUT mailing list or
+via link:https://github.com/networkupstools/nut/issues[NUT issues on GitHub]
+or as a pull request against link:https://github.com/networkupstools/nut-ddl
+following the naming and other rules described in the DDL documentation page.
+
 Offsite Links
 -------------
 

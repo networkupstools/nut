@@ -44,7 +44,7 @@ static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
 	/* default polling interval = 5 sec */
 static	int	pollfreq = 5, pollfreqalert = 5;
 
-	/* slave hosts are given 15 sec by default to logout from upsd */
+	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
 
 	/* sum of all power values from config file */
@@ -199,26 +199,32 @@ static void do_notify(const utype_t *ups, int ntype)
 	/* not found ?! */
 }
 
-/* check for master permissions on the server for this ups */
-static int checkmaster(utype_t *ups)
+/* check if we need "primary" mode (managerial permissions)
+ * on the server for this ups, and apply for them then.
+ * Returns 0 in case of error, 1 otherwise (including when
+ * we do not need to try becoming a primary). This currently
+ * propagates further as the return value of do_upsd_auth().
+ */
+static int apply_for_primary(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
-	/* don't bother if we're not configured as a master for this ups */
-	if (!flag_isset(ups->status, ST_MASTER))
+	/* don't bother if we're not configured as a primary for this ups */
+	if (!flag_isset(ups->status, ST_PRIMARY))
 		return 1;
 
 	/* this shouldn't happen (LOGIN checks it earlier) */
 	if ((ups->upsname == NULL) || (strlen(ups->upsname) == 0)) {
-		upslogx(LOG_ERR, "Set master on UPS [%s] failed: empty upsname",
+		upslogx(LOG_ERR, "Set primary managerial mode on UPS [%s] failed: empty upsname",
 			ups->sys);
 		return 0;
 	}
 
+	/* TODO: Use PRIMARY first but if talking to older server, retry with MASTER */
 	snprintf(buf, sizeof(buf), "MASTER %s\n", ups->upsname);
 
 	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
-		upslogx(LOG_ALERT, "Can't set master mode on UPS [%s] - %s",
+		upslogx(LOG_ALERT, "Can't set primary managerial mode on UPS [%s] - %s",
 			ups->sys, upscli_strerror(&ups->conn));
 		return 0;
 	}
@@ -229,12 +235,12 @@ static int checkmaster(utype_t *ups)
 
 		/* not ERR, but not caught by readline either? */
 
-		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]",
+		upslogx(LOG_ALERT, "Primary managerial privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Response: [%s]", buf);
 	}
 	else {	/* something caught by readraw's parsing call */
-		upslogx(LOG_ALERT, "Master privileges unavailable on UPS [%s]",
+		upslogx(LOG_ALERT, "Primary managerial privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Reason: %s", upscli_strerror(&ups->conn));
 	}
@@ -243,6 +249,9 @@ static int checkmaster(utype_t *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
+/* TODO: API change pending to replace deprecated MASTER with PRIMARY
+ * and SLAVE with SECONDARY (and backwards-compatible alias handling)
+ */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -320,8 +329,8 @@ static int do_upsd_auth(utype_t *ups)
 	upsdebugx(1, "Logged into UPS %s", ups->sys);
 	setflag(&ups->status, ST_LOGIN);
 
-	/* now see if we also need to test master permissions */
-	return checkmaster(ups);
+	/* now see if we also need to test primary managerial-mode permissions */
+	return apply_for_primary(ups);
 }
 
 /* set flags and make announcements when a UPS has been checked successfully */
@@ -591,7 +600,11 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 	return 0;
 }
 
-static void slavesync(void)
+/* Called by upsmon which is the primary on some UPS(es) to wait
+ * until all secondaries log out from it on the shared upsd server
+ * or the HOSTSYNC timeout expires
+ */
+static void sync_secondaries(void)
 {
 	utype_t	*ups;
 	char	temp[SMALLBUF];
@@ -605,8 +618,8 @@ static void slavesync(void)
 
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 
-			/* only check login count on our master(s) */
-			if (!flag_isset(ups->status, ST_MASTER))
+			/* only check login count on devices we are the primary for */
+			if (!flag_isset(ups->status, ST_PRIMARY))
 				continue;
 
 			set_alarm();
@@ -621,11 +634,15 @@ static void slavesync(void)
 			clear_alarm();
 		}
 
-		/* if no UPS has more than 1 login (us), then slaves are gone */
+		/* if no UPS has more than 1 login (that would be us),
+		 * then secondaries are all gone */
+		/* TO THINK: how about redundant setups with several primary-mode
+		 * clients managing an UPS, or possibly differend UPSes, with the
+		 * same upsd? */
 		if (maxlogins <= 1)
 			return;
 
-		/* after HOSTSYNC seconds, assume slaves are stuck and bail */
+		/* after HOSTSYNC seconds, assume secondaries are stuck - and bail */
 		time(&now);
 
 		if ((now - start) > hostsync) {
@@ -643,28 +660,28 @@ static void forceshutdown(void)
 static void forceshutdown(void)
 {
 	utype_t	*ups;
-	int	isamaster = 0;
+	int	isaprimary = 0;
 
-	upsdebugx(1, "Shutting down any UPSes in MASTER mode...");
+	upsdebugx(1, "Shutting down any UPSes in PRIMARY mode...");
 
-	/* set FSD on any "master" UPS entries (forced shutdown in progress) */
+	/* set FSD on any "primary" UPS entries (forced shutdown in progress) */
 	for (ups = firstups; ups != NULL; ups = ups->next)
-		if (flag_isset(ups->status, ST_MASTER)) {
-			isamaster = 1;
+		if (flag_isset(ups->status, ST_PRIMARY)) {
+			isaprimary = 1;
 			setfsd(ups);
 		}
 
-	/* if we're not a master on anything, we should shut down now */
-	if (!isamaster)
+	/* if we're not a primary on anything, we should shut down now */
+	if (!isaprimary)
 		doshutdown();
 
-	/* must be the master now */
-	upsdebugx(1, "This system is a master... waiting for slave logout...");
+	/* we must be the primary now */
+	upsdebugx(1, "This system is a primary... waiting for secondaries to logout...");
 
-	/* wait up to HOSTSYNC seconds for slaves to logout */
-	slavesync();
+	/* wait up to HOSTSYNC seconds for secondaries to logout */
+	sync_secondaries();
 
-	/* time expired or all the slaves are gone, so shutdown */
+	/* time expired or all the secondaries are gone, so shutdown */
 	doshutdown();
 }
 
@@ -672,7 +689,10 @@ static int is_ups_critical(utype_t *ups)
 {
 	time_t	now;
 
-	/* FSD = the master is forcing a shutdown */
+	/* FSD = the primary is forcing a shutdown, or a driver forwarded the flag
+	 * from a smarter UPS depending on vendor protocol, ability and settings
+	 * (e.g. is charging but battery too low to guarantee safety to the load)
+	 */
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
 
@@ -696,24 +716,24 @@ static int is_ups_critical(utype_t *ups)
 		return 0;
 	}
 
-	/* if we're a master, declare it critical so we set FSD on it */
-	if (flag_isset(ups->status, ST_MASTER))
+	/* if we're a primary, declare it critical so we set FSD on it */
+	if (flag_isset(ups->status, ST_PRIMARY))
 		return 1;
 
-	/* must be a slave now */
+	/* must be a secondary now */
 
-	/* FSD isn't set, so the master hasn't seen it yet */
+	/* FSD isn't set, so the primary hasn't seen it yet */
 
 	time(&now);
 
-	/* give the master up to HOSTSYNC seconds before shutting down */
+	/* give the primary up to HOSTSYNC seconds before shutting down */
 	if ((now - ups->lastnoncrit) > hostsync) {
-		upslogx(LOG_WARNING, "Giving up on the master for UPS [%s]",
+		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s]",
 			ups->sys);
 		return 1;
 	}
 
-	/* there's still time left */
+	/* there's still time left, maybe OB+LB will go away next time we look? */
 	return 0;
 }
 
@@ -827,7 +847,7 @@ static void drop_connection(utype_t *ups)
 
 /* change some UPS parameters during reloading */
 static void redefine_ups(utype_t *ups, int pv, const char *un,
-		const char *pw, const char *master)
+		const char *pw, const char *managerialOption)
 {
 	ups->retain = 1;
 
@@ -905,33 +925,37 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 		}
 	}
 
-	/* slave -> master */
-	if ((!strcasecmp(master, "master")) && (!flag_isset(ups->status, ST_MASTER))) {
-		upslogx(LOG_INFO, "UPS [%s]: redefined as master", ups->sys);
-		setflag(&ups->status, ST_MASTER);
+	/* secondary|slave -> primary|master */
+	if ( (   (!strcasecmp(managerialOption, "primary"))
+	      || (!strcasecmp(managerialOption, "master"))  )
+	     && (!flag_isset(ups->status, ST_PRIMARY)) ) {
+		upslogx(LOG_INFO, "UPS [%s]: redefined as a primary", ups->sys);
+		setflag(&ups->status, ST_PRIMARY);
 
-		/* reset connection to ensure master mode gets checked */
+		/* reset connection to ensure primary mode gets checked */
 		drop_connection(ups);
 		return;
 	}
 
-	/* master -> slave */
-	if ((!strcasecmp(master, "slave")) && (flag_isset(ups->status, ST_MASTER))) {
-		upslogx(LOG_INFO, "UPS [%s]: redefined as slave", ups->sys);
-		clearflag(&ups->status, ST_MASTER);
+	/* primary|master -> secondary|slave */
+	if ( (   (!strcasecmp(managerialOption, "secondary"))
+	      || (!strcasecmp(managerialOption, "slave"))  )
+	     && (flag_isset(ups->status, ST_PRIMARY)) ) {
+		upslogx(LOG_INFO, "UPS [%s]: redefined as a secondary", ups->sys);
+		clearflag(&ups->status, ST_PRIMARY);
 		return;
 	}
 }
 
 static void addups(int reloading, const char *sys, const char *pvs,
-		const char *un, const char *pw, const char *master)
+		const char *un, const char *pw, const char *managerialOption)
 {
 	int	pv;
 	utype_t	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
 
-	if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
+	if ((!sys) || (!pvs) || (!pw) || (!managerialOption) || (!un)) {
 		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in %s!", configfile);
 		upslogx(LOG_WARNING, "MONITOR configuration directives require five arguments.");
 		return;
@@ -953,7 +977,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		/* check for duplicates */
 		if (!strcmp(tmp->sys, sys)) {
 			if (reloading)
-				redefine_ups(tmp, pv, un, pw, master);
+				redefine_ups(tmp, pv, un, pw, managerialOption);
 			else
 				upslogx(LOG_WARNING, "Warning: ignoring duplicate"
 					" UPS [%s]", sys);
@@ -985,8 +1009,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->lastrbwarn = 0;
 	tmp->lastncwarn = 0;
 
-	if (!strcasecmp(master, "master"))
-		setflag(&tmp->status, ST_MASTER);
+	if (   (!strcasecmp(managerialOption, "primary"))
+	    || (!strcasecmp(managerialOption, "master"))  ) {
+		setflag(&tmp->status, ST_PRIMARY);
+	}
 
 	tmp->next = NULL;
 
@@ -997,7 +1023,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	if (tmp->pv)
 		upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
-			flag_isset(tmp->status, ST_MASTER) ? "master" : "slave",
+			flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
 			tmp->pv);
 	else
 		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
@@ -1262,7 +1288,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 		}
 
-		/* <sys> <pwrval> <user> <pw> ("master" | "slave") */
+		/* <sys> <pwrval> <user> <pw> ("primary"|"master" | "secondary"|"slave") */
 		addups(reload_flag, arg[1], arg[2], arg[3], arg[4], arg[5]);
 		return 1;
 	}
@@ -1707,7 +1733,7 @@ static void help(const char *arg_progname)
 	printf("usage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
-	printf("		 - fsd: shutdown all master UPSes (use with caution)\n");
+	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
 	printf("		 - stop: stop monitoring and exit\n");
 	printf("  -D		raise debugging level\n");

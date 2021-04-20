@@ -760,8 +760,8 @@ check-man-pages: $(MAN_MANS)
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
-	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | $(EGREP) -i '(troff.* input|C source|ASCII text)' > /dev/null ; } ) || \
-	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | $(EGREP) -i '(troff.* input|C source|ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | $(EGREP) -i '(roff.* input|C source|ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | $(EGREP) -i '(roff.* input|C source|ASCII text)' > /dev/null ; } ) || \
 	    FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; \
