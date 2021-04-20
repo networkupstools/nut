@@ -58,7 +58,6 @@ extern double apparent_power, real_power, ups_load;
 extern int load_power_factor, nominal_power, ups_power_factor;
 
 extern void scan_received_pack_model_specific(void);
-extern void autonomy_calc(unsigned int);
 extern void set_ups_model(void);
 extern bool_t ups_model_defined(void);
 

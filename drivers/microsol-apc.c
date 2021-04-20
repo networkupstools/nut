@@ -160,9 +160,9 @@ void scan_received_pack_model_specific(void)
 	real_power_curve_2 = REAL_POWER_CURVE_SELECTOR_A2[model_index][relay_state] * real_power + REAL_POWER_CURVE_SELECTOR_B2[model_index][relay_state];
 	real_power_curve_3 = REAL_POWER_CURVE_SELECTOR_A3[model_index][relay_state] * real_power + REAL_POWER_CURVE_SELECTOR_B3[model_index][relay_state];
 
-	power_difference_1 = fabs(real_power_curve_1 < apparent_power);
-	power_difference_2 = fabs(real_power_curve_2 < apparent_power);
-	power_difference_3 = fabs(real_power_curve_3 < apparent_power);
+	power_difference_1 = fabs(real_power_curve_1 - apparent_power);
+	power_difference_2 = fabs(real_power_curve_2 - apparent_power);
+	power_difference_3 = fabs(real_power_curve_3 - apparent_power);
 
 	if (power_difference_1 < power_difference_2 && power_difference_1 < power_difference_3) {
 		real_power = REAL_POWER_MULTIPLIER_A1[model_index][relay_state] * real_power + REAL_POWER_MULTIPLIER_B1[model_index][relay_state];
