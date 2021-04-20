@@ -398,6 +398,7 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	microsol-apc.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -440,6 +441,7 @@ MAN_SERIAL_PAGES = \
 	mge-utalk.8	\
 	oneac.8		\
 	microdowell.8	\
+	microsol-apc.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
@@ -486,6 +488,7 @@ HTML_SERIAL_MANS = \
 	mge-utalk.html	\
 	oneac.html		\
 	microdowell.html	\
+	microsol-apc.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
