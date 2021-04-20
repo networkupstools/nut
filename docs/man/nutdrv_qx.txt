@@ -333,7 +333,7 @@ The argument is a regular expression that must match the bus name where the UPS 
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *sgs*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
