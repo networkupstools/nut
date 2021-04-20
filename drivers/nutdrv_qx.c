@@ -1027,7 +1027,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 	}
 
 	/* Send command/Read reply */
-	if (langid_fix != -1 && hunnox_patch) {
+	if (langid_fix != -1) {
 		ret = usb_get_string(udev, index, langid_fix, buf, buflen);
 	} else {
 		ret = usb_get_string_simple(udev, index, buf, buflen);
