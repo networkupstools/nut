@@ -258,6 +258,7 @@
 "Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card"	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
+"Delta"	"ups"	"4"	"Delta UPS Amplon R Series"	"USB port"	"usbhid-ups"
 
 "Deltec"	"ups"	"1"	"PowerRite Pro II"	""	"genericups upstype=15"
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
