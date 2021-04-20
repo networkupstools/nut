@@ -1,5 +1,5 @@
 MICROSOL-APC(8)
-========
+===============
 
 NAME
 ----
@@ -53,8 +53,8 @@ models, but is untested.
 
 AUTHOR
 ------
-Ygor A. S. Regados <ygorre@tutanota.com>
-Roberto P. Velloso <rvelloso@gmail.com>
+Ygor A. S. Regados <ygorre@tutanota.com>,
+Roberto P. Velloso <rvelloso@gmail.com>,
 Silvino B. Magalhães <sbm2yk@gmail.com>
 
 SEE ALSO
