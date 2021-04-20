@@ -29,7 +29,7 @@
 
 #define DELTA_HID_VERSION	"Delta HID 0.5"
 
-/* Delta Vendor ID */
+/* Delta UPS */
 #define DELTA_VENDORID	0x05dd
 
 /* USB IDs device table */
