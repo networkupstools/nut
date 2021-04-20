@@ -945,7 +945,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 	 * track the modifications compared to original fabula_command() e.g. to
 	 * facilitate refactoring commented above, in the future.
 	 */
-	char hunnox_patch = 1;
+/*	char hunnox_patch = 1; */
 	const struct {
 		const char	*str;	/* Megatec command */
 		const int	index;	/* Fabula string index for this command */
@@ -1013,7 +1013,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 
 	upsdebugx(4, "command index: 0x%02x", index);
 
-	if (hunnox_patch) {
+/*	if (hunnox_patch) { */
 		// Enable lock-step protocol for Hunnox
 		if (hunnox_protocol(index) != 0) {
 			return 0;
@@ -1024,7 +1024,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 		if (buflen > 102) {
 			buflen = 102;
 		}
-	}
+/*	} */
 
 	/* Send command/Read reply */
 	if (langid_fix != -1) {
@@ -1038,7 +1038,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	if (hunnox_patch) {
+/*	if (hunnox_patch) { */
 		if (langid_fix != -1) {
 			/* Limit this check, at least for now */
 			/* Invalid receive size - message corrupted */
@@ -1064,7 +1064,7 @@ static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 			buf[di] = 0;
 			ret = di;
 		}
-	}
+/*	} */
 
 	upsdebug_hex(5, "read", buf, ret);
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
