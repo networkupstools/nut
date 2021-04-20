@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2537 utf-8
+personal_ws-1.1 en 2542 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -401,6 +401,7 @@ Hlavinka
 Holger
 Hoogervorst
 Hough
+Hunnox
 Hurd
 Håvard
 IANA
@@ -802,6 +803,7 @@ PowerVault
 PowerWalker
 PowerWare
 Powerchute
+Powercool
 Powervar
 Powerwell
 Prachi
@@ -1269,6 +1271,7 @@ automessage
 autoreconf
 autorestart
 autosaving
+autoscan
 autostart
 autowidth
 auxdata
@@ -1661,6 +1664,7 @@ http
 httpd
 https
 huawei
+hunnox
 iBox
 iDowell
 iManufacturer
@@ -1948,6 +1952,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noscanlangid
 notAfter
 notifyme
 notifytype
