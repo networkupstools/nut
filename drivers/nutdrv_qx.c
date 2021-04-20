@@ -1858,7 +1858,7 @@ void	upsdrv_shutdown(void)
 			{ "sgs", &sgs_command },
 			{ NULL, NULL }
 		};
-    #endif
+	#endif
 #endif
 
 
@@ -1866,16 +1866,16 @@ void	upsdrv_help(void)
 {
 #ifdef QX_USB
 	#ifndef TESTING
-    printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
-    size_t i;
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
 
-    for (i = 0; usbsubdriver[i].name != NULL; i++) {
-        if (i>0)
-            printf(", ");
-        printf("%s", usbsubdriver[i].name);
-    }
-    printf("\n\n");
-    #endif
+	for (i = 0; usbsubdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", usbsubdriver[i].name);
+	}
+	printf("\n\n");
+	#endif
 #endif
 
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
