@@ -343,6 +343,9 @@ IMPLEMENTATION NOTES
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
 
+*'hunnox' subdriver*::
+This protocol subdriver is closely related to 'fabula' one, with a few tweaks for devices not directly supported by that driver.
+
 *'fuji' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the *shutdown.stayoff* and *load.off* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.

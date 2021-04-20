@@ -938,7 +938,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 /* Hunnox communication subdriver, based on Fabula code above so repeats
  * much of it currently. Possible future optimization is to refactor shared
  * code into new routines to be called from both (or more) methods.*/
-static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
+static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 {
 	/* The hunnox_patch was an argument in initial implementation of PR #638
 	 * which added "hunnox" support; keeping it fixed here helps to visibly
@@ -1257,9 +1257,9 @@ static void	*fabula_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
-static void *fabula_hunnox_subdriver(USBDevice_t *device)
+static void *hunnox_subdriver(USBDevice_t *device)
 {
-	subdriver_command = &fabula_command_hunnox;
+	subdriver_command = &hunnox_command;
 	return NULL;
 }
 
@@ -1295,7 +1295,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	/* End of list */
@@ -1853,7 +1853,7 @@ void	upsdrv_shutdown(void)
 			{ "ippon", &ippon_command },
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
-			{ "fabula-hunnox", &fabula_command_hunnox },
+			{ "hunnox", &hunnox_command },
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
 			{ NULL, NULL }
