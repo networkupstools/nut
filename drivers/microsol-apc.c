@@ -39,7 +39,9 @@
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Silvino B. Magalhães <sbm2yk@gmail.com>" "Roberto Panerai Velloso <rvelloso@gmail.com>" "Ygor A. S. Regados <ygorre@tutanota.com>",
+	"Silvino B. Magalhães <sbm2yk@gmail.com>"
+	"Roberto Panerai Velloso <rvelloso@gmail.com>"
+	"Ygor A. S. Regados <ygorre@tutanota.com>",
 	DRV_STABLE,
 	{ NULL }
 };
