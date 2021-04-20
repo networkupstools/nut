@@ -17,7 +17,7 @@ For information about the core driver, see linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
+The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Hunnox', 'Mustek', 'Powercool', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
 
 The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
 Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
@@ -52,7 +52,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'hunnox', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
@@ -324,13 +324,16 @@ The argument is a regular expression that must match the bus name where the UPS 
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *ippon*, *krauler*, *phoenix*, *sgs* and *snr*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *sgs* and *sgs*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
 Apply the language ID workaround to the *krauler* subdriver.
 This is mandatory for some devices to work (LDLC, Dynamix and others).
 You must provide *value* (+0x409+ or +0x4095+), according to your device entry in NUT hardware compatibility list (HCL).
+
+*noscanlangid*::
+If this flag is set, don't autoscan valid range for langid.
 
 
 IMPLEMENTATION NOTES
@@ -339,6 +342,9 @@ IMPLEMENTATION NOTES
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'hunnox' subdriver*::
+This protocol subdriver is closely related to 'fabula' one, with a few tweaks for devices not directly supported by that driver.
 
 *'fuji' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the *shutdown.stayoff* and *load.off* commands.
