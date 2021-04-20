@@ -1209,6 +1209,105 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	return (int)strlen(buf);
 }
 
+/* SNR communication subdriver */
+static int	snr_command(const char *cmd, char *buf, size_t buflen)
+{
+	/*ATTENTION: This subdriver uses short buffer with length 102 byte*/
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* String index for this command */
+		const char	prefix;	/* Character to replace the first byte in reply */
+	} command[] = {
+		{ "Q1\r", 0x03, '(' },
+		{ "F\r", 0x0d, '#' },
+		{ "I\r", 0x0c, '#' },
+		{ NULL, 0, '\0' }
+	};
+
+	int	i;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen < 102) {
+		upsdebugx(4, "size of buf less than 102 byte!");
+		return 0;
+	}
+
+	for (i = 0; command[i].str; i++) {
+
+		int	retry;
+
+		if (strcmp(cmd, command[i].str)) {
+			continue;
+		}
+
+		for (retry = 0; retry < 10; retry++) {
+
+			int	ret;
+
+			ret = usb_get_string(udev, command[i].index, langid_fix, buf, 102);
+
+			if (ret <= 0) {
+				upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+				return ret;
+			}
+
+			/* This may serve in the future */
+			upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				continue;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+				* FIXME: this code is at least shared with mge-shut/libshut
+				* Create a common function? */
+			unsigned int	di, si, size = buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+
+			}
+
+			buf[di] = 0;
+			ret = di;
+
+			/* "UPS No Ack" has a special meaning */
+			if (
+				strcspn(buf, "\r") == 10 &&
+				!strncasecmp(buf, "UPS No Ack", 10)
+			) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+				continue;
+			}
+
+			/* Replace the first byte of what we received with the correct one */
+			buf[0] = command[i].prefix;
+
+			upsdebug_hex(5, "read", buf, ret);
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+			return ret;
+
+		}
+
+		return 0;
+
+	}
+
+	/* Echo the unknown command back */
+	upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+	return snprintf(buf, buflen, "%s", cmd);
+}
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -1272,6 +1371,14 @@ static void	*fuji_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*snr_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &snr_command;
+	return NULL;
+}
+
 /* USB device match structure */
 typedef struct {
 	const int	vendorID;		/* USB device's VendorID */
@@ -1299,6 +1406,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
@@ -1857,6 +1965,7 @@ void	upsdrv_shutdown(void)
 			{ "hunnox", &hunnox_command },
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
+			{ "snr", &snr_command },
 			{ NULL, NULL }
 		};
 	#endif

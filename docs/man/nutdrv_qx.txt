@@ -324,7 +324,7 @@ The argument is a regular expression that must match the bus name where the UPS 
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix* and *sgs*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *sgs* and *sgs*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
@@ -351,6 +351,9 @@ This subdriver, meant to be used with the 'megatec' protocol, does *not* support
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
 
 *'krauler' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the shutdown commands, i.e.: *shutdown.return*, *shutdown.stayoff* and *load.off*.
+
+*'snr' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the shutdown commands, i.e.: *shutdown.return*, *shutdown.stayoff* and *load.off*.
 
 

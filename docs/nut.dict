@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2542 utf-8
+personal_ws-1.1 en 2546 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -461,6 +461,7 @@ KRT
 Kain
 Kaminski
 Kanji
+Kazancev
 Kazutoshi
 Kebo
 Keor
@@ -893,6 +894,7 @@ Rodríguez
 Rucelf
 RxD
 RxHs
+Ryabov
 SAI
 SCM
 SCO
@@ -934,6 +936,7 @@ SMT
 SMTP
 SMX
 SNMPv
+SNR
 SOCKADDR
 SOCKLEN
 SOFF
@@ -2234,6 +2237,7 @@ snmpv
 snmpwalk
 snprintf
 snprintfcat
+snr
 sockdebug
 solaris
 solis
