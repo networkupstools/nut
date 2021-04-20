@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2540 utf-8
+personal_ws-1.1 en 2542 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1271,6 +1271,7 @@ automessage
 autoreconf
 autorestart
 autosaving
+autoscan
 autostart
 autowidth
 auxdata
@@ -1951,6 +1952,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noscanlangid 
 notAfter
 notifyme
 notifytype
