@@ -38,7 +38,7 @@ Configuration commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - linkman:nut-scanner[8]
- 
+
 CGI programs
 ~~~~~~~~~~~~
 

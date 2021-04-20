@@ -61,7 +61,7 @@ static int	ssl_initialized = 0;
 #ifndef WITH_SSL
 
 /* stubs for non-ssl compiles */
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
@@ -233,7 +233,7 @@ static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 #ifdef WITH_OPENSSL
 	int ret;
@@ -558,7 +558,10 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 #ifdef WITH_OPENSSL
 	ret = SSL_read(client->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Read(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Read(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	if (ret < 1) {
@@ -580,7 +583,10 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 #ifdef WITH_OPENSSL
 	ret = SSL_write(client->ssl, buf, buflen);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Write(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upsdebugx(5, "ssl_write ret=%d", ret);

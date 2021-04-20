@@ -24,6 +24,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
 #define DRIVER_VERSION	"0.07"
@@ -596,8 +597,8 @@ void upsdrv_updateinfo(void)
 		if (int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
 		/* current */
 		float_num = get_word(&my_answer[5]);
-		if (float_num == -1) dstate_setinfo("output.current", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current", "%s", "not available");
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current", "%2.2f", float_num);
@@ -605,8 +606,8 @@ void upsdrv_updateinfo(void)
 #ifdef EXTRADATA
 		/* peak current */
 		float_num = get_word(&my_answer[7]);
-		if (float_num == -1) dstate_setinfo("output.current.peak", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current.peak", "%s", "not available");
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current.peak", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current.peak", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current.peak", "%2.2f", float_num);

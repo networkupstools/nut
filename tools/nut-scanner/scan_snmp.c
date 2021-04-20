@@ -62,7 +62,7 @@
 #include "nutscan-snmp.h"
 
 /* Address API change */
-#ifndef usmAESPrivProtocol
+#if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
 #define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
 #else
 #define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
@@ -542,8 +542,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			else {
 				if (strcmp(sec->privProtocol, "DES") != 0) {
 					fprintf(stderr,
-						"Bad SNMPv3 authProtocol: %s\n"
-						,sec->authProtocol);
+						"Bad SNMPv3 privProtocol: %s\n"
+						,sec->privProtocol);
 				return 0;
 				}
 			}

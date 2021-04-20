@@ -3,14 +3,14 @@ BELKIN(8)
 
 NAME
 ----
-  
+
 belkin - Driver for Belkin serial UPS equipment
 
 NOTE
 ----
 
 This man page only documents the hardware-specific features of the
-belkin driver.  For information about the core driver, see  
+belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -27,7 +27,7 @@ drivers you should use.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the    
+This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 BUGS

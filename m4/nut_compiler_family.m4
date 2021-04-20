@@ -31,17 +31,17 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes])
 
   AC_CACHE_CHECK([if CC compiler family is clang],
-    [nut_cv_CLANG],
+    [nut_cv_CLANGCC],
     [AS_IF([test -n "$CC"],
-        [AS_IF([$CC --version 2>&1 | grep 'clang version' > /dev/null],
-            [nut_cv_CLANG=yes],[nut_cv_CLANG=no])],
+        [AS_IF([$CC --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+            [nut_cv_CLANGCC=yes],[nut_cv_CLANGCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
 
   AC_CACHE_CHECK([if CXX compiler family is clang],
     [nut_cv_CLANGXX],
     [AS_IF([test -n "$CXX"],
-        [AS_IF([$CXX --version 2>&1 | grep 'clang version' > /dev/null],
+        [AS_IF([$CXX --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGXX=yes],[nut_cv_CLANGXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
@@ -49,7 +49,7 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AC_CACHE_CHECK([if CPP preprocessor family is clang],
     [nut_cv_CLANGPP],
     [AS_IF([test -n "$CPP"],
-        [AS_IF([$CPP --version 2>&1 | grep 'clang version' > /dev/null],
+        [AS_IF([$CPP --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGPP=yes],[nut_cv_CLANGPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])

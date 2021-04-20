@@ -163,7 +163,7 @@ static void do_hidden(const char *next)
 }
 
 /* generate SELECT chooser from hosts.conf entries */
-static void upslist_arg(int numargs, char **arg)
+static void upslist_arg(size_t numargs, char **arg)
 {
 	if (numargs < 3)
 		return;

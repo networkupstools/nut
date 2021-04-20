@@ -3,7 +3,8 @@
 #include "bcmxcp_io.h"
 #include "bcmxcp_ser.h"
 #include "serial.h"
-
+#include "nut_stdint.h"
+#include <limits.h>
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
 #define SUBDRIVER_VERSION "0.20"
@@ -255,16 +256,64 @@ void upsdrv_comm_good()
 	ser_comm_good();
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void pw_comm_setup(const char *port)
 {
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
 	unsigned char id_command = PW_ID_BLOCK_REQ;
 	unsigned char answer[256];
-	int i = 0, baud, mybaud = 0, ret = -1;
+	int i = 0, ret = -1;
+	speed_t mybaud = 0, baud;
 
 	if (getval("baud_rate") != NULL)
 	{
-		baud = atoi(getval("baud_rate"));
+		int br = atoi(getval("baud_rate"));
+		/* Note that atoi() behavior on erroneous input is undefined */
+		if (br < 0) {
+			upslogx(LOG_ERR, "baud_rate option is invalid");
+			return;
+		}
+
+		/* FIXME: speed_t does not define a SPEED_MAX value nor
+		 * guarantee that it is an int (just a typedef from
+		 * termios.h happens to say that on some systems)...
+		 * But since we convert this setting from int, we assume...
+		 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		switch(sizeof(speed_t)) {
+			case 8:	assert (br < INT64_MAX); break;
+			case 4:	assert (br < INT32_MAX); break;
+			case 2:	assert (br < INT16_MAX); break;
+			default:	assert (br < INT_MAX);
+		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		baud = (speed_t)br;
 
 		for(i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
@@ -289,11 +338,14 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, baud);
+			/* Cast baud into max length unsigned, despite the POSIX
+			 * standard some systems vary in definition of this type
+			 */
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 			return;
 		}
 
-		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %d", port, baud);
+		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 	}
 
 	upslogx(LOG_INFO, "Attempting to autodect baudrate");
@@ -312,15 +364,18 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 			return;
 		}
 
-		upsdebugx(2, "No response from UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+		upsdebugx(2, "No response from UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 	}
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void upsdrv_initups(void)
 {

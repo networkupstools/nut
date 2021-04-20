@@ -434,7 +434,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
+static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -465,7 +465,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	}
 
 	/* looks good - call the command */
-	netcmds[cmdnum].func(client, numarg - 1, numarg > 1 ? &arg[1] : NULL);
+	netcmds[cmdnum].func(client, (numarg < 2) ? 0 : (numarg - 1), (numarg > 1) ? &arg[1] : NULL);
 }
 
 /* parse requests from the network */
