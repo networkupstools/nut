@@ -52,14 +52,20 @@ static usb_device_id_t delta_ups_usb_device_table[] = {
 static usage_lkp_t delta_ups_usage_lkp[] = {
 	{ "DELTA1",									0x00000000 },
 	{ "DELTA2",									0xff000055 },
-	{ "DELTA3",									0xffff0010 },
+/*	{ "DELTA3",									0xffff0010 }, */
+	{ "DeltaCustom",								0xffff0010 },
 	{ "DELTA4",									0xffff0056 },
-	{ "DELTA5",									0xffff0057 },
-	{ "DELTA6",									0xffff0058 },
-	{ "DELTA7",									0xffff0059 },
-	{ "DELTA8",									0xffff005a },
+/*	{ "DELTA5",									0xffff0057 }, */
+	{ "DeltaConfigTransferLowMax",				0xffff0057 },
+/*	{ "DELTA6",									0xffff0058 }, */
+	{ "DeltaConfigTransferLowMin",				0xffff0058 },
+/*	{ "DELTA7",									0xffff0059 }, */
+	{ "DeltaConfigTransferHighMax",				0xffff0059 },
+/*	{ "DELTA8",									0xffff005a }, */
+	{ "DeltaConfigTransferHighMin",				0xffff005a },
 	{ "DELTA9",									0xffff0060 },
-	{ "DELTA10",									0xffff0061 },
+/*	{ "DELTA10",									0xffff0061 }, */
+	{ "DeltaConfigExternalBatteryPack",			0xffff0061 },
 	{ "DELTA11",									0xffff0062 },
 	{ "DELTA12",									0xffff0063 },
 	{ "DELTA13",									0xffff0064 },
@@ -67,12 +73,16 @@ static usage_lkp_t delta_ups_usage_lkp[] = {
 	{ "DELTA15",									0xffff0066 },
 	{ "DELTA16",									0xffff0067 },
 	{ "DELTA17",									0xffff0068 },
-	{ "DELTA18",									0xffff0075 },
+/*	{ "DELTA18",									0xffff0075 }, */
+	{ "DeltaModelName",							0xffff0075 },
 	{ "DELTA19",									0xffff0076 },
-	{ "DELTA20",									0xffff007c },
+/*	{ "DELTA20",									0xffff007c }, */
+	{ "DeltaUPSType",							0xffff007c },
 	{ "DELTA21",									0xffff007d },
-	{ "DELTA22",									0xffff0081 },
-	{ "DELTA23",									0xffff0091 },
+/*	{ "DELTA22",									0xffff0081 }, */
+	{ "DeltaConfigStartPowerRestoreDelay",		0xffff0081 },
+/*	{ "DELTA23",									0xffff0091 }, */
+	{ "DeltaOutputSource",						0xffff0091 },
 	{ "DELTA24",									0xffff0092 },
 	{ "DELTA25",									0xffff0093 },
 	{ "DELTA26",									0xffff0094 },
@@ -82,8 +92,10 @@ static usage_lkp_t delta_ups_usage_lkp[] = {
 	{ "DELTA30",									0xffff0098 },
 	{ "DELTA31",									0xffff0099 },
 	{ "DELTA32",									0xffff009a },
-	{ "DELTA33",									0xffff009b },
-	{ "DELTA34",									0xffff009c },
+/*	{ "DELTA33",									0xffff009b }, */
+	{ "DeltaConfigSensitivity",					0xffff009b },
+/*	{ "DELTA34",									0xffff009c }, */
+	{ "DeltaConfigStartPowerRestore",			0xffff009c },
 
 	/* Terminating entry */
 	{ NULL, 0 }
