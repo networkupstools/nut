@@ -108,6 +108,61 @@ static usage_tables_t delta_ups_utab[] = {
 };
 
 /* --------------------------------------------------------------- */
+/* Helper lookup tables and mapping functions                      */
+/* --------------------------------------------------------------- */
+
+static info_lkp_t delta_ups_sensitivity_info[] = {
+	{ 0, "normal", NULL, NULL },
+	{ 1, "reduced", NULL, NULL },
+	{ 2, "low", NULL, NULL },
+
+	/* Terminating entry */
+	{ 0, NULL, NULL, NULL }
+};
+
+static const char *delta_ups_type_fun(double value)
+{
+	static const char* upstypes[] = {
+		"online",
+		"offline",
+		"line-interactive",
+		"3-phase",
+		"split-phase"
+	};
+
+	int type = (int)value & 0xf;
+	if (type == 6) {
+		type = 4;
+	} else if (2 < type && type <= 5) {
+		type -= 2;
+	}
+
+	if (type < 0 || type > 4) {
+		return NULL;
+	}
+
+	return upstypes[type];
+}
+
+static info_lkp_t delta_ups_type_info[] = {
+	{ 0, NULL, delta_ups_type_fun },
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t delta_ups_output_source_info[] = {
+	{ 0, "normal", NULL, NULL },
+	{ 1, "battery", NULL, NULL },
+	{ 2, "bypass/reserve", NULL, NULL },
+	{ 3, "reducing", NULL, NULL },
+	{ 4, "boosting", NULL, NULL },
+	{ 5, "manual bypass", NULL, NULL },
+	{ 6, "other", NULL, NULL },
+	{ 7, "no output", NULL, NULL },
+	{ 8, "on eco", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* --------------------------------------------------------------- */
 /* HID2NUT lookup table                                            */
 /* --------------------------------------------------------------- */
 
