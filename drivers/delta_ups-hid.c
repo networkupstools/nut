@@ -168,20 +168,20 @@ static info_lkp_t delta_ups_output_source_info[] = {
 
 static hid_info_t delta_ups_hid2nut[] = {
 	{ "input.sensitivity", ST_FLAG_RW, 0, "UPS.DeltaCustom.[1].DeltaConfigSensitivity", NULL, "%s", 0, delta_ups_sensitivity_info },
-	{ "input.voltage.nominal", 0, 0, "UPS.PowerSummary.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.voltage.nominal", 0, 0, "UPS.PowerSummary.Input.ConfigVoltage", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.voltage", 0, 0, "UPS.PowerSummary.Input.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
-	{ "input.transfer.low", ST_FLAG_RW, 0, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", 0, NULL },
-	{ "input.transfer.high", ST_FLAG_RW, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", 0, NULL },
-	{ "input.transfer.low.min", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferLowMin", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.transfer.low.max", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferLowMax", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.transfer.high.min", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferHighMin", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.transfer.high.max", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferHighMax", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.transfer.low", ST_FLAG_RW, 0, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", 0, NULL },
+	{ "input.transfer.high", ST_FLAG_RW, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f", 0, NULL },
+	{ "input.transfer.low.min", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferLowMin", NULL, "%.1f", HU_FLAG_STATIC, NULL },
+	{ "input.transfer.low.max", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferLowMax", NULL, "%.1f", HU_FLAG_STATIC, NULL },
+	{ "input.transfer.high.min", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferHighMin", NULL, "%.1f", HU_FLAG_STATIC, NULL },
+	{ "input.transfer.high.max", 0, 0, "UPS.PowerConverter.Output.DeltaConfigTransferHighMax", NULL, "%.1f", HU_FLAG_STATIC, NULL },
 	/* FIXME: Check vs hardware, is this an "input" or "outlet/outpu" value after all? */
 	{ "input.source", 0, 0, "UPS.OutletSystem.Outlet.DeltaOutputSource", NULL, "%s", 0, delta_ups_output_source_info },
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 
-	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.1f", HU_FLAG_STATIC, NULL },
 	{ "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
 	{ "battery.charge", 0, 0, "UPS.BatterySystem.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -194,10 +194,10 @@ static hid_info_t delta_ups_hid2nut[] = {
 	{ "battery.capacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "battery.capacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
 
-	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-	{ "output.frequency.nominal", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
-	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "output.frequency.nominal", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
+	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 
 	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_QUICK_POLL, beeper_info },
