@@ -16,7 +16,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 The *upscli_disconnect()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure, shuts down the connection to the server, and 
+`UPSCONN_t` state structure, shuts down the connection to the server, and
 frees dynamic memory used by the state structure.  The `UPSCONN_t` structure
 is no longer valid after this function is called.
 
@@ -31,5 +31,5 @@ error occurs.
 
 SEE ALSO
 --------
-linkman:upscli_connect[3], linkman:upscli_fd[3], 
+linkman:upscli_connect[3], linkman:upscli_fd[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

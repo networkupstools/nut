@@ -1,4 +1,4 @@
-/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER handlers for upsd
+/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER[PRIMARY] handlers for upsd
 
    Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
 
@@ -28,7 +28,7 @@
 #include "netuser.h"
 
 /* LOGIN <ups> */
-void net_login(nut_ctype_t *client, int numarg, const char **arg)
+void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 
@@ -65,7 +65,7 @@ void net_login(nut_ctype_t *client, int numarg, const char **arg)
 	sendback(client, "OK\n");
 }
 
-void net_logout(nut_ctype_t *client, int numarg, const char **arg)
+void net_logout(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
@@ -84,7 +84,10 @@ void net_logout(nut_ctype_t *client, int numarg, const char **arg)
 }
 
 /* MASTER <upsname> */
-void net_master(nut_ctype_t *client, int numarg, const char **arg)
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
+void net_master(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 
@@ -111,7 +114,7 @@ void net_master(nut_ctype_t *client, int numarg, const char **arg)
 }
 
 /* USERNAME <username> */
-void net_username(nut_ctype_t *client, int numarg, const char **arg)
+void net_username(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -131,7 +134,7 @@ void net_username(nut_ctype_t *client, int numarg, const char **arg)
 }
 
 /* PASSWORD <password> */
-void net_password(nut_ctype_t *client, int numarg, const char **arg)
+void net_password(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

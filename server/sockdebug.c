@@ -31,11 +31,11 @@
 
 	PCONF_CTX_t	sock_ctx;
 
-static void sock_arg(int numarg, char **arg)
+static void sock_arg(size_t numarg, char **arg)
 {
-	int	i;
+	size_t	i;
 
-	printf("numarg=%d : ", numarg);
+	printf("numarg=%zu : ", numarg);
 
 	for (i = 0; i < numarg; i++)
 		printf("[%s] ", arg[i]);

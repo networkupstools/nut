@@ -6,7 +6,7 @@
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *  2020 Luka Kovacic <luka.kovacic@builtin.io>
- *	2021		Jungeon Kim <me@jungeon.kim>
+ *  2021		Jungeon Kim <me@jungeon.kim>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,6 @@ static usb_device_id_t delta_ups_usb_device_table[] = {
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
-
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */

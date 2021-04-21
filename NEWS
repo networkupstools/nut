@@ -4,6 +4,14 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.7.5 (brewing) - what's new since 2.7.4:
+
+ - Master/Slave terminology was deprecated in favor of Primary/Secondary
+   modes of upsmon client. Respective keywords in the configuration are
+   supported as backwards-compatible settings, but obsoleted values are
+   no longer documented.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.7.4 - what's new since 2.7.3:
 
  - New class of device supported: ATS - Automatic Transfer Switch are now
