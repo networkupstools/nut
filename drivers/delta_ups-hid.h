@@ -1,4 +1,4 @@
-/* delta-hid.h - subdriver to monitor Delta USB/HID devices with NUT
+/* delta_ups-hid.h - subdriver to monitor Delta USB/HID devices with NUT
  *
  *  Copyright (C)
  *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>

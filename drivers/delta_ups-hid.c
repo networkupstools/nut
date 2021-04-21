@@ -1,4 +1,4 @@
-/* delta-hid.c - subdriver to monitor Delta USB/HID devices with NUT
+/* delta_ups-hid.c - subdriver to monitor Delta USB/HID devices with NUT
  *
  *  Copyright (C)
  *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
@@ -23,13 +23,13 @@
  */
 
 #include "usbhid-ups.h"
-#include "delta-hid.h"
+#include "delta_ups-hid.h"
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
 #define DELTA_HID_VERSION	"Delta HID 0.5"
 
-/* Delta Vendor ID */
+/* Delta UPS */
 #define DELTA_VENDORID	0x05dd
 
 /* USB IDs device table */

@@ -44,7 +44,7 @@
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
-	#include "delta-hid.h"
+	#include "delta_ups-hid.h"
 	#include "liebert-hid.h"
 	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
