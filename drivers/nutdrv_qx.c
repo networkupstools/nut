@@ -42,8 +42,6 @@
 #include "attribute.h"
 #include "nut_float.h"
 
-#include <vis.h>
-
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
 	#include "libusb.h"
@@ -1221,15 +1219,9 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 {
 	int ret;
 	char *p, *e;
-	char *vis;
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
 
-	if (nut_debug_level >= 4) {
-		stravis(&vis, cmd, VIS_NL | VIS_CSTYLE);
-		upsdebugx(4, "> %s", vis);
-		free(vis);
-	}
 	if ((ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT, 0x0d, 0, 0, (char *)cmd, strlen(cmd), 1000)) <= 0) {
 		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 		*buf = '\0';
@@ -1265,11 +1257,6 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	}
 	if (e != NULL && ++e < buf + buflen) {
 		*e = '\0';
-		if (nut_debug_level >= 4) {
-			stravis(&vis, buf, VIS_NL | VIS_CSTYLE);
-			upsdebugx(4, "< %s", vis);
-			free(vis);
-		}
 		return e - buf;
 	} else {
 		upsdebugx(3, "read: buflen %zd too small", buflen);
