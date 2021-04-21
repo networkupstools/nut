@@ -148,7 +148,14 @@ static const char *delta_ups_format_mfr(HIDDevice_t *hd) {
 }
 
 static const char *delta_ups_format_model(HIDDevice_t *hd) {
-	return hd->Product;
+	static char model[SMALLBUF];
+	HIDGetItemString(udev, "UPS.DeltaCustom.[1].DeltaModelName", model, sizeof(model), delta_ups_utab);
+
+	if (strlen(model) < 1) {
+		return hd->Product;
+	}
+
+	return model;
 }
 
 static const char *delta_ups_format_serial(HIDDevice_t *hd) {
