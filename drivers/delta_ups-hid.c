@@ -208,9 +208,14 @@ static hid_info_t delta_ups_hid2nut[] = {
 	{ "ups.realpower", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
-	{ "ups.mfr", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	/* Per comments to PR #807 these 3 declarations are populated elsewhere,
+	 * by delta_ups_format_*() functions hooks; see:
+	 *   https://github.com/networkupstools/nut/pull/807#discussion_r501496383
+	 */
+/*	{ "ups.mfr", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "ups.model", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+*/
 	{ "ups.delay.start", ST_FLAG_RW, 0, "UPS.OutletSystem.Outlet.DeltaConfigStartPowerRestoreDelay", NULL, "%.0f", 0, NULL },
 /* mge-hid.c simlar configurable settings:
 	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL },
