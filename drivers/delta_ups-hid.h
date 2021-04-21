@@ -1,9 +1,10 @@
-/* delta_ups-hid.h - subdriver to monitor Delta USB/HID devices with NUT
+/* delta_ups-hid.h - data mapping subdriver to monitor Delta UPS USB/HID devices with NUT
  *
  *  Copyright (C)
  *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2021		Jungeon Kim <me@jungeon.kim>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,11 +21,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef DELTA_HID_H
-#define DELTA_HID_H
+#ifndef DELTA_UPS_HID_H
+#define DELTA_UPS_HID_H
 
 #include "usbhid-ups.h"
 
-extern subdriver_t delta_subdriver;
+extern subdriver_t delta_ups_subdriver;
 
-#endif /* DELTA_HID_H */
+#endif /* DELTA_UPS_HID_H */

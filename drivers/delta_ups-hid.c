@@ -1,4 +1,4 @@
-/* delta_ups-hid.c - subdriver to monitor Delta USB/HID devices with NUT
+/*  delta_ups-hid.c - data mapping subdriver to monitor Delta UPS USB/HID devices with NUT
  *
  *  Copyright (C)
  *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
@@ -6,6 +6,7 @@
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *  2020 Luka Kovacic <luka.kovacic@builtin.io>
+ *	2021		Jungeon Kim <me@jungeon.kim>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,15 +28,16 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define DELTA_HID_VERSION	"Delta HID 0.5"
+#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.5"
 
 /* Delta UPS */
-#define DELTA_VENDORID	0x05dd
+#define DELTA_UPS_VENDORID	0x05dd
 
 /* USB IDs device table */
-static usb_device_id_t delta_usb_device_table[] = {
+static usb_device_id_t delta_ups_usb_device_table[] = {
 	/* Delta RT Series, Single Phase, 1/2/3 kVA */
-	{ USB_DEVICE(DELTA_VENDORID, 0x041b), NULL },
+	/* Delta UPS Amplon R Series, Single Phase UPS, 1/2/3 kVA */
+	{ USB_DEVICE(DELTA_UPS_VENDORID, 0x041b), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -47,7 +49,7 @@ static usb_device_id_t delta_usb_device_table[] = {
 /* --------------------------------------------------------------- */
 
 /* DELTA usage table */
-static usage_lkp_t delta_usage_lkp[] = {
+static usage_lkp_t delta_ups_usage_lkp[] = {
 	{ "DELTA1",	0x00000000 },
 	{ "DELTA2",	0xff000055 },
 	{ "DELTA3",	0xffff0010 },
@@ -82,11 +84,13 @@ static usage_lkp_t delta_usage_lkp[] = {
 	{ "DELTA32",	0xffff009a },
 	{ "DELTA33",	0xffff009b },
 	{ "DELTA34",	0xffff009c },
-	{  NULL, 0 }
+
+	/* Terminating entry */
+	{ NULL, 0 }
 };
 
-static usage_tables_t delta_utab[] = {
-	delta_usage_lkp,
+static usage_tables_t delta_ups_utab[] = {
+	delta_ups_usage_lkp,
 	hid_usage_lkp,
 	NULL,
 };
@@ -95,8 +99,7 @@ static usage_tables_t delta_utab[] = {
 /* HID2NUT lookup table                                            */
 /* --------------------------------------------------------------- */
 
-static hid_info_t delta_hid2nut[] = {
-
+static hid_info_t delta_ups_hid2nut[] = {
   { "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
   { "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%.1f", HU_FLAG_QUICK_POLL, NULL },
   { "battery.temperature", 0, 0, "UPS.BatterySystem.Temperature", NULL, "%s", HU_FLAG_QUICK_POLL, kelvin_celsius_conversion },
@@ -140,23 +143,22 @@ static hid_info_t delta_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static const char *delta_format_model(HIDDevice_t *hd) {
+static const char *delta_ups_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static const char *delta_format_mfr(HIDDevice_t *hd) {
+static const char *delta_ups_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Delta";
 }
 
-static const char *delta_format_serial(HIDDevice_t *hd) {
+static const char *delta_ups_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int delta_claim(HIDDevice_t *hd)
-{
-	int status = is_usb_device_supported(delta_usb_device_table, hd);
+static int delta_ups_claim(HIDDevice_t *hd) {
+	int status = is_usb_device_supported(delta_ups_usb_device_table, hd);
 
 	switch (status)
 	{
@@ -177,12 +179,12 @@ static int delta_claim(HIDDevice_t *hd)
 	}
 }
 
-subdriver_t delta_subdriver = {
-	DELTA_HID_VERSION,
-	delta_claim,
-	delta_utab,
-	delta_hid2nut,
-	delta_format_model,
-	delta_format_mfr,
-	delta_format_serial,
+subdriver_t delta_ups_subdriver = {
+	DELTA_UPS_HID_VERSION,
+	delta_ups_claim,
+	delta_ups_utab,
+	delta_ups_hid2nut,
+	delta_ups_format_model,
+	delta_ups_format_mfr,
+	delta_ups_format_serial,
 };
