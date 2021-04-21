@@ -1259,7 +1259,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 		*e = '\0';
 		return e - buf;
 	} else {
-		upsdebugx(3, "read: buflen %zd too small", buflen);
+		upsdebugx(3, "read: buflen %zu too small", buflen);
 		*buf = '\0';
 		return 0;
 	}
