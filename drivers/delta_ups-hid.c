@@ -143,12 +143,12 @@ static hid_info_t delta_ups_hid2nut[] = {
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static const char *delta_ups_format_model(HIDDevice_t *hd) {
-	return hd->Product;
-}
-
 static const char *delta_ups_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Delta";
+}
+
+static const char *delta_ups_format_model(HIDDevice_t *hd) {
+	return hd->Product;
 }
 
 static const char *delta_ups_format_serial(HIDDevice_t *hd) {
