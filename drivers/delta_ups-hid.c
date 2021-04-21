@@ -160,22 +160,21 @@ static const char *delta_ups_format_serial(HIDDevice_t *hd) {
 static int delta_ups_claim(HIDDevice_t *hd) {
 	int status = is_usb_device_supported(delta_ups_usb_device_table, hd);
 
-	switch (status)
-	{
-	case POSSIBLY_SUPPORTED:
-		/* by default, reject, unless the productid option is given */
-		if (getval("productid")) {
+	switch (status) {
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("Delta", hd);
-		return 0;
 
-	case SUPPORTED:
-		return 1;
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Delta", hd);
+			return 0;
 
-	case NOT_SUPPORTED:
-	default:
-		return 0;
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 
