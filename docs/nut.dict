@@ -56,6 +56,7 @@ AlmCPol
 AlmEnbl
 Amplon
 Ampère
+Amplon
 Andreas
 Andreassen
 Andrzej
@@ -1777,7 +1778,6 @@ getDescription
 getDevice
 getDevicesVariableValues
 getTrackingResult
-getDevicesVariableValues
 getValue
 getVariable
 getconf
