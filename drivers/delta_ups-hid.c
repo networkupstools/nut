@@ -144,7 +144,7 @@ static const char *delta_ups_type_fun(double value)
 }
 
 static info_lkp_t delta_ups_type_info[] = {
-	{ 0, NULL, delta_ups_type_fun },
+	{ 0, NULL, delta_ups_type_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
