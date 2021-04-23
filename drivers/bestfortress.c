@@ -347,10 +347,12 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-static int setparam (int parameter, size_t dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
-	upssend ("p%zu=%*s\r", parameter, dlen, data);
+	/* Note the use of "%*s" - parameter (int)dlen specifies
+	 * the string width reserved for data */
+	upssend ("p%d=%*s\r", parameter, dlen, data);
 	if (upsrecv (reply, sizeof(reply), ENDCHAR, "") < 0) return 0;
 	return strncmp (reply, "OK", 2) == 0;
 }
@@ -393,7 +395,7 @@ static int upsdrv_setvar (const char *var, const char * data) {
 	}
 	ups_setsuper (1);
 	assert (len < INT_MAX);
-	if (setparam (parameter, len, data)) {
+	if (setparam (parameter, (int)len, data)) {
 		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
