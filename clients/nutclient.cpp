@@ -104,6 +104,9 @@ std::string SystemException::err()
  *          is deprecated because it has a user-declared destructor
  * This is fixed in header with declarations like:
  *   NutException(const NutException&) = default;
+ * and assignment operator to accompany the copy constructor, per
+ * https://lgtm.com/rules/2165180572/ like:
+ *   NutException& operator=(NutException& rhs) = default;
  */
 NutException::~NutException() {}
 SystemException::~SystemException() {}
