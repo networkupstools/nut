@@ -10,9 +10,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
- - Add support for ALLOW_NO_DEVICE=true (as upsd.conf flag or envvar) to
-   allow starting the data server initially without any device configurations
-   and reloading it later to apply config changes on the fly [PR #766]
+ - Add support for `ALLOW_NO_DEVICE=true` (as an upsd.conf flag or environment
+   variable passed from caller of the program), to allow starting the data
+   server initially without any device configurations and reloading it later
+   to apply config changes on the fly [PR #766]
 
  - Improve support for upsdrvctl for managing of numerous device configs,
    including default "maxretry=3" and a "nowait" option to complete the
@@ -24,8 +25,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    general support for:
    * "Standalone" mode (`-s` option), to monitor a device which is not
      detailed or mentioned in ups.conf
-   * NUT_ALTPIDPATH or NUT_STATEPATH envvars to override paths built into
-     the driver binary [PRs #473 and #507]
+   * `NUT_ALTPIDPATH` and `NUT_STATEPATH` environment variables to override
+     the paths built into the driver binary [PR #473 and #507]
    * "Driver data dump" mode (`-d` option), to poll a device for one or
      few ('update_count' ) loops, report discovered values (dump the data
      tree in upsc-like format), and exit. This complements the `nut-scanner`
@@ -149,7 +150,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
    modes of upsmon client. Respective keywords in the configuration are
    supported as backwards-compatible settings, but obsoleted values are
-   no longer documented. [issue #840 and several PRs]
+   no longer documented. [For details see issue #840 and several pull
+   requests referenced from it, and discussions on NUT mailing lists]
 
  - Build fixes:
    * In general, numerous fixes were applied to ensure portability and avoid
@@ -174,7 +176,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * More use of `pkg-config` to detect dependencies at configure time, as
      well as fail-safe detection of presence of pkg-config (and its macros)
      to survive and build without it too
-   * "slibtool" pedantics supported, allowing an alternative to GNU libtool
+   * "slibtool" pedantic nuances now supported, allowing an alternative to
+     GNU libtool
    * Dynamic library loading used in certain programs and use-cases improved,
      especially for 64-bit vs 32-bit builds on multiple-bitness OSes
    * Numerous classes of compilation warnings eradicated, many of those being

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2690 utf-8
+personal_ws-1.1 en 2698 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -52,6 +52,7 @@ Alm
 AlmCPol
 AlmEnbl
 Ampère
+Amplon
 Andreas
 Andreassen
 Andrzej
@@ -340,6 +341,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
+Fosshost
 Frama
 FreeBSD
 FreeDesktop
@@ -396,6 +398,7 @@ HFILE
 HIDIOCINITREPORT
 HITRANS
 HMAC
+HNX
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -510,6 +513,7 @@ LDFLAGS
 LDLC
 LDRIVER
 LEDs
+LGTM
 LH
 LIBGD
 LIBNEON
@@ -1696,8 +1700,8 @@ gentoo
 gestion
 getDescription
 getDevice
-getTrackingResult
 getDevicesVariableValues
+getTrackingResult
 getValue
 getVariable
 getenv
@@ -2191,6 +2195,8 @@ powerware
 ppc
 pprint
 ppro
+pragma
+pragmas
 pre
 prepend
 prepended
@@ -2344,6 +2350,7 @@ si
 siemens
 sigaction
 sigmask
+signedness
 simplejson
 simu
 sio
@@ -2353,6 +2360,7 @@ sizeof
 skel
 slavesync
 slewrate
+slibtool
 sm
 smartups
 sms
