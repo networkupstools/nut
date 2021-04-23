@@ -137,9 +137,9 @@ static int get_belkin_reply(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);
@@ -184,14 +184,14 @@ static int do_broken_rat(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
 	/* firmware 001 only sends 50 bytes instead of the proper 53 */
 	if (cnt == 53) {
 		cnt = 50;
 	}
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);

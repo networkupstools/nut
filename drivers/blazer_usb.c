@@ -514,7 +514,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 }
 
 #ifndef TESTING
-const struct subdriver_t {
+static const struct subdriver_t {
 	const char	*name;
 	int		(*command)(const char *cmd, char *buf, size_t buflen);
 } subdriver[] = {
@@ -529,15 +529,15 @@ const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-    printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
-    size_t i;
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
 
-    for (i = 0; subdriver[i].name != NULL; i++) {
-        if (i>0)
-            printf(", ");
-        printf("%s", subdriver[i].name);
-    }
-    printf("\n\n");
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", subdriver[i].name);
+	}
+	printf("\n\n");
 #endif	/* TESTING */
 
 	printf("Read The Fine Manual ('man 8 blazer_usb')\n");

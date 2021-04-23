@@ -165,6 +165,10 @@ AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 # include <float.h>
 #endif])
 
+AC_CHECK_HEADER([limits.h],
+    [AC_DEFINE([HAVE_LIMITS_H], [1],
+        [Define to 1 if you have <limits.h>.])])
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -1976,16 +1980,16 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal|gcc-medium|gcc-hard], [

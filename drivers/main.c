@@ -326,7 +326,9 @@ static int main_arg(char *var, char *val)
 static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			poll_interval = (unsigned int)ipv;
 		return;
 	}
 
@@ -391,7 +393,9 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			poll_interval = (unsigned int)ipv;
 		return;
 	}
 
@@ -555,8 +559,11 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
-			case 'i':
-				poll_interval = atoi(optarg);
+			case 'i': {
+				int ipv = atoi(optarg);
+				if (ipv >= 0)
+					poll_interval = (unsigned int)ipv;
+				}
 				break;
 			case 'k':
 				do_lock_port = 0;

@@ -289,8 +289,9 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 /* turn the format string into a list of function calls with args */
 static void compile_format(void)
 {
-	unsigned int	i;
-	int	j, found, ofs;
+	size_t	i;
+	int	j, found;
+	size_t	ofs;
 	char	*cmd, *arg, *ptr;
 
 	for (i = 0; i < strlen(logformat); i++) {
@@ -516,7 +517,7 @@ int main(int argc, char **argv)
 
 		if (nextpoll > now) {
 			/* there is still time left, so sleep it off */
-			sleep(difftime(nextpoll, now));
+			sleep((unsigned int)(difftime(nextpoll, now)));
 			nextpoll += interval;
 		} else {
 			/* we spent more time in polling than the interval allows */
