@@ -31,12 +31,12 @@
  *
  */
 
-#include <limits.h>
 #include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 

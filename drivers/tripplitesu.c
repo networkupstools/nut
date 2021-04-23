@@ -215,10 +215,11 @@ static struct {
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
-static int do_command(char type, const char *command, const char *parameters, char *response)
+static ssize_t do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count, ret;
+	size_t	count;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -234,7 +235,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		return -1;
 	}
 
-	upsdebugx(3, "do_command: %d bytes sent [%s] -> OK", ret, buffer);
+	upsdebugx(3, "do_command: %zd bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
 	if (ret < 0) {
@@ -247,7 +248,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 	}
 
 	buffer[ret] = '\0';
-	upsdebugx(3, "do_command: %d byted read [%s]", ret, buffer);
+	upsdebugx(3, "do_command: %zd byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
 
@@ -262,9 +263,15 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		buffer[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, buffer);
+		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, buffer);
 
-		count = atoi(buffer);
+		int c = atoi(buffer);
+		if (c < 0) {
+			upsdebugx(3, "do_command: response not expected to be a negative count!");
+			return -1;
+		}
+
+		count = (size_t)c;
 		if (count >= MAX_RESPONSE_LENGTH) {
 			upsdebugx(3, "do_command: response exceeds expected size!");
 			return -1;
@@ -290,7 +297,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		response[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, response);
+		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
 		   I don't like that, so I remove them.  This is safe to
@@ -548,7 +555,7 @@ static int setvar(const char *varname, const char *val)
 
 static int init_comm(void)
 {
-	int i, bit;
+	size_t i, bit;
 	char response[MAX_RESPONSE_LENGTH];
 
 	ups.commands_available = 0;
