@@ -150,14 +150,14 @@ static long FormatValue(uint32_t Value, uint8_t Size)
  * -------------------------------------------------------------------------- */
 static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 {
-	int	Found = -1;
+	int	Found = -1, i;
 
 	while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) {
 		/* Get new pParser->Item if current pParser->Count is empty */
 		if (pParser->Count == 0) {
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-			for (int i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
+			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
 				pParser->Value += pParser->ReportDesc[(pParser->Pos)+i] << (8*i);
 			}
 			/* Pos on next item */
