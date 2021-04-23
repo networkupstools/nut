@@ -35,10 +35,13 @@
 /* Ever */
 #define EVER_VENDORID	0x2e51
 
+/* ST Microelectronics */
+#define STMICRO_VENDORID	0x0483
+
 /* USB IDs device table */
 static usb_device_id_t ever_usb_device_table[] = {
 
-	{ USB_DEVICE(0x0483, 0xa113), NULL },
+	{ USB_DEVICE(STMICRO_VENDORID, 0xa113), NULL },
 	{ USB_DEVICE(EVER_VENDORID, 0xffff), NULL},
 
 
