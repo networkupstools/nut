@@ -1359,6 +1359,8 @@ static void	*fabula_subdriver(USBDevice_t *device)
 /* Note: the "hunnox_subdriver" name is taken by the subdriver_t structure */
 static void *fabula_hunnox_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &hunnox_command;
 	return NULL;
 }
