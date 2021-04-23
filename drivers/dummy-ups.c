@@ -431,7 +431,7 @@ static int parse_data_file(int arg_upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr, var_value[MAX_STRING_SIZE];
-	int		value_args = 0, counter;
+	size_t	value_args = 0, counter;
 	time_t	now;
 	NUT_UNUSED_VARIABLE(arg_upsfd);
 

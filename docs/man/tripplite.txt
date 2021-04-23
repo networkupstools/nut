@@ -19,7 +19,7 @@ using the serial port.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports the following optional settings in the 
+This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
 *offdelay*='num'::

@@ -50,9 +50,11 @@
 	#include "idowell-hid.h"
 	#include "openups-hid.h"
 	#include "ever-hid.h"
+	#include "powervar-hid.h"
+	#include "delta_ups-hid.h"
 #endif
 
-/* master list of avaiable subdrivers */
+/* Reference list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
@@ -68,6 +70,8 @@ static subdriver_t *subdriver_list[] = {
 	&idowell_subdriver,
 	&openups_subdriver,
 	&ever_subdriver,
+	&powervar_subdriver,
+	&delta_ups_subdriver,
 #endif
 	NULL
 };
@@ -486,11 +490,15 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
 	NUT_UNUSED_VARIABLE(privdata);
 
+	upsdebugx(2, "%s (non-SHUT mode): matching a device...", __func__);
+
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {
 			return 1;
 		}
 	}
+
+	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver to vendor and/or product ID", __func__);
 	return 0;
 }
 

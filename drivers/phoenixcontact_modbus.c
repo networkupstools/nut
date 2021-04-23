@@ -157,7 +157,7 @@ void upsdrv_initups(void)
 	r = modbus_set_slave(ctx, MODBUS_SLAVE_ID);	/* slave ID */
 	if (r < 0) {
 		modbus_free(ctx);
-		fatalx(EXIT_FAILURE, "Invalid slave ID %d",MODBUS_SLAVE_ID);
+		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
 	}
 
 	if (modbus_connect(ctx) == -1) {

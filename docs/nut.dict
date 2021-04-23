@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2522 utf-8
+personal_ws-1.1 en 2548 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -16,6 +16,7 @@ AEG
 AES
 AGM
 AIX
+AMETEK
 APC's
 API
 APIs
@@ -134,6 +135,7 @@ Brabec
 Breiland
 Brownell
 Bs
+BuildBot
 Buildbot
 Bxx
 ByPass
@@ -164,6 +166,7 @@ COMMOK
 CONTEXTs
 CPAN
 CPM
+CPP
 CPUs
 CRC
 CREAD
@@ -218,6 +221,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DHEA
 DISCHRG
 DN
 DOCTYPE
@@ -291,6 +295,7 @@ EqlzInvl
 EqlzTm
 Erikson
 Eriksson
+Evgeny
 FEMEA
 FFF
 FH
@@ -397,6 +402,7 @@ Hlavinka
 Holger
 Hoogervorst
 Hough
+Hunnox
 Hurd
 Håvard
 IANA
@@ -423,6 +429,7 @@ IPs
 IPv
 IRIX
 ITEMP
+ITy
 IVT
 IZ
 Infosec
@@ -455,6 +462,7 @@ KRT
 Kain
 Kaminski
 Kanji
+Kazancev
 Kazutoshi
 Kebo
 Keor
@@ -797,6 +805,8 @@ PowerVault
 PowerWalker
 PowerWare
 Powerchute
+Powercool
+Powervar
 Powerwell
 Prachi
 PresentStatus
@@ -885,6 +895,7 @@ Rodríguez
 Rucelf
 RxD
 RxHs
+Ryabov
 SAI
 SCM
 SCO
@@ -926,6 +937,7 @@ SMT
 SMTP
 SMX
 SNMPv
+SNR
 SOCKADDR
 SOCKLEN
 SOFF
@@ -1072,6 +1084,7 @@ UINT
 UNKCOMMAND
 UNV
 UPGUARDS
+UPM
 UPOII
 UPS's
 UPSCONN
@@ -1127,7 +1140,10 @@ Viktor
 Vout
 Václav
 WALKMODE
+WARNFATAL
+WARNOPT
 WELI
+WHAD
 WMNut
 WS
 WSE
@@ -1260,6 +1276,7 @@ automessage
 autoreconf
 autorestart
 autosaving
+autoscan
 autostart
 autowidth
 auxdata
@@ -1408,11 +1425,13 @@ constantitime
 constantvtime
 constatus
 contdisplay
+contrib
 contstatus
 coreutils
 cout
 coverity
 cp
+cpp
 cpqpower
 cpsups
 cr
@@ -1606,6 +1625,7 @@ getVariable
 getenv
 getopt
 getvar
+github
 gitignore
 gitk
 gmail
@@ -1649,6 +1669,7 @@ http
 httpd
 https
 huawei
+hunnox
 iBox
 iDowell
 iManufacturer
@@ -1810,6 +1831,7 @@ macaddr
 macosx
 mailx
 maintainer's
+maintainership
 maj
 makevartable
 mandir
@@ -1935,6 +1957,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noscanlangid
 notAfter
 notifyme
 notifytype
@@ -2085,6 +2108,7 @@ qgs
 qpi
 qs
 queequeg
+quiesce
 qx
 qx's
 qxflags
@@ -2215,6 +2239,7 @@ snmpv
 snmpwalk
 snprintf
 snprintfcat
+snr
 sockdebug
 solaris
 solis
@@ -2420,6 +2445,7 @@ upsset
 upsstats
 upstype
 upsuser
+upswired
 uptime
 urpmi
 usb

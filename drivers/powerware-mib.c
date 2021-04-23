@@ -105,13 +105,13 @@ static info_lkp_t pw_alarm_ob[] = {
 	{ 1, "OB", NULL, NULL },
 	{ 2, "", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
-} ;
+};
 
 static info_lkp_t pw_alarm_lb[] = {
 	{ 1, "LB", NULL, NULL },
 	{ 2, "", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
-} ;
+};
 
 static info_lkp_t pw_pwr_info[] = {
 	{   1, ""         /* other */, NULL, NULL },
@@ -165,9 +165,9 @@ static info_lkp_t pw_battery_abm_status[] = {
 /*	{ 4, "Resting", NULL, NULL }, */
 /*	{ 5, "Unknown", NULL, NULL }, */
 	{ 0, NULL, NULL, NULL }
-} ;
+};
 
-static info_lkp_t eaton_abm_status_info[] = {
+static info_lkp_t pw_abm_status_info[] = {
 	{ 1, "charging", NULL, NULL },
 	{ 2, "discharging", NULL, NULL },
 	{ 3, "floating", NULL, NULL },
@@ -188,7 +188,7 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_yes_no_info[] = {
+static info_lkp_t pw_yes_no_info[] = {
 	{ 1, "yes", NULL, NULL },
 	{ 2, "no", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -239,9 +239,9 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsTestBatteryStatus */
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.8.2.0", "", 0, &pw_batt_test_info[0] },
 	/* UPS-MIB::upsAutoRestart */
-	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &ietf_yes_no_info[0] },
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &pw_yes_no_info[0] },
 	/* XUPS-MIB::xupsBatteryAbmStatus.0 */
-	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &eaton_abm_status_info[0] },
+	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &pw_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",

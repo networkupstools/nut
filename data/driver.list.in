@@ -258,6 +258,7 @@
 "Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card"	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
+"Delta"	"ups"	"4"	"Delta UPS Amplon R Series"	"USB port"	"usbhid-ups"
 
 "Deltec"	"ups"	"1"	"PowerRite Pro II"	""	"genericups upstype=15"
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
@@ -950,6 +951,19 @@
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
+
+"SNR"	"ups"	"2" "SNR-UPS-LID-600"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-LED-C13"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-LED-C13-PRO"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-800"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-800-LED-С13"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1000-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1200"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1500"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-2000"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-2000-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-3000-XPS"	""  "nutdrv_qx"
 
 "SOLA"	"ups"	"1"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"ups"	"1"	"325"	""	"blazer_ser or bestups"

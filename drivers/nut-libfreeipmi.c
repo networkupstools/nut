@@ -519,7 +519,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 	uint16_t record_count;
 	int found_device_id = 0;
 	uint16_t record_id;
-	uint8_t entity_id, entity_instance;
+	uint8_t entity_id = 0, entity_instance = 0;
 	int i;
 
 	if (ipmi_ctx == NULL)

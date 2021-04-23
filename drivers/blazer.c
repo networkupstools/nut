@@ -1,6 +1,11 @@
 /*
  * blazer.c: driver core for Megatec/Q1 protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
  * found online at http://www.networkupstools.org/ups-protocols/megatec.html
  *
@@ -25,8 +30,7 @@
 
 #include "main.h"
 #include "blazer.h"
-
-#include <math.h>
+#include "nut_float.h"
 
 static int	ondelay = 3;	/* minutes */
 static int	offdelay = 30;	/* seconds */
@@ -599,7 +603,7 @@ static void blazer_initbattery(void)
 
 	/* If no values were provided by the user in ups.conf, try to guesstimate
 	 * battery.charge, but announce it! */
-	if ((batt.volt.nom != 1) && ((batt.volt.high == -1) || (batt.volt.low == -1))) {
+	if ( (!d_equal(batt.volt.nom, 1)) && ((d_equal(batt.volt.high, -1)) || (d_equal(batt.volt.low, -1)))) {
 		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
 
 		/* Basic formula, which should cover most cases */
@@ -692,7 +696,7 @@ void blazer_initinfo(void)
 
 	for (proto = 0; command[proto].status; proto++) {
 
-		int	ret;
+		int	ret = -1;
 
 		if (protocol && strcasecmp(protocol, command[proto].name)) {
 			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
@@ -724,7 +728,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].rating && !testvar("norating")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -744,7 +748,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].vendor && !testvar("novendor")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 

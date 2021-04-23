@@ -65,13 +65,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     LC_ALL=C
     export LANG LC_ALL
 
-    if [ -d "./tmp" ]; then
-        rm -rf ./tmp
+    if [ -d "./tmp/" ]; then
+        rm -rf ./tmp/
     fi
-    if [ -d "./.inst" ]; then
-        rm -rf ./.inst
+    if [ -d "./.inst/" ]; then
+        rm -rf ./.inst/
     fi
-    mkdir -p tmp .inst
+    mkdir -p tmp/ .inst/
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
 
@@ -97,7 +97,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     if which ccache && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
-    mkdir -p "${CCACHE_DIR}" || HAVE_CCACHE=no
+    mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
     if [ "$HAVE_CCACHE" = yes ] && [ -d "$CCACHE_DIR" ]; then
         echo "CCache stats before build:"
@@ -200,7 +200,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] ; then
+            if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] && [ "${BUILD_LIBGD_CGI-}" != "auto" ] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
@@ -291,6 +291,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
+    if [ -n "${BUILD_WARNOPT-}" ]; then
+        CONFIG_OPTS+=("--enable-warnings=${BUILD_WARNOPT}")
+    fi
+
+    if [ -n "${BUILD_WARNFATAL-}" ]; then
+        CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
@@ -352,7 +360,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             ;;
         "default-all-errors")
             RES=0
-            if pkg-config --exists nss && pkg-config --exists openssl ; then
+            if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
                 # Try builds for both cases as they are ifdef-ed
 
                 echo "=== Building with SSL=openssl..."
@@ -384,6 +392,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
     git status -s || true
     echo "==="
+    if [ -n "`git status -s`" ]; then
+        echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+        git diff || true
+        echo "==="
+        exit 1
+    fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install

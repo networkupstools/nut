@@ -21,11 +21,11 @@ been tested on PW5110 hardware.
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports the following optional settings in the    
+This driver supports the following optional settings in the
 linkman:ups.conf[5].
 
 *shutdown_delay=*'delay'::
-The number of seconds that the UPS should wait between receiving the 
+The number of seconds that the UPS should wait between receiving the
 shutdown command and actually shutting off.
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
@@ -37,7 +37,7 @@ INSTANT COMMANDS
 This driver supports the following Instant Commands:
 
 *shutdown.return*::
-Turn off the load and return when power is back. 
+Turn off the load and return when power is back.
 
 *shutdown.stayoff*::
 Turn off the load and remain off.
