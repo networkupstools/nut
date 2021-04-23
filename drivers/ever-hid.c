@@ -33,7 +33,7 @@
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Ever */
-#define EVER_VENDORID	0x2E51
+#define EVER_VENDORID	0x2e51
 
 /* USB IDs device table */
 static usb_device_id_t ever_usb_device_table[] = {
