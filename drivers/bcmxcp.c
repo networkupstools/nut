@@ -1716,7 +1716,7 @@ void upsdrv_updateinfo(void)
 			upsdebugx(1, "Failed to extract Battery Status from answer");
 		}
 
-    		/*Extracting internal batteries ABM status*/
+		/*Extracting internal batteries ABM status*/
 		/*Placed first in ABM statuses list. For examples above - on position BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS (18):
 		PW5115RM - 0 - no external strings, no status bytes,
 		so next byte (19) - number of ABM statuses, next (20) - first ABM Status for internal batteries.
@@ -2411,7 +2411,7 @@ int setvar (const char *varname, const char *val)
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d %s delay set to %d sec",
 					outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
 
-       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
+		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 	}
 

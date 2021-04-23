@@ -40,8 +40,7 @@
 #include "serial.h"
 #include "timehead.h"
 #include "nut_stdint.h"
-
-#include <math.h>
+#include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
 #define DRIVER_VERSION	"0.89"
@@ -837,7 +836,7 @@ void upsdrv_updateinfo(void)
 	if (batt_runtime >= 0 && batt_runtime < 9999) {
 		dstate_setinfo("battery.runtime", "%.0f", batt_runtime*60);
 	}
-	else if (load > 0 && batt_disch_curr_max != 0) {
+	else if (load > 0 && ! f_equal(batt_disch_curr_max, 0)) {
 		float est_battcurr = load * fabs(batt_disch_curr_max);
 		/* Peukert equation */
 		float runtime = (batt_cap_nom*3600)/pow(est_battcurr, 1.35);

@@ -35,7 +35,7 @@ This driver also supports the following optional settings:
 
 *lb*='num'::
 Set the low battery threshold to 'num' volts.
- 
+
 *hb*='num'::
 Set the high battery threshold to 'num' volts.
 

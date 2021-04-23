@@ -1,7 +1,7 @@
 APCSMART-OLD(8)
 ===============
 
-NAME  
+NAME
 ----
 
 apcsmart-old - Driver for American Power Conversion Smart Protocol UPS equipment

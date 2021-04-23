@@ -390,7 +390,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0 };
+		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);

@@ -25,7 +25,7 @@ power events.
 
 upsmon can monitor multiple systems using a single process.  Every UPS
 that is defined in the linkman:upsmon.conf[5] configuration file is assigned
-a power value and a type (*slave* or *master*).
+a power value and a type (*primary* or *secondary*).
 
 OPTIONS
 -------
@@ -37,7 +37,7 @@ Display the help message.
 Send the command 'command' to the existing upsmon process.  Valid
 commands are:
 
-*fsd*;; shutdown all master UPSes (use with caution)
+*fsd*;; shutdown all primary-mode UPSes (use with caution)
 
 *stop*;; stop monitoring and exit
 
@@ -52,7 +52,7 @@ times for more details.
 *-K*::
 Test for the shutdown flag.  If it exists and contains the magic string
 from upsmon, then upsmon will exit with `EXIT_SUCCESS`.  Any other condition
-will make upsmon exit with `EXIT_FAILURE`.  
+will make upsmon exit with `EXIT_FAILURE`.
 +
 You can test for a successful exit from `upsmon -K` in your shutdown
 scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
@@ -93,7 +93,7 @@ examples follow:
  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
 
- - "fenton@bigbox:5678" is a UPS called "fenton" on a system called 
+ - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
 "bigbox" which runs linkman:upsd[8] on port "5678".
 
 The 'powervalue' refers to how many power supplies on this system are
@@ -102,13 +102,13 @@ on power values below.
 
 The 'username' is a section in your linkman:upsd.users[5] file.
 Whatever password you set in that section must match the 'password'
-set in this file.  
+set in this file.
 
-The type set in that section must also match the 'type' here--
-*master* or *slave*.  In general, a master process is one
+The type set in that section must also match the 'type' here --
+*primary* or *secondary*.  In general, a primary process is one
 running on the system with the UPS actually plugged into a serial
-port, and a slave is drawing power from the UPS but can't talk to it
-directly.  See the section on UPS types for more.
+port, and a secondary is drawing power from the UPS but can't
+talk to it directly.  See the section on UPS types for more.
 
 NOTIFY EVENTS
 -------------
@@ -149,7 +149,7 @@ NOTIFY COMMAND
 --------------
 
 In linkman:upsmon.conf[5], you can configure a program called the NOTIFYCMD
-that will handle events that occur.  
+that will handle events that occur.
 
 +NOTIFYCMD+ "'path to program'"
 
@@ -227,36 +227,36 @@ number.  If a UPS is critical (on battery and low battery) or has been
 put into "forced shutdown" mode, it no longer contributes.
 
 A "power value" on a MONITOR line in the config file is the number of
-power supplies that the UPS runs on the current system.  
+power supplies that the UPS runs on the current system.
 
 +MONITOR+ 'upsname' 'powervalue' 'username' 'password' 'type'
 
-Normally, you only have one power supply, so it will be set to 1.  
+Normally, you only have one power supply, so it will be set to 1.
 
-+MONITOR myups@myhost 1 username mypassword master+
++MONITOR myups@myhost 1 username mypassword primary+
 
 On a large server with redundant power supplies, the power value for a UPS
 may be greater than 1.  You may also have more than one of them defined.
 
-+MONITOR ups-alpha@myhost 2 username mypassword master+
++MONITOR ups-alpha@myhost 2 username mypassword primary+
 
-+MONITOR ups-beta@myhost 2 username mypassword master+
++MONITOR ups-beta@myhost 2 username mypassword primary+
 
 You can also set the power value for a UPS to 0 if it does not supply any
 power to that system.  This is generally used when you want to use the
 upsmon notification features for a UPS even though it's not actually
-running the system that hosts upsmon.  Don't set this to "master" unless
+running the system that hosts upsmon.  Don't set this to "primary" unless
 you really want to power this UPS off when this instance of upsmon needs
 to shut down for its own reasons.
 
-+MONITOR faraway@anotherbox 0 username mypassword slave+
++MONITOR faraway@anotherbox 0 username mypassword secondary+
 
 The "minimum power value" is the number of power supplies that must be
-receiving power in order to keep the computer running.  
+receiving power in order to keep the computer running.
 
 +MINSUPPLIES+ 'value'
 
-Typical PCs only have 1, so most users will leave this at the default. 
+Typical PCs only have 1, so most users will leave this at the default.
 
 +MINSUPPLIES 1+
 
@@ -276,31 +276,31 @@ UPS TYPES
 
 *upsmon* and linkman:upsd[8] don't always run on the same system.  When they
 do, any UPSes that are directly attached to the upsmon host should be
-monitored in "master" mode.  This makes upsmon take charge of that
-equipment, and it will wait for slaves to disconnect before shutting
+monitored in "primary" mode.  This makes upsmon take charge of that equipment,
+and it will wait for the "secondary" systems to disconnect before shutting
 down the local system.  This allows the distant systems (monitoring over
 the network) to shut down cleanly before `upsdrvctl shutdown` runs
 and turns them all off.
 
-When upsmon runs as a slave, it is relying on the distant system to tell
+When upsmon runs as a secondary, it is relying on the distant system to tell
 it about the state of the UPS.  When that UPS goes critical (on battery
 and low battery), it immediately invokes the local shutdown command.  This
-needs to happen quickly.  Once it disconnects from the distant
-linkman:upsd[8] server, the master upsmon will start its own shutdown
-process.  Your slaves must all shut down before the master turns off the
-power or filesystem damage may result.
+needs to happen quickly.  Once all secondaries disconnect from the distant
+linkman:upsd[8] server, its primary-mode upsmon will start its own shutdown
+process.  Your secondary systems must all quiesce and shut down before the
+primary turns off the shared power source, or filesystem damage may result.
 
-upsmon deals with slaves that get wedged, hang, or otherwise fail to 
+upsmon deals with secondaries that get wedged, hang, or otherwise fail to
 disconnect from linkman:upsd[8] in a timely manner with the HOSTSYNC
-timer.  During a shutdown situation, the master upsmon will give up after
-this interval and it will shut down anyway.  This keeps the master from
-sitting there forever (which would endanger that host) if a slave should
-break somehow.  This defaults to 15 seconds.
+timer.  During a shutdown situation, the primary upsmon will give up after
+this interval and it will shut down anyway.  This keeps the primary from
+sitting there forever (which would endanger that host) if a secondary
+should break somehow.  This defaults to 15 seconds.
 
-If your master system is shutting down too quickly, set the FINALDELAY
+If your primary system is shutting down too quickly, set the FINALDELAY
 interval to something greater than the default 15 seconds.  Don't set
 this too high, or your UPS battery may run out of power before the
-master upsmon process shuts down that system.
+primary upsmon process shuts down that system.
 
 TIMED SHUTDOWNS
 ---------------
@@ -353,9 +353,10 @@ MIXED OPERATIONS
 
 Besides being able to monitor multiple UPSes, upsmon can also monitor them
 as different roles.  If you have a system with multiple power supplies
-serviced by separate UPS batteries, it's possible to be a master on one
-and a slave on the other.  This usually happens when you run out of serial
-ports and need to do the monitoring through another system nearby.
+serviced by separate UPS batteries, it's possible to be a primary on one
+UPS and a secondary on the other.  This usually happens when you run
+out of serial or USB ports and need to do the monitoring through another
+system nearby.
 
 This is also complicated, especially when it comes time to power down a
 UPS that has gone critical but doesn't supply the local system.  You can
@@ -366,15 +367,15 @@ FORCED SHUTDOWNS
 ----------------
 
 When upsmon is forced to bring down the local system, it sets the
-"FSD" (forced shutdown) flag on any UPSes that it is running in master
-mode.  This is used to synchronize slaves in the event that a master UPS
-that is otherwise OK needs to be brought down due to some pressing event
-on the master.
+"FSD" (forced shutdown) flag on any UPSes that it is running in primary
+mode.  This is used to synchronize secondary systems in the event that
+a primary which is otherwise OK needs to be brought down due to some
+pressing event on the UPS manager system.
 
-You can manually invoke this mode on the master upsmon by starting another
-copy with `-c fsd`.  This is useful when you want to initiate a shutdown
-before the critical stage through some external means, such as
-linkman:upssched[8].
+You can manually invoke this mode on the system with primary-mode upsmon
+by starting another copy of the program with `-c fsd` command line argument.
+This is useful when you want to initiate a shutdown before the critical
+stage through some external means, such as linkman:upssched[8].
 
 DEAD UPSES
 ----------
@@ -419,9 +420,13 @@ by calling upsmon again to set the flag, i.e.:
 
 +upsmon -c fsd+
 
-After that, the master and the slaves will do their usual shutdown sequence
-as if the battery had gone critical.  This is much easier on your UPS
-equipment, and it beats crawling under a desk to find the plug.
+After that, the primary and the secondary will do their usual shutdown
+sequence as if the battery had gone critical, while you can time how long
+it takes for them.  This is much easier on your UPS equipment, and it beats
+crawling under a desk to find the plug.
+
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the
+systems would shut down at this point, without actually disrupting their work.
 
 FILES
 -----
