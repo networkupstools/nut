@@ -1,5 +1,5 @@
-/* eaton_ats16-mib.c - subdriver to monitor Eaton ATS16 SNMP devices with NUT
- * using either legacy NMC or newer Network-M2 cards
+/* eaton-ats16-nmc-mib.c - subdriver to monitor Eaton ATS16 NMC SNMP devices with NUT
+ * using legacy NMC cards
  *
  *  Copyright (C)
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
@@ -23,15 +23,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "eaton-ats16-mib.h"
+#include "eaton-ats16-nmc-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.19"
+#define EATON_ATS16_NMC_MIB_VERSION  "0.18"
 
-#define EATON_ATS16_SYSOID_GEN1  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
-#define EATON_ATS16_SYSOID_GEN2  ".1.3.6.1.4.1.534.10.2" /* newer Network-M2 */
-#define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
+#define EATON_ATS16_NMC_SYSOID  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
+#define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
 
-static info_lkp_t eaton_ats16_source_info[] = {
+static info_lkp_t eaton_ats16_nmc_source_info[] = {
 	{ 1, "init"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -74,7 +73,7 @@ static info_lkp_t eaton_ats16_source_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_sensitivity_info[] = {
+static info_lkp_t eaton_ats16_nmc_sensitivity_info[] = {
 	{ 1, "normal"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -97,7 +96,7 @@ static info_lkp_t eaton_ats16_sensitivity_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
+static info_lkp_t eaton_ats16_nmc_input_frequency_status_info[] = {
 	{ 1, "good"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -115,7 +114,7 @@ static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
+static info_lkp_t eaton_ats16_nmc_input_voltage_status_info[] = {
 	{ 1, "good"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -143,7 +142,7 @@ static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_test_result_info[] = {
+static info_lkp_t eaton_ats16_nmc_test_result_info[] = {
 	{ 1, "done and passed"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -181,7 +180,7 @@ static info_lkp_t eaton_ats16_test_result_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_output_status_info[] = {
+static info_lkp_t eaton_ats16_nmc_output_status_info[] = {
 	{ 1, "OFF"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -199,17 +198,41 @@ static info_lkp_t eaton_ats16_output_status_info[] = {
 	}
 };
 
-static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
-	{ -1, "unknown" },
-	{ 1, "opened" },
-	{ 2, "closed" },
-	{ 3, "opened" },   /* openWithNotice   */
-	{ 4, "closed" }, /* closedWithNotice */
-	{ 0, NULL }
+static info_lkp_t eaton_ats16_nmc_ambient_drycontacts_info[] = {
+	{ -1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "opened"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "opened"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* openWithNotice   */
+	{ 4, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* closedWithNotice */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
 };
 
-/* EATON_ATS Snmp2NUT lookup table */
-static snmp_info_t eaton_ats16_mib[] = {
+/* EATON_ATS_NMC Snmp2NUT lookup table */
+static snmp_info_t eaton_ats16_nmc_mib[] = {
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -243,21 +266,21 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* ats2InputVoltage.source2 = INTEGER: 2432 0.1 V */
 	{ "input.2.voltage", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.2.2", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputStatusVoltage.source1 = INTEGER: normalRange(1) */
-	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info },
+	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, eaton_ats16_nmc_input_voltage_status_info },
 	/* ats2InputStatusVoltage.source2 = INTEGER: normalRange(1) */
-	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info },
+	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, eaton_ats16_nmc_input_voltage_status_info },
 	/* ats2InputFrequency.source1 = INTEGER: 500 0.1 Hz */
 	{ "input.1.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputFrequency.source2 = INTEGER: 500 0.1 Hz */
 	{ "input.2.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.2", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputStatusFrequency.source1 = INTEGER: good(1) */
-	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info },
+	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, eaton_ats16_nmc_input_frequency_status_info },
 	/* ats2InputStatusFrequency.source2 = INTEGER: good(1) */
-	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info },
+	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, eaton_ats16_nmc_input_frequency_status_info },
 	/* ats2ConfigSensitivity.0 = INTEGER: normal(1) */
-	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &eaton_ats16_sensitivity_info[0] },
+	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &eaton_ats16_nmc_sensitivity_info[0] },
 	/* ats2OperationMode.0 = INTEGER: source1(4) */
-	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats16_source_info },
+	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats16_nmc_source_info },
 	/* ats2ConfigPreferred.0 = INTEGER: source1(1) */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.4.5.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputDephasing = INTEGER: 181 */
@@ -274,10 +297,10 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* UPS collection */
 	/* FIXME: RFC for device.test.result! */
 	/* ats2ConfigTransferTest.0 = INTEGER: noTestInitiated(6) */
-	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, eaton_ats16_test_result_info },
+	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, eaton_ats16_nmc_test_result_info },
 	/* FIXME: RFC for device.status! */
 	/* ats2StatusOutput.0 = INTEGER: outputPowered(2) */
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, eaton_ats16_output_status_info },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, eaton_ats16_nmc_output_status_info },
 
 	/* Ambient collection */
 	/* ats2EnvRemoteTemp.0 = INTEGER: 0 degrees Centigrade */
@@ -296,11 +319,11 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* ats2ContactState.1 = INTEGER: open(1) */
 	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+		NULL, SU_FLAG_OK, &eaton_ats16_nmc_ambient_drycontacts_info[0] },
 	/* ats2ContactState.2 = INTEGER: open(1) */
 	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+		NULL, SU_FLAG_OK, &eaton_ats16_nmc_ambient_drycontacts_info[0] },
 
 #if 0 /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
@@ -382,13 +405,11 @@ static snmp_info_t eaton_ats16_mib[] = {
 /* Note: keep the legacy definition intact, to avoid breaking compatibility */
 
 /* FIXME: The lines below are duplicated to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
-/*mib2nut_info_t  eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1, NULL }; */
-mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1, NULL };
-/*mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2, NULL };*/
-mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2, NULL };
 /* Note:
- * * newer Network-M2 communication cards, with a fixed sysOID (above)
- * * due to a bug in tools/nut-snmpinfo.py, prepending a 2nd mib2nut_info_t
+ *   due to a bug in tools/nut-snmpinfo.py, prepending a 2nd mib2nut_info_t
  *   declaration with a comment line results in data extraction not being
  *   done for all entries in the file. Hence the above comment line being
  *   after its belonging declaration! */
+
+/*mib2nut_info_t  eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, eaton_ats16_nmc_mib, EATON_ATS16_NMC_SYSOID, NULL }; */
+mib2nut_info_t	eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, eaton_ats16_nmc_mib, EATON_ATS16_NMC_SYSOID, NULL };

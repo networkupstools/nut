@@ -40,18 +40,21 @@
 #include "mge-hid.h"
 
 #ifndef SHUT_MODE
+	/* explore stub goes first, others alphabetically */
 	#include "explore-hid.h"
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
-	#include "liebert-hid.h"
-	#include "powercom-hid.h"
-	#include "tripplite-hid.h"
+	#include "delta_ups-hid.h"
 	#include "idowell-hid.h"
+	#include "liebert-hid.h"
 	#include "openups-hid.h"
+	#include "powercom-hid.h"
+	#include "powervar-hid.h"
+	#include "tripplite-hid.h"
 #endif
 
-/* master list of avaiable subdrivers */
+/* Reference list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
@@ -61,11 +64,13 @@ static subdriver_t *subdriver_list[] = {
 	&apc_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
-	&liebert_subdriver,
-	&powercom_subdriver,
-	&tripplite_subdriver,
+	&delta_ups_subdriver,
 	&idowell_subdriver,
+	&liebert_subdriver,
 	&openups_subdriver,
+	&powercom_subdriver,
+	&powervar_subdriver,
+	&tripplite_subdriver,
 #endif
 	NULL
 };

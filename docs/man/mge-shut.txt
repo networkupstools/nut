@@ -1,4 +1,4 @@
-MGE-SHUT(8) 
+MGE-SHUT(8)
 ===========
 
 NAME
@@ -44,7 +44,7 @@ sent (via the *-k* switch).
 +
 The default value is 20 (in seconds). Usually this *must be lower* than
 'ondelay', but the driver will *not* warn you upon startup if it isn't.
- 
+
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent but before the actual switch off. This

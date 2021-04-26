@@ -166,8 +166,8 @@ static snmp_info_t xppc_mib[] = {
 	 * 	{ 0, NULL }
 	 * };
 	 */
-        { "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",
-                SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 
 	/* upsBaseIdentModel.0 = STRING: "Intelligent" */
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.1.1.1.0", "Generic Phoenixtec SNMP device", SU_FLAG_OK, NULL },

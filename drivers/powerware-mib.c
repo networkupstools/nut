@@ -122,7 +122,7 @@ static info_lkp_t pw_alarm_ob[] = {
 		, NULL, NULL, NULL, NULL
 #endif
 	}
-} ;
+};
 
 static info_lkp_t pw_alarm_lb[] = {
 	{ 1, "LB"
@@ -140,7 +140,7 @@ static info_lkp_t pw_alarm_lb[] = {
 		, NULL, NULL, NULL, NULL
 #endif
 	}
-} ;
+};
 
 static info_lkp_t pw_pwr_info[] = {
 	{   1, ""         /* other */
@@ -493,7 +493,7 @@ static info_lkp_t pw_battery_abm_status[] = {
 		, NULL, NULL, NULL, NULL
 #endif
 	}
-} ;
+};
 
 static info_lkp_t pw_abm_status_info[] = {
 	{ 1, "charging"

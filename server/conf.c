@@ -167,7 +167,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		if (isdigit(arg[1][0])) {
-			maxconn = atoi(arg[1]);
+			maxconn = atol(arg[1]);
 			return 1;
 		}
 		else {

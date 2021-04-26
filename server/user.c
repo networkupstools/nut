@@ -317,19 +317,20 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	return 0;	/* fail */
 }
 
-/* handle "upsmon master" and "upsmon slave" for nicer configurations */
+/* handle "upsmon primary" and "upsmon secondary" for nicer configurations */
+/* FIXME: Protocol update needed to handle master/primary alias (in action and in protocol) */
 static void set_upsmon_type(char *type)
 {
-	/* master: login, master, fsd */
-	if (!strcasecmp(type, "master")) {
+	/* primary: login, master, fsd */
+	if (!strcasecmp(type, "master") || !strcasecmp(type, "primary")) {
 		user_add_action("login");
-		user_add_action("master");
+		user_add_action("master"); /* Note: this is linked to "MASTER" API command permission */
 		user_add_action("fsd");
 		return;
 	}
 
-	/* slave: just login */
-	if (!strcasecmp(type, "slave")) {
+	/* secondary: just login */
+	if (!strcasecmp(type, "slave") || !strcasecmp(type, "secondary")) {
 		user_add_action("login");
 		return;
 	}

@@ -54,7 +54,7 @@ List all NUT-compatible USB devices currently plugged in.
 Scan SNMP devices. Requires at least a 'start IP', and optionally, an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
-Scan XML/HTTP devices. Broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices. No IP required. 
+Scan XML/HTTP devices. Broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices. No IP required.
 
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.

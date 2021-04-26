@@ -750,7 +750,9 @@ static void do_type(const char *varname)
 			/* split out the :<len> data */
 			ptr = strchr(answer[i], ':');
 			*ptr++ = '\0';
-			len = strtol(ptr, (char **) NULL, 10);
+			long l = strtol(ptr, (char **) NULL, 10);
+			assert(l <= 127);	/* FIXME: Loophole about longer numbers? Why are we limited to char at all here? */
+			len = (char)l;
 
 			do_string(varname, len);
 			return;

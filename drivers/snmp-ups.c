@@ -33,12 +33,12 @@
  *
  */
 
-#include <limits.h>
 #include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 
@@ -67,7 +67,8 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats16-mib.h"
+#include "eaton-ats16-nmc-mib.h"
+#include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
@@ -130,8 +131,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
 	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
-	&eaton_ats16,		/* This struct comes from : eaton-ats16-mib.c */
-	&eaton_ats16_g2,	/* This struct comes from : eaton-ats16-mib.c */
+	&eaton_ats16_nmc,		/* This struct comes from : eaton-ats16-nmc-mib.c */
+	&eaton_ats16_nm2,	/* This struct comes from : eaton-ats16-nm2-mib.c */
 	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
 	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */

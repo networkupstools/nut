@@ -392,11 +392,18 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
       $CI_TIME make VERBOSE=1 all )
 
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
-    git status -s || true
-    echo "==="
     if git status -s | egrep '\.dmf$' ; then
-        echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
-        git diff -- '*.dmf'
+        echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated, even if generated (not all builders can do so)!" >&2
+### Bail out will happen below
+#        git diff -- '*.dmf'
+#        exit 1
+    fi
+    git status -s | egrep -v '\.dmf$' || true
+    echo "==="
+    if [ -n "`git status -s`" ]; then
+        echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+        git diff || true
+        echo "==="
         exit 1
     fi
 
