@@ -50,7 +50,7 @@ class NutClientTest : public CppUnit::TestFixture
 		CPPUNIT_TEST( test_copy_constructor_var );
 		CPPUNIT_TEST( test_copy_assignment_var );
 
-		CPPUNIT_TEST( test_mock_dev );
+		CPPUNIT_TEST( test_nutclientstub_dev );
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -69,7 +69,7 @@ public:
 	void test_copy_constructor_var();
 	void test_copy_assignment_var();
 
-	void test_mock_dev();
+	void test_nutclientstub_dev();
 };
 
 // Registers the fixture into the 'registry'
@@ -82,6 +82,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( NutClientTest );
 #endif
 
 #include "../clients/nutclient.h"
+#include "../clients/nutclientmem.h"
 
 namespace nut {
 
@@ -220,12 +221,22 @@ void NutClientTest::test_copy_assignment_var() {
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Variable variable j by equating to i", i, j);
 }
 
-void NutClientTest::test_mock_dev() {
-	nut::TcpClientMock c;
-	nut::Device d(nullptr, "ups_1");
-	c.setDeviceVariable("ups_1", "name_1", "value_1");
-	std::string value = c.getDeviceVariableValue("ups_1", "nam_1");
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed mock tcp client", value, "value_1");
+void NutClientTest::test_nutclientstub_dev() {
+	bool noExeption = true;
+	try
+	{
+		nut::MemClientStub c;
+		nut::Device d(nullptr, "ups_1");
+		c.setDeviceVariable("ups_1", "name_1", "value_1");
+		ListValue values = c.getDeviceVariableValue("ups_1", "name_1");
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: wrong values number", values.size() == 1);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: bad value", values[0] == std::string("value_1"));
+	}
+	catch(...)
+	{
+		noExeption = false;
+	}
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exeption", noExeption);
 }
 
 } // namespace nut {}

@@ -1,4 +1,4 @@
-/* nutclientmock.h - definitions for nutclientmock C/C++ library
+/* nutclientmem.h - definitions for nutclientmem C/C++ library
 
    Copyright (C) 2021
 
@@ -17,8 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef NUTCLIENTMOCK_HPP_SEEN
-#define NUTCLIENTMOCK_HPP_SEEN
+#ifndef NUTCLIENTMEM_HPP_SEEN
+#define NUTCLIENTMEM_HPP_SEEN
 
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
@@ -28,18 +28,22 @@
 namespace nut
 {
 
+typedef std::vector<std::string> ListValue;
+typedef std::map<std::string, ListValue> ListObject;
+typedef std::map<std::string, ListObject> ListDevice;
+
 /**
- * TCP NUTD client mock.
- * Class to mock TCPClient for test.
+ * Memory client stub.
+ * Class to stub TCPClient for test (data store in local memory).
  */
-class TcpClientMock : public Client
+class MemClientStub : public Client
 {
 public:
 	/**
-	 * Construct a nut TcpClientMock object.
+	 * Construct a nut MemClientStub object.
 	 */
-	TcpClientMock() {};
-	~TcpClientMock() {};
+	MemClientStub() {};
+	~MemClientStub() {};
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) {};
 	virtual void logout() {};
@@ -51,11 +55,11 @@ public:
 	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
 	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
 	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name);
-	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
-	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
+	virtual ListValue getDeviceVariableValue(const std::string& dev, const std::string& name);
+	virtual ListObject getDeviceVariableValues(const std::string& dev);
+	virtual ListDevice getDevicesVariableValues(const std::set<std::string>& devs);
 	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values);
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
@@ -72,12 +76,40 @@ public:
 	virtual void setFeature(const Feature& feature, bool status);
 
 private:
-	std::map<std::string, std::map<std::string, std::vector<std::string>>> _values;
+	ListDevice _values;
 };
 
 } /* namespace nut */
 
 #endif /* __cplusplus */
 /* End of C++ nutclient library declaration */
+
+/* Begin of C nutclient library declaration */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/**
+ * Nut MEM client dedicated types and functions
+ * \{
+ */
+/**
+ * Hidden structure representing a MEM connection.
+ * NUTCLIENT_MEM_t is back compatible to NUTCLIENT_t.
+ */
+typedef NUTCLIENT_t NUTCLIENT_MEM_t;
+
+/**
+ * Create a client to NUTD using memory.
+ * \return New client or nullptr if failed.
+ */
+NUTCLIENT_MEM_t nutclient_mem_create_client();
+
+/** \} */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+/* End of C nutclient library declaration */
 
 #endif	/* NUTCLIENTMOCK_HPP_SEEN */

@@ -1,4 +1,4 @@
-/* nutclientmock.cpp - nutclientmock C++ library implementation
+/* nutclientmem.cpp - nutclientmem C++ library implementation
 
    Copyright (C) 2021
 
@@ -17,50 +17,51 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "nutclientmock.h"
+#include "nutclientmem.h"
+#include <common.h>
 
 namespace nut
 {
 
 /*
  *
- * TCP Client Mock implementation
+ * Memory Client stub implementation
  *
  */
 
-Device TcpClientMock::getDevice(const std::string& name)
+Device MemClientStub::getDevice(const std::string& name)
 {
 	throw NutException("Not implemented");
 }
 
-std::set<std::string> TcpClientMock::getDeviceNames()
+std::set<std::string> MemClientStub::getDeviceNames()
 {
 	throw NutException("Not implemented");
 }
 
-std::string TcpClientMock::getDeviceDescription(const std::string& name)
+std::string MemClientStub::getDeviceDescription(const std::string& name)
 {
 	throw NutException("Not implemented");
 }
 
-std::set<std::string> TcpClientMock::getDeviceVariableNames(const std::string& dev)
+std::set<std::string> MemClientStub::getDeviceVariableNames(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-std::set<std::string> TcpClientMock::getDeviceRWVariableNames(const std::string& dev)
+std::set<std::string> MemClientStub::getDeviceRWVariableNames(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-std::string TcpClientMock::getDeviceVariableDescription(const std::string& dev, const std::string& name)
+std::string MemClientStub::getDeviceVariableDescription(const std::string& dev, const std::string& name)
 {
 	throw NutException("Not implemented");
 }
 
-std::vector<std::string> TcpClientMock::getDeviceVariableValue(const std::string& dev, const std::string& name)
+ListValue MemClientStub::getDeviceVariableValue(const std::string& dev, const std::string& name)
 {
-	std::vector<std::string> res;
+	ListValue res;
 	auto it_dev = _values.find(dev);
 	if (it_dev != _values.end())
 	{
@@ -74,9 +75,9 @@ std::vector<std::string> TcpClientMock::getDeviceVariableValue(const std::string
 	return res;
 }
 
-std::map<std::string, std::vector<std::string>> TcpClientMock::getDeviceVariableValues(const std::string& dev)
+ListObject MemClientStub::getDeviceVariableValues(const std::string& dev)
 {
-	std::map<std::string, std::vector<std::string>> res;
+	ListObject res;
 	auto it_dev = _values.find(dev);
 	if (it_dev != _values.end())
 	{
@@ -85,28 +86,27 @@ std::map<std::string, std::vector<std::string>> TcpClientMock::getDeviceVariable
 	return res;
 }
 
-std::map<std::string, std::map<std::string, std::vector<std::string>>> TcpClientMock::getDevicesVariableValues(const std::set<std::string>& devs)
+ListDevice MemClientStub::getDevicesVariableValues(const std::set<std::string>& devs)
 {
-	std::map<std::string, std::map<std::string, std::vector<std::string>>> res;
-
+	ListDevice res;
 	for (auto itr = devs.begin(); itr != devs.end(); itr++)
 	{
 		std::string dev = *itr;
 		auto it_dev = _values.find(dev);
 		if (it_dev != _values.end())
 		{
-			res.insert(std::pair<std::string, std::map<std::string, std::vector<std::string>>>(dev, it_dev->second));
+			res.insert(std::pair<std::string, ListObject>(dev, it_dev->second));
 		}
 	}
 	return res;
 }
 
-TrackingID TcpClientMock::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)
+TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)
 {
 	auto it_dev = _values.find(dev);
 	if (it_dev == _values.end())
 	{
-		std::map<std::string, std::vector<std::string>> list;
+		ListObject list;
 		_values.emplace(dev, list);
 		it_dev = _values.find(dev);
 	}
@@ -120,7 +120,7 @@ TrackingID TcpClientMock::setDeviceVariable(const std::string& dev, const std::s
 		}
 		else
 		{
-			std::vector<std::string> list_value;
+			ListValue list_value;
 			list_value.push_back(value);
 			map->emplace(name, list_value);
 		}
@@ -128,7 +128,7 @@ TrackingID TcpClientMock::setDeviceVariable(const std::string& dev, const std::s
 	return "";
 }
 
-TrackingID TcpClientMock::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)
+TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values)
 {
 	auto it_dev = _values.find(dev);
 	if (it_dev != _values.end())
@@ -147,56 +147,80 @@ TrackingID TcpClientMock::setDeviceVariable(const std::string& dev, const std::s
 	return "";
 }
 
-std::set<std::string> TcpClientMock::getDeviceCommandNames(const std::string& dev)
+std::set<std::string> MemClientStub::getDeviceCommandNames(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-std::string TcpClientMock::getDeviceCommandDescription(const std::string& dev, const std::string& name)
+std::string MemClientStub::getDeviceCommandDescription(const std::string& dev, const std::string& name)
 {
 	throw NutException("Not implemented");
 }
 
-TrackingID TcpClientMock::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
+TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
 {
 	throw NutException("Not implemented");
 }
 
-void TcpClientMock::deviceLogin(const std::string& dev)
+void MemClientStub::deviceLogin(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-void TcpClientMock::deviceMaster(const std::string& dev)
+void MemClientStub::deviceMaster(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-void TcpClientMock::deviceForcedShutdown(const std::string& dev)
+void MemClientStub::deviceForcedShutdown(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-int TcpClientMock::deviceGetNumLogins(const std::string& dev)
+int MemClientStub::deviceGetNumLogins(const std::string& dev)
 {
 	throw NutException("Not implemented");
 }
 
-TrackingResult TcpClientMock::getTrackingResult(const TrackingID& id)
+TrackingResult MemClientStub::getTrackingResult(const TrackingID& id)
 {
 	throw NutException("Not implemented");
 	//return TrackingResult::SUCCESS;
 }
 
-bool TcpClientMock::isFeatureEnabled(const Feature& feature)
+bool MemClientStub::isFeatureEnabled(const Feature& feature)
 {
 	throw NutException("Not implemented");
 }
-void TcpClientMock::setFeature(const Feature& feature, bool status)
+void MemClientStub::setFeature(const Feature& feature, bool status)
 {
 	throw NutException("Not implemented");
 }
 
 } /* namespace nut */
+
+/**
+ * C nutclient API.
+ */
+extern "C" {
+
+NUTCLIENT_MEM_t nutclient_mem_create_client()
+{
+	nut::MemClientStub* client = new nut::MemClientStub;
+	try
+	{
+		return static_cast<NUTCLIENT_MEM_t>(client);
+	}
+	catch(nut::NutException& ex)
+	{
+		// TODO really catch it
+		NUT_UNUSED_VARIABLE(ex);
+		delete client;
+		return nullptr;
+	}
+}
+
+} /* extern "C" */
+
 
 
