@@ -49,6 +49,8 @@ class NutClientTest : public CppUnit::TestFixture
 
 		CPPUNIT_TEST( test_copy_constructor_var );
 		CPPUNIT_TEST( test_copy_assignment_var );
+
+		CPPUNIT_TEST( test_mock_dev );
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -66,6 +68,8 @@ public:
 
 	void test_copy_constructor_var();
 	void test_copy_assignment_var();
+
+	void test_mock_dev();
 };
 
 // Registers the fixture into the 'registry'
@@ -214,6 +218,14 @@ void NutClientTest::test_copy_assignment_var() {
 
 	j = i;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Variable variable j by equating to i", i, j);
+}
+
+void NutClientTest::test_mock_dev() {
+	nut::TcpClientMock c;
+	nut::Device d(nullptr, "ups_1");
+	c.setDeviceVariable("ups_1", "name_1", "value_1");
+	std::string value = c.getDeviceVariableValue("ups_1", "nam_1");
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed mock tcp client", value, "value_1");
 }
 
 } // namespace nut {}
