@@ -33,10 +33,11 @@
 #include "state.h"
 #include "parseconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[LARGEBUF];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
 	static cmdlist_t *cmdhead = NULL;
@@ -1059,14 +1060,105 @@ void alarm_init(void)
 	device_alarm_init();
 }
 
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 void alarm_set(const char *buf)
 {
+	int ret;
 	if (strlen(alarm_buf) > 0) {
-		snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	} else {
-		snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+	}
+
+	if (ret < 0) {
+		/* Should we also try to print the potentially unusable buf?
+		 * Generally - likely not. But if it is short enough...
+		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
+		 * size before PR #986.
+		 */
+		char alarm_tmp[LARGEBUF];
+		memset(alarm_tmp, 0, sizeof(alarm_tmp));
+		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
+		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		size_t buflen;
+		if (ibuflen < 0) {
+			alarm_tmp[0] = 'N';
+			alarm_tmp[1] = '/';
+			alarm_tmp[2] = 'A';
+			alarm_tmp[3] = '\0';
+			buflen = strlen(alarm_tmp);
+		} else {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+			if ((unsigned long long int)ibuflen < SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+				buflen = (size_t)ibuflen;
+			} else {
+				buflen = SIZE_MAX;
+			}
+		}
+		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
+			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
+	} else if ((size_t)ret > sizeof(alarm_buf)) {
+		char alarm_tmp[LARGEBUF];
+		memset(alarm_tmp, 0, sizeof(alarm_tmp));
+		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
+		size_t buflen;
+		if (ibuflen < 0) {
+			alarm_tmp[0] = 'N';
+			alarm_tmp[1] = '/';
+			alarm_tmp[2] = 'A';
+			alarm_tmp[3] = '\0';
+			buflen = strlen(alarm_tmp);
+		} else {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+			if ((unsigned long long int)ibuflen < SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+				buflen = (size_t)ibuflen;
+			} else {
+				buflen = SIZE_MAX;
+			}
+		}
+		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
+			"alarm_buf (limited to %zu bytes), with message: %s%s",
+			__func__, sizeof(alarm_buf), alarm_tmp,
+			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" ));
 	}
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 /* write the status_buf into the info array for "ups.alarm" */
 void alarm_commit(void)
@@ -1172,7 +1264,7 @@ int dstate_detect_phasecount(
 		           *c1,  *c2,  *c3,  *c0;
 		char buf[MAX_STRING_SIZE]; /* For concatenation of "xput_prefix" with items we want to query */
 		size_t xput_prefix_len;
-		int bufrw_max;
+		size_t bufrw_max;
 		char *bufrw_ptr = NULL;
 
 		if (!xput_prefix) {

@@ -1,4 +1,4 @@
-USBHID-UPS(8) 
+USBHID-UPS(8)
 =============
 
 NAME
@@ -26,6 +26,7 @@ At the present time, usbhid-ups supports:
  - the newer Eaton USB models,
  - all MGE USB models,
  - all Dell USB models,
+ - all AMETEK Powervar UPM models,
  - some APC models,
  - some Belkin models,
  - some Cyber Power Systems models,
@@ -60,7 +61,7 @@ The default value is 20 (in seconds). Usually this *must be lower* than
 Note that many Cyber Power Systems (CPS) models tend to divide this delay by
 60 and round down, so the minimum advisable value is 60 to avoid powering off
 immediately after NUT sends the shutdown command to the UPS.
- 
+
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent, but before the actual switch off. This
@@ -101,7 +102,7 @@ string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
 finding out the strings to match.
 +
-Examples: 
+Examples:
 
  -  `-x vendor="Foo.Corporation.*"`
  -  `-x vendorid=051d*` (APC)
@@ -111,7 +112,7 @@ Examples:
 
 Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]"). 
+connected (e.g. bus="002", bus="00[2-3]").
 
 *explore*::
 With this option, the driver will connect to any device, including

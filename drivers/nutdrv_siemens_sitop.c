@@ -53,7 +53,7 @@
 
 #include "main.h"
 #include "serial.h"
-#include "limits.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
 #define DRIVER_VERSION	"0.02"

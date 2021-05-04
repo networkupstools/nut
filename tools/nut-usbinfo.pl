@@ -305,6 +305,12 @@ sub find_usbdevs
 			else {
 				die "Unknown driver type: $nameFile";
 			}
+			if ($vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
+				print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+					"was already related to driver '" .
+					$vendor{$VendorID}{$ProductID}{"driver"} .
+					"' and changing to '$driver'\n";
+			}
 			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
 		}
 	}

@@ -43,6 +43,7 @@
 #include <gd.h>
 #include <gdfontmb.h>
 
+#include "nut_stdint.h"
 #include "upsimagearg.h"
 
 #define MAX_CGI_STRLEN 64
@@ -60,7 +61,7 @@ static	UPSCONN_t	ups;
 
 void parsearg(char *var, char *value)
 {
-	int	i, v;
+	long long	i, v;	/* Be big enough to fit all expected inputs; truncate later */
 
 	/* avoid bogus junk from evil people */
 	if ((strlen(var) > MAX_CGI_STRLEN) || (strlen(value) > MAX_CGI_STRLEN))
@@ -91,8 +92,11 @@ void parsearg(char *var, char *value)
 				imgarg[i].val = imgarg[i].min;
 			else if (v > imgarg[i].max)
 				imgarg[i].val = imgarg[i].max;
-			else
-				imgarg[i].val = v;
+			else {
+				assert (v < INT_MAX);
+				assert (v > INT_MIN);
+				imgarg[i].val = (int)v;
+			}
 			return;
 		}
 	}
@@ -203,8 +207,9 @@ static void drawscale(
 		if (level % step10 == 0) {
 			y = scale_height * (lvlhi - level) / range;
 			snprintf(lbltxt, sizeof(lbltxt), "%d", level);
-			gdImageString(im, gdFontMediumBold, width - strlen(lbltxt)*gdFontMediumBold->w, y,
-				(unsigned char *) lbltxt, scale_num_color);
+			gdImageString(im, gdFontMediumBold,
+				width - (int)(strlen(lbltxt)) * gdFontMediumBold->w,
+				y, (unsigned char *) lbltxt, scale_num_color);
 		}
 	}
 }
@@ -254,7 +259,7 @@ static void drawbar(
 	summary_color	= color_alloc(im, get_imgarg("summary_col"));
 
 	/* rescale UPS value to fit in the scale */
-	bar_y = (1 - (value - lvllo) / (lvlhi - lvllo)) * scale_height;
+	bar_y = (int)((1.0 - (value - lvllo) / (lvlhi - lvllo)) * scale_height);
 
 	/* sanity checks: */
 
@@ -285,7 +290,7 @@ static void drawbar(
 #pragma GCC diagnostic pop
 #endif
 	gdImageString(im, gdFontMediumBold,
-		(width - strlen(text)*gdFontMediumBold->w)/2,
+		(width - (int)(strlen(text))*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
 		(unsigned char *) text, summary_color);
 
@@ -334,13 +339,13 @@ static void noimage(const char *fmt, ...)
 
 	if (width > height)
 		gdImageString(im, gdFontMediumBold,
-			(width - strlen(msg)*gdFontMediumBold->w)/2,
+			(width - (int)(strlen(msg))*gdFontMediumBold->w)/2,
 			(height - gdFontMediumBold->h)/2,
 			(unsigned char *) msg, 	summary_color);
 	else
 		gdImageStringUp(im, gdFontMediumBold,
 			(width - gdFontMediumBold->h)/2,
-			(height + strlen(msg)*gdFontMediumBold->w)/2,
+			(height + (int)(strlen(msg))*gdFontMediumBold->w)/2,
 			(unsigned char *) msg, summary_color);
 
 	drawimage(im);
@@ -460,7 +465,7 @@ static void draw_utility(double var, int min, int nom, int max,
 
 	/* Acceptable range of voltage is 85%-110% of nominal voltage
 	 * in EU at least. Be conservative and say +-10% */
-	deviation = nom*0.1;
+	deviation = (int)(nom * 0.1);
 
 	drawgeneralbar(var, min, nom, max, deviation, format);
 
@@ -517,18 +522,17 @@ static void draw_battvolt(double var, int min, int nom, int max,
 	}
 
 	if(min == -1) {
-		min = nom/2*1.6+1; /* Assume a 2V cell is dead at 1.6V */
+		min = (int)(nom/2*1.6+1); /* Assume a 2V cell is dead at 1.6V */
 	}
 
 	if(max == -1) {
-		max = nom/2*2.3+1; /* Assume 2.3V float charge voltage */
+		max = (int)(nom/2*2.3+1); /* Assume 2.3V float charge voltage */
 	}
 
 	if (nom < min || nom > max)
 		nom = -1;
 
-
-	deviation = -(nom*0.05); /* 5% deviation from nominal voltage */
+	deviation = (int)(-nom*0.05); /* 5% deviation from nominal voltage */
 	if(deviation==0) {
 		deviation = -1;
 	}

@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include <ne_request.h>
 #include <ne_basic.h>
@@ -39,6 +38,8 @@
 #include <ne_ssl.h>
 #include <ne_auth.h>
 #include <ne_socket.h>
+
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
 #define DRIVER_VERSION	"0.43"

@@ -1,4 +1,4 @@
-POWERMAN-PDU(8) 
+POWERMAN-PDU(8)
 ===============
 
 NAME

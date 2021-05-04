@@ -210,10 +210,6 @@ static info_lkp_t mge_transfer_reason_info[] = {
 	}
 };
 
-/* Note: This is currently identical to ietf_test_result_info from IETF MIB
- * We rename it here to a) allow evolution that may become incompatible;
- * b) avoid namespace conflicts, especially with DMF loader of named objects
- */
 static info_lkp_t mge_test_result_info[] = {
 	{ 1, "done and passed"
 #if WITH_SNMP_LKP_FUN
