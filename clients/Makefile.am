@@ -72,11 +72,11 @@ libupsclient_la_LDFLAGS = -version-info 5:0:0 -export-symbols-regex ^upscli_
 
 if HAVE_CXX11
 # libnutclient version information and build
-libnutclient_la_SOURCES = nutclient.h nutclient.cpp
+libnutclient_la_SOURCES = nutclient.h nutclient.cpp nutclientmock.h nutclientmock.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 else
-EXTRA_DIST += nutclient.h nutclient.cpp
+EXTRA_DIST += nutclient.h nutclient.cpp nutclientmock.h nutclientmock.cpp
 endif
