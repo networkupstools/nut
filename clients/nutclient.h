@@ -466,6 +466,52 @@ private:
 	internal::Socket* _socket;
 };
 
+/**
+ * TCP NUTD client mock.
+ * Class to mock TCPClient for test.
+ */
+class TcpClientMock : public Client
+{
+public:
+	/**
+	 * Construct a nut TcpClientMock object.
+	 */
+	TcpClientMock() {};
+	~TcpClientMock() {};
+
+	virtual void authenticate(const std::string& user, const std::string& passwd) {};
+	virtual void logout() {};
+
+	virtual Device getDevice(const std::string& name);
+	virtual std::set<std::string> getDeviceNames();
+	virtual std::string getDeviceDescription(const std::string& name);
+
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name);
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values);
+
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
+
+ 	virtual void deviceLogin(const std::string& dev);
+	virtual void deviceMaster(const std::string& dev);
+	virtual void deviceForcedShutdown(const std::string& dev);
+	virtual int deviceGetNumLogins(const std::string& dev);
+
+	virtual TrackingResult getTrackingResult(const TrackingID& id);
+
+	virtual bool isFeatureEnabled(const Feature& feature);
+	virtual void setFeature(const Feature& feature, bool status);
+
+private:
+	std::map<std::string, std::map<std::string, std::vector<std::string>>> _values;
+};
 
 /**
  * Device attached to a client.
@@ -475,6 +521,7 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -630,6 +677,7 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -713,6 +761,7 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
