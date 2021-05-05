@@ -31,7 +31,7 @@ if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
 endif
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
+ include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h nutclientmem.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
