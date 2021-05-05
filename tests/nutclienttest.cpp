@@ -227,12 +227,39 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		nut::MemClientStub c;
 		nut::Device d(nullptr, "ups_1");
+		// set mono value
 		c.setDeviceVariable("ups_1", "name_1", "value_1");
+		// get mono value
 		ListValue values = c.getDeviceVariableValue("ups_1", "name_1");
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: wrong values number", values.size() == 1);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: bad value", values[0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: mono wrong values number", values.size() == 1);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: mono bad value", values[0] == std::string("value_1"));
+		// set multi value
+		ListValue values_multi = { "multi_1", "multi_2" };
+		c.setDeviceVariable("ups_1", "name_multi_1", values_multi);
+		// get multi value
+		values = c.getDeviceVariableValue("ups_1", "name_multi_1");
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi wrong values number", values.size() == 2);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi first bad value", values[0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi second bad value", values[1] == std::string("multi_2"));
+		// get object values
+		ListObject objects = c.getDeviceVariableValues("ups_1");
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects wrong values number", objects.size() == 2);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono wrong values number", objects["name_1"].size() == 1);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_1"][0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects multi wrong values number", objects["name_multi_1"].size() == 2);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_multi_1"][0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_multi_1"][1] == std::string("multi_2"));
+		// get device values
+		std::set<std::string> devices_name = { "ups_1" };
+		ListDevice devices = c.getDevicesVariableValues(devices_name);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices wrong values number", devices.size() == 1);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono wrong values number", devices["ups_1"]["name_1"].size() == 1);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_1"][0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices multi wrong values number", devices["ups_1"]["name_multi_1"].size() == 2);
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_multi_1"][0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_multi_1"][1] == std::string("multi_2"));
 	}
-	catch(...)
+	catch(nut::NutException& ex)
 	{
 		noExeption = false;
 	}
