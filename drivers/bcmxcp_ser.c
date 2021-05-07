@@ -37,7 +37,7 @@ static void send_command(unsigned char *command, size_t command_length)
 {
 	int retry = 0;
 	ssize_t sent;
-	unsigned char sbuf[128];
+	unsigned char sbuf[1024];
 
 	if (command_length > UCHAR_MAX) {
 		upsdebugx (3, "%s: ERROR: command_length too long for the character protocol", __func__);
