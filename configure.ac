@@ -2596,6 +2596,7 @@ AC_OUTPUT([
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile
  scripts/Aix/nut-aix.spec
