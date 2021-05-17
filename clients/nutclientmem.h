@@ -1,6 +1,6 @@
 /* nutclientmem.h - definitions for nutclientmem C/C++ library
 
-   Copyright (C) 2021
+   Copyright (C) 2021  Eric Clappier <ericclappier@eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -91,7 +91,6 @@ extern "C" {
 
 /**
  * Nut MEM client dedicated types and functions
- * \{
  */
 /**
  * Hidden structure representing a MEM connection.
@@ -104,8 +103,6 @@ typedef NUTCLIENT_t NUTCLIENT_MEM_t;
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_MEM_t nutclient_mem_create_client();
-
-/** \} */
 
 #ifdef __cplusplus
 }
