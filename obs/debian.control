@@ -260,6 +260,21 @@ Description: network UPS tools - new client library
  .
  This package provides the new shared client library.
 
+Package: libnutclientstub1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
+Description: network UPS tools - new client library Stub
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status
+ changes.
+ .
+ This package provides the new shared client library Stub.
+
 Package: libnutclient-dev
 Section: libdevel
 Architecture: any
@@ -272,6 +287,19 @@ Description: network UPS tools - development files
  changes.
  .
  This package provides the development files for the new client library.
+
+Package: libnutclientstub-dev
+Section: libdevel
+Architecture: any
+Depends: libnutclientstub1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: network UPS tools - development files for stub
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status
+ changes.
+ .
+ This package provides the development files for the new client library stub.
 
 Package: python-nut
 Section: python
