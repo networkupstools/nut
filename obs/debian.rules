@@ -30,6 +30,7 @@ runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 # Something like `grep 'version-info' **/Makefile.am` ?
 SO_MAJOR_LIBUPSCLIENT=5
 SO_MAJOR_LIBNUTCLIENT=1
+SO_MAJOR_LIBNUTCLIENTSTUB=1
 SO_MAJOR_LIBNUTSCAN=1
 
 # List any files which are not installed
@@ -130,6 +131,10 @@ common-install-arch::
 	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so.$(SO_MAJOR_LIBNUTCLIENTSTUB) && \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so.$(SO_MAJOR_LIBNUTCLIENTSTUB) \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclientstub.so
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
 	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
