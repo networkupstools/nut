@@ -264,7 +264,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exeption", noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exception", noException);
 
 	// List of functions not implemented (should return exception)
 	noException = true;
@@ -276,7 +276,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -287,7 +287,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -298,7 +298,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -308,7 +308,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -318,7 +318,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -328,7 +328,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -338,7 +338,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -349,7 +349,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -360,7 +360,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
 	noException = true;
 	try {
@@ -370,7 +370,7 @@ void NutClientTest::test_nutclientstub_dev() {
 	{
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noException);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 }
 
 } // namespace nut {}
