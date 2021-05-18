@@ -3021,7 +3021,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 				
 				batt.volt.act = batt.packs * strtod(val, NULL);
 
-				if (batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
 					double voltage_battery_charge = (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
 
