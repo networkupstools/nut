@@ -222,7 +222,7 @@ void NutClientTest::test_copy_assignment_var() {
 }
 
 void NutClientTest::test_nutclientstub_dev() {
-	bool noExeption = true;
+	bool noException = true;
 
 	nut::MemClientStub c;
 	nut::Device d(nullptr, "ups_1");
@@ -262,115 +262,115 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exeption", noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exception", noException);
 
 	// List of functions not implemented (should return exception)
-	noExeption = true;
+	noException = true;
 	try {
 		std::set<std::string> cmd = c.getDeviceCommandNames("ups-1");
 		CPPUNIT_ASSERT_MESSAGE("Variable not use", cmd.size() == 0);
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		std::string desc = c.getDeviceCommandDescription("ups-1", "cmd-1");
 		CPPUNIT_ASSERT_MESSAGE("Variable not use", desc.empty());
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		TrackingID id = c.executeDeviceCommand("ups-1", "cmd-1", "param-1");
 		CPPUNIT_ASSERT_MESSAGE("Variable not use", id.empty());
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		c.deviceLogin("ups-1");
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		c.deviceMaster("ups-1");
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		c.deviceForcedShutdown("ups-1");
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		c.deviceGetNumLogins("ups-1");
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		TrackingResult result = c.getTrackingResult("track-1");
 		CPPUNIT_ASSERT_MESSAGE("Variable not use", result == TrackingResult::SUCCESS);
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		bool status = c.isFeatureEnabled(Feature("feature-1"));
 		CPPUNIT_ASSERT_MESSAGE("Variable not use", !status);
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 
-	noExeption = true;
+	noException = true;
 	try {
 		c.setFeature(Feature("feature-1"), true);
 	}
 	catch(nut::NutException& ex)
 	{
-		noExeption = false;
+		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exeption", !noExeption);
+	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
 }
 
 } // namespace nut {}
