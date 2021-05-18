@@ -1,4 +1,3 @@
 usr/lib/*/libnutclientstub.so
-usr/lib/*/libnutclientstub.a
 usr/lib/*/pkgconfig/libnutclientstub.pc
 usr/include/nutclientmem.h
