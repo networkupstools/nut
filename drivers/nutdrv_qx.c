@@ -1233,6 +1233,10 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		return 0;
 	}
 
+	/* Prepare SNR-UPS for communication.
+	* Without the interrupt UPS returns zeros some time, and after all the NUT return communication error. */
+	usb_interrupt_read(udev, 0x81, buf, 102, 1000);
+
 	for (i = 0; command[i].str; i++) {
 
 		int	retry;
