@@ -30,7 +30,7 @@
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
- * the pieces of information by which a USB device identifies
+ * the 5 pieces of information by which a USB device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client
@@ -38,11 +38,14 @@
  * corresponding string did not exist or could not be retrieved.
  */
 typedef struct USBDevice_s {
+	/* These 5 data points are common properties of an USB device: */
 	uint16_t	VendorID;  /*!< Device's Vendor ID    */
 	uint16_t	ProductID; /*!< Device's Product ID   */
 	char		*Vendor;   /*!< Device's Vendor Name  */
 	char		*Product;  /*!< Device's Product Name */
 	char		*Serial;   /*!< Product serial number */
+	/* These data points can be determined by the driver for some devices
+	   or by libusb to detail its connection topology: */
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
