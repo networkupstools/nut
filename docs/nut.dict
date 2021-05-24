@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2546 utf-8
+personal_ws-1.1 en 2549 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -332,6 +332,7 @@ FreeIPMI
 FreqSens
 Frolov
 FullLoad
+Fuß
 GES
 GETADDRINFO
 GKrellM
@@ -1203,6 +1204,7 @@ adb
 addcmd
 addenum
 addinfo
+addr
 addrange
 adkorte
 adm
@@ -2038,6 +2040,7 @@ pfy
 ph
 phasewindow
 phoenixcontact
+phoenixtec
 picocom
 pid
 pidpath

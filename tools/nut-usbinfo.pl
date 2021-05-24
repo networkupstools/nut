@@ -244,7 +244,7 @@ sub find_usbdevs
 			$lastComment=$1;
 		}
 
-		if($line =~/^\s*\{\s*USB_DEVICE\((.+)\,(.+)\)\s*/) # for example : { USB_DEVICE(MGE_VENDORID, 0x0001)... }
+		if($line =~/^\s*\{\s*USB_DEVICE\(([^)]+)\,([^)]+)\)\s*/) # for example : { USB_DEVICE(MGE_VENDORID, 0x0001)... }
 		{
 			my $VendorID=trim($1);
 			my $ProductID=trim($2);
