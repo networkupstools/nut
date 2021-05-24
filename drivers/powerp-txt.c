@@ -616,6 +616,7 @@ static int powpan_initups(void)
 }
 
 subdriver_t powpan_text = {
+	"text",
 	POWERPANEL_TEXT_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
