@@ -23,6 +23,7 @@
 #include "nutdrv_qx.h"
 
 #include "nutdrv_qx_masterguard.h"
+#include <stddef.h>
 
 #define MASTERGUARD_VERSION "Masterguard 0.01"
 
