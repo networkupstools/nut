@@ -33,6 +33,8 @@
 
 #include "powerp-txt.h"
 
+#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.5"
+
 typedef struct {
 	float          i_volt;
 	float          o_volt;
@@ -614,7 +616,7 @@ static int powpan_initups(void)
 }
 
 subdriver_t powpan_text = {
-	"text",
+	POWERPANEL_TEXT_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,
