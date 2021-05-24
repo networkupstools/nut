@@ -44,8 +44,8 @@ typedef struct USBDevice_s {
 	char		*Product;  /*!< Device's Product Name */
 	char		*Serial;   /*!< Product serial number */
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
-	char		*Device;   /*!< Device name, e.g. "001"  */
 	uint16_t	bcdDevice; /*!< Device release number */
+	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
 } USBDevice_t;
 
 /*!
