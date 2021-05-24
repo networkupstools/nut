@@ -121,6 +121,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * several rounds of updates for Eaton devices, including new ATS and ePDU
      hardware families
 
+ - the powerpanel driver now also supports CyberPower OR1500LCDRTXL2U with
+   serial cable [PR #538]
+
  - netxml-ups: Report calibration status
 
  - solis: various improvements and fixes
