@@ -71,6 +71,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - C++11 support in nutclient library and cppunit tests
 
+ - Added C++ testing mock for TcpClient class (nutclientmem/MemClientStub:
+   data stored in local memory) [PR #1034]
+
  - Python 3 compatibility in development scripts
 
  - Added Russian translation for NUT-Monitor GUI client [PR #806]
