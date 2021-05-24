@@ -49,6 +49,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      for Powercool, Iron Guardian, ARES devices and possibly many others from
      discussions linking to the pull request which introduced the driver.
 
+ - microsol-apc (starting at version 0.68 as derived from solis 0.67):
+   adding support for newer APC Back-UPS BR hardware, such as
+   APC Back-UPS BZ1500, BZ2200BI and BZ2200I [PR #994]
+
  - pijuice: added new i2c bus driver for PiJuice HAT, a battery UPS module
    for the Raspberry Pi systems [PR #730]
 
