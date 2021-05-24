@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2546 utf-8
+personal_ws-1.1 en 2548 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -145,6 +145,7 @@ CAs
 CBLimit
 CCC
 CCCC
+CDS
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -985,6 +986,7 @@ Sicon
 Sidorov
 Signetic
 Silvino
+Sinline
 Sistem
 Sistemas
 Slackware

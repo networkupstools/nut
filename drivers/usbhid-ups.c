@@ -46,6 +46,7 @@
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
+	#include "ever-hid.h"
 	#include "idowell-hid.h"
 	#include "liebert-hid.h"
 	#include "openups-hid.h"
@@ -65,6 +66,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ever_subdriver,
 	&idowell_subdriver,
 	&liebert_subdriver,
 	&openups_subdriver,
