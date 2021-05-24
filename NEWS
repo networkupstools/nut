@@ -80,6 +80,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    multiple attached devices that seem identical by other fields (e.g.
    same vendor, same model, same USB bus, and no serial number) [PR #974]
 
+ - Various USB driver families: Improved HID parsing for byte-stream to
+   number conversions on different CPU architectures [PR #1024]
+
  - usbhid-ups:
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
