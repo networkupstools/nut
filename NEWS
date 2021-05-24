@@ -75,6 +75,11 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Added Russian translation for NUT-Monitor GUI client [PR #806]
 
+ - Various USB driver families: expanded device-matching with "device" in
+   addition to "bus" and generic USB fields. This is needed to support
+   multiple attached devices that seem identical by other fields (e.g.
+   same vendor, same model, same USB bus, and no serial number) [PR #974]
+
  - usbhid-ups:
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
