@@ -1218,7 +1218,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 {
 	int ret;
-	char *p, *e;
+	char *p, *e = NULL;
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
 
