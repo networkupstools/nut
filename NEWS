@@ -64,16 +64,19 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
    * Emerson Avocent PM3000 PDU (SNMP)
    * HPE ePDU (SNMP)
-   * nutdrv_qx: "snr" subdriver with USB connection, for SNR-UPS-LID-XXXX
-     [PR #1008].
+
+ - nutdrv_qx: several subdrivers added or improved, including:
+   * "snr" subdriver with USB connection, for SNR-UPS-LID-XXXX [PR #1008].
      Note that end-users should reference explicitly the `snr` subdriver
      in their `ups.conf` settings because of USB chip using the same
      values of VendorID/ProductID as fabula_subdriver, fuji_subdriver,
      and krauler_subdriver.
-   * nutdrv_qx: "hunnox" subdriver, as a dialect of earlier "fabula" [PR #638]
+   * "hunnox" subdriver, as a dialect of earlier "fabula" [PR #638]
      adds support for Hunnox HNX-850 with USB connection and reported to work
      for Powercool, Iron Guardian, ARES devices and possibly many others from
      discussions linking to the pull request which introduced the driver.
+   * "phoenixtec" subdriver for Masterguard A and E series, device series
+     A700/1000/2000/3000(-19) and E40/60/100(-19). [PR #975]
 
  - microsol-apc (starting at version 0.68 as derived from solis 0.67):
    adding support for newer APC Back-UPS BR hardware, such as
