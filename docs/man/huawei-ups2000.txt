@@ -1,0 +1,266 @@
+HUAWEI_UPS2000(8)
+==================
+
+NAME
+----
+
+huawei-ups2000 - Driver for Huawei UPS2000/UPS2000A (1kVA-3kVA) UPS
+with serial Modbus connection.
+
+SYNOPSIS
+--------
+
+*huawei-ups2000* -h
+
+*huawei-ups2000* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+huawei-ups2000 driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports Huawei UPS2000 and UPS2000A series of online (double
+conversion) UPS, only the basic 1kVA-3kVA model is supported, higher power
+models were not tested. Only RS-232 Modbus connection is supported, but
+USB and RS-485 are not supported and their cables should be unplugged.
+
+huawei-ups2000 uses the libmodbus project, for Modbus implementation.
+
+CABLING
+-------
+
+The UPS has a USB port, a RS-232 port, and an optional RMS-MODBUS01B RS-485
+Modbus adapter. Only the RS-232 port is supported, USB or RS-485 cannot be
+used - their cables should be unplugged. You must connect the UPS2000 via
+RS-232, either to a built-in serial port on your computer, or by using an
+USB-to-RS-232 converter. If you plan to use an USB-to-RS-232 converter,
+make sure it's supported by your operating system.
+
+INSTALLATION
+------------
+
+This driver is not built by default.  You can build it by installing libmodbus
+(with development packages) and running `configure --with-modbus=yes`.
+
+You also need to give proper permissions on the local serial device file to
+allow the NUT driver run-time user to access it (R/W). This may need additional
+setup for start-up scripting, udev or upower rules, to apply the rights on every
+boot -- especially if your device nodes are tracked by a virtual filesystem.
+
+For example, a USB-to-serial converter could be identified as `/dev/ttyACM0`
+or `/dev/ttyUSB0` on Linux, or `/dev/ttyU0` on FreeBSD (note the capital "U").
+A built-in serial port could be identified as `/dev/ttyS0` on Linux or one of
+`/dev/cua*` names on FreeBSD.
+
+EXTRA ARGUMENTS
+---------------
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+*offdelay=*'value'::
+Time to wait before shutting down the UPS (seconds), acceptable range is
+6 seconds (0.1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
+Must be a multiple of 6 seconds. To ensure your system has adequate time
+to shutdown after a power failure, it's highly recommended for you to adjust
+offdelay.
+
+*rebootdelay=*'value'::
+Time to wait before rebooting the UPS (seconds), acceptable range is
+6 seconds (0.1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
+Must be a multiple of 6 seconds. This is used by the *shutdown.reboot.graceful*
+instant command. If you've adjusted *offdelay*, you should also adjust
+*rebootdelay*.
+
+*ondelay=*'value'::
+Time to wait before switching on the UPS (seconds), acceptable range is
+60 seconds (1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
+Must be a multiple of 60 seconds (not 6 seconds). You don't need to adjust
+this delay unless you have special requirements.
+
+NOTE: Due to hardware limitation, in this driver, *ondelay* is respected
+only when line power is available. If the UPS is running on battery, the
+load is immediately switched on as soon (or as late) as the line power is
+restored.
+
+INSTANT COMMANDS
+----------------
+
+This driver supports some instant commands (see linkman:upscmd[8]):
+
+*shutdown.stayoff*::
+After an *offdelay*, turn off the UPS and remain off.
+
+*shutdown.return*::
+After an *offdelay*, turn off the load. When line power is back,
+restart the load. Not affected by a power race.
+
+NOTE: This shutdown procedure protects the user from a "power race"
+condition. The load is always restarted even if line power is suddenly
+restored unexpectedly before the UPS shuts down. This is implemented by
+starting the *ondelay* timer after the load is off. When the timer
+counts down to zero, check whether mains power is still available or
+has already restored, if so, restart the load. Otherwise, turn off
+the UPS, wait to restart the load when the power is back.
+
+*shutdown.reboot*::
+Turn off the load immediately. If line power is still available, restart
+the load after an *ondelay*. Otherwise, turn off the UPS and wait to
+restart the load when line power is back. Not affected by a power race.
+
+*shutdown.reboot.graceful*::
+After an *offdelay*, turn off the load. If line power is still available,
+restart the load after an *ondelay*. Otherwise, turn off the UPS and wait
+to restart the load when the line power is back.  Not affected by a power
+race.
+
+*beeper.enable*::
+
+Enable the UPS beeper.
+
+*beeper.disable*::
+
+Disable the UPS beeper.
+
+*beeper.toggle*::
+
+Toggle the UPS beeper.
+
+*bypass.start*::
+
+Put the UPS in bypass mode. Use with caution. It exposes your equipment
+to unregulated line power and provides no protection from power failures.
+Also, the bypass input goes out of specification, the UPS will shutdown.
+As a warning, the UPS beeps once every 10 seconds.
+
+NOTE: If the bypass input is currently abnormal due to a power failure,
+this command is aborted and an error is logged. However, it's possible
+for a power failure to occur just after our check. Thus, again, use with
+caution.
+
+*bypass.stop*::
+
+Put the UPS out of bypass mode.
+
+*load.on*::
+
+Turn on the load immediately.
+
+*load.off*::
+
+Turn off the load immediately. Use with caution, everything on the UPS
+will lost power.
+
+*test.battery.start.quick*::
+
+Perform a short battery test.
+
+*test.battery.start.deep*::
+
+Perform a long battery test.
+
+*test.battery.stop*::
+
+Stop a running battery test.
+
+VARIABLES
+---------
+
+This driver supports some writable runtime variables (see linkman:upsrw[8]):
+
+**ups.beeper.status**::
+Enable or disable the UPS beeper, *disabled* or *enabled*.
+
+NOTE: The beeper can only be disabled completely, it cannot be
+temporally muted until the next alarm, but the option *muted* is
+also accepted for convenience, *muted* is treated as an alias of
+*disabled*.
+
+**ups.delay.shutdown**::
+Seconds to wait after shutdown with delay command. It's the runtime
+equivalent of *offdelay*. See description of *offdelay*.
+
+**ups.delay.reboot**::
+Seconds to wait before rebooting the UPS, it's the runtime
+equivalent of *rebootdelay*. See description of *rebootdelay*.
+
+**ups.delay.start**::
+Seconds to wait before restarting the load, it's the runtime
+equivalent of *ondelay*. See description of *ondelay*.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+Data stale
+~~~~~~~~~~~
+
+Under certain circumstances, some registers can return invalid values
+and trigger a "data stale" error. Once a data stale error has occurred,
+you should see error messages similar to the example below in the system
+log.
+
+    huawei-ups2000: register 2002 has invalid value a000,
+    upsd: Data for UPS [huawei] is stale - check driver
+    upsd: UPS [huawei] data is no longer stale
+
+So far all known problems have been fixed by the author, but an unknown one
+cannot be ruled out. If you have encountered "data stale" problems during
+normal uses, please file a bug report with full logs attached.
+
+Serial port becomes unresponsive
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some malformed commands are known to lock up the serial port. Upon receiving
+them, UPS2000 stops all serial communications. The result is a completely
+unresponsive UPS, regardless of what you do - restarting NUT, rebooting the
+computer - cannot restore connectivity, as if someone has unplugged the RS-232
+cable. To recover: Simply power cycle the UPS via the front panel (check the
+user manual of your UPS for front panel usage). Switch the UPS off, wait a
+few second to allow UPS to shut down, and switch the UPS on again.
+
+That being said, locking up the serial port is unlikely to happen, care has
+been taken while writing the current driver and we are not aware of any lockup
+problems. However, the possibility of an unknown problem such as flaky cabling
+or EMI noise cannot be ruled out. If you have discovered a reproducible serial
+port lockup bug, make sure to file a bug report.
+
+USB is unsupported
+~~~~~~~~~~~~~~~~~~~
+
+As previously stated, only RS-232 is supported. USB is not.
+
+The USB port on the UPS is implemented via a MaxLinear RX21V1410
+USB-to-serial converter, and can be recognized as a standard
+USB-CDC serial device. Ideally, there should be no difference
+between USB and RS-232.
+
+Unfortunately, the USB serial device does not respond to requests,
+it always times out. Thus, this driver cannot be used on an USB
+connection. Please use a RS-232 to USB converter supported by your
+operating system.
+
+It seems that some device-specific registers on RX21V1410 USB-serial
+converter must be initialized for this particular hardware
+configuration used in UPS2000. It can only be fixed at the operating
+system's level, nothing can be done within NUT. Anyone who wants to
+work on the kernel driver must figure out which registers should be
+initialized for proper communication.
+
+AUTHOR
+------
+Yifeng Li <tomli@tomli.me>
+
+SEE ALSO
+--------
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide: https://support.huawei.com/enterprise/en/doc/EDOC1000110696
+
+libmodbus home page: http://libmodbus.org

@@ -616,16 +616,16 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
-SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt huawei-ups2000.txt
 if WITH_MANS
-MAN_MODBUS_PAGES = phoenixcontact_modbus.8
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8 huawei-ups2000.8
 endif
 
 if WITH_MODBUS
    man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
-HTML_MODBUS_MANS = phoenixcontact_modbus.html
+HTML_MODBUS_MANS = phoenixcontact_modbus.html huawei-ups2000.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS

@@ -262,6 +262,7 @@ EEPROM
 EG
 EL
 ELCD
+EMI
 ENDFOR
 ENV
 EOF
@@ -573,6 +574,7 @@ Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
+MaxLinear
 McKinnon
 Megaline
 Metheringham
@@ -1183,6 +1185,7 @@ YV
 YY
 YYYYMMDD
 YZ
+Yifeng
 Ygor
 Yukai
 Yunto
@@ -2363,8 +2366,10 @@ tripplitesu
 troff
 tsd
 tty
+ttyACM
 ttyS
 ttySx
+ttyU
 ttyUPS
 ttyUSB
 ttya
@@ -2405,6 +2410,7 @@ unpowered
 unshutup
 updateinfo
 upexia
+upower
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage
