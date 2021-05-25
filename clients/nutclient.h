@@ -466,7 +466,6 @@ private:
 	internal::Socket* _socket;
 };
 
-
 /**
  * Device attached to a client.
  * Device is a lightweight class which can be copied easily.
@@ -475,6 +474,7 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -630,6 +630,7 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -713,6 +714,7 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif

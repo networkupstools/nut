@@ -913,7 +913,7 @@ void upsdrv_initups(void)
 
 	subdriver_matcher = device_path;
 #else
-	char *regex_array[6];
+	char *regex_array[7];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
@@ -936,6 +936,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	switch(ret)
@@ -1038,6 +1039,7 @@ void upsdrv_cleanup(void)
 	free(curDevice.Product);
 	free(curDevice.Serial);
 	free(curDevice.Bus);
+	free(curDevice.Device);
 #endif
 }
 

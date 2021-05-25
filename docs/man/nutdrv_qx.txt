@@ -17,7 +17,7 @@ For information about the core driver, see linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Hunnox', 'Mustek', 'Powercool', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
+The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
 
 The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
 Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
@@ -52,7 +52,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'hunnox', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'hunnox', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
@@ -143,6 +143,15 @@ The acceptable range is +12..5940+ seconds.
 
 *pins_shutdown_mode =* 'value'::
 Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
+
+
+MASTERGUARD PROTOCOL
+~~~~~~~~~~~~~~~~~~~~
+
+*slave_addr =* 'value'::
+Make the claim function verify it's talking to the specified 'slave address' (*ups.id*).
+Safeguard against talking to the wrong one of several identical UPSes on the same USB bus.
+Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
 
 
 Q1 PROTOCOL
@@ -322,9 +331,14 @@ Examples:
 Select a UPS on a specific USB bus or group of buses.
 The argument is a regular expression that must match the bus name where the UPS is connected (e.g. +bus="002"+, +bus="00[2-3]"+).
 
+*device =* 'regex'::
+Select a UPS on a specific USB device or group of devices.
+The argument is a regular expression that must match the device name where the UPS is connected (e.g. +device="001"+, +device="00[1-2]"+).
+Note that device numbers are not guaranteed by the OS to be stable across re-boots or device re-plugging.
+
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *sgs* and *snr*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
@@ -401,6 +415,26 @@ BESTUPS, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
+
+
+MASTERGUARD PROTOCOL
+~~~~~~~~~~~~~~~~~~~~
+
+*beeper.enable*::
+Enable the UPS beeper.
+
+*beeper.disable*::
+Disable the UPS beeper.
+
+*test.battery.start* 'value'::
+Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+0..5940+].
+This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
+
+*bypass.start*::
+Put the UPS in bypass mode
+
+*bypass.stop*::
+Take the UPS in normal mode
 
 
 VOLTRONIC POWER P98 UNITS (WITH MECER PROTOCOL)
@@ -642,6 +676,12 @@ So, the *beeper.toggle* command may appear to have no effect in the status repor
 The temperature and load value is known to be bogus in some models.
 
 
+MASTERGUARD UNITS
+~~~~~~~~~~~~~~~~~
+
+The driver is supposed to support both "new" A series (A700/1000/2000/3000 and their -19 cousins) and E series (E60/100/200) but was tested only on A due to lack of E hardware.
+
+
 VOLTRONIC-QS UNITS
 ~~~~~~~~~~~~~~~~~~
 
@@ -743,7 +783,8 @@ Arnaud Quette <arnaud.quette@gmail.com>,
 John Stamp <kinsayder@hotmail.com>,
 Peter Selinger <selinger@users.sourceforge.net>,
 Arjen de Korte <adkorte-guest@alioth.debian.org>,
-Alexander Gordeev <lasaine@lvk.cs.msu.su>
+Alexander Gordeev <lasaine@lvk.cs.msu.su>,
+Edgar Fuß <ef@math.uni-bonn.de>
 
 
 SEE ALSO
