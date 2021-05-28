@@ -1447,7 +1447,7 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-AC_MSG_CHECKING(whether to install systemd files)
+AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
@@ -1473,6 +1473,7 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
 	[systemdshutdowndir=${withval}])
@@ -1481,6 +1482,11 @@ if test -n "${systemdsystemunitdir}"; then
 	yes|auto|"")
 		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
 	esac
+fi
+if test -n "${systemdshutdowndir}"; then
+	AC_MSG_RESULT(using ${systemdshutdowndir})
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
