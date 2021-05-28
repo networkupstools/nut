@@ -2023,7 +2023,7 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT(["${nut_enable_Werror}"])
 
-dnl Finally restore warnings setings that the caller might have provided in CFLAGS etc
+dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
 AC_OUTPUT([
