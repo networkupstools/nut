@@ -1,3 +1,4 @@
+/nut-common.tmpfiles
 /nut-driver.service
 /nut-driver@.service
 /nut-driver.target

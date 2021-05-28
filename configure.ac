@@ -1472,6 +1472,7 @@ AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
 	[systemdshutdowndir=${withval}])
@@ -1479,6 +1480,16 @@ if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+	esac
+fi
+
+AC_ARG_WITH([systemdtmpfilesdir],
+	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
+	[systemdtmpfilesdir=${withval}])
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdtmpfilesdir}" in
+	yes|auto|"")
+		systemdtmpfilesdir=`$PKG_CONFIG --variable=tmpfilesdir systemd`
 	esac
 fi
 
@@ -1909,6 +1920,7 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
+AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
@@ -2058,6 +2070,7 @@ AC_OUTPUT([
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
+ scripts/systemd/nut-common.tmpfiles
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
