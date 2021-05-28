@@ -1,3 +1,5 @@
+# Note: nut-common.tmpfiles.in is also generated, by configure script
+/nut-common.tmpfiles.in
 /nut-common.tmpfiles
 /nut-driver.service
 /nut-driver@.service

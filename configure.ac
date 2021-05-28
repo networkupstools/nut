@@ -1483,14 +1483,27 @@ if test -n "${systemdsystemunitdir}"; then
 	esac
 fi
 
+dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
+dnl daemons starting not as systemd units
+AC_MSG_CHECKING([whether to install systemd tmpfiles files (${systemdtmpfilesdir})])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir=${withval}])
-if test -n "${systemdsystemunitdir}"; then
-	case "${systemdtmpfilesdir}" in
+	[systemdshutdowndir=${withval}])
+case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		systemdtmpfilesdir=`$PKG_CONFIG --variable=tmpfilesdir systemd`
-	esac
+		;;
+	no)
+		systemdtmpfilesdir=""
+		;;
+	*)
+		systemdtmpfilesdir="${withval}"
+		;;
+esac
+if test -n "${systemdtmpfilesdir}"; then
+	AC_MSG_RESULT(using ${systemdtmpfilesdir})
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl
@@ -2025,6 +2038,30 @@ AC_MSG_RESULT(["${nut_enable_Werror}"])
 
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
+
+dnl Due to possibly repetitive content, generate unique settings:
+AS_IF([test -n "$systemdtmpfilesdir"],
+    [cat > scripts/systemd/nut-common.tmpfiles.in << EOF
+# State file (e.g. upsd to driver) and pidfile location for NUT:
+d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@/nut
+EOF
+    AS_IF([test "$STATEPATH" != "$PIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@/nut
+EOF])
+])
 
 AC_OUTPUT([
  clients/Makefile
