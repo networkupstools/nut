@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2556 utf-8
+personal_ws-1.1 en 2558 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1097,6 +1097,7 @@ UPSTEMP
 UPScode
 UPSes
 UPSilon
+UPSmon
 UPSonic
 UPSs
 UPStation
@@ -1283,6 +1284,7 @@ autoscan
 autostart
 autowidth
 auxdata
+avPHK
 avahi
 avr
 awd
