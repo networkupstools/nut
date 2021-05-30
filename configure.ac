@@ -1487,6 +1487,13 @@ if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		;;
+	no)
+		systemdshutdowndir=""
+		;;
+	*)
+		systemdshutdowndir="${withval}"
+		;;
 	esac
 fi
 if test -n "${systemdshutdowndir}"; then
