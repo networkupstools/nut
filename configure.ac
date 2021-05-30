@@ -1458,7 +1458,7 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1486,7 +1486,7 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
 	esac
 fi
 if test -n "${systemdshutdowndir}"; then
@@ -1503,7 +1503,7 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdshutdowndir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir=`$PKG_CONFIG --variable=tmpfilesdir systemd`
+		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
 		;;
 	no)
 		systemdtmpfilesdir=""
