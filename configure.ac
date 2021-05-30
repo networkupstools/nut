@@ -1504,7 +1504,7 @@ fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units
-AC_MSG_CHECKING([whether to install systemd tmpfiles files (${systemdtmpfilesdir})])
+AC_MSG_CHECKING([whether to install systemd tmpfiles files])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
 	[systemdshutdowndir=${withval}])
