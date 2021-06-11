@@ -113,6 +113,19 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 	temp->retain = 1;
 }
 
+static int parse_boolean(char *arg, int *result)
+{
+	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes"))) {
+		*result = 1;
+		return 1;
+	}
+	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no"))) {
+		*result = 0;
+		return 1;
+	}
+	return 0;
+}
+
 /* return 1 if usable, 0 if not */
 static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
@@ -150,18 +163,11 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
 			return 1;
 		}
-		else {
-			if ( (!strcasecmp(arg[1], "true")) || (!strcasecmp(arg[1], "on")) || (!strcasecmp(arg[1], "yes"))) {
-				allow_no_device = 1;
-				return 1;
-			}
-			if ( (!strcasecmp(arg[1], "false")) || (!strcasecmp(arg[1], "off")) || (!strcasecmp(arg[1], "no"))) {
-				allow_no_device = 0;
-				return 1;
-			}
-			upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
-			return 0;
-		}
+		if (parse_boolean(arg[1], &allow_no_device))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
 	}
 
 	/* MAXCONN <connections> */
@@ -217,6 +223,17 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+#endif /* WITH_OPENSSL | WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* DISABLE_WEAK_SSL <bool> */
+	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
+		if (parse_boolean(arg[1], &disable_weak_ssl))
+			return 1;
+
+		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
+		return 0;
+	}
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	/* ACCEPT <aclname> [<aclname>...] */
