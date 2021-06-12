@@ -3,6 +3,20 @@ NUT variable names and instant commands
 =======================================
 endif::external_title[]
 
+[NOTE]
+.RFC xxxx Recording Document
+====
+This document is defined by (pending) RFC xxxx and is referenced as the
+document of record for the variable names and the instant commands used
+in the protocol described by the RFC.
+
+On behalf of the RFC, this document records the names of variables
+describing the abstracted state of an UPS or similar power distribution
+device, and the instant commands sent to the UPS using command `INSTCMD`,
+as used in commands and messages between the Attachment Daemon (the `upsd`
+in case of NUT implementation of the standard) and the clients.
+====
+
 This document defines the standard names of NUT commands and variables.
 Developers should use the names recorded here, with dstate functions and
 data mappings provided in NUT drivers for interactions with power devices.
