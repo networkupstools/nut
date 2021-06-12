@@ -113,13 +113,16 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 	temp->retain = 1;
 }
 
+/* returns 1 if "arg" was usable as a boolean value, 0 if not
+ * saves converted meaning of "arg" into referenced "result"
+ */
 static int parse_boolean(char *arg, int *result)
 {
-	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes"))) {
+	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
 		*result = 1;
 		return 1;
 	}
-	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no"))) {
+	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no")) || (!strcasecmp(arg, "0"))) {
 		*result = 0;
 		return 1;
 	}
