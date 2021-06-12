@@ -144,3 +144,4 @@
 # to TLSv1.2 or better.
 #
 # Unless you have really ancient clients, you probably want to enable this.
+# Currently disabled by default to ensure compatibility with existing setups.
