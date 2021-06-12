@@ -51,6 +51,12 @@
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
+
+/* Warning: in this release of NUT, this feature is disabled by default
+ * in order to retain compatibility with "least surprise" for earlier
+ * existing deployments. Over time it can become enabled by default.
+ * See upsd.conf option DISABLE_WEAK_SSL to toggle this in-vivo.
+ */
 int	disable_weak_ssl = 0;
 
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
