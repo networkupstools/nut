@@ -36,13 +36,13 @@
 	#include <pk11pub.h>
 	#include <prinit.h>
 	#include <private/pprio.h>
-#if defined(NSS_VMAJOR) && NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && NSS_VMINOR >= 39)
+#if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 39))
 	#include <keyhi.h>
 	#include <keythi.h>
 #else
 	#include <key.h>
 	#include <keyt.h>
-#endif
+#endif /* NSS before 3.39 */
 	#include <secerr.h>
 	#include <sslerr.h>
 	#include <sslproto.h>
@@ -390,7 +390,7 @@ void ssl_init(void)
 {
 #ifdef WITH_NSS
 	SECStatus status;
-#if defined(NSS_VMAJOR) && NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && NSS_VMINOR >= 14)
+#if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 14))
 	SSLVersionRange range;
 #endif
 #endif /* WITH_NSS */
@@ -513,7 +513,7 @@ void ssl_init(void)
 			return;
 		}
 	} else {
-#if defined(NSS_VMAJOR) && NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && NSS_VMINOR >= 14)
+#if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 14))
 		status = SSL_VersionRangeGetSupported(ssl_variant_stream, &range);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not get versions supported");
