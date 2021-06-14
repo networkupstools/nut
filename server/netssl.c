@@ -406,6 +406,8 @@ void ssl_init(void)
 	}
 
 	check_perms(certfile);
+	if (!disable_weak_ssl)
+		upslogx(LOG_WARNING, "Warning: DISABLE_WEAK_SSL is not enabled. Please consider enabling to improve network security.");
 
 #ifdef WITH_OPENSSL
 
