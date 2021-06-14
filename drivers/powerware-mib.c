@@ -1097,6 +1097,10 @@ static snmp_info_t pw_mib[] = {
 		SU_INPUT_3, NULL },
 
 	/* Outlet page */
+    /* Master outlet id always equal to 0 */
+	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC , NULL },
+    /* XUPS-MIB:: xupsSwitchable.0 */
+	{ "outlet.switchable", 0, 1, ".1.3.6.1.4.1.534.1.9.7.0", NULL, SU_FLAG_STATIC , &pw_yes_no_info[0] },
 	/* XUPS-MIB::xupsNumReceptacles; Value (Integer): 2 */
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.1.12.1.0", NULL, SU_FLAG_STATIC, NULL },
 	/* XUPS-MIB::xupsRecepIndex.X; Value (Integer): X */
