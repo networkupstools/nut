@@ -3281,7 +3281,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
 
 	/* Check if this is a daisychain template */
-	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+	if (su_info_p->OID != NULL
+	&&  (format_char = strchr(su_info_p->OID, '%')) != NULL
+	) {
 		upsdebugx(3, "%s: calling instantiate_info() for "
 			"daisy-chain template", __func__);
 		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
@@ -3501,7 +3503,12 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return TRUE;
 	}
 
-	if (su_info_p->info_flags & ST_FLAG_STRING) {
+	/* special treatment for element without oid but with default value */
+	if (su_info_p->OID == NULL && su_info_p->dfl != NULL) {
+		status = TRUE;
+		strncpy(buf, su_info_p->dfl, sizeof(buf));
+	}
+	else if (su_info_p->info_flags & ST_FLAG_STRING) {
 		upsdebugx(2, "%s: requesting nut_snmp_get_str(), "
 			"with%s daisy template originally",
 			__func__, (format_char!=NULL ? "" : "out"));
