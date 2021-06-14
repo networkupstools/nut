@@ -20,8 +20,8 @@
  */
 
 #include "main.h"
+#include "nut_float.h"
 #include "nutdrv_qx.h"
-
 #include "nutdrv_qx_voltronic.h"
 
 #define VOLTRONIC_VERSION "Voltronic 0.06"
@@ -1885,35 +1885,35 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 
 	} else if (!strcasecmp(item->info_type, "max_bypass_freq")) {
 
-		if (val == max_bypass_freq) {
+		if (d_equal(val, max_bypass_freq)) {
 			upslogx(LOG_INFO, "%s is already set to %.1f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "min_bypass_freq")) {
 
-		if (val == min_bypass_freq) {
+		if (d_equal(val, min_bypass_freq)) {
 			upslogx(LOG_INFO, "%s is already set to %.1f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "max_bypass_volt")) {
 
-		if (val == max_bypass_volt) {
+		if (d_equal(val, max_bypass_volt)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "min_bypass_volt")) {
 
-		if (val == min_bypass_volt) {
+		if (d_equal(val, min_bypass_volt)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "battery_number")) {
 
-		if (val == battery_number) {
+		if (d_equal(val, battery_number)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}

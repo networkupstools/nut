@@ -102,7 +102,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int	i, ret;
+	int	i, ret = -1;
 
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power
@@ -125,7 +125,7 @@ void upsdrv_shutdown(void)
 		}
 	}
 
-	if (ret) {
+	if (ret > 0) {
 		/*
 		 * When on battery, the 'shutdown.stayoff' command will make
 		 * the UPS switch back on when the power returns.
@@ -134,7 +134,7 @@ void upsdrv_shutdown(void)
 			upslogx(LOG_INFO, "Waiting for power to return...");
 			return;
 		}
-	} else {
+	} else if (ret == 0) {
 		/*
 		 * Apparently, the power came back already, so we just need to reboot.
 		 */

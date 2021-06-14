@@ -1,8 +1,8 @@
 Desc: Powerware 3115 factory cable
 File: powerware.txt
-Date: 22 July 2005                                                              
+Date: 22 July 2005
 Auth: various
-                                                                                
+
 1) Powerware 3115 factory cable
 From Peter Åstrand <altic@lysator.liu.se>
 

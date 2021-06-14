@@ -1,14 +1,14 @@
 VICTRONUPS(8)
 =============
 
-NAME  
+NAME
 ----
 victronups - Driver for IMV/Victron UPS unit Match, Match Lite, NetUps
 
 NOTE
 ----
 This man page only documents the hardware-specific features of the the
-victronups driver.  For information about the core driver, see  
+victronups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE

@@ -16,7 +16,7 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 This driver has been tested with :
-  
+
  * Solis   1000 VA
  * Solis   1500 VA
  * Solis   2000 VA

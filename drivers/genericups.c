@@ -22,6 +22,7 @@
 #include "main.h"
 #include "serial.h"
 #include "genericups.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
 #define DRIVER_VERSION	"1.36"
@@ -299,14 +300,20 @@ void upsdrv_shutdown(void)
 	}
 
 	if (getval("sdtime")) {
-		int	sdtime;
+		long	sdtime;
 
 		sdtime = strtol(getval("sdtime"), (char **) NULL, 10);
 
-		upslogx(LOG_INFO, "Holding shutdown signal for %d seconds...\n",
+		upslogx(LOG_INFO, "Holding shutdown signal for %ld seconds...\n",
 			sdtime);
 
-		sleep(sdtime);
+		if (sdtime > 0) {
+			if (sizeof(long) > sizeof(unsigned int) && sdtime < (long)UINT_MAX) {
+				sleep((unsigned int)sdtime);
+			} else {
+				sleep(UINT_MAX);
+			}
+		}
 	}
 }
 
@@ -342,7 +349,7 @@ void upsdrv_initups(void)
 	}
 
 	/* don't hang up on last close */
-	tio.c_cflag &= ~HUPCL;
+	tio.c_cflag &= ~((tcflag_t)HUPCL);
 
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");

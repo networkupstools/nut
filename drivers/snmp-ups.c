@@ -4,8 +4,8 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -31,11 +31,12 @@
  *
  */
 
-#include <limits.h>
 #include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 
@@ -58,7 +59,8 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats16-mib.h"
+#include "eaton-ats16-nmc-mib.h"
+#include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
@@ -107,8 +109,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&xppc,
 	&huawei,
 	&tripplite_ietf,
-	&eaton_ats16,
-	&eaton_ats16_g2,
+	&eaton_ats16_nmc,
+	&eaton_ats16_nm2,
 	&apc_ats,
 	&raritan_px2,
 	&eaton_ats30,
@@ -148,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.12"
+#define DRIVER_VERSION		"1.15"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -626,7 +628,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
 		else
-			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
 		/* set the privacy key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
@@ -2730,9 +2732,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			else {
 				/* Check if there is a need to publish decimal too,
 				 * i.e. if switching to integer does not cause a
-				 * loss of precision */
+				 * loss of precision.
+				 * FIXME: Use remainder? is (dvalue%1.0)>0 cleaner?
+				 */
 				dvalue = value * su_info_p->info_len;
-				if ((int)dvalue == dvalue)
+				if (f_equal((int)dvalue, dvalue))
 					snprintf(buf, sizeof(buf), "%i", (int)dvalue);
 				else
 					snprintf(buf, sizeof(buf), "%.2f", (float)dvalue);
@@ -2865,7 +2869,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 		/* check if default value is also a template */
 		if ((su_info_p->dfl != NULL) &&
-			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
+			(strstr(tmp_info_p->dfl, "%i") != NULL))
+		{
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -2876,7 +2881,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
+			snprintf((char *)su_info_p->dfl, SU_INFOSIZE, tmp_info_p->dfl,
 				item_number);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -2998,7 +3003,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			}
 		}
 		/* Actually apply the new value */
-		if (su_info_p->flags & SU_TYPE_TIME) {
+		if (SU_TYPE(su_info_p) == SU_TYPE_TIME) {
 			status = nut_snmp_set_time(su_info_p->OID, value);
 		}
 		else {
@@ -3077,7 +3082,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 /* FIXME: the below functions can be removed since these were for loading
  * the mib2nut information from a file instead of the .h definitions... */
 /* return 1 if usable, 0 if not */
-static int parse_mibconf_args(int numargs, char **arg)
+static int parse_mibconf_args(size_t numargs, char **arg)
 {
 	bool_t ret;
 
@@ -3109,11 +3114,13 @@ static int parse_mibconf_args(int numargs, char **arg)
 
 	return 1;
 }
+
 /* called for fatal errors in parseconf like malloc failures */
 static void mibconf_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf (*mib.conf): %s", errmsg);
 }
+
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {

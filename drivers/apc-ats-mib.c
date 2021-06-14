@@ -29,26 +29,26 @@
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
-static info_lkp_t ats_sensitivity_info[] = {
+static info_lkp_t apc_ats_sensitivity_info[] = {
 	{ 1, "high", NULL, NULL },
 	{ 2, "low", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ats_output_status_info[] = {
+static info_lkp_t apc_ats_output_status_info[] = {
 	{ 1, "OFF", NULL, NULL }, /* fail */
 	{ 2, "OL", NULL, NULL },  /* ok */
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ats_outletgroups_name_info[] = {
+static info_lkp_t apc_ats_outletgroups_name_info[] = {
 	{ 1, "total", NULL, NULL },
 	{ 2, "bank1", NULL, NULL },
 	{ 3, "bank2", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ats_outletgroups_status_info[] = {
+static info_lkp_t apc_ats_outletgroups_status_info[] = {
 	{ 1, "OL", NULL, NULL },   /* normal */
 	{ 2, "", NULL, NULL },     /* lowload */
 	{ 3, "", NULL, NULL },     /* nearoverload */
@@ -99,7 +99,7 @@ static snmp_info_t apc_ats_mib[] = {
 	/* atsInputFrequency.2 = INTEGER: 50 */
 	{ "input.2.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.3.2.1.4.2", NULL, SU_FLAG_OK, NULL },
 	/* atsConfigVoltageSensitivity.0 = INTEGER: high(1) */
-	{ "input.sensitivity", ST_FLAG_RW, 1, ".1.3.6.1.4.1.318.1.1.8.4.4.0", NULL, SU_FLAG_OK, &ats_sensitivity_info[0] },
+	{ "input.sensitivity", ST_FLAG_RW, 1, ".1.3.6.1.4.1.318.1.1.8.4.4.0", NULL, SU_FLAG_OK, &apc_ats_sensitivity_info[0] },
 	/* FIXME: RFC for input.count! */
 	/* atsNumInputs.0 = INTEGER: 2 */
 	{ "input.count", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.3.1.0", NULL, SU_FLAG_OK, NULL },
@@ -113,7 +113,7 @@ static snmp_info_t apc_ats_mib[] = {
 	/* UPS collection */
 	/* FIXME: RFC for device.status! */
 	/* atsStatusVoltageOutStatus.0 = INTEGER: ok(2) */
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.15.0", NULL, SU_FLAG_OK, &ats_output_status_info[0] },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.15.0", NULL, SU_FLAG_OK, &apc_ats_output_status_info[0] },
 
 	/* Outlet groups collection */
 	/* Note: prefer the OutputBank data to the ConfigBank ones */
@@ -126,13 +126,13 @@ static snmp_info_t apc_ats_mib[] = {
 	/* atsOutputBankTableIndex.%i = INTEGER: %i */
 	{ "outlet.group.%i.id", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.1.%i", NULL, SU_FLAG_OK | SU_OUTLET_GROUP, NULL },
 	/* atsConfigBank.%i = INTEGER: total(1) */
-	/*{ "outlet.group.%i.name", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.14.1.2.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &ats_group_name_info[0] },*/
+	/*{ "outlet.group.%i.name", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.14.1.2.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &apc_ats_group_name_info[0] },*/
 	/* atsOutputBank.1 = INTEGER: total(1) */
-	{ "outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.3.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &ats_outletgroups_name_info[0] },
+	{ "outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.3.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &apc_ats_outletgroups_name_info[0] },
 	/* atsOutputBankCurrent.%i = Gauge32: 88 */
 	{ "outlet.group.%i.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.4.%i", NULL, SU_OUTLET_GROUP, NULL },
 	/* atsOutputBankState.%i = INTEGER: normal(1) */
-	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.5.%i", NULL, SU_OUTLET_GROUP, &ats_outletgroups_status_info[0] },
+	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.5.%i", NULL, SU_OUTLET_GROUP, &apc_ats_outletgroups_status_info[0] },
 	/* atsOutputBankOutputVoltage.%i = INTEGER: 215 */
 	{ "outlet.group.%i.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.6.%i", NULL, SU_OUTLET_GROUP, NULL },
 	/* atsOutputBankPower.1 = INTEGER: 1883 */

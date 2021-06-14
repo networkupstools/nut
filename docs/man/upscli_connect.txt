@@ -20,7 +20,7 @@ The *upscli_connect()* function takes the pointer 'ups' to a
 the given 'port'.
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
-connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection. 
+connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection.
 
 Introduced in version 2.7, an additional flag `UPSCLI_CONN_CERTVERIF`
 now exists to verify the signature offered during the SSL handshake.
@@ -45,7 +45,7 @@ returns 0 on success, or -1 if an error occurs.
 
 SEE ALSO
 --------
-linkman:upscli_disconnect[3], linkman:upscli_fd[3], 
-linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
-linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
+linkman:upscli_ssl[3], linkman:upscli_strerror[3],
 linkman:upscli_upserror[3]

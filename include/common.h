@@ -133,8 +133,8 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void s_upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void s_upsdebug_hex(int level, const char *msg, const void *buf, int len);
-void s_upsdebug_ascii(int level, const char *msg, const void *buf, int len);
+void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len);
+void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len);
 /* These macros should help avoid run-time overheads
  * passing data for messages nobody would ever see.
  *
