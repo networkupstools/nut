@@ -204,7 +204,7 @@ void upsdrv_updateinfo(void)
     }
 
     /*
-     * update UPS status regarding battery HEALTH state vi RB. RB is mapped
+     * update UPS status regarding battery HEALTH state via RB. RB is mapped
      * to "replace battery" contact
      */
     if (sigar[RB_T].addr != NOTUSED) {
@@ -219,7 +219,7 @@ void upsdrv_updateinfo(void)
     }
 
     /*
-     * update UPS status regarding battery HEALTH state vi RB. RB is mapped
+     * update UPS status regarding battery HEALTH state via RB. RB is mapped
      * to "replace battery" contact
      */
     if (sigar[CHRG_T].addr != NOTUSED) {
@@ -363,7 +363,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
                (type == COIL) ? "COIL" :
                (type == INPUT_B) ? "INPUT_B" :
                (type == INPUT_R) ? "INPUT_R" : "HOLDING",
-               DEVICE_PATH
+               device_path
         );
     }
     upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
@@ -399,7 +399,7 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
                 (type == COIL) ? "COIL" :
                 (type == INPUT_B) ? "INPUT_B" :
                 (type == INPUT_R) ? "INPUT_R" : "HOLDING",
-                DEVICE_PATH
+                device_path
         );
     }
     upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
@@ -733,7 +733,7 @@ void get_config_vars()
             }
         }
     }
-    /* check if FSD register type is set and get the value otherwise set to INPUT_B */
+    /* check if FSD register type is set and get the value otherwise set to COIL */
     if (testvar("FSD_regtype")) {
         sigar[FSD_T].type = (int )strtol(getval("FSD_regtype"), NULL, 10);
         if (sigar[FSD_T].type < COIL || sigar[FSD_T].type > HOLDING) {
