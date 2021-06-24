@@ -83,11 +83,6 @@ void upsdrv_initinfo(void) {
         dstate_addcmd("load.off");
     }
 
-	/*
-    dstate_addcmd("shutdown.return");
-    dstate_addcmd("shutdown.stayoff");
-    */
-
 	/* set callback for instant commands */
 	upsh.instcmd = upscmd;
 }
