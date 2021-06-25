@@ -8,6 +8,12 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers tools \
   lib scripts server tests
 
+# Automatically update the libtool script if it becomes out-of-date
+# See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status libtool
+
 # COPYING is included automatically.
 EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 

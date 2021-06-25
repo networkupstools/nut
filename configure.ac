@@ -1067,6 +1067,7 @@ fi
 dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
 dnl #OBSOLETED:# AC_PROG_LIBTOOL
 LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
 
 if ( test "${GCC}" = "yes" )
 then
