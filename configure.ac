@@ -1063,7 +1063,11 @@ then
 	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
 	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
 fi
-AC_PROG_LIBTOOL
+
+dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+dnl #OBSOLETED:# AC_PROG_LIBTOOL
+LT_INIT
+
 if ( test "${GCC}" = "yes" )
 then
 	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
