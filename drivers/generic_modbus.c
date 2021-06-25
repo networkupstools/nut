@@ -405,14 +405,53 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
     upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
     return rval;
 }
+int
+timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y)
+{
+  /* Perform the carry for the later subtraction by updating y. */
+  if (x->tv_usec < y->tv_usec) {
+    int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+    y->tv_usec -= 1000000 * nsec;
+    y->tv_sec += nsec;
+  }
+  if (x->tv_usec - y->tv_usec > 1000000) {
+    int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+    y->tv_usec += 1000000 * nsec;
+    y->tv_sec -= nsec;
+  }
+
+  /* Compute the time remaining to wait.
+     tv_usec is certainly positive. */
+  result->tv_sec = x->tv_sec - y->tv_sec;
+  result->tv_usec = x->tv_usec - y->tv_usec;
+
+  /* Return 1 if result is negative. */
+  return x->tv_sec < y->tv_sec;
+}
 
 /* returns the time elapsed since start in milliseconds */
 long time_ellapsed(struct timeval *start)
 {
+    long rval;
     struct timeval end;
 
-    gettimeofday(&end, NULL);
-    return (end.tv_usec - start->tv_usec) / 1000;
+    rval = gettimeofday(&end, NULL);
+    if (rval < 0) {
+        upslogx(LOG_ERR, "time_ellapsed: %s", strerror(errno));
+    }
+    if (start->tv_usec < end.tv_usec) {
+        ulong nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
+        end.tv_usec -= 1000000 * nsec;
+        end.tv_sec += nsec;
+    }
+    if (start->tv_usec - end.tv_usec > 1000000) {
+        ulong nsec = (start->tv_usec - end.tv_usec) / 1000000;
+        end.tv_usec += 1000000 * nsec;
+        end.tv_sec -= nsec;
+    }
+    rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
+
+    return rval;
 }
 
 /* instant command triggered by upsd */
@@ -429,7 +468,7 @@ int upscmd(const char *cmd, const char *arg)
             data = 1 ^ sigar[FSD_T].noro;
             rval = register_write(ctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
             if (rval == -1) {
-                printf("ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+                upslogx(2,"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
                        modbus_strerror(errno),
                        sigar[FSD_T].addr,
                        sigar[FSD_T].type,
@@ -443,7 +482,10 @@ int upscmd(const char *cmd, const char *arg)
             upsdebugx(2, "instcmd: addr: 0x%x, data: %d", sigar[FSD_T].addr, data);
 
             if (FSD_pulse_duration != NOTUSED) {
-                gettimeofday(&start, NULL);
+                rval = gettimeofday(&start, NULL);
+                if (rval < 0) {
+                    upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
+                }
 
                 /* wait for FSD_pulse_duration ms */
                 while ((etime = time_ellapsed(&start)) < FSD_pulse_duration);
@@ -771,6 +813,12 @@ void get_config_vars()
                     break;
                 case FSD_T:
                     signame = "FSD";
+                    break;
+                case CHRG_T:
+                    signame = "CHRG";
+                    break;
+                case DISCHRG_T:
+                    signame = "DISCHRG";
                     break;
                 default:
                     signame = "NOTUSED";
