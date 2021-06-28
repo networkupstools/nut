@@ -29,7 +29,7 @@
 #define DRIVER_VERSION	"0.01"
 
 /* variables */
-modbus_t *ctx = NULL;                               /* modbus memory context */
+modbus_t *mbctx = NULL;                               /* modbus memory context */
 sigattr_t sigar[NUMOF_SIG_STATES];                  /* array of ups signal attributes */
 int errcnt = 0;                                     /* modbus access error counter */
 
@@ -96,21 +96,21 @@ void upsdrv_initups(void)
     get_config_vars();
 
     /* open serial port */
-    ctx = modbus_new(device_path);
-    if (ctx == NULL) {
+    mbctx = modbus_new(device_path);
+    if (mbctx == NULL) {
         fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open serial port context");
     }
 
     /* set slave ID */
-    rval = modbus_set_slave(ctx, rio_slave_id);	/* slave ID */
+    rval = modbus_set_slave(mbctx, rio_slave_id);	/* slave ID */
     if (rval < 0) {
-        modbus_free(ctx);
+        modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d\n", rio_slave_id);
     }
 
     /* connect to modbus device  */
-    if (modbus_connect(ctx) == -1) {
-        modbus_free(ctx);
+    if (modbus_connect(mbctx) == -1) {
+        modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s\n", modbus_strerror(errno));
     }
 }
@@ -316,9 +316,9 @@ void upsdrv_makevartable(void)
 /* close modbus connection and free modbus context allocated memory */
 void upsdrv_cleanup(void)
 {
-	if (ctx != NULL) {
-		modbus_close(ctx);
-		modbus_free(ctx);
+	if (mbctx != NULL) {
+		modbus_close(mbctx);
+		modbus_free(mbctx);
 	}
 }
 
@@ -443,7 +443,7 @@ int upscmd(const char *cmd, const char *arg)
         if (sigar[FSD_T].addr != NOTUSED &&
            (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)) {
             data = 1 ^ sigar[FSD_T].noro;
-            rval = register_write(ctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
+            rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
             if (rval == -1) {
                 upslogx(2,"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
                        modbus_strerror(errno),
@@ -468,7 +468,7 @@ int upscmd(const char *cmd, const char *arg)
                 while ((etime = time_ellapsed(&start)) < FSD_pulse_duration);
 
                 data = 0 ^ sigar[FSD_T].noro;
-                rval = register_write(ctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
+                rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
                 if (rval == -1) {
                     printf("ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
                            modbus_strerror(errno),
@@ -543,7 +543,7 @@ int get_signal_state(devstate_t state)
             break;
     }
 
-   rval = register_read(ctx, addr, rtype, &reg_val);
+   rval = register_read(mbctx, addr, rtype, &reg_val);
     if (rval > -1) {
         rval = reg_val;
     }
