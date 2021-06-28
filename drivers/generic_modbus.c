@@ -470,7 +470,7 @@ int upscmd(const char *cmd, const char *arg)
                 data = 0 ^ sigar[FSD_T].noro;
                 rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
                 if (rval == -1) {
-                    printf("ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+                    upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
                            modbus_strerror(errno),
                            sigar[FSD_T].addr,
                            sigar[FSD_T].type,
@@ -809,28 +809,26 @@ void get_config_vars()
 /* create a new modbus context based on connection type (serial or TCP) */
 modbus_t *modbus_new(const char *port)
 {
-    modbus_t *mb = NULL;
+    modbus_t *mb;
     char *sp;
     if (strstr(port, "/dev/tty") != NULL) {
         mb = modbus_new_rtu(port, BAUD_RATE, 'N', 8, 1);
         if (mb == NULL) {
-            printf("modbus_new_rtu: Unable to open serial port context\n");
-            exit(EXIT_FAILURE);
+            upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
         }
     } else if ((sp = strchr(port, ':')) != NULL) {
-        char *tcp_port = malloc(sizeof(sp));
+        char *tcp_port = xmalloc(sizeof(sp));
         strcpy(tcp_port, sp + 1);
         *sp = '\0';
         mb = modbus_new_tcp(port, (int )strtoul(tcp_port, NULL, 10));
         if (mb == NULL) {
-            printf("modbus_new_tcp: Unable to connect to %s\n", port);
-            exit(EXIT_FAILURE);
+            upslogx(LOG_ERR, "modbus_new_tcp: Unable to connect to %s\n", port);
         }
+        free(tcp_port);
     } else {
         mb = modbus_new_tcp(port, 502);
         if (mb == NULL) {
-            printf("modbus_new_tcp: Unable to connect to %s\n", port);
-            exit(EXIT_FAILURE);
+            upslogx(LOG_ERR, "modbus_new_tcp: Unable to connect to %s\n", port);
         }
     }
     return mb;
