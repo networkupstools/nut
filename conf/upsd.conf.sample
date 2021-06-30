@@ -134,3 +134,14 @@
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
+# =======================================================================
+# DISABLE_WEAK_SSL <Boolean>
+# DISABLE_WEAK_SSL true
+#
+# Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+#
+# With relatively recent versions of OpenSSL or NSS it will be restricted
+# to TLSv1.2 or better.
+#
+# Unless you have really ancient clients, you probably want to enable this.
+# Currently disabled by default to ensure compatibility with existing setups.
