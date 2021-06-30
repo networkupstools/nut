@@ -35,7 +35,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 #include "config.h"
 #include "main.h"
@@ -1288,6 +1288,12 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		upsdebugx(4, "size of buf less than 102 byte!");
 		return 0;
 	}
+
+	/* Prepare SNR-UPS for communication.
+	 * Without the interrupt UPS returns zeros for some time,
+	 * and afterwards NUT returns a communications error.
+	 */
+	usb_interrupt_read(udev, 0x81, buf, 102, 1000);
 
 	for (i = 0; command[i].str; i++) {
 
@@ -3075,6 +3081,34 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 					batt.runt.est = 0;
 				}
 
+			}
+
+			const char	*val = dstate_getinfo("battery.voltage");
+
+			if (!val) {
+				upsdebugx(2, "%s: unable to get battery.voltage", __func__);
+			} else {
+				
+				batt.volt.act = batt.packs * strtod(val, NULL);
+
+				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+
+					double voltage_battery_charge = (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
+
+					if (voltage_battery_charge < 0) {
+						voltage_battery_charge = 0;
+					}
+
+					if (voltage_battery_charge > 1) {
+						voltage_battery_charge = 1;
+					}
+
+					/* Correct estimated runtime remaining for old batteries */
+					if(voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+						batt.runt.est = voltage_battery_charge * batt.runt.nom;
+					}
+
+				}
 			}
 
 			if (d_equal(batt.chrg.act, -1))
