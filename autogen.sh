@@ -39,6 +39,10 @@ then
 	fi
 fi
 
+if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
+    echo '# autoconf requires this file exists before generating configure script' > scripts/systemd/nut-common.tmpfiles.in
+fi
+
 # now we can safely call autoreconf
 echo "Calling autoreconf..."
 autoreconf -iv && {
