@@ -62,6 +62,9 @@
 /* IBM */
 #define IBM_VENDORID 0x04b3
 
+/* EVER */
+#define EVER_VENDORID 0x2e51
+
 #ifndef SHUT_MODE
 #include "usb-common.h"
 
@@ -91,6 +94,9 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
+
+	/* various models */
+	{ USB_DEVICE(EVER_VENDORID, 0x0000), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
