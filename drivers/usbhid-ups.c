@@ -43,6 +43,7 @@
 	/* explore stub goes first, others alphabetically */
 	#include "explore-hid.h"
 	#include "apc-hid.h"
+        #include "arduino-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
@@ -62,6 +63,7 @@ static subdriver_t *subdriver_list[] = {
 	&mge_subdriver,
 #ifndef SHUT_MODE
 	&apc_subdriver,
+        &arduino_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
