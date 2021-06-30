@@ -19,9 +19,8 @@ PartOf=nut.target
 
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
-ExecStart=@SBINDIR@/upsd
+ExecStart=@SBINDIR@/upsd -F
 ExecReload=@SBINDIR@/upsd -c reload
-Type=forking
 
 [Install]
 WantedBy=nut.target
