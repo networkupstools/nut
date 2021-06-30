@@ -41,26 +41,26 @@
 
 import telnetlib
 
-class PyNUTError( Exception ) :
+
+class PyNUTError(Exception):
     """ Base class for custom exceptions """
 
 
-class PyNUTClient :
+class PyNUTClient:
     """ Abstraction class to access NUT (Network UPS Tools) server """
 
-    __debug       = None   # Set class to debug mode (prints everything useful for debuging...)
-    __host        = None
-    __port        = None
-    __login       = None
-    __password    = None
-    __timeout     = None
+    __debug = None  # Set class to debug mode (prints everything useful for debuging...)
+    __host = None
+    __port = None
+    __login = None
+    __password = None
+    __timeout = None
     __srv_handler = None
 
-    __version     = "1.3.0"
-    __release     = "2014-06-03"
+    __version = "1.3.0"
+    __release = "2014-06-03"
 
-
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
+    def __init__(self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5):
         """ Class initialization method
 
 host     : Host to connect (default to localhost)
@@ -72,197 +72,197 @@ timeout  : Timeout used to wait for network response
         """
         self.__debug = debug
 
-        if self.__debug :
-            print( "[DEBUG] Class initialization..." )
-            print( "[DEBUG]  -> Host  = %s (port %s)" % ( host, port ) )
-            print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
+        if self.__debug:
+            print("[DEBUG] Class initialization...")
+            print("[DEBUG]  -> Host  = %s (port %s)" % (host, port))
+            print("[DEBUG]  -> Login = '%s' / '%s'" % (login, password))
 
-        self.__host     = host
-        self.__port     = port
-        self.__login    = login
+        self.__host = host
+        self.__port = port
+        self.__login = login
         self.__password = password
-        self.__timeout  = 5
+        self.__timeout = 5
 
         self.__connect()
 
     # Try to disconnect cleanly when class is deleted ;)
-    def __del__( self ) :
+    def __del__(self):
         """ Class destructor method """
-        try :
-            self.__srv_handler.write( "LOGOUT\n" )
-        except :
+        try:
+            self.__srv_handler.write("LOGOUT\n")
+        except:
             pass
 
-    def __connect( self ) :
+    def __connect(self):
         """ Connects to the defined server
 
 If login/pass was specified, the class tries to authenticate. An error is raised
 if something goes wrong.
         """
-        if self.__debug :
-            print( "[DEBUG] Connecting to host" )
+        if self.__debug:
+            print("[DEBUG] Connecting to host")
 
-        self.__srv_handler = telnetlib.Telnet( self.__host, self.__port )
+        self.__srv_handler = telnetlib.Telnet(self.__host, self.__port)
 
-        if self.__login != None :
-            self.__srv_handler.write( "USERNAME %s\n" % self.__login )
-            result = self.__srv_handler.read_until( "\n", self.__timeout )
-            if result[:2] != "OK" :
-                raise PyNUTError( result.replace( "\n", "" ) )
+        if self.__login is not None:
+            self.__srv_handler.write("USERNAME %s\n" % self.__login)
+            result = self.__srv_handler.read_until("\n", self.__timeout)
+            if result[:2] != "OK":
+                raise PyNUTError(result.replace("\n", ""))
 
-        if self.__password != None :
-            self.__srv_handler.write( "PASSWORD %s\n" % self.__password )
-            result = self.__srv_handler.read_until( "\n", self.__timeout )
-            if result[:2] != "OK" :
-                raise PyNUTError( result.replace( "\n", "" ) )
+        if self.__password is not None:
+            self.__srv_handler.write("PASSWORD %s\n" % self.__password)
+            result = self.__srv_handler.read_until("\n", self.__timeout)
+            if result[:2] != "OK":
+                raise PyNUTError(result.replace("\n", ""))
 
-    def GetUPSList( self ) :
+    def GetUPSList(self):
         """ Returns the list of available UPS from the NUT server
 
 The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
         """
-        if self.__debug :
-            print( "[DEBUG] GetUPSList from server" )
+        if self.__debug:
+            print("[DEBUG] GetUPSList from server")
 
-        self.__srv_handler.write( "LIST UPS\n" )
-        result = self.__srv_handler.read_until( "\n" )
-        if result != "BEGIN LIST UPS\n" :
-            raise PyNUTError( result.replace( "\n", "" ) )
+        self.__srv_handler.write("LIST UPS\n")
+        result = self.__srv_handler.read_until("\n")
+        if result != "BEGIN LIST UPS\n":
+            raise PyNUTError(result.replace("\n", ""))
 
-        result = self.__srv_handler.read_until( "END LIST UPS\n" )
+        result = self.__srv_handler.read_until("END LIST UPS\n")
         ups_list = {}
 
-        for line in result.split( "\n" ) :
-            if line[:3] == "UPS" :
-                ups, desc = line[4:-1].split( '"' )
-                ups_list[ ups.replace( " ", "" ) ] = desc
+        for line in result.split("\n"):
+            if line[:3] == "UPS":
+                ups, desc = line[4:-1].split('"')
+                ups_list[ups.replace(" ", "")] = desc
 
-        return( ups_list )
+        return ups_list
 
-    def GetUPSVars( self, ups="" ) :
+    def GetUPSVars(self, ups=""):
         """ Get all available vars from the specified UPS
 
 The result is a dictionary containing 'key->val' pairs of all
 available vars.
         """
-        if self.__debug :
-            print( "[DEBUG] GetUPSVars called..." )
+        if self.__debug:
+            print("[DEBUG] GetUPSVars called...")
 
-        self.__srv_handler.write( "LIST VAR %s\n" % ups )
-        result = self.__srv_handler.read_until( "\n" )
-        if result != "BEGIN LIST VAR %s\n" % ups :
-            raise PyNUTError( result.replace( "\n", "" ) )
+        self.__srv_handler.write("LIST VAR %s\n" % ups)
+        result = self.__srv_handler.read_until("\n")
+        if result != "BEGIN LIST VAR %s\n" % ups:
+            raise PyNUTError(result.replace("\n", ""))
 
-        ups_vars   = {}
-        result     = self.__srv_handler.read_until( "END LIST VAR %s\n" % ups )
-        offset     = len( "VAR %s " % ups )
-        end_offset = 0 - ( len( "END LIST VAR %s\n" % ups ) + 1 )
+        ups_vars = {}
+        result = self.__srv_handler.read_until("END LIST VAR %s\n" % ups)
+        offset = len("VAR %s " % ups)
+        end_offset = 0 - (len("END LIST VAR %s\n" % ups) + 1)
 
-        for current in result[:end_offset].split( "\n" ) :
-            var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
-            data = current[ offset: ].split( '"' )[1]
-            ups_vars[ var ] = data
+        for current in result[:end_offset].split("\n"):
+            var = current[offset:].split('"')[0].replace(" ", "")
+            data = current[offset:].split('"')[1]
+            ups_vars[var] = data
 
-        return( ups_vars )
+        return ups_vars
 
-    def GetUPSCommands( self, ups="" ) :
+    def GetUPSCommands(self, ups=""):
         """ Get all available commands for the specified UPS
 
 The result is a dict object with command name as key and a description
 of the command as value
         """
-        if self.__debug :
-            print( "[DEBUG] GetUPSCommands called..." )
+        if self.__debug:
+            print("[DEBUG] GetUPSCommands called...")
 
-        self.__srv_handler.write( "LIST CMD %s\n" % ups )
-        result = self.__srv_handler.read_until( "\n" )
-        if result != "BEGIN LIST CMD %s\n" % ups :
-            raise PyNUTError( result.replace( "\n", "" ) )
+        self.__srv_handler.write("LIST CMD %s\n" % ups)
+        result = self.__srv_handler.read_until("\n")
+        if result != "BEGIN LIST CMD %s\n" % ups:
+            raise PyNUTError(result.replace("\n", ""))
 
-        ups_cmds   = {}
-        result     = self.__srv_handler.read_until( "END LIST CMD %s\n" % ups )
-        offset     = len( "CMD %s " % ups )
-        end_offset = 0 - ( len( "END LIST CMD %s\n" % ups ) + 1 )
+        ups_cmds = {}
+        result = self.__srv_handler.read_until("END LIST CMD %s\n" % ups)
+        offset = len("CMD %s " % ups)
+        end_offset = 0 - (len("END LIST CMD %s\n" % ups) + 1)
 
-        for current in result[:end_offset].split( "\n" ) :
-            var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
+        for current in result[:end_offset].split("\n"):
+            var = current[offset:].split('"')[0].replace(" ", "")
 
             # For each var we try to get the available description
-            try :
-                self.__srv_handler.write( "GET CMDDESC %s %s\n" % ( ups, var ) )
-                temp = self.__srv_handler.read_until( "\n" )
-                if temp[:7] != "CMDDESC" :
+            try:
+                self.__srv_handler.write("GET CMDDESC %s %s\n" % (ups, var))
+                temp = self.__srv_handler.read_until("\n")
+                if temp[:7] != "CMDDESC":
                     raise PyNUTError
-                else :
-                    off  = len( "CMDDESC %s %s " % ( ups, var ) )
+                else:
+                    off = len("CMDDESC %s %s " % (ups, var))
                     desc = temp[off:-1].split('"')[1]
-            except :
+            except:
                 desc = var
 
-            ups_cmds[ var ] = desc
+            ups_cmds[var] = desc
 
-        return( ups_cmds )
+        return ups_cmds
 
-    def GetRWVars( self,  ups="" ) :
+    def GetRWVars(self, ups=""):
         """ Get a list of all writable vars from the selected UPS
 
 The result is presented as a dictionary containing 'key->val' pairs
         """
-        if self.__debug :
-            print( "[DEBUG] GetUPSVars from '%s'..." % ups )
+        if self.__debug:
+            print("[DEBUG] GetUPSVars from '%s'..." % ups)
 
-        self.__srv_handler.write( "LIST RW %s\n" % ups )
-        result = self.__srv_handler.read_until( "\n" )
-        if ( result != "BEGIN LIST RW %s\n" % ups ) :
-            raise PyNUTError( result.replace( "\n",  "" ) )
+        self.__srv_handler.write("LIST RW %s\n" % ups)
+        result = self.__srv_handler.read_until("\n")
+        if result != "BEGIN LIST RW %s\n" % ups:
+            raise PyNUTError(result.replace("\n", ""))
 
-        result     = self.__srv_handler.read_until( "END LIST RW %s\n" % ups )
-        offset     = len( "VAR %s" % ups )
-        end_offset = 0 - ( len( "END LIST RW %s\n" % ups ) + 1 )
-        rw_vars    = {}
+        result = self.__srv_handler.read_until("END LIST RW %s\n" % ups)
+        offset = len("VAR %s" % ups)
+        end_offset = 0 - (len("END LIST RW %s\n" % ups) + 1)
+        rw_vars = {}
 
-        try :
-            for current in result[:end_offset].split( "\n" ) :
-                var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
-                data = current[ offset: ].split( '"' )[1]
-                rw_vars[ var ] = data
+        try:
+            for current in result[:end_offset].split("\n"):
+                var = current[offset:].split('"')[0].replace(" ", "")
+                data = current[offset:].split('"')[1]
+                rw_vars[var] = data
 
-        except :
+        except:
             pass
 
-        return( rw_vars )
+        return rw_vars
 
-    def SetRWVar( self, ups="", var="", value="" ):
+    def SetRWVar(self, ups="", var="", value=""):
         """ Set a variable to the specified value on selected UPS
 
 The variable must be a writable value (cf GetRWVars) and you must have the proper
 rights to set it (maybe login/password).
         """
 
-        self.__srv_handler.write( "SET VAR %s %s %s\n" % ( ups, var, value ) )
-        result = self.__srv_handler.read_until( "\n" )
-        if ( result == "OK\n" ) :
-            return( "OK" )
-        else :
-            raise PyNUTError( result )
+        self.__srv_handler.write("SET VAR %s %s %s\n" % (ups, var, value))
+        result = self.__srv_handler.read_until("\n")
+        if result == "OK\n":
+            return "OK"
+        else:
+            raise PyNUTError(result)
 
-    def RunUPSCommand( self, ups="", command="" ) :
+    def RunUPSCommand(self, ups="", command=""):
         """ Send a command to the specified UPS
 
 Returns OK on success or raises an error
         """
 
-        if self.__debug :
-            print( "[DEBUG] RunUPSCommand called..." )
+        if self.__debug:
+            print("[DEBUG] RunUPSCommand called...")
 
-        self.__srv_handler.write( "INSTCMD %s %s\n" % ( ups, command ) )
-        result = self.__srv_handler.read_until( "\n" )
-        if ( result == "OK\n" ) :
-            return( "OK" )
-        else :
-            raise PyNUTError( result.replace( "\n", "" ) )
+        self.__srv_handler.write("INSTCMD %s %s\n" % (ups, command))
+        result = self.__srv_handler.read_until("\n")
+        if result == "OK\n":
+            return "OK"
+        else:
+            raise PyNUTError(result.replace("\n", ""))
 
-    def FSD( self, ups="") :
+    def FSD(self, ups=""):
         """ Send FSD command
 
 Returns OK on success or raises an error
@@ -271,71 +271,71 @@ TODO: API change pending to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
 
-        if self.__debug :
-            print( "[DEBUG] MASTER called..." )
+        if self.__debug:
+            print("[DEBUG] MASTER called...")
 
-        self.__srv_handler.write( "MASTER %s\n" % ups )
-        result = self.__srv_handler.read_until( "\n" )
-        if ( result != "OK MASTER-GRANTED\n" ) :
-            raise PyNUTError( ( "Master level function are not available", "" ) )
+        self.__srv_handler.write("MASTER %s\n" % ups)
+        result = self.__srv_handler.read_until("\n")
+        if result != "OK MASTER-GRANTED\n":
+            raise PyNUTError(("Master level function are not available", ""))
 
-        if self.__debug :
-            print( "[DEBUG] FSD called..." )
-        self.__srv_handler.write( "FSD %s\n" % ups )
-        result = self.__srv_handler.read_until( "\n" )
-        if ( result == "OK FSD-SET\n" ) :
-            return( "OK" )
-        else :
-            raise PyNUTError( result.replace( "\n", "" ) )
+        if self.__debug:
+            print("[DEBUG] FSD called...")
+        self.__srv_handler.write("FSD %s\n" % ups)
+        result = self.__srv_handler.read_until("\n")
+        if result == "OK FSD-SET\n":
+            return "OK"
+        else:
+            raise PyNUTError(result.replace("\n", ""))
 
-    def help(self) :
+    def help(self):
         """ Send HELP command
         """
 
-        if self.__debug :
-            print( "[DEBUG] HELP called..." )
+        if self.__debug:
+            print("[DEBUG] HELP called...")
 
-        self.__srv_handler.write( "HELP\n")
-        return self.__srv_handler.read_until( "\n" )
+        self.__srv_handler.write("HELP\n")
+        return self.__srv_handler.read_until("\n")
 
-    def ver(self) :
+    def ver(self):
         """ Send VER command
         """
 
-        if self.__debug :
-            print( "[DEBUG] VER called..." )
+        if self.__debug:
+            print("[DEBUG] VER called...")
 
-        self.__srv_handler.write( "VER\n")
-        return self.__srv_handler.read_until( "\n" )
+        self.__srv_handler.write("VER\n")
+        return self.__srv_handler.read_until("\n")
 
-    def ListClients( self, ups = None ) :
+    def ListClients(self, ups=None):
         """ Returns the list of connected clients from the NUT server
 
 The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list of clients
         """
-        if self.__debug :
-            print( "[DEBUG] ListClients from server" )
+        if self.__debug:
+            print("[DEBUG] ListClients from server")
 
         if ups and (ups not in self.GetUPSList()):
-            raise PyNUTError( "%s is not a valid UPS" % ups )
+            raise PyNUTError("%s is not a valid UPS" % ups)
 
         if ups:
-            self.__srv_handler.write( "LIST CLIENTS %s\n" % ups)
+            self.__srv_handler.write("LIST CLIENTS %s\n" % ups)
         else:
-            self.__srv_handler.write( "LIST CLIENTS\n" )
-        result = self.__srv_handler.read_until( "\n" )
-        if result != "BEGIN LIST CLIENTS\n" :
-            raise PyNUTError( result.replace( "\n", "" ) )
+            self.__srv_handler.write("LIST CLIENTS\n")
+        result = self.__srv_handler.read_until("\n")
+        if result != "BEGIN LIST CLIENTS\n":
+            raise PyNUTError(result.replace("\n", ""))
 
-        result = self.__srv_handler.read_until( "END LIST CLIENTS\n" )
+        result = self.__srv_handler.read_until("END LIST CLIENTS\n")
         ups_list = {}
 
-        for line in result.split( "\n" ):
-            if line[:6] == "CLIENT" :
+        for line in result.split("\n"):
+            if line[:6] == "CLIENT":
                 host, ups = line[7:].split(' ')
                 ups.replace(' ', '')
-                if not ups in ups_list:
+                if ups not in ups_list:
                     ups_list[ups] = []
                 ups_list[ups].append(host)
 
-        return( ups_list )
+        return ups_list
