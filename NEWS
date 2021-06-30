@@ -6,7 +6,7 @@ ChangeLog file, or the Git version control history.
 ---------------------------------------------------------------------------
 Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
- - libusb-1.0 API support in addition to libusb-0.1 API
+ - (expected) libusb-1.0 API support in addition to libusb-0.1 API
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
