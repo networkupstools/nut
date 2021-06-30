@@ -119,6 +119,13 @@ bool_t use_interrupt_pipe = FALSE;
 #endif
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
+/**
+ * CyberPower UT series sometime need a bit of help deciding their online status.
+ * This quirk is to enable the special handling of OL & DISCHRG at the same time
+ * as being OB (on battery power/no mains power)
+ */
+#define DEFAULT_ONLINEDISCHARGE 0
+static int onlinedischarge = DEFAULT_ONLINEDISCHARGE;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -719,6 +726,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+
+	snprintf(temp, sizeof(temp), "Treat discharging while online as being offline (default=%s)",
+		DEFAULT_ONLINEDISCHARGE);
+	addvar(VAR_FLAG, "onlinedischarge", temp);
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
@@ -1464,10 +1475,25 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
-	if (ups_status & STATUS(ONLINE)) {
-		status_set("OL");		/* on line */
-	} else {
+
+	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
+	} else if ((ups_status & STATUS(DISCHRG))) {
+			/* if online */
+		if (onlinedischarge) {
+			/* if we treat OL+DISCHRG as being offline */
+			status_set("OB");	/* on battery */
+		} else {
+			if (!(ups_status & STATUS(CAL))) {
+				/* if in OL+DISCHRG unknowingly, warn user */
+				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
+				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
+				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
+				  __func__, ups->upsname)
+			}
+			/* if we're calibrating */
+			status_set("OL");	/* on line */
+		}
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
