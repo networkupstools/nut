@@ -1022,10 +1022,12 @@ void upsdrv_initups(void)
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
 		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
-		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
-			upslogx(LOG_NOTICE, "writing error");
-			dstate_datastale();
-			return;
+		if (!dstate_getinfo("driver.flag.nobt")){
+			if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
+				upslogx(LOG_NOTICE, "writing error");
+				dstate_datastale();
+				return;
+			}
 		}
 	}
 
