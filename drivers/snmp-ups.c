@@ -282,6 +282,9 @@ void upsdrv_shutdown(void)
 
 	upsdebugx(1, "%s...", __func__);
 
+	/* set shutdown and autostart delay */
+	set_delays();
+	
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -342,6 +345,10 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+	addvar(VAR_VALUE, SU_VAR_ONDELAY,
+		"Set start  delay time after shutdown");
+	addvar(VAR_VALUE, SU_VAR_OFFDELAY,
+		"Set delay time before shutdown ");
 }
 
 void upsdrv_initups(void)
@@ -477,6 +484,9 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	/* set shutdown and autostart delay */
+	set_delays();
 }
 
 void upsdrv_cleanup(void)
@@ -1569,6 +1579,36 @@ static void disable_competition(snmp_info_t *entry)
 			p->flags &= ~SU_FLAG_OK;
 		}
 	}
+}
+
+/* set shutdown and start delay */
+void set_delays(void)
+{
+
+	int ondelay, offdelay;
+	char delayval[6]; 
+
+	
+	if (getval(SU_VAR_ONDELAY))
+		ondelay = atoi(getval(SU_VAR_ONDELAY));
+	else
+		ondelay = -1;
+
+	if (getval(SU_VAR_OFFDELAY))
+		offdelay = atoi(getval(SU_VAR_OFFDELAY));
+	else
+		offdelay = -1;
+
+
+	if (ondelay >= 0) {
+		sprintf(delayval, "%d", ondelay);
+		su_setvar("ups.delay.start", delayval);
+	}
+	if (offdelay >= 0) {
+		sprintf(delayval, "%d", offdelay);
+		su_setvar("ups.delay.shutdown",    delayval);
+	}
+
 }
 
 /***********************************************************************
