@@ -554,8 +554,10 @@ int get_signal_state(devstate_t state)
 /* get driver configuration parameters */
 void get_config_vars()
 {
+    int i; /* local index */
+
     /* initialize sigar table */
-    for (int i = 0; i < NUMOF_SIG_STATES; i++) {
+    for (i = 0; i < NUMOF_SIG_STATES; i++) {
         sigar[i].addr = NOTUSED;
         sigar[i].noro = 0;          /* ON corresponds to 1 (closed contact) */
     }
@@ -769,7 +771,7 @@ void get_config_vars()
     upsdebugx(2, "FSD_pulse_duration %d", FSD_pulse_duration);
 
     /* debug loop over signal array */
-    for (int i = 0; i < NUMOF_SIG_STATES; i++) {
+    for (i = 0; i < NUMOF_SIG_STATES; i++) {
         if (sigar[i].addr != NOTUSED) {
             char *signame;
             switch (i) {
