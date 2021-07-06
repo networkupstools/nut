@@ -28,7 +28,6 @@
 #define DEVICE_MODEL "unknown"
 
 /* serial access parameters */
-#define DEVICE_PATH "/dev/ttyUSB0"
 #define BAUD_RATE 9600
 #define PARITY 'N'
 #define DATA_BIT 8
@@ -89,6 +88,7 @@ struct sigattr {
  * Buffering contact    <--> 1:OB, 0:OL
  * Battery-low          <--> 1:LB
  * Replace Battery      <--> 1:RB
+ * Inhibit buffering    <--> 1:FSD
  */
 
 

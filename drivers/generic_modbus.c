@@ -814,7 +814,7 @@ modbus_t *modbus_new(const char *port)
     modbus_t *mb;
     char *sp;
     if (strstr(port, "/dev/tty") != NULL) {
-        mb = modbus_new_rtu(port, BAUD_RATE, 'N', 8, 1);
+        mb = modbus_new_rtu(port, ser_baud_rate, (char )ser_parity, ser_data_bit, ser_stop_bit);
         if (mb == NULL) {
             upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
         }
