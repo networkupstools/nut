@@ -29,7 +29,7 @@
 #define DRIVER_VERSION	"0.01"
 
 /* variables */
-modbus_t *mbctx = NULL;                               /* modbus memory context */
+modbus_t *mbctx = NULL;                             /* modbus memory context */
 sigattr_t sigar[NUMOF_SIG_STATES];                  /* array of ups signal attributes */
 int errcnt = 0;                                     /* modbus access error counter */
 
