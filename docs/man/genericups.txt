@@ -18,7 +18,8 @@ kind of interface where basic high/low signals are provided to indicate
 status.  This kind of UPS can only report line power and battery status.
 
 This means that you will only get the essentials in ups.status: OL, OB,
-and LB.  Anything else requires a smarter UPS.
+and LB (some UPSes may also support RB and BYPASS).  Anything else requires
+a smarter UPS.
 
 CABLING
 -------
@@ -95,6 +96,10 @@ OL:: On line (no power failure) (opposite of OB - on battery)
 
 LB:: Low battery
 
+RB:: Replace battery
+
+BYPASS:: Battery bypass active or no battery installed
+
 SD:: Shutdown load
 
 CP:: Cable power (must be present for cable to have valid reading)
@@ -108,6 +113,8 @@ DCD:: Data Carrier Detect.  Received from the UPS.
 RNG:: Ring indicate.  Received from the UPS.
 
 DTR:: Data Terminal Ready.  Sent by the PC.
+
+DSR:: Data Set Ready.  Received from the UPS.
 
 ST:: Send a BREAK on the transmit data line
 
@@ -218,6 +225,11 @@ UPS TYPES
      (also CyberPower SL series)
 
      [CP=RTS] [OL=CTS] [LB=-DCD] [SD=DTR]
+
+23 = Generic FTTx (Fiber to the x) battery backup
+     with 4-wire telemetry interface
+
+     [CP=RTS] [OL=-CTS] [LB=DCD] [RB=RNG] [BYPASS=DSR] [SD=none]
 
 SIMILAR MODELS
 --------------

@@ -27,6 +27,8 @@ static struct {
 	int	line_norm;
 	int	line_ol, val_ol;
 	int	line_bl, val_bl;
+	int	line_rb, val_rb;
+	int	line_bypass, val_bypass;
 	int	line_sd;
 }	upstab[] =
 {
@@ -37,6 +39,8 @@ static struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
@@ -47,6 +51,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_RNG, 0,			/* online: RNG off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS 			/* shutdown: RTS		*/
 	},
 
@@ -57,6 +63,8 @@ static struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR|TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -67,6 +75,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -77,6 +87,8 @@ static struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  0				/* shutdown: none		*/
 	},
 
@@ -87,6 +99,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -97,6 +111,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
@@ -107,6 +123,8 @@ static struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: set DTR		*/
 	},
 
@@ -117,6 +135,8 @@ static struct {
           TIOCM_DTR,			/* cable power: DTR		*/
           TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
           TIOCM_CD, 0,			/* low battery: CD off		*/
+          0, 0,				/* replace battery: none	*/
+          0, 0,				/* battery bypass: none		*/
           -1				/* shutdown: unknown		*/
         },
 
@@ -127,6 +147,8 @@ static struct {
 	  0,				/* cable power: none		*/
 	  TIOCM_CD, 0,			/* online: CD off		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* low battery: CTS on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
@@ -137,6 +159,8 @@ static struct {
 	  TIOCM_RTS,                    /* cable power: RTS             */
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on               */
 	  TIOCM_CD, 0,                  /* low battery: CD off          */
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR                     /* shutdown: DTR                */
 	},
 
@@ -147,6 +171,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST			*/
 	},
 
@@ -157,6 +183,8 @@ static struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: raise DTR		*/
 	},
 
@@ -167,6 +195,8 @@ static struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CD, TIOCM_CD,		/* On-line : DCD on		*/
 	  TIOCM_CTS, 0,			/* Battery low: CTS off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: TX BREA		*/
 	},
 
@@ -177,6 +207,8 @@ static struct {
 	   TIOCM_DTR,			/* cable power: DTR		*/
 	   TIOCM_CD, TIOCM_CD,		/* online: CD on		*/
 	   TIOCM_CTS, 0,		/* low battery: CTS off		*/
+	   0, 0,				/* replace battery: none	*/
+	   0, 0,				/* battery bypass: none		*/
 	   TIOCM_RTS			/* shutdown: raise RTS		*/
 	},
 
@@ -187,6 +219,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
@@ -197,6 +231,8 @@ static struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: unknown		*/
 	},
 
@@ -207,6 +243,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: unknown		*/
 	},
 
@@ -217,6 +255,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CAR on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: none		*/
 	},
 
@@ -227,6 +267,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: DCD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
@@ -238,6 +280,8 @@ static struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
@@ -249,6 +293,8 @@ static struct {
 	  TIOCM_RTS,                    /* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on		*/
 	  TIOCM_CD, 0,                  /* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
 
@@ -259,7 +305,21 @@ static struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: DTR		*/
+	},
+
+	/* Type 23 */
+	{ "Generic",
+	  "Generic FTTx Battery Backup",
+	  "FTTx (Fiber to the x) battery backup with 4-wire telemetry interface",
+	  TIOCM_RTS,			/* cable power: RTS		*/
+	  TIOCM_CTS, 0,			/* online: CTS off		*/
+	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  TIOCM_RI, TIOCM_RI,		/* replace battery: RI on	*/
+	  TIOCM_DSR, TIOCM_DSR,		/* battery bypass: DSR on	*/
+	  0				/* shutdown: none		*/
 	},
 
 	/* add any new entries directly above this line */
@@ -268,6 +328,8 @@ static struct {
 	  NULL,
 	  NULL,
 	  0,
+	  0, 0,
+	  0, 0,
 	  0, 0,
 	  0, 0,
 	  0
