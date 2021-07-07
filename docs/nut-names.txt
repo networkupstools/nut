@@ -401,6 +401,8 @@ battery: Any battery details
 | battery.capacity.nominal     | Nominal battery capacity (Ah)       | 8.0
 | battery.current              | Battery current (A)                 | 1.19
 | battery.current.total        | Total battery current (A)           | 1.19
+| battery.status               | Health status of the battery
+                                 (opaque string)                     | ok
 | battery.temperature          | Battery temperature (degrees C)     | 050.7
 | battery.temperature.cell.max | Maximum battery temperature of the
                                  Li-ion cell (degrees C)             | 25.85
