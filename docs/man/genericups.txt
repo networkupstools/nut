@@ -118,6 +118,9 @@ DSR:: Data Set Ready.  Received from the UPS.
 
 ST:: Send a BREAK on the transmit data line
 
+NULL:: Disable this signal.  Disabled signal will always be low except for OL
+       which will always be high.
+
 A "-" in front of a signal name (like -RNG) means that the indicated
 condition is signaled with an active low signal.  For example, [LB=-RNG]
 means the battery is low when the ring indicate line goes low, and that
