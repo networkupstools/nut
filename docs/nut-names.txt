@@ -388,6 +388,10 @@ battery: Any battery details
 | battery.charger.status       | Status of the battery charger
                                  (see the note below)                | charging
 | battery.voltage              | Battery voltage (V)                 | 24.84
+| battery.voltage.cell.max     | Maximum battery voltage of the
+                                 Li-ion cell (V)                     | 3.44
+| battery.voltage.cell.min     | Minimum battery voltage of the
+                                 Li-ion cell (V)                     | 3.41
 | battery.voltage.nominal      | Nominal battery voltage (V)         | 024
 | battery.voltage.low          | Minimum battery voltage, that
                                  triggers FSD status                 | 21,52
@@ -398,6 +402,10 @@ battery: Any battery details
 | battery.current              | Battery current (A)                 | 1.19
 | battery.current.total        | Total battery current (A)           | 1.19
 | battery.temperature          | Battery temperature (degrees C)     | 050.7
+| battery.temperature.cell.max | Maximum battery temperature of the
+                                 Li-ion cell (degrees C)             | 25.85
+| battery.temperature.cell.min | Minimum battery temperature of the
+                                 Li-ion cell (degrees C)             | 24.85
 | battery.runtime              | Battery runtime (seconds)           | 1080
 | battery.runtime.low          | Remaining battery runtime when
                                  UPS switches to LB (seconds)        | 180
