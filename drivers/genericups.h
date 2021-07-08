@@ -315,10 +315,10 @@ static struct {
 	  "Generic FTTx Battery Backup",
 	  "FTTx (Fiber to the x) battery backup with 4-wire telemetry interface",
 	  TIOCM_RTS,			/* cable power: RTS		*/
-	  TIOCM_CTS, 0,			/* online: CTS off		*/
-	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
-	  TIOCM_RI, TIOCM_RI,		/* replace battery: RI on	*/
-	  TIOCM_DSR, TIOCM_DSR,		/* battery bypass: DSR on	*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  TIOCM_RI, 0,			/* replace battery: RI off	*/
+	  TIOCM_DSR, 0,			/* battery bypass: DSR off	*/
 	  0				/* shutdown: none		*/
 	},
 

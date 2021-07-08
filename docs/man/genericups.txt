@@ -232,7 +232,7 @@ UPS TYPES
 23 = Generic FTTx (Fiber to the x) battery backup
      with 4-wire telemetry interface
 
-     [CP=RTS] [OL=-CTS] [LB=DCD] [RB=RNG] [BYPASS=DSR] [SD=none]
+     [CP=RTS] [OL=CTS] [LB=-DCD] [RB=-RNG] [BYPASS=-DSR] [SD=none]
 
 SIMILAR MODELS
 --------------
