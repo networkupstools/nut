@@ -102,10 +102,31 @@ States (X = OL, OB, LB, HB, RB, CHRG, DISCHRG, FSD)
 A number specifying the modbus address for the X state.
 
 *<X>_regtype*='value'::
-A number specifying the modbus register type for the X state (0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING).
+A number specifying the modbus register type for the X state 
+Default values:::
++
+[source, conf]
+----
+1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
+0 for X = FSD
+----
+Valid values:::
++
+[source, conf]
+----
+0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
+----
 
 *<X>_noro*='value'::
-A number specifying the contact configuration for the X state (0:NC, 1:NO).  
+A number specifying the contact configuration for the X state (default 1).  
+Valid values:::
++
+[source, conf]
+----
+0:NC, 1:NO
+----
++
+NOTE: NO stands for normally open and NC for normally closed contact
 
 Shutdown
 ~~~~~~~~
