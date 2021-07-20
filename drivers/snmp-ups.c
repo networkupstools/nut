@@ -2917,7 +2917,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
 
 	/* Check if this is a daisychain template */
-	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+	if (su_info_p->OID != NULL && (format_char = strchr(su_info_p->OID, '%')) != NULL) {
 		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
 		if (tmp_info_p != NULL) {
 			/* adapt the OID */
@@ -3080,7 +3080,12 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return TRUE;
 	}
 
-	if (su_info_p->info_flags & ST_FLAG_STRING) {
+	/* special treatment for element without oid but with default value */
+	if (su_info_p->OID == NULL && su_info_p->dfl != NULL) {
+		status = TRUE;
+		strncpy(buf, su_info_p->dfl, sizeof(buf));
+	}
+	else if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
 		if (status == TRUE) {
 			if (quirk_symmetra_threephase) {
