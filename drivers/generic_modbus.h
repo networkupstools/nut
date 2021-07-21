@@ -36,6 +36,12 @@
 /* modbus access parameters */
 #define MODBUS_SLAVE_ID 5
 
+/* shutdown repeat on error */
+#define FSD_REPEAT_CNT 3
+
+/* shutdown repeat interval in ms */
+#define FSD_REPEAT_INTRV 1500
+
 /* definition of register type */
 typedef enum regtype regtype_t;
 enum regtype {

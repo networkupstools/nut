@@ -57,6 +57,9 @@ int upscmd(const char *cmd, const char *arg);
 /* read signal status */
 int get_signal_state(devstate_t state);
 
+/* count the time elapsed since start */
+long time_elapsed(struct timeval *start);
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -257,8 +260,22 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
     int rval;
+    int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
+    struct timeval start;
+    long etime;
 
-    rval = upscmd("load.off", NULL);
+    /* retry sending shutdown command on error */
+    while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
+        rval = gettimeofday(&start, NULL);
+        if (rval < 0) {
+            upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
+        }
+
+        /* wait for an increasing time interval before sending shutdown command */
+        while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+        upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
+        cnt--;
+    }
     switch (rval) {
         case STAT_INSTCMD_FAILED:
         case STAT_INSTCMD_INVALID:
@@ -407,14 +424,14 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 }
 
 /* returns the time elapsed since start in milliseconds */
-long time_ellapsed(struct timeval *start)
+long time_elapsed(struct timeval *start)
 {
     long rval;
     struct timeval end;
 
     rval = gettimeofday(&end, NULL);
     if (rval < 0) {
-        upslogx(LOG_ERR, "time_ellapsed: %s", strerror(errno));
+        upslogx(LOG_ERR, "time_elapsed: %s", strerror(errno));
     }
     if (start->tv_usec < end.tv_usec) {
         ulong nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
@@ -451,21 +468,22 @@ int upscmd(const char *cmd, const char *arg)
                        sigar[FSD_T].type,
                        device_path
                 );
-                upslogx(LOG_NOTICE, "instcmd: failed (communication error) [%s] [%s]", cmd, arg);
+                upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
                 rval = STAT_INSTCMD_FAILED;
             } else {
+                upsdebugx(2, "load.off: addr: 0x%x, data: %d", sigar[FSD_T].addr, data);
                 rval = STAT_INSTCMD_HANDLED;
             }
-            upsdebugx(2, "instcmd: addr: 0x%x, data: %d", sigar[FSD_T].addr, data);
 
-            if (FSD_pulse_duration != NOTUSED) {
+            /* if pulse has been defined and rising edge was successful */
+            if (FSD_pulse_duration != NOTUSED && rval == STAT_INSTCMD_HANDLED) {
                 rval = gettimeofday(&start, NULL);
                 if (rval < 0) {
                     upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
                 }
 
                 /* wait for FSD_pulse_duration ms */
-                while ((etime = time_ellapsed(&start)) < FSD_pulse_duration);
+                while ((etime = time_elapsed(&start)) < FSD_pulse_duration);
 
                 data = 0 ^ sigar[FSD_T].noro;
                 rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
@@ -476,19 +494,19 @@ int upscmd(const char *cmd, const char *arg)
                            sigar[FSD_T].type,
                            device_path
                     );
-                    upslogx(LOG_NOTICE, "instcmd: failed (communication error) [%s] [%s]", cmd, arg);
+                    upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
                     rval = STAT_INSTCMD_FAILED;
                 } else {
+                    upsdebugx(2, "load.off: addr: 0x%x, data: %d, elapsed time: %lims",
+                              sigar[FSD_T].addr,
+                              data,
+                              etime
+                    );
                     rval = STAT_INSTCMD_HANDLED;
                 }
-                upsdebugx(2, "instcmd: addr: 0x%x, data: %d, elapsed time: %lims",
-                          sigar[FSD_T].addr,
-                          data,
-                          etime
-                );
             }
         } else {
-            upslogx(LOG_NOTICE,"instcmd: failed (FSD address undefined or invalid register type)  [%s] [%s]",
+            upslogx(LOG_NOTICE,"load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
                     cmd,
                     arg
                     );
@@ -606,7 +624,7 @@ void get_config_vars()
 
     /* check if OL address is set and get the value */
     if (testvar("OL_addr")) {
-        sigar[OL_T].addr = (int )strtol(getval("OL_addr"), NULL, 16);
+        sigar[OL_T].addr = (int )strtol(getval("OL_addr"), NULL, 0);
         if (testvar("OL_noro")) {
             sigar[OL_T].noro = (int )strtol(getval("OL_noro"), NULL, 10);
             if (sigar[OL_T].noro != 1) {
@@ -626,7 +644,7 @@ void get_config_vars()
 
     /* check if OB address is set and get the value */
     if (testvar("OB_addr")) {
-        sigar[OB_T].addr = (int )strtol(getval("OB_addr"), NULL, 16);
+        sigar[OB_T].addr = (int )strtol(getval("OB_addr"), NULL, 0);
     }
     if (testvar("OB_noro")) {
         sigar[OB_T].noro = (int )strtol(getval("OB_noro"), NULL, 10);
@@ -646,7 +664,7 @@ void get_config_vars()
 
     /* check if LB address is set and get the value */
     if (testvar("LB_addr")) {
-        sigar[LB_T].addr = (int )strtol(getval("LB_addr"), NULL, 16);
+        sigar[LB_T].addr = (int )strtol(getval("LB_addr"), NULL, 0);
         if (testvar("LB_noro")) {
             sigar[LB_T].noro = (int )strtol(getval("LB_noro"), NULL, 10);
             if (sigar[LB_T].noro != 1) {
@@ -666,7 +684,7 @@ void get_config_vars()
 
     /* check if HB address is set and get the value */
     if (testvar("HB_addr")) {
-        sigar[HB_T].addr = (int )strtol(getval("HB_addr"), NULL, 16);
+        sigar[HB_T].addr = (int )strtol(getval("HB_addr"), NULL, 0);
         if (testvar("HB_noro")) {
             sigar[HB_T].noro = (int )strtol(getval("HB_noro"), NULL, 10);
             if (sigar[HB_T].noro != 1) {
@@ -686,7 +704,7 @@ void get_config_vars()
 
     /* check if RB address is set and get the value */
     if (testvar("RB_addr")) {
-        sigar[RB_T].addr = (int )strtol(getval("RB_addr"), NULL, 16);
+        sigar[RB_T].addr = (int )strtol(getval("RB_addr"), NULL, 0);
         if (testvar("RB_noro")) {
             sigar[RB_T].noro = (int )strtol(getval("RB_noro"), NULL, 10);
             if (sigar[RB_T].noro != 1) {
@@ -706,7 +724,7 @@ void get_config_vars()
 
     /* check if CHRG address is set and get the value */
     if (testvar("CHRG_addr")) {
-        sigar[CHRG_T].addr = (int )strtol(getval("CHRG_addr"), NULL, 16);
+        sigar[CHRG_T].addr = (int )strtol(getval("CHRG_addr"), NULL, 0);
         if (testvar("CHRG_noro")) {
             sigar[CHRG_T].noro = (int )strtol(getval("CHRG_noro"), NULL, 10);
             if (sigar[CHRG_T].noro != 1) {
@@ -726,7 +744,7 @@ void get_config_vars()
 
     /* check if DISCHRG address is set and get the value */
     if (testvar("DISCHRG_addr")) {
-        sigar[DISCHRG_T].addr = (int )strtol(getval("DISCHRG_addr"), NULL, 16);
+        sigar[DISCHRG_T].addr = (int )strtol(getval("DISCHRG_addr"), NULL, 0);
         if (testvar("DISCHRG_noro")) {
             sigar[DISCHRG_T].noro = (int )strtol(getval("DISCHRG_noro"), NULL, 10);
             if (sigar[DISCHRG_T].noro != 1) {
@@ -746,7 +764,7 @@ void get_config_vars()
 
     /* check if FSD address is set and get the value */
     if (testvar("FSD_addr")) {
-        sigar[FSD_T].addr = (int )strtol(getval("FSD_addr"), NULL, 16);
+        sigar[FSD_T].addr = (int )strtol(getval("FSD_addr"), NULL, 0);
         if (testvar("FSD_noro")) {
             sigar[FSD_T].noro = (int )strtol(getval("FSD_noro"), NULL, 10);
             if (sigar[FSD_T].noro != 1) {
