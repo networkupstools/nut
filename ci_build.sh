@@ -409,7 +409,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
-        export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
+        DISTCHECK_CONFIGURE_FLAGS=""
+        for F in "${CONFIG_OPTS[@]}" ; do
+            DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS '$F'"
+        done
+        export DISTCHECK_CONFIGURE_FLAGS
         $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" distcheck
 
         echo "=== Are GitIgnores good after 'make distcheck'? (should have no output below)"
