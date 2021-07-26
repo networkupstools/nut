@@ -24,6 +24,8 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+[ -n "$MAKE" ] || MAKE=make
+
 configure_nut() {
     local CONFIGURE_SCRIPT=./configure
     if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then
@@ -46,12 +48,12 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-      $CI_TIME make VERBOSE=1 all -k ) || return $?
+      $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
-    echo "`date`: Starting a 'make check' for quick sanity test of the products built with the current compiler and standards"
-    $CI_TIME make VERBOSE=0 check \
+    echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
+    $CI_TIME $MAKE VERBOSE=0 check \
     && echo "`date`: SUCCESS" \
     || return $?
 
@@ -323,8 +325,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
             export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
-            $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
-            echo "=== Are GitIgnores good after 'make $BUILD_TGT'? (should have no output below)"
+            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
+            echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
             if git status -s | egrep '\.dmf$' ; then
@@ -335,14 +337,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                 echo "CCache stats after build:"
                 ccache -s
             fi
-            echo "=== Exiting after the custom-build target 'make $BUILD_TGT' succeeded OK"
+            echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
             ;;
         "default-spellcheck")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: use the root Makefile's spellcheck recipe which goes into
             # sub-Makefiles known to check corresponding directory's doc files.
-            ( $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            ( $CI_TIME $MAKE VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
             ;;
         "default-shellcheck")
@@ -355,7 +357,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             ### Still, there remains value in also checking the script syntax
             ### by the very version of the shell interpreter that would run
             ### these scripts in production usage of the resulting packages.
-            ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
+            ( $CI_TIME $MAKE VERBOSE=1 shellcheck check-scripts-syntax )
             exit $?
             ;;
         "default-all-errors")
@@ -369,7 +371,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                   build_to_only_catch_errors ) || RES=$?
 
                 echo "=== Clean the sandbox..."
-                make distclean -k || true
+                $MAKE distclean -k || true
 
                 echo "=== Building with SSL=nss..."
                 ( CONFIG_OPTS+=("--with-nss")
@@ -385,11 +387,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME make VERBOSE=1 -k -j8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k -j8 all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
-      $CI_TIME make VERBOSE=1 all )
+      $CI_TIME $MAKE VERBOSE=1 all )
 
-    echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
+    echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
     git status -s || true
     echo "==="
     if [ -n "`git status -s`" ]; then
@@ -400,7 +402,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
-    $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
+    $CI_TIME $MAKE VERBOSE=1 DESTDIR="$INST_PREFIX" install
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
         find "$INST_PREFIX" -ls || true
 
@@ -411,9 +413,9 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         (
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`"
         export DISTCHECK_FLAGS
-        $CI_TIME make VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
 
-        echo "=== Are GitIgnores good after 'make distcheck'? (should have no output below)"
+        echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
         )
@@ -431,7 +433,7 @@ bindings)
     echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual"
     ./autogen.sh
     ./configure
-    make all && make check
+    $MAKE all && $MAKE check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
