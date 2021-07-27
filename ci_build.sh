@@ -411,7 +411,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
-        DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`"
+        DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
 
