@@ -197,6 +197,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
+        "default-withdoc:man")
+            # Some systems lack tools for HTML/PDF generation
+            # but may still yield standard man pages
+            CONFIG_OPTS+=("--with-doc=man")
+            ;;
         "default-all-errors")
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
