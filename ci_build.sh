@@ -34,7 +34,9 @@ configure_nut() {
         CONFIGURE_SCRIPT=./configure.bat
     fi
 
-    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}"
+    # Help copy-pasting build setups from CI logs to terminal:
+    local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
+    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
     echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
     $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
     || { RES=$?
