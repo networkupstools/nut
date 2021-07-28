@@ -329,8 +329,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
-            export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
+
+            # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
+            # that include DISTCHECK_FLAGS if provided
+            DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
+            export DISTCHECK_FLAGS
+            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" "$BUILD_TGT"
+
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
@@ -416,6 +421,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
+        # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
+        # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
