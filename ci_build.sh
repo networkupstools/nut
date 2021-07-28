@@ -25,6 +25,7 @@ case "$CI_TRACE" in
 esac
 
 [ -n "$MAKE" ] || MAKE=make
+[ -n "$GGREP" ] || GGREP=grep
 
 configure_nut() {
     local CONFIGURE_SCRIPT=./configure
@@ -40,7 +41,10 @@ configure_nut() {
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
-        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
+        echo "=========== DUMPING config.log :"
+        $GGREP -B 100 -A 1 'Cache variables' config.log 2>/dev/null \
+        || cat config.log || true
+        echo "=========== END OF config.log"
         echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
         exit $RES
        }
