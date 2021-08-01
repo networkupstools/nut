@@ -116,7 +116,7 @@ Note that `PATH` for builds on BSD should include `local`:
     gmake autoconf automake autotools libltdl \
     pkgconf \
     gcc clang \
-    asciidoc dblatex aspell \
+    asciidoc dblatex en-aspell aspell \
     libgd
 
 :; pkg install \
