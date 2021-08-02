@@ -28,7 +28,7 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline['shellcheck'] = [
         //'stageNameFunc': null,
         'single': '( \${MAKE} shellcheck )',
-        'multi': '(cd tests && SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
+        'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
     ]
