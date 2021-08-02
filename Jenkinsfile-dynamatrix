@@ -8,7 +8,6 @@ import org.nut.dynamatrix.*;
     // dynacfgPipeline = Step-dependent setup in sub-maps
     def dynacfgBase = [:]
     def dynacfgPipeline = [:]
-    def lockDsbcClone = new Object()
 
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
@@ -65,13 +64,9 @@ import org.nut.dynamatrix.*;
     //dynacfgPipeline.buildSystem = 'ci_build.sh'
 
     //dynacfgPipeline.slowBuildDefaultBody = { echo "Running default custom build" }
-    dynacfgPipeline.slowBuildDefaultBody_autotools = { delegate -> synchronized(lockDsbcClone) {setDelegate(delegate)}
-        def dsbcClone = null
-        def stageNameClone = null
-        synchronized(lockDsbcClone) {
-            dsbcClone = dsbc.clone()
-            stageNameClone = "${stageName}"
-        }
+    dynacfgPipeline.slowBuildDefaultBody_autotools = { delegate -> setDelegate(delegate)
+        def dsbcClone = dsbc.clone()
+        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (Autotools DEBUG)') {
             echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
@@ -92,13 +87,9 @@ set | sort -n """
         }
     }
 
-    dynacfgPipeline.slowBuildDefaultBody_ci_build = { delegate -> synchronized(lockDsbcClone) {setDelegate(delegate)}
-        def dsbcClone = null
-        def stageNameClone = null
-        synchronized(lockDsbcClone) {
-            dsbcClone = dsbc.clone()
-            stageNameClone = "${stageName}"
-        }
+    dynacfgPipeline.slowBuildDefaultBody_ci_build = { delegate -> setDelegate(delegate)
+        def dsbcClone = dsbc.clone()
+        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (CI_Build DEBUG)') {
             echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
