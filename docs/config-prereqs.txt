@@ -75,7 +75,7 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
     lua5.1-dev
 
 :; apt-get install \
-    bash dash zsh ksh busybox csh tcsh
+    bash dash ksh busybox
 ````
 
 Alternatives that can depend on your system's other packaging choices:
@@ -134,7 +134,7 @@ Note that `PATH` for builds on BSD should include `local`:
     lua51
 
 :; pkg install \
-    bash dash zsh busybox
+    bash dash busybox ksh93
 ````
 
 Recommended:
@@ -200,7 +200,7 @@ Typical tooling would include:
     lua
 
 :; pkg install \
-    dash bash zsh shell/ksh93
+    dash bash shell/ksh93
 
 ### Maybe
 :; pkg install \
