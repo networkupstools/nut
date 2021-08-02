@@ -65,7 +65,10 @@ import org.nut.dynamatrix.*;
 
     //dynacfgPipeline.slowBuildDefaultBody = { echo "Running default custom build" }
     dynacfgPipeline.slowBuildDefaultBody_autotools = { delegate -> setDelegate(delegate)
-        stage('Investigate envvars (DEBUG)') {
+        def dsbcClone = dsbc.clone()
+        def stageNameClone = "${stageName}"
+
+        stage('Investigate envvars (Autotools DEBUG)') {
             echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; echo "\${MATRIX_TAG}"; set | sort -n """
             if (dynacfgPipeline?.configureEnvvars) {
@@ -78,16 +81,17 @@ set | sort -n """
         }
 
         infra.withEnvOptional(dynacfgPipeline.defaultTools) {
-            def dsbcClone = dsbc.clone()
-            def stageNameClone = "${stageName}"
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
-            buildMatrixCellCI(dynacfgPipeline, dsbsClone, stageNameClone)
+            buildMatrixCellCI(dynacfgPipeline, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline, dsbc, stageName)
         }
     }
 
     dynacfgPipeline.slowBuildDefaultBody_ci_build = { delegate -> setDelegate(delegate)
-        stage('Investigate envvars') {
+        def dsbcClone = dsbc.clone()
+        def stageNameClone = "${stageName}"
+
+        stage('Investigate envvars (CI_Build DEBUG)') {
             echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; echo "\${MATRIX_TAG}"; set | sort -n """
             if (dynacfgPipeline?.configureEnvvars) {
@@ -106,9 +110,8 @@ set | sort -n """
             dynacfgPipeline_ciBuild.buildPhases = [:]
             dynacfgPipeline_ciBuild = ci_build.sanityCheckDynacfgPipeline(dynacfgPipeline_ciBuild)
 
-            def stageNameClone = "${stageName}"
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
-            buildMatrixCellCI(dynacfgPipeline_ciBuild, dsbsClone, stageNameClone)
+            buildMatrixCellCI(dynacfgPipeline_ciBuild, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline_ciBuild, dsbc, stageName)
         }
     }
