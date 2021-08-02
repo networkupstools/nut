@@ -77,9 +77,10 @@ doc spellcheck-sortdict:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	for F in `git ls-files || find . -type f` ; do \
+	@RUNBASH=bash; if [ -x /bin/bash ]; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
-	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
+	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
 	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
 	done
