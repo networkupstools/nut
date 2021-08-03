@@ -860,8 +860,8 @@ static item_t masterguard_qx2nut[] = {
 
 	/* server variables */
 	/* type			flags		rw			command	answer	len	leading	value	from	to	dfl			qxflags		precmd				preans	preproc */
-	{ "ups.delay.shutdown",	ST_FLAG_RW,	masterguard_r_offdelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,NULL,	NULL },
-	{ "ups.delay.start",	ST_FLAG_RW,	masterguard_r_ondelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,NULL,	NULL },
+	{ "ups.delay.shutdown",	ST_FLAG_RW,	masterguard_r_offdelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	NULL },
+	{ "ups.delay.start",	ST_FLAG_RW,	masterguard_r_ondelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	NULL },
 
 
 	/* end marker */
