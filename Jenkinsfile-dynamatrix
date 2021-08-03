@@ -59,6 +59,11 @@ import org.nut.dynamatrix.*;
         ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}']
     dynacfgBase['dynamatrixAxesCommonEnv'] = [ ['LANG=C', 'TZ=UTC'] ]
 
+    // Do not override DISTCHECK_CONFIGURE_FLAGS as default implem
+    // does, that breaks custom proto-dir installs and tries to go
+    // into (not writeable) system paths:
+    dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
     //dynacfgPipeline.buildSystem = 'ci_build.sh'
