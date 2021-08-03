@@ -567,6 +567,7 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 				/* copy to s to avoid snprintf()ing value to itself */
 				if (strlen(value) >= sizeof s) goto ill;
 				strcpy(s, value);
+				break;
 			default:
 				upsdebugx(2, "setvar: unknown dfl %c", item->dfl[0]);
 				return -1;
