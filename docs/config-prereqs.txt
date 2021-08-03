@@ -52,7 +52,7 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 :; apt-get install \
     ccache time \
     git python curl \
-    make autoconf automake libltdl-dev \
+    make autoconf automake libltdl-dev libtool-bin libtool \
     pkg-config \
     gcc clang \
     asciidoc dblatex aspell \
@@ -113,7 +113,7 @@ Note that `PATH` for builds on BSD should include `local`:
 ````
 :; pkg install \
     git python curl \
-    gmake autoconf automake autotools libltdl \
+    gmake autoconf automake autotools libltdl libtool \
     pkgconf \
     gcc clang \
     asciidoc dblatex en-aspell aspell \
@@ -178,7 +178,7 @@ Typical tooling would include:
 ````
 :; pkg install \
     git curl wget \
-    gnu-make autoconf automake libltdl \
+    gnu-make autoconf automake libltdl libtool \
     pkg-config \
     gnu-binutils developer/linker \
     asciidoc libxslt aspell text/aspell/en \
