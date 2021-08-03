@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2604 utf-8
+personal_ws-1.1 en 2608 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1238,6 +1238,7 @@ alloc
 allowfrom
 altinterface
 altpidpath
+amd
 anded
 aod
 aon
@@ -1338,6 +1339,7 @@ bigups
 bindir
 binutils
 bitmapped
+bitness
 bitwise
 bn
 boolean
@@ -1632,6 +1634,7 @@ fuji
 fullload
 gamatronic
 gcc
+gcpp
 gd
 gd's
 gdlib
@@ -2048,6 +2051,7 @@ ont
 ontd
 ontimedays
 ontiniedays
+ooce
 openSUSE
 openjdk
 openlog
