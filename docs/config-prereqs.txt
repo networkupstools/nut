@@ -232,3 +232,53 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).
+
+## OmniOS CE (151036)
+
+Being a minimal-footprint system, OmniOS CE provides very few packages out
+of the box. There are additional repositories supported by the project, as
+well as third-party repositories such as SFE. For some dependencies, it may
+happen that you would need to roll and install your own builds.
+
+Note you may need not just the "Core" package publisher, but also the "Extra"
+one. See OmniOS CE web site for setup details.
+
+````
+:; pkg install \
+    developer/build/autoconf developer/build/automake developer/build/libtool \
+    build-essential ccache git developer/pkg-config \
+    asciidoc \
+    libgd
+
+:; pkg install \
+    net-snmp
+````
+
+OmniOS lacks a pre-packaged libusb, however the binary build from contemporary
+OpenIndiana can be used (copy the header files and the library+symlinks for
+all architectures you would need).
+
+You may need to set up `ccache` with the same dir used in other OS recipes;
+assuming your Build Essentials pulled GCC 9, and ccache is under `/opt/ooce`
+namespace, that would be like:
+````
+:; mkdir -p /usr/lib/ccache
+:; cd /usr/lib/ccache
+:; ln -fs ../../../opt/ooce/bin/ccache gcc
+:; ln -fs ../../../opt/ooce/bin/ccache g++
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp
+:; ln -fs ../../../opt/ooce/bin/ccache gcc-9
+:; ln -fs ../../../opt/ooce/bin/ccache g++-9
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
+````
+
+Given that many of the dependencies can get installed into that namespace,
+you may have to specify where `pkg-config` will look for them (note that
+library and binary paths can be architecture bitness-dependent):
+````
+:; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
+````
+
+Note also that the minimal footprint nature of OmniOS CE precludes building
+any large scope easily, so avoid docs and "all drivers" unless you provide
+whatever they need to happen.
