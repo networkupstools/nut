@@ -254,7 +254,7 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/], [~/BUILD_WARNOPT=hard/], [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requireNodelabels: ["NUT_BUILD_CAPS=drivers:all"],
+                requiredNodelabels: ["NUT_BUILD_CAPS=drivers:all"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
@@ -281,7 +281,7 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requireNodelabels: ["NUT_BUILD_CAPS=docs:all"],
+                requiredNodelabels: ["NUT_BUILD_CAPS=docs:all"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
@@ -308,7 +308,7 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/], [~/BUILD_TYPE=default-withdoc:man/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requireNodelabels: ["(NUT_BUILD_CAPS=docs:all||NUT_BUILD_CAPS=docs:man)"],
+                requiredNodelabels: ["(NUT_BUILD_CAPS=docs:all||NUT_BUILD_CAPS=docs:man)"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
