@@ -62,6 +62,9 @@ import org.nut.dynamatrix.*;
     // Do not override DISTCHECK_CONFIGURE_FLAGS as default implem
     // does, that breaks custom proto-dir installs and tries to go
     // into (not writeable) system paths:
+    if (!dynacfgPipeline.containsKey('buildPhases')) {
+        dynacfgPipeline.buildPhases = [:]
+    }
     dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
