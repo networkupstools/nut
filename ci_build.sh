@@ -27,9 +27,38 @@ esac
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
+# CI builds on Jenkins
+if [ -z "$CI_OS_NAME" ]; then
+    # Check for dynaMatrix node labels support and map into a simple
+    # classification styled after (compatible with) that in Travis CI
+    case "$OS_FAMILY-$OS_DISTRO" in
+        *freebsd*)
+            CI_OS_NAME="freebsd" ;;
+        *debian*|*linux*)
+            CI_OS_NAME="debian" ;;
+        *windows*)
+            CI_OS_NAME="windows" ;;
+        *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
+            CI_OS_NAME="osx" ;;
+        *openindiana*)
+            CI_OS_NAME="openindiana" ;;
+        *omnios*)
+            CI_OS_NAME="omnios" ;;
+        *bsd*)
+            CI_OS_NAME="bsd" ;;
+        *illumos*)
+            CI_OS_NAME="illumos" ;;
+        "-") ;;
+        *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
+    esac
+fi
+
+# CI builds on Travis
+[ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
+
 configure_nut() {
     local CONFIGURE_SCRIPT=./configure
-    if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then
+    if [[ "$CI_OS_NAME" == "windows" ]] ; then
         find . -ls
         CONFIGURE_SCRIPT=./configure.bat
     fi
@@ -213,7 +242,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] && [ "${BUILD_LIBGD_CGI-}" != "auto" ] ; then
+            if [[ "$CI_OS_NAME" != "windows" ]] && [[ "$CI_OS_NAME" != "freebsd" ]] && [ "${BUILD_LIBGD_CGI-}" != "auto" ] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
@@ -317,12 +346,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
-    if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
+    if [ "$CI_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
         $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ] ; then
+    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
