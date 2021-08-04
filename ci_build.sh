@@ -28,6 +28,36 @@ esac
 [ -n "$GGREP" ] || GGREP=grep
 
 # CI builds on Jenkins
+[ -z "$NODE_LABELS" ] || \
+for L in $NODE_LABELS ; do
+    case "$L" in
+        "NUT_BUILD_CAPS=cppunit=no")
+            [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no ;;
+        "NUT_BUILD_CAPS=cppunit=no-gcc")
+            [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-gcc ;;
+        "NUT_BUILD_CAPS=cppunit=no-clang")
+            [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-clang ;;
+        "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
+            [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
+        "NUT_BUILD_CAPS=docs:man=no")
+            [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
+        "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
+            [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=yes ;;
+        "NUT_BUILD_CAPS=docs:all=no")
+            [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=no ;;
+        "NUT_BUILD_CAPS=docs:all"|"NUT_BUILD_CAPS=docs:all=yes")
+            [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=yes ;;
+        "NUT_BUILD_CAPS=drivers:all=no")
+            [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=no ;;
+        "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
+            [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
+        "NUT_BUILD_CAPS=cgi=no")
+            [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
+        "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
+            [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=yes ;;
+    esac
+done
+
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
@@ -55,6 +85,16 @@ fi
 
 # CI builds on Travis
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
+
+# Analyze some environmental choices
+if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
+    # No prereq dll and headers on win so far
+    [[ "$CI_OS_NAME" = "windows" ]] && CANBUILD_LIBGD_CGI=no
+
+    # NUT CI farm with Jenkins can build it; Travis could not
+    #[[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+    [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+fi
 
 configure_nut() {
     local CONFIGURE_SCRIPT=./configure
@@ -216,6 +256,17 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    # Some OSes have broken cppunit support, it crashes either build/link
+    # or at run-time. While distros take time to figure out fixes, we can
+    # skip the case...
+    if [ "${CANBUILD_CPPUNIT_TESTS-}" = no ] \
+    || ( [ "${CANBUILD_CPPUNIT_TESTS-}" = "no-gcc" ] && [ "$COMPILER_FAMILY" = "GCC" ] ) \
+    || ( [ "${CANBUILD_CPPUNIT_TESTS-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
+    ; then
+        echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
+        CONFIG_OPTS+=("--with-cppunit=no")
+    fi
+
     DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
@@ -230,19 +281,46 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             DO_DISTCHECK=no
             ;;
         "default-withdoc")
-            CONFIG_OPTS+=("--with-doc=yes")
+            # If the build agent says what it can not do, honor that
+            # TOTHINK: Should this build scenario die with error/unstable instead?
+            if [ "${CANBUILD_DOCS_ALL-}" = no ]; then
+                if [ "${CANBUILD_DOCS_MAN-}" = no ]; then
+                    # TBD: Also html? We'd have man then, and that is needed for distchecks at least
+                    echo "WARNING: Build agent says it can build neither 'all' nor 'man' doc types; will ask for what we can build" >&2
+                    #?#CONFIG_OPTS+=("--with-doc=no")
+                    CONFIG_OPTS+=("--with-doc=auto")
+                else
+                    echo "WARNING: Build agent says it can't build 'all' doc types, but can build 'man' pages; will ask for what we can build" >&2
+                    CONFIG_OPTS+=("--with-doc=auto")
+                fi
+            else
+                if [ "${CANBUILD_DOCS_MAN-}" = no ]; then
+                    # TBD: Also html? We'd have man then, and that is needed for distchecks at least
+                    echo "WARNING: Build agent says it can't build 'man' pages and says nothing about 'all' doc types; will ask for what we can build" >&2
+                    CONFIG_OPTS+=("--with-doc=auto")
+                else
+                    # Not a "no" in any category (yes or unspecified), request everything
+                    CONFIG_OPTS+=("--with-doc=yes")
+                fi
+            fi
             ;;
         "default-withdoc:man")
             # Some systems lack tools for HTML/PDF generation
             # but may still yield standard man pages
-            CONFIG_OPTS+=("--with-doc=man")
+            if [ "${CANBUILD_DOCS_MAN-}" = no ]; then
+                echo "WARNING: Build agent says it can't build man pages; will ask for what we can build" >&2
+                CONFIG_OPTS+=("--with-doc=auto")
+            else
+                CONFIG_OPTS+=("--with-doc=man")
+            fi
             ;;
         "default-all-errors")
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ "$CI_OS_NAME" != "windows" ]] && [[ "$CI_OS_NAME" != "freebsd" ]] && [ "${BUILD_LIBGD_CGI-}" != "auto" ] ; then
+
+            if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
@@ -255,14 +333,18 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                     CONFIG_OPTS+=("--with-cgi=auto")
                 fi
             else
-                # No prereq dll and headers on win so far
                 CONFIG_OPTS+=("--with-cgi=auto")
             fi
             ;;
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
-            CONFIG_OPTS+=("--with-all=yes")
+            if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
+                echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
+                CONFIG_OPTS+=("--with-all=auto")
+            else
+                CONFIG_OPTS+=("--with-all=yes")
+            fi
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
