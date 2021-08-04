@@ -149,8 +149,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         rm -rf ./.inst/
     fi
     mkdir -p tmp/ .inst/
-    BUILD_PREFIX=$PWD/tmp
-    INST_PREFIX=$PWD/.inst
+    BUILD_PREFIX="$PWD/tmp"
+    INST_PREFIX="$PWD/.inst"
 
     echo "PATH='$PATH' before possibly applying CCACHE into the mix"
     ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
