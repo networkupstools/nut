@@ -55,7 +55,7 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
     make autoconf automake libltdl-dev libtool-bin libtool \
     pkg-config \
     gcc clang \
-    asciidoc dblatex aspell \
+    asciidoc source-highlight dblatex aspell \
     libgd-dev
 
 :; apt-get install \
@@ -116,7 +116,7 @@ Note that `PATH` for builds on BSD should include `local`:
     gmake autoconf automake autotools libltdl libtool \
     pkgconf \
     gcc clang \
-    asciidoc dblatex en-aspell aspell \
+    asciidoc source-highlight dblatex en-aspell aspell \
     libgd
 
 :; pkg install \
