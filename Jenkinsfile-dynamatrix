@@ -4,8 +4,8 @@ Kept for reference: build of commit https://github.com/networkupstools/nut/commi
 PR https://github.com/networkupstools/nut/pull/1047
 A milestone of "fightwarn" effort attacking actual warnings in codebase Jun 2021
 
-*/
 def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
+*/
 
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
