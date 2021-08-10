@@ -1,3 +1,12 @@
+/* Typical Keep this build description for custom replayed builds (see below):
+
+Kept for reference: build of commit https://github.com/networkupstools/nut/commit/86a32237c7df45c5aba640746f7afc4de09505a1
+PR https://github.com/networkupstools/nut/pull/1047
+A milestone of "fightwarn" effort attacking actual warnings in codebase Jun 2021
+
+*/
+def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
+
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
 @Library('jenkins-dynamatrix') _
@@ -34,10 +43,14 @@ import org.nut.dynamatrix.*;
     ]
 
 /*
-    // Examples for custom checkouts instead of following a branch/PR:
+    // Examples for custom checkouts instead of following a branch/PR that triggered the build:
     //dynacfgPipeline.bodyStashCmd = { git (url: "https://github.com/networkupstools/nut", branch: "fightwarn") }
+
+    //def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
+    def buildCommit = 'refs/tags/v2.7.4'
+
     dynacfgPipeline.bodyStashCmd = { checkout([
-        $class: 'GitSCM', branches: [[name: "refs/tags/v2.7.4"]],
+        $class: 'GitSCM', branches: [[name: buildCommit]],
         doGenerateSubmoduleConfigurations: false,
         extensions: [[$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false, recursiveSubmodules: false, reference: '', trackingSubmodules: false]],
         submoduleCfg: [],
