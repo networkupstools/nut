@@ -46,6 +46,183 @@ import org.nut.dynamatrix.*;
     // Examples for custom checkouts instead of following a branch/PR that triggered the build:
     //dynacfgPipeline.bodyStashCmd = { git (url: "https://github.com/networkupstools/nut", branch: "fightwarn") }
 
+    // https://github.com/networkupstools/nut/commit/c7333f033b8fd7b3bf8a7e0dcb124bb9bf95798b
+    // start of fightwarn effort ~PR#833
+
+    // https://github.com/networkupstools/nut/commit/26c89948095023f3951a057cad346ee050f71a70
+    // fightwarn effort milestone - 2020-11-09 - PR844
+
+    // https://github.com/networkupstools/nut/commit/7a70c44ee1c1a60daf69642f5b6fb111facfc8cc
+    // fightwarn effort milestone - 2020-11-11 - PR848
+
+    // https://github.com/networkupstools/nut/commit/052cd83d14316afc0396be7336d46dbaa4548c82
+    // fightwarn effort milestone - 2020-11-11 - PR849
+
+    // https://github.com/networkupstools/nut/commit/1a1f1211216275e677f2a41d5f517f80aa50a616
+    // fightwarn effort milestone - 2020-11-11 - PR851
+
+    // https://github.com/networkupstools/nut/commit/dfb8ef2f39688db9996c934b684f65f568729b0c
+    // fightwarn effort milestone - 2020-11-11 - PR856
+
+    // https://github.com/networkupstools/nut/commit/16f2ee7f5e8e5ce3dae2e658b37359536c3c03fc
+    // fightwarn effort milestone - 2020-11-11 - PR864
+
+    // https://github.com/networkupstools/nut/commit/3f0b752bdf9596bb5c58df0238014c64000030c7
+    // fightwarn effort milestone - 2020-11-11 - PR865
+
+    // https://github.com/networkupstools/nut/commit/0b5318090252795c77be79ac10e7d2405c0452ff
+    // fightwarn effort milestone - 2020-11-11 - PR858
+
+    // https://github.com/networkupstools/nut/commit/d70389d55b0669b6db76af1426b5bb2481d422e4
+    // fightwarn effort milestone - 2020-11-11 - PR854
+
+    // https://github.com/networkupstools/nut/commit/3da8c34d38d42a3ef96bf65e71739893e8eb8a3a
+    // fightwarn effort milestone - 2020-11-11 - PR857
+
+    // https://github.com/networkupstools/nut/commit/90f6fe86d1bbb8b5020d4c067def69e3f4cd4a83
+    // fightwarn effort milestone - 2020-11-13 - PR853
+
+    // https://github.com/networkupstools/nut/commit/3e46996058bbeb991928a60e1d3609b8295fc404
+    // fightwarn effort milestone - 2020-11-13 - PR866
+
+    // https://github.com/networkupstools/nut/commit/3f9225d15f53dcafee66a99a2913b54d7b4181e2
+    // fightwarn effort milestone - 2020-11-13 - PR852
+
+    // https://github.com/networkupstools/nut/commit/06569e1ff88c309f94a8f569605073f172391378
+    // fightwarn effort milestone - 2020-11-15 - PR872
+
+    // https://github.com/networkupstools/nut/commit/27e1507976d8b52bc88992f276c4eeda1beaeb79
+    // fightwarn effort milestone - 2020-11-16 - PR876
+
+    // https://github.com/networkupstools/nut/commit/13ed666f49fdd2ede0356b8aafc851c5436f0012
+    // fightwarn effort milestone - 2020-11-18 - PR878
+
+    // https://github.com/networkupstools/nut/commit/709800c121a1d57b1c70c754386f19c34b8158a6
+    // fightwarn effort milestone - 2020-11-20 - PR884
+
+    // https://github.com/networkupstools/nut/commit/4db45f7d04bc3ce0abd9c5f309beddaf28f61bf5
+    // fightwarn effort milestone - 2020-11-21 - PR879
+
+    // https://github.com/networkupstools/nut/commit/f974e45686afa6e6ff148dd5db2639d9a60b3a51
+    // fightwarn effort milestone - 2020-11-22 - PR897
+
+    // https://github.com/networkupstools/nut/commit/4ba8a7994c0cbffb07f83e3005d6665844874412
+    // fightwarn effort milestone - 2020-11-23 - PR898
+
+    // https://github.com/networkupstools/nut/commit/4f328b3fabbce4b04acb5e6d6cc54822768430d3
+    // fightwarn effort milestone - 2020-11-25 - PR901
+
+    // https://github.com/networkupstools/nut/commit/51f519271e6c863899d52a83097e506c1c8b7a7c
+    // fightwarn effort milestone - 2020-11-25 - PR885
+
+    // https://github.com/networkupstools/nut/commit/5ec8b182adb6a3f443bb0afcf03fb87e00cf40ee
+    // fightwarn effort milestone - 2020-11-25 - PR880
+
+    // https://github.com/networkupstools/nut/commit/1d9d22aaf772d9dd8d0fe065576868c9d53ebddf
+    // fightwarn effort milestone - 2020-11-26 - PR903
+
+    // https://github.com/networkupstools/nut/commit/c655977f6442814d6757ad2b85ca5ecee8ee6d72
+    // fightwarn effort milestone - 2020-11-26 - PR906
+
+    // https://github.com/networkupstools/nut/commit/de65c03ac1c342d7bdc6611e95b3fbd494675ff2
+    // fightwarn effort milestone - 2020-11-27 - PR907
+
+    // https://github.com/networkupstools/nut/commit/28012f0b48fc42e90c62a35c2a8b118904fef09e
+    // fightwarn effort milestone - 2020-11-27 - PR883
+
+    // https://github.com/networkupstools/nut/commit/48ca688ec2093cfa9801fef5904ee878efb7a5ae
+    // fightwarn effort milestone - 2020-11-27 - PR908
+
+    // https://github.com/networkupstools/nut/commit/c4cae1667136247cffb9974d9ece9d5831654d4d
+    // fightwarn effort milestone - 2020-11-27 - PR887
+
+    // https://github.com/networkupstools/nut/commit/163b0e1708b4f0c28432ca213d8f0bb11e94825c
+    // fightwarn effort milestone - 2020-11-27 - PR914
+
+    // https://github.com/networkupstools/nut/commit/d87c2fd7d5e18496529f11c6861676d6ab9779f6
+    // fightwarn effort milestone - 2020-11-28 - PR905
+
+    // https://github.com/networkupstools/nut/commit/d659c6f98db80c2da97b657d008c5805149c8ef8
+    // fightwarn effort milestone - 2020-11-29 - PR919
+
+    // https://github.com/networkupstools/nut/commit/504d2c01f78b84b7e6ece124f0cd4f430165049f
+    // mid-fightwarn effort milestone (PR not directly for fightwarn, but was a green Travis build) - 2020-12-13 - PR913
+
+    // https://github.com/networkupstools/nut/commit/2b4a105038723da0f93859029b665f44e6dc860b
+    // fightwarn effort milestone - 2020-12-25 - PR943
+
+    // https://github.com/networkupstools/nut/commit/09a7b64d1a75874d2ec903c0e4ce42ee4fc8ae60
+    // fightwarn effort milestone - 2021-01-06 - PR945
+
+    // https://github.com/networkupstools/nut/commit/b263e4766e395ad27ba45da54685a83aef17acb3
+    // fightwarn effort milestone - 2021-01-08 - PR956
+
+    // https://github.com/networkupstools/nut/commit/9defa7a9cc97491b4d595fe1233996b948ab730d
+    // fightwarn effort milestone - 2021-01-28 - PR961
+
+    // https://github.com/networkupstools/nut/commit/8ba451ec8b6703e5f957f09fe1e2b9e56a720dfa
+    // mid-fightwarn effort milestone - 2021-03-02 - PR733
+
+    // https://github.com/networkupstools/nut/commit/fbe7806e83f2838da21a0c7d56649777780881c1
+    // fightwarn effort milestone - 2021-03-14 - PR986
+
+    // https://github.com/networkupstools/nut/commit/b224266aeba57f46bd49807ad36d112b3e3d912b
+    // mid-fightwarn effort milestone - 2021-03-24 - PR996
+
+    // https://github.com/networkupstools/nut/commit/03c3bbe8df9a2caf3c09c120ae7045d35af99b76
+    // mid-fightwarn effort milestone (docs updates) - 2021-03-30 - PR1002
+
+    // https://github.com/networkupstools/nut/commit/4ac86833df410dfa40102cfc8f823b5f0b853375
+    // fightwarn effort milestone - 2021-04-08 - PR1003
+
+    // https://github.com/networkupstools/nut/commit/88773359d2958585471fb6d5ebe8af633ac4936e
+    // mid-fightwarn effort milestone (forget-slavery patch and docs updates) - 2021-04-10 - PR1011
+
+    // https://github.com/networkupstools/nut/commit/169b637eb95de1a5f71aacdb90c26bb43740bbb3
+    // mid-fightwarn effort milestone (drv added)- 2021-04-20 - PR638
+
+    // https://github.com/networkupstools/nut/commit/c9a21090d8b3ccb966b3212ae47c100fad3333d7
+    // fightwarn effort milestone - 2021-04-20 - PR997
+
+    // https://github.com/networkupstools/nut/commit/214626825a4381a59bbeeacfff97688c0a1ef677
+    // mid-fightwarn effort milestone (drv added) - 2021-04-20 - PR963
+
+    // https://github.com/networkupstools/nut/commit/7843fb478808189aabf97af368a7f0465328e3ca
+    // fightwarn effort milestone - 2021-04-23 - PR1025
+
+    // https://github.com/networkupstools/nut/commit/82a984b8cd72687a0b775fc1832fe7b6299f3301
+    // fightwarn effort milestone - 2021-04-23 - PR1026
+
+    // https://github.com/networkupstools/nut/commit/1e4b5ce6e24118e8bcd96ff7cbbb2c28f63f8f5b
+    // mid-fightwarn effort milestone (drv added) - 2021-05-08 - PR807
+
+    // https://github.com/networkupstools/nut/commit/294b833ff342ede64aa9ea5c3b6c0059c3af9522
+    // mid-fightwarn effort milestone (drv added) - 2021-05-24 - PR994
+
+    // https://github.com/networkupstools/nut/commit/a0d8aa0bc9c5cc37f04b0cac25525e3687e4cec7
+    // mid-fightwarn effort milestone (usb endianness) - 2021-05-24 - PR1024
+
+    // https://github.com/networkupstools/nut/commit/9ea2aa279ed9b68994c1675701eff21e6fdde34f
+    // mid-fightwarn effort milestone (usb) - 2021-05-24 - PR974
+
+    // https://github.com/networkupstools/nut/commit/ea48a460ca776a30899080c63fe5d4472c7759d3
+    // mid-fightwarn effort milestone (C++ tcp client) - 2021-05-24 - PR1034
+
+    // https://github.com/networkupstools/nut/commit/c47c1ec2bfe2181b665c74d6b66af55a44db8da0
+    // mid-fightwarn effort milestone (drv) - 2021-05-24 - PR793
+
+    // https://github.com/networkupstools/nut/commit/54729ba8a041f618a27dd342c61d697ba44425ff
+    // mid-fightwarn effort milestone (drv) - 2021-05-24 - PR538
+
+    // https://github.com/networkupstools/nut/commit/c06b98cda2e595acb667fec2d364fb34be930bfd
+    // mid-fightwarn effort milestone (drv) - 2021-05-24 - PR975
+
+    // https://github.com/networkupstools/nut/commit/55a0747f441d35460ec5b9ea06b038c2068cb7f1
+    // fightwarn effort milestone - 2021-06-30 - PR1046
+
+    // https://github.com/networkupstools/nut/commit/86a32237c7df45c5aba640746f7afc4de09505a1
+    // fightwarn effort milestone - 2021-06-30 - PR1047
+
     //def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
     def buildCommit = 'refs/tags/v2.7.4'
 
