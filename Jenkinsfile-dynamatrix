@@ -72,6 +72,8 @@ import org.nut.dynamatrix.*;
         ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}']
     dynacfgBase['dynamatrixAxesCommonEnv'] = [ ['LANG=C', 'TZ=UTC'] ]
 
+    dynacfgPipeline.stashnameSrc = 'nut-ci-src'
+
     // Do not override DISTCHECK_CONFIGURE_FLAGS as default implem
     // does, that breaks custom proto-dir installs and tries to go
     // into (not writeable) system paths:
