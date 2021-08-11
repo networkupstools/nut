@@ -150,6 +150,8 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
+                requiredNodelabels: [],
+                excludedNodelabels: [],
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
@@ -179,6 +181,8 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
+                requiredNodelabels: [],
+                excludedNodelabels: [],
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
@@ -211,6 +215,9 @@ set | sort -n """
          //branchRegexTarget: ~/^(master|main|stable)$/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
@@ -237,7 +244,10 @@ set | sort -n """
          //branchRegexTarget: ~/^(master|main|stable)$/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
-                commonLabelExpr: "nut-builder:alldrv",
+                //commonLabelExpr: "nut-builder:alldrv",
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
@@ -263,7 +273,10 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
-                commonLabelExpr: "nut-builder:alldrv",
+                //commonLabelExpr: "nut-builder:alldrv",
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
@@ -277,7 +290,6 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/], [~/BUILD_WARNOPT=hard/], [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requiredNodelabels: ["NUT_BUILD_CAPS=drivers:all"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
@@ -292,6 +304,9 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
+                requiredNodelabels: ["NUT_BUILD_CAPS=docs:all"],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
@@ -304,7 +319,6 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requiredNodelabels: ["NUT_BUILD_CAPS=docs:all"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
@@ -319,6 +333,9 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
+                requiredNodelabels: ["(NUT_BUILD_CAPS=docs:all||NUT_BUILD_CAPS=docs:man)"],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
@@ -331,7 +348,6 @@ set | sort -n """
                 allowedFailure: [ [~/OS_FAMILY=windows/], [~/BUILD_TYPE=default-withdoc:man/] ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                requiredNodelabels: ["(NUT_BUILD_CAPS=docs:all||NUT_BUILD_CAPS=docs:man)"],
                 excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/], [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/] ]
                 ], body)
             }, // getParStages
@@ -344,6 +360,9 @@ set | sort -n """
          //branchRegexTarget: ~/^(master|main|stable)$/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
@@ -367,6 +386,9 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'], ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
@@ -396,6 +418,9 @@ set | sort -n """
          //branchRegexTarget: ~/^(master|main|stable)$/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
@@ -422,6 +447,9 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'], 'ansi' ],
@@ -449,6 +477,9 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
