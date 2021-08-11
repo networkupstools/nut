@@ -291,7 +291,7 @@ set | sort -n """
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
-                commonLabelExpr: infra.labelDocumentationWorker(),
+                //commonLabelExpr: infra.labelDocumentationWorker(),
                 dynamatrixAxesVirtualLabelsMap: [
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
@@ -318,7 +318,7 @@ set | sort -n """
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
-                commonLabelExpr: infra.labelDocumentationWorker(),
+                //commonLabelExpr: infra.labelDocumentationWorker(),
                 dynamatrixAxesVirtualLabelsMap: [
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
