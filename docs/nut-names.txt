@@ -417,8 +417,9 @@ battery: Any battery details
 | battery.date                 | Battery change date (opaque string) | 11/14/00
 | battery.mfr.date             | Battery manufacturing date
                                  (opaque string)                     | 2005/04/02
-| battery.packs                | Number of battery packs             | 001
-| battery.packs.bad            | Number of bad battery packs         | 000
+| battery.packs                | Number of internal battery packs    | 1
+| battery.packs.bad            | Number of bad battery packs         | 0
+| battery.packs.external       | Number of external battery packs    | 1
 | battery.type                 | Battery chemistry (opaque
                                  string)                             | PbAc
 | battery.protection           | Prevent deep discharge of
