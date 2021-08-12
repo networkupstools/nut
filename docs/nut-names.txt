@@ -414,7 +414,10 @@ battery: Any battery details
 | battery.runtime.restart      | Minimum battery runtime for UPS
                                  restart after power-off (seconds)   | 120
 | battery.alarm.threshold      | Battery alarm threshold             | 0 (immediate)
-| battery.date                 | Battery change date (opaque string) | 11/14/00
+| battery.date                 | Battery installation or last change
+                                 date (opaque string)                | 11/14/20
+| battery.date.maintenance     | Battery next change or maintenance
+                                 date (opaque string)                | 11/13/24
 | battery.mfr.date             | Battery manufacturing date
                                  (opaque string)                     | 2005/04/02
 | battery.packs                | Number of internal battery packs    | 1
