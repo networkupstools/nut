@@ -48,10 +48,10 @@ distcleancheck:
 # Note: these are optionally available (as determined during configure runs)
 spellcheck spellcheck-interactive:
 	@RES=0; \
-	(cd $(srcdir)/docs && $(MAKE) $@) || RES=$$? ; \
-	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
-	(cd $(srcdir)/conf && $(MAKE) $@) || RES=$$? ; \
-	(cd $(srcdir)/data && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/docs && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/conf && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/data && $(MAKE) $@) || RES=$$? ; \
 	exit $$RES
 
 doc spellcheck-sortdict:

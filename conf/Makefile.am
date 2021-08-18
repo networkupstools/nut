@@ -20,4 +20,4 @@ SPELLCHECK_SRC = $(dist_sysconf_DATA) \
  upssched.conf.sample.in upsmon.conf.sample.in
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_DIR="$(srcdir)" $@
