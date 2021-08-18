@@ -52,27 +52,80 @@ and commands with an object-oriented API in C++ and C.
 For more information, refer to the linkman:libnutclient[3] manual page.
 
   #include <iostream>
+  #include <unistd.h>
+  #include <stdlib.h>
+
   #include <nutclient.h>
+
   using namespace nut;
   using namespace std;
-  
-  int main(int argc, char** argv)
+
+  // argv[1] is the mandatory NUT device name (@localhost), used to list variables from
+  // argv[2] is an optional command. When provided, it will be executed and possibly with status tracking enabled
+  int main(int argc, char **argv)
   {
+    Client *client;
     try
     {
       // Connection
-      Client* client = new TcpClient("localhost", 3493);
-      Device mydev = client->getDevice("myups");
-      cout << mydev.getDescription() << endl;
-      Variable var = mydev.getVariable("device.model");
-      cout << var.getValue()[0] << endl;
+      client = new TcpClient("localhost", 3493);
+
+      if (argc >= 2)
+      {
+        // Reading data from device
+        Device mydev = client->getDevice(argv[1]);
+        cout << "Description: " << mydev.getDescription() << endl;
+        Variable var = mydev.getVariable("device.model");
+        cout << "Model: " <<  var.getValue()[0] << endl;
+
+        if (argc >= 3)
+        {
+          // Authenticate to NUT server
+          const char *user = getenv("NUT_USER");
+          const char *password = getenv("NUT_PASSWD");
+          client->authenticate(user ? user : "", password ? password : "");
+
+          // Enable command tracking, if available
+          if (client->hasFeature(Client::TRACKING))
+          {
+            cout << "Server can do command tracking" << std::endl;
+            client->setFeature(Client::TRACKING, true);
+          }
+          else
+          {
+            std::cout << "Server can't do command tracking" << std::endl;
+          }
+
+          // Perform an asynchronous command
+          TrackingID id = mydev.executeCommand(argv[2]);
+          TrackingResult result;
+          do
+          {
+            sleep(1);
+            result = client->getTrackingResult(id);
+          }
+          while (result == PENDING);
+
+          // Display result of command
+          const char *output = "<UNRECOGNIZED>";
+          switch (result)
+          {
+            case SUCCESS: output = "SUCCESS"; break;
+            case FAILURE: output = "FAILURE"; break;
+            case UNKNOWN: output = "UNKNOWN"; break;
+          }
+          cout << "Command sent, result=" << output << endl;
+        }
+      }
     }
-    catch(NutException& ex)
+    catch (NutException &ex)
     {
       cerr << "Unexpected problem : " << ex.str() << endl;
     }
+    delete client;
     return 0;
   }
+
 
 Configuration helpers
 ~~~~~~~~~~~~~~~~~~~~~

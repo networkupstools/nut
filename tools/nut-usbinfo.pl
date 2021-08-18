@@ -28,20 +28,31 @@
 use File::Find;
 use strict;
 
+
+my $TOP_SRCDIR = "..";
+if (defined $ENV{'TOP_SRCDIR'}) {
+    $TOP_SRCDIR = $ENV{'TOP_SRCDIR'};
+}
+
+my $TOP_BUILDDIR = "..";
+if (defined $ENV{'TOP_BUILDDIR'}) {
+    $TOP_BUILDDIR = $ENV{'TOP_BUILDDIR'};
+}
+
 # path to scan for USB_DEVICE pattern
-my $scanPath="../drivers";
+my $scanPath="$TOP_SRCDIR/drivers";
 
 # Hotplug output file
-my $outputHotplug="../scripts/hotplug/libhid.usermap";
+my $outputHotplug="$TOP_BUILDDIR/scripts/hotplug/libhid.usermap";
 
 # udev output file
-my $outputUdev="../scripts/udev/nut-usbups.rules.in";
+my $outputUdev="$TOP_BUILDDIR/scripts/udev/nut-usbups.rules.in";
 
 # BSD devd output file
-my $output_devd="../scripts/devd/nut-usb.conf.in";
+my $output_devd="$TOP_BUILDDIR/scripts/devd/nut-usb.conf.in";
 
 # UPower output file
-my $outputUPower="../scripts/upower/95-upower-hid.rules";
+my $outputUPower="$TOP_BUILDDIR/scripts/upower/95-upower-hid.rules";
 
 # tmp output, to allow generating the ENV{UPOWER_VENDOR} header list
 my $tmpOutputUPower;
@@ -49,7 +60,7 @@ my $tmpOutputUPower;
 my $upowerMfrHeaderDone = 0;
 
 # NUT device scanner - C header
-my $outputDevScanner = "./nut-scanner/nutscan-usb.h";
+my $outputDevScanner = "$TOP_BUILDDIR/tools/nut-scanner/nutscan-usb.h";
 
 my $GPL_header = "\
  *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette\@free.fr>\

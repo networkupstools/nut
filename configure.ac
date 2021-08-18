@@ -27,7 +27,23 @@ dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
-dnl PKG_PROG_PKG_CONFIG
+dnl Some systems have older autotools without direct macro support for PKG_CONF*
+have_PKG_CONFIG=yes
+AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
+AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
+    [have_PKG_CONFIG=no],
+    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
+     PKG_PROG_PKG_CONFIG
+     dummy_RES=$?
+     AS_IF([test $dummy_RES = 0],
+        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
+            [], [have_PKG_CONFIG=no])
+        ], [have_PKG_CONFIG=no])]
+)
+AS_IF([test x"$have_PKG_CONFIG" = xno],
+    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+
 
 dnl Various version related processing
 dnl ----------------------------------
@@ -132,8 +148,8 @@ dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
     LN_S_R="ln"
-    DIR1="$(mktemp -d "dir1.XXXXX")" && \
-    DIR2="$(mktemp -d "dir2.XXXXX")" && \
+    DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
+    DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
@@ -311,16 +327,18 @@ dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
 dnl HPUX, since v11, needs an explicit activation of pthreads
 case ${target_os} in
    solaris2.1* )
-      echo Checking for Solaris 10 / 11 specific configuration for usb drivers
+      AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
       AC_SEARCH_LIBS(nanosleep, rt)
       LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
       dnl and need to call libusb close upon reconnection
       AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
       SUN_LIBUSB=1
+      AC_MSG_RESULT([${LIBUSB_LIBS}])
       ;;
     hpux11*)
       CFLAGS="${CFLAGS} -lpthread"
+      ;;
 esac
 
 
@@ -814,12 +832,12 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+dnl Test that groff files exist (building from distributed tarball, not git repo)
 					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
@@ -1180,7 +1198,90 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-PKG_PROG_PKG_CONFIG
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		solarissmf="no"
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
+AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
+solarispkg_svr4="auto"
+AC_ARG_WITH([solaris-pkg-svr4],
+	AS_HELP_STRING([--with-solaris-pkg-svr4=(yes|auto|no)], [Enable construction of Solaris SVR4 packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_svr4="auto"
+		;;
+	yes|no)
+		solarispkg_svr4="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-svr4=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_svr4" = xauto ; then
+	if test -x /usr/bin/pkgtrans && test -x /usr/bin/pkgmk && test -x /usr/bin/pkgproto ; then
+		solarispkg_svr4="yes"
+	else
+		solarispkg_svr4="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_svr4}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
+
+AC_MSG_CHECKING(whether to make Solaris IPS packages)
+solarispkg_ips="auto"
+AC_ARG_WITH([solaris-pkg-ips],
+	AS_HELP_STRING([--with-solaris-pkg-ips=(yes|auto|no)], [Enable construction of Solaris IPS packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_ips="auto"
+		;;
+	yes|no)
+		solarispkg_ips="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-ips=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_ips" = xauto ; then
+	if test -x /usr/bin/pkg && test -x /usr/bin/pkgmogrify && test -x /usr/bin/pkgdepend ; then
+		solarispkg_ips="yes"
+	else
+		solarispkg_ips="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_ips}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
@@ -1229,47 +1330,57 @@ dnl # Could use `AX_CXX_COMPILE_STDCXX_11([noext], [optional])` if it were
 dnl # available everywhere. Or AX_CHECK_COMPILE_FLAG if it was ubiquitous:
 dnl ###AX_CHECK_COMPILE_FLAG([-std=c++11],
 dnl ###    [CXXFLAGS="$CXXFLAGS -std=c++11"
-dnl ###     HAVE_CXX11=1],
-dnl ###    [HAVE_CXX11=0])
+dnl ###     have_cxx11=yes],
+dnl ###    [have_cxx11=no])
 
 AC_MSG_CHECKING(for C++11 support in current compiler)
+have_cxx11=unknown
 my_CXXFLAGS="$CXXFLAGS"
 AC_LANG_PUSH([C++])
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+CPLUSPLUS_DECL='
 #include <stdio.h>
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
 #endif
-]], [[printf("%ld\n", __cplusplus);]])
-],
+'
+CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
-     HAVE_CXX11=1],
+     have_cxx11=yes],
     [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#if __cplusplus < 201103L
-  #error This library needs at least a C++11 compliant compiler
-#endif
-        ]], [[printf("%ld\n", __cplusplus);]])
-        ],
-        [AC_MSG_RESULT([yes, GCC-style])
-         HAVE_CXX11=1],
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+         have_cxx11=yes],
+        [CXXFLAGS="$CXXFLAGS -std=c++0x"
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+             have_cxx11=yes],
             [AC_MSG_RESULT([no])
              CXXFLAGS="$my_CXXFLAGS"
-             HAVE_CXX11=0])])
+             have_cxx11=no])])])
+AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
+unset CPLUSPLUS_MAIN
+unset CPLUSPLUS_DECL
 
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
-AS_IF([test "${HAVE_CXX11}" = 1],
-    [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
-     if test "${have_cppunit}" != "yes" ; then
-        AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
-     else
-     AS_IF([test -n "$CXX"],[AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
-        [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
-     fi])
+AS_IF([test x"$have_PKG_CONFIG" = xyes],
+    [AS_IF([test x"${have_cxx11}" = xyes],
+        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+         AS_IF([test "${have_cppunit}" != "yes"],
+            [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
+             have_cppunit=no],
+            [AS_IF([test -n "$CXX"],
+                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            ])
+        ])
+    ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
+        have_cppunit=no]
+)
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
@@ -1300,6 +1411,16 @@ else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
+
+AC_PATH_PROGS([AUGPARSE], [augparse], [none])
+AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
+AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
+if test "x${AUGPARSE}" != xnone ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
@@ -1451,7 +1572,9 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-dnl expand ${sysconfdir} and write it out
+dnl expand ${sysconfdir} and write it out - note that most packages
+dnl override it to be /etc/nut, /etc/ups or similar, while the
+dnl autotools default would be $prefix/etc
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -1463,6 +1586,7 @@ conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 DATADIR=${conftemp}
+NUT_DATADIR=${conftemp}
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
@@ -1485,6 +1609,13 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
+
+dnl same for libexecdir
+conftemp="${libexecdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+LIBEXECDIR=${conftemp}
+AC_DEFINE_UNQUOTED(LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
 
 dnl checks related to --with-snmp enabled on command-line
@@ -1577,6 +1708,8 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
+AC_SUBST(NUT_DATADIR, [`eval echo "${DATADIR}"`])
+AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
@@ -1630,19 +1763,35 @@ AC_OUTPUT([
  scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/Aix/nut.init
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
  scripts/python/Makefile
+ scripts/upsdrvsvcctl/Makefile
+ scripts/upsdrvsvcctl/nut-driver-enumerator.sh
+ scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
- scripts/systemd/nut-driver.service
+ scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
+ scripts/systemd/nut-driver-enumerator.service
+ scripts/systemd/nut-driver-enumerator.path
  scripts/systemd/nutshutdown
+ scripts/Solaris/nut-driver-enumerator.xml
+ scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-monitor.xml
+ scripts/Solaris/nut-server.xml
+ scripts/Solaris/nut.xml
+ scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-monitor
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
+ scripts/Solaris/preinstall
  scripts/Solaris/postinstall
  scripts/Solaris/preremove
- scripts/Solaris/nut 
+ scripts/Solaris/postremove
+ scripts/Solaris/preproto.pl
+ scripts/Solaris/nut
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

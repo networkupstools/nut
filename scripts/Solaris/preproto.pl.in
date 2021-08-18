@@ -8,6 +8,8 @@ $preinstall = "preinstall";
 $postinstall = "postinstall";
 $preremove = "preremove";
 $postremove = "postremove";
+$nutuser = "@RUN_AS_USER@";
+$nutgroup = "@RUN_AS_GROUP@";
 
 open (PREPROTO,"< $temp") || die "Unable to read prototype information ($!)\n";
 open (PROTO,"> $prototype") || die "Unable to write file prototype ($!)\n";
@@ -26,12 +28,12 @@ while (<PREPROTO>) {
 	} elsif ($thisline =~ "^[fd] ") {
 	  # Change the ownership for files and directories
 	  ($dir, $none, $file, $mode, $user, $group) = split / /,$thisline;
-	  print PROTO "$dir $none $file=$file $mode nut nut\n";
+	  print PROTO "$dir $none $file=$file $mode $nutuser $nutgroup\n";
 	} else {
 	  # Symlinks and other stuff should be printed as well ofcourse
 	  print PROTO "$thisline\n";
 	}
 }
-print PROTO "f $none nut $mode root nut\n";
+#print PROTO "f $none nut $mode root $nutgroup\n";
 close PROTO;
 close PREPROTO;

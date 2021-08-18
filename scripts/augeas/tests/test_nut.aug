@@ -27,6 +27,7 @@ test NutUpsConf.ups_lns get ups_conf =
 
 let upsd_conf = "
 MAXAGE 30
+TRACKINGDELAY 600
 LISTEN 0.0.0.0 3493
 MAXCONN 1024
 "
@@ -34,6 +35,7 @@ MAXCONN 1024
 test NutUpsdConf.upsd_lns get upsd_conf = 
 	{ }
 	{ "MAXAGE"      = "30" }
+	{ "TRACKINGDELAY" = "600" }
 	{ "LISTEN"
 		{ "interface" = "0.0.0.0" }
 		{ "port"     = "3493"     } }

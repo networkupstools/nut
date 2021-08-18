@@ -137,40 +137,6 @@ static double interval(void);
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
 
-/* ---------------------------------------------------------------------- */
-/* data for processing boolean values from UPS */
-
-#define	STATUS(x)	((unsigned)1<<x)
-
-typedef enum {
-	ONLINE = 0,	/* on line */
-	DISCHRG,	/* discharging */
-	CHRG,		/* charging */
-	LOWBATT,	/* low battery */
-	OVERLOAD,	/* overload */
-	REPLACEBATT,	/* replace battery */
-	SHUTDOWNIMM,	/* shutdown imminent */
-	TRIM,		/* SmartTrim */
-	BOOST,		/* SmartBoost */
-	BYPASSAUTO,	/* on automatic bypass */
-	BYPASSMAN,	/* on manual/service bypass */
-	OFF,		/* ups is off */
-	CAL,		/* calibration */
-	OVERHEAT,	/* overheat; Belkin, TrippLite */
-	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
-	DEPLETED,	/* battery depleted; Belkin */
-	TIMELIMITEXP,	/* time limit expired; APC */
-	FULLYCHARGED,	/* battery full; CyberPower */
-	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
-	FANFAIL,	/* fan failure; MGE */
-	NOBATTERY,	/* battery missing; MGE */
-	BATTVOLTLO,	/* battery voltage too low; MGE */
-	BATTVOLTHI,	/* battery voltage too high; MGE */
-	CHARGERFAIL,	/* battery charger failure; MGE */
-	VRANGE,		/* voltage out of range */
-	FRANGE		/* frequency out of range */
-} status_bit_t;
-
 
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
@@ -917,18 +883,24 @@ void upsdrv_initups(void)
 {
 	int ret;
 	char *val;
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
+
 #ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
 	 */
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (SHUT)...");
 
 	subdriver_matcher = device_path;
 #else
 	char *regex_array[6];
 
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
 	subdriver_matcher = &subdriver_matcher_struct;
 
@@ -1432,6 +1404,12 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
+}
+
+/* Return the current value of ups_status */
+int ups_status_get(void)
+{
+	return ups_status;
 }
 
 /* Convert the local status information to NUT format and set NUT

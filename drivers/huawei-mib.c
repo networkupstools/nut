@@ -122,7 +122,6 @@ static snmp_info_t huawei_mib[] = {
 	 *	dfl: default value
 	 *	flags: snmp-ups internal flags (FIXME: ...)
 	 *	oid2info: lookup table between OID and NUT values
-	 *	setvar: variable to set for SU_FLAG_SETINT
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },

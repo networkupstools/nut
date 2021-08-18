@@ -201,6 +201,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
+	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -356,6 +357,12 @@ static int cmd_dump_conn(conn_t *conn)
 	return 1;
 }
 
+
+static void send_tracking(conn_t *conn, const char *id, int value)
+{
+	send_to_one(conn, "TRACKING %s %i\n", id, value);
+}
+
 static int sock_arg(conn_t *conn, int numarg, char **arg)
 {
 	if (numarg < 1) {
@@ -394,20 +401,40 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* INSTCMD <cmdname> [<value>]*/
+	/* INSTCMD <cmdname> [<cmdparam>] [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "INSTCMD")) {
+		int ret;
+		char *cmdname = arg[1];
+		char *cmdparam = NULL;
+		char *cmdid = NULL;
+
+		/* Check if <cmdparam> and TRACKING were provided */
+		if (numarg == 3) {
+			cmdparam = arg[2];
+		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
+			cmdid = arg[3];
+		} else if (numarg == 5 && !strcasecmp(arg[3], "TRACKING")) {
+			cmdparam = arg[2];
+			cmdid = arg[4];
+		} else if (numarg != 2) {
+			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			return 0;
+		}
+
+		if (cmdid)
+			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
-			if (numarg > 2) {
-				upsh.instcmd(arg[1], arg[2]);
-				return 1;
-			}
+			ret = upsh.instcmd(cmdname, cmdparam);
 
-			upsh.instcmd(arg[1], NULL);
+			/* send back execution result */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
-
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -416,12 +443,33 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* SET <var> <value> */
+	/* SET <var> <value> [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "SET")) {
+		int ret;
+		char *setid = NULL;
+
+		/* Check if TRACKING was provided */
+		if (numarg == 5) {
+			if (!strcasecmp(arg[3], "TRACKING")) {
+				setid = arg[4];
+			}
+			else {
+				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+					arg[3], arg[4]);
+				return 0;
+			}
+			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
+		}
 
 		/* try the new handler first if present */
 		if (upsh.setvar) {
-			upsh.setvar(arg[1], arg[2]);
+			ret = upsh.setvar(arg[1], arg[2]);
+
+			/* send back execution result */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
 
@@ -655,7 +703,7 @@ int dstate_addrange(const char *var, const int min, const int max)
 	ret = state_addrange(dtree_root, var, min, max);
 
 	if (ret == 1) {
-		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+		send_to_all("ADDRANGE %s %i %i\n", var, min, max);
 		/* Also add the "NUMBER" flag for ranges */
 		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
@@ -817,7 +865,7 @@ int dstate_delrange(const char *var, const int min, const int max)
 
 	/* update listeners */
 	if (ret == 1) {
-		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
+		send_to_all("DELRANGE %s %i %i\n", var, min, max);
 	}
 
 	return ret;

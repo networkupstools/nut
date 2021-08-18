@@ -7,6 +7,6 @@ Comment[it]=Client grafico per NUT (Network UPS Tools)
 Categories=Application;Network;
 Encoding=UTF-8
 Exec=NUT-Monitor
-Icon=nut-monitor.png
+Icon=nut-monitor
 Terminal=false
 Type=Application

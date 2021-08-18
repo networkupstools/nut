@@ -1,4 +1,15 @@
 /nut
 /pkginfo
+/preinstall
 /postinstall
 /preremove
+/postremove
+/preproto.pl
+/svc-nut-server
+/svc-nut-monitor
+/nut-driver.xml
+/nut-driver-enumerator.xml
+/nut-monitor.xml
+/nut-server.xml
+/nut.xml
+/NUT*.local.gz

@@ -484,7 +484,7 @@ void upsdrv_initups ()
       fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
       break;
     default:
-      fatalx(EXIT_FAILURE, "Uknown model %s in ups_ident()", temp);
+      fatalx(EXIT_FAILURE, "Unknown model %s in ups_ident()", temp);
   }
 
   fc.valid = 1;

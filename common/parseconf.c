@@ -83,6 +83,7 @@
 #include <stdlib.h>
 #include <string.h>	
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "parseconf.h"
 
@@ -442,6 +443,9 @@ int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 			fn, strerror(errno));
 		return 0;
 	}
+
+	/* prevent fd leaking to child processes */
+	fcntl(fileno(ctx->f), F_SETFD, FD_CLOEXEC);
 
 	return 1;	/* OK */
 }

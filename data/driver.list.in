@@ -448,6 +448,8 @@
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
+"HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
 "IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
@@ -978,6 +980,9 @@
 "Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
+
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 

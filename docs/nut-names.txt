@@ -354,6 +354,8 @@ battery: Any battery details
 |===============================================================================
 | Name                         | Description                         | Example value
 | battery.charge               | Battery charge (percent)            | 100.0
+| battery.charge.approx        | Rough approximation of battery
+                                 charge (opaque, percent)            | <85
 | battery.charge.low           | Remaining battery level when
                                  UPS switches to LB (percent)        | 20
 | battery.charge.restart       | Minimum battery level for
@@ -625,9 +627,9 @@ Instant commands
 | Name                     | Description
 | load.off                 | Turn off the load immediately
 | load.on                  | Turn on the load immediately
-| load.off.delay           | Turn off the load possibly after a delay 
-| load.on.delay            | Turn on the load possibly after a delay 
-| shutdown.return          | Turn off the load possibly after a delay 
+| load.off.delay           | Turn off the load possibly after a delay
+| load.on.delay            | Turn on the load possibly after a delay
+| shutdown.return          | Turn off the load possibly after a delay
                              and return when power is back
 | shutdown.stayoff         | Turn off the load possibly after a delay
                              and remain off even if power returns

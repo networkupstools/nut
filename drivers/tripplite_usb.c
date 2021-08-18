@@ -1362,6 +1362,9 @@ void upsdrv_updateinfo(void)
 		case TRIPP_LITE_SMARTPRO:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			break;
+		case TRIPP_LITE_SMART_3005:
+			dstate_setinfo("ups.load", "%d", hex_or_bin2d(l_value+1, 1));
+			break;
 		case TRIPP_LITE_SMART_0004:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));

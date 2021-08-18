@@ -25,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.41"
+#define NETVISION_MIB_VERSION			"0.42"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -135,7 +135,7 @@ static snmp_info_t netvision_mib[] = {
 	{ "ups.load", 0, 1, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_INPUT_1, NULL },
 
 	/*ups input,output voltage, output frquency phase 1 */
-	{ "input.phases", 0, 1.0, NETVISION_OID_INPUT_NUM_LINES, NULL, 0, NULL, NULL },
+	{ "input.phases", 0, 1.0, NETVISION_OID_INPUT_NUM_LINES, NULL, 0, NULL },
 	{ "input.frequency", 0, 0.1, NETVISION_OID_INPUT_FREQ, NULL, SU_FLAG_OK, NULL },
 	{ "input.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P1, NULL, SU_INPUT_1, NULL },
 	{ "input.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P1, NULL, SU_INPUT_1, NULL },
@@ -146,7 +146,7 @@ static snmp_info_t netvision_mib[] = {
 	{ "input.L3-N.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P3, NULL, SU_INPUT_3, NULL },
 	{ "input.L3.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P3, NULL, SU_INPUT_3, NULL },
 
-	{ "output.phases", 0, 1.0, NETVISION_OID_OUTPUT_NUM_LINES, NULL, 0, NULL, NULL },
+	{ "output.phases", 0, 1.0, NETVISION_OID_OUTPUT_NUM_LINES, NULL, 0, NULL },
 	{ "output.frequency", 0, 0.1, NETVISION_OID_OUTPUT_FREQ, NULL, SU_FLAG_OK, NULL },
 	{ "output.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P1, NULL, SU_OUTPUT_1, NULL },
 	{ "output.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P1, NULL, SU_OUTPUT_1, NULL },
@@ -161,7 +161,7 @@ static snmp_info_t netvision_mib[] = {
 	{ "output.L3.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P3, NULL, SU_OUTPUT_3, NULL },
 	{ "output.L3.power.percent", 0, 1.0, NETVISION_OID_OUT_LOAD_PCT_P3, NULL, SU_OUTPUT_3, NULL },
 
-	{ "input.bypass.phases", 0, 1.0, NETVISION_OID_BYPASS_NUM_LINES, NULL, 0, NULL, NULL },
+	{ "input.bypass.phases", 0, 1.0, NETVISION_OID_BYPASS_NUM_LINES, NULL, 0, NULL },
 	{ "input.bypass.frequency", 0, 0.1, NETVISION_OID_BYPASS_FREQ, NULL, SU_FLAG_OK, NULL },
 	{ "input.bypass.voltage", 0, 0.1, NETVISION_OID_BY_VOLTAGE_P1, NULL, SU_BYPASS_1, NULL },
 	{ "input.bypass.current", 0, 0.1, NETVISION_OID_BY_CURRENT_P1, NULL, SU_BYPASS_1, NULL },

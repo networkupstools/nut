@@ -4,6 +4,7 @@
 	1999		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
+	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,6 +54,9 @@ int	deny_severity = LOG_WARNING;
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
 
+	/* default to 1h before cleaning up status tracking entries */
+	int	tracking_delay = 3600;
+
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 	int	maxconn = 0;
 
@@ -84,6 +88,28 @@ typedef struct {
 	void		*data;
 } handler_t;
 
+
+/* Commands and settings status tracking */
+
+/* general enable/disable status info for commands and settings
+ * (disabled by default)
+ * Note that only client that requested it will have it enabled
+ * (see nut_ctype.h) */
+static int	tracking_enabled = 0;
+
+/* Commands and settings status tracking structure */
+typedef struct tracking_s {
+	char	*id;
+	int	status;
+	time_t	request_time; /* for cleanup */
+	/* doubly linked list */
+	struct tracking_s	*prev;
+	struct tracking_s	*next;
+} tracking_t;
+
+static tracking_t	*tracking_list = NULL;
+
+
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
 static handler_t	*handler = NULL;
@@ -93,6 +119,11 @@ static char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
+
+/* Minimalistic support for UUID v4 */
+/* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
+#define UUID4_BYTESIZE 16
+
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -427,7 +458,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	}
 
 	/* looks good - call the command */
-	netcmds[cmdnum].func(client, numarg - 1, &arg[1]);
+	netcmds[cmdnum].func(client, numarg - 1, numarg > 1 ? &arg[1] : NULL);
 }
 
 /* parse requests from the network */
@@ -479,6 +510,8 @@ static void client_connect(stype_t *server)
 	time(&client->last_heard);
 
 	client->addr = xstrdup(inet_ntopW(&csock));
+
+	client->tracking = 0;
 
 	pconf_init(&client->ctx, NULL);
 
@@ -644,6 +677,7 @@ static void upsd_cleanup(void)
 	server_free();
 	client_free();
 	driver_free();
+	tracking_free();
 
 	free(statepath);
 	free(datapath);
@@ -672,6 +706,219 @@ void poll_reload(void)
 	handler = xrealloc(handler, maxconn * sizeof(*handler));
 }
 
+/* instant command and setvar status tracking */
+
+/* allocate a new status tracking entry */
+int tracking_add(const char *id)
+{
+	tracking_t	*item;
+
+	if ((!tracking_enabled) || (!id))
+		return 0;
+
+	item = xcalloc(1, sizeof(*item));
+
+	item->id = xstrdup(id);
+	item->status = STAT_PENDING;
+	time(&item->request_time);
+
+	if (tracking_list) {
+		tracking_list->prev = item;
+		item->next = tracking_list;
+	}
+
+	tracking_list = item;
+
+	return 1;
+}
+
+/* set status of a specific tracking entry */
+int tracking_set(const char *id, const char *value)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity checks */
+	if ((!tracking_list) || (!id) || (!value))
+		return 0;
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (!strcasecmp(item->id, id)) {
+			item->status = atoi(value);
+			return 1;
+		}
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free a specific tracking entry */
+int tracking_del(const char *id)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity check */
+	if ((!tracking_list) || (!id))
+		return 0;
+
+	upsdebugx(3, "%s: deleting id %s", __func__, id);
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (strcasecmp(item->id, id))
+			continue;
+
+		if (item->prev)
+			item->prev->next = item->next;
+		else
+			/* deleting first entry */
+			tracking_list = item->next;
+
+		if (item->next)
+			item->next->prev = item->prev;
+
+		free(item->id);
+		free(item);
+
+		return 1;
+
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free all status tracking entries */
+void tracking_free(void)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity check */
+	if (!tracking_list)
+		return;
+
+	upsdebugx(3, "%s", __func__);
+
+	for (item = tracking_list; item; item = next_item) {
+		next_item = item->next;
+		tracking_del(item->id);
+	}
+}
+
+/* cleanup status tracking entries according to their age and tracking_delay */
+void tracking_cleanup(void)
+{
+	tracking_t	*item, *next_item;
+	time_t	now;
+
+	/* sanity check */
+	if (!tracking_list)
+		return;
+
+	time(&now);
+
+	upsdebugx(3, "%s", __func__);
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (difftime(now, item->request_time) > tracking_delay) {
+			tracking_del(item->id);
+		}
+	}
+}
+
+/* get status of a specific tracking entry */
+char *tracking_get(const char *id)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity checks */
+	if ((!tracking_list) || (!id))
+		return "ERR UNKNOWN";
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (strcasecmp(item->id, id))
+			continue;
+
+		switch (item->status)
+		{
+		case STAT_PENDING:
+			return "PENDING";
+		case STAT_HANDLED:
+			return "SUCCESS";
+		case STAT_UNKNOWN:
+			return "ERR UNKNOWN";
+		case STAT_INVALID:
+			return "ERR INVALID-ARGUMENT";
+		case STAT_FAILED:
+			return "ERR FAILED";
+		}
+	}
+
+	return "ERR UNKNOWN"; /* id not found! */
+}
+
+/* enable general status tracking (tracking_enabled) and return its value (1). */
+int tracking_enable(void)
+{
+	tracking_enabled = 1;
+
+	return tracking_enabled;
+}
+
+/* disable general status tracking only if no client use it anymore.
+ * return the new value for tracking_enabled */
+int tracking_disable(void)
+{
+	nut_ctype_t		*client, *cnext;
+
+	for (client = firstclient; client; client = cnext) {
+		cnext = client->next;
+		if (client->tracking == 1)
+			return 1;
+	}
+	return 0;
+}
+
+/* return current general status of tracking (tracking_enabled). */
+int tracking_is_enabled(void)
+{
+	return tracking_enabled;
+}
+
+/* UUID v4 basic implementation
+ * Note: 'dest' must be at least `UUID4_LEN` long */
+int nut_uuid_v4(char *uuid_str)
+{
+	size_t		i;
+	uint8_t nut_uuid[UUID4_BYTESIZE];
+
+	if (!uuid_str)
+		return 0;
+
+	for (i = 0; i < UUID4_BYTESIZE; i++)
+		nut_uuid[i] = (unsigned)rand() + (unsigned)rand();
+
+	/* set variant and version */
+	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
+	nut_uuid[8] = (nut_uuid[8] & 0x3F) | 0x80;
+
+	return snprintf(uuid_str, UUID4_LEN,
+		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+		nut_uuid[0], nut_uuid[1], nut_uuid[2], nut_uuid[3],
+		nut_uuid[4], nut_uuid[5], nut_uuid[6], nut_uuid[7],
+		nut_uuid[8], nut_uuid[9], nut_uuid[10], nut_uuid[11],
+		nut_uuid[12], nut_uuid[13], nut_uuid[14], nut_uuid[15]);
+}
+
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -689,6 +936,9 @@ static void mainloop(void)
 		poll_reload();
 		reload_flag = 0;
 	}
+
+	/* cleanup instcmd/setvar status tracking entries if needed */
+	tracking_cleanup();
 
 	/* scan through driver sockets */
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
@@ -722,6 +972,7 @@ static void mainloop(void)
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
+			/* FIXME: create an upsd.conf parameter (CLIENT_INACTIVITY_DELAY) */
 			client_disconnect(client);
 			continue;
 		}

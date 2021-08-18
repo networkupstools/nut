@@ -104,13 +104,20 @@ quotes spanning multiple lines.
 Basic configuration
 -------------------
 
-This chapter describe the base configuration to establish communication with
+This chapter describes the base configuration to establish communication with
 the device.
 
 This will be sufficient for PDU. But for UPS and SCD, you will also need to
 configure <<UPS_shutdown,automatic shutdowns for low battery events>>.
 
 image:images/simple.png[]
+
+On operating systems with service management frameworks (such as Linux systemd
+and Solaris/illumos SMF), the driver, data server and monitoring client daemons'
+life-cycle is managed respectively by `nut-driver` (multi-instance), `nut-server`
+and `nut-monitor` services. These are in turn wrapped by an "umbrella" service
+(or systemd "target") conveniently called `nut` which allows to start or stop
+those of the bundled services, which are enabled on a particular deployment.
 
 [[Driver_configuration]]
 Driver configuration
@@ -156,7 +163,8 @@ linkman:usbhid-ups[8]
 Starting the driver(s)
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Start the driver(s) for your hardware:
+Generally, you can just start the driver(s) for your hardware (all sections
+defined in 'ups.conf') using the following command:
 
 	/usr/local/ups/sbin/upsdrvctl start
 
@@ -183,6 +191,67 @@ state path probably isn't writable by the driver.  Check the
 <<StatePath,permissions and mode on that directory>>.
 
 After making changes, try the <<Ownership, Ownership and permissions>> step again.
+
+On operating systems with init-scripts managing life-cycle of the operating
+environment, the `upsdrvctl` program is also commonly used in those scripts.
+It has a few downsides, such as that if the device was not accessible during
+OS startup and the driver connection timed out, it would remain not-started
+until an administrator (or some other script) "kicks" the driver to retry
+startup. Also, startup of the `upsd` data server daemon and its clients
+like `upsmon` is delayed until all the NUT drivers complete their startup
+(or time out trying).
+
+This can be a big issue on systems which monitor multiple devices, such as
+big servers with multiple power sources, or administrative workstations
+which monitor a datacenter full of UPSes.
+
+For this reason, NUT starting with version 2.7.5 supports startup of its
+drivers as independent instances of a `nut-driver` service under the Linux
+systemd and Solaris/illumos SMF service-management frameworks (corresponding
+files and scripts may be not pre-installed in packaging for other systems).
+
+Such service instances have their own and independent life-cycle, including
+parallel driver start and stop processing, and retries of startup in case of
+failure as implemented by the service framework in the OS. The Linux systemd
+solution also includes a `nut-driver.target` as a checkpoint that all defined
+drivers have indeed started up (as well as being a singular way to enable or
+disable startup of drivers).
+
+In both cases, a service named `nut-driver-enumerator` is registered, and
+when it is (re-)started it scans the currently defined device sections in
+`ups.conf` and the currently defined instances of `nut-driver` service,
+and brings them in sync (adding or removing service instances), and if
+there were changes -- it restarts the corresponding drivers (via service
+instances) as well as the data server which only reads the list of sections
+at its startup. This helper service should be triggered whenever your system
+(re-)starts the `nut-server` service, so that it runs against an up-to-date
+list of NUT driver processes.
+
+A service-oriented solution also allows to consider that different drivers
+have different dependencies -- such as that networked drivers should begin
+startup after IP addresses have been assigned, while directly-connected
+devices might need nothing beside a mounted filesystem (or an activated
+USB stack service or device rule, in case of Linux). Likewise, systems
+administrators can define further local dependencies between services and
+their instances as needed on particular deployments.
+
+This solution also adds the `upsdrvsvcctl` script to manage NUT drivers as
+system service instances, whose CLI mimics that of `upsdrvctl` program.
+One addition is the `resync` argument to trigger `nut-driver-enumerator`,
+another is a `list` argument to display current mappings of service
+instances to NUT driver sections. Also, original tool's arguments such
+as the `-u` (user to run the driver as) or `-D` (debug of the driver)
+do not make sense in the service context -- the accounts to use and
+other arguments to the driver process are part of service setup (and
+an administrator can manage it there).
+
+Note that while this solution tries to register service instances with same
+names as NUT configuration sections for the devices, this can not always be
+possible due to constraints such as syntax supported by a particular service
+management framework. In this case, the enumerator falls back to MD5 hashes
+of such section names, and the `upsdrvsvcctl` script supports this to map
+the user-friendly NUT configuration section names to actual service names
+that it would manage.
 
 References: man pages: linkman:nutupsdrv[8], linkman:upsdrvctl[8]
 
@@ -246,6 +315,9 @@ NOTE: if upsd says that it can't connect to a UPS or that the data
 is stale, then your ups.conf is not configured correctly, or you
 have a driver that isn't working properly.  You must fix this before
 going on to the next step.
+
+On operating systems with service management frameworks, the data server
+life-cycle is managed by `nut-server` service.
 
 Reference: man page: linkman:upsd[8]
 
@@ -521,6 +593,9 @@ Start upsmon
 	/usr/local/ups/sbin/upsmon
 
 If it complains about something, then check your configuration.
+
+On operating systems with service management frameworks, the monitoring client
+life-cycle is managed by `nut-monitor` service.
 
 Checking upsmon
 ^^^^^^^^^^^^^^^

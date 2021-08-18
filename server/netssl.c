@@ -275,7 +275,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	{
 	case 1:
 		client->ssl_connected = 1;
-		upsdebugx(3, "SSL connected");
+		upsdebugx(3, "SSL connected (%s)", SSL_get_version(client->ssl));
 		break;
 		
 	case 0:
@@ -371,13 +371,7 @@ void ssl_init(void)
 {
 #ifdef WITH_NSS
 	SECStatus status;
-#elif defined(WITH_OPENSSL)
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-	const SSL_METHOD	*ssl_method;
-#else
-	SSL_METHOD	*ssl_method;
-#endif
-#endif /* WITH_NSS|WITH_OPENSSL */
+#endif /* WITH_NSS */
 
 	if (!certfile) {
 		return;
@@ -387,18 +381,29 @@ void ssl_init(void)
 
 #ifdef WITH_OPENSSL
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
 	SSL_library_init();
 
-	if ((ssl_method = TLSv1_server_method()) == NULL) {
-		ssl_debug();
-		fatalx(EXIT_FAILURE, "TLSv1_server_method failed");
-	}
+	ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+#else
+	ssl_ctx = SSL_CTX_new(TLS_server_method());
+#endif
 
-	if ((ssl_ctx = SSL_CTX_new(ssl_method)) == NULL) {
+	if (!ssl_ctx) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_new failed");
 	}
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	/* set minimum protocol TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#else
+	if (SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_min_proto_version(TLS1_VERSION)");
+	}
+#endif
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();

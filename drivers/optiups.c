@@ -536,7 +536,7 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_FLAG, OPTI_MINPOLL, "Only poll for critical status variables");
 	addvar(VAR_FLAG, OPTI_FAKELOW, "Fake a low battery status" );
-	addvar(VAR_FLAG, OPTI_NOWARN_NOIMP, "Supress warnings of unsupported commands");
+	addvar(VAR_FLAG, OPTI_NOWARN_NOIMP, "Suppress warnings of unsupported commands");
 	addvar(VAR_FLAG, OPTI_POWERUP, "(Zinto D) Power-up UPS at start (cannot identify a powered-down Zinto D)");
 }
 

@@ -1,11 +1,21 @@
 [Unit]
 Description=Network UPS Tools - power devices information server
-After=local-fs.target network.target nut-driver.service
+After=local-fs.target network.target nut-driver.target
 # We don't Require drivers to be successfully started! This would be
 # a change of behavior compared to init SysV, and could prevent from
 # accessing successfully started, at least to audit a system.
-Wants=nut-driver.service
+Wants=nut-driver.target
+# The `upsd` is a networked service (even if bound to a `localhost`)
+# so it requires that the OS has some notion of networking already.
+# Extending the unit does not require *this* file to be edited, you
+# can instead drop in an additional piece of configuration, e.g. add
+# a `/etc/systemd/system/nut-server.service.d/network.conf` with:
+#   [Unit]
+#   Requires=network-online.target
+#   After=network-online.target
+Requires=network.target
 Before=nut-monitor.service
+PartOf=nut.target
 
 [Service]
 ExecStart=@SBINDIR@/upsd
@@ -13,4 +23,4 @@ ExecReload=@SBINDIR@/upsd -c reload
 Type=forking
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target

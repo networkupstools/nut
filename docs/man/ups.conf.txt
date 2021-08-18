@@ -113,8 +113,8 @@ of the driver behavior.
 
 *user*::
 
-Optional.  If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Optional.  Overrides the compiled-in default unprivileged username. See the
+discussion of the `-u` option in linkman:nutupsdrv[8] for details.
 
 UPS FIELDS
 ----------

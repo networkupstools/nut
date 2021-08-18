@@ -69,7 +69,7 @@ typedef struct {
 const char *upscli_strerror(UPSCONN_t *ups);
 
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
-int upscli_cleanup();
+int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags, struct timeval *tv);
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
@@ -86,8 +86,10 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query);
 int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 		unsigned int *numa, char ***answer);
 
+int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout);
 int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
+int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout);
 int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
 int upscli_splitname(const char *buf, char **upsname, char **hostname,

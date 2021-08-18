@@ -15,6 +15,15 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
+# This needs augparse from augeas-tools
+if HAVE_AUGPARSE
+check-local:
+	@echo "augparse proceeding to lenses verification job..."; \
+	echo "DISABLED for now due to https://github.com/networkupstools/nut/issues/657"
+endif
+# FIXME
+#	augparse -I $(srcdir)/ $(srcdir)/tests/test_nut.aug
+
 if WITH_AUGLENS
 # Now "make install" should cover delivery of Augeas lenses...
 # The "auglensdir" value should be set up by configure

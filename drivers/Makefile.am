@@ -33,22 +33,22 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
- safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser	\
- nutdrv_qx
+ safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
- nutdrv_atcl_usb \
- nutdrv_qx
+ nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
+SERIAL_USB_DRIVERLIST = \
+	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus
 LINUX_I2C_DRIVERLIST = asem
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -56,7 +56,11 @@ if SOME_DRIVERS
 else
  driverexec_PROGRAMS =
 if WITH_SERIAL
-  driverexec_PROGRAMS += $(SERIAL_DRIVERLIST)
+  driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
+else
+if WITH_USB
+  driverexec_PROGRAMS += $(SERIAL_USB_DRIVERLIST)
+endif
 endif
 if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
@@ -131,6 +135,7 @@ powerpanel_LDADD = $(LDADD) -lm
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
+nutdrv_siemens_sitop_SOURCES = nutdrv_siemens_sitop.c
 solis_SOURCES = solis.c
 solis_LDADD = $(LDADD) -lm
 tripplite_SOURCES = tripplite.c
@@ -207,7 +212,7 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats16-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
- apc-pdu-mib.c emerson-avocent-pdu-mib.c
+ apc-pdu-mib.c emerson-avocent-pdu-mib.c hpe-pdu-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
@@ -223,7 +228,7 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 # IPMI PSU
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
-  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c
 endif
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
@@ -279,7 +284,8 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
- eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
+ hpe-pdu-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
