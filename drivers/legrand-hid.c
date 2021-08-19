@@ -117,7 +117,7 @@ static info_lkp_t legrand_times10M_info[] = {
 
 static hid_info_t legrand_hid2nut[] = {
 	/* Input Data */
-	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.0f", 0, legrand_times10_info },
+	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.0f", 0, NULL },
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.0f", 0, legrand_times1M_info },
 	{ "input.transfer.high", 0, 0, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.transfer.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10_info },
