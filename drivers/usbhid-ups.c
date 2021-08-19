@@ -47,6 +47,7 @@
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
 	#include "idowell-hid.h"
+	#include "legrand-hid.h"
 	#include "liebert-hid.h"
 	#include "openups-hid.h"
 	#include "powercom-hid.h"
@@ -66,6 +67,7 @@ static subdriver_t *subdriver_list[] = {
 	&cps_subdriver,
 	&delta_ups_subdriver,
 	&idowell_subdriver,
+	&legrand_subdriver,
 	&liebert_subdriver,
 	&openups_subdriver,
 	&powercom_subdriver,
