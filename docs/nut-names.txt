@@ -153,6 +153,9 @@ commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
 to the right value before issuing the command. That is, shutdown.stayoff will first
 set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
 
+NOTE: When possible, dates should be expressed in ISO 8601 Calendar format, that
+is to say "YYYY-MM-DD", or otherwise and Combined date and time representations.
+
 input: Incoming line/power information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -447,6 +450,9 @@ following value:
 - floating: battery has completed its charge cycle, and waiting to go to resting
 mode,
 - resting: the battery is fully charged, and not charging nor discharging.
+
+NOTE: When possible, dates should be expressed in ISO 8601 Calendar format, that
+is to say "YYYY-MM-DD", or otherwise and Combined date and time representations.
 
 
 ambient: Conditions from external probe equipment
