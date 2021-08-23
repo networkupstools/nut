@@ -198,8 +198,9 @@ static char marlin_scratch_buf[20];
  * WRT the number of phase(s) and the outlet group number.
  * Note that the group type (marlin_outlet_group_type_info) is
  *  not considered since this applies to any kind of group */
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 {
+	int outlet_group_nb = *((int *)raw_outlet_group_nb);
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
 	if (str_phases_nb && (outlet_group_nb >= 0) ) {
