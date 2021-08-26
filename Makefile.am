@@ -8,6 +8,12 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers tools \
   lib scripts server tests
 
+# Automatically update the libtool script if it becomes out-of-date
+# See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status libtool
+
 # COPYING is included automatically.
 EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
@@ -71,9 +77,10 @@ doc spellcheck-sortdict:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	for F in `git ls-files || find . -type f` ; do \
+	@RUNBASH=bash; if [ -x /bin/bash ]; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
-	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
+	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
 	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
 	done
@@ -85,6 +92,12 @@ shellcheck-disclaimer:
 	@echo "Later it may become a call to the real shellcheck tool (if available on the"
 	@echo "build system during the configure phase)"
 	@echo "==============================================================================="
+
+# Note: currently not part of shellcheck target, because the script below
+# can test the logic with numerous SHELL_PROGS in a CI setting, and because
+# check-scripts-syntax probably has checked the basic syntax above already.
+shellcheck-nde:
+	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
 
