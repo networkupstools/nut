@@ -189,7 +189,6 @@ Typical tooling would include:
     graphviz expect gd graphviz-tcl
 
 :; pkg install \
-    cppunit \
     openssl library/mozilla-nss \
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
@@ -209,13 +208,19 @@ Typical tooling would include:
 :; pkg install \
     gnu-coreutils
 
+### Maybe - after it gets fixed for GCC builds/linkage
+:; pkg install \
+    cppunit
+
 ### Not yet in distro, PR pending:
 :; pkg install \
     libmodbus
 ````
 
 For extra compiler coverage, can also set up `gcc-4.4.4-il` (used to build
-the OS and a viable example of an old GCC baseline):
+the OS, or was recently, and is a viable example of an old GCC baseline);
+but note that so far it conflicts with libgd builds at `configure --with-cgi`
+stage:
 ````
 :; pkg install \
     illumos-gcc@4.4.4 \
