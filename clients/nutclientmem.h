@@ -45,7 +45,10 @@ public:
 	MemClientStub() {};
 	~MemClientStub() {};
 
-	virtual void authenticate(const std::string& user, const std::string& passwd) {};
+	virtual void authenticate(const std::string& user, const std::string& passwd) {
+		NUT_UNUSED_VARIABLE(user);
+		NUT_UNUSED_VARIABLE(passwd);
+	};
 	virtual void logout() {};
 
 	virtual Device getDevice(const std::string& name);

@@ -29,6 +29,11 @@
 #include <set>
 #include <exception>
 
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
+
 namespace nut
 {
 
