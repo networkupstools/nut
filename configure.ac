@@ -146,6 +146,7 @@ AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+NUT_COMPILER_FAMILY_FLAGS
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
@@ -653,7 +654,7 @@ if test "${nut_with_linux_i2c}" != no; then
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
-                [nut_with_linux_i2c="no"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -663,7 +664,13 @@ if test "${nut_with_linux_i2c}" != no; then
                  #endif
                 ]
             )
-            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
+            dnl Builds for bitness/arch other than system default can be
+            dnl "compromised" by lack of respective binary library, so
+            dnl even if we have the right headers, ultimate link fails.
+            dnl Note: here we keep the verdict from above, or make it worse.
+            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c], [],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1063,7 +1070,29 @@ then
 	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
 	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
 fi
-AC_PROG_LIBTOOL
+
+dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+dnl #OBSOLETED:# AC_PROG_LIBTOOL
+
+dnl # Hack around the libtool script: as of version 58 (current in 2021),
+dnl # they use code like below to detect library paths:
+dnl #   if test yes = "$GCC"; then ... lt_search_path_spec=`$CC -print-search-dirs | ...
+dnl # which explodes when non-default architecture is used for the build,
+dnl # where e.g. "CC=gcc" and "CFLAGS=-m32" on a 64-bit capable system.
+SAVED_GCC="$GCC"
+SAVED_CC="$CC"
+if ( test "${GCC}" = "yes" )
+then
+    case "$CFLAGS$LDFLAGS" in
+        *-m32*) CC="$CC -m32" ;;
+        *-m64*) CC="$CC -m64" ;;
+    esac
+fi
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
+GCC="$SAVED_GCC"
+CC="$SAVED_CC"
+
 if ( test "${GCC}" = "yes" )
 then
 	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
@@ -1953,6 +1982,11 @@ AC_MSG_RESULT(["${nut_enable_warnings}"])
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
 dnl # make a difference.
+dnl # Some of the compiler flags (including those added by pkg-config of some
+dnl # third-party dependency packages) can upset older compiler releases which
+dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
+dnl # "-Wno-unknown-warning-option" for CLANG should take care of that at least
+dnl # for toolkit versions that support these - set in NUT_COMPILER_FAMILY_FLAGS
 dnl # Majority of sanity checks are enabled by "-Wextra" on both GCC and CLANG
 dnl # and "-Weverything" additionally on CLANG. They are impractically picky,
 dnl # especially with fallout from system headers that we can not impact anyway

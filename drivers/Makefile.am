@@ -297,6 +297,10 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h b
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
+# as a final product. It was necessary for Automake-technical reasons,
+# because per-object CFLAGS can only be specified for libraries, not
+# for object files. This library is used during the build process,
+# and is not meant to be installed.
 EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
