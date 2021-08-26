@@ -189,3 +189,10 @@ Appendix J: Project history
 ===========================
 
 include::history.txt[]
+
+
+[[Config_Prereqs]]
+Appendix K: Configuration prerequisites
+=======================================
+
+include::config-prereqs.txt[]
