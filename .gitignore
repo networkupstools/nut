@@ -35,6 +35,8 @@ Makefile.in
 /missing
 /test-driver
 common/.dirstamp
+/.ci*.log
+/.ci*.log.*
 
 # Dist
 /nut-*.*.*/
