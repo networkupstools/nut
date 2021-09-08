@@ -843,6 +843,7 @@
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 "Opti-UPS"	"ups"	"1"	"VS 575C"	"type=OPTI"	"powercom"
+"Opti-UPS"	"ups"	"1"	"Power Series"	"PS1500E"	"blazer_usb"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
