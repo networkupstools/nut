@@ -246,6 +246,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             # configure-time checks of libgd; newer compilers fare okay.
             # Feel free to revise this if the distro packages are fixed
             # (or the way configure script and further build uses them).
+            # UPDATE: Per https://github.com/networkupstools/nut/pull/1089
+            # This is a systems issue (in current OpenIndiana 2021.04 built
+            # with a newer GCC version, the older GCC is not ABI compatible
+            # with the libgd shared object file). Maybe this warrants later
+            # caring about not just the CI_OS_NAME but also CI_OS_RELEASE...
             if [[ "$COMPILER_FAMILY" = "GCC" ]]; then
                 case "`LANG=C $CC --version | head -1`" in
                     *[\ -][01234].*)
