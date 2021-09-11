@@ -92,8 +92,8 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     [[ "$CI_OS_NAME" = "windows" ]] && CANBUILD_LIBGD_CGI=no
 
     # NUT CI farm with Jenkins can build it; Travis could not
-    #[[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
-    [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+    [[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=yes \
+    || [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
 fi
 
 configure_nut() {
