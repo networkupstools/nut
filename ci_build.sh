@@ -264,7 +264,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     || ( [ "${CANBUILD_CPPUNIT_TESTS-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
     ; then
         echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
-        CONFIG_OPTS+=("--with-cppunit=no")
+        CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
     DO_DISTCHECK=yes
