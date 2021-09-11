@@ -18,6 +18,8 @@ import org.nut.dynamatrix.*;
     def dynacfgBase = [:]
     def dynacfgPipeline = [:]
 
+    // NOTE: These can be further disabled or active in different combo specs
+    // below based on branch names
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
@@ -144,8 +146,9 @@ set | sort -n """
     dynacfgPipeline.slowBuild = [
         [name: 'Default autotools driven build',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
-         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
@@ -175,8 +178,9 @@ set | sort -n """
 
         ,[name: 'Default autotools driven build with max warnings (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
-         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         branchRegexTarget: ~/fightwarn/,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
