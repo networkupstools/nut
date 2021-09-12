@@ -213,7 +213,7 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration
 
-        ,[name: 'Various target builds (must pass)',
+        ,[name: 'Various target builds (must pass on all platforms)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -226,8 +226,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-nodoc', 'default', 'default-tgt:distcheck-light', 'default-tgt:distcheck-valgrind', 'default-withdoc:man']
-                    // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true
+                    'BUILD_TYPE': ['default-nodoc', 'default', 'default-tgt:distcheck-valgrind']
+                    // BUILD_TYPE=default-withdoc:man
+                    // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
+                    // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC'
