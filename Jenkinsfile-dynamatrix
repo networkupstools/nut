@@ -244,7 +244,10 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems (must pass)',
+        ,[name: 'A build with all driver types on capable systems with distcheck for main supported C/C++ revision (must pass)',
+         // NOTE: Here we constrain distcheck builds (more CI stress load)
+         // to run as few combos as possible; arguably this filter config
+         // is more about recipes than about codebase quality
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -255,8 +258,10 @@ set | sort -n """
                 excludedNodelabels: [],
 
                 dynamatrixAxesVirtualLabelsMap: [
+                    // TODO: Find a way to constrain these builds to one
+                    // per OS type, whatever bitness(es) supported there
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': ['default-alldrv']
                     ],
@@ -275,7 +280,41 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems with fatal warnings (allowed to fail)',
+        ,[name: 'A build with all driver types on capable systems without distcheck for more C/C++ revisions (must pass)',
+         // NOTE: We reduce the build load here since the Makefile recipes
+         // (for distcheck part) are deemed tested above with the supported
+         // C/C++ standard revision
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         //branchRegexTarget: ~/^(master|main|stable)$/,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                //commonLabelExpr: "nut-builder:alldrv",
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '17', 'cxx': '17'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    'BUILD_TYPE': ['default-alldrv:no-distcheck']
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC'
+                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ]
+                ],
+                // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
+                allowedFailure: [ [~/OS_FAMILY=windows/], [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldr(v|v:no-distcheck)/] ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/] ] //, [~/OS_DISTRO=openindiana/] ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'A build with all driver types on capable systems with distcheck and fatal warnings (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
