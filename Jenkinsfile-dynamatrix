@@ -407,7 +407,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with non-fatal warnings (must pass)',
+        ,[name: 'GNU C standard builds with non-fatal warnings, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -436,7 +436,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with fatal warnings (allowed to fail with non-GCC, and for GCC with gnu89 builds)',
+        ,[name: 'GNU C standard builds with fatal warnings, without distcheck and docs (allowed to fail with non-GCC, and for GCC with gnu89 builds)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -471,7 +471,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with fatal warnings with GCC (must pass)',
+        ,[name: 'GNU C standard builds with fatal warnings with GCC, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -503,7 +503,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C standard builds on non-Windows platforms (allowed to fail)',
+        ,[name: 'Strict C standard builds on non-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -533,7 +533,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C and GNU standard builds on Windows platforms (allowed to fail)',
+        ,[name: 'Strict C and GNU standard builds on Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
