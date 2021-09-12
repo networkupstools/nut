@@ -139,7 +139,7 @@ build_to_only_catch_errors() {
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
-default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
+default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -362,11 +362,17 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                 CONFIG_OPTS+=("--with-cgi=auto")
             fi
             ;;
+        "default-alldrv:no-distcheck")
+            DO_DISTCHECK=no
+            ;& # fall through
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
+                if [ "$DO_DISTCHECK" != no ]; then
+                    echo "WARNING: this is effectively default-tgt:distcheck-light then" >&2
+                fi
                 CONFIG_OPTS+=("--with-all=auto")
             else
                 CONFIG_OPTS+=("--with-all=yes")
