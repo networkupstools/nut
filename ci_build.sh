@@ -291,6 +291,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
+    # This flag is primarily linked with (lack of) docs generation enabled
+    # (or not) in some BUILD_TYPE scenarios or workers
     DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
@@ -370,11 +372,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                 CONFIG_OPTS+=("--with-all=yes")
             fi
             ;;
-        "default"|*)
+        "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
             ;;
     esac
+    # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
+    # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         PATH="/usr/lib/ccache:$PATH"
@@ -466,8 +470,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         configure_nut
     fi
 
+    # NOTE: There is also a case "$BUILD_TYPE" above for setting CONFIG_OPTS
+    # This case runs some specially handled BUILD_TYPEs and exists; support
+    # for all other scenarios proceeds.below.
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
+            # e.g. distcheck-light, distcheck-valgrind, maybe others later,
+            # as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
 
