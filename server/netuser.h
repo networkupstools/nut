@@ -1,11 +1,11 @@
-/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER handlers for upsd
+/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER[PRIMARY] handlers for upsd
 
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2005	Arnaud Quette <arnaud.quette@free.fr>
 	2007	Peter Selinger <selinger@users.sourceforge.net>
 	2013	Emilien Kia <kiae.dev@gmail.com>
-	2020	Jim Klimov <jimklimov@gmail.com>
+	2020-2021	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,11 +31,14 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-void net_login(nut_ctype_t *client, int numarg, const char **arg);
-void net_logout(nut_ctype_t *client, int numarg, const char **arg);
-void net_master(nut_ctype_t *client, int numarg, const char **arg);
-void net_username(nut_ctype_t *client, int numarg, const char **arg);
-void net_password(nut_ctype_t *client, int numarg, const char **arg);
+void net_login(nut_ctype_t *client, size_t numarg, const char **arg);
+void net_logout(nut_ctype_t *client, size_t numarg, const char **arg);
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
+void net_master(nut_ctype_t *client, size_t numarg, const char **arg);
+void net_username(nut_ctype_t *client, size_t numarg, const char **arg);
+void net_password(nut_ctype_t *client, size_t numarg, const char **arg);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

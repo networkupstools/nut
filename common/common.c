@@ -35,7 +35,6 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 #include <stdio.h>
-#include <limits.h>
 
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
@@ -390,7 +389,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0 };
+		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
@@ -586,13 +585,14 @@ void upsdebugx(int level, const char *fmt, ...)
 /* dump message msg and len bytes from buf to upsdebugx(level) in
    hexadecimal. (This function replaces Philippe Marzouk's original
    dump_hex() function) */
-void upsdebug_hex(int level, const char *msg, const void *buf, int len)
+void upsdebug_hex(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[100];
 	int n;	/* number of characters currently in line */
-	int i;	/* number of bytes output from buffer */
+	size_t i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len);
+	n = snprintf(line, sizeof(line), "%s: (%zu bytes) =>", msg, len);
+	if (n < 0) goto failed;
 
 	for (i = 0; i < len; i++) {
 
@@ -603,8 +603,15 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
 			((const unsigned char *)buf)[i]);
+
+		if (n < 0) goto failed;
 	}
+
 	upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	upsdebugx(level, "%s", "Failed to print a hex dump for debug");
 }
 
 /* taken from www.asciitable.com */
@@ -644,29 +651,37 @@ static const char* ascii_symb[] = {
 };
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
-void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
+void upsdebug_ascii(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[256];
-	int i;
+	int n;	/* number of characters currently in line */
+	size_t i;	/* number of bytes output from buffer */
 	unsigned char ch;
 
 	if (nut_debug_level < level)
 		return;	/* save cpu cycles */
 
-	snprintf(line, sizeof(line), "%s", msg);
+	n = snprintf(line, sizeof(line), "%s", msg);
+	if (n < 0) goto failed;
 
 	for (i=0; i<len; ++i) {
 		ch = ((const unsigned char *)buf)[i];
 
 		if (ch < 0x20)
-			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
+			n = snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
 		else if (ch >= 0x80)
-			snprintfcat(line, sizeof(line), "%02Xh ", ch);
+			n = snprintfcat(line, sizeof(line), "%02Xh ", ch);
 		else
-			snprintfcat(line, sizeof(line), "'%c' ", ch);
+			n = snprintfcat(line, sizeof(line), "'%c' ", ch);
+
+		if (n < 0) goto failed;
 	}
 
 	upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	upsdebugx(level, "%s", "Failed to print an ASCII data dump for debug");
 }
 
 static void vfatal(const char *fmt, va_list va, int use_strerror)
@@ -839,12 +854,12 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const l
  * communications media and/or vendor protocol.
  */
 static const char * search_paths[] = {
-	// Use the library path (and bitness) provided during ./configure first
+	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/local"LIBDIR,
 #ifdef BUILD_64
-	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
 	"/usr/lib64",
 #endif

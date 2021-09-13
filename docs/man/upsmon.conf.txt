@@ -25,25 +25,25 @@ CONFIGURATION DIRECTIVES
 upsmon allows a UPS to go missing for this many seconds before declaring
 it "dead".  The default is 15 seconds.
 +
-upsmon requires a UPS to provide status information every few seconds 
+upsmon requires a UPS to provide status information every few seconds
 (see POLLFREQ and POLLFREQALERT) to keep things updated.  If the status
-fetch fails, the UPS is marked stale.  If it stays stale for more than 
+fetch fails, the UPS is marked stale.  If it stays stale for more than
 DEADTIME seconds, the UPS is marked dead.
 +
 A dead UPS that was last known to be on battery is assumed to have
-changed to a low battery condition.  This may force a shutdown if it is 
+changed to a low battery condition.  This may force a shutdown if it is
 providing a critical amount of power to your system.  This seems
 disruptive, but the alternative is barreling ahead into oblivion and
 crashing when you run out of power.
 +
-Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT. 
+Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT.
 Otherwise,  you'll have "dead" UPSes simply because upsmon isn't polling
 them quickly enough.  Rule of thumb: take the larger of the two POLLFREQ
 values, and multiply by 3.
 
 *FINALDELAY* 'seconds'::
 
-When running in master mode, upsmon waits this long after sending the
+When running in primary mode, upsmon waits this long after sending the
 NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
 runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
 +
@@ -51,32 +51,33 @@ If you need to let your users do something in between those events,
 increase this number.  Remember, at this point your UPS battery is
 almost depleted, so don't make this too big.
 +
-Alternatively, you can set this very low so you don't wait around when 
-it's time to shut down.  Some UPSes don't give much warning for low 
+Alternatively, you can set this very low so you don't wait around when
+it's time to shut down.  Some UPSes don't give much warning for low
 battery and will require a value of 0 here for a safe shutdown.
 +
-NOTE: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
-the master will give up waiting for the slave to disconnect.
+NOTE: If FINALDELAY on the secondary is greater than HOSTSYNC on the
+primary, the primary will give up waiting for that secondary upsmon
+to disconnect.
 
 *HOSTSYNC* 'seconds'::
 
-upsmon will wait up to this many seconds in master mode for the slaves
+upsmon will wait up to this many seconds in primary mode for the secondaries
 to disconnect during a shutdown situation.  By default, this is 15
 seconds.
 +
 When a UPS goes critical (on battery + low battery, or "FSD": forced
-shutdown), the slaves are supposed to disconnect and shut down right
-away.  The HOSTSYNC timer keeps the master upsmon from sitting there
-forever if one of the slaves gets stuck.
+shutdown), the secondary systems are supposed to disconnect and shut
+down right away.  The HOSTSYNC timer keeps the primary upsmon from sitting
+there forever if one of the secondaries gets stuck.
 +
-This value is also used to keep slave systems from getting stuck if
-the master fails to respond in time.  After a UPS becomes critical,
-the slave will wait up to HOSTSYNC seconds for the master to set the
-FSD flag.  If that timer expires, the slave will assume that the master
-is broken and will shut down anyway.
+This value is also used to keep secondary systems from getting stuck if
+the primary fails to respond in time.  After a UPS becomes critical, the
+secondary will wait up to HOSTSYNC seconds for the primary to set the
+FSD flag.  If that timer expires, the secondary upsmon will assume that the
+primary (or communications path to it) is broken and will shut down anyway.
 +
-This keeps the slaves from shutting down during a short-lived status
-change to "OB LB" that the slaves see but the master misses.
+This keeps the secondaries from shutting down during a short-lived status
+change to "OB LB" and back that the secondaries see but the primary misses.
 
 *MINSUPPLIES* 'num'::
 
@@ -126,22 +127,34 @@ doesn't actually supply power to this system.  This is useful when you
 want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
-The 'username' and 'password' on this line must match an entry 
-in that system's linkman:upsd.users[5].  If your username is "monmaster"
-and your password is "blah", the MONITOR line might look like this:
+The 'username' and 'password' on this line must match an entry in
+the `upsd` server system's linkman:upsd.users[5] file.
 
-+MONITOR myups@bigserver 1 monmaster blah master+
+If your username is "observer" and your password is "abcd", the MONITOR
+line might look like this (likely on a remote secondary system):
+
++MONITOR myups@bigserver 1 observer abcd secondary+
 
 Meanwhile, the `upsd.users` on `bigserver` would look like this:
 
-	[monmaster]
-		password  = blah
-		upsmon master #  (or slave)
+	[observer]
+		password = abcd
+		upsmon secondary
+	
+	[upswired]
+		password = blah
+		upsmon primary
+
+And the copy of upsmon on that bigserver would run with the primary
+configuration:
+
++MONITOR myups@bigserver 1 upswired blah primary+
+
 
 The 'type' refers to the relationship with linkman:upsd[8].  It can
-be either "master" or "slave".  See linkman:upsmon[8] for more information
-on the meaning of these modes.  The mode you pick here also goes in
-the `upsd.users` file, as seen in the example above.
+be either "primary" or "secondary".  See linkman:upsmon[8] for more
+information on the meaning of these modes.  The mode you pick here
+also goes in the `upsd.users` file, as seen in the example above.
 
 *NOCOMMWARNTIME* 'seconds'::
 
@@ -154,7 +167,7 @@ seconds.
 
 upsmon calls this to send messages when things happen.
 +
-This command is called with the full text of the message as one 
+This command is called with the full text of the message as one
 argument.  The environment string NOTIFYTYPE will contain the type
 string of whatever caused this event to happen.
 +
@@ -201,7 +214,7 @@ ONBATT;; UPS is on battery
 
 LOWBATT;; UPS is on battery and has a low battery (is critical)
 
-FSD;; UPS is being shutdown by the master (FSD = "Forced Shutdown")
+FSD;; UPS is being shutdown by the primary (FSD = "Forced Shutdown")
 
 COMMOK;; Communications established with the UPS
 
@@ -211,13 +224,13 @@ SHUTDOWN;; The system is being shutdown
 
 REPLBATT;; The UPS battery is bad and needs to be replaced
 
-NOCOMM;; A UPS is unavailable (can't be contacted for monitoring) 
+NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 
 *NOTIFYFLAG* 'type' 'flag'[\+'flag'][+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)
 via /bin/wall and writes to the syslog when things happen.  You can
-change this. 
+change this.
 +
 Examples:
 +
@@ -266,17 +279,17 @@ also apply here.
 
 *POWERDOWNFLAG* 'filename'::
 
-upsmon creates this file when running in master mode when the UPS needs
+upsmon creates this file when running in primary mode when the UPS needs
 to be powered off.  You should check for this file in your shutdown
 scripts and call `upsdrvctl shutdown` if it exists.
 +
-This is done to forcibly reset the slaves, so they don't get stuck at
-the "halted" stage even if the power returns during the shutdown
+This is done to forcibly reset the secondary systems, so they don't get
+stuck at the "halted" stage even if the power returns during the shutdown
 process.  This usually does not work well on contact-closure UPSes that
 use the genericups driver.
 +
 See the config-notes.txt file in the docs subdirectory for more information.
-Refer to the section: 
+Refer to the section:
 [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
 or refer to the online version.
 
@@ -306,17 +319,17 @@ privileges and an impossible password.
 Then, tell upsmon to run as that user, and make `upsmon.conf` readable by it.
 Your reloads will work, and your config file will stay secure.
 +
-This file should not be writable by the upsmon user, as it would be 
+This file should not be writable by the upsmon user, as it would be
 possible to exploit a hole, change the SHUTDOWNCMD to something
 malicious, then wait for upsmon to be restarted.
 
 *SHUTDOWNCMD* 'command'::
 
 upsmon runs this command when the system needs to be brought down.  If
-it is a slave, it will do that immediately whenever the current overall
-power value drops below the MINSUPPLIES value above.
+it is a secondary, it will do that immediately whenever the current
+overall power value drops below the MINSUPPLIES value above.
 +
-When upsmon is a master, it will allow any slaves to log out before
+When upsmon is a primary, it will allow any secondaries to log out before
 starting the local shutdown procedure.
 +
 Note that the command needs to be one element in the config file.  If
@@ -355,7 +368,7 @@ must be secure.
 
 *CERTVERIFY* '0 | 1'::
 
-When compiled with SSL support, make upsmon verify all connections with 
+When compiled with SSL support, make upsmon verify all connections with
 certificates.
 +
 Without this, there is no guarantee that the upsd is the right host.
@@ -364,7 +377,7 @@ This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
 +
-When compiled with NSS support of SSL, can be overridden for host 
+When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
 *FORCESSL* '0 | 1'::
@@ -377,7 +390,7 @@ that nobody can sniff your sessions without a large effort. Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 +
-When compiled with NSS support of SSL, can be overridden for host 
+When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
 SEE ALSO

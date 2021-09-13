@@ -4,8 +4,8 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -31,11 +31,12 @@
  *
  */
 
-#include <limits.h>
 #include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 
@@ -58,7 +59,8 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats16-mib.h"
+#include "eaton-ats16-nmc-mib.h"
+#include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
@@ -107,8 +109,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&xppc,
 	&huawei,
 	&tripplite_ietf,
-	&eaton_ats16,
-	&eaton_ats16_g2,
+	&eaton_ats16_nmc,
+	&eaton_ats16_nm2,
 	&apc_ats,
 	&raritan_px2,
 	&eaton_ats30,
@@ -148,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.12"
+#define DRIVER_VERSION		"1.16"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -184,6 +186,36 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
 int get_template_type(const char* varname);
+
+/* common value post-processing functions */
+
+static char su_scratch_buf[255];
+
+/* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
+const char *su_usdate_to_isodate_info_fun(void *raw_date)
+{
+	const char *usdate = (char *)raw_date;
+	struct tm tm;
+	memset(&tm, 0, sizeof(struct tm));
+	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
+
+	upsdebugx(3, "%s: US date = %s", __func__, usdate);
+
+	/* Try to convert from US date string to time */
+	/* Note strptime returns NULL upon failure, and a ptr to the last
+	   null char of the string upon success. Just try blindly the conversion! */
+	strptime(usdate, "%m/%d/%Y", &tm);
+	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
+		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
+		return su_scratch_buf;
+	}
+
+	return NULL;
+}
+info_lkp_t su_convert_to_iso_date_info[] = {
+	{ 1, "dummy", su_usdate_to_isodate_info_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -636,7 +668,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
 		else
-			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
 		/* set the privacy key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
@@ -848,7 +880,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_GAUGE:
 		if(oid2info) {
 			const char *str;
-			if((str=su_find_infoval(oid2info, *pdu->variables->val.integer))) {
+			if((str=su_find_infoval(oid2info, pdu->variables->val.integer))) {
 				strncpy(buf, str, buf_len-1);
 			}
 			/* when oid2info returns NULL, don't publish the variable! */
@@ -1223,7 +1255,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s()", __func__);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
 			status_set(info_value);
@@ -1254,7 +1286,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "%s: using definition %s", __func__, info_type);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
 		/* Special handling for outlet & outlet groups alarms */
@@ -1537,15 +1569,30 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 	return -1;
 }
 
+/* String reformating function */
+const char *su_find_strval(info_lkp_t *oid2info, void *value)
+{
+	/* First test if we have a generic lookup function */
+	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
+		upsdebugx(2, "%s: using generic lookup function (string reformating)", __func__);
+		const char * retvalue = oid2info->fun(value);
+		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		return retvalue;
+	}
+	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
+	return NULL;
+}
+
 /* find the INFO_* value matching that OID value */
-const char *su_find_infoval(info_lkp_t *oid2info, long value)
+const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
+	long value = *((long *)raw_value);
 
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun(value);
+		const char * retvalue = oid2info->fun(raw_value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2750,6 +2797,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
+			/* Check if there is a string reformating function */
+			const char *fmt_buf = NULL;
+			if ((fmt_buf = su_find_strval(su_info_p->oid2info, buf)) != NULL) {
+				snprintf(buf, sizeof(buf), "%s", fmt_buf);
+			}
 		}
 	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
@@ -2765,14 +2817,16 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				return FALSE;
 			}
 			/* Check if there is a value to be looked up */
-			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+			if ((strValue = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
 			else {
 				/* Check if there is a need to publish decimal too,
 				 * i.e. if switching to integer does not cause a
-				 * loss of precision */
+				 * loss of precision.
+				 * FIXME: Use remainder? is (dvalue%1.0)>0 cleaner?
+				 */
 				dvalue = value * su_info_p->info_len;
-				if ((int)dvalue == dvalue)
+				if (f_equal((int)dvalue, dvalue))
 					snprintf(buf, sizeof(buf), "%i", (int)dvalue);
 				else
 					snprintf(buf, sizeof(buf), "%.2f", (float)dvalue);
@@ -2905,7 +2959,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 		/* check if default value is also a template */
 		if ((su_info_p->dfl != NULL) &&
-			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
+			(strstr(tmp_info_p->dfl, "%i") != NULL))
+		{
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -2916,7 +2971,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
+			snprintf((char *)su_info_p->dfl, SU_INFOSIZE, tmp_info_p->dfl,
 				item_number);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
@@ -3038,7 +3093,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			}
 		}
 		/* Actually apply the new value */
-		if (su_info_p->flags & SU_TYPE_TIME) {
+		if (SU_TYPE(su_info_p) == SU_TYPE_TIME) {
 			status = nut_snmp_set_time(su_info_p->OID, value);
 		}
 		else {
@@ -3117,7 +3172,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 /* FIXME: the below functions can be removed since these were for loading
  * the mib2nut information from a file instead of the .h definitions... */
 /* return 1 if usable, 0 if not */
-static int parse_mibconf_args(int numargs, char **arg)
+static int parse_mibconf_args(size_t numargs, char **arg)
 {
 	bool_t ret;
 
@@ -3149,11 +3204,13 @@ static int parse_mibconf_args(int numargs, char **arg)
 
 	return 1;
 }
+
 /* called for fatal errors in parseconf like malloc failures */
 static void mibconf_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf (*mib.conf): %s", errmsg);
 }
+
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
