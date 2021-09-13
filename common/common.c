@@ -854,12 +854,12 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const l
  * communications media and/or vendor protocol.
  */
 static const char * search_paths[] = {
-	// Use the library path (and bitness) provided during ./configure first
+	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/local"LIBDIR,
 #ifdef BUILD_64
-	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
 	"/usr/lib64",
 #endif
