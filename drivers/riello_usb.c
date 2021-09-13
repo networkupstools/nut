@@ -806,7 +806,7 @@ void upsdrv_initups(void)
 	};
 
 	int	ret;
-	char	*regex_array[6];
+	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
 
@@ -816,6 +816,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -1172,4 +1173,5 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 }

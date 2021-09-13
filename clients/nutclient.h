@@ -29,6 +29,11 @@
 #include <set>
 #include <exception>
 
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
+
 namespace nut
 {
 
@@ -51,6 +56,8 @@ class NutException : public std::exception
 {
 public:
 	NutException(const std::string& msg):_msg(msg){}
+	NutException(const NutException&) = default;
+    NutException& operator=(NutException& rhs) = default;
 	virtual ~NutException();
 	virtual const char * what() const noexcept {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
@@ -65,6 +72,8 @@ class SystemException : public NutException
 {
 public:
 	SystemException();
+	SystemException(const SystemException&) = default;
+    SystemException& operator=(SystemException& rhs) = default;
 	virtual ~SystemException();
 private:
 	static std::string err();
@@ -78,6 +87,8 @@ class IOException : public NutException
 {
 public:
 	IOException(const std::string& msg):NutException(msg){}
+	IOException(const IOException&) = default;
+    IOException& operator=(IOException& rhs) = default;
 	virtual ~IOException();
 };
 
@@ -88,6 +99,8 @@ class UnknownHostException : public IOException
 {
 public:
 	UnknownHostException():IOException("Unknown host"){}
+	UnknownHostException(const UnknownHostException&) = default;
+    UnknownHostException& operator=(UnknownHostException& rhs) = default;
 	virtual ~UnknownHostException();
 };
 
@@ -98,6 +111,8 @@ class NotConnectedException : public IOException
 {
 public:
 	NotConnectedException():IOException("Not connected"){}
+	NotConnectedException(const NotConnectedException&) = default;
+    NotConnectedException& operator=(NotConnectedException& rhs) = default;
 	virtual ~NotConnectedException();
 };
 
@@ -108,6 +123,8 @@ class TimeoutException : public IOException
 {
 public:
 	TimeoutException():IOException("Timeout"){}
+	TimeoutException(const TimeoutException&) = default;
+    TimeoutException& operator=(TimeoutException& rhs) = default;
 	virtual ~TimeoutException();
 };
 
@@ -454,7 +471,6 @@ private:
 	internal::Socket* _socket;
 };
 
-
 /**
  * Device attached to a client.
  * Device is a lightweight class which can be copied easily.
@@ -463,6 +479,7 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -618,6 +635,7 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -701,6 +719,7 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif

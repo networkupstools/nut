@@ -398,6 +398,7 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	microsol-apc.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -441,6 +442,7 @@ MAN_SERIAL_PAGES = \
 	mge-utalk.8	\
 	oneac.8		\
 	microdowell.8	\
+	microsol-apc.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
@@ -488,6 +490,7 @@ HTML_SERIAL_MANS = \
 	mge-utalk.html	\
 	oneac.html		\
 	microdowell.html	\
+	microsol-apc.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
@@ -772,11 +775,17 @@ check-man-pages: $(MAN_MANS)
 
 check-man-source: check-man-txt
 
+# Note: (GNU) make can helpfully add VPATH to the short source filenames
+# which we had listed above, so the "case" below handles two possibilities
 check-man-txt: $(SRC_ALL_PAGES)
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	cd $(abs_srcdir) || exit; \
+	( cd $(abs_srcdir) ) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
+	    case "$$F" in \
+	        */*) ;; \
+	        *) F="$(abs_srcdir)/$$F" ;; \
+	    esac ; \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(ASCII|UTF-8|Unicode|ISO-8859|English).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
@@ -876,4 +885,4 @@ else !HAVE_ASCIIDOC
 endif !HAVE_ASCIIDOC
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
