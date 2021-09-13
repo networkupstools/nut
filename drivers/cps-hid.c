@@ -24,6 +24,7 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "nut_float.h"
 #include "usbhid-ups.h"
 #include "cps-hid.h"
 #include "usb-common.h"
@@ -86,7 +87,7 @@ static void cps_adjust_battery_scale(double batt_volt)
 	}
 
 	batt_volt_nom = strtod(batt_volt_nom_str, NULL);
-	if(batt_volt_nom == 0) {
+	if(d_equal(batt_volt_nom, 0)) {
 		upsdebugx(3, "%s: 'battery.voltage.nominal' is %s", __func__, batt_volt_nom_str);
 		return;
 	}

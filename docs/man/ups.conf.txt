@@ -150,9 +150,9 @@ to clients that ask for a list of connected equipment.
 Optional.  When you specify this, the driver skips the port locking routines
 every time it starts.  This may allow other processes to seize the port if
 you start more than one accidentally.
-+  
++
 You should only use this if your system won't work without it.
-+  
++
 This may be needed on Mac OS X systems.
 
 *ignorelb*::

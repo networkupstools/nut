@@ -10,7 +10,7 @@ SYNOPSIS
 --------
 *upsd* -h
 
-*upsd* ['OPTIONS'] 
+*upsd* ['OPTIONS']
 
 DESCRIPTION
 -----------
@@ -83,8 +83,8 @@ on the files, or run upsd as another user that will be able to read them.
 
 DO NOT make your upsd.conf or upsd.users world-readable, as those files
 hold important authentication information.  In the wrong hands, it could
-be used by some evil person to spoof your master upsmon and command your
-systems to shut down.
+be used by some evil person to spoof your primary-mode upsmon and command
+your systems to shut down.
 
 DIAGNOSTICS
 -----------
@@ -161,7 +161,7 @@ linkman:everups[8], linkman:genericups[8],
 linkman:isbmex[8], linkman:liebert[8], linkman:masterguard[8],
 linkman:mge-shut[8], linkman:mge-utalk[8], linkman:oneac[8],
 linkman:powercom[8], linkman:safenet[8], linkman:snmp-ups[8],
-linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8], 
+linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8],
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

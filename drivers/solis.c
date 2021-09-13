@@ -39,9 +39,9 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <math.h>
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
 #include "solis.h"
 #include "timehead.h"
 
@@ -485,8 +485,8 @@ static void scan_received_pack(void) {
 
 	if (AppPower < 0) /* charge pf */
 		ChargePowerFactor = 0;
-	else  {
-		if( AppPower == 0 )
+	else {
+		if( d_equal(AppPower, 0) )
 			ChargePowerFactor = 100;
 		else
 			ChargePowerFactor = (( UtilPower / AppPower) * 100);
@@ -682,7 +682,7 @@ static void get_base_info(void) {
 #else
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	unsigned char packet[PACKET_SIZE], syncEOR;
+	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
 	int i1=0, i2=0, tam, i;
 
 	time_t tmt;
@@ -747,11 +747,12 @@ static void get_base_info(void) {
 	*/
 	for (i = 0; i < packet_size*3; i++) {
 		ser_get_char(upsfd, &syncEOR, 3, 0);
+		syncEOR_was_read = 1;
 		if(syncEOR == RESP_END)
 			break;
 	}
 
-	if (syncEOR != RESP_END) {
+	if (!syncEOR_was_read || syncEOR != RESP_END) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {

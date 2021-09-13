@@ -24,6 +24,8 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
 #define DRIVER_VERSION	"0.07"
@@ -72,9 +74,9 @@ static int instcmd(const char *cmdname, const char *extra);
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
 */
-static int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
+static uint16_t get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
 	unsigned char a, b;
-	int result;
+	uint16_t result;
 
 	a = buffer[0];
 	b = buffer[1];
@@ -83,9 +85,9 @@ static int get_word(unsigned char *buffer) {		/* return an integer reading a wor
 }
 
 
-static long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
+static uint32_t get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
 	unsigned char a, b, c, d;
-	long int result;
+	uint32_t result;
 	a=buffer[0];
 	b=buffer[1];
 	c=buffer[2];
@@ -93,6 +95,18 @@ static long int get_long(unsigned char *buffer) {	/* return a long integer readi
 	result = (256*256*256*d) + (256*256*c) + (256*b) + a;
 	return result;
 }
+
+static float get_word_float(unsigned char *buffer) {
+	/* return a float converted after reading a word in the supplied buffer */
+	/* NOTE: This started as a wrapper for legacy logic that directly assigned
+	 *   float_num = get_word(...)
+	 * in code below. No idea if the protocol really sends 16-bit floats.
+	 * FWIW, bcmxcp.c copied get_word() and get_long() from metasys.c but did
+	 * implement a get_float() for IEEE-754 32-bit values.
+	 */
+	return (float)(int16_t)get_word(buffer);
+}
+
 
 static void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
@@ -114,7 +128,7 @@ static void dump_buffer(unsigned char *buffer, int buf_len) {
 
 /* send a read command to the UPS, it retries 5 times before give up
    it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
-static void send_read_command(char command) {
+static void send_read_command(unsigned char command) {
 	int retry, sent;
 	unsigned char buf[4];
 	retry = 0;
@@ -133,8 +147,9 @@ static void send_read_command(char command) {
 /* send a write command to the UPS, the write command and the value to be written are passed
    with a char* buffer
    it retries 5 times before give up */
-static void send_write_command(unsigned char *command, int command_length) {
-	int i, retry, sent, checksum;
+static void send_write_command(unsigned char *command, size_t command_length) {
+	int retry, sent, checksum;
+	size_t i;
 	unsigned char raw_buf[255];
 
 	/* prepares the raw data */
@@ -150,12 +165,14 @@ static void send_write_command(unsigned char *command, int command_length) {
 	raw_buf[command_length] = (unsigned char)checksum;
 	command_length +=1;
 
+	assert (command_length < INT_MAX);
 	retry = 0;
 	sent = 0;
-	while ((sent != (command_length)) && (retry < 5)) {
+	while ((sent != (int)(command_length)) && (retry < 5)) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset... */
 		sent = ser_send_buf(upsfd, raw_buf, (command_length));
-		if (sent != (command_length)) printf("Error sending command %d\n", raw_buf[2]);
+		if (sent < 0) ser_comm_fail("Error sending command %d\n", raw_buf[2]);
+		if (sent != (int)(command_length)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
 	}
 }
@@ -163,11 +180,13 @@ static void send_write_command(unsigned char *command, int command_length) {
 /* get the answer of a command from the ups */
 static int get_answer(unsigned char *data) {
 	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
-	int packet_length, checksum, i, res;
+	unsigned char packet_length, checksum, i;
+	ssize_t res;
+
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (STX): %d!!!\n", res);
+		ser_comm_fail("Receive error (STX): %zd!!!\n", res);
 		return -1;
 	}
 	if (my_buf[0] != 0x02) {
@@ -177,7 +196,7 @@ static int get_answer(unsigned char *data) {
 	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (length): %d!!!\n", res);
+		ser_comm_fail("Receive error (length): %zd!!!\n", res);
 		return -1;
 	}
 	packet_length = my_buf[0];
@@ -188,7 +207,7 @@ static int get_answer(unsigned char *data) {
 	/* Try to read all the remainig bytes (packet_length) */
 	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
 	if (res != packet_length) {
-		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_length);
+		ser_comm_fail("Receive error (data): got %zd bytes instead of %d!!!\n", res, packet_length);
 		return -1;
 	}
 
@@ -233,7 +252,7 @@ static int command_read_sequence(unsigned char command, unsigned char *data) {
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the length of the received answer or -1 in case of failure */
-static int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
+static int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 
@@ -252,6 +271,15 @@ static int command_write_sequence(unsigned char *command, int command_length, un
 	return bytes_read;
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 void upsdrv_initinfo(void)
 {
 	unsigned char my_answer[255];
@@ -536,16 +564,39 @@ void upsdrv_initinfo(void)
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
 	}
 
-	/* Get the serial number */
-	memcpy(serial, my_answer + 7, res - 7);
+	/* Get the serial number; res >=0 per check above */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (res < 7 || (unsigned long long int)res >= SIZE_MAX)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+	memcpy(serial, my_answer + 7, (size_t)(res - 7));
 	/* serial number start from the 8th byte */
-	serial[12]=0;		/* terminate string */
+	serial[12]='\0';		/* terminate string */
 	dstate_setinfo("ups.serial", "%s", serial);
 
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
 	dstate_setinfo("ups.firmware", "%u.%u", my_answer[5], my_answer[6]);
 
-	printf("Detected %s [%s] v.%s on %s\n", dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"), dstate_getinfo("ups.firmware"), device_path);
+	printf("Detected %s [%s] v.%s on %s\n",
+		dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"),
+		dstate_getinfo("ups.firmware"), device_path);
 
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
@@ -561,15 +612,19 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	return;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void upsdrv_updateinfo(void)
 {
-	int res, int_num;
+	int res;
+	uint16_t int_num;
 #ifdef EXTRADATA
 	int day, hour, minute;
 #endif
 	float float_num;
-	long int long_num;
+	uint32_t long_num;
 	unsigned char my_answer[255];
 
 	/* GET Output data */
@@ -587,26 +642,26 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%s", "not available");
 		}
 #ifdef EXTRADATA
-		dstate_setinfo("output.power", "%d", int_num);
+		dstate_setinfo("output.power", "%u", int_num);
 #endif
 		/* voltage */
 		int_num = get_word(&my_answer[3]);
-		if (int_num > 0) dstate_setinfo("output.voltage", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("output.voltage", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("output.voltage", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("output.voltage", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("output.voltage", "%s", "not available");
 		/* current */
-		float_num = get_word(&my_answer[5]);
-		if (float_num == -1) dstate_setinfo("output.current", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current", "%s", "not available");
+		float_num = get_word_float(&my_answer[5]);
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current", "%2.2f", float_num);
 		}
 #ifdef EXTRADATA
 		/* peak current */
-		float_num = get_word(&my_answer[7]);
-		if (float_num == -1) dstate_setinfo("output.current.peak", "%s", "overrange");
-		if (float_num == -2) dstate_setinfo("output.current.peak", "%s", "not available");
+		float_num = get_word_float(&my_answer[7]);
+		if (f_equal(float_num, -1.0)) dstate_setinfo("output.current.peak", "%s", "overrange");
+		if (f_equal(float_num, -2.0)) dstate_setinfo("output.current.peak", "%s", "not available");
 		if (float_num > 0) {
 			float_num = (float)(float_num/10);
 			dstate_setinfo("output.current.peak", "%2.2f", float_num);
@@ -624,18 +679,18 @@ void upsdrv_updateinfo(void)
 #ifdef EXTRADATA
 		/* Active power */
 		int_num = get_word(&my_answer[1]);
-		if (int_num > 0) dstate_setinfo("input.power", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("input.power", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("input.power", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("input.power", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("input.power", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("input.power", "%s", "not available");
 #endif
 		/* voltage */
 		int_num = get_word(&my_answer[3]);
-		if (int_num > 0) dstate_setinfo("input.voltage", "%d", int_num);
-		if (int_num == -1) dstate_setinfo("input.voltage", "%s", "overrange");
-		if (int_num == -2) dstate_setinfo("input.voltage", "%s", "not available");
+		if ((int16_t)int_num > 0) dstate_setinfo("input.voltage", "%u", int_num);
+		if ((int16_t)int_num == -1) dstate_setinfo("input.voltage", "%s", "overrange");
+		if ((int16_t)int_num == -2) dstate_setinfo("input.voltage", "%s", "not available");
 #ifdef EXTRADATA
 		/* current */
-		float_num = get_word(&my_answer[5]);
+		float_num = get_word_float(&my_answer[5]);
 		if (float_num == -1) dstate_setinfo("input.current", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current", "%s", "not available");
 		if (float_num > 0) {
@@ -643,7 +698,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("input.current", "%2.2f", float_num);
 		}
 		/* peak current */
-		float_num = get_word(&my_answer[7]);
+		float_num = get_word_float(&my_answer[7]);
 		if (float_num == -1) dstate_setinfo("input.current.peak", "%s", "overrange");
 		if (float_num == -2) dstate_setinfo("input.current.peak", "%s", "not available");
 		if (float_num > 0) {
@@ -661,16 +716,16 @@ void upsdrv_updateinfo(void)
 		dstate_datastale();
 	} else {
 		/* Actual value */
-		float_num = get_word(&my_answer[1]);
+		float_num = get_word_float(&my_answer[1]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage", "%2.2f", float_num);
 #ifdef EXTRADATA
 		/* reserve threshold */
-		float_num = get_word(&my_answer[3]);
+		float_num = get_word_float(&my_answer[3]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.low", "%2.2f", float_num);
 		/* exhaust threshold */
-		float_num = get_word(&my_answer[5]);
+		float_num = get_word_float(&my_answer[5]);
 		float_num = (float)(float_num/10);
 		dstate_setinfo("battery.voltage.exhaust", "%2.2f", float_num);
 #endif
@@ -691,7 +746,7 @@ void upsdrv_updateinfo(void)
 		long_num -= (long)(hour*3600);
 		minute = (int)(long_num / 60);
 		long_num -= (minute*60);
-		dstate_setinfo("ups.total.runtime", "%d days %dh %dm %lds", day, hour, minute, long_num);
+		dstate_setinfo("ups.total.runtime", "%d days %dh %dm %lus", day, hour, minute, long_num);
 
 		/* ups inverter runtime */
 		long_num = get_long(&my_answer[5]);
@@ -701,19 +756,19 @@ void upsdrv_updateinfo(void)
 		long_num -= (long)(hour*3600);
 		minute = (int)(long_num / 60);
 		long_num -= (minute*60);
-		dstate_setinfo("ups.inverter.runtime", "%d days %dh %dm %lds", day, hour, minute, long_num);
+		dstate_setinfo("ups.inverter.runtime", "%d days %dh %dm %lus", day, hour, minute, long_num);
 		/* ups inverter interventions */
-		dstate_setinfo("ups.inverter.interventions", "%d", get_word(&my_answer[9]));
+		dstate_setinfo("ups.inverter.interventions", "%u", get_word(&my_answer[9]));
 		/* battery full discharges */
-		dstate_setinfo("battery.full.discharges", "%d", get_word(&my_answer[11]));
+		dstate_setinfo("battery.full.discharges", "%u", get_word(&my_answer[11]));
 		/* ups bypass / stabilizer interventions */
 		int_num = get_word(&my_answer[13]);
-		if (int_num == -2) dstate_setinfo("ups.bypass.interventions", "%s", "not avaliable");
-		if (int_num >= 0) dstate_setinfo("ups.bypass.interventions", "%d", int_num);
+		if ((int16_t)int_num == -2) dstate_setinfo("ups.bypass.interventions", "%s", "not avaliable");
+		if ((int16_t)int_num >= 0) dstate_setinfo("ups.bypass.interventions", "%u", int_num);
 		/* ups overheatings */
 		int_num = get_word(&my_answer[15]);
-		if (int_num == -2) dstate_setinfo("ups.overheatings", "%s", "not avalilable");
-		if (int_num >= 0) dstate_setinfo("ups.overheatings", "%d", int_num);
+		if ((int16_t)int_num == -2) dstate_setinfo("ups.overheatings", "%s", "not avalilable");
+		if ((int16_t)int_num >= 0) dstate_setinfo("ups.overheatings", "%u", int_num);
 	}
 #endif
 
@@ -735,17 +790,17 @@ void upsdrv_updateinfo(void)
 	} else {
 		/* time remaining to shutdown */
 		long_num = get_long(&my_answer[1]);
-		if (long_num == -1) {
+		if ((int32_t)long_num == -1) {
 			dstate_setinfo("ups.delay.shutdown", "%d", 120);
 		} else {
-			dstate_setinfo("ups.delay.shutdown", "%ld", long_num);
+			dstate_setinfo("ups.delay.shutdown", "%lu", (unsigned long)long_num);
 		}
 		/* time remaining to restart  */
 		long_num = get_long(&my_answer[5]);
-		if (long_num == -1) {
+		if ((int32_t)long_num == -1) {
 			dstate_setinfo("ups.delay.start", "%d", 0);
 		} else {
-			dstate_setinfo("ups.delay.start", "%ld", long_num);
+			dstate_setinfo("ups.delay.start", "%lu", (unsigned long)long_num);
 		}
 	}
 

@@ -273,32 +273,52 @@ separate section in the documentation since it is so important.
 
 You configure it by telling it about UPSes that you want to monitor in
 upsmon.conf.  Each UPS can be defined as one of two possible types:
+a "primary" or "secondary".
 
-Master
-~~~~~~
+Primary
+~~~~~~~
 
-This UPS supplies power to the system running `upsmon`, and this system is also
-responsible for shutting it down when the battery is depleted.  This occurs
-after any slave systems have disconnected safely.
+The monitored UPS possibly supplies power to this system running `upsmon`,
+but more importantly -- this system can manage the UPS (typically, this
+instance of `upsmon` runs on the same system as the `upsd` and driver(s)):
+it is capable and responsible for shutting it down when the battery is
+depleted (or in another approach, lingering to deplete it or to tell the
+UPS to reboot its load after too much time has elapsed and this system
+is still alive -- meaning wall power returned at a  "wrong" moment).
 
-If your UPS is plugged directly into a system's serial port, the `upsmon`
-process on that system should define that UPS as a master.
+The shutdown of this (primary) system itself, as well as eventually an
+UPS shutdown, occurs after any secondary systems ordered to shut down
+first have disconnected, or a critical urgency threshold was passed.
+
+If your UPS is plugged directly into a system's serial or USB port, the
+`upsmon` process on that system should define its relation to that UPS
+as a primary. It may be more complicated for higher-end UPSes with a
+shared network management capability (typically via SNMP) or several
+serial/USB ports that can be used simultaneously, and depends on what
+vendors and drivers implement. Setups with several competing primaries
+(for redundancy) are technically possible, if each one runs its own
+full stack of NUT, but results can be random (currently NUT does not
+provide a way to coordinate several entities managing the same device).
 
 For a typical home user, there's one computer connected to one UPS.
-That means you run a driver, `upsd`, and `upsmon` in master mode.
+That means you would run on the same computer the whole NUT stack --
+a suitable driver, `upsd`, and `upsmon` in primary mode.
 
-Slave
-~~~~~
+Secondary
+~~~~~~~~~
 
-This UPS may supply power to the system running `upsmon`, but this system can't
-shut it down directly.
+The monitored UPS may supply power to the system running `upsmon` (or
+alternatively, it may be a monitoring station with zero PSUs fed by
+that UPS), but more importantly, this system can't manage the UPS --
+e.g. shut it down directly (through a locally running NUT driver).
 
-Use this mode when you run multiple computers on the same UPS.  Obviously, only
-one can be connected to the serial port on the UPS, and that system is the
-master.  Everything else is a slave.
+Use this mode when you run multiple computers on the same UPS.
+Obviously, only one can be connected to the serial or USB port
+on a typical UPS, and that system is the primary. Everything
+else is a secondary.
 
 For a typical home user, there's one computer connected to one UPS.
-That means you run a driver, upsd, and upsmon in master mode.
+That means you run a driver, `upsd`, and `upsmon` in primary mode.
 
 Additional Information
 ~~~~~~~~~~~~~~~~~~~~~~

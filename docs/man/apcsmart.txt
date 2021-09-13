@@ -267,7 +267,7 @@ APC units - even if they report LB mode - will not go into shutdown
 automatically. This gives us even more control with reference to "when to
 actually shutdown PSU". Since version 2.6.2, NUT supports *ignorelb* option in
 driver's section of linkman:ups.conf[5]. When such option is in effect,
-the core driver will ignore LB state as reported by specific driver and 
+the core driver will ignore LB state as reported by specific driver and
 start shutdown basing the decision _only_ on two conditions:
 
 battery.charge < battery.charge.low

@@ -94,7 +94,7 @@ static info_lkp_t mge_transfer_reason_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_test_result_info[] = {
+static info_lkp_t mge_test_result_info[] = {
 	{ 1, "done and passed", NULL, NULL },
 	{ 2, "done and warning", NULL, NULL },
 	{ 3, "done and error", NULL, NULL },
@@ -104,14 +104,14 @@ static info_lkp_t ietf_test_result_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_beeper_status_info[] = {
+static info_lkp_t mge_beeper_status_info[] = {
 	{ 1, "disabled", NULL, NULL },
 	{ 2, "enabled", NULL, NULL },
 	{ 3, "muted", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_yes_no_info[] = {
+static info_lkp_t mge_yes_no_info[] = {
 	{ 1, "yes", NULL, NULL },
 	{ 2, "no", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -119,7 +119,7 @@ static info_lkp_t ietf_yes_no_info[] = {
 
 /* FIXME: the below may introduce status redundancy, that needs to be
  * addressed by the driver, as for usbhid-ups! */
-static info_lkp_t ietf_power_source_info[] = {
+static info_lkp_t mge_power_source_info[] = {
 	{ 1, "" /* other */, NULL, NULL },
 	{ 2, "OFF" /* none */, NULL, NULL },
 #if 0
@@ -154,17 +154,17 @@ static snmp_info_t mge_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.1.4.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.12.12.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.1", "", SU_OUTPUT_1, NULL },
-	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.9.8.0", "", 0, ietf_beeper_status_info },
+	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.9.8.0", "", 0, mge_beeper_status_info },
 	{ "ups.L1.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.1", "", SU_OUTPUT_3, NULL },
 	{ "ups.L2.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.2", "", SU_OUTPUT_3, NULL },
 	{ "ups.L3.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.3", "", SU_OUTPUT_3, NULL },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, ietf_test_result_info },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, mge_test_result_info },
 	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.2.0", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.3.0", DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.timer.shutdown", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", "", SU_FLAG_OK, NULL },
 	{ "ups.timer.start", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", "", SU_FLAG_OK, NULL },
 	{ "ups.timer.reboot", 0, 1, "1.3.6.1.2.1.33.1.8.4.0", "", SU_FLAG_OK, NULL },
-	{ "ups.start.auto", ST_FLAG_RW, 1, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, ietf_yes_no_info },
+	{ "ups.start.auto", ST_FLAG_RW, 1, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, mge_yes_no_info },
 	/* status data */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.5.11.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_replacebatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.5.14.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_lowbatt_info },
@@ -175,7 +175,7 @@ static snmp_info_t mge_mib[] = {
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.8.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_boost_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.10.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_overload_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.12.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_trim_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.4.1.0", "", SU_STATUS_PWR | SU_FLAG_OK, ietf_power_source_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.4.1.0", "", SU_STATUS_PWR | SU_FLAG_OK, mge_power_source_info },
 
 	/* FIXME: Alarms
 	 * - upsmgBatteryChargerFault (.1.3.6.1.4.1.705.1.5.15.0), yes (1), no (2)
