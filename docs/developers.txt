@@ -578,10 +578,12 @@ Alioth) to track changes to the NUT source code. This allows you to
 clone the repository (or fork, in GitHub parlance), make changes, and
 post them online for review prior to integration.
 
-To obtain permission to commit directly to the master NUT repository,
+To obtain permission to commit directly to the common upstream NUT repository,
 you must be prepared to spend a fair amount of time contributing to the
 NUT codebase. Most developers will be well served by committing to their
-own Git repository, and having the NUT team merge their changes.
+own forked Git repository (preferably in a uniquely named branch for each
+new contribution), and having the NUT team merge their changes using pull
+requests.
 
 Git offers a little more flexibility than the +svn update+ command.
 You may fetch other developers' changes into your repository, but hold
@@ -707,11 +709,18 @@ and should *not* be used as a guide for future commits.
 Repository etiquette and quality assurance
 ------------------------------------------
 
-Please keep the Git master branch in working condition at all times. The
-master branch may be used to generate daily tarballs, and should not contain
-broken code. If you need to commit incremental changes that leave the system
-in a broken state, please do so in a separate branch and merge the changes
-back into master once they are complete.
+For developers who have commit access to the common upstream NUT repository:
+Please keep the Git "master" branch in working condition at all times.
+The "master" branch may be used to generate daily tarballs, it provides the
+baseline for new contributions, and occasionally is tagged for a new release.
+It should not contain broken code. If you need to commit incremental changes
+that leave the system in a broken state, please do so in a separate branch
+and merge the changes back into "master" once they are complete.
+
+To help keep the codebase ever-green, we run a number of CI tests and builds
+in various conditions, including older compilers, different C/C++ standard
+revisions, and an assortment of operating systems; a section below elaborates
+on this in more detail.
 
 You are encouraged to use `git rebase -i` on your private Git branches to
 separate your changes into <<_patch_cohesion,logical changes>>.
@@ -810,7 +819,7 @@ optional libraries and features installed.
 Finally note, that since 2017 the GitHub upstream project is monitored by
 Travis CI (in addition to multi-platform buildbots which occasionally do not
 work). This means that if your posted improvements are based on current NUT
-master branch, the resulting pull request should get tested for a number of
+"master" branch, the resulting pull request should get tested for a number of
 scenarios automatically. If your code adds a substantial feature, consider
 extending the `.travis.yml` and/or `ci_build.sh` scripts in the workspace
 root to add another `BUILD_TYPE` to the matrix of tests run in parallel.

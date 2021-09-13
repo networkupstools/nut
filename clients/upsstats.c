@@ -26,6 +26,7 @@
 #include "timehead.h"
 #include "upsstats.h"
 #include "upsimagearg.h"
+#include "nut_stdint.h"
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
@@ -565,7 +566,7 @@ static void do_upsimgpath(const char *s) {
 static void do_temp(const char *var)
 {
 	char	tempc[SMALLBUF];
-	float	tempf;
+	double	tempf;
 
 	if (!get_var(var, tempc, sizeof(tempc), 1))
 		return;
@@ -808,7 +809,8 @@ static int do_command(char *cmd)
 static void parse_line(const char *buf)
 {
 	char	cmd[SMALLBUF];
-	int	i, len, do_cmd = 0;
+	size_t	i, len;
+	char	do_cmd = 0;
 
 	for (i = 0; buf[i]; i += len) {
 
@@ -825,9 +827,10 @@ static void parse_line(const char *buf)
 			i++;	/* skip over the '@' character */
 			continue;
 		}
+		assert (len < INT_MAX);
 
 		if (do_cmd) {
-			snprintf(cmd, sizeof(cmd), "%.*s", len, &buf[i]);
+			snprintf(cmd, sizeof(cmd), "%.*s", (int)len, &buf[i]);
 			continue;
 		}
 
@@ -837,7 +840,7 @@ static void parse_line(const char *buf)
 		}
 
 		/* pass it trough */
-		printf("%.*s", len, &buf[i]);
+		printf("%.*s", (int)len, &buf[i]);
 	}
 }
 

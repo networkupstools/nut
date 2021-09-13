@@ -148,6 +148,14 @@ Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]").
 
+*device =* 'regex'::
+
+Select a UPS on a specific USB device or group of devices. The argument is
+a regular expression that must match the device name where the UPS is
+connected (e.g. device="001", device="00[1-2]").
+Note that device numbers are not guaranteed by the OS to be stable across
+re-boots or device re-plugging.
+
 *subdriver =* 'string'::
 
 Select a serial-over-USB subdriver to use. You have a choice between

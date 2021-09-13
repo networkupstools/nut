@@ -117,9 +117,12 @@ list, and the rest of the information is available via the
 link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
 archives].
 
-- link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed
+* link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed
 the ablerex subdriver for blazer_usb, handling Ablerex 625L and Ablerex Dk+
 6kVA models.
+
+* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov, 
+has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
 
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~

@@ -34,14 +34,20 @@ AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
     [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     PKG_PROG_PKG_CONFIG
-     dummy_RES=$?
-     AS_IF([test $dummy_RES = 0],
+     have_PKG_CONFIG=no
+     dummy_RES=0
+     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
+     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
+     AS_IF([test "${dummy_RES}" = 0],
         [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
-            [], [have_PKG_CONFIG=no])
-        ], [have_PKG_CONFIG=no])]
-)
+         dnl The m4 macro below may be not defined if pkg-config package is not
+         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
+         dnl allows to avoid shell syntax errors in generated configure script
+         dnl by defining a dummy macro in-place.
+         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
+        ])
+])
 AS_IF([test x"$have_PKG_CONFIG" = xno],
     [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
 
@@ -140,6 +146,7 @@ AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+NUT_COMPILER_FAMILY_FLAGS
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
@@ -158,6 +165,10 @@ AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 #ifdef HAVE_FLOAT_H
 # include <float.h>
 #endif])
+
+AC_CHECK_HEADER([limits.h],
+    [AC_DEFINE([HAVE_LIMITS_H], [1],
+        [Define to 1 if you have <limits.h>.])])
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
@@ -643,7 +654,7 @@ if test "${nut_with_linux_i2c}" != no; then
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
-                [nut_with_linux_i2c="no"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -653,7 +664,13 @@ if test "${nut_with_linux_i2c}" != no; then
                  #endif
                 ]
             )
-            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
+            dnl Builds for bitness/arch other than system default can be
+            dnl "compromised" by lack of respective binary library, so
+            dnl even if we have the right headers, ultimate link fails.
+            dnl Note: here we keep the verdict from above, or make it worse.
+            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c], [],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1053,7 +1070,29 @@ then
 	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
 	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
 fi
-AC_PROG_LIBTOOL
+
+dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+dnl #OBSOLETED:# AC_PROG_LIBTOOL
+
+dnl # Hack around the libtool script: as of version 58 (current in 2021),
+dnl # they use code like below to detect library paths:
+dnl #   if test yes = "$GCC"; then ... lt_search_path_spec=`$CC -print-search-dirs | ...
+dnl # which explodes when non-default architecture is used for the build,
+dnl # where e.g. "CC=gcc" and "CFLAGS=-m32" on a 64-bit capable system.
+SAVED_GCC="$GCC"
+SAVED_CC="$CC"
+if ( test "${GCC}" = "yes" )
+then
+    case "$CFLAGS$LDFLAGS" in
+        *-m32*) CC="$CC -m32" ;;
+        *-m64*) CC="$CC -m64" ;;
+    esac
+fi
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
+GCC="$SAVED_GCC"
+CC="$SAVED_CC"
+
 if ( test "${GCC}" = "yes" )
 then
 	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
@@ -1525,11 +1564,12 @@ AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
     [AS_IF([test x"${have_cxx11}" = xyes],
-        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+        [ifdef([PKG_CHECK_MODULES], [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)], [have_cppunit=no])
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
@@ -1541,6 +1581,69 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
         have_cppunit=no]
 )
+AC_MSG_RESULT(${have_cppunit})
+
+AS_IF([test "${have_cppunit}" = "yes"],
+    [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
+     dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
+     CPLUSPLUS_DECL='
+#include <stdexcept>
+#include <cppunit/extensions/HelperMacros.h>
+#include <cppunit/CompilerOutputter.h>
+#include <cppunit/extensions/TestFactoryRegistry.h>
+#include <cppunit/ui/text/TestRunner.h>
+
+class ExampleTest : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE( ExampleTest );
+    CPPUNIT_TEST( testOne );
+  CPPUNIT_TEST_SUITE_END();
+public:
+  void setUp() {};
+  void tearDown() {};
+  void testOne();
+};
+CPPUNIT_TEST_SUITE_REGISTRATION( ExampleTest );
+void ExampleTest::testOne()
+{
+  int i = 1;
+  float f = 1.0;
+  int cast = static_cast<int>(f);
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+}
+'
+
+     CPLUSPLUS_MAIN='
+CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
+CppUnit::TextUi::TestRunner runner;
+runner.addTest( suite );
+runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(), std::cerr ) );
+bool res = runner.run();
+return res ? 0 : 1;
+'
+
+     my_CXXFLAGS="$CXXFLAGS"
+     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
+     AC_LANG_PUSH([C++])
+     AC_RUN_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [have_cppunit=yes], [have_cppunit=no])
+     CXXFLAGS="$my_CXXFLAGS"
+     AC_LANG_POP([C++])
+     unset CPLUSPLUS_MAIN
+     unset CPLUSPLUS_DECL
+     ])
+AC_MSG_RESULT(${have_cppunit})
+
+dnl # By default keep the originally detected have_cppunit value
+AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
+AC_ARG_ENABLE(cppunit,
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_CASE(["${enableval}"],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["no"], [have_cppunit=no]
+	)])
+AC_MSG_RESULT(${have_cppunit})
+
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
@@ -1930,6 +2033,11 @@ AC_MSG_RESULT(["${nut_enable_warnings}"])
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
 dnl # make a difference.
+dnl # Some of the compiler flags (including those added by pkg-config of some
+dnl # third-party dependency packages) can upset older compiler releases which
+dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
+dnl # "-Wno-unknown-warning-option" for CLANG should take care of that at least
+dnl # for toolkit versions that support these - set in NUT_COMPILER_FAMILY_FLAGS
 dnl # Majority of sanity checks are enabled by "-Wextra" on both GCC and CLANG
 dnl # and "-Weverything" additionally on CLANG. They are impractically picky,
 dnl # especially with fallout from system headers that we can not impact anyway
@@ -1957,16 +2065,16 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal|gcc-medium|gcc-hard], [
@@ -2009,6 +2117,7 @@ AC_OUTPUT([
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile
  scripts/Aix/nut-aix.spec

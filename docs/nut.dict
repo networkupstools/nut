@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2535 utf-8
+personal_ws-1.1 en 2611 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -167,6 +167,7 @@ CONTEXTs
 CPAN
 CPM
 CPP
+CPPFLAGS
 CPUs
 CRC
 CREAD
@@ -223,6 +224,7 @@ DES
 DESTDIR
 DHEA
 DISCHRG
+DMF
 DN
 DOCTYPE
 DOMAINs
@@ -334,6 +336,7 @@ FreeIPMI
 FreqSens
 Frolov
 FullLoad
+Fuß
 GES
 GETADDRINFO
 GKrellM
@@ -403,6 +406,7 @@ Hlavinka
 Holger
 Hoogervorst
 Hough
+Hunnox
 Hurd
 Håvard
 IANA
@@ -445,6 +449,7 @@ Ioannou
 JAWAN
 JBus
 JKL
+JRE
 JSON
 JW
 Jageson
@@ -462,6 +467,7 @@ KRT
 Kain
 Kaminski
 Kanji
+Kazancev
 Kazutoshi
 Kebo
 Keor
@@ -804,9 +810,11 @@ PowerVault
 PowerWalker
 PowerWare
 Powerchute
+Powercool
 Powervar
 Powerwell
 Prachi
+Prereqs
 PresentStatus
 Procomm
 ProductID
@@ -877,6 +885,7 @@ RealSmart
 RedHat
 Redhat
 RefNom
+Regados
 Reinholdtsen
 Remi
 Rene
@@ -893,6 +902,7 @@ Rodríguez
 Rucelf
 RxD
 RxHs
+Ryabov
 SAI
 SCM
 SCO
@@ -909,6 +919,7 @@ SERVER's
 SETFL
 SETINFOs
 SETLK
+SFE
 SFTWTMS
 SG
 SGI
@@ -934,6 +945,7 @@ SMT
 SMTP
 SMX
 SNMPv
+SNR
 SOCKADDR
 SOCKLEN
 SOFF
@@ -1020,6 +1032,7 @@ Sysgration
 SystemIO
 Systeme
 Szady
+TBD
 TBR
 TCIFLUSH
 TCIOFLUSH
@@ -1092,6 +1105,7 @@ UPSTEMP
 UPScode
 UPSes
 UPSilon
+UPSmon
 UPSonic
 UPSs
 UPStation
@@ -1128,6 +1142,7 @@ VVV
 Vaclav
 Valderen
 Vdc
+Velloso
 VendorID
 Viewpower
 Viewsonic
@@ -1177,6 +1192,7 @@ YV
 YY
 YYYYMMDD
 YZ
+Ygor
 Yukai
 Yunto
 ZZZZZZZZ
@@ -1198,6 +1214,7 @@ adb
 addcmd
 addenum
 addinfo
+addr
 addrange
 adkorte
 adm
@@ -1224,6 +1241,7 @@ alloc
 allowfrom
 altinterface
 altpidpath
+amd
 anded
 aod
 aon
@@ -1241,10 +1259,12 @@ arg
 argc
 args
 argv
+armhf
 asapm
 ascii
 asciidoc
 asem
+aspell
 async
 atcl
 ats
@@ -1266,15 +1286,19 @@ autodetect
 autodetected
 autodetection
 autofrequency
+autogen
 automagically
 automake
 automessage
 autoreconf
 autorestart
 autosaving
+autoscan
 autostart
+autotools
 autowidth
 auxdata
+avPHK
 avahi
 avr
 awd
@@ -1316,7 +1340,9 @@ bigone
 bigserver
 bigups
 bindir
+binutils
 bitmapped
+bitness
 bitwise
 bn
 boolean
@@ -1336,6 +1362,7 @@ buflen
 bugfix
 bugfixes
 buildbots
+busybox
 bv
 bypassvolts
 byv
@@ -1344,6 +1371,7 @@ calloc
 cb
 cbl
 cblimit
+ccache
 cd
 cerr
 certfile
@@ -1427,14 +1455,17 @@ cout
 coverity
 cp
 cpp
+cppunit
 cpqpower
 cpsups
 cr
 crestfactor
 crlf
 cron
+crossbuild
 crt
 crw
+csh
 cshdelay
 css
 cts
@@ -1493,6 +1524,7 @@ dll
 dlopen
 dmesg
 dnl
+docbook
 dockapp
 docs
 dod
@@ -1508,8 +1540,10 @@ drwxr
 drwxrwx
 ds
 dsr
+dsssl
 dstate
 dt
+dtds
 dtr
 dumbterm
 dummycons
@@ -1603,6 +1637,7 @@ fuji
 fullload
 gamatronic
 gcc
+gcpp
 gd
 gd's
 gdlib
@@ -1626,10 +1661,12 @@ gitk
 gmail
 gmake
 gnuplot
+gnutls
 google
 goto
 gotos
 gpg
+graphviz
 groupname
 guardpend
 guardpstart
@@ -1664,6 +1701,7 @@ http
 httpd
 https
 huawei
+hunnox
 iBox
 iDowell
 iManufacturer
@@ -1734,6 +1772,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jdk
 journalctl
 jpg
 jpgraph
@@ -1749,6 +1788,7 @@ killpower
 kludgy
 kr
 krauler
+ksh
 ktrace
 labcd
 lan
@@ -1758,28 +1798,37 @@ ld
 len
 lf
 libaugeas
+libavahi
 libc
 libcommon
+libcppunit
 libdir
 libexec
+libfreeipmi
+libgd
 libhid
 libhidups
 libi
+libipmimonitoring
 libltdl
 libmodbus
+libneon
 libnss
 libnut
 libnutclient
 libnutconfig
 libnutscan
 libpng
+libpowerman
 libre
 libs
 libsnmp
 libtool
 libupsclient
 libusb
+libusbugen
 libwrap
+libxslt
 libxxx
 liebert
 liebertgxt
@@ -1814,6 +1863,7 @@ lowvoltsout
 lr
 lsusb
 lu
+lua
 lv
 lvo
 lxml
@@ -1862,6 +1912,7 @@ mibs
 microcontroller
 microdowell
 microlink
+microsol
 middleware
 minacvi
 minacvo
@@ -1875,6 +1926,7 @@ minva
 minvalue
 minvi
 minvo
+mis
 misconfigured
 mkdir
 mmap
@@ -1888,8 +1940,10 @@ monpasswd
 monslave
 monuser
 morbo
+mozilla
 msec
 multi
+multilib
 multilink
 multimeter
 multimon
@@ -1951,6 +2005,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noscanlangid
 notAfter
 notifyme
 notifytype
@@ -1999,12 +2054,15 @@ ont
 ontd
 ontimedays
 ontiniedays
+ooce
 openSUSE
+openjdk
 openlog
 opensolaris
 openssl
 optiups
 oq
+ostream
 otherprotocols
 pF
 paramkeywords
@@ -2029,6 +2087,7 @@ pfy
 ph
 phasewindow
 phoenixcontact
+phoenixtec
 picocom
 pid
 pidpath
@@ -2036,6 +2095,7 @@ pijuice
 pinout
 pinouts
 pkg
+pkgconf
 pkgconfig
 plaintext
 plugin
@@ -2076,6 +2136,7 @@ preprocess
 preprocessing
 preprocessor
 prerelease
+prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
@@ -2096,11 +2157,13 @@ py
 pydoc
 pynut
 qa
+qemu
 qfs
 qgs
 qpi
 qs
 queequeg
+quiesce
 qx
 qx's
 qxflags
@@ -2201,6 +2264,7 @@ setq
 setuid
 setvar
 setvar's
+sgml
 sgs
 shutdownArguments
 shutdowndebounce
@@ -2231,6 +2295,7 @@ snmpv
 snmpwalk
 snprintf
 snprintfcat
+snr
 sockdebug
 solaris
 solis
@@ -2291,6 +2356,7 @@ suid
 superset
 sv
 svc
+svcadm
 svn
 sw
 symlink
@@ -2321,9 +2387,11 @@ tapswitchphase
 tbody
 tcflush
 tcgetattr
+tcl
 tcp
 tcpdump
 tcsetattr
+tcsh
 td
 tdriver
 tempmax
@@ -2341,6 +2409,7 @@ tiocm
 tios
 tmp
 toolchain
+toolkits
 topbot
 tport
 transmitxhs
@@ -2436,6 +2505,7 @@ upsset
 upsstats
 upstype
 upsuser
+upswired
 uptime
 urpmi
 usb
@@ -2489,6 +2559,7 @@ wDescriptorLength
 wakeup
 webserver
 wf
+wget
 whitespace
 wiki
 wmnut
@@ -2521,6 +2592,7 @@ xml
 xmllint
 xr
 xrealloc
+xsl
 xsltproc
 xstrdup
 xu
@@ -2532,6 +2604,7 @@ yyy
 zaac
 zinto
 zlib
+zsh
 zw
 zwfa
 zzz
