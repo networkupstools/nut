@@ -34,7 +34,7 @@ endif
 
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
-cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la
+cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 else !HAVE_CPPUNIT

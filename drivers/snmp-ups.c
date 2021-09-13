@@ -31,12 +31,12 @@
  *
  */
 
-#include <limits.h>
 #include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
 
@@ -150,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.15"
+#define DRIVER_VERSION		"1.16"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -186,6 +186,36 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
 int get_template_type(const char* varname);
+
+/* common value post-processing functions */
+
+static char su_scratch_buf[255];
+
+/* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
+const char *su_usdate_to_isodate_info_fun(void *raw_date)
+{
+	const char *usdate = (char *)raw_date;
+	struct tm tm;
+	memset(&tm, 0, sizeof(struct tm));
+	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
+
+	upsdebugx(3, "%s: US date = %s", __func__, usdate);
+
+	/* Try to convert from US date string to time */
+	/* Note strptime returns NULL upon failure, and a ptr to the last
+	   null char of the string upon success. Just try blindly the conversion! */
+	strptime(usdate, "%m/%d/%Y", &tm);
+	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
+		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
+		return su_scratch_buf;
+	}
+
+	return NULL;
+}
+info_lkp_t su_convert_to_iso_date_info[] = {
+	{ 1, "dummy", su_usdate_to_isodate_info_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -840,7 +870,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_GAUGE:
 		if(oid2info) {
 			const char *str;
-			if((str=su_find_infoval(oid2info, *pdu->variables->val.integer))) {
+			if((str=su_find_infoval(oid2info, pdu->variables->val.integer))) {
 				strncpy(buf, str, buf_len-1);
 			}
 			/* when oid2info returns NULL, don't publish the variable! */
@@ -1215,7 +1245,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s()", __func__);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
 			status_set(info_value);
@@ -1246,7 +1276,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "%s: using definition %s", __func__, info_type);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
 		/* Special handling for outlet & outlet groups alarms */
@@ -1529,15 +1559,30 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 	return -1;
 }
 
+/* String reformating function */
+const char *su_find_strval(info_lkp_t *oid2info, void *value)
+{
+	/* First test if we have a generic lookup function */
+	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
+		upsdebugx(2, "%s: using generic lookup function (string reformating)", __func__);
+		const char * retvalue = oid2info->fun(value);
+		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		return retvalue;
+	}
+	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
+	return NULL;
+}
+
 /* find the INFO_* value matching that OID value */
-const char *su_find_infoval(info_lkp_t *oid2info, long value)
+const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
+	long value = *((long *)raw_value);
 
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun(value);
+		const char * retvalue = oid2info->fun(raw_value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2712,6 +2757,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
+			/* Check if there is a string reformating function */
+			const char *fmt_buf = NULL;
+			if ((fmt_buf = su_find_strval(su_info_p->oid2info, buf)) != NULL) {
+				snprintf(buf, sizeof(buf), "%s", fmt_buf);
+			}
 		}
 	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
@@ -2727,7 +2777,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				return FALSE;
 			}
 			/* Check if there is a value to be looked up */
-			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+			if ((strValue = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
 			else {
 				/* Check if there is a need to publish decimal too,

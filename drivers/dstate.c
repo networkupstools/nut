@@ -1256,7 +1256,7 @@ int dstate_detect_phasecount(
 		           *c1,  *c2,  *c3,  *c0;
 		char buf[MAX_STRING_SIZE]; /* For concatenation of "xput_prefix" with items we want to query */
 		size_t xput_prefix_len;
-		int bufrw_max;
+		size_t bufrw_max;
 		char *bufrw_ptr = NULL;
 
 		if (!xput_prefix) {

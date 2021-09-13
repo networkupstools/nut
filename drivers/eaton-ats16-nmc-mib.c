@@ -244,6 +244,14 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
+/* Note: keep the legacy definition intact, to avoid breaking compatibility */
+
 /* FIXME: The lines below are duplicated to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
+/* Note:
+ *   due to a bug in tools/nut-snmpinfo.py, prepending a 2nd mib2nut_info_t
+ *   declaration with a comment line results in data extraction not being
+ *   done for all entries in the file. Hence the above comment line being
+ *   after its belonging declaration! */
+
 /*mib2nut_info_t  eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, EATON_ATS16_NMC_mib, EATON_ATS16_NMC_SYSOID, NULL }; */
 mib2nut_info_t	eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, eaton_ats16_nmc_mib, EATON_ATS16_NMC_SYSOID, NULL };

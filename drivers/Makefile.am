@@ -32,7 +32,7 @@ endif
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
- mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
+ mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
@@ -127,6 +127,8 @@ masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
+microsol_apc_SOURCES = microsol-apc.c microsol-common.c
+microsol_apc_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -261,6 +263,7 @@ nutdrv_qx_SOURCES += libusb.c usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+ nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
  nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c	\
@@ -277,12 +280,14 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
- mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
+ mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
+ delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
+ nutdrv_qx_masterguard.h	\
+ nutdrv_qx_mecer.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
@@ -292,6 +297,10 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
+# as a final product. It was necessary for Automake-technical reasons,
+# because per-object CFLAGS can only be specified for libraries, not
+# for object files. This library is used during the build process,
+# and is not meant to be installed.
 EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static

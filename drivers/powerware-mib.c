@@ -4,7 +4,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2016 Arnaud Quette <ArnaudQuette@Eaton.com>
+ *       2015-2021 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.92"
+#define PW_MIB_VERSION "0.93"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -254,7 +254,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
-	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, NULL },
+	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, &su_convert_to_iso_date_info[0] },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL },

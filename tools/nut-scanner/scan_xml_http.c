@@ -390,7 +390,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 				if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
 
 #ifdef HAVE_PTHREAD
-				if (pthread_create(&thread,NULL,nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
+				if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
 					thread_count++;
 					pthread_t *new_thread_array = realloc(thread_array,
 								thread_count*sizeof(pthread_t));
@@ -413,8 +413,8 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 #ifdef HAVE_PTHREAD
 			if (thread_array != NULL) {
-				for ( i=0; i < thread_count ; i++) {
-						pthread_join(thread_array[i],NULL);
+				for (i=0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
 				}
 				free(thread_array);
 			}

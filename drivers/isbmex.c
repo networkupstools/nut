@@ -185,7 +185,10 @@ static const char *getpacket(int *we_know){
 		tv.tv_usec = 0;
 		ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
 		if (!ret) return NULL;
-		rr=read(upsfd,buf+r,255-r);
+		/* Casting is okay since bytes_per_packet is small
+		 * and r is smaller, so 255-r is positive */
+		assert (r <= 255);
+		rr = read(upsfd, buf+r, (size_t)(255-r));
 		r += rr;
 		if (r < bytes_per_packet) return NULL;
 	}

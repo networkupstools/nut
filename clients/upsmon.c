@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "upsmon.h"
 #include "parseconf.h"
@@ -39,16 +40,19 @@
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
 static	char	*powerdownflag = NULL, *configfile = NULL;
 
-static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
+static	unsigned int	minsupplies = 1, sleepval = 5;
+
+	/* sum of all power values from config file */
+static	unsigned int	totalpv = 0;
+
+	/* default TTL of a device gone AWOL, 3 x polling interval = 15 sec */
+static	int deadtime = 15;
 
 	/* default polling interval = 5 sec */
-static	int	pollfreq = 5, pollfreqalert = 5;
+static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
-
-	/* sum of all power values from config file */
-static	int	totalpv = 0;
 
 	/* default replace battery warning interval (seconds) */
 static	int	rbwarntime = 43200;
@@ -57,7 +61,7 @@ static	int	rbwarntime = 43200;
 static	int	nocommwarntime = 300;
 
 	/* default interval between the shutdown warning and the shutdown */
-static	int	finaldelay = 5;
+static	unsigned int	finaldelay = 5;
 
 	/* set by SIGHUP handler, cleared after reload finishes */
 static	int	reload_flag = 0;
@@ -741,7 +745,7 @@ static int is_ups_critical(utype_t *ups)
 static void recalc(void)
 {
 	utype_t	*ups;
-	int	val_ol = 0;
+	unsigned int	val_ol = 0;
 	time_t	now;
 
 	time(&now);
@@ -768,8 +772,8 @@ static void recalc(void)
 		ups = ups->next;
 	}
 
-	upsdebugx(3, "Current power value: %d", val_ol);
-	upsdebugx(3, "Minimum power value: %d", minsupplies);
+	upsdebugx(3, "Current power value: %u", val_ol);
+	upsdebugx(3, "Minimum power value: %u", minsupplies);
 
 	if (val_ol < minsupplies)
 		forceshutdown();
@@ -846,7 +850,7 @@ static void drop_connection(utype_t *ups)
 }
 
 /* change some UPS parameters during reloading */
-static void redefine_ups(utype_t *ups, int pv, const char *un,
+static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 		const char *pw, const char *managerialOption)
 {
 	ups->retain = 1;
@@ -950,7 +954,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 static void addups(int reloading, const char *sys, const char *pvs,
 		const char *un, const char *pw, const char *managerialOption)
 {
-	int	pv;
+	unsigned int	pv;
 	utype_t	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
@@ -961,13 +965,14 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		return;
 	}
 
-	pv = strtol(pvs, (char **) NULL, 10);
+	long lpv = strtol(pvs, (char **) NULL, 10);
 
-	if (pv < 0) {
+	if (lpv < 0 || (sizeof(long) > sizeof(unsigned int) && lpv > (long)UINT_MAX)) {
 		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%s]",
 			sys, pvs);
 		return;
 	}
+	pv = (unsigned int)lpv;
 
 	last = tmp = firstups;
 
@@ -1171,13 +1176,23 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 	/* POLLFREQ <num> */
 	if (!strcmp(arg[0], "POLLFREQ")) {
-		pollfreq = atoi(arg[1]);
+		int ipollfreq = atoi(arg[1]);
+		if (ipollfreq < 0) {
+			upsdebugx(0, "Ignoring invalid POLLFREQ value: %d", ipollfreq);
+		} else {
+			pollfreq = (unsigned int)ipollfreq;
+		}
 		return 1;
 	}
 
 	/* POLLFREQALERT <num> */
 	if (!strcmp(arg[0], "POLLFREQALERT")) {
-		pollfreqalert = atoi(arg[1]);
+		int ipollfreqalert = atoi(arg[1]);
+		if (ipollfreqalert < 0) {
+			upsdebugx(0, "Ignoring invalid POLLFREQALERT value: %d", ipollfreqalert);
+		} else {
+			pollfreqalert = (unsigned int)ipollfreqalert;
+		}
 		return 1;
 	}
 
@@ -1195,7 +1210,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 	/* MINSUPPLIES <num> */
 	if (!strcmp(arg[0], "MINSUPPLIES")) {
-		minsupplies = atoi(arg[1]);
+		int iminsupplies = atoi(arg[1]);
+		if (iminsupplies < 0) {
+			upsdebugx(0, "Ignoring invalid MINSUPPLIES value: %d", iminsupplies);
+		} else {
+			minsupplies = (unsigned int)iminsupplies;
+		}
 		return 1;
 	}
 
@@ -1213,7 +1233,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 	/* FINALDELAY <num> */
 	if (!strcmp(arg[0], "FINALDELAY")) {
-		finaldelay = atoi(arg[1]);
+		int ifinaldelay = atoi(arg[1]);
+		if (ifinaldelay < 0) {
+			upsdebugx(0, "Ignoring invalid FINALDELAY value: %d", ifinaldelay);
+		} else {
+			finaldelay = (unsigned int)ifinaldelay;
+		}
 		return 1;
 	}
 

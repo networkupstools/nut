@@ -804,6 +804,9 @@ The idea is to write it up in here so that nobody asks the mailing
 list when it finally does get released.
 
 == My UPS powers up immediately after a power failure instead of waiting for the batteries to recharge!
+Or a variation like...
+
+== My UPS (an APC as it happens) lacks the field "battery.charge.restart" -- so how will it know when to restart?
 
 You can rig up a little hack to handle this issue in software.
 
