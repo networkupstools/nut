@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2558 utf-8
+personal_ws-1.1 en 2611 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -166,6 +166,7 @@ CONTEXTs
 CPAN
 CPM
 CPP
+CPPFLAGS
 CPUs
 CRC
 CREAD
@@ -222,6 +223,7 @@ DES
 DESTDIR
 DHEA
 DISCHRG
+DMF
 DN
 DOCTYPE
 DOMAINs
@@ -445,6 +447,7 @@ Ioannou
 JAWAN
 JBus
 JKL
+JRE
 JSON
 JW
 Jageson
@@ -809,6 +812,7 @@ Powercool
 Powervar
 Powerwell
 Prachi
+Prereqs
 PresentStatus
 Procomm
 ProductID
@@ -913,6 +917,7 @@ SERVER's
 SETFL
 SETINFOs
 SETLK
+SFE
 SFTWTMS
 SG
 SGI
@@ -1025,6 +1030,7 @@ Sysgration
 SystemIO
 Systeme
 Szady
+TBD
 TBR
 TCIFLUSH
 TCIOFLUSH
@@ -1232,6 +1238,7 @@ alloc
 allowfrom
 altinterface
 altpidpath
+amd
 anded
 aod
 aon
@@ -1249,10 +1256,12 @@ arg
 argc
 args
 argv
+armhf
 asapm
 ascii
 asciidoc
 asem
+aspell
 async
 atcl
 ats
@@ -1274,6 +1283,7 @@ autodetect
 autodetected
 autodetection
 autofrequency
+autogen
 automagically
 automake
 automessage
@@ -1282,6 +1292,7 @@ autorestart
 autosaving
 autoscan
 autostart
+autotools
 autowidth
 auxdata
 avPHK
@@ -1326,7 +1337,9 @@ bigone
 bigserver
 bigups
 bindir
+binutils
 bitmapped
+bitness
 bitwise
 bn
 boolean
@@ -1346,6 +1359,7 @@ buflen
 bugfix
 bugfixes
 buildbots
+busybox
 bv
 bypassvolts
 byv
@@ -1354,6 +1368,7 @@ calloc
 cb
 cbl
 cblimit
+ccache
 cd
 cerr
 certfile
@@ -1437,14 +1452,17 @@ cout
 coverity
 cp
 cpp
+cppunit
 cpqpower
 cpsups
 cr
 crestfactor
 crlf
 cron
+crossbuild
 crt
 crw
+csh
 cshdelay
 css
 cts
@@ -1503,6 +1521,7 @@ dll
 dlopen
 dmesg
 dnl
+docbook
 dockapp
 docs
 dod
@@ -1518,8 +1537,10 @@ drwxr
 drwxrwx
 ds
 dsr
+dsssl
 dstate
 dt
+dtds
 dtr
 dumbterm
 dummycons
@@ -1613,6 +1634,7 @@ fuji
 fullload
 gamatronic
 gcc
+gcpp
 gd
 gd's
 gdlib
@@ -1636,10 +1658,12 @@ gitk
 gmail
 gmake
 gnuplot
+gnutls
 google
 goto
 gotos
 gpg
+graphviz
 groupname
 guardpend
 guardpstart
@@ -1745,6 +1769,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jdk
 journalctl
 jpg
 jpgraph
@@ -1760,6 +1785,7 @@ killpower
 kludgy
 kr
 krauler
+ksh
 ktrace
 labcd
 lan
@@ -1769,28 +1795,37 @@ ld
 len
 lf
 libaugeas
+libavahi
 libc
 libcommon
+libcppunit
 libdir
 libexec
+libfreeipmi
+libgd
 libhid
 libhidups
 libi
+libipmimonitoring
 libltdl
 libmodbus
+libneon
 libnss
 libnut
 libnutclient
 libnutconfig
 libnutscan
 libpng
+libpowerman
 libre
 libs
 libsnmp
 libtool
 libupsclient
 libusb
+libusbugen
 libwrap
+libxslt
 libxxx
 liebert
 liebertgxt
@@ -1825,6 +1860,7 @@ lowvoltsout
 lr
 lsusb
 lu
+lua
 lv
 lvo
 lxml
@@ -1887,6 +1923,7 @@ minva
 minvalue
 minvi
 minvo
+mis
 misconfigured
 mkdir
 mmap
@@ -1900,8 +1937,10 @@ monpasswd
 monslave
 monuser
 morbo
+mozilla
 msec
 multi
+multilib
 multilink
 multimeter
 multimon
@@ -2012,12 +2051,15 @@ ont
 ontd
 ontimedays
 ontiniedays
+ooce
 openSUSE
+openjdk
 openlog
 opensolaris
 openssl
 optiups
 oq
+ostream
 otherprotocols
 pF
 paramkeywords
@@ -2050,6 +2092,7 @@ pijuice
 pinout
 pinouts
 pkg
+pkgconf
 pkgconfig
 plaintext
 plugin
@@ -2090,6 +2133,7 @@ preprocess
 preprocessing
 preprocessor
 prerelease
+prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
@@ -2110,6 +2154,7 @@ py
 pydoc
 pynut
 qa
+qemu
 qfs
 qgs
 qpi
@@ -2216,6 +2261,7 @@ setq
 setuid
 setvar
 setvar's
+sgml
 sgs
 shutdownArguments
 shutdowndebounce
@@ -2307,6 +2353,7 @@ suid
 superset
 sv
 svc
+svcadm
 svn
 sw
 symlink
@@ -2339,9 +2386,11 @@ tapswitchphase
 tbody
 tcflush
 tcgetattr
+tcl
 tcp
 tcpdump
 tcsetattr
+tcsh
 td
 tdriver
 tempmax
@@ -2360,6 +2409,7 @@ tios
 tmp
 tmpfiles
 toolchain
+toolkits
 topbot
 tport
 transmitxhs
@@ -2509,6 +2559,7 @@ wDescriptorLength
 wakeup
 webserver
 wf
+wget
 whitespace
 wiki
 wmnut
@@ -2541,6 +2592,7 @@ xml
 xmllint
 xr
 xrealloc
+xsl
 xsltproc
 xstrdup
 xu
@@ -2552,6 +2604,7 @@ yyy
 zaac
 zinto
 zlib
+zsh
 zw
 zwfa
 zzz
