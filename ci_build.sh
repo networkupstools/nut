@@ -92,8 +92,10 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     [[ "$CI_OS_NAME" = "windows" ]] && CANBUILD_LIBGD_CGI=no
 
     # NUT CI farm with Jenkins can build it; Travis could not
-    #[[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
-    [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+    [[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=yes \
+    || [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+
+    # See also below for some compiler-dependent decisions
 fi
 
 configure_nut() {
@@ -238,6 +240,28 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         fi
     fi
 
+    if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
+        if [[ "$CI_OS_NAME" = "openindiana" ]] ; then
+            # For some reason, here gcc-4.x (4.4.4, 4.9) have a problem with
+            # configure-time checks of libgd; newer compilers fare okay.
+            # Feel free to revise this if the distro packages are fixed
+            # (or the way configure script and further build uses them).
+            # UPDATE: Per https://github.com/networkupstools/nut/pull/1089
+            # This is a systems issue (in current OpenIndiana 2021.04 built
+            # with a newer GCC version, the older GCC is not ABI compatible
+            # with the libgd shared object file). Maybe this warrants later
+            # caring about not just the CI_OS_NAME but also CI_OS_RELEASE...
+            if [[ "$COMPILER_FAMILY" = "GCC" ]]; then
+                case "`LANG=C $CC --version | head -1`" in
+                    *[\ -][01234].*)
+                        echo "WARNING: Seems we are running with gcc-4.x or older on $CI_OS_NAME, which last had known issues with libgd; disabling CGI for this build"
+                        CANBUILD_LIBGD_CGI=no
+                        ;;
+                esac
+            fi
+        fi
+    fi
+
     # Note: Potentially there can be spaces in entries for multiple
     # *FLAGS here; this should be okay as long as entry expands to
     # one token when calling shell (may not be the case for distcheck)
@@ -264,7 +288,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     || ( [ "${CANBUILD_CPPUNIT_TESTS-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
     ; then
         echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
-        CONFIG_OPTS+=("--with-cppunit=no")
+        CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
     DO_DISTCHECK=yes
