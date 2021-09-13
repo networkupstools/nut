@@ -266,6 +266,9 @@ Returns OK on success or raises an error
         """ Send FSD command
 
 Returns OK on success or raises an error
+
+TODO: API change pending to replace MASTER with PRIMARY
+(and backwards-compatible alias handling)
         """
 
         if self.__debug :

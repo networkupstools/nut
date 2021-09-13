@@ -33,7 +33,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.29"
+#define MGE_XML_VERSION		"MGEXML/0.30"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -438,7 +438,7 @@ static const char *convert_deci(const char *arg_val)
 			upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are normally not decimated. This driver instance has however configured do_convert_deci in your ups.conf, so this behavior for old MGE NetXML-capable devices is preserved.", __func__);
 			mge_report_deprecation__convert_deci = 0;
 		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(arg_val));
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)(atoi(arg_val)));
 		return mge_scratch_buf;
 	}
 
@@ -484,13 +484,13 @@ static const char *url_convert(const char *arg_val)
 
 static const char *mge_battery_capacity(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 3600);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)(atoi(arg_val)) / 3600.0);
 	return mge_scratch_buf;
 }
 
 static const char *mge_powerfactor_conversion(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 100);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)(atoi(arg_val)) / 100.0);
 	return mge_scratch_buf;
 }
 
@@ -928,10 +928,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
-	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
-	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
-	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
 	{ "battery.protection", 0, 0, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
 	{ "battery.energysave", 0, 0, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 

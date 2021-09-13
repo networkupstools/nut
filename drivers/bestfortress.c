@@ -22,6 +22,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define UPSDELAY 50000	/* 50 ms delay required for reliable operation */
 #define SER_WAIT_SEC	2	/* allow 2.0 sec for ser_get calls */
@@ -167,10 +168,7 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	/* FIXME (bitness-dependent?):
-	 *   error: cast from function call of type 'int' to non-matching type 'double' [-Werror,-Wbad-function-cast]
-	 */
-	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+	dstate_setinfo (key, fmt, factor * (double)(atoi (buf)));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -202,17 +200,20 @@ static int upssend(const char *fmt,...) {
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
 				"than %d bytes", (int)sizeof(buf));
-	for (p = buf; *p; p++) {
+	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
 
-		if (d_usec)
-			usleep(d_usec);
+		if (d_usec > 0)
+			usleep((useconds_t)d_usec);
 
 		sent++;
+		if (sent >= INT_MAX) {
+			upslogx(LOG_WARNING, "ser_send_pace: sent more than INT_MAX, aborting");
+		}
 	}
 
-	return sent;
+	return (int)sent;
 }
 
 static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
@@ -231,12 +232,13 @@ static int upsflushin(int f, int verbose, const char *ignset)
 void upsdrv_updateinfo(void)
 {
 	char temp[256];
-	char *p;
+	char *p = NULL;
 	int loadva;
-	int len, recv;
+	size_t len = 0;
+	int recv;
 	int retry;
 	char ch;
-	int checksum_ok, is_online=1, is_off, low_batt, trimming, boosting;
+	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
 
 	upsdebugx(1, "upsdrv_updateinfo");
 
@@ -254,7 +256,7 @@ void upsdrv_updateinfo(void)
 		} while (temp[2] == 0);
 
 		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
-		upsdebug_hex(5, "buffer", temp, recv);
+		upsdebug_hex(5, "buffer", temp, (size_t)recv);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
@@ -269,7 +271,7 @@ void upsdrv_updateinfo(void)
 		/* last bytes are a checksum:
 		   interpret response as hex string, sum of all bytes must be zero
 		 */
-		checksum_ok = (checksum (temp+2) & 0xff) == 0;
+		checksum_ok = ( (checksum (temp+2) & 0xff) == 0 );
 		/* setinfo (INFO_, ""); */
 
 		/* I can't figure out why this is missing the first two chars.
@@ -287,12 +289,19 @@ void upsdrv_updateinfo(void)
 		sleep(SER_WAIT_SEC);
 	}
 
-	if (!checksum_ok) {
-		upsdebugx(2, "checksum corruption");
-		upsdebug_hex(3, "buffer", temp, len);
+	if (!p || len < 1 || checksum_ok < 0) {
+		upsdebugx(2, "pointer to data not initialized after processing");
 		dstate_datastale();
 		return;
 	}
+
+	if (!checksum_ok) {
+		upsdebugx(2, "checksum corruption");
+		upsdebug_hex(3, "buffer", temp, (size_t)len);
+		dstate_datastale();
+		return;
+	}
+
 	/* upslogx(LOG_INFO, "updateinfo: %s", p); */
 
 	setinfo_int ("input.voltage", p+24,4);
@@ -344,6 +353,8 @@ void upsdrv_updateinfo(void)
 static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
+	/* Note the use of "%*s" - parameter (int)dlen specifies
+	 * the string width reserved for data */
 	upssend ("p%d=%*s\r", parameter, dlen, data);
 	if (upsrecv (reply, sizeof(reply), ENDCHAR, "") < 0) return 0;
 	return strncmp (reply, "OK", 2) == 0;
@@ -370,7 +381,7 @@ static void autorestart (int restart)
 /* set UPS parameters */
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
-	int len = strlen(data);
+	size_t len = strlen(data);
 	upsdebugx(1, "Setvar: %s %s", var, data);
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
@@ -386,8 +397,9 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		return STAT_SET_UNKNOWN;
 	}
 	ups_setsuper (1);
-	if (setparam (parameter, len, data)) {
-		dstate_setinfo (var, "%*s", len, data);
+	assert (len < INT_MAX);
+	if (setparam (parameter, (int)len, data)) {
+		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
 	return STAT_SET_HANDLED;

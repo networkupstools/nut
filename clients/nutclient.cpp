@@ -98,7 +98,16 @@ std::string SystemException::err()
 	}
 }
 
-/* Implemented out-of-line to avoid "Weak vtables" warnings and related overheads */
+/* Implemented out-of-line to avoid "Weak vtables" warnings and related overheads
+ * But now with clang-9 C++11 linter (though not C++17) they complain with
+ *   error: definition of implicit copy constructor for 'NutException'
+ *          is deprecated because it has a user-declared destructor
+ * This is fixed in header with declarations like:
+ *   NutException(const NutException&) = default;
+ * and assignment operator to accompany the copy constructor, per
+ * https://lgtm.com/rules/2165180572/ like:
+ *   NutException& operator=(NutException& rhs) = default;
+ */
 NutException::~NutException() {}
 SystemException::~SystemException() {}
 IOException::~IOException() {}
@@ -802,6 +811,9 @@ void TcpClient::deviceLogin(const std::string& dev)
 	detectError(sendQuery("LOGIN " + dev));
 }
 
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
 void TcpClient::deviceMaster(const std::string& dev)
 {
 	detectError(sendQuery("MASTER " + dev));
@@ -1301,6 +1313,9 @@ void Device::login()
 	getClient()->deviceLogin(getName());
 }
 
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
 void Device::master()
 {
 	if (!isOk()) throw NutException("Invalid device");
@@ -1705,6 +1720,9 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev)
 	return -1;
 }
 
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 {
 	if(client)

@@ -1532,7 +1532,7 @@ void upsdrv_makevartable(void)
  */
 void upsdrv_initups(void)
 {
-	char *regex_array[6];
+	char *regex_array[7];
 	char *value;
 	int r;
 
@@ -1543,6 +1543,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product"); /* product string */
 	regex_array[4] = getval("serial"); /* probably won't see this */
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {

@@ -74,8 +74,8 @@ static const struct option longopts[] = {
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 	{ "available", no_argument, NULL, 'a' },
-	{ "nut_debug_level",  no_argument,  NULL,  'D' },
-	{NULL, 0, NULL, 0}
+	{ "nut_debug_level", no_argument, NULL, 'D' },
+	{ NULL, 0, NULL, 0 }
 };
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c)
