@@ -214,7 +214,7 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 		sendback(client, "VAR %s %s \"%s\"\n", upsname, var, val);
 }
 
-void net_get(nut_ctype_t *client, int numarg, const char **arg)
+void net_get(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

@@ -4,8 +4,8 @@
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
-LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
-LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
+LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
+LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -32,7 +32,7 @@ endif
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
- mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
+ mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
@@ -109,6 +109,7 @@ bcmxcp_LDADD = $(LDADD) -lm
 belkin_SOURCES = belkin.c
 belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
+bestfortress_SOURCES = bestfortress.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
@@ -126,6 +127,8 @@ masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
+microsol_apc_SOURCES = microsol-apc.c microsol-common.c
+microsol_apc_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -175,7 +178,7 @@ skel_LDADD = $(LDADD_DRIVERS)
 # USB
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -198,7 +201,6 @@ richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
@@ -211,7 +213,7 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
  eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
- eaton-ats16-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
+ eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
  apc-pdu-mib.c emerson-avocent-pdu-mib.c hpe-pdu-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
@@ -253,7 +255,7 @@ nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
 nutdrv_qx_CFLAGS = $(AM_CFLAGS)
 if WITH_SERIAL
 nutdrv_qx_CFLAGS += -DQX_SERIAL
-nutdrv_qx_LDADD += $(SERLIBS) serial.o
+nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
 endif
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
@@ -261,9 +263,11 @@ nutdrv_qx_SOURCES += libusb.c usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+ nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
- nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c
+ nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c	\
+ nutdrv_qx_hunnox.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -276,20 +280,29 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
- mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
+ mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
- nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h	\
+ delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
+ nutdrv_qx_masterguard.h	\
+ nutdrv_qx_mecer.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
- xppc-mib.h huawei-mib.h eaton-ats16-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
+ xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h \
- hpe-pdu-mib.h
+ hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
-EXTRA_LIBRARIES = libdummy.a
-libdummy_a_SOURCES = main.c dstate.c serial.c
+# as a final product. It was necessary for Automake-technical reasons,
+# because per-object CFLAGS can only be specified for libraries, not
+# for object files. This library is used during the build process,
+# and is not meant to be installed.
+EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
+libdummy_la_SOURCES = main.c dstate.c
+libdummy_la_LDFLAGS = -no-undefined -static
+libdummy_serial_la_SOURCES = serial.c
+libdummy_serial_la_LDFLAGS = -no-undefined -static

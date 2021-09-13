@@ -1,5 +1,10 @@
 /* bestups.c - model specific routines for Best-UPS Fortress models
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
    ID config option by Jason White <jdwhite@jdwhite.org>

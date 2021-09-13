@@ -30,6 +30,7 @@
 #include "upsd.h"
 #include "neterr.h"
 #include "netssl.h"
+#include "nut_stdint.h"
 
 #ifdef WITH_NSS
 	#include <pk11pub.h>
@@ -61,19 +62,19 @@ static int	ssl_initialized = 0;
 #ifndef WITH_SSL
 
 /* stubs for non-ssl compiles */
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
 }
 
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
+ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
+ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;
@@ -103,7 +104,7 @@ static SSL_CTX	*ssl_ctx = NULL;
 
 static void ssl_debug(void)
 {
-	int	e;
+	unsigned long	e;
 	char	errmsg[SMALLBUF];
 
 	while ((e = ERR_get_error()) != 0) {
@@ -233,7 +234,7 @@ static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 #ifdef WITH_OPENSSL
 	int ret;
@@ -547,18 +548,38 @@ void ssl_init(void)
 #endif /* WITH_OPENSSL | WITH_NSS */
 }
 
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;
 	}
 
 #ifdef WITH_OPENSSL
-	ret = SSL_read(client->ssl, buf, buflen);
+	/* SSL_* routines deal with int type for return and buflen
+	 * We might need to window our I/O if we exceed 2GB (in
+	 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+	 * but smaller systems with 16-bits might be endangered :)
+	 */
+	assert(buflen <= INT_MAX);
+	int iret = SSL_read(client->ssl, buf, (int)buflen);
+	assert(iret <= SSIZE_MAX);
+	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Read(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Read(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	if (ret < 1) {
@@ -569,24 +590,38 @@ int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	return ret;
 }
 
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
+ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
-	int	ret;
+	ssize_t	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;
 	}
 
 #ifdef WITH_OPENSSL
-	ret = SSL_write(client->ssl, buf, buflen);
+	/* SSL_* routines deal with int type for return and buflen
+	 * We might need to window our I/O if we exceed 2GB (in
+	 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+	 * but smaller systems with 16-bits might be endangered :)
+	 */
+	assert(buflen <= INT_MAX);
+	int iret = SSL_write(client->ssl, buf, (int)buflen);
+	assert(iret <= SSIZE_MAX);
+	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	ret = PR_Write(client->ssl, buf, buflen);
+	/* PR_* routines deal in PRInt32 type
+	 * We might need to window our I/O if we exceed 2GB :) */
+	assert(buflen <= PR_INT32_MAX);
+	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%d", ret);
+	upsdebugx(5, "ssl_write ret=%zd", ret);
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void ssl_finish(nut_ctype_t *client)
 {

@@ -15,7 +15,7 @@ DESCRIPTION
 
 *libupsclient-config* is a tool that is used to determine the compiler and
 linker flags that should be used to compile and link programs that use
-*libupsclient* from the Network UPS Tools project. 
+*libupsclient* from the Network UPS Tools project.
 
 OPTIONS
 -------

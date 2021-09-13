@@ -45,7 +45,7 @@ extern "C" {
 
 static struct {
 	const	char	*name;
-	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
+	void	(*func)(nut_ctype_t *client, size_t numargs, const char **arg);
 	int	flags;
 } netcmds[] = {
 	{ "VER",	net_ver,	0		},
@@ -61,6 +61,9 @@ static struct {
 
 	{ "LOGIN",	net_login,	FLAG_USER	},
 	{ "LOGOUT", 	net_logout,	0		},
+	/* FIXME: Protocol update needed to handle master/primary alias
+	 * and probably an API bump also, to rename/alias the routine.
+	 */
 	{ "MASTER",	net_master,	FLAG_USER	},
 
 	{ "FSD",	net_fsd,	FLAG_USER	},
@@ -68,7 +71,7 @@ static struct {
 	{ "SET",	net_set,	FLAG_USER	},
 	{ "INSTCMD",	net_instcmd,	FLAG_USER	},
 
-	{ NULL,		(void(*)(struct nut_ctype_s *, int,  const char **))(NULL), 0		}
+	{ NULL,		(void(*)(struct nut_ctype_s *, size_t,  const char **))(NULL), 0		}
 };
 
 #ifdef __cplusplus

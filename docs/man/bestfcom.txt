@@ -20,7 +20,7 @@ Best Power Fortress/Ferrups implementing the Fortress UPS Protocol
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the    
+This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 AUTHORS

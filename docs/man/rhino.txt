@@ -14,7 +14,7 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 This driver has been tested with :
-  
+
  * Rhino   6000 VA
  * Rhino   7500 VA
  * Rhino  10000 VA

@@ -112,6 +112,7 @@ TODO List:
 #include "main.h"
 #include <math.h>       /* For ldexp() */
 #include <float.h>      /*for FLT_MAX */
+
 #include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
@@ -139,8 +140,8 @@ upsdrv_info_t upsdrv_info = {
 	{ &comm_upsdrv_info, NULL }
 };
 
-static int get_word(const unsigned char*);
-static long int get_long(const unsigned char*);
+static uint16_t get_word(const unsigned char*);
+static uint32_t get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static void init_command_map(void);
 static void init_meter_map(void);
@@ -152,9 +153,9 @@ static void init_ext_vars(void);
 static void init_topology(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
-static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex);
+static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const unsigned int mapIndex, const unsigned int bitmask, const unsigned int alarmMapIndex, const unsigned int alarmBlockIndex);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
-static int init_outlet(unsigned char len);
+static unsigned char init_outlet(unsigned char len);
 static void init_system_test_capabilities(void);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
@@ -171,7 +172,7 @@ static const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with 
 /* Standard Authorization Block */
 static unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 static int nphases = 0;
-static int outlet_block_len = 0;
+static uint16_t outlet_block_len = 0;
 static const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 static const char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
@@ -245,10 +246,10 @@ BCMXCP_STATUS_t
 
 
 /* get_word function from nut driver metasys.c */
-int get_word(const unsigned char *buffer) /* return an integer reading a word in the supplied buffer */
+uint16_t get_word(const unsigned char *buffer) /* return a short integer reading a word in the supplied buffer */
 {
 	unsigned char a, b;
-	int result;
+	uint16_t result;
 
 	a = buffer[0];
 	b = buffer[1];
@@ -258,10 +259,10 @@ int get_word(const unsigned char *buffer) /* return an integer reading a word in
 }
 
 /* get_long function from nut driver metasys.c for meter readings*/
-long int get_long(const unsigned char *buffer) /* return a long integer reading 4 bytes in the supplied buffer.*/
+uint32_t get_long(const unsigned char *buffer) /* return a long integer reading 4 bytes in the supplied buffer.*/
 {
 	unsigned char a, b, c, d;
-	long int result;
+	uint32_t result;
 
 	a = buffer[0];
 	b = buffer[1];
@@ -842,7 +843,7 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 
 void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value)
 {
-	long lValue = 0;
+	uint32_t lValue = 0;
 	char sFormat[32];
 	float fValue;
 	unsigned char dd, mm, yy, cc, hh, ss;
@@ -930,7 +931,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
 	unsigned int iIndex = 0;
-	int alarm = 0;
+	unsigned int alarm = 0;
 
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported");
@@ -966,39 +967,49 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	upsdebugx(2, "\n");
 }
 
-bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex) {
-		/* Check what the alarm block tells about the support for the alarm */
-		if (map[mapIndex] & bitmask)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = alarmBlockIndex;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
-		}
+bool_t set_alarm_support_in_alarm_map(
+	const unsigned char *map,
+	const unsigned int mapIndex,
+	const unsigned int bitmask,
+	const unsigned int alarmMapIndex,
+	const unsigned int alarmBlockIndex
+) {
+	/* Check what the alarm block tells about the support for the alarm */
+	if (map[mapIndex] & bitmask)
+	{
+		/* Set alarm active */
+		assert (alarmBlockIndex < INT_MAX);
+		bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = (int)alarmBlockIndex;
+	}
+	else
+	{
+		/* Set alarm inactive */
+		bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
+	}
 
-		/* Return if the alarm was supported or not */
-		if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
-			return TRUE;
+	/* Return if the alarm was supported or not */
+	if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
+		/* Debug info */
+		upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+		return TRUE;
 		}
-		else {
-			/* Debug info */
-			upsdebugx(3, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
-			return FALSE;
-		}
+	else {
+		/* Debug info */
+		upsdebugx(3, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+		return FALSE;
+	}
 }
 
-int init_outlet(unsigned char len)
+unsigned char init_outlet(unsigned char len)
 {
+	/* Note: (bug?) the argument "len" is not practically used in code below
+	 * Callers know it as "outlet_block_len" in their routines and it is greater than 8
+	 */
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int iIndex = 0, res, num;
-	int num_outlet, size_outlet;
-	int outlet_num, outlet_state;
-	short auto_dly_off, auto_dly_on;
+	int iIndex = 0, res;
+	unsigned char num_outlet, size_outlet, num;
+	unsigned char outlet_num, outlet_state;
+	uint16_t auto_dly_off, auto_dly_on;
 	char outlet_name[64];
 
 	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
@@ -1008,36 +1019,36 @@ int init_outlet(unsigned char len)
 		upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of outlets: %d", num_outlet);
+	upsdebugx(2, "Number of outlets: %u", num_outlet);
 
 	size_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of bytes: %d", size_outlet);
+	upsdebugx(2, "Number of bytes: %u", size_outlet);
 
 	for(num = 1 ; num <= num_outlet ; num++) {
 		outlet_num = answer[iIndex++];
-		upsdebugx(2, "Outlet number: %d", outlet_num);
-		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", num);
-		dstate_setinfo(outlet_name, "%d", outlet_num);
+		upsdebugx(2, "Outlet number: %u", outlet_num);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%u.id", num);
+		dstate_setinfo(outlet_name, "%u", outlet_num);
 
 		outlet_state = answer[iIndex++];
-		upsdebugx(2, "Outlet state: %d", outlet_state);
-		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.status", num);
+		upsdebugx(2, "Outlet state: %u", outlet_state);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%u.status", num);
 		if (outlet_state>0 && outlet_state <9 )
 			dstate_setinfo(outlet_name, "%s", OutletStatus[outlet_state] );
 
 		auto_dly_off = get_word(answer+iIndex);
 		iIndex += 2;
-		upsdebugx(2, "Auto delay off: %d", auto_dly_off);
-		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.shutdown", num);
-		dstate_setinfo(outlet_name, "%d", auto_dly_off);
+		upsdebugx(2, "Auto delay off: %u", auto_dly_off);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%u.delay.shutdown", num);
+		dstate_setinfo(outlet_name, "%u", auto_dly_off);
 		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux(outlet_name, 5);
 
 		auto_dly_on = get_word(answer+iIndex);
 		iIndex += 2;
-		upsdebugx(2, "Auto delay on: %d", auto_dly_on);
-		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
-		dstate_setinfo(outlet_name, "%d", auto_dly_on);
+		upsdebugx(2, "Auto delay on: %u", auto_dly_on);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%u.delay.start", num);
+		dstate_setinfo(outlet_name, "%u", auto_dly_on);
 		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux(outlet_name, 5);
 	}
@@ -1129,7 +1140,8 @@ void init_ext_vars(void)
 void init_config(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int voltage = 0, frequency = 0, res, tmp=0;
+	uint16_t voltage = 0, frequency = 0, tmp = 0;
+	int res;
 	char sValue[17];
 	char sPartNumber[17];
 
@@ -1143,17 +1155,17 @@ void init_config(void)
 	/* Nominal output voltage of ups */
 	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
 	if (voltage != 0)
-		dstate_setinfo("output.voltage.nominal", "%d", voltage);
+		dstate_setinfo("output.voltage.nominal", "%u", voltage);
 
 	/* Nominal Output Frequency */
 	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
 	if (frequency != 0)
-		dstate_setinfo("output.frequency.nominal", "%d", frequency);
+		dstate_setinfo("output.frequency.nominal", "%u", frequency);
 
 	/*Number of EBM*/
-	tmp = (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
+	tmp = (uint16_t) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
 	if (tmp != 0)
-		dstate_setinfo("battery.packs", "%d", tmp);
+		dstate_setinfo("battery.packs", "%u", tmp);
 
 	/* UPS serial number */
 	snprintf(sValue, sizeof(sValue), "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
@@ -1169,7 +1181,8 @@ void init_config(void)
 void init_limit(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int value, res;
+	uint16_t value;
+	int res;
 
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0) {
@@ -1179,43 +1192,45 @@ void init_limit(void)
 	/* Nominal input voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
 	if (value != 0) {
-		dstate_setinfo("input.voltage.nominal", "%d", value);
+		dstate_setinfo("input.voltage.nominal", "%u", value);
 	}
 
 	/* Nominal input frequency */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
 	if (value != 0) {
-		int fnom = value;
-		dstate_setinfo("input.frequency.nominal", "%d", value);
+		uint16_t fnom = value;
+		dstate_setinfo("input.frequency.nominal", "%u", value);
 
 		/* Input frequency deviation */
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT));
 
 		if (value != 0) {
 			value /= 100;
-			dstate_setinfo("input.frequency.low", "%d", fnom - value);
-			dstate_setinfo("input.frequency.high", "%d", fnom + value);
+			dstate_setinfo("input.frequency.low", "%u", fnom - value);
+			dstate_setinfo("input.frequency.high", "%u", fnom + value);
 		}
 	}
 
 	/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
 	if (value != 0) {
-		dstate_setinfo("input.transfer.boost.high", "%d", value);
+		dstate_setinfo("input.transfer.boost.high", "%u", value);
 	}
 
 	/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
 	if (value != 0) {
-		dstate_setinfo("input.transfer.trim.low", "%d", value);
+		dstate_setinfo("input.transfer.trim.low", "%u", value);
 	}
 
 	/* Low battery warning */
 	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
 
-	/* Check if we should warn the user that her shutdown delay is to long? */
+	/* Check if we should warn the user that her shutdown delay is too long? */
 	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
-		upslogx(LOG_WARNING, "Shutdown delay longer than battery capacity when Low Battery warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+		upslogx(LOG_WARNING,
+			"Shutdown delay longer than battery capacity when Low Battery "
+			"warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
@@ -1226,55 +1241,55 @@ void init_limit(void)
 	/* Minimum Supported Input Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
 	if (value != 0) {
-		dstate_setinfo("input.transfer.low", "%d", value);
+		dstate_setinfo("input.transfer.low", "%u", value);
 	}
 
 	/* Maximum Supported Input Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
 	if (value != 0) {
-		dstate_setinfo("input.transfer.high", "%d", value);
+		dstate_setinfo("input.transfer.high", "%u", value);
 	}
 
 	/* Ambient Temperature Lower Alarm Limit  */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW];
 	if (value != 0) {
-		dstate_setinfo("ambient.temperature.low", "%d", value);
+		dstate_setinfo("ambient.temperature.low", "%u", value);
 	}
 
 	/* Ambient Temperature Upper Alarm Limit  */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
 	if (value != 0) {
-		dstate_setinfo("ambient.temperature.high", "%d", value);
+		dstate_setinfo("ambient.temperature.high", "%u", value);
 	}
 
 	/*Sleep minimum load*/
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
 	if (value != 0) {
-		dstate_setinfo("battery.energysave.load", "%d", value);
+		dstate_setinfo("battery.energysave.load", "%u", value);
 	}
 
 	/* Sleep delay*/
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
 	if (value != 0) {
-		dstate_setinfo("battery.energysave.delay", "%d", value);
+		dstate_setinfo("battery.energysave.delay", "%u", value);
 	}
 
 	/* Low batt minutes warning*/
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
 	if (value != 0) {
-		dstate_setinfo("battery.runtime.low", "%d", value);
+		dstate_setinfo("battery.runtime.low", "%u", value);
 	}
 
 	/* Return to mains delay */
 	value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
 	if (value != 0) {
-		dstate_setinfo("input.transfer.delay","%d",value);
+		dstate_setinfo("input.transfer.delay", "%u", value);
 	}
 
 	/* Minimum return capacity*/
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
 	if (value != 0) {
-		dstate_setinfo("battery.charge.restart","%d",value);
+		dstate_setinfo("battery.charge.restart", "%u", value);
 	}
 
 }
@@ -1283,7 +1298,8 @@ void init_topology(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	const char* nutvalue;
-	int res, value;
+	uint16_t value;
+	int res;
 
 	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
 	if (res <= 0)
@@ -1336,9 +1352,11 @@ void upsdrv_initinfo(void)
 	char *pTmp;
 	char outlet_name[64];
 	char power_rating[10];
-	int iRating = 0, iIndex = 0, res, len;
-	int ncpu = 0, buf;
-	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
+	int res;
+	unsigned int ncpu = 0;
+	size_t buf;
+	uint16_t iRating = 0, iIndex = 0, len;
+	uint16_t conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
 	bool_t got_cmd_list = FALSE;
 
 	/* Init BCM/XCP command descriptions */
@@ -1348,10 +1366,18 @@ void upsdrv_initinfo(void)
 	init_alarm_map();
 
 	/* Get vars from ups.conf */
-	if (getval("shutdown_delay") != NULL)
-		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
-	else
+	if (getval("shutdown_delay") != NULL) {
+		int tmp = atoi(getval("shutdown_delay"));
+		if (tmp >= 0) {
+			bcmxcp_status.shutdowndelay = (unsigned int)tmp;
+		} else {
+			fatal_with_errno(EXIT_FAILURE,
+				"Invalid setting for shutdown_delay: %s",
+				getval("shutdown_delay"));
+		}
+	} else {
 		bcmxcp_status.shutdowndelay = 120;
+	}
 
 	/* Get information on UPS from UPS ID block */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
@@ -1361,6 +1387,7 @@ void upsdrv_initinfo(void)
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
 
+	/* No overflow checks, len value is byte-sized here */
 	buf = len * 11;
 	pTmp = xmalloc(buf+1);
 
@@ -1395,7 +1422,7 @@ void upsdrv_initinfo(void)
 		iRating = get_word(answer+iIndex) * 50;
 		iIndex += 2;
 	}
-	dstate_setinfo("ups.power.nominal", "%d", iRating);
+	dstate_setinfo("ups.power.nominal", "%u", iRating);
 
 	/* Get information on Phases from UPS */
 	nphases = (answer[iIndex++]);
@@ -1430,68 +1457,71 @@ void upsdrv_initinfo(void)
 
 	/* Get meter map info from ups, and init our map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of meter map: %d\n", len);
-	init_ups_meter_map(answer+iIndex, len);
+	upsdebugx(2, "Length of meter map: %u\n", len);
+	/* Here and below, no range check needed - just initialized from unsigned char array */
+	init_ups_meter_map(answer+iIndex, (unsigned char)len);
 	iIndex += len;
 
 	/* Next is alarm map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of alarm map: %d\n", len);
-	init_ups_alarm_map(answer+iIndex, len);
+	upsdebugx(2, "Length of alarm map: %u\n", len);
+	init_ups_alarm_map(answer+iIndex, (unsigned char)len);
 	iIndex += len;
 
 	/* Then the Config_block_length */
 	conf_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of Config_block: %d\n", conf_block_len);
+	upsdebugx(2, "Length of Config_block: %u\n", conf_block_len);
 	iIndex += 2;
 
 	/* Next is statistics map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of statistics map: %d\n", len);
-	/* init_statistics_map(answer+iIndex, len); */
+	upsdebugx(2, "Length of statistics map: %u\n", len);
+	/* init_statistics_map(answer+iIndex, (unsigned char)len); */
 	iIndex += len;
 
 	/* Size of the alarm history log */
 	len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of alarm history log: %d\n", len);
+	upsdebugx(2, "Length of alarm history log: %u\n", len);
 	iIndex += 2;
 
 	/* Size of custom event log, always 0 according to spec */
 	iIndex += 2;
 	/* Size of topology block */
 	topology_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of topology block: %d\n", topology_block_len);
+	upsdebugx(2, "Length of topology block: %u\n", topology_block_len);
 	iIndex += 2;
 
 	/* Maximum supported command length */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of max supported command length: %d\n", len);
+	upsdebugx(2, "Length of max supported command length: %u\n", len);
 
 	/* Size of command list block */
-	if (iIndex < res)
+	if (iIndex < (unsigned int)res)
 		cmd_list_len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of command list: %d\n", cmd_list_len);
+	upsdebugx(2, "Length of command list: %u\n", cmd_list_len);
 	iIndex += 2;
 
 	/* Size of outlet monitoring block */
-	if (iIndex < res)
+	if (iIndex < (unsigned int)res)
 		outlet_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of outlet_block: %d\n", outlet_block_len);
+	upsdebugx(2, "Length of outlet_block: %u\n", outlet_block_len);
 	iIndex += 2;
 
 	/* Size of the alarm block */
-	if (iIndex < res)
+	if (iIndex < (unsigned int)res)
 		alarm_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of alarm_block: %d\n", alarm_block_len);
+	upsdebugx(2, "Length of alarm_block: %u\n", alarm_block_len);
 	/* End of UPS ID block request */
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
 	The protocol state that outlet block is only implemented if there is
 	at least 2 outlet block. 5115 has only one outlet, but has outlet block! */
 	if (outlet_block_len > 8) {
-		len = init_outlet(outlet_block_len);
+		if (outlet_block_len > 255)
+			fatal_with_errno(EXIT_FAILURE, "outlet_block_len overflow: %u", outlet_block_len);
+		len = init_outlet((unsigned char)outlet_block_len /* arg ignored */);
 
-		for(res = 1 ; res <= len ; res++) {
+		for(res = 1 ; (unsigned int)res <= (unsigned int)len ; res++) {
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.shutdown.return", res);
 			dstate_addcmd(outlet_name);
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.load.on", res);
@@ -1535,7 +1565,8 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	unsigned char status, topology;
 	char sValue[128];
-	int iIndex, res, value;
+	int iIndex, res;
+	uint16_t value;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char *nutvalue;
@@ -1578,7 +1609,9 @@ void upsdrv_updateinfo(void)
 	The protocol state that outlet block is only implemented if there is
 	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */
 	if (outlet_block_len > 8) {
-		init_outlet(outlet_block_len);
+		if (outlet_block_len > 255)
+			fatal_with_errno(EXIT_FAILURE, "outlet_block_len overflow: %u", outlet_block_len);
+		init_outlet((unsigned char)outlet_block_len /* arg ignored */);
 	}
 
 	/* Get alarm info from UPS */
@@ -1705,7 +1738,7 @@ void upsdrv_updateinfo(void)
 		 *  Powerware 9130 output:
 		 *   03 0a d7 25 42 0a d7 25 42 00 9a 19 6d 43 cd cc 4c 3e 01 00 01 03
 		 */
-		upsdebug_hex(2, "Battery Status", answer, res);
+		upsdebug_hex(2, "Battery Status", answer, (size_t)res);
 		batt_status = answer[BCMXCP_BATTDATA_BLOCK_BATT_TEST_STATUS];
 
 		if ((nutvalue = nut_find_infoval(batt_test_info, batt_status, TRUE)) != NULL) {
@@ -1716,7 +1749,7 @@ void upsdrv_updateinfo(void)
 			upsdebugx(1, "Failed to extract Battery Status from answer");
 		}
 
-    		/*Extracting internal batteries ABM status*/
+		/*Extracting internal batteries ABM status*/
 		/*Placed first in ABM statuses list. For examples above - on position BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS (18):
 		PW5115RM - 0 - no external strings, no status bytes,
 		so next byte (19) - number of ABM statuses, next (20) - first ABM Status for internal batteries.
@@ -1724,10 +1757,12 @@ void upsdrv_updateinfo(void)
 		PW9130 - 1 - one external string, so one additional status byte (#19 - 00 - no test run), next(20) - number of ABM statuses,
 		next (21) - ABM Status for internal batteries.
 		*/
-		value=*(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS + *(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS)*1+2 );
-			upsdebugx(2, "ABM Status = %d ",value);
-		if (value > 0 && value < 5)
-			dstate_setinfo("battery.charger.status","%s",ABMStatus[value-1]);
+		value =
+			*(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS +
+			  *(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS) * 1 + 2);
+		upsdebugx(2, "ABM Status = %u ", value);
+		if (value < 5)
+			dstate_setinfo("battery.charger.status", "%s", ABMStatus[value-1]);
 	}
 
 
@@ -1740,35 +1775,35 @@ void upsdrv_updateinfo(void)
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
 
 		if (value != 0) {
-			dstate_setinfo("input.voltage.nominal", "%d", value);
+			dstate_setinfo("input.voltage.nominal", "%u", value);
 		}
 
 		/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
 
 		if (value != 0) {
-			dstate_setinfo("input.transfer.boost.high", "%d", value);
+			dstate_setinfo("input.transfer.boost.high", "%u", value);
 		}
 
 		/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
 
 		if (value != 0) {
-			dstate_setinfo("input.transfer.trim.low", "%d", value);
+			dstate_setinfo("input.transfer.trim.low", "%u", value);
 		}
 
 		/* Minimum Supported Input Voltage */
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
 
 		if (value != 0) {
-			dstate_setinfo("input.transfer.low", "%d", value);
+			dstate_setinfo("input.transfer.low", "%u", value);
 		}
 
 		/* Maximum Supported Input Voltage */
 		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
 
 		if (value != 0) {
-			dstate_setinfo("input.transfer.high", "%d", value);
+			dstate_setinfo("input.transfer.high", "%u", value);
 		}
 
 		/* Horn Status: */
@@ -1781,37 +1816,37 @@ void upsdrv_updateinfo(void)
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
 
 		if (value != 0) {
-			dstate_setinfo("ambient.temperature.high", "%d", value);
+			dstate_setinfo("ambient.temperature.high", "%u", value);
 		}
 
 		/*Sleep minimum load*/
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
 		if (value != 0) {
-			dstate_setinfo("battery.energysave.load", "%d", value);
+			dstate_setinfo("battery.energysave.load", "%u", value);
 		}
 
 		/* Sleep delay*/
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
 		if (value != 0) {
-			dstate_setinfo("battery.energysave.delay", "%d", value);
+			dstate_setinfo("battery.energysave.delay", "%u", value);
 		}
 
 		/* Low batt minutes warning*/
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
 		if (value != 0) {
-			dstate_setinfo("battery.runtime.low", "%d", value);
+			dstate_setinfo("battery.runtime.low", "%u", value);
 		}
 
 		/* Return to mains delay */
 		value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
 		if (value != 0) {
-			dstate_setinfo("input.transfer.delay","%d",value);
+			dstate_setinfo("input.transfer.delay", "%u", value);
 		}
 
 		/* Minimum return capacity*/
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
 		if (value != 0) {
-			dstate_setinfo("battery.charge.restart","%d",value);
+			dstate_setinfo("battery.charge.restart", "%u", value);
 		}
 	}
 
@@ -1825,11 +1860,11 @@ void upsdrv_updateinfo(void)
 		value = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
 
 		if (value != 0)
-			dstate_setinfo("output.voltage.nominal", "%d", value);
+			dstate_setinfo("output.voltage.nominal", "%u", value);
 		/*Number of EBM*/
-		value = (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
+		value = (uint16_t) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
 		if (value != 0)
-			dstate_setinfo("battery.packs", "%d", value);
+			dstate_setinfo("battery.packs", "%u", value);
 
 	}
 
@@ -2040,7 +2075,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		/*if -1 then use global shutdown_delay from ups.conf*/
-		if (sddelay == -1) sddelay=bcmxcp_status.shutdowndelay;
+		if (sddelay == -1) sddelay = (int)bcmxcp_status.shutdowndelay;
 
 		outlet_num = cmdname[NUT_OUTLET_POSITION] - '0';
 		if (outlet_num < 1 || outlet_num > 9)
@@ -2048,8 +2083,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
-		cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
-		cbuf[3] = outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
+		cbuf[2] = (unsigned char)(sddelay >> 8);     /* high byte of the 2 byte time argument */
+		cbuf[3] = (unsigned char)outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
 		res = command_write_sequence(cbuf, 4, answer);
 
@@ -2070,7 +2105,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 
 		cbuf[0] = (cmdname[NUT_OUTLET_POSITION+8] == 'n')?PW_UPS_ON:PW_UPS_OFF;        /* Cmd oN or not*/
-		cbuf[1] = outlet_num;                           /* Outlet number */
+		cbuf[1] = (unsigned char)outlet_num;                           /* Outlet number */
 
 		res = command_write_sequence(cbuf, 2, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
@@ -2142,7 +2177,7 @@ int setvar (const char *varname, const char *val)
 	unsigned char answer[128], cbuf[5];
 	char namebuf[MAX_NUT_NAME_LENGTH];
 	char success_msg[SMALLBUF];
-	int res, sec, outlet_num,tmp;
+	int res, sec, outlet_num, tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
 	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
@@ -2160,7 +2195,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_LOW_DEV_LIMIT;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " BOOST threshold volage set to %d V", tmp);
@@ -2182,7 +2217,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_HIGH_DEV_LIMIT;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " TRIM threshold volage set to %d V", tmp);
@@ -2203,7 +2238,7 @@ int setvar (const char *varname, const char *val)
 
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_LOW_BATT;
-		cbuf[2]=tmp;
+		cbuf[2]=tmp&0xff;
 		cbuf[3]=0x0;
 
 		res = command_write_sequence(cbuf, 4, answer);
@@ -2226,7 +2261,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_RETURN_DELAY;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " Mains return delay set to %d sec", tmp);
@@ -2293,7 +2328,7 @@ int setvar (const char *varname, const char *val)
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_NOMINAL_OUT_VOLTAGE;
 		cbuf[2]=tmp&0xff;
-		cbuf[3]=tmp>>8;
+		cbuf[3]=(unsigned char)(tmp>>8);
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, " Nominal output voltage set to %d V", tmp);
@@ -2359,7 +2394,7 @@ int setvar (const char *varname, const char *val)
 
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_BATT_STRINGS;
-		cbuf[2]=tmp;
+		cbuf[2]=tmp&0xff;
 		cbuf[3]=0x0;
 
 		res = command_write_sequence(cbuf, 4, answer);
@@ -2401,17 +2436,17 @@ int setvar (const char *varname, const char *val)
 			return STAT_SET_INVALID;
 		}
 
-		cbuf[0] = PW_SET_OUTLET_COMMAND;	/* Cmd */
-		cbuf[1] = onOff_setting;			/* Set Auto Off (1) or On (2) Delay */
-		cbuf[2] = outlet_num;				/* Outlet number */
-		cbuf[3] = sec&0xff;					/* Delay in seconds LSB */
-		cbuf[4] = sec>>8;					/* Delay in seconds MSB */
+		cbuf[0] = PW_SET_OUTLET_COMMAND;		/* Cmd */
+		cbuf[1] = (unsigned char)onOff_setting;	/* Set Auto Off (1) or On (2) Delay */
+		cbuf[2] = (unsigned char)outlet_num;	/* Outlet number */
+		cbuf[3] = sec&0xff;						/* Delay in seconds LSB */
+		cbuf[4] = (unsigned char)(sec>>8);		/* Delay in seconds MSB */
 
 		res = command_write_sequence(cbuf, 5, answer);
 		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d %s delay set to %d sec",
 					outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
 
-       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
+		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 	}
 

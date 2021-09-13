@@ -1,6 +1,11 @@
 /*
  * blazer_usb.c: support for Megatec/Q1 USB protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
@@ -508,9 +513,33 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 #endif	/* TESTING */
 }
 
+#ifndef TESTING
+static const struct subdriver_t {
+	const char	*name;
+	int		(*command)(const char *cmd, char *buf, size_t buflen);
+} subdriver[] = {
+	{ "cypress", &cypress_command },
+	{ "phoenix", &phoenix_command },
+	{ "ippon", &ippon_command },
+	{ "krauler", &krauler_command },
+	{ NULL, NULL }
+};
+#endif	/* TESTING */
 
 void upsdrv_help(void)
 {
+#ifndef TESTING
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
+
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", subdriver[i].name);
+	}
+	printf("\n\n");
+#endif	/* TESTING */
+
 	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
@@ -529,20 +558,9 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 #ifndef TESTING
-	const struct {
-		const char	*name;
-		int		(*command)(const char *cmd, char *buf, size_t buflen);
-	} subdriver[] = {
-		{ "cypress", &cypress_command },
-		{ "phoenix", &phoenix_command },
-		{ "ippon", &ippon_command },
-		{ "krauler", &krauler_command },
-		{ NULL, NULL }
-	};
-
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
-	char	*regex_array[6];
+	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
 
@@ -552,6 +570,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -667,5 +686,6 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 #endif	/* TESTING */
 }
