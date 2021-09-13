@@ -237,7 +237,7 @@ duplication and ugliness otherwise.
 [NOTE]
 ==============================================================================
 
-- upsd injects `FSD` by itself following that command by a master upsmon
+- upsd injects `FSD` by itself following that command by a primary upsmon
 process.  Drivers must not set that value, apart from specific cases (see
 below).
 

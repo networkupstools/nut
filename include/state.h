@@ -61,7 +61,7 @@ int state_getflags(st_tree_t *root, const char *var);
 int state_getaux(st_tree_t *root, const char *var);
 const enum_t *state_getenumlist(st_tree_t *root, const char *var);
 const range_t *state_getrangelist(st_tree_t *root, const char *var);
-void state_setflags(st_tree_t *root, const char *var, int numflags, char **flags);
+void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flags);
 int state_addcmd(cmdlist_t **list, const char *cmd);
 void state_infofree(st_tree_t *node);
 void state_cmdfree(cmdlist_t *list);

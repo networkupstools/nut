@@ -64,7 +64,7 @@ more details.  It is ignored when 'MODE' above indicates that no
 upsmon should be running.
 
 *POWEROFF_WAIT*::
-Optional.  At the end of an emergency system halt, the upsmon master
+Optional.  At the end of an emergency system halt, the upsmon primary
 will signal the UPS to switch off.  This may fail for a number of
 reasons.  Most notably is the case that mains power returns during
 the shutdown process.  See the section "Power races" in

@@ -30,7 +30,7 @@
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
+ * static info_lkp_t xpcc_onbatt_info[] = {
  * 	{ 1, "OB", NULL, NULL },
  * 	{ 2, "OL", NULL, NULL },
  * 	{ 0, NULL, NULL, NULL }
@@ -88,11 +88,11 @@ static snmp_info_t xppc_mib[] = {
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, xpcc_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t xpcc_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
 	 * 	{ 0, NULL }
