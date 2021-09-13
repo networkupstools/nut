@@ -19,18 +19,17 @@ The NUT Team
 Active members
 ~~~~~~~~~~~~~~
 
-- Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
+- Jim Klimov: project leader (since 2020), OpenIndiana and OmniOS packager, CI ops and infra
+- Arnaud Quette: ex-project leader (from 2005 to 2020), Debian packager and jack of all trades
 - Charles Lepple: senior lieutenant
-- Emilien Kia: senior developer
 - Daniele Pezzini: senior developer
-- Jim Klimov: senior developer
-- Václav Krpec: junior developer
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer
 - Michal Soltys: junior developer
 - David Goncalves: Python developer
 - Jean Perriault: web consultant
 - Eric S. Raymond: Documentation consultant
+- Roger Price: Documentation specialist
 - Oden Eriksson: Mandriva packager
 - Stanislav Brabec: Novell / SUSE packager
 - Michal Hlavinka: Redhat packager
@@ -46,8 +45,8 @@ Retired members
 - Arjen de Korte: senior lieutenant
 - Peter Selinger: senior lieutenant
 - Carlos Rodrigues: author of the "megatec" drivers, removing the numerous
-drivers for Megatec / Q1 protocol. These drivers have now been replaced by
-blazer_ser and blazer_usb
+  drivers for Megatec / Q1 protocol. These drivers have now been replaced
+  by blazer_ser and blazer_usb
 - Niels Baggesen: ported and heavily extended upscode2 to NUT 2.0 driver model
 - Niklas Edmundsson: has worked on 3-phase support, and upscode2 updates
 - Martin Loyer: has worked a bit on mge-utalk
@@ -58,6 +57,8 @@ blazer_ser and blazer_usb
 - Julius Malkiewicz: junior developer
 - Tomas Smetana: former Redhat packager (2007-2008)
 - Frederic Bohe: senior developer, Eaton contractor (2009-2013)
+- Emilien Kia: senior developer
+- Václav Krpec: junior developer
 
 
 Supporting manufacturers
@@ -88,6 +89,10 @@ provide you with official support from Eaton, or a better level of device
 support in NUT.*
 ================================================================================
 
+* link:https://www.ametek.com/products/businessunits/powersystemsandinstruments/powervar[AMETEK
+Powervar], through Andrew McCartney, has added support for all AMETEK Powervar
+UPM models as usb-hid UPS.
+
 * link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
@@ -111,6 +116,9 @@ this information has been incorporated into the NUT hardware compatibility
 list, and the rest of the information is available via the
 link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
 archives].
+
+* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov, 
+has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
 
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~

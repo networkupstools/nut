@@ -56,7 +56,7 @@ linkman:upsd.users[5], and are not linked to system usernames.
 
 *-p* 'password'::
 Set the password to authenticate to the server.  This is also optional
-like -u, and you will be prompted for it if necessary.  
+like -u, and you will be prompted for it if necessary.
 
 *-w*::
 Wait for the completion of setting execution by the driver and return its

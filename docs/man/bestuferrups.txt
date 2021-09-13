@@ -19,7 +19,7 @@ Best Power Micro-Ferrups ME3100, probably other similar models too.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the    
+This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 AUTHORS
