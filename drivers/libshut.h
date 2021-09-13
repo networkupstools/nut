@@ -49,6 +49,7 @@ typedef struct SHUTDevice_s {
 	char*		Serial;    /*!< Product serial number */
 	char*		Bus;       /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
+	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
 } SHUTDevice_t;
 
 /*!

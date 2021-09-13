@@ -459,14 +459,14 @@ static int sock_arg(conn_t *conn)
 	return 0;
 }
 
-static void log_unknown(int numarg, char **arg)
+static void log_unknown(size_t numarg, char **arg)
 {
-	int	i;
+	size_t	i;
 
 	upslogx(LOG_INFO, "Unknown command on socket: ");
 
 	for (i = 0; i < numarg; i++)
-		upslogx(LOG_INFO, "arg %d: %s", i, arg[i]);
+		upslogx(LOG_INFO, "arg %zu: %s", i, arg[i]);
 }
 
 static int sock_read(conn_t *conn)
@@ -837,7 +837,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	upslogx(LOG_ERR, "Invalid command: %s", cmd);
 }
 
-static int conf_arg(int numargs, char **arg)
+static int conf_arg(size_t numargs, char **arg)
 {
 	if (numargs < 2)
 		return 0;

@@ -66,7 +66,7 @@ If your UPS goes on and off battery frequently, you can use this program
 to reduce the number of pager messages that are sent out.  Rather than
 sending pages directly from linkman:upsmon[8], use a short timer here.
 If the timer triggers with the UPS still on battery, then send the page.
-If the power returns before then, the timer can be cancelled and no page 
+If the power returns before then, the timer can be cancelled and no page
 is necessary.
 
 BACKGROUND
@@ -92,7 +92,7 @@ no timers are present in the queue, the background process exits.
 This means that you will only see upssched running when one of two things
 is happening:
 
- - There's a timer of some sort currently running 
+ - There's a timer of some sort currently running
  - upsmon just called it, and you managed to catch the brief instance
 
 The final optimization handles the possibility of trying to cancel a timer

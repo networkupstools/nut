@@ -39,7 +39,7 @@ if test -z "${nut_have_avahi_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`pkg-config --silence-errors --cflags avahi-core avahi-client 2>/dev/null`"])
+	], [CFLAGS="`pkg-config --silence-errors --cflags avahi-core avahi-client 2>/dev/null`" || CFLAGS="-I/usr/local/include -I/usr/include -L/usr/local/lib -L/usr/lib"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for avahi ldflags)
@@ -54,7 +54,7 @@ if test -z "${nut_have_avahi_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [LIBS="`pkg-config --silence-errors --libs avahi-core avahi-client 2>/dev/null`"])
+	], [LIBS="`pkg-config --silence-errors --libs avahi-core avahi-client 2>/dev/null`" || LIBS="-lavahi-core -lavahi-client"])
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if avahi-core is usable

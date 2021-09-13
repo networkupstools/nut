@@ -381,7 +381,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	send_cmd(":B\r", buf, sizeof buf);
-	bv = (float)hex2d(buf, 2) / 10.0;
+	bv = (float)(hex2d(buf, 2)) / 10.0;
 	if (bv > 50.0 || bv < 0.0) {
 		++numfails;
 		if (numfails > MAXTRIES) {

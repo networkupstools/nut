@@ -39,7 +39,7 @@ Set the username for the connection to the server.  This is optional, and
 you will be prompted for this when invoking a command if -u is not used.
 
 *-p* 'password'::
-Set the password to authenticate to the server.  This is also optional 
+Set the password to authenticate to the server.  This is also optional
 like -u, and you will be prompted for it if necessary.
 
 *-w*::

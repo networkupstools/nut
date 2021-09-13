@@ -33,6 +33,8 @@
 
 #include "powerp-txt.h"
 
+#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.5"
+
 typedef struct {
 	float          i_volt;
 	float          o_volt;
@@ -384,6 +386,7 @@ static int powpan_status(status_t *status)
 	/*
 	 * WRITE D\r
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
+	 *      #I118.0O118.0L029B100F060.0R0218S..\r
 	 *      01234567890123456789012345678901234
 	 *      0         1         2         3
 	 */
@@ -428,8 +431,21 @@ static int powpan_status(status_t *status)
 		status->has_b_volt = 0;
 		status->has_o_freq = 0;
 		status->has_runtime = 0;
+	} else {
+
+		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dF%fR%dS%2c\r",
+			&status->i_volt, &status->o_volt, &status->o_load,
+			&status->b_chrg, &status->i_freq, &status->runtime,
+			status->flags);
+
+		if (ret >= 7) {
+			status->has_b_volt = 0;
+			status->has_o_freq = 0;
+			status->has_runtime = 1;
+		}
+
 	}
-	else {
+	if (ret < 7) {
 		ret = ser_get_buf_len(upsfd, powpan_answer+35, 23, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret < 0) {
@@ -601,6 +617,7 @@ static int powpan_initups(void)
 
 subdriver_t powpan_text = {
 	"text",
+	POWERPANEL_TEXT_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,

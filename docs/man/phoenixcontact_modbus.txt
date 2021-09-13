@@ -52,7 +52,7 @@ Meaning of settings:
 
  * PC-Shutdown: How long before output cutoff the UPS will raise the "shutdown event" signal. Max value for this is 5 minutes. So PC should be able to shutdown within 5 minutes.
  * PC-Restart: How long to delay output power after power is restored. Max is 60 seconds.
- 
+
 
 EXTRA ARGUMENTS
 ---------------

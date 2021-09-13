@@ -36,7 +36,7 @@
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
-#include <math.h>
+#include "nut_float.h"
 
 #define MGE_HID_VERSION		"MGE HID 1.44"
 
@@ -314,7 +314,7 @@ static const char *eaton_abm_check_dischrg_fun(double value)
 {
 	if (advanced_battery_monitoring == ABM_DISABLED)
 	{
-		if (value == 1) {
+		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
 		}
 		else {
@@ -340,7 +340,7 @@ static const char *eaton_abm_check_chrg_fun(double value)
 {
 	if (advanced_battery_monitoring == ABM_DISABLED)
 	{
-		if (value == 1) {
+		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 		}
 		else {
@@ -626,7 +626,7 @@ static const char *pegasus_yes_no_info_fun(double value)
 		return NULL;
 	}
 
-	return (value == 0) ? "no" : "yes";
+	return (d_equal(value, 0)) ? "no" : "yes";
 }
 
 /* Conversion back of yes/no info */
@@ -816,7 +816,7 @@ static const char *eaton_converter_online_fun(double value)
 	int ups_status = ups_status_get();
 
 	if (!(ups_status & STATUS(OFF)))
-		return (value == 0) ? "!online" : "online";
+		return (d_equal(value, 0)) ? "!online" : "online";
 	else
 		return NULL;
 }

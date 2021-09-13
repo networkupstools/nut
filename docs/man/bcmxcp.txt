@@ -21,11 +21,11 @@ documentation.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports the following optional settings in the    
+This driver supports the following optional settings in the
 linkman:ups.conf[5].
 
 *shutdown_delay=*'delay'::
-The number of seconds that the UPS should wait between receiving the 
+The number of seconds that the UPS should wait between receiving the
 shutdown command (`upsdrvctl shutdown`) and actually shutting off.
 
 *baud_rate=*'rate'::
@@ -33,7 +33,7 @@ Communication speed for the UPS. If this is set to 9600, it tries to connect
 to the UPS at 9600bps. If it fails to communicate, it will go into baud-hunting.
 It starts at 1200 and goes up to 19200. If it succeeds, it tell you the speed it
 connected with. If not included in the config, it defaults to baud-hunting.
- 
+
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
  - *shutdown_delay =* '120'
@@ -44,7 +44,7 @@ INSTANT COMMANDS
 This driver supports the following Instant Commands:
 
 *shutdown.return*::
-Turn off the load and return when power is back. 
+Turn off the load and return when power is back.
 
 *shutdown.stayoff*::
 Turn off the load and remain off.
@@ -54,7 +54,7 @@ Start a battery test.
 
 *outlet.n.shutdown.return*::
 Turn off the load on outlet 'n' and return when power is back.
-('n' is the outlet number reported by the upsc command) 
+('n' is the outlet number reported by the upsc command)
 
 TODO LIST
 ---------
