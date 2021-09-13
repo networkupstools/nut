@@ -25,8 +25,8 @@ The *nutscan_new_device()* function returns the newly allocated `nutscan_device_
 
 SEE ALSO
 --------
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3], 
-linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3], 
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3]
 linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_parsable[3]
 linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3]

@@ -21,7 +21,7 @@ IMAGE_FILES = images/asciidoc.png \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
-USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
+USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt config-prereqs.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -191,6 +191,9 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README
 
+# Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
+SPELLCHECK_DIR = $(srcdir)
+
 # Note: de-facto our documentation is beyond ASCII (at least in names of
 # international committers). The grep tests below look if the aspell output
 # contained something other than the OK lines (tagged with asterisk) and
@@ -221,18 +224,18 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
+		echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $(SPELLCHECK_DIR)/$$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
 			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 			  test -z "$$OUT" ; } || \
 			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $$docsrc"; } ; \
+			  FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; } ; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
 		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
 		echo "=====================================================================" ; \
-		echo "Please 'cd $(abs_srcdir) && make spellcheck-interactive'"; \
+		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
 		echo "words and spellings listed in the '$(NUT_SPELL_DICT)' file there."; \
 		echo "Either way, please follow up by posting a pull request or a patch"; \
@@ -272,9 +275,9 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
-			FAILED="$$FAILED $$docsrc"; \
+		echo "Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_DIR)/$$docsrc || \
+			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
 		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \

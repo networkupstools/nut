@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.2"
+#define CYBERPOWER_MIB_VERSION		"0.3"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
@@ -97,11 +97,21 @@ static snmp_info_t cyberpower_mib[] = {
 	 * UPS has switched to battery power */
 	{ "battery.runtime.elapsed", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.1.2.0", "",
 		0, NULL },
+	/* Different generations/models reported "battery.voltage" by different OIDs: */
+	{ "battery.voltage", 0, 0.1, ".1.3.6.1.2.1.33.1.2.5.0", "",
+		0, NULL },
 	{ "battery.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.2.2.2.0", "",
+		0, NULL },
+	{ "battery.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.8.0", "",
+		0, NULL },
+	/* Different generations/models reported "battery.current" by different OIDs: */
+	{ "battery.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.4.0", "",
 		0, NULL },
 	{ "battery.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.2.2.7.0", "",
 		0, NULL },
 	{ "battery.charge", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.1.0", "",
+		0, NULL },
+	{ "battery.temperature", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.3.0", "",
 		0, NULL },
 
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.3.2.1.0", "",
@@ -110,6 +120,10 @@ static snmp_info_t cyberpower_mib[] = {
 		0, NULL },
 
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
+		0, NULL },
+	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.2.0", "",
+		0, NULL },
+	{ "output.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.4.0", "",
 		0, NULL },
 
 	/* Delays affecting instant commands */

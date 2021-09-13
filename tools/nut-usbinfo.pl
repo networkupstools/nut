@@ -244,7 +244,7 @@ sub find_usbdevs
 			$lastComment=$1;
 		}
 
-		if($line =~/^\s*\{\s*USB_DEVICE\((.+)\,(.+)\)\s*/) # for example : { USB_DEVICE(MGE_VENDORID, 0x0001)... }
+		if($line =~/^\s*\{\s*USB_DEVICE\(([^)]+)\,([^)]+)\)\s*/) # for example : { USB_DEVICE(MGE_VENDORID, 0x0001)... }
 		{
 			my $VendorID=trim($1);
 			my $ProductID=trim($2);
@@ -304,6 +304,12 @@ sub find_usbdevs
 			}
 			else {
 				die "Unknown driver type: $nameFile";
+			}
+			if ($vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
+				print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+					"was already related to driver '" .
+					$vendor{$VendorID}{$ProductID}{"driver"} .
+					"' and changing to '$driver'\n";
 			}
 			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
 		}

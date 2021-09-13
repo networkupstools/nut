@@ -34,7 +34,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.56"
+#define EATON_MARLIN_MIB_VERSION	"0.57"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -198,8 +198,9 @@ static char marlin_scratch_buf[20];
  * WRT the number of phase(s) and the outlet group number.
  * Note that the group type (marlin_outlet_group_type_info) is
  *  not considered since this applies to any kind of group */
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 {
+	int outlet_group_nb = *((int *)raw_outlet_group_nb);
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
 	if (str_phases_nb && (outlet_group_nb >= 0) ) {
@@ -622,7 +623,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Ugly hack for older G2 ePDU: check the first outlet to determine unit switchability */
 	{ "outlet.switchable", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.1",
-		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &g2_unit_outlet_switchability_info[0] },
+		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_TYPE_DAISY_1, &g2_unit_outlet_switchability_info[0] },
 	/* The below ones are the same as the input.* equivalent */
 	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
 	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
