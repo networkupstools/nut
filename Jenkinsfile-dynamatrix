@@ -1,3 +1,6 @@
+#!/usr/bin/env groovy
+// ^^^ For syntax highlighters
+
 /* Typical Keep this build description formula for custom replayed builds (see below):
 
 Kept for reference: build of commit https://github.com/networkupstools/nut/commit/86a32237c7df45c5aba640746f7afc4de09505a1
