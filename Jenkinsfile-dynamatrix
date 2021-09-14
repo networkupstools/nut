@@ -1,4 +1,4 @@
-/* Typical Keep this build description for custom replayed builds (see below):
+/* Typical Keep this build description formula for custom replayed builds (see below):
 
 Kept for reference: build of commit https://github.com/networkupstools/nut/commit/86a32237c7df45c5aba640746f7afc4de09505a1
 PR https://github.com/networkupstools/nut/pull/1047
@@ -347,7 +347,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all docs types on capable systems (must pass)',
+        ,[name: 'A build with all docs types on capable systems, and a distcheck (must pass)',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers (maybe
          // iterate docs tools though, if we were to support many backends?)
@@ -381,7 +381,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with manpage docs on all systems that did not build "all docs" (allowed to fail - e.g. no tools even for that)',
+        ,[name: 'A build with manpage docs on all systems that did not build "all docs", and a distcheck (allowed to fail - e.g. no tools even for that)',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers; see above
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
