@@ -146,6 +146,17 @@ set | sort -n """
 
     dynacfgPipeline.slowBuildDefaultBody = dynacfgPipeline.slowBuildDefaultBody_autotools
 
+    /* By default, the master/main/stable branch and PRs against it
+     * is built with as few scenarios as possible, allowing for fast
+     * turnaround and avoiding redundant work (e.g. documentation
+     * rendering, distchecks that are more about recipes than code),
+     * and stricter warnings that current codebase would fail so far.
+     * In particular, this saves CI farm resources - allowing more
+     * PRs per day to be checked in practice.
+     * Conversely, a branch with "fightwarn" in the name (or PR to it)
+     * would enjoy many more build scenarios, covering both autotools
+     * directly and ci_build.sh with stricter warnings, in particular.
+     */
     dynacfgPipeline.slowBuild = [
         [name: 'Default autotools driven build',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
