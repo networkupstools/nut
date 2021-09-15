@@ -315,6 +315,8 @@ int upscli_init(int certverify, const char *certpath,
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #else
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -427,6 +429,11 @@ int upscli_init(int certverify, const char *certpath,
 		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
+#else
+	/* Note: historically we do not return with error here,
+	 * just fall through to below and treat as initialized.
+	 */
+	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
@@ -927,6 +934,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
 	return 0;	/* not supported */
 }
 
