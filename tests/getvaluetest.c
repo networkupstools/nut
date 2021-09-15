@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hidtypes.h"
+#include "common.h"
 
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
 
