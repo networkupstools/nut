@@ -31,6 +31,8 @@ void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 }
 
 int RunBuiltInTests(char *argv[]) {
+  NUT_UNUSED_VARIABLE(argv);
+
   int exitStatus = 0;
   char *next;
   uint8_t reportBuf[64];
