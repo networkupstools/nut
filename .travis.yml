@@ -491,7 +491,7 @@ _matrix_linux_gnustd_nowarn_s390x_64bit_viable:
 
 _matrix_linux_gnustd_nowarn_s390x_64bit_fatal:
   include: &_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
-  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
     os: linux
     arch: s390x
     dist: xenial
@@ -635,7 +635,7 @@ _matrix_linux_cstd_nowarn:
 # Stuff with warnings made fatal... and codebase got good enough to survive!
 _matrix_linux_gnustd_warn_viable:
   include: &_matrix_linux_gnustd_warn_viable
-  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic" CXXFLAGS="-Wall -Wextra -Werror"
+  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard
     os: linux
     sudo: false
     services:
@@ -647,7 +647,7 @@ _matrix_linux_gnustd_warn_viable:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98"
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
     os: linux
     sudo: false
     services:
@@ -659,7 +659,7 @@ _matrix_linux_gnustd_warn_viable:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++11"
+  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11"
     os: linux
     sudo: false
     services:
@@ -671,7 +671,7 @@ _matrix_linux_gnustd_warn_viable:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
     os: linux
     sudo: false
     services:
@@ -687,7 +687,7 @@ _matrix_linux_gnustd_warn_viable:
         - gcc-7
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc-9 CXX=g++-9
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
     os: linux
     sudo: false
     services:
@@ -707,7 +707,7 @@ _matrix_linux_gnustd_warn_viable:
 _matrix_linux_gnustd_warn_fatal:
   include: &_matrix_linux_gnustd_warn_fatal
 # Note: Fixing these would make NUT viable again on platforms with only ANSI C!
-  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
     os: linux
     sudo: false
     services:
@@ -722,7 +722,7 @@ _matrix_linux_gnustd_warn_fatal:
 # The hardest of two worlds: both strict C standards on Linux and fatal warnings:
 _matrix_linux_cstd_warn:
   include: &_matrix_linux_cstd_warn
-  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -std=c++98"
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++98"
     os: linux
     sudo: false
     services:
@@ -734,7 +734,7 @@ _matrix_linux_cstd_warn:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
     os: linux
     dist: xenial
     sudo: false
@@ -751,7 +751,7 @@ _matrix_linux_cstd_warn:
         - clang-format-5.0
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
     os: linux
     dist: xenial
     sudo: false
@@ -768,7 +768,7 @@ _matrix_linux_cstd_warn:
         - clang-format-5.0
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++17" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
     os: linux
     dist: xenial
     sudo: false
@@ -785,7 +785,7 @@ _matrix_linux_cstd_warn:
         - clang-format-8
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -std=c++11"
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11"
     os: linux
     sudo: false
     services:
@@ -797,7 +797,7 @@ _matrix_linux_cstd_warn:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Wextra -Werror -std=c++89"
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c89" CXXFLAGS="-std=c++89"
     os: linux
     sudo: false
     services:
@@ -845,7 +845,7 @@ _matrix_freebsd_gnustd_nowarn:
 
 _matrix_freebsd_gnustd_warn_viable:
   include: &_matrix_freebsd_gnustd_warn_viable
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
     os: freebsd
     sudo: true
     compiler: gcc
@@ -854,7 +854,7 @@ _matrix_freebsd_gnustd_warn_viable:
       directories:
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
     os: freebsd
     sudo: true
     compiler: gcc
@@ -865,7 +865,7 @@ _matrix_freebsd_gnustd_warn_viable:
 
 _matrix_freebsd_gnustd_warn_fatal:
   include: &_matrix_freebsd_gnustd_warn_fatal
-  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
     os: freebsd
     sudo: true
     compiler: clang
@@ -874,7 +874,7 @@ _matrix_freebsd_gnustd_warn_fatal:
       directories:
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
     os: freebsd
     sudo: true
     compiler: clang
@@ -915,12 +915,9 @@ _matrix_osx_gnustd_nowarn:
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
-# -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_, __EXTENSIONS__ etc.
-# -Wno-unused-macros -- system headers define a lot of stuff we do not use, gotta be fatal right?
-# -Wno-padded -- NSPR and NSS headers get to issue lots of that
 _matrix_osx_gnustd_warn:
   include: &_matrix_osx_gnustd_warn
-  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
@@ -930,7 +927,7 @@ _matrix_osx_gnustd_warn:
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
@@ -964,7 +961,7 @@ _matrix_osx_cstd_nowarn:
 
 _matrix_osx_cstd_warn:
   include: &_matrix_osx_cstd_warn
-  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
@@ -974,7 +971,7 @@ _matrix_osx_cstd_warn:
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
@@ -984,7 +981,7 @@ _matrix_osx_cstd_warn:
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
     os: osx
     osx_image: xcode7.3
     compiler: clang
@@ -1014,7 +1011,7 @@ _matrix_windows_gnustd_nowarn:
 
 _matrix_windows_gnustd_warn:
   include: &_matrix_windows_gnustd_warn
-  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
     os: windows
     compiler: clang
     if: branch =~ fightwarn
@@ -1038,7 +1035,7 @@ _matrix_windows_cstd_nowarn:
 
 _matrix_windows_cstd_warn:
   include: &_matrix_windows_cstd_warn
-  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
     os: windows
     compiler: clang
     if: branch =~ fightwarn
@@ -1050,7 +1047,7 @@ _matrix_windows_cstd_warn:
 
 # Incidentally, this is one platform we know to have clang-9,
 # the version which has (at least partial) C++20 support
-  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c20" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++20" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c20" CXXFLAGS="-std=c++20" CC=clang CXX=clang++
     os: windows
     compiler: clang
     if: branch =~ fightwarn
@@ -1073,8 +1070,8 @@ _matrix_required_linux:
   - *_matrix_required_linux_pass1_quick
   - *_matrix_required_linux_pass2_shell
   - *_matrix_required_linux_pass3_large
-  - *_matrix_linux_gnustd_nowarn
   - *_matrix_linux_gnustd_warn_viable
+  - *_matrix_linux_gnustd_nowarn
   - *_matrix_linux_gnustd_nowarn_x86_32bit
   - *_matrix_linux_gnustd_nowarn_arm_64bit_viable
   - *_matrix_linux_gnustd_nowarn_s390x_64bit_viable
@@ -1253,31 +1250,31 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang-5.0 CXX=clang++-5.0
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
-#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32" LDFLAGS="-m32"
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
   - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
   - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
   - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
   - env: NUT_MATRIX_TAG="c17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
-  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++17" CC=clang-8 CXX=clang++-8
-#OK#  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic" CXXFLAGS="-Wall -Wextra -Werror"
-#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98"
-  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -std=c++98"
-#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc-7 CXX=g++-7
-  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang-5.0 CXX=clang++-5.0
-  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang-5.0 CXX=clang++-5.0
-  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -std=c++11"
-#OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++11"
+  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
+#OK#  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11"
+#OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11"
 #OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
-  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Wextra -Werror -std=c++89"
-  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c89" CXXFLAGS="-std=c++89"
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
 
 ### Linux on s390x (BigEndian)
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
-  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
 
 ### Linux on ARM
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
@@ -1289,29 +1286,29 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
-#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc CXX=g++
-#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
-  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
 
 ### macosx
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode7.3-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++17" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
 
 ### windows on x86_64
   - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c20" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++20" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c20" CXXFLAGS="-std=c++20" CC=clang CXX=clang++
 
 before_install:
 - |-

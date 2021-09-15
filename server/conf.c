@@ -114,7 +114,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 }
 
 /* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
@@ -167,7 +167,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		if (isdigit(arg[1][0])) {
-			maxconn = atoi(arg[1]);
+			maxconn = atol(arg[1]);
 			return 1;
 		}
 		else {

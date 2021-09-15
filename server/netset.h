@@ -44,7 +44,7 @@ typedef enum
 set_var_check_val_t set_var_check_val(upstype_t *ups, const char *var, const char *newval);
 int do_set_var(upstype_t *ups, const char *var, const char *newval);
 
-void net_set(nut_ctype_t *client, int numarg, const char **arg);
+void net_set(nut_ctype_t *client, size_t numarg, const char **arg);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

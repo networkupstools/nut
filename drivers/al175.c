@@ -47,7 +47,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-
 #include "nut_stdint.h"
 typedef	uint8_t byte_t;
 
@@ -254,14 +253,14 @@ static void reverse_bits(byte_t *buf, size_t count)
 
 	while (count!=0) {
 		x = *buf;
-		x = ( (x & 0x80) >> 7 )  |
-		    ( (x & 0x40) >> 5 )  |
-		    ( (x & 0x20) >> 3 )  |
-		    ( (x & 0x10) >> 1 )  |
-		    ( (x & 0x08) << 1 )  |
-		    ( (x & 0x04) << 3 )  |
-		    ( (x & 0x02) << 5 )  |
-		    ( (x & 0x01) << 7 );
+		x = (byte_t)( (x & 0x80) >> 7 )  |
+		    (byte_t)( (x & 0x40) >> 5 )  |
+		    (byte_t)( (x & 0x20) >> 3 )  |
+		    (byte_t)( (x & 0x10) >> 1 )  |
+		    (byte_t)( (x & 0x08) << 1 )  |
+		    (byte_t)( (x & 0x04) << 3 )  |
+		    (byte_t)( (x & 0x02) << 5 )  |
+		    (byte_t)( (x & 0x01) << 7 );
 		*buf = x;
 
 		++buf;
@@ -393,17 +392,29 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	h.io.len	= 8;
 
 	/* NOTE: doc says we should use ASCII coding here, but the actual
-	 *       values are > 0x80, so we use binary coding	*/
-	data[0] = cmd;
-	data[1] = subcmd;
+	 *       values are > 0x80, so we use binary coding. And have to
+	 *       make this "fit" into the char array required by snprintf */
+	data[0] = (char)cmd;
+	data[1] = (char)subcmd;
 
 	/* FIXME? One CI testcase builder claims here that
 	 *   warning: '%2X' directive output may be truncated writing
 	 *   between 2 and 4 bytes into a region of size between 3 and 5
 	 *   [-Wformat-truncation=]
 	 * but none others do, and I can't figure out how it thinks so :/
+	 *
+	 * Per https://stackoverflow.com/questions/51534284/how-to-circumvent-format-truncation-warning-in-gcc
+	 * https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg521037.html
+	 * and simlar googlable sources, this seems to be a bug-or-feature
+	 * linked to non-zero optimization level and/or not checking for the
+	 * return value (conveys runtime errors if any do happen).
 	 */
-	snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3);
+	assert (pr1 <= UINT8_MAX);
+	assert (pr2 <= UINT8_MAX);
+	assert (pr3 <= UINT8_MAX);
+	if (0 > snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3)) {
+		data[8] = '\0';
+	}
 
 	comli_prepare(dest, &h, data, 8);
 }
@@ -423,6 +434,9 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	int bcc;
 	byte_t *tail;
 
+	if ( (f.end - f.begin) < 2 )
+		return -1;
+
 	if (*f.begin!=STX)
 		return -1;
 
@@ -433,7 +447,7 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	if (tail[0]!=ETX)
 		return -1;
 
-	bcc = compute_bcc(f.begin+1, (f.end - f.begin) - 2/*STX & BCC*/);
+	bcc = compute_bcc(f.begin+1, (size_t)(f.end - f.begin) - 2 /*STX & BCC*/);
 	if (bcc!= tail[1])
 		return -1;
 
@@ -487,15 +501,19 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 		return -1;		/* wrong type	*/
 	}
 
-	io_addr = from_hex(&reply_head[5], 4);
-	if (io_addr==-1UL)  {
-		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__, reply_head[5],reply_head[6],reply_head[7],reply_head[8]);
+	/* Avoid signed/unsigned implicit conversion warnings
+	 * At least, when shuffling a signed long into unsigned long,
+	 * don't have to worry about overflows */
+	io_addr = (unsigned long)from_hex(&reply_head[5], 4);
+	if (io_addr == -1UL)  {
+		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__,
+			reply_head[5], reply_head[6], reply_head[7], reply_head[8]);
 		return -1;		/* wrong addr	*/
 	}
 
-	io_len = from_hex(&reply_head[9], 2);
-	if (io_len==-1UL)   {
-		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9],reply_head[10]);
+	io_len = (unsigned long)from_hex(&reply_head[9], 2);
+	if (io_len == -1UL)   {
+		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9], reply_head[10]);
 		return -1;		/* wrong NOB	*/
 	}
 
@@ -573,9 +591,11 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	for (i=0; i<io_head->len; ++i)
 		*(io_buf->end++) = reply[11+i];
 
-	reverse_bits(io_buf->begin, (io_buf->end - io_buf->begin) );
+	assert(io_buf->end - io_buf->begin >= 0);
+	size_t io_buf_len = (size_t)(io_buf->end - io_buf->begin);
+	reverse_bits(io_buf->begin, io_buf_len );
 
-	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, (io_buf->end - io_buf->begin));
+	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, io_buf_len);
 
 	return 0;	/* all ok */
 }
@@ -654,7 +674,11 @@ static void ser_disable_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	/* Clumsy rewrite of a one-liner
+	 *   tio.c_iflag &= ~ (IXON | IXOFF);
+	 * to avoid type conversion warnings */
+	tcflag_t x = (IXON | IXOFF);
+	tio.c_iflag &= ~ x;
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
@@ -678,17 +702,20 @@ static void flush_rx_queue()
  */
 static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 {
-	int err;
+	ssize_t err;
 
-	upsdebug_ascii(3, dmsg, frame.begin, (frame.end - frame.begin));
+	assert(frame.end - frame.begin >= 0);
+	size_t frame_len = (size_t)(frame.end - frame.begin);
 
-	err = ser_send_buf(upsfd, frame.begin, (frame.end - frame.begin) );
+	upsdebug_ascii(3, dmsg, frame.begin, frame_len);
+
+	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
 		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
 		return -1;
 	}
 
-	if (err != (frame.end - frame.begin)) {
+	if (err != (ssize_t)frame_len) {
 		upslogx(LOG_ERR, "sent incomplete frame to PRS");
 		return -1;
 	}
@@ -804,7 +831,8 @@ static int recv_command_ack()
 	ack.end += 7;
 
 	/* frame constructed - let's verify it */
-	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (ack.end - ack.begin));
+	assert (ack.end - ack.begin >= 0);
+	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (size_t)(ack.end - ack.begin));
 
 	/* generic layout */
 	err = comli_check_frame(ack);
@@ -849,7 +877,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.end += 10;
 
-	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (reply_head.end - reply_head.begin));
+	assert (reply_head.end - reply_head.begin >= 0);
+	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (size_t)(reply_head.end - reply_head.begin));
 
 
 	/* 3:  check header, extract IO info */
@@ -866,8 +895,11 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
 
-	memcpy(reply.end, reply_head.begin, (reply_head.end - reply_head.begin));
-	reply.end += (reply_head.end - reply_head.begin);
+	assert (reply_head.end - reply_head.begin >= 0);
+	size_t reply_head_len = (size_t)(reply_head.end - reply_head.begin);
+
+	memcpy(reply.end, reply_head.begin, reply_head_len);
+	reply.end += reply_head_len;
 
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
@@ -880,7 +912,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 
 	/* frame constructed, let's verify it */
-	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (reply.end - reply.begin));
+	assert (reply.end - reply.begin >= 0);
+	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (size_t)(reply.end - reply.begin));
 
 	/* generic layout */
 	err = comli_check_frame(reply);
@@ -990,8 +1023,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
  * see 8. ACTIVATE COMMANDS
  */
 
-typedef int mm_t;	/* minutes */
-typedef int VV_t;	/* voltage */
+typedef uint16_t mm_t;	/* minutes */
+typedef uint16_t VV_t;	/* voltage */
 
 #define	Z1  , 0
 #define Z2  , 0, 0
@@ -1003,7 +1036,7 @@ typedef int VV_t;	/* voltage */
 ACT	TOGGLE_PRS_ONOFF	(void);
 ACT	CANCEL_BOOST		(void);
 ACT	STOP_BATTERY_TEST	(void);
-ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes);
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes);
 ACT	SET_FLOAT_VOLTAGE	(VV_t v);
 ACT	SET_BOOST_VOLTAGE	(VV_t v);
 ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
@@ -1015,14 +1048,14 @@ ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
 ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
-ACT	SWITCH_TEMP_COMP	(int on);
+ACT	SWITCH_TEMP_COMP	(uint16_t on);
 ACT	SWITCH_SYM_ALARM	(void);
 
 /* Implement */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
 ACT	SET_FLOAT_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x80, v			Z2);	}
@@ -1042,7 +1075,7 @@ ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
-ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
+ACT	SWITCH_TEMP_COMP	(uint16_t on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
 ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
 

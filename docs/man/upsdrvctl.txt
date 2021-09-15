@@ -1,4 +1,4 @@
-UPSDRVCTL(8) 
+UPSDRVCTL(8)
 ============
 
 NAME

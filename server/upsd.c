@@ -36,6 +36,7 @@
 
 #include "user.h"
 #include "nut_ctype.h"
+#include "nut_stdint.h"
 #include "stype.h"
 #include "netssl.h"
 #include "sstate.h"
@@ -66,7 +67,7 @@ int	tracking_delay = 3600;
 int allow_no_device = 0;
 
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-int	maxconn = 0;
+long	maxconn = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -347,12 +348,15 @@ static void client_disconnect(nut_ctype_t *client)
 	return;
 }
 
-/* send the buffer <sendbuf> of length <sendlen> to host <dest> */
+/* send the buffer <sendbuf> of length <sendlen> to host <dest>
+ * returns effectively a boolean: 0 = failed, 1 = sent ok
+ */
 int sendback(nut_ctype_t *client, const char *fmt, ...)
 {
-	int	res, len;
-	char ans[NUT_NET_ANSWER_MAX+1];
-	va_list ap;
+	ssize_t	res;
+	size_t	len;
+	char	ans[NUT_NET_ANSWER_MAX+1];
+	va_list	ap;
 
 	if (!client) {
 		return 0;
@@ -364,6 +368,11 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
+	/* System write() and our ssl_write() have a loophole that they write a
+	 * size_t amount of bytes and upon success return that in ssize_t value
+	 */
+	assert(len < SSIZE_MAX);
+
 #ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
@@ -373,9 +382,9 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%zu] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
-	if (len != res) {
+	if (res < 0 || len != (size_t)res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
 		client->last_heard = 0;
 		return 0;	/* failed */
@@ -435,7 +444,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
+static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -466,7 +475,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	}
 
 	/* looks good - call the command */
-	netcmds[cmdnum].func(client, numarg - 1, numarg > 1 ? &arg[1] : NULL);
+	netcmds[cmdnum].func(client, (numarg < 2) ? 0 : (numarg - 1), (numarg > 1) ? &arg[1] : NULL);
 }
 
 /* parse requests from the network */
@@ -699,19 +708,34 @@ static void upsd_cleanup(void)
 
 static void poll_reload(void)
 {
-	int	ret;
+	long	ret;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
 	if (ret < maxconn) {
 		fatalx(EXIT_FAILURE,
-			"Your system limits the maximum number of connections to %d\n"
-			"but you requested %d. The server won't start until this\n"
+			"Your system limits the maximum number of connections to %ld\n"
+			"but you requested %ld. The server won't start until this\n"
 			"problem is resolved.\n", ret, maxconn);
 	}
 
-	fds = xrealloc(fds, maxconn * sizeof(*fds));
-	handler = xrealloc(handler, maxconn * sizeof(*handler));
+	if (0 > maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %ld as maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n", maxconn);
+	}
+
+	/* How many items can we stuff into the array? */
+	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	if ((unsigned long long)maxalloc < (unsigned long long)maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %ld as maximum number of connections, but we can only allocate %zu.\n"
+			"The server won't start until this problem is resolved.\n", maxconn, maxalloc);
+	}
+
+	/* The checks above effectively limit that maxconn is in size_t range */
+	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
+	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
 }
 
 /* instant command and setvar status tracking */

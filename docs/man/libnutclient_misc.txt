@@ -4,8 +4,8 @@ LIBNUTCLIENT_MISC(3)
 NAME
 ----
 
-libnutclient_misc, nutclient_authenticate, nutclient_logout, 
-nutclient_device_login, nutclient_get_device_num_logins, 
+libnutclient_misc, nutclient_authenticate, nutclient_logout,
+nutclient_device_login, nutclient_get_device_num_logins,
 nutclient_device_master, nutclient_device_forced_shutdown -
 Miscellaneous functions in Network UPS Tools high-level client access library
 
@@ -26,24 +26,26 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutclient_authenticate()* function authenticate the user.
+The *nutclient_authenticate()* function authenticates the user.
 
 'login' is the user name.
 
 'passwd' is the user password.
 
-The *nutclient_logout()* function disconnect gracefully from the server.
+The *nutclient_logout()* function disconnects gracefully from the server.
 
-The *nutclient_device_login()* function log the fact that a system
+The *nutclient_device_login()* function logs the fact that a system
 is drawing power from this UPS.
 
-The *nutclient_get_device_num_logins()* function retrieve the number of clients
-which have been logged for this device.
+The *nutclient_get_device_num_logins()* function retrieves the number of
+clients which have been logged for this device.
 
-The *nutclient_device_master()* function make sure that master-level
-functions like FSD are available if necessary.
+The *nutclient_device_master()* function makes sure that primary-mode
+functions like FSD are available if necessary. (Note: API change may be
+pending to rename/alias the deprecated function name)
 
-The *nutclient_device_forced_shutdown()* function sets the "forced shutdown" flag on the device.
+The *nutclient_device_forced_shutdown()* function sets the "forced shutdown"
+flag on the device.
 
 'dev' is the device name.
 

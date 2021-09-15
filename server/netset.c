@@ -200,7 +200,7 @@ int do_set_var(upstype_t *ups, const char *var, const char *newval)
 	return sstate_sendline(ups, cmd);
 }
 
-void net_set(nut_ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	char	tracking_id[UUID4_LEN] = "";
 

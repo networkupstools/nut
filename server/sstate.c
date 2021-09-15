@@ -37,7 +37,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-static int parse_args(upstype_t *ups, int numargs, char **arg)
+static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 {
 	if (numargs < 1)
 		return 0;

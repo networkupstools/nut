@@ -80,7 +80,7 @@
 
 #define ACCESS_DEVICE(fd, address) \
 	if (ioctl(fd, I2C_SLAVE, address) < 0) { \
-		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to slave 0x%02X", address); \
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to i2c slave 0x%02X", address); \
 	}
 
 static unsigned long lb_threshold = LOW_BATTERY_THRESHOLD;
