@@ -315,6 +315,8 @@ int upscli_init(int certverify, const char *certpath,
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #else
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -927,6 +929,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
 	return 0;	/* not supported */
 }
 
