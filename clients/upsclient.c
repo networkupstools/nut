@@ -429,6 +429,11 @@ int upscli_init(int certverify, const char *certpath,
 		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
+#else
+	/* Note: historically we do not return with error here,
+	 * just fall through to below and treat as initialized.
+	 */
+	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
