@@ -11,16 +11,19 @@ if test -z "${nut_have_libnss_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	REQUIRES_ORIG="${REQUIRES}"
 
 	AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
 	NSS_VERSION="`pkg-config --silence-errors --modversion nss 2>/dev/null`"
 	if test "$?" = "0" -a -n "${NSS_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags nss 2>/dev/null`"
 		LIBS="`pkg-config --silence-errors --libs nss 2>/dev/null`"
+		REQUIRES="nss"
 	else
 		NSS_VERSION="none"
 		CFLAGS=""
 		LIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
+		REQUIRES="nss"
 	fi
 	AC_MSG_RESULT(${NSS_VERSION} found)
 
@@ -56,6 +59,10 @@ if test -z "${nut_have_libnss_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if NSS is usable: we need both the runtime and headers
+	dnl NOTE that caller may have to specify PKG_CONFIG_PATH including
+	dnl their bitness variant if it is not prioritized in their default
+	dnl setting built in by OS distribution; the .../pkgconfig/nss.pc
+	dnl tends to specify the libdir which is CPU Arch dependent.
 	AC_CHECK_FUNCS(NSS_Init, [nut_have_libnss=yes], [nut_have_libnss=no])
 	dnl libc6 also provides an nss.h file, so also check for ssl.h
 	AC_CHECK_HEADERS([nss.h ssl.h], [], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
@@ -67,10 +74,12 @@ if test -z "${nut_have_libnss_seen}"; then
 		AC_DEFINE(WITH_NSS, 1, [Define to enable SSL support using Mozilla NSS])
 		LIBSSL_CFLAGS="${CFLAGS}"
 		LIBSSL_LIBS="${LIBS}"
+		LIBSSL_REQUIRES="${REQUIRES}"
 	fi
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
+	REQUIRES="${REQUIRES_ORIG}"
 fi
 ])

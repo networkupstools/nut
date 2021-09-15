@@ -15,7 +15,7 @@ link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
 manual pages (troff). This single point of control fills many gaps,
 suppresses many redundancies, and optimizes documentation management in
 general.
- 
+
 - The NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
 compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
 icons, at the bottom of each page.
@@ -103,7 +103,7 @@ FIXME (POST):
      the installation, upgrade and removal testing processes.
 
 - a runtime testing suite, which automates the inter-layer communication testing
-(driver - upsd - upsmon / clients), that is part of Ubuntu.
+(driver -- upsd -- upsmon / clients), that is part of Ubuntu.
 link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
 is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
 It installs NUT, configures it with the dummy-ups driver, changes a few data and
@@ -111,7 +111,7 @@ checks that these are well propagated with upsc.
 
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
-- link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net) 
+- link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net)
 provides metrics on NUT source code base and activity.
 
 Runtime quality

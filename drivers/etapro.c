@@ -52,6 +52,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
 #define DRIVER_VERSION	"0.04"
@@ -112,7 +113,10 @@ etapro_get_response(const char *resp_type)
 		upslogx(LOG_ERR, "bad response format (%s)", tmp);
 		return -1;
 	}
-	return val;
+	if (val > INT_MAX) {
+		upslogx(LOG_WARNING, "got value too big in response");
+	}
+	return (int)val;
 }
 
 static void
@@ -190,7 +194,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

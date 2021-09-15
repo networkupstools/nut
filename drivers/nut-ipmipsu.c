@@ -47,11 +47,11 @@ upsdrv_info_t upsdrv_info = {
 
 /* Abstract structure to allow different IPMI implementation
  * We currently use FreeIPMI, but OpenIPMI and others are serious
- * candidates! */ 
-IPMIDevice_t ipmi_dev;
+ * candidates! */
+static IPMIDevice_t ipmi_dev;
 
 /* Currently used to store FRU ID, but will probably evolve... */
-int ipmi_id = -1;
+static int ipmi_id = -1;
 
 void upsdrv_initinfo(void)
 {
@@ -137,6 +137,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
@@ -181,7 +184,7 @@ void upsdrv_makevartable(void)
 			"Authentication type to use during lan session activation");
 	addvar(VAR_VALUE, "type",
 		"Type of the device to match ('psu' for \"Power Supply\")");
-	
+
 	addvar(VAR_VALUE, "serial", "Serial number to match a specific device");
 	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device"); */
 }
@@ -197,7 +200,7 @@ void upsdrv_initups(void)
 	 * - out of band
 	 *   "id?@host"
 	 *   "host" => requires serial or ...
-	 */ 
+	 */
 	if (!strncmp( device_path, "id", 2))
 	{
 		ipmi_id = atoi(device_path+2);

@@ -16,6 +16,8 @@
 
 */
 
+#include "config.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -24,9 +26,12 @@
 
 #include "main.h"
 #include "apcupsd-ups.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
 #define DRIVER_VERSION	"0.5"
+
+#define POLL_INTERVAL_MIN 10
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -128,9 +133,25 @@ static void process(char *item,char *data)
 				data[(int)nut_data[i].info_len]=0;
 			dstate_setinfo(nut_data[i].info_type,"%s",data);
 		}
-		else dstate_setinfo(nut_data[i].info_type,
-			nut_data[i].default_value,
-			atof(data)*nut_data[i].info_len);
+		else
+		{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+			/* default_value acts as a format string in this case */
+			dstate_setinfo(nut_data[i].info_type,
+				nut_data[i].default_value,
+				atof(data)*nut_data[i].info_len);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		}
 		break;
 	}
 }
@@ -145,7 +166,7 @@ static int getdata(void)
 	char bfr[1024];
 
 	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags&DU_FLAG_INIT))
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
 	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
@@ -192,6 +213,12 @@ static int getdata(void)
 			return 0;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
+		/* Note: LGTM.com suggests "Comparison is always false because x >= 0"
+		 * for the line above, probably because ntohs() returns an uint type.
+		 * I am reluctant to fix this one, because googling for headers from
+		 * random OSes showed various types used as the return value (uint16_t,
+		 * unsigned_short, u_short, in_port_t...)
+		 */
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
@@ -237,15 +264,20 @@ void upsdrv_initinfo(void)
 	if(!port)fatalx(EXIT_FAILURE,"invalid host or port specified!");
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
 {
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

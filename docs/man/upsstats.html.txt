@@ -143,7 +143,7 @@ status variables:
 
 	ups.load;; UPS load - percentage
 
-	ups.temperature;; UPS temperature 
+	ups.temperature;; UPS temperature
 
 'extra' is where you can put additional definitions.  Right now
 the valid definitions are colors for various parts of the bars drawn
@@ -194,7 +194,7 @@ voltage trim/boost or "off" are yellow, and other events like being on
 battery or having a low battery are red.
 
 *@VAR* 'varname'*@*::
-Insert the current value of the status variable varname on the host being 
+Insert the current value of the status variable varname on the host being
 monitored, or "Not supported".
 
 *@RUNTIME@*::

@@ -24,13 +24,13 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef LIBSHUT_H
-#define LIBSHUT_H
+#ifndef NUT_LIBSHUT_H_SEEN
+#define NUT_LIBSHUT_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
 #include "nut_stdint.h"	/* for uint16_t */
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
@@ -49,6 +49,7 @@ typedef struct SHUTDevice_s {
 	char*		Serial;    /*!< Product serial number */
 	char*		Bus;       /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
+	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
 } SHUTDevice_t;
 
 /*!
@@ -85,4 +86,4 @@ extern shut_communication_subdriver_t	shut_subdriver;
 					/* Ellipse models */
 #define DEFAULT_NOTIFICATION COMPLETE_NOTIFICATION
 
-#endif /* LIBSHUT_H */
+#endif /* NUT_LIBSHUT_H_SEEN */

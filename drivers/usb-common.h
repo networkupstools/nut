@@ -38,13 +38,17 @@
  * corresponding string did not exist or could not be retrieved.
  */
 typedef struct USBDevice_s {
+	/* These 5 data points are common properties of an USB device: */
 	uint16_t	VendorID;  /*!< Device's Vendor ID    */
 	uint16_t	ProductID; /*!< Device's Product ID   */
 	char		*Vendor;   /*!< Device's Vendor Name  */
 	char		*Product;  /*!< Device's Product Name */
 	char		*Serial;   /*!< Product serial number */
+	/* These data points can be determined by the driver for some devices
+	   or by libusb to detail its connection topology: */
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
+	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
 } USBDevice_t;
 
 /*!
@@ -91,7 +95,7 @@ typedef struct {
 /* Function used to match a VendorID/ProductID pair against a list of
  * supported devices. Return values:
  * NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) */
-int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 							USBDevice_t *device);
 
 void nut_usb_addvars(void);

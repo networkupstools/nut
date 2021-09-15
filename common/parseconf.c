@@ -26,7 +26,7 @@
  * There is now a context buffer, and you call pconf_init to set it up.
  * All subsequent calls must have it as the first argument.  There are
  * two entry points for parsing lines.  You can have it read a file
- * (pconf_file_begin and pconf_file_next), take lines directly from 
+ * (pconf_file_begin and pconf_file_next), take lines directly from
  * the caller (pconf_line), or go along a character at a time (pconf_char).
  * The parsing is identical no matter how you feed it.
  *
@@ -38,7 +38,7 @@
  *
  * Fatal errors are those that involve memory allocation.  If the user
  * defines an error handler when calling pconf_init, that function will
- * be called with the error message before parseconf exits.  By default 
+ * be called with the error message before parseconf exits.  By default
  * it will just write the message to stderr before exiting.
  *
  * Input vs. Output:
@@ -57,12 +57,12 @@
  * also allows you to join lines, allowing you to have logical lines
  * that span physical lines, just like you can do in some shells.
  *
- * Lines normally end with a newline, but reaching EOF will also force 
+ * Lines normally end with a newline, but reaching EOF will also force
  * parsing on what's been scanned so far.
- * 
+ *
  * Design:
  *
- * Characters are read one at a time to drive the state machine.  
+ * Characters are read one at a time to drive the state machine.
  * As words are completed (by hitting whitespace or ending a "" item),
  * they are committed to the next buffer in the arglist.  realloc is
  * used, so the buffer can grow to handle bigger words.
@@ -76,16 +76,19 @@
  *
  */
 
+#include "common.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <string.h>	
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 #include "parseconf.h"
+#include "attribute.h"
 
 /* possible states */
 
@@ -99,6 +102,9 @@
 #define STATE_PARSEERR		8
 
 static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
+	__attribute__((noreturn));
+
+static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
 {
 	if (ctx->errhandler)
 		ctx->errhandler(errtxt);
@@ -110,7 +116,7 @@ static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
 
 static void add_arg_word(PCONF_CTX_t *ctx)
 {
-	int	argpos;
+	size_t	argpos;
 	size_t	wbuflen;
 
 	/* this is where the new value goes */
@@ -123,13 +129,13 @@ static void add_arg_word(PCONF_CTX_t *ctx)
 		ctx->maxargs = ctx->numargs;
 
 		/* resize the lists */
-		ctx->arglist = realloc(ctx->arglist, 
+		ctx->arglist = realloc(ctx->arglist,
 			sizeof(char *) * ctx->numargs);
 
 		if (!ctx->arglist)
 			pconf_fatal(ctx, "realloc arglist failed");
 
-		ctx->argsize = realloc(ctx->argsize, 
+		ctx->argsize = realloc(ctx->argsize,
 			sizeof(size_t) * ctx->numargs);
 
 		if (!ctx->argsize)
@@ -200,7 +206,7 @@ static void addchar(PCONF_CTX_t *ctx)
 		ctx->wordptr = &ctx->wordbuf[wbuflen];
 	}
 
-	*ctx->wordptr++ = ctx->ch;
+	*ctx->wordptr++ = (char)ctx->ch;
 	*ctx->wordptr = '\0';
 }
 
@@ -236,7 +242,7 @@ static int findwordstart(PCONF_CTX_t *ctx)
 
 	/* space = not in a word yet, so loop back */
 	if (isspace(ctx->ch))
-		return STATE_FINDWORDSTART;				
+		return STATE_FINDWORDSTART;
 
 	/* \ = literal = accept the next char blindly */
 	if (ctx->ch == '\\')
@@ -256,7 +262,7 @@ static int findwordstart(PCONF_CTX_t *ctx)
 	}
 
 	return STATE_COLLECT;
-}	
+}
 
 /* eat characters until the end of the line is found */
 static int findeol(PCONF_CTX_t *ctx)
@@ -275,7 +281,7 @@ static void pconf_seterr(PCONF_CTX_t *ctx, const char *errmsg)
 	snprintf(ctx->errmsg, PCONF_ERR_LEN, "%s", errmsg);
 
 	ctx->error = 1;
-}	
+}
 
 /* quote characters inside a word bounded by "quotes" */
 static int quotecollect(PCONF_CTX_t *ctx)
@@ -292,7 +298,7 @@ static int quotecollect(PCONF_CTX_t *ctx)
 	/* another " means we're done with this word */
 	if (ctx->ch == '"') {
 		endofword(ctx);
-	
+
 		return STATE_FINDWORDSTART;
 	}
 
@@ -575,7 +581,7 @@ int pconf_line(PCONF_CTX_t *ctx, const char *line)
 	/* deal with any lingering characters */
 
 	/* still building a word? */
-	if (ctx->wordptr != ctx->wordbuf)	
+	if (ctx->wordptr != ctx->wordbuf)
 		endofword(ctx);		/* tie it off */
 
 	return 1;

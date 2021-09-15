@@ -4,50 +4,51 @@ Information for developers
 This document is intended to explain some of the more useful things
 within the tree, and provide a standard for working on the code.
 
-General stuff - common subdirectory
------------------------------------
+General stuff -- common subdirectory
+------------------------------------
 
 String handling
 ~~~~~~~~~~~~~~~
 
-Use snprintf().  It's even provided with a compatibility module if the
+Use `snprintf()`.  It's even provided with a compatibility module if the
 target system doesn't have it natively.
 
-If you use snprintf() to load some value into a buffer, make sure you
+If you use `snprintf()` to load some value into a buffer, make sure you
 provide the format string.  Don't use user-provided format strings,
 since that's an easy way to open yourself up to an exploit.
 
-Don't use strcat().  We have a neat wrapper for snprintf() called snprintfcat()
-that allows you to append to char * with a format string and all the usual
-string length checking of snprintf().
+Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
+`snprintfcat()` that allows you to append to `char *` with a format
+string and all the usual string length checking of `snprintf()` routine.
 
 Error reporting
 ~~~~~~~~~~~~~~~
 
-Don't call syslog() directly.  Use upslog_with_errno() and upslogx().
+Don't call `syslog()` directly.  Use `upslog_with_errno()` and `upslogx()`.
 They may write to the syslog, stderr, or both as appropriate.  This
 means you don't have to worry about whether you're running in the
 background or not.
 
-upslog_with_errno prints your message plus the string expansion of
-errno.  upslogx just prints the message.
+The `upslog_with_errno()` routine prints your message plus the string
+expansion of `errno`. The `upslogx()` just prints the message.
 
-fatal_with_errno and fatalx work the same way, but they
-exit(EXIT_FAILURE) afterwards. Don't call exit() directly.
+`fatal_with_errno()` and `fatalx()` work the same way, but they
+also `exit(EXIT_FAILURE)` afterwards. Don't call `exit()` directly.
 
 Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
 
-upsdebug_with_errno(), upsdebugx(), upsdebug_hex() and upsdebug_ascii()
-use the global `nut_debug_level` so you don't have to mess around with
-printf()s yourself.  Use them.
+The `upsdebug_with_errno()`, `upsdebugx()`, `upsdebug_hex()` and
+`upsdebug_ascii()` routines use the global `nut_debug_level`, so you
+don't have to mess around with `printf()`s and `if`s yourself.
+Use them.
 
 Memory allocation
 ~~~~~~~~~~~~~~~~~
 
-xmalloc, xcalloc, xrealloc and xstrdup all check the results of the base
-calls before continuing, so you don't have to.  Don't use the raw calls
-directly.
+`xmalloc()`, `xcalloc()`, `xrealloc()` and `xstrdup()` all check the
+results of the base calls before continuing, so you don't have to.
+Don't use the raw calls directly.
 
 Config file parsing
 ~~~~~~~~~~~~~~~~~~~
@@ -66,8 +67,8 @@ handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
 NOTE: this does not apply to drivers.  Driver authors should use the
-upsdrv_makevartable() scheme to pick up values from ups.conf.  Drivers
-should not have their own config files.
+`upsdrv_makevartable()` scheme to pick up values from ups.conf.
+Drivers should not have their own config files.
 
 Drivers may have their own data files, such as lists of hardware,
 mapping tables, or similar.  The difference between a data file and a
@@ -81,8 +82,8 @@ hardware support to a driver without recompiling.
 This is already handled by autoconf, so just include "timehead.h" and you
 will get the right headers on every system.
 
-Device drivers - main.c
------------------------
+Device drivers -- main.c
+------------------------
 
 The device drivers use main.c as their core.
 
@@ -108,9 +109,9 @@ There are still older systems out there that don't do C++ style comments.
 --------------------------------------
 
 Newer versions of gcc allow you to declare a variable inside a function
-somewhat like the way C++ operates, like this:
+after code, somewhat like the way C++ operates, like this:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 function do_stuff(void)
 {
 	check_something();
@@ -119,18 +120,150 @@ function do_stuff(void)
 
 	a = do_something_else();
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 While this will compile and run on these newer versions, it will fail
 miserably for anyone on an older system.  That means you must not use
 it.  gcc only warns about this with -pedantic.
+
+Another feature that does not work on some compilers (e.g. conforming
+to ANSI C / C89 standard) is initial variable declaration inside a
+'for loop' block, like this:
+--------------------------------------------------------------------------------
+function do_stuff(void)
+{
+	/* This should declare "int i;" first, then use it in "for" loop: */
+	for (int i = 0; i < INT_MAX; ++i) { ... }
+
+	/* Additional loops cause also an error about re-declaring a variable: */
+	for (int i = 10; i < 15; ++i) { ... }
+}
+--------------------------------------------------------------------------------
+
+At this point NUT is expected to work correctly when built with a C99
+(or GNU99 on Linux) or newer standard.
+
+See the `.travis.yml` file in project sources for detailed matrix of
+`CFLAGS` and compiler versions currently known to work or to not (yet)
+work on operating systems available to that CI solution.
+
+The NUT codebase may build in a mode without warnings made fatal on C89
+(GNU89), but the emitted warnings indicate that those binaries may crash.
+If somebody in the community requires to build and run NUT on systems
+that old, pull requests to fix the offending coding issues are welcome.
+
+The NUT project on GitHub has integration with Travis CI to test a large
+set of compiler and option combinations, covering different versions of
+gcc and clang, C standards, and requiring to pass builds at least in a
+mode without warnings (and checking the other cases where any warnings
+are made fatal).
+
+Developers can directly use the scripts involved in CI builds to fix
+existing code on their workstations or to ensure support for new
+compilers and C standard revisions, e.g. save a local file like this:
+
+	$ cat _fightwarn-gcc10-gnu17.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
+	CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
+	CC=gcc-10 CXX=g++-10 \
+		./ci_build.sh
+
+...and then execute it to prepare a workspace, after which you can go
+fixing bugs file-by-file running a `make` after each save to confirm
+your solutions and uncover the next issue to address :-)
+
+Note that while spelling out sets of warnings can help in a quest to
+fix certain bugs during development (if only by removing noise from
+classes of warnings not relevant to the issue one is working on), there
+is a reasonable set of warnings which NUT codebase actively tries to
+be clean about (and checks in CI), detailed in the next section.
+
+For the `ci_build.sh` usage like above, one can instead pass the setting
+via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
+for their build, e.g.:
+
+	$ cat _fightwarn-clang9-gnu11.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
+	CFLAGS="-std=gnu11" \
+	CXXFLAGS="-std=gnu++11" \
+	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
+		./ci_build.sh
+
+As a rule of thumb, new contributions must not emit any warnings when
+built in GNU99 mode with a `minimal` "difficulty" level of warnings.
+Technically they must survive the part of test matrix across the several
+platforms tested by Travis CI and marked in project settings as required
+to pass, to be accepted for a pull request merge.
+
+Developers aiming to post successful pull requests to improve NUT can
+pass the `--enable-warnings` option to the `configure` script in local
+builds to see how that behaves and ensure that at least in some set-up
+their contribution is viable. Note that different compiler versions and
+vendors (gcc/clang/...), building against different OS and third-party
+dependencies, with different CPU architectures and different language
+specification revisions, might all complain about different issues --
+and catching this in as diverse range of set-ups as possible is why we
+have CI tests.
+
+It can be beneficial for serial developers to set up a local BuildBot
+or a Jenkins instance with a matrix test job, to test their local git
+repository branches with whatever systems they have available.
+
+* https://github.com/networkupstools/nut/issues/823
+
+Pre-set warning options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The options chosen into pre-sets that can be selected by `configure`
+script options are ones we use for different layers of CI tests.
+
+Values to note include:
+
+* `--enable-Werror(=yes/no)` -- make warnings fatal;
+
+* `--enable-warnings(=.../no)` -- enable certain warning presets:
+
+** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
+   `clang-minimal`, `all` -- actual definitions that are compiler-dependent
+   (the latter just adds `-Wall` which may be relatively portable);
+
+** `hard`, `medium` or `minimal` -- if current compiler is detected as
+   CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
+
+** `gcc` or `clang` -- apply the set of options (regardless of detected
+   compiler) with default "difficulty" hard-coded in `configure` script,
+   to tweak as our codebase becomes cleaner;
+
+** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
+   without an `=ARG` part) -- if current compiler is detected as CLANG
+   or GCC, apply corresponding setting with default "difficulty" from
+   above (or `all` otherwise).
+
+Note that for backwards-compatibility reasons and to help filter out
+introduction of blatant errors, builds with compilers that claim GCC
+compatibility can enable a few easy warning presets by default. This
+can be avoided with an explicit argument to `--disable-warnings` (or
+`--enable-warnings=no`).
+
+Hopefully this mechanism is extensible enough if we would need to add
+more compilers and/or "difficulty levels" in the future.
+
+Finally, note that such pre-set warnings can be mixed with options
+passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
+run, but it is up to your compiler how it interprets the resulting mix.
 
 Coding style
 ------------
 
 This is how we do things:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 int open_subspace(char *ship, int privacy)
 {
 	if (!privacy)
@@ -141,7 +274,7 @@ int open_subspace(char *ship, int privacy)
 
 	return secure_channel(ship);
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 The basic idea is that we try to group things into functions, and then
 find ways to drop out of them when we can't go any further.  There's
@@ -174,16 +307,33 @@ non-tab character has appeared on the line must be done by spaces in
 order for it to remain at the same alignment when someone views tabs at
 a different widths.
 
-If you write something that uses spaces, you may get away with it in a
-driver that's relatively secluded.  However, if we have to work on that
-code, expect it to get reformatted according to the above.
+One common example for this is multi-line if condition:
+
+--------------------------------------------------------------------------------
+	if (something &&
+	    something_else) {
+--------------------------------------------------------------------------------
+
+Another example is tables of definitions that are better aligned with
+(non-leading) spaces at least between names and values not too many
+characters wide; it still helps to align the columns with spaces at
+offsets divisible by 4 or 8 (consistently for the whole table):
+
+--------------------------------------------------------------------------------
+#define SHORT_MACRO                         1	/* flag comment */
+#define SOMETHING_WITH_A_VERY_LONG_NAME     255	/* flag comment */
+--------------------------------------------------------------------------------
+
+If you write something that uses leading spaces, you may get away with
+it in a driver that's relatively secluded.  However, if we have to work
+on that code, expect it to get reformatted according to the above.
 
 Patches to existing code that don't conform to the coding style being
 used in that file will probably be dropped.  If it's something we really
 need, it will be grudgingly reformatted before being included.
 
 When in doubt, have a look at Linus's take on this topic in the Linux
-kernel - Documentation/CodingStyle.  He's done a far better job of
+kernel -- Documentation/CodingStyle.  He's done a far better job of
 explaining this.
 
 Line breaks
@@ -200,17 +350,43 @@ long when there is a better alternative (see the note on
 pretentiousVariableNamingSchemes above).  Certainly there should not
 be more than one statement per line. Please do not use
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 if (condition) break;
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 but use the following:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 if (condition) {
 	break;
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+Un-used variables and function arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whenever a function needs to satisfy a particular API, it can end up
+taking arguments that are not used in practice (think a too-trivial
+signal handler). While some compilers offer the facility of decorations
+like `__attribute__(unused)`, this proved not to be a portable solution.
+Also the abilities of newer C++ standard revisions are of no help to
+the vast range of existing systems that run NUT today and expect to be
+able to do so tomorrow (hence the required C99+ support noted above).
+
+In NUT codebase we prefer to mark un-used variables explicitly in the
+body of the function (or an `#ifdef` branch of its code) using the
+`NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
+body, referring to the macro defined in `common.h`.
+
+To display in a rough example:
+
+-------------------------------------------------------------------------------
+	static void signal_X_handler(int signal_X) {
+		NUT_UNUSED_VARIABLE(signal_X);
+		/* We have explicitly got nothing to do if we catch signal X */
+		return;
+	}
+-------------------------------------------------------------------------------
 
 Miscellaneous coding style tools
 --------------------------------
@@ -233,7 +409,7 @@ rendered on screen). It is even possible to set this on a
 per-directory basis, by putting something like this into your .emacs
 file:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 ;; NUT style
 
 (defun nut-c-mode ()
@@ -248,7 +424,7 @@ file:
 
 (setq auto-mode-alist (cons '(".*/nut/.*\\.[ch]$". nut-c-mode)
                        auto-mode-alist))
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Finishing touches
 ~~~~~~~~~~~~~~~~~
@@ -264,13 +440,48 @@ or access something outside their scope will throw a warning or even
 fail to compile in some cases.  This is what we want.
 
 
+Switch case fall-through
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+While C standards allow to write `switch` statements to "fall through"
+from handling one case into another, modern compilers frown upon that
+practice and spew warnings which complicate detecting real bugs in the
+code (and also looking back at some of the cases written decades ago,
+it is not trivial to state whether the fall-through was intentional or
+really is a bug).
+
+Compilers which detect such problem usually offer ways to decorate the
+code with comments or attributes to keep it quiet it in cases where the
+jump is intentional; also C++17 introduces special keywords for that in
+the standard. NUT aiming to be portable and independent of compilers as
+much as possible, prefers the arguably clearer and standards-based way
+of using `goto` into the next intended operation, even though it is a
+couple of lines away, e.g.:
+
+	int uppercase = 0;
+	switch (char_opt) {
+		case 'U':
+			uppercase = 1;
+			goto fallthrough_case_u_option;
+		case 'u':
+		fallthrough_case_u_option:
+			process_u_option(uppercase);
+			break;
+	}
+
+In trivial cases, like falling through to `default` which just returns,
+it may be clearer and more maintainable (adding other option cases in
+the future) to just `return same_result` in the code block that would
+fall through otherwise and avoid `goto` statements altogether.
+
 Spaghetti
 ~~~~~~~~~
 
-If you use a goto, expect us to drop it when our head stops spinning.
-It gives us flashbacks to the very old code we wrote.
+If you use a `goto` that jumps over long distances (see "Switch case
+fall-through" section above), expect us to drop it when our head stops
+spinning. It gives us flashbacks to the very old code we wrote.
 We've tried to clean up our act, and you should make the effort
-as well.  
+as well.
 
 We're not making a blanket statement about gotos, since everything
 probably has at least one good use.  There are a few cases where a goto
@@ -285,18 +496,18 @@ There are parts of the source tree that do not yet conform to these
 specs.  Part of this is due to the fact that the coding style has been
 evolving slightly over the course of the project.  Some of the code you
 see in these directories is 5 years old, and things have gotten cleaner
-since then.  Don't worry - it'll get cleaned up the next time something
+since then.  Don't worry -- it'll get cleaned up the next time something
 in the vicinity gets a visit.
 
 Memory leak checking
 ~~~~~~~~~~~~~~~~~~~~
 
 We can't say enough good things about valgrind.  If you do anything with
-dynamic memory in your code, you need to use this.  Just compile with -g
-and start the program inside valgrind.  Run it through the suspected
-area and then exit cleanly.  valgrind will tell you if you've done
-anything dodgy like freeing regions twice, reading uninitialized memory,
-or if you've leaked memory anywhere.
+dynamic memory in your code, you need to use this.  Just compile with
+`gcc -g` and start the program inside `valgrind`.  Run it through the
+suspected area and then exit cleanly.  valgrind will tell you if you've
+done anything dodgy like freeing regions twice, reading uninitialized
+memory, or if you've leaked memory anywhere.
 
 For more information, refer to the link:http://valgrind.kde.org[Valgrind]
 project.
@@ -310,19 +521,21 @@ and many people have put a lot of time and energy to improve it.
 Submitting patches
 ------------------
 
-Small patches that arrive in unified format (diff -u) as plain text attachments
-with no HTML and a brief summary at the top are the easiest to handle.
+Small patches that arrive in unified format (diff -u) as plain text
+attachments with no HTML and a brief summary at the top are the easiest
+to handle.
 
-If a patch is sent to the nut-upsdev mailing list, it stands a better chance of
-being seen immediately. However, it is likely to be dropped if any issues
-cannot be resolved quickly. If your code might not work for others, or if it is
-a large change, your best bet is to submit a pull request or create an
+If a patch is sent to the nut-upsdev mailing list, it stands a better
+chance of being seen immediately. However, it is likely to be dropped
+if any issues cannot be resolved quickly. If your code might not work
+for others, or if it is a large change, your best bet is to submit a
+pull request or create an
 link:https://github.com/networkupstools/nut/issues[issue on GitHub].
 
-The issue tracker allows us to track the patches over a longer period of time,
-and it is less likely that a patch will fall through the cracks. Posting a
-reminder to the developers (via the nut-upsdev list) about a patch on GitHub is
-fair game.
+The issue tracker allows us to track the patches over a longer period
+of time, and it is less likely that a patch will fall through the cracks.
+Posting a reminder to the developers (via the nut-upsdev list) about a
+patch on GitHub is fair game.
 
 Patch cohesion
 --------------
@@ -338,7 +551,7 @@ evaluated separately, assuming the core developers care enough to do that
 instead of just dropping it.
 
 If you have to make big changes in lots of places, send multiple
-patches - one per item.
+patches -- one per item.
 
 The finishing touches: manual pages and device entry in HCL
 -----------------------------------------------------------
@@ -360,32 +573,37 @@ HTML and dynamic searchable HTML for the website.
 Source code management
 ----------------------
 
-We currently use a Git repository hosted at GitHub (with a mirror at Alioth) to track
-changes to the NUT source code. This allows you to clone the repository (or
-fork, in GitHub parlance), make changes, and post them online for review prior
-to integration.
+We currently use a Git repository hosted at GitHub (with a mirror at
+Alioth) to track changes to the NUT source code. This allows you to
+clone the repository (or fork, in GitHub parlance), make changes, and
+post them online for review prior to integration.
 
-To obtain permission to commit directly to the master NUT repository, you must
-be prepared to spend a fair amount of time contributing to the NUT codebase.
-Most developers will be well served by committing to their own Git repository,
-and having the NUT team merge their changes.
+To obtain permission to commit directly to the common upstream NUT repository,
+you must be prepared to spend a fair amount of time contributing to the
+NUT codebase. Most developers will be well served by committing to their
+own forked Git repository (preferably in a uniquely named branch for each
+new contribution), and having the NUT team merge their changes using pull
+requests.
 
-Git offers a little more flexibility than the +svn update+ command. You may
-fetch other developers' changes into your repository, but hold off on
-actually combining them with your branch until you have compared the two
-branches (for instance, with `gitk --all`). Git also allows you to accumulate
-more than one commit worth of changes before pushing to another repository.
-This allows development to continue without a constant network connection.
+Git offers a little more flexibility than the +svn update+ command.
+You may fetch other developers' changes into your repository, but hold
+off on actually combining them with your branch until you have compared
+the two branches (for instance, with `gitk --all`). Git also allows you
+to accumulate more than one commit worth of changes before pushing to
+another repository. This allows development to continue without a constant
+network connection.
 
-For a quick change to a file in the Git working copy, you can use `git diff` to
-generate a patch to send to the nut-upsdev mailing list.  If you have more
-extensive changes, you can use `git format-patch` on a complete commit or
-branch, and send the resulting series of patches to the list.
+For a quick change to a file in the Git working copy, you can use
+`git diff` to generate a patch to send to the nut-upsdev mailing list.
+If you have more extensive changes, you can use `git format-patch` on
+a complete commit or branch, and send the resulting series of patches
+to the list.
 
-If you use GitHub's web-based editor to make changes, it tends to create lots
-of small commits, one per change per file. Unless there is reason to keep the
-intermediate history, we will probably collapse the entire branch into one
-commit with `git rebase -i` before merging.
+If you use GitHub's web-based editor to make changes, it tends to create
+lots of small commits, one per change per file. Unless there is reason to
+keep the intermediate history, we will probably collapse (or "squash" in
+Git parlance) the entire branch into one commit with a `git rebase -i`
+before merging.
 
 The link:https://git.wiki.kernel.org/index.php/GitSvnCrashCourse[GitSvnCrashCourse]
 wiki page has some useful information for long-time users of Subversion.
@@ -401,18 +619,18 @@ or
 
 	git clone https://github.com/networkupstools/nut.git
 
-if it is necessary to get around a pesky firewall that blocks the native Git
-protocol.
+if it is necessary to get around a pesky firewall that blocks the native
+Git protocol.
 
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
 	git clone --depth 1 git://github.com/networkupstools/nut.git
 
-In case the GitHub repository is temporarily unavailable for any reason, we
-also plan to push to Alioth's
-link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well. You can
-add a remote reference to your local repository:
+In case the GitHub repository is temporarily unavailable for any reason,
+we also plan to push to Alioth's
+link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well.
+You can add a remote reference to your local repository:
 
 	cd path/to/nut
 	git remote add -f alioth git://anonscm.debian.org/nut/nut.git
@@ -420,27 +638,27 @@ add a remote reference to your local repository:
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~
 
-There are those who prefer the simplicity and self-consistency of the Mercurial
-SCM client over the hodgepodge of unique commands which make up Git. Rather
-than debate the merits of each system, we will gently guide you towards the
-link:http://hg-git.github.com/[hg-git project] which would theoretically be a
-transparent bridge between the central Git repository, and your local Mercurial
-working copy.
+There are those who prefer the simplicity and self-consistency of the
+Mercurial SCM client over the hodgepodge of unique commands which make
+up Git. Rather than debate the merits of each system, we will gently
+guide you towards the link:http://hg-git.github.com/[hg-git project]
+which would theoretically be a transparent bridge between the central
+Git repository, and your local Mercurial working copy.
 
-Other tools for hg/git interoperability are sure to exist. We would welcome any
-feedback about this process on the nut-upsdev mailing list.
+Other tools for hg/git interoperability are sure to exist. We would
+welcome any feedback about this process on the nut-upsdev mailing list.
 
 Subversion (SVN) access
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 If you prefer to check out the NUT source code using an SVN client, GitHub
 has a link:https://github.com/blog/966-improved-subversion-client-support[SVN
-interface to Git repositories] hosted on their servers. You can fork a copy of
-the NUT repository and commit to your fork with SVN.
+interface to Git repositories] hosted on their servers. You can fork a copy
+of the NUT repository and commit to your fork with SVN.
 
-Be aware that the examples in the GitHub blog post might result in a checkout
-that includes all of the current branches, as well as the trunk. You are most
-likely interested in a command line similar to the following:
+Be aware that the examples in the GitHub blog post might result in a
+checkout that includes all of the current branches, as well as the trunk.
+You are most likely interested in a command line similar to the following:
 
 	svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
@@ -451,12 +669,13 @@ The NUT repository generally only holds files which are not generated from
 other files. This prevents spurious differences from being recorded in the
 repository history.
 
-If you add a driver, it is recommended that you add the driver executable name
-to the .gitignore file in that directory. Similarly, files generated from *.in
-and *.am sources should be ignored as well. We try to include a number of
-generated files in the tarball releases with `make dist` hooks in order to
-minimize the number of dependencies for end users, but the assumption is that
-a developer can install the packages needed to regenerate those files.
+If you add a driver, it is recommended that you add the driver executable
+name to the `.gitignore` file in that directory. Similarly, files generated
+from `*.in` and `*.am` source templates should be ignored as well.
+We try to include a number of generated files in the tarball releases with
+`make dist` hooks in order to minimize the number of dependencies for end
+users, but the assumption is that a developer can install the packages
+needed to regenerate those files.
 
 Commit message formatting
 -------------------------
@@ -464,11 +683,11 @@ Commit message formatting
 From the `git commit` man page:
 
 [quote]
-Though not required, it's a good idea to begin the commit message with a single
-short (less than 50 character) line summarizing the change, followed by a blank
-line and then a more thorough description. The text up to the first blank line
-in a commit message is treated as the commit title, and that title is used
-throughout git.
+Though not required, it's a good idea to begin the commit message with a
+single short (less than 50 character) line summarizing the change, followed
+by a blank line and then a more thorough description. The text up to the
+first blank line in a commit message is treated as the commit title, and
+that title is used throughout git.
 
 If your commit is just a change to one component, such as the HCL, upsd or a
 specific driver, prefix your commit message in a way that matches similar
@@ -490,16 +709,24 @@ and should *not* be used as a guide for future commits.
 Repository etiquette and quality assurance
 ------------------------------------------
 
-Please keep the Git master branch in working condition at all times. The
-master branch may be used to generate daily tarballs, and should not contain
-broken code. If you need to commit incremental changes that leave the system
-in a broken state, please do so in a separate branch and merge the changes
-back into master once they are complete.
+For developers who have commit access to the common upstream NUT repository:
+Please keep the Git "master" branch in working condition at all times.
+The "master" branch may be used to generate daily tarballs, it provides the
+baseline for new contributions, and occasionally is tagged for a new release.
+It should not contain broken code. If you need to commit incremental changes
+that leave the system in a broken state, please do so in a separate branch
+and merge the changes back into "master" once they are complete.
+
+To help keep the codebase ever-green, we run a number of CI tests and builds
+in various conditions, including older compilers, different C/C++ standard
+revisions, and an assortment of operating systems; a section below elaborates
+on this in more detail.
 
 You are encouraged to use `git rebase -i` on your private Git branches to
 separate your changes into <<_patch_cohesion,logical changes>>.
 
-From there, you can generate patches for the issue tracker, or the nut-upsdev list.
+From there, you can generate patches for the issue tracker, or the nut-upsdev
+mailing list.
 
 Note that once you rebase a branch, anyone else who has a copy of this branch
 will need to rebase on top of your rebased branch. Obviously, this hinders
@@ -516,7 +743,7 @@ stash pop+ to apply your saved changes.
 
 Here is an example workflow:
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 	git clone -o central git://github.com/networkupstools/nut.git
 
 	cd nut
@@ -543,7 +770,7 @@ Here is an example workflow:
 	# Publish your branch to your GitHub repository:
 
 	git push username my-new-feature
---------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
@@ -592,7 +819,7 @@ optional libraries and features installed.
 Finally note, that since 2017 the GitHub upstream project is monitored by
 Travis CI (in addition to multi-platform buildbots which occasionally do not
 work). This means that if your posted improvements are based on current NUT
-master branch, the resulting pull request should get tested for a number of
+"master" branch, the resulting pull request should get tested for a number of
 scenarios automatically. If your code adds a substantial feature, consider
 extending the `.travis.yml` and/or `ci_build.sh` scripts in the workspace
 root to add another `BUILD_TYPE` to the matrix of tests run in parallel.

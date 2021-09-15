@@ -18,6 +18,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_APCSMART_OLD_H_SEEN
+#define NUT_APCSMART_OLD_H_SEEN 1
+
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include "serial.h"
@@ -108,7 +111,7 @@ typedef struct {
 	char		cmd;		/* command character */
 } apc_vartab_t;
 
-apc_vartab_t	apc_vartab[] = {
+static apc_vartab_t	apc_vartab[] = {
 
 	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
@@ -141,7 +144,7 @@ apc_vartab_t	apc_vartab[] = {
 	{ "input.transfer.low",	APC_F_VOLT,		'l' },
 	{ "input.transfer.high",
 				APC_F_VOLT,		'u' },
-	{ "input.transfer.reason", 
+	{ "input.transfer.reason",
 				APC_POLL|APC_F_REASON,	'G' },
 
 	{ "input.voltage.maximum",
@@ -151,30 +154,30 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "output.current", 	APC_POLL|APC_F_AMP,	'/' },
 	{ "output.voltage", 	APC_POLL|APC_F_VOLT,	'O' },
-	{ "output.voltage.nominal",  
+	{ "output.voltage.nominal",
 				APC_F_VOLT,		'o' },
 
 	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },
-	{ "ambient.humidity.high", 
+	{ "ambient.humidity.high",
 				APC_F_PERCENT,		'{' },
-	{ "ambient.humidity.low", 
+	{ "ambient.humidity.low",
 				APC_F_PERCENT,		'}' },
 
-	{ "ambient.temperature", 	
+	{ "ambient.temperature",
 				APC_POLL|APC_F_CELSIUS, 't' },
-	{ "ambient.temperature.high",	
+	{ "ambient.temperature.high",
 				APC_F_CELSIUS,		'[' },
-	{ "ambient.temperature.low", 	
+	{ "ambient.temperature.low",
 				APC_F_CELSIUS,		']' },
 
 	{ "battery.date",	APC_STRING,		'x' },
 
 	{ "battery.charge",  	APC_POLL|APC_F_PERCENT,	'f' },
-	{ "battery.charge.restart",  
+	{ "battery.charge.restart",
 				APC_F_PERCENT,		'e' },
 
 	{ "battery.voltage", 	APC_POLL|APC_F_VOLT,	'B' },
-	{ "battery.voltage.nominal", 
+	{ "battery.voltage.nominal",
 				0,			'g' },
 
 	{ "battery.runtime", 	APC_POLL|APC_F_MINUTES,	'j' },
@@ -183,7 +186,7 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "battery.packs", 	APC_F_DEC,		'>' },
 	{ "battery.packs.bad", 	APC_F_DEC,		'<' },
-	{ "battery.alarm.threshold", 
+	{ "battery.alarm.threshold",
 				0,			'k' },
 	/* todo:
 
@@ -218,7 +221,7 @@ typedef struct {
 	char	cmd;
 } apc_cmdtab_t;
 
-apc_cmdtab_t	apc_cmdtab[] =
+static apc_cmdtab_t	apc_cmdtab[] =
 {
 	{ "load.off",		APC_NASTY|APC_REPEAT,	APC_CMD_OFF       },
 	{ "load.on",		APC_REPEAT,		APC_CMD_ON        },
@@ -246,7 +249,7 @@ apc_cmdtab_t	apc_cmdtab[] =
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
-struct {
+static struct {
 	const	char	*firmware;
 	const	char	*cmdchars;
 	int	flags;
@@ -289,3 +292,5 @@ struct {
 
 	{ NULL,		NULL,			0 },
 };
+
+#endif  /* NUT_APCSMART_OLD_H_SEEN */

@@ -1,4 +1,4 @@
-/* eaton_ats16-mib.h - subdriver to monitor Eaton ATS16 SNMP devices with NUT
+/* eaton_ats16-nmc-mib.h - subdriver to monitor Eaton ATS16 NMC SNMP devices with NUT
  *
  *  Copyright (C)
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
@@ -19,13 +19,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef EATON_ATS16_MIB_H
-#define EATON_ATS16_MIB_H
+#ifndef EATON_ATS16_NMC_MIB_H
+#define EATON_ATS16_NMC_MIB_H
 
 #include "main.h"
 #include "snmp-ups.h"
 
-extern mib2nut_info_t eaton_ats16;
-extern mib2nut_info_t eaton_ats16_g2;
+extern mib2nut_info_t eaton_ats16_nmc;
 
-#endif /* EATON_ATS16_MIB_H */
+#endif /* EATON_ATS16_NMC_MIB_H */

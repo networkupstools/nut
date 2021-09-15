@@ -16,6 +16,10 @@
 #   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
 #   files from source tree
 
+# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
+EGREP = egrep
+#EGREP = grep -E
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
@@ -394,6 +398,7 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	microsol-apc.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -436,6 +441,7 @@ MAN_SERIAL_PAGES = \
 	mge-utalk.8	\
 	oneac.8		\
 	microdowell.8	\
+	microsol-apc.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
@@ -482,6 +488,7 @@ HTML_SERIAL_MANS = \
 	mge-utalk.html	\
 	oneac.html		\
 	microdowell.html	\
+	microsol-apc.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
@@ -620,16 +627,16 @@ endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html
 
-SRC_LINUX_I2C_PAGES = asem.txt
+SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.8
+MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
 endif
 
 if WITH_LINUX_I2C
    man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
-HTML_LINUX_I2C_MANS = asem.html
+HTML_LINUX_I2C_MANS = asem.html pijuice.html
 
 # SOME_DRIVERS
 endif
@@ -686,7 +693,7 @@ if ! SKIP_MANS
 # runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
 EXTRA_DIST += dist
 dist:
-	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
 endif
 endif
 
@@ -718,6 +725,68 @@ HTML_MANS = \
 all:
 
 html-man: $(HTML_MANS) index.html
+
+if WITH_MANS
+if ! SKIP_MANS
+check-local: check-man
+else
+check-local: check-man-txt check-man-pages
+	@echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
+endif
+else
+check-local: check-man-txt check-man-pages
+	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
+endif
+
+check-man: check-man-txt check-man-pages check-html-man
+
+# the "for" loops might better use $^ but it might be not portable
+check-man-html: check-html-man
+
+check-html-man: $(HTML_MANS)
+	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(HTML_MANS) ; do \
+	    CHECKED="`expr $$CHECKED + 1`"; \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
+
+# Note: many man-pages here have code samples and are mis-identified as C code
+check-man-page: check-man-pages
+
+# Man-pages may be pre-generated (srcdir), or re-built (builddir)
+check-man-pages: $(MAN_MANS)
+	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(MAN_MANS) ; do \
+	    CHECKED="`expr $$CHECKED + 1`"; \
+	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | $(EGREP) -i '(roff.* input|C source|ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | $(EGREP) -i '(roff.* input|C source|ASCII text)' > /dev/null ; } ) || \
+	    FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; \
+	    ( echo "SRCDIR:"; cd "$(abs_srcdir)/" && file $$FAILED ; \
+	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
+	    ) >&2 ; exit 1; \
+	fi; echo "PASSED man-page sanity check (checked $$CHECKED files)"; exit 0
+
+check-man-source: check-man-txt
+
+# Note: (GNU) make can helpfully add VPATH to the short source filenames
+# which we had listed above, so the "case" below handles two possibilities
+check-man-txt: $(SRC_ALL_PAGES)
+	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	( cd $(abs_srcdir) ) || exit; \
+	for F in $(SRC_ALL_PAGES) ; do \
+	    CHECKED="`expr $$CHECKED + 1`"; \
+	    case "$$F" in \
+	        */*) ;; \
+	        *) F="$(abs_srcdir)/$$F" ;; \
+	    esac ; \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(ASCII|UTF-8|Unicode|ISO-8859|English).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
 CLEANFILES = *.xml *.html
 
@@ -813,4 +882,4 @@ else !HAVE_ASCIIDOC
 endif !HAVE_ASCIIDOC
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@

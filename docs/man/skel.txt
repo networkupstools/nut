@@ -48,7 +48,7 @@ This driver also supports the following optional settings:
 
 *option1*='num'::
 Set the value of ... to 'num'. Contrast with *option2*.
- 
+
 *option2*='string'::
 Some other option.
 

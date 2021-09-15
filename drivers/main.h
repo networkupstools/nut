@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef NUT_MAIN_H_SEEN
+#define NUT_MAIN_H_SEEN
 
 #include "common.h"
 #include "upsconf.h"
@@ -53,7 +53,7 @@ void addvar(int vartype, const char *name, const char *desc);
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {
-	const char	*name;		/* driver full name, for banner printing, ... */ 
+	const char	*name;		/* driver full name, for banner printing, ... */
 	const char	*version;	/* driver version */
 	const char	*authors;	/* authors name */
 	const int	status;		/* driver development status */
@@ -76,4 +76,4 @@ typedef struct upsdrv_info_s {
 /* public driver information from the driver file */
 extern upsdrv_info_t	upsdrv_info;
 
-#endif /* MAIN_H */
+#endif /* NUT_MAIN_H_SEEN */

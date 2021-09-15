@@ -1,6 +1,10 @@
 DISTCLEANFILES =
 EXTRA_DIST =
 
+# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
+EGREP = egrep
+#EGREP = grep -E
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
@@ -17,7 +21,7 @@ IMAGE_FILES = images/asciidoc.png \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
-USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
+USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt config-prereqs.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -74,6 +78,8 @@ SUFFIXES = .txt .html .pdf
 
 all: doc
 
+check-local: @DOC_CHECK_LIST@
+
 doc: @DOC_BUILD_LIST@
 
 pdf: $(ASCIIDOC_PDF)
@@ -81,8 +87,44 @@ pdf: $(ASCIIDOC_PDF)
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
+# the "for" loops might better use $^ but it might be not portable
+check-pdf: $(ASCIIDOC_PDF)
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(ASCIIDOC_PDF) ; do \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i 'PDF document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED PDF sanity check"; exit 0
+
+check-html-single: $(ASCIIDOC_HTML_SINGLE)
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED HTML-single sanity check"; exit 0
+
+check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for D in $(ASCIIDOC_HTML_CHUNKED); do \
+	    for F in "$$D"/*.html ; do \
+	        test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    done; \
+	    for F in "$$D"/*.css ; do \
+	        test -s "$$F" && { $(EGREP) -i 'CSS stylesheet' "$$F" > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    done; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED HTML-chunked sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED HTML-chunked sanity check"; exit 0
+
+# Note: usually the results from man-page check will be reported twice:
+# once as a SUBDIRS child makefile, and once via DOC_CHECK_LIST expansion
+check-man:
+	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
+
 clean-local:
-	rm -rf *.pdf *.html *.chunked docbook-xsl.css *.bak
+	rm -f *.pdf *.html docbook-xsl.css
+	rm -rf *.chunked *.bak
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
@@ -149,6 +191,9 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README
 
+# Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
+SPELLCHECK_DIR = $(srcdir)
+
 # Note: de-facto our documentation is beyond ASCII (at least in names of
 # international committers). The grep tests below look if the aspell output
 # contained something other than the OK lines (tagged with asterisk) and
@@ -158,7 +203,6 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # interpreted as commands, and seems this feature can not be turned off.
 # See also http://aspell.net/man-html/Through-A-Pipe.html
 # TODO: Is "grep -a" or "grep -b" (treat input as ascii/bin) portable enough?
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 # Set SPELLCHECK_ERROR_FATAL=no if there are some unavoidable issues
 # due to spellchecking, to temporarily not fail builds due to this.
 # For Travis CI in particular, see ci_build.sh in NUT codebase root.
@@ -175,23 +219,23 @@ spellcheck:
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
 		dpkg -l |grep -i aspell || true ; \
-		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | egrep -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+		echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $(SPELLCHECK_DIR)/$$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 			  test -z "$$OUT" ; } || \
 			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $$docsrc"; } ; \
+			  FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; } ; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
 		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
 		echo "=====================================================================" ; \
-		echo "Please 'cd $(abs_srcdir) && make spellcheck-interactive'"; \
+		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
 		echo "words and spellings listed in the '$(NUT_SPELL_DICT)' file there."; \
 		echo "Either way, please follow up by posting a pull request or a patch"; \
@@ -231,9 +275,9 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
-			FAILED="$$FAILED $$docsrc"; \
+		echo "Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_DIR)/$$docsrc || \
+			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
 		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \

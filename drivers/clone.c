@@ -18,8 +18,10 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 #include "main.h"
 #include "parseconf.h"
+#include "attribute.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -66,7 +68,7 @@ static time_t	last_poll = 0, last_heard = 0,
 static int instcmd(const char *cmdname, const char *extra);
 
 
-static int parse_args(int numargs, char **arg)
+static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
 		return 0;
@@ -381,7 +383,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -519,6 +521,9 @@ void upsdrv_updateinfo(void)
 	last_poll = now;
 }
 
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
