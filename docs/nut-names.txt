@@ -154,10 +154,12 @@ to the right value before issuing the command. That is, shutdown.stayoff will fi
 set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
 
 NOTE: When possible, dates should be expressed in ISO 8601 Calendar format, that
-is to say "YYYY-MM-DD", or otherwise and Combined date and time representations
-(<date>T<time>, so "YYYY-MM-DDThh:mm"). In the latter case, timezone can be added
-as per the ISO 8601 standard, by appending the letter Z from UTC or the time
-offsets from UTC.
+is to say "YYYY-MM-DD", or otherwise a Combined date and time representation
+(<date>T<time>, so "YYYY-MM-DDThh:mm"). In the latter case, timezone can be
+added as per the ISO 8601 standard: by appending the letter `Z` for UTC
+(e.g. "YYYY-MM-DDThh:mmZ"), or the positive or negative time offsets from UTC
+(e.g. "YYYY-MM-DDThh:mm+03:00"). For more details see examples at
+link:https://en.wikipedia.org/wiki/ISO_8601
 
 input: Incoming line/power information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -455,10 +457,12 @@ mode,
 - resting: the battery is fully charged, and not charging nor discharging.
 
 NOTE: When possible, dates should be expressed in ISO 8601 Calendar format, that
-is to say "YYYY-MM-DD", or otherwise and Combined date and time representations
-(<date>T<time>, so "YYYY-MM-DDThh:mm"). In the latter case, timezone can be added
-as per the ISO 8601 standard, by appending the letter Z from UTC or the time
-offsets from UTC.
+is to say "YYYY-MM-DD", or otherwise a Combined date and time representation
+(<date>T<time>, so "YYYY-MM-DDThh:mm"). In the latter case, timezone can be
+added as per the ISO 8601 standard: by appending the letter `Z` for UTC
+(e.g. "YYYY-MM-DDThh:mmZ"), or the positive or negative time offsets from UTC
+(e.g. "YYYY-MM-DDThh:mm+03:00"). For more details see examples at
+link:https://en.wikipedia.org/wiki/ISO_8601
 
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
