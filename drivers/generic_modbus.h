@@ -43,16 +43,15 @@
 #define FSD_REPEAT_INTRV 1500
 
 /* definition of register type */
-typedef enum regtype regtype_t;
 enum regtype {
     COIL = 0,
     INPUT_B,
     INPUT_R,
     HOLDING
 };
+typedef enum regtype regtype_t;
 
 /* UPS device state enum */
-typedef enum devstate devstate_t;
 enum devstate {
     OL_T = 0,
     OB_T,
@@ -69,9 +68,9 @@ enum devstate {
     BOOST_T,
     FSD_T
 };
+typedef enum devstate devstate_t;
 
 /* UPS state signal attributes */
-typedef struct sigattr sigattr_t;
 struct sigattr {
     int addr;           /* register address */
     regtype_t type;     /* register type */
@@ -80,6 +79,7 @@ struct sigattr {
                            of the contact state. if noro is set to 1 then ON corresponds
                            to an open contact */
 };
+typedef struct sigattr sigattr_t;
 
 #define NUMOF_SIG_STATES 14
 #define NOTUSED -1
