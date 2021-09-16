@@ -434,12 +434,12 @@ long time_elapsed(struct timeval *start)
         upslogx(LOG_ERR, "time_elapsed: %s", strerror(errno));
     }
     if (start->tv_usec < end.tv_usec) {
-        ulong nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
+        uint32_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
         end.tv_usec -= 1000000 * nsec;
         end.tv_sec += nsec;
     }
     if (start->tv_usec - end.tv_usec > 1000000) {
-        ulong nsec = (start->tv_usec - end.tv_usec) / 1000000;
+        uint32_t nsec = (start->tv_usec - end.tv_usec) / 1000000;
         end.tv_usec += 1000000 * nsec;
         end.tv_sec -= nsec;
     }
