@@ -79,27 +79,32 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.stashnameSrc = 'nut-ci-src'
 
-    // First list the building blocks as lists of files;
-    // final regexes are arranged below:
-    // TODO: Technically the slash should be the Path.Separator,
-    // but at least modern windows can handle a sh step with that
-    // character, so no big deal for NUT supported platforms
-    dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX = ~/^(\/*|.*\/)/
-    dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE = ~/(configure\.ac|.*\.m4|Makefile.am|ci_.*\.sh|\.git.*|Jenkinsfile.*|.*\.groovy)/
-    dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
-    dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
-    dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
+    if ( !( env?.BRANCH_NAME ==~ /master|main|stable/ ) ) {
+        // else: For main branches we want all builds,
+        // to keep reference for warnings-ng up to date
 
-    // Recipe changes and C source changes go here:
-    dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
-    dynacfgPipeline.appliesToChangedFilesRegex_C = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_C})(|\.in)$/
+        // First list the building blocks as lists of files;
+        // final regexes are arranged below:
+        // TODO: Technically the slash should be the Path.Separator,
+        // but at least modern windows can handle a sh step with that
+        // character, so no big deal for NUT supported platforms
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX = ~/^(\/*|.*\/)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE = ~/(configure\.ac|.*\.m4|Makefile.am|ci_.*\.sh|\.git.*|Jenkinsfile.*|.*\.groovy)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
 
-    // Recipe changes and docs source changes go here:
-    dynacfgPipeline.appliesToChangedFilesRegex_TXT = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}(|\.in)$)/
-    dynacfgPipeline.appliesToChangedFilesRegex_DOC = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG})(|\.in)$/
+        // Recipe changes and C source changes go here:
+        dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
+        dynacfgPipeline.appliesToChangedFilesRegex_C = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_C})(|\.in)$/
 
-    // TODO: Similar for shell files but based on some logic
-    // like in shellcheck to find the script files (not only *.sh)?
+        // Recipe changes and docs source changes go here:
+        dynacfgPipeline.appliesToChangedFilesRegex_TXT = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}(|\.in)$)/
+        dynacfgPipeline.appliesToChangedFilesRegex_DOC = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG})(|\.in)$/
+
+        // TODO: Similar for shell files but based on some logic
+        // like in shellcheck to find the script files (not only *.sh)?
+    }
 
     // Do not override DISTCHECK_CONFIGURE_FLAGS as default implem
     // does, that breaks custom proto-dir installs and tries to go
