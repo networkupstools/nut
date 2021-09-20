@@ -253,6 +253,7 @@ DiSplay
 Diehl
 Dietze
 Digitus
+Dimitris
 Dly
 Dmitry
 DocBook
@@ -277,6 +278,7 @@ ESXi
 ETIME
 EUROCASE
 EXtreme
+Economou
 Edlman
 Edmundsson
 Edscott
@@ -428,6 +430,7 @@ INV
 INVOLT
 IPAR
 IPBX
+IPC
 IPs
 IPv
 IRIX
@@ -602,6 +605,8 @@ Monett
 Morioka
 Morozov
 Moskovitch
+Moxa
+MOXA
 Mozilla
 Msg
 Multiplug
@@ -755,6 +760,7 @@ PSKxn
 PSSENTR
 PSUs
 PSX
+PULS
 PV
 PWLv
 PWR
@@ -1757,6 +1763,9 @@ inverterlog
 inverterminutes
 invertervolts
 io
+ioLogik
+ioLogikE
+ioLogikR
 iostream
 ip
 ipE
@@ -2005,6 +2014,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noro
 noscanlangid
 notAfter
 notifyme
@@ -2188,6 +2198,7 @@ reentrancy
 refactoring
 referencenominal
 regex
+regtype
 reposurgeon
 repotec
 req
@@ -2201,6 +2212,7 @@ rfc
 rh
 richcomm
 riello
+rio
 rj
 rk
 rkm
@@ -2434,6 +2446,7 @@ tx
 txt
 typedef
 uA
+UB
 uD
 uM
 ua
