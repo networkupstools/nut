@@ -6,28 +6,32 @@
   (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
   and https://wiki.debian.org/LXC/SimpleBridge
 
-* Install qemu with its /usr/bin/qemu-*-static and registration in
-  /var/lib/binfmt
+* Install qemu with its `/usr/bin/qemu-*-static` and registration in
+  `/var/lib/binfmt`
 
 * Prepare an LVM partition (or preferably some other tech like ZFS)
-  as /srv/libvirt and create a /srv/libvirt/rootfs to hold the containers
+  as `/srv/libvirt` and create a `/srv/libvirt/rootfs` to hold the containers
 
-* Prepare /home/abuild on the host system (preferably in ZFS with dedup)
+* Prepare `/home/abuild` on the host system (preferably in ZFS with dedup);
+  account user and group ID numbers are `399` as on the rest of the CI farm
+  (historically, inherited from OBS workers)
 
-* Edit the ~/.profile to default virsh provider with:
-````
+* Edit the `~/.profile` to default virsh provider with:
++
+------
 LIBVIRT_DEFAULT_URI=lxc:///system
 export LIBVIRT_DEFAULT_URI
-````
+------
 
-* If rootfs is small, relocate the LXC download cache to the (larger) /srv:
-````
+* If host root filesystem is small, relocate the LXC download cache to the
+  (larger) `/srv/libvirt` partition:
++
+------
 :; mkdir -p /srv/libvirt/cache-lxc
 :; rm -rf /var/cache/lxc
 :; ln -sfr /srv/libvirt/cache-lxc /var/cache/lxc
-````
-
-** Maybe similarly relocate /home/abuild to reduce strain on rootfs?
+------
+** Maybe similarly relocate shared `/home/abuild` to reduce strain on rootfs?
 
 
 == Setup a container
@@ -43,56 +47,74 @@ writes the log (also deleted). Before re-trying the container creation, this
 file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 
 * Install containers like this:
-````
++
+------
 :; lxc-create -n jenkins-debian11-mips64el -P /srv/libvirt/rootfs -t debian -- \
     -r bullseye -a mips64el
-````
+------
 ** to specify a particular mirror (not everyone hosts everything --
-   if you get "E: Invalid Release file, no entry for main/binary-mips/Packages"
-   see https://www.debian.org/mirror/list for details, and check the chosen
-   site to verify if the distro version of choice is hosted with your arch
-   of choice):
-````
+   so if you get something like
+   `"E: Invalid Release file, no entry for main/binary-mips/Packages"`
+   then see https://www.debian.org/mirror/list for details, and double-check
+   the chosen site to verify if the distro version of choice is hosted with
+   your arch of choice):
++
+------
 :; MIRROR="http://ftp.br.debian.org/debian/" \
    lxc-create -n jenkins-debian10-mips -P /srv/libvirt/rootfs -t debian -- \
     -r buster -a mips
-````
+------
 ** ...or for EOLed distros, use the archive, e.g.:
-````
++
+------
 :; MIRROR="http://archive.debian.org/debian-archive/debian/" \
    lxc-create -n jenkins-debian8-s390x -P /srv/libvirt/rootfs -t debian -- \
     -r jessie -a s390x
-````
+------
 ** See further options for the "template" with its help, e.g.:
-````
++
+------
 :; lxc-create -t debian -h
-````
+------
 
-* Add the "name,IP" to /etc/lxc/dnsmasq.conf
+* Add the "name,IP" line for this container to `/etc/lxc/dnsmasq.conf` on
+  the host, e.g.:
++
+------
+jenkins-debian11-mips,10.0.3.245
+------
 
 * Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
-  on the fly -- e.g. fix the LXC "dir:/" URL schema:
-````
+  markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
++
+------
 :; virsh -c lxc:///system domxml-from-native lxc-tools \
     /srv/libvirt/rootfs/jenkins-debian11-armhf/config \
     | sed -e 's,dir:/srv,/srv,' \
     > /tmp/x && virsh define /tmp/x
-````
-** It may be needed to revert the generated "os/arch" to "x86_64" (and let
-   QEMU handle the rest) in the `/tmp/x` file, and re-run `virsh define /tmp/x`
-** My first urge was to also reduce a generic 64GB RAM allocation, but then
+------
++
+NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
    the launched QEMU containers were OOM-killed as they exceeded their memory
    cgroup limit. In practice they do not eat that much resident memory, just
    want to have it addressable by VMM, I guess (swap is not very used either).
++
+** It may be needed to revert the generated "os/arch" to `x86_64` (and let
+   QEMU handle the rest) in the `/tmp/x` file, and re-try the definition:
++
+------
+:; virsh define /tmp/x
+------
 
-* Then `virsh edit jenkins-debian11-armhf` and other containers to bind-mount
-  the common `/home/abuild`, adding this tag to "devices":
-````
+* Then `virsh edit jenkins-debian11-armhf` (and other containers) to bind-mount
+  the common `/home/abuild`, adding this tag to their "devices":
++
+------
     <filesystem type='mount' accessmode='passthrough'>
       <source dir='/home/abuild'/>
       <target dir='/home/abuild'/>
     </filesystem>
-````
+------
 ** Note that generated XML might not conform to current LXC schema so it
    fails validation during save; this can be bypassed with "i" when it asks.
    One such case was however with indeed invalid contents, the "dir:" schema
@@ -102,31 +124,36 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 == Shepherd the herd
 
 * Monitor deployed container rootfs'es with:
-````
++
+------
 :; du -ks /srv/libvirt/rootfs/*
-````
+------
++
 (should have non-trivial size for deployments without fatal infant errors)
 
 * Mass-edit/review libvirt configurations with:
-````
++
+------
 :; virsh list --all | awk '{print $2}' \
    | grep jenkins | while read X ; do \
      virsh edit --skip-validate $X ; done
-````
+------
 ** ...or avoid `--skip-validate` when markup is initially good :)
 
 * Mass-define network interfaces:
-````
++
+------
 :; virsh list --all | awk '{print $2}' \
    | grep jenkins | while read X ; do \
      virsh dumpxml "$X" | grep "bridge='lxcbr0'" \
      || virsh attach-interface --domain "$X" --config \
         --type bridge --source lxcbr0 ; \
    done
-````
+------
 
 * Populate with `abuild` account:
-````
++
+------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
@@ -143,36 +170,41 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
          fi ; \
        } ; \
    done
-````
+------
++
 Note that for some reason, in some of those other-arch distros `useradd`
 fails to find the group anyway; then we have to "manually" add them.
 
 * Let the host know names/IPs of containers you assigned:
-````
++
+------
 :; grep -v '#' /etc/lxc/dnsmasq.conf  | while IFS=, read N I ; do \
     getent hosts "$N" >&2 || echo "$I $N" ; \
    done >> /etc/hosts
-````
+------
 
 == Further setup of the containers
 
-See NUT `docs/config-prereqs.txt` about dependency package installation for
-Debian-based Linux systems. It may be wise to not install e.g. documentation
-generation tools (at least not the full set) in each environment do conserve
-space and run-time stress. Still, if there are version outliers (such as an
-older distribution due to CPU requirements), it can be installed fully just
-to ensure non-regression, that when adapting Makefile rule definitions to
-modern tools -- we do not lose ability to build with older ones.
+See NUT docs/config-prereqs.txt about dependency package installation for
+Debian-based Linux systems.
+
+It may be wise to not install e.g. documentation generation tools (or at
+least not the full set for HTML/PDF generation) in each environment, in
+order to conserve space and run-time stress.
+
+Still, if there are significant version outliers (such as using an older
+distribution due to vCPU requirements), it can be installed fully just
+to ensure non-regression -- that when adapting Makefile rule definitions
+to modern tools, we do not lose ability to build with older ones.
 
 For this, `chroot` from the host system can be used, e.g. for a population
 of Debian(-compatible) containers:
-````
+------
 :; for D in /srv/libvirt/rootfs/*/rootfs ; do \
     chroot "$D" apt-get install sudo \
    ; done
-````
+------
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker
 account on the host system to build in the prepared filesystems without the
 overhead of running containers and several copies of Jenkins `agent.jar`.
-
