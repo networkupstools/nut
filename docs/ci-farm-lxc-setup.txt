@@ -5,6 +5,15 @@
 * Prepare LXC and LIBVIRT-LXC integration, including an "independent"
   (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
   and https://wiki.debian.org/LXC/SimpleBridge
+** For dnsmasq integration on the independent bridge (`lxcbr0` following
+   the documentation examples), be sure to mention:
+*** `LXC_DHCP_CONFILE="/etc/lxc/dnsmasq.conf"` in `/etc/default/lxc-net`
+*** `dhcp-hostsfile=/etc/lxc/dnsmasq-hosts.conf` in/as the content of
+    `/etc/lxc/dnsmasq.conf`
+*** `touch /etc/lxc/dnsmasq-hosts.conf` which would list simple `name,IP`
+    pairs, one per line (so one per container)
+*** `systemctl restart lxc-net` to apply config (is this needed after
+    setup of containers too, to apply new items before booting them?)
 
 * Install qemu with its `/usr/bin/qemu-*-static` and registration in
   `/var/lib/binfmt`
@@ -77,8 +86,8 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 :; lxc-create -t debian -h
 ------
 
-* Add the "name,IP" line for this container to `/etc/lxc/dnsmasq.conf` on
-  the host, e.g.:
+* Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
+  on the host, e.g.:
 +
 ------
 jenkins-debian11-mips,10.0.3.245
@@ -152,12 +161,14 @@ NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
 ------
 
 * Populate with `abuild` account, as well as with the `bash` shell and
-  `sudo` ability:
+  `sudo` ability, and reporting of assigned IP addresses on the console:
 +
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
     chroot "$ALTROOT" apt-get install sudo bash ; \
+    grep eth0 "$ALTROOT/etc/issue" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
+    grep eth0 "$ALTROOT/etc/issue.net" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
     useradd -R "$ALTROOT" -u 399 -g abuild -M -N -s /bin/bash abuild \
     || useradd -R "$ALTROOT" -u 399 -g 399 -M -N -s /bin/bash abuild \
@@ -187,8 +198,8 @@ fails to find the group anyway; then we have to "manually" add them.
 
 == Further setup of the containers
 
-See NUT docs/config-prereqs.txt about dependency package installation for
-Debian-based Linux systems.
+See NUT `docs/config-prereqs.txt` about dependency package installation
+for Debian-based Linux systems.
 
 It may be wise to not install e.g. documentation generation tools (or at
 least not the full set for HTML/PDF generation) in each environment, in
@@ -214,14 +225,15 @@ Note that technically `(sudo) chroot ...` can also be used from the CI worker
 account on the host system to build in the prepared filesystems without the
 overhead of running containers and several copies of Jenkins `agent.jar`.
 
-Also note that for set-up of some packages, including the `ca-certificates`
-and JDK/JRE, the `/proc` filesystem is needed:
+Also note that set-up of some packages, including the `ca-certificates` and
+the JDK/JRE, require that the `/proc` filesystem is usable in the chroot.
+This can be achieved with e.g.:
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
-    for D in /proc ; do \
+    for D in proc ; do \
       echo "=== $ALTROOT/$D :" ; \
       mkdir -p "$ALTROOT/$D" ; \
-      mount -o bind,rw "$D" "$ALTROOT/$D" ; \
+      mount -o bind,rw "/$D" "$ALTROOT/$D" ; \
     done ; \
    done
 ------
