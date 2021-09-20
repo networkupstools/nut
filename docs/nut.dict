@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2608 utf-8
+personal_ws-1.1 en 2611 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -213,6 +213,7 @@ DCE
 DDD
 DDDDD
 DDF
+DDThh
 DEADTIME
 DEBUGOUT
 DELCMD
@@ -252,6 +253,7 @@ DiSplay
 Diehl
 Dietze
 Digitus
+Dimitris
 Dly
 Dmitry
 DocBook
@@ -276,6 +278,7 @@ ESXi
 ETIME
 EUROCASE
 EXtreme
+Economou
 Edlman
 Edmundsson
 Edscott
@@ -427,6 +430,7 @@ INV
 INVOLT
 IPAR
 IPBX
+IPC
 IPs
 IPv
 IRIX
@@ -601,6 +605,8 @@ Monett
 Morioka
 Morozov
 Moskovitch
+Moxa
+MOXA
 Mozilla
 Msg
 Multiplug
@@ -754,6 +760,7 @@ PSKxn
 PSSENTR
 PSUs
 PSX
+PULS
 PV
 PWLv
 PWR
@@ -1188,6 +1195,7 @@ Xymon
 YQ
 YV
 YY
+YYYY
 YYYYMMDD
 YZ
 Ygor
@@ -1755,6 +1763,9 @@ inverterlog
 inverterminutes
 invertervolts
 io
+ioLogik
+ioLogikE
+ioLogikR
 iostream
 ip
 ipE
@@ -1926,6 +1937,7 @@ minvo
 mis
 misconfigured
 mkdir
+mmZ
 mmap
 mmddyyyy
 mn
@@ -2002,6 +2014,7 @@ nomdcvolts
 nomfrequency
 noout
 norating
+noro
 noscanlangid
 notAfter
 notifyme
@@ -2185,6 +2198,7 @@ reentrancy
 refactoring
 referencenominal
 regex
+regtype
 reposurgeon
 repotec
 req
@@ -2198,6 +2212,7 @@ rfc
 rh
 richcomm
 riello
+rio
 rj
 rk
 rkm
@@ -2371,7 +2386,9 @@ sysconfig
 syslog
 systemctl
 systemd
+systemdshutdowndir
 systemdsystemunitdir
+systemdtmpfilesdir
 systemhours
 systemmode
 systemtest
@@ -2405,6 +2422,7 @@ timername
 tiocm
 tios
 tmp
+tmpfiles
 toolchain
 toolkits
 topbot
@@ -2431,6 +2449,7 @@ tx
 txt
 typedef
 uA
+UB
 uD
 uM
 ua
