@@ -151,11 +151,13 @@ NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
    done
 ------
 
-* Populate with `abuild` account:
+* Populate with `abuild` account, as well as with the `bash` shell and
+  `sudo` ability:
 +
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
+    chroot "$ALTROOT" apt-get install sudo bash ; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
     useradd -R "$ALTROOT" -u 399 -g abuild -M -N -s /bin/bash abuild \
     || useradd -R "$ALTROOT" -u 399 -g 399 -M -N -s /bin/bash abuild \
@@ -197,14 +199,29 @@ distribution due to vCPU requirements), it can be installed fully just
 to ensure non-regression -- that when adapting Makefile rule definitions
 to modern tools, we do not lose ability to build with older ones.
 
-For this, `chroot` from the host system can be used, e.g. for a population
-of Debian(-compatible) containers:
+For this, `chroot` from the host system can be used, e.g. to improve the
+interactive usability for a population of Debian(-compatible) containers
+(and to use its networking, while the operating environment in containers
+may be not yet configured or still struggling to access the Internet):
 ------
-:; for D in /srv/libvirt/rootfs/*/rootfs ; do \
-    chroot "$D" apt-get install sudo \
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    echo "=== $ALTROOT :" ; \
+    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 \
    ; done
 ------
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker
 account on the host system to build in the prepared filesystems without the
 overhead of running containers and several copies of Jenkins `agent.jar`.
+
+Also note that for set-up of some packages, including the `ca-certificates`
+and JDK/JRE, the `/proc` filesystem is needed:
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    for D in /proc ; do \
+      echo "=== $ALTROOT/$D :" ; \
+      mkdir -p "$ALTROOT/$D" ; \
+      mount -o bind,rw "$D" "$ALTROOT/$D" ; \
+    done ; \
+   done
+------
