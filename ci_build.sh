@@ -139,7 +139,7 @@ build_to_only_catch_errors() {
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
-default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
+default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -291,6 +291,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
+    # This flag is primarily linked with (lack of) docs generation enabled
+    # (or not) in some BUILD_TYPE scenarios or workers
     DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
@@ -360,21 +362,29 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
                 CONFIG_OPTS+=("--with-cgi=auto")
             fi
             ;;
+        "default-alldrv:no-distcheck")
+            DO_DISTCHECK=no
+            ;& # fall through
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
+                if [ "$DO_DISTCHECK" != no ]; then
+                    echo "WARNING: this is effectively default-tgt:distcheck-light then" >&2
+                fi
                 CONFIG_OPTS+=("--with-all=auto")
             else
                 CONFIG_OPTS+=("--with-all=yes")
             fi
             ;;
-        "default"|*)
+        "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
             ;;
     esac
+    # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
+    # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         PATH="/usr/lib/ccache:$PATH"
@@ -466,8 +476,13 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         configure_nut
     fi
 
+    # NOTE: There is also a case "$BUILD_TYPE" above for setting CONFIG_OPTS
+    # This case runs some specially handled BUILD_TYPEs and exists; support
+    # for all other scenarios proceeds.below.
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
+            # e.g. distcheck-light, distcheck-valgrind, maybe others later,
+            # as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
 
@@ -512,27 +527,84 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             exit $?
             ;;
         "default-all-errors")
+            # Try to run various build scenarios to collect build errors
+            # (no checks here) as configured further by caller's choice
+            # of BUILD_WARNFATAL and/or BUILD_WARNOPT envvars above.
+            # Note this is one scenario where we did not configure_nut()
+            # in advance.
             RES=0
-            if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
-                # Try builds for both cases as they are ifdef-ed
+            FAILED=""
+            SUCCEEDED=""
 
-                echo "=== Building with SSL=openssl..."
-                ( CONFIG_OPTS+=("--with-openssl")
-                  configure_nut
-                  build_to_only_catch_errors ) || RES=$?
+            # Technically, let caller provide this setting explicitly
+            if [ -z "$NUT_SSL_VARIANTS" ] ; then
+                NUT_SSL_VARIANTS="auto"
+                if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+                    # Try builds for both cases as they are ifdef-ed
+                    # TODO: Extend if we begin to care about different
+                    # major versions of openssl (with their APIs), etc.
+                    NUT_SSL_VARIANTS="openssl nss"
+                else
+                    if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
+                        pkg-config --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
+                        pkg-config --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
+                    fi  # else leave at "auto", if we skipped building
+                        # two variants while having two possibilities
+                fi
 
+                # Consider also a build --without-ssl to test that codepath?
+                if [ "$NUT_SSL_VARIANTS" != auto ] && [ "${BUILD_SSL_ONCE-}" != "true" ]; then
+                    NUT_SSL_VARIANTS="$NUT_SSL_VARIANTS no"
+                fi
+            fi
+
+            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 echo "=== Clean the sandbox..."
                 $MAKE distclean -k || true
 
-                echo "=== Building with SSL=nss..."
-                ( CONFIG_OPTS+=("--with-nss")
-                  configure_nut
-                  build_to_only_catch_errors ) || RES=$?
-            else
-                # Build what we can configure
-                configure_nut
-                build_to_only_catch_errors || RES=$?
+                case "$NUT_SSL_VARIANT" in
+                    ""|auto|default)
+                        # Quietly build one scenario, whatever we can (or not)
+                        # configure regarding SSL and other features
+                        NUT_SSL_VARIANT=auto
+                        configure_nut
+                        ;;
+                    no)
+                        echo "=== Building without SSL support..."
+                        ( CONFIG_OPTS+=("--without-ssl")
+                          configure_nut
+                        )
+                        ;;
+                    *)
+                        echo "=== Building with NUT_SSL_VARIANT='${NUT_SSL_VARIANT}' ..."
+                        ( CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
+                          configure_nut
+                        )
+                        ;;
+                esac || {
+                    RES=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    continue
+                }
+
+                build_to_only_catch_errors && {
+                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}"
+                } || {
+                    RES=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                }
+            done
+            # TODO: Similar loops for other variations like TESTING,
+            # MGE SHUT vs other serial protocols, libusb version...
+
+            if [ -n "$SUCCEEDED" ]; then
+                echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
+            if [ "$RES" != 0 ]; then
+                # Leading space is included in FAILED
+                echo "FAILED build(s) with:${FAILED}" >&2
+            fi
+
             exit $RES
             ;;
     esac

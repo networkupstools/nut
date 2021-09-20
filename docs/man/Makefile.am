@@ -619,16 +619,19 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
-SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
+		   generic_modbus.txt
 if WITH_MANS
-MAN_MODBUS_PAGES = phoenixcontact_modbus.8
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
+		   generic_modbus.8
 endif
 
 if WITH_MODBUS
    man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
-HTML_MODBUS_MANS = phoenixcontact_modbus.html
+HTML_MODBUS_MANS = phoenixcontact_modbus.html \
+		   generic_modbus.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -817,7 +820,7 @@ if HAVE_ASCIIDOC
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
-	--xsltproc-opts "--nonet" \
+	--xsltproc-opts="--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
