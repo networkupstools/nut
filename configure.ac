@@ -1476,13 +1476,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-AC_MSG_CHECKING(whether to install systemd files)
+dnl Note: Currently there is no automatic detection enabled -
+dnl users have to ask they want systemd units installed.
+dnl It may be changed based on popular demand to just always
+dnl run the "case" below for ${systemdsystemunitdir} values,
+dnl like we do for systemdtmpfilesdir further below.
+AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1501,14 +1506,52 @@ AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
+AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
 	[systemdshutdowndir=${withval}])
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		;;
+	no)
+		systemdshutdowndir=""
+		;;
+	*)
+		systemdshutdowndir="${withval}"
+		;;
 	esac
+fi
+if test -n "${systemdshutdowndir}"; then
+	AC_MSG_RESULT(using ${systemdshutdowndir})
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
+dnl daemons starting not as systemd units
+AC_MSG_CHECKING([whether to install systemd tmpfiles files])
+AC_ARG_WITH([systemdtmpfilesdir],
+	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
+	[systemdtmpfilesdir=${withval}])
+case "${systemdtmpfilesdir}" in
+	yes|auto|"")
+		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		;;
+	no)
+		systemdtmpfilesdir=""
+		;;
+	*)
+		systemdtmpfilesdir="${withval}"
+		;;
+esac
+if test -n "${systemdtmpfilesdir}"; then
+	AC_MSG_RESULT(using ${systemdtmpfilesdir})
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl
@@ -1989,6 +2032,7 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
+AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
@@ -2096,8 +2140,32 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT(["${nut_enable_Werror}"])
 
-dnl Finally restore warnings setings that the caller might have provided in CFLAGS etc
+dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
+
+dnl Due to possibly repetitive content, generate unique settings:
+AS_IF([test -n "$systemdtmpfilesdir"],
+    [cat > scripts/systemd/nut-common.tmpfiles.in << EOF
+# State file (e.g. upsd to driver) and pidfile location for NUT:
+d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@/nut
+EOF
+    AS_IF([test "$STATEPATH" != "$PIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@/nut
+EOF])
+])
 
 AC_OUTPUT([
  clients/Makefile
@@ -2143,6 +2211,7 @@ AC_OUTPUT([
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
+ scripts/systemd/nut-common.tmpfiles
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service

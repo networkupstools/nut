@@ -2386,7 +2386,9 @@ sysconfig
 syslog
 systemctl
 systemd
+systemdshutdowndir
 systemdsystemunitdir
+systemdtmpfilesdir
 systemhours
 systemmode
 systemtest
@@ -2420,6 +2422,7 @@ timername
 tiocm
 tios
 tmp
+tmpfiles
 toolchain
 toolkits
 topbot
