@@ -145,10 +145,10 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
-    --xsltproc-opts "--nonet" \
-    --xsltproc-opts "--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
-    --xsltproc-opts "--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
-    --xsltproc-opts "--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
+    --xsltproc-opts="--nonet" \
+    --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
+    --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
+    --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
     --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \
