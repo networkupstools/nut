@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2608 utf-8
+personal_ws-1.1 en 2611 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -213,6 +213,7 @@ DCE
 DDD
 DDDDD
 DDF
+DDThh
 DEADTIME
 DEBUGOUT
 DELCMD
@@ -1188,6 +1189,7 @@ Xymon
 YQ
 YV
 YY
+YYYY
 YYYYMMDD
 YZ
 Ygor
@@ -1926,6 +1928,7 @@ minvo
 mis
 misconfigured
 mkdir
+mmZ
 mmap
 mmddyyyy
 mn
