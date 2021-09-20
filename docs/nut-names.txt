@@ -40,6 +40,28 @@ parse the value for that variable as it may vary greatly from one UPS
 by the user.
 
 
+Time and Date format
+--------------------
+
+When possible, dates should be expressed in ISO 8601 and RFC 3339 compatible
+Calendar format, that is to say "YYYY-MM-DD", or otherwise a Combined Date
+and Time representation (`<date>T<time>`, so "YYYY-MM-DDThh:mm").
+Separators for the date (hyphen) and time (colon) components are required
+to conform to both ISO 8601 "extended" format and RFC 3339 required format.
+
+In the case of Date and Time representation, a timezone can be added as per
+RFC 3339 and the newer revisions of the ISO 8601 standard (which allow for
+negative offsets):
+
+* by appending the letter `Z` for UTC (e.g. "YYYY-MM-DDThh:mmZ"), or
+* by appending the complete "hours:minutes" positive or negative time
+  offsets from UTC (e.g. "YYYY-MM-DDThh:mm+03:00").
+
+For more details see examples at link:https://en.wikipedia.org/wiki/ISO_8601
+and the publicly available RFC at link:http://tools.ietf.org/html/rfc3339
+
+Other representations from those specifications are not necessarily supported.
+
 Variables
 ---------
 
@@ -152,6 +174,9 @@ NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
 commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
 to the right value before issuing the command. That is, shutdown.stayoff will first
 set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
+
+NOTE: When possible, time-stamps and dates should be expressed as detailed
+above in the Time and Date format chapter.
 
 input: Incoming line/power information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -448,6 +473,8 @@ following value:
 mode,
 - resting: the battery is fully charged, and not charging nor discharging.
 
+NOTE: When possible, time-stamps and dates should be expressed as detailed
+above in the Time and Date format chapter.
 
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
