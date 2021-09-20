@@ -70,18 +70,30 @@ static int	ssl_initialized = 0;
 /* stubs for non-ssl compiles */
 void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(client);
+	NUT_UNUSED_VARIABLE(numarg);
+	NUT_UNUSED_VARIABLE(arg);
+
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
 }
 
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
+	NUT_UNUSED_VARIABLE(client);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
+	NUT_UNUSED_VARIABLE(client);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;
 }
