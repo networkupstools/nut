@@ -124,7 +124,7 @@ check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
 clean-local:
-	rm -f *.pdf *.html *.spellchecked docbook-xsl.css
+	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
 	rm -rf *.chunked *.bak
 
 ### TODO: automatic dependency generation
@@ -220,7 +220,13 @@ ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 
-%.spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# WARNING: The percent wildcard is a GNU extension; otherwise we need
+# a ".txt.txt-spellchecked" type of rule and files like "README" all
+# renamed to *.txt, or lots of rules for files without the extensions
+# Other Makefiles have a relatively simple life, dealing with just a
+# few texts and name/extension patterns in their directories.
+#?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 rm -f "$@" || true ; \
 	 echo "  ASPELL   Spell checking on $<"; \
@@ -246,7 +252,7 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		$(MAKE) -s $(SPELLCHECK_DIR)/$$docsrc.spellchecked \
+		$(MAKE) -s "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
@@ -309,7 +315,7 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
-%.spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+*-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@echo "  SKIP-ASPELL   Spell checking on $< : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."

@@ -1,2 +1,2 @@
 clean-local:
-	rm -f *.spellchecked
+	rm -f *-spellchecked

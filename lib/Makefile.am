@@ -9,4 +9,4 @@ endif
 endif
 
 clean-local:
-	rm -f *.spellchecked
+	rm -f *-spellchecked

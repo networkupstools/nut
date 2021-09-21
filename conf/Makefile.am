@@ -20,9 +20,16 @@ SPELLCHECK_SRC = $(dist_sysconf_DATA) \
  upssched.conf.sample.in upsmon.conf.sample.in
 
 clean-local:
-	rm -f *.pdf *.html *.spellchecked
+	rm -f *.pdf *.html *-spellchecked
 
-%.spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
+
+.sample.sample-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
+
+.in.in-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:

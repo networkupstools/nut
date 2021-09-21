@@ -52,7 +52,7 @@ distcleancheck:
 	@:
 
 clean-local:
-	rm -f *.spellchecked
+	rm -f *-spellchecked
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
