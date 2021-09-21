@@ -220,6 +220,22 @@ You also need to give proper permissions on the local serial device
 file (/dev/ttyUSB0 for example) to allow the run-time NUT driver user
 account to access it.
 
+OTHER NOTES
+-----------
+
+The `generic_modbus` driver intends to support generic UPS devices with
+contact signals through modbus TCP/RTU gateways (also known as RIO --
+remote I/Os). The data and signal path looks like this:
+
+----
+[UPSD] <--- IPC ---> [GENERIC_UPS] <--- modbus TCP/RTU ---> MODBUS-RIO <--- contacts ---> [UPS DEVICE]
+----
+
+On the other hand, you can setup any kind of modbus server, and configure
+the `generic_modbus` driver to connect and read or write specific registers.
+Your application / modbus server could then drive NUT statuses (e.g. OL, OB,
+HB etc) by writing over those registers.
+
 AUTHOR
 ------
 Dimitris Economou <dimitris.s.economou@gmail.com>
