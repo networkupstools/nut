@@ -219,6 +219,22 @@ ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+%.spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 rm -f "$@" || true ; \
+	 echo "  ASPELL   Spell checking on $<"; \
+	 OUT="`sed 's,^\(.*\)$$, \1,' < "$<" | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" \
+		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+		     test -z "$$OUT" ; } \
+		|| { RES=$$? ; \
+		     echo "FAILED : Aspell reported errors here:" >&2 \
+		     && echo "----- vvv" >&2 \
+		     && echo "$$OUT" >&2 \
+		     && echo "----- ^^^" >&2 ; \
+		     exit $$RES; } ; \
+	 touch "$@"
+
 spellcheck: 
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
@@ -230,12 +246,8 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $(SPELLCHECK_DIR)/$$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
-			  test -z "$$OUT" ; } || \
-			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; } ; \
+		$(MAKE) -s $(SPELLCHECK_DIR)/$$docsrc.spellchecked \
+		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
@@ -297,6 +309,8 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
+%.spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@echo "  SKIP-ASPELL   Spell checking on $< : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 spellcheck-interactive:

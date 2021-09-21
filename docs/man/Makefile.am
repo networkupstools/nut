@@ -884,5 +884,8 @@ else !HAVE_ASCIIDOC
 
 endif !HAVE_ASCIIDOC
 
+%.spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
+
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
