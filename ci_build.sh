@@ -553,7 +553,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: use the root Makefile's spellcheck recipe which goes into
             # sub-Makefiles known to check corresponding directory's doc files.
-            ( echo "`date`: Starting the quiet build attempt for target $BUILD_TGT..." >&2
+            ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
               $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \

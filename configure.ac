@@ -2190,6 +2190,7 @@ AC_CONFIG_FILES([
  data/Makefile
  data/driver.list
  docs/Makefile
+ docs/cables/Makefile
  docs/docinfo.xml
  docs/man/Makefile
  drivers/Makefile
@@ -2248,6 +2249,7 @@ AC_CONFIG_FILES([
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
+ scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
  server/Makefile

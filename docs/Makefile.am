@@ -73,8 +73,8 @@ ASCIIDOC_PDF = user-manual.pdf \
 	cables.pdf \
 	FAQ.pdf
 
-SUBDIRS = man
-SUFFIXES = .txt .html .pdf
+SUBDIRS = man cables
+SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
@@ -123,7 +123,7 @@ check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
 clean-local:
-	rm -f *.pdf *.html docbook-xsl.css
+	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
 	rm -rf *.chunked *.bak
 
 ### TODO: automatic dependency generation
@@ -168,17 +168,32 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # (or cause them to produce undefined results if some bad timing happens).
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
-.txt.html: common.xsl xhtml.xsl
+
+# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
+# prerequisites like done below, and GNU Make of some versions complains;
+# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
+# says the prerequisites were ignored while a suffix rule was created;
+# eventually the POSIX stance would be taken to define a rule for a weird
+# verbatim target file name with prerequisites:
+# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
+# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
+# as done below may be pointless in the end (with regard to a portable way
+# to trigger builds by a changed dependency), but at least predictable and
+# not toxic.
+*.html: common.xsl xhtml.xsl
+.txt.html:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
-.txt.chunked: common.xsl chunked.xsl
+*.chunked: common.xsl chunked.xsl
+.txt.chunked:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
-.txt.pdf: docinfo.xml
+*.pdf: docinfo.xml
+.txt.pdf:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
@@ -218,6 +233,32 @@ ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+# WARNING: The percent wildcard is a GNU extension; otherwise we need
+# a ".txt.txt-spellchecked" type of rule and files like "README" all
+# renamed to *.txt, or lots of rules for files without the extensions
+# Other Makefiles have a relatively simple life, dealing with just a
+# few texts and name/extension patterns in their directories.
+#?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
+# at a time, with an outer Makefile caller ensuring the looping:
+$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 rm -f "$@" || true ; \
+	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
+		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+		     test -z "$$OUT" ; } \
+		|| { RES=$$? ; \
+		     echo "FAILED : Aspell reported errors here:" >&2 \
+		     && echo "----- vvv" >&2 \
+		     && echo "$$OUT" >&2 \
+		     && echo "----- ^^^" >&2 ; \
+		     exit $$RES; } ; \
+	 touch "$@"
+
 spellcheck: 
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
@@ -229,12 +270,11 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $(SPELLCHECK_DIR)/$$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
-			  test -z "$$OUT" ; } || \
-			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; } ; \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
+		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_DIR="$(SPELLCHECK_DIR)" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
@@ -296,6 +336,9 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
+# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+*/*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 spellcheck-interactive:
