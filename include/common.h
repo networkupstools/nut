@@ -138,21 +138,25 @@ void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len);
 /* These macros should help avoid run-time overheads
  * passing data for messages nobody would ever see.
  *
- * NOTE: The "##" before __VA_ARGS__ is a presumably
- * non-standard but portable hack to support both
- * present and absent variadic arguments in one macro
- * that should work in different major compilers:
- * https://stackoverflow.com/questions/679979/how-to-make-a-variadic-macro-variable-number-of-arguments
- * At least, without it GCC did not compile the code...
+ * Also NOTE: the "level" may be specified by callers in various ways,
+ * e.g. as a "X ? Y : Z" style expression; to catch those expansions
+ * transparently we hide them into parentheses as "(label)".
+ *
+ * For stricter C99 compatibility, all parameters specified to a macro
+ * must be populated by caller (so we do not handle "fmt, args..." where
+ * the args part may be skipped by caller because fmt is a fixed string).
+ * Note it is then up to the caller (and compiler checks) that at least
+ * one argument is provided, the format string (maybe fixed) -- as would
+ * be required by the actual s_upsdebugx*() method after macro evaluation.
  */
-#define upsdebug_with_errno(level, fmt, ...) \
-	do { if (nut_debug_level >= level) { s_upsdebug_with_errno(level, fmt, ##__VA_ARGS__); } } while(0)
-#define upsdebugx(level, fmt, ...) \
-	do { if (nut_debug_level >= level) { s_upsdebugx(level, fmt, ##__VA_ARGS__); } } while(0)
+#define upsdebug_with_errno(level, ...) \
+	do { if (nut_debug_level >= (level)) { s_upsdebug_with_errno((level), __VA_ARGS__); } } while(0)
+#define upsdebugx(level, ...) \
+	do { if (nut_debug_level >= (level)) { s_upsdebugx((level), __VA_ARGS__); } } while(0)
 #define upsdebug_hex(level, msg, buf, len) \
-	do { if (nut_debug_level >= level) { s_upsdebug_hex(level, msg, buf, len); } } while(0)
+	do { if (nut_debug_level >= (level)) { s_upsdebug_hex((level), msg, buf, len); } } while(0)
 #define upsdebug_ascii(level, msg, buf, len) \
-	do { if (nut_debug_level >= level) { s_upsdebug_ascii(level, msg, buf, len); } } while(0)
+	do { if (nut_debug_level >= (level)) { s_upsdebug_ascii((level), msg, buf, len); } } while(0)
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
