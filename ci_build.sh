@@ -61,7 +61,7 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    case "$OS_FAMILY-$OS_DISTRO" in
+    case "`echo "$OS_FAMILY-$OS_DISTRO" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *debian*|*linux*)
@@ -78,6 +78,10 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="bsd" ;;
         *illumos*)
             CI_OS_NAME="illumos" ;;
+        *solaris*)
+            CI_OS_NAME="solaris" ;;
+        *sunos*)
+            CI_OS_NAME="sunos" ;;
         "-") ;;
         *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
     esac
