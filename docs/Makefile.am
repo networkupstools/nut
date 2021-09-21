@@ -73,7 +73,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	cables.pdf \
 	FAQ.pdf
 
-SUBDIRS = man
+SUBDIRS = man cables
 SUFFIXES = .txt .html .pdf
 
 all: doc
@@ -123,7 +123,7 @@ check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
 clean-local:
-	rm -f *.pdf *.html docbook-xsl.css
+	rm -f *.pdf *.html *.spellchecked docbook-xsl.css
 	rm -rf *.chunked *.bak
 
 ### TODO: automatic dependency generation

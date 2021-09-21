@@ -7,3 +7,6 @@ else
  bin_SCRIPTS = libupsclient-config
 endif
 endif
+
+clean-local:
+	rm -f *.spellchecked
