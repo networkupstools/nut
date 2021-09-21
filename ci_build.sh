@@ -449,10 +449,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
+    # Numerous per-compiler variants defined in configure.ac, including
+    # aliases "minimal", "medium", "hard", "all"
     if [ -n "${BUILD_WARNOPT-}" ]; then
         CONFIG_OPTS+=("--enable-warnings=${BUILD_WARNOPT}")
     fi
 
+    # Parse from strings that could be populated by a CI Boolean checkbox:
+    case "${BUILD_WARNFATAL-}" in
+        [Tt][Rr][Uu][Ee]) BUILD_WARNFATAL=yes;;
+        [Ff][Aa][Ll][Ss][Ee]) BUILD_WARNFATAL=no;;
+    esac
     if [ -n "${BUILD_WARNFATAL-}" ]; then
         CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
     fi
