@@ -3,15 +3,15 @@ dnl | Network UPS Tools: configure.ac                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT([nut], [2.7.4.1], [https://github.com/networkupstools/nut/issues])
+AC_INIT([nut],[2.7.4.1],[https://github.com/networkupstools/nut/issues])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
-AC_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -126,8 +126,10 @@ AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl +-------------------------------------------------------------------
 
-AC_PROG_CC
-AC_PROG_CC_C99
+dnl AC_PROG_CC
+dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+dnl Note that NUT does not support building with C89 anyway
+dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
@@ -139,7 +141,7 @@ AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
-dnl Postpone call to AC_PROG_LIBTOOL to allow disabling static lib
+dnl Postpone call to LT_INIT/AC_CONFIG_FILES to allow disabling static lib
 AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
@@ -289,8 +291,17 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+dnl All current systems provide time.h; it need not be checked for.
+dnl Not all systems provide sys/time.h, but those that do, all allow
+dnl you to include it and time.h simultaneously.
+dnl NUT codebase provides the include/timehead.h to wrap these nuances.
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+AS_IF([test "$ac_cv_header_sys_time_h" = yes],
+    [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is deemed obsolete by autotools.])
+    ], [])
+
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
@@ -958,7 +969,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
 		if test "${nut_have_asciidoc}" = yes ; then
-			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
 		if test "${can_build_doc_man}" = yes ; then
@@ -1072,13 +1083,14 @@ then
 fi
 
 dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
-dnl #OBSOLETED:# AC_PROG_LIBTOOL
+dnl #OBSOLETED:# LT_INIT and AC_PROG_LIBTOOL
 
 dnl # Hack around the libtool script: as of version 58 (current in 2021),
 dnl # they use code like below to detect library paths:
 dnl #   if test yes = "$GCC"; then ... lt_search_path_spec=`$CC -print-search-dirs | ...
 dnl # which explodes when non-default architecture is used for the build,
 dnl # where e.g. "CC=gcc" and "CFLAGS=-m32" on a 64-bit capable system.
+dnl # And similarly for compilation-checks to link third-party libraries.
 SAVED_GCC="$GCC"
 SAVED_CC="$CC"
 if ( test "${GCC}" = "yes" )
@@ -1476,13 +1488,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-AC_MSG_CHECKING(whether to install systemd files)
+dnl Note: Currently there is no automatic detection enabled -
+dnl users have to ask they want systemd units installed.
+dnl It may be changed based on popular demand to just always
+dnl run the "case" below for ${systemdsystemunitdir} values,
+dnl like we do for systemdtmpfilesdir further below.
+AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1501,14 +1518,52 @@ AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
+AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
 	[systemdshutdowndir=${withval}])
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		;;
+	no)
+		systemdshutdowndir=""
+		;;
+	*)
+		systemdshutdowndir="${withval}"
+		;;
 	esac
+fi
+if test -n "${systemdshutdowndir}"; then
+	AC_MSG_RESULT(using ${systemdshutdowndir})
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
+dnl daemons starting not as systemd units
+AC_MSG_CHECKING([whether to install systemd tmpfiles files])
+AC_ARG_WITH([systemdtmpfilesdir],
+	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
+	[systemdtmpfilesdir=${withval}])
+case "${systemdtmpfilesdir}" in
+	yes|auto|"")
+		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		;;
+	no)
+		systemdtmpfilesdir=""
+		;;
+	*)
+		systemdtmpfilesdir="${withval}"
+		;;
+esac
+if test -n "${systemdtmpfilesdir}"; then
+	AC_MSG_RESULT(using ${systemdtmpfilesdir})
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl
@@ -1989,6 +2044,7 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
+AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
@@ -2096,10 +2152,34 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT(["${nut_enable_Werror}"])
 
-dnl Finally restore warnings setings that the caller might have provided in CFLAGS etc
+dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
-AC_OUTPUT([
+dnl Due to possibly repetitive content, generate unique settings:
+AS_IF([test -n "$systemdtmpfilesdir"],
+    [cat > scripts/systemd/nut-common.tmpfiles.in << EOF
+# State file (e.g. upsd to driver) and pidfile location for NUT:
+d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@/nut
+EOF
+    AS_IF([test "$STATEPATH" != "$PIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@/nut
+EOF])
+])
+
+AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
@@ -2110,6 +2190,7 @@ AC_OUTPUT([
  data/Makefile
  data/driver.list
  docs/Makefile
+ docs/cables/Makefile
  docs/docinfo.xml
  docs/man/Makefile
  drivers/Makefile
@@ -2143,6 +2224,7 @@ AC_OUTPUT([
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
+ scripts/systemd/nut-common.tmpfiles
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
@@ -2167,6 +2249,7 @@ AC_OUTPUT([
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
+ scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
  server/Makefile
@@ -2175,5 +2258,6 @@ AC_OUTPUT([
  tests/Makefile
  Makefile
 ])
+AC_OUTPUT
 
 NUT_PRINT_FEATURE_REPORT
