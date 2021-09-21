@@ -35,8 +35,17 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.delayedIssueAnalysis = //false //
         true
 
+    // In modern builds, use the ci_build.sh recipe which first checks
+    // quietly for things that succeed, and summarizes errors in the end
+    dynacfgPipeline['spellcheck_prepconf'] = false
+    dynacfgPipeline['spellcheck_configure'] = false
+    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck ./ci_build.sh)'
+
+/*
+    // For older builds, with only autotools in the tree:
     dynacfgPipeline['spellcheck'] = //false //true
-        '( \${MAKE} VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )'
+        // '( \${MAKE} VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )'
+*/
 
     //dynacfgPipeline['shellcheck'] = true
     dynacfgPipeline['shellcheck'] = [
@@ -78,6 +87,33 @@ import org.nut.dynamatrix.*;
     dynacfgBase['dynamatrixAxesCommonEnv'] = [ ['LANG=C', 'LC_ALL=C', 'TZ=UTC'] ]
 
     dynacfgPipeline.stashnameSrc = 'nut-ci-src'
+
+    if ( !( env?.BRANCH_NAME ==~ /master|main|stable/ ) ) {
+        // else: For main branches we want all builds,
+        // to keep reference for warnings-ng up to date
+
+        // First list the building blocks as lists of files;
+        // final regexes are arranged below:
+        // TODO: Technically the slash should be the Path.Separator,
+        // but at least modern windows can handle a sh step with that
+        // character, so no big deal for NUT supported platforms
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX = ~/^(\/*|.*\/)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE = ~/(configure\.ac|.*\.m4|C?Make.*|ci_.*\.sh|\.git.*|Jenkinsfile.*|.*\.groovy)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
+
+        // Recipe changes and C source changes go here:
+        dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
+        dynacfgPipeline.appliesToChangedFilesRegex_C = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_C})(|\.in)$/
+
+        // Recipe changes and docs source changes go here:
+        dynacfgPipeline.appliesToChangedFilesRegex_TXT = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}(|\.in)$)/
+        dynacfgPipeline.appliesToChangedFilesRegex_DOC = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG})(|\.in)$/
+
+        // TODO: Similar for shell files but based on some logic
+        // like in shellcheck to find the script files (not only *.sh)?
+    }
 
     // Do not override DISTCHECK_CONFIGURE_FLAGS as default implem
     // does, that breaks custom proto-dir installs and tries to go
@@ -163,6 +199,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
          branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
@@ -195,6 +232,8 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
          branchRegexTarget: ~/fightwarn/,
+         // NOTE: For fightwarn, we want some schenarios that would always build to test
+         //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
@@ -227,10 +266,11 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration
 
-        ,[name: 'Various target builds (must pass on all platforms)',
+        ,[name: 'Various non-docs target builds (must pass on all platforms)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -240,7 +280,7 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-nodoc', 'default', 'default-tgt:distcheck-valgrind']
+                    'BUILD_TYPE': ['default-nodoc', 'default-tgt:distcheck-valgrind']
                     // BUILD_TYPE=default-withdoc:man
                     // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
@@ -267,6 +307,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
@@ -303,6 +344,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
@@ -334,6 +376,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
@@ -368,6 +411,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_DOC,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
@@ -402,6 +446,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_TXT,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
@@ -434,6 +479,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -463,6 +509,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -498,6 +545,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -530,6 +578,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -560,6 +609,7 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
@@ -617,4 +667,3 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
     }
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)
-

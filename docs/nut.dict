@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2608 utf-8
+personal_ws-1.1 en 2682 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,8 +12,10 @@ ADDRINFO
 ADK
 ADKK
 AEC
+AEF
 AEG
 AES
+AFE
 AGM
 AIX
 AMETEK
@@ -38,6 +40,7 @@ AWG
 Ablerex
 ActivePower
 AdMiN
+Affero
 Agrain
 AlarmStatus
 AlarmsHelp
@@ -107,6 +110,7 @@ BadPW
 Bads
 Baggesen
 Bakos
+Balker
 Bartek
 BattTstFail
 BatteryA
@@ -178,6 +182,7 @@ CUDA
 CVE
 CXR
 CXX
+CXXCPP
 CXXFLAGS
 Casar
 CentOS
@@ -192,6 +197,7 @@ Chu
 Cichowski
 Claesson
 CodingStyle
+Collver
 Colombier
 Comfo
 ConITm
@@ -213,6 +219,7 @@ DCE
 DDD
 DDDDD
 DDF
+DDThh
 DEADTIME
 DEBUGOUT
 DELCMD
@@ -221,6 +228,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DF
 DHEA
 DISCHRG
 DMF
@@ -252,6 +260,7 @@ DiSplay
 Diehl
 Dietze
 Digitus
+Dimitris
 Dly
 Dmitry
 DocBook
@@ -276,6 +285,7 @@ ESXi
 ETIME
 EUROCASE
 EXtreme
+Economou
 Edlman
 Edmundsson
 Edscott
@@ -324,6 +334,7 @@ Feldman
 Ferrups
 Fideltronic
 Fideltronik
+Filipozzi
 Fiskars
 FlossMetrics
 Forza
@@ -346,6 +357,7 @@ GUIs
 GWD
 GXE
 GXT
+Gabeler
 Gabor
 Gammons
 Gandi
@@ -360,6 +372,7 @@ Gilles
 GitHub
 GitHub's
 Gnd
+Gnomovision
 Goebl
 Golang
 Gomes
@@ -427,6 +440,7 @@ INV
 INVOLT
 IPAR
 IPBX
+IPC
 IPs
 IPv
 IRIX
@@ -531,6 +545,7 @@ LowRntm
 LowRuntime
 Loyer
 Ltr
+Luca
 Lucent
 Lygre
 Lynge
@@ -552,11 +567,13 @@ MMM
 MMMMMMMMMMMMMMM
 MNU
 MONITORed
+MOXA
 MPSU
 MQ
 MSI
 MacKenzie's
 MacOS
+Maccelari
 Magalhaes
 MagalhÃ
 Magalhães
@@ -582,6 +599,7 @@ Metheringham
 Michal
 Michalkiewicz
 MicroDowell
+MicroFerrups
 Microline
 Micropower
 Microsol
@@ -601,8 +619,10 @@ Monett
 Morioka
 Morozov
 Moskovitch
+Moxa
 Mozilla
 Msg
+MultiLink
 Multiplug
 MyCompany
 MyPasSw
@@ -681,6 +701,7 @@ OMNIVS
 OMNIVSINT
 ONF
 ONV
+OSF
 OSs
 OUTPUTV
 OUTVOLT
@@ -754,6 +775,7 @@ PSKxn
 PSSENTR
 PSUs
 PSX
+PULS
 PV
 PWLv
 PWR
@@ -871,6 +893,7 @@ RRR
 RSA
 RSM
 RST
+RTU
 RTXL
 RUPS
 RWD
@@ -888,6 +911,7 @@ Reinholdtsen
 Remi
 Rene
 René
+Repotec's
 Repoteck
 Richthof
 Rickard
@@ -897,6 +921,7 @@ RntmK
 Rocketfish
 Rodrigues
 Rodríguez
+Rozman
 Rucelf
 RxD
 RxHs
@@ -971,7 +996,10 @@ SXI
 SXL
 SafeNet
 Salvia
+Santinoli
+Savia
 Sawatzky
+Schmier
 Schoch
 Schonefeld
 Schroder
@@ -1019,9 +1047,13 @@ Stanislav
 StatePath
 Stefano
 Stimits
+SuSE
 Suatoni
+Sublicensing
+SunOS
 SuperPower
 Sweex
+Sycon
 Symmetra
 Symmetras
 Synology
@@ -1057,6 +1089,7 @@ TapSwDly
 TapSwPh
 TcpClient
 Technic
+Technorama
 Tecnoware
 Tefft
 TeleCom
@@ -1081,6 +1114,7 @@ Tru
 Tx
 TxD
 TxHS
+UB
 UBD
 UBR
 UDP
@@ -1133,6 +1167,7 @@ VIB
 VMIN
 VMware
 VNC
+VPATH
 VSN
 VTIME
 VV
@@ -1145,6 +1180,7 @@ VendorID
 Viewpower
 Viewsonic
 Viktor
+VirCIO
 Vout
 Václav
 WALKMODE
@@ -1152,6 +1188,7 @@ WARNFATAL
 WARNOPT
 WELI
 WHAD
+WIPO
 WMNut
 WS
 WSE
@@ -1172,6 +1209,7 @@ XCP
 XLA
 XOFF
 XON
+XOPEN
 XP
 XPPC
 XSL
@@ -1188,9 +1226,11 @@ Xymon
 YQ
 YV
 YY
+YYYY
 YYYYMMDD
 YZ
 Ygor
+Yoyodyne
 Yukai
 Yunto
 ZZZZZZZZ
@@ -1328,6 +1368,7 @@ beepertone
 belkin
 belkinunv
 bestfcom
+bestferrups
 bestfort
 bestfortress
 bestuferrups
@@ -1447,6 +1488,7 @@ constatus
 contdisplay
 contrib
 contstatus
+copyrightable
 coreutils
 cout
 coverity
@@ -1515,6 +1557,7 @@ dipsw
 dir
 disp
 distcheck
+distclean
 distro
 distros
 dl
@@ -1739,6 +1782,7 @@ initinfo
 initscripts
 initups
 inline
+installcheck
 instcmd
 instcmds
 intercharacter
@@ -1756,6 +1800,9 @@ inverterlog
 inverterminutes
 invertervolts
 io
+ioLogik
+ioLogikE
+ioLogikR
 iostream
 ip
 ipE
@@ -1828,12 +1875,15 @@ libusbugen
 libwrap
 libxslt
 libxxx
+licensor
+licensors
 liebert
 liebertgxt
 linesensitivity
 linevoltage
 linkdoc
 linux
+lipo
 listdef
 littleguy
 lk
@@ -1858,6 +1908,7 @@ lowbattery
 lowfrequency
 lowruntime
 lowvoltsout
+lposix
 lr
 lsusb
 lu
@@ -1927,6 +1978,7 @@ minvo
 mis
 misconfigured
 mkdir
+mmZ
 mmap
 mmddyyyy
 mn
@@ -1991,6 +2043,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nodtk
 noflag
 nohang
 noimp
@@ -2001,8 +2054,10 @@ nomacvoltsout
 nombattvolt
 nomdcvolts
 nomfrequency
+noncommercially
 noout
 norating
+noro
 noscanlangid
 notAfter
 notifyme
@@ -2126,9 +2181,11 @@ powerpanel
 powerup
 powervalue
 powerware
+ppc
 pprint
 ppro
 pre
+prepend
 prepended
 preprocess
 preprocessing
@@ -2148,11 +2205,13 @@ prtconf
 psu
 pw
 pwl
+pwmib
 pwro
 px
 pxgx
 py
 pydoc
+pygments
 pynut
 qa
 qemu
@@ -2182,10 +2241,13 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+redistributors
 reentrancy
 refactoring
 referencenominal
 regex
+regtype
+relicensing
 reposurgeon
 repotec
 req
@@ -2199,6 +2261,7 @@ rfc
 rh
 richcomm
 riello
+rio
 rj
 rk
 rkm
@@ -2287,6 +2350,7 @@ sm
 smartups
 sms
 sn
+snailmail
 snmp
 snmpagent
 snmpv
@@ -2307,6 +2371,7 @@ splitaddr
 splitname
 sr
 src
+srcdir
 srw
 ss
 ssl
@@ -2346,6 +2411,8 @@ subdriver
 subdriver's
 subdrivers
 subdrv
+sublicense
+sublicenses
 submodule
 submodules
 subtree
@@ -2372,7 +2439,9 @@ sysconfig
 syslog
 systemctl
 systemd
+systemdshutdowndir
 systemdsystemunitdir
+systemdtmpfilesdir
 systemhours
 systemmode
 systemtest
@@ -2399,6 +2468,7 @@ termios
 testime
 testtime
 testuser
+textproc
 th
 timehead
 timeline
@@ -2406,6 +2476,7 @@ timername
 tiocm
 tios
 tmp
+tmpfiles
 toolchain
 toolkits
 topbot
@@ -2432,10 +2503,12 @@ tx
 txt
 typedef
 uA
+UB
 uD
 uM
 ua
 uc
+ucb
 udev
 udevadm
 ufw
@@ -2555,6 +2628,7 @@ voltronic
 von
 wDescriptorLength
 wakeup
+wchar
 webserver
 wf
 wget
