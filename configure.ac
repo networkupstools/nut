@@ -3,15 +3,15 @@ dnl | Network UPS Tools: configure.ac                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT([nut], [2.7.4.1], [https://github.com/networkupstools/nut/issues])
+AC_INIT([nut],[2.7.4.1],[https://github.com/networkupstools/nut/issues])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
-AC_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -126,8 +126,10 @@ AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl +-------------------------------------------------------------------
 
-AC_PROG_CC
-AC_PROG_CC_C99
+dnl AC_PROG_CC
+dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+dnl Note that NUT does not support building with C89 anyway
+dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
@@ -139,7 +141,7 @@ AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
-dnl Postpone call to AC_PROG_LIBTOOL to allow disabling static lib
+dnl Postpone call to LT_INIT/AC_CONFIG_FILES to allow disabling static lib
 AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
@@ -289,8 +291,17 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+dnl All current systems provide time.h; it need not be checked for.
+dnl Not all systems provide sys/time.h, but those that do, all allow
+dnl you to include it and time.h simultaneously.
+dnl NUT codebase provides the include/timehead.h to wrap these nuances.
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+AS_IF([test "$ac_cv_header_sys_time_h" = yes],
+    [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is deemed obsolete by autotools.])
+    ], [])
+
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
@@ -1072,7 +1083,7 @@ then
 fi
 
 dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
-dnl #OBSOLETED:# AC_PROG_LIBTOOL
+dnl #OBSOLETED:# LT_INIT and AC_PROG_LIBTOOL
 
 dnl # Hack around the libtool script: as of version 58 (current in 2021),
 dnl # they use code like below to detect library paths:
@@ -2168,7 +2179,7 @@ X @ALTSTATEPATH@/nut
 EOF])
 ])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
@@ -2245,5 +2256,6 @@ AC_OUTPUT([
  tests/Makefile
  Makefile
 ])
+AC_OUTPUT
 
 NUT_PRINT_FEATURE_REPORT
