@@ -258,6 +258,9 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
 		$(MAKE) -s "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
