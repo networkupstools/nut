@@ -61,7 +61,11 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    case "$OS_FAMILY-$OS_DISTRO" in
+    for CI_OS_HINT in "$OS_FAMILY-$OS_DISTRO" "`uname -o`" "`uname -s -r -v`" "`uname -a`" ; do
+        [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
+    done
+
+    case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *debian*|*linux*)
@@ -78,9 +82,14 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="bsd" ;;
         *illumos*)
             CI_OS_NAME="illumos" ;;
+        *solaris*)
+            CI_OS_NAME="solaris" ;;
+        *sunos*)
+            CI_OS_NAME="sunos" ;;
         "-") ;;
         *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
     esac
+    [ -z "$CI_OS_NAME" ] || echo "INFO: Detected CI_OS_NAME='$CI_OS_NAME'" >&2
 fi
 
 # CI builds on Travis
@@ -269,11 +278,38 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
-    if [ -n "$PKG_CONFIG_PATH" ] ; then
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}")
-    else
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+
+    DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
+    SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
+    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+        *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
+            case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
+                *-m64*)
+                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                    ;;
+                *)
+                    case "$ARCH$BITS" in
+                        *64*)
+                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+    if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
+        if [ -n "$PKG_CONFIG_PATH" ] ; then
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
+        else
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
+        fi
     fi
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}")
+    else
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
+    fi
+
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")

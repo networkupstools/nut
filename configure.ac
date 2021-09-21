@@ -1079,6 +1079,7 @@ dnl # they use code like below to detect library paths:
 dnl #   if test yes = "$GCC"; then ... lt_search_path_spec=`$CC -print-search-dirs | ...
 dnl # which explodes when non-default architecture is used for the build,
 dnl # where e.g. "CC=gcc" and "CFLAGS=-m32" on a 64-bit capable system.
+dnl # And similarly for compilation-checks to link third-party libraries.
 SAVED_GCC="$GCC"
 SAVED_CC="$CC"
 if ( test "${GCC}" = "yes" )
