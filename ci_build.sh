@@ -89,6 +89,7 @@ if [ -z "$CI_OS_NAME" ]; then
         "-") ;;
         *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
     esac
+    [ -z "$CI_OS_NAME" ] || echo "INFO: Detected CI_OS_NAME='$CI_OS_NAME'" >&2
 fi
 
 # CI builds on Travis
