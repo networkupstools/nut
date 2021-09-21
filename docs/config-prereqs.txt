@@ -56,7 +56,7 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
     valgrind \
     pkg-config \
     gcc clang \
-    asciidoc source-highlight dblatex aspell \
+    asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
 :; apt-get install \
@@ -118,7 +118,7 @@ Note that `PATH` for builds on BSD should include `local`:
     valgrind \
     pkgconf \
     gcc clang \
-    asciidoc source-highlight dblatex en-aspell aspell \
+    asciidoc source-highlight textproc/py-pygments dblatex en-aspell aspell \
     libgd
 
 :; pkg install \
@@ -185,7 +185,7 @@ Typical tooling would include:
     pkg-config \
     gnu-binutils developer/linker \
     asciidoc libxslt aspell text/aspell/en \
-    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common \
+    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
     graphviz expect gd graphviz-tcl
 
 :; pkg install \
