@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2678 utf-8
+personal_ws-1.1 en 2682 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -893,6 +893,7 @@ RRR
 RSA
 RSM
 RST
+RTU
 RTXL
 RUPS
 RWD
@@ -2209,6 +2210,7 @@ px
 pxgx
 py
 pydoc
+pygments
 pynut
 qa
 qemu
@@ -2238,6 +2240,7 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+redistributors
 reentrancy
 refactoring
 referencenominal
@@ -2464,6 +2467,7 @@ termios
 testime
 testtime
 testuser
+textproc
 th
 timehead
 timeline
