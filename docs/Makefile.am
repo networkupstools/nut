@@ -233,11 +233,15 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 # Other Makefiles have a relatively simple life, dealing with just a
 # few texts and name/extension patterns in their directories.
 #?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
+# at a time, with an outer Makefile caller ensuring the looping:
+$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 rm -f "$@" || true ; \
-	 echo "  ASPELL   Spell checking on $<"; \
-	 OUT="`sed 's,^\(.*\)$$, \1,' < "$<" | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" \
+	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 OUT="`sed 's,^\(.*\)$$, \1,' < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)" | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
@@ -262,7 +266,7 @@ spellcheck:
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) -s -f "$(top_builddir)/docs/Makefile" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
+		$(MAKE) -s -f "$(top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_DIR="$(SPELLCHECK_DIR)" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
@@ -325,7 +329,7 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
-#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
 */*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
