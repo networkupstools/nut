@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2611 utf-8
+personal_ws-1.1 en 2682 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,8 +12,10 @@ ADDRINFO
 ADK
 ADKK
 AEC
+AEF
 AEG
 AES
+AFE
 AGM
 AIX
 AMETEK
@@ -38,6 +40,7 @@ AWG
 Ablerex
 ActivePower
 AdMiN
+Affero
 Agrain
 AlarmStatus
 AlarmsHelp
@@ -107,6 +110,7 @@ BadPW
 Bads
 Baggesen
 Bakos
+Balker
 Bartek
 BattTstFail
 BatteryA
@@ -178,6 +182,7 @@ CUDA
 CVE
 CXR
 CXX
+CXXCPP
 CXXFLAGS
 Casar
 CentOS
@@ -192,6 +197,7 @@ Chu
 Cichowski
 Claesson
 CodingStyle
+Collver
 Colombier
 Comfo
 ConITm
@@ -222,6 +228,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DF
 DHEA
 DISCHRG
 DMF
@@ -327,6 +334,7 @@ Feldman
 Ferrups
 Fideltronic
 Fideltronik
+Filipozzi
 Fiskars
 FlossMetrics
 Forza
@@ -349,6 +357,7 @@ GUIs
 GWD
 GXE
 GXT
+Gabeler
 Gabor
 Gammons
 Gandi
@@ -363,6 +372,7 @@ Gilles
 GitHub
 GitHub's
 Gnd
+Gnomovision
 Goebl
 Golang
 Gomes
@@ -535,6 +545,7 @@ LowRntm
 LowRuntime
 Loyer
 Ltr
+Luca
 Lucent
 Lygre
 Lynge
@@ -556,11 +567,13 @@ MMM
 MMMMMMMMMMMMMMM
 MNU
 MONITORed
+MOXA
 MPSU
 MQ
 MSI
 MacKenzie's
 MacOS
+Maccelari
 Magalhaes
 MagalhÃ
 Magalhães
@@ -586,6 +599,7 @@ Metheringham
 Michal
 Michalkiewicz
 MicroDowell
+MicroFerrups
 Microline
 Micropower
 Microsol
@@ -606,9 +620,9 @@ Morioka
 Morozov
 Moskovitch
 Moxa
-MOXA
 Mozilla
 Msg
+MultiLink
 Multiplug
 MyCompany
 MyPasSw
@@ -687,6 +701,7 @@ OMNIVS
 OMNIVSINT
 ONF
 ONV
+OSF
 OSs
 OUTPUTV
 OUTVOLT
@@ -878,6 +893,7 @@ RRR
 RSA
 RSM
 RST
+RTU
 RTXL
 RUPS
 RWD
@@ -895,6 +911,7 @@ Reinholdtsen
 Remi
 Rene
 René
+Repotec's
 Repoteck
 Richthof
 Rickard
@@ -904,6 +921,7 @@ RntmK
 Rocketfish
 Rodrigues
 Rodríguez
+Rozman
 Rucelf
 RxD
 RxHs
@@ -978,7 +996,10 @@ SXI
 SXL
 SafeNet
 Salvia
+Santinoli
+Savia
 Sawatzky
+Schmier
 Schoch
 Schonefeld
 Schroder
@@ -1026,9 +1047,13 @@ Stanislav
 StatePath
 Stefano
 Stimits
+SuSE
 Suatoni
+Sublicensing
+SunOS
 SuperPower
 Sweex
+Sycon
 Symmetra
 Symmetras
 Synology
@@ -1064,6 +1089,7 @@ TapSwDly
 TapSwPh
 TcpClient
 Technic
+Technorama
 Tecnoware
 Tefft
 TeleCom
@@ -1088,6 +1114,7 @@ Tru
 Tx
 TxD
 TxHS
+UB
 UBD
 UBR
 UDP
@@ -1140,6 +1167,7 @@ VIB
 VMIN
 VMware
 VNC
+VPATH
 VSN
 VTIME
 VV
@@ -1152,6 +1180,7 @@ VendorID
 Viewpower
 Viewsonic
 Viktor
+VirCIO
 Vout
 Václav
 WALKMODE
@@ -1159,6 +1188,7 @@ WARNFATAL
 WARNOPT
 WELI
 WHAD
+WIPO
 WMNut
 WS
 WSE
@@ -1179,6 +1209,7 @@ XCP
 XLA
 XOFF
 XON
+XOPEN
 XP
 XPPC
 XSL
@@ -1199,6 +1230,7 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yoyodyne
 Yukai
 Yunto
 ZZZZZZZZ
@@ -1336,6 +1368,7 @@ beepertone
 belkin
 belkinunv
 bestfcom
+bestferrups
 bestfort
 bestfortress
 bestuferrups
@@ -1455,6 +1488,7 @@ constatus
 contdisplay
 contrib
 contstatus
+copyrightable
 coreutils
 cout
 coverity
@@ -1522,6 +1556,7 @@ dipsw
 dir
 disp
 distcheck
+distclean
 distro
 distros
 dl
@@ -1746,6 +1781,7 @@ initinfo
 initscripts
 initups
 inline
+installcheck
 instcmd
 instcmds
 intercharacter
@@ -1838,12 +1874,15 @@ libusbugen
 libwrap
 libxslt
 libxxx
+licensor
+licensors
 liebert
 liebertgxt
 linesensitivity
 linevoltage
 linkdoc
 linux
+lipo
 listdef
 littleguy
 lk
@@ -1868,6 +1907,7 @@ lowbattery
 lowfrequency
 lowruntime
 lowvoltsout
+lposix
 lr
 lsusb
 lu
@@ -2002,6 +2042,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nodtk
 noflag
 nohang
 noimp
@@ -2012,6 +2053,7 @@ nomacvoltsout
 nombattvolt
 nomdcvolts
 nomfrequency
+noncommercially
 noout
 norating
 noro
@@ -2138,9 +2180,11 @@ powerpanel
 powerup
 powervalue
 powerware
+ppc
 pprint
 ppro
 pre
+prepend
 prepended
 preprocess
 preprocessing
@@ -2160,11 +2204,13 @@ prtconf
 psu
 pw
 pwl
+pwmib
 pwro
 px
 pxgx
 py
 pydoc
+pygments
 pynut
 qa
 qemu
@@ -2194,11 +2240,13 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+redistributors
 reentrancy
 refactoring
 referencenominal
 regex
 regtype
+relicensing
 reposurgeon
 repotec
 req
@@ -2301,6 +2349,7 @@ sm
 smartups
 sms
 sn
+snailmail
 snmp
 snmpagent
 snmpv
@@ -2321,6 +2370,7 @@ splitaddr
 splitname
 sr
 src
+srcdir
 srw
 ss
 ssl
@@ -2360,6 +2410,8 @@ subdriver
 subdriver's
 subdrivers
 subdrv
+sublicense
+sublicenses
 submodule
 submodules
 subtree
@@ -2415,6 +2467,7 @@ termios
 testime
 testtime
 testuser
+textproc
 th
 timehead
 timeline
@@ -2454,6 +2507,7 @@ uD
 uM
 ua
 uc
+ucb
 udev
 udevadm
 ufw
@@ -2573,6 +2627,7 @@ voltronic
 von
 wDescriptorLength
 wakeup
+wchar
 webserver
 wf
 wget

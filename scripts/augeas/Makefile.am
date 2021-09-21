@@ -32,3 +32,6 @@ if WITH_AUGLENS
     nuthostsconf.aug  nutupsconf.aug   nutupsdusers.aug   nutupsschedconf.aug \
     nutnutconf.aug    nutupsdconf.aug  nutupsmonconf.aug  nutupssetconf.aug
 endif
+
+clean-local:
+	rm -f *-spellchecked
