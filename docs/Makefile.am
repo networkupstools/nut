@@ -241,7 +241,7 @@ $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLC
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 rm -f "$@" || true ; \
 	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
-	 OUT="`sed 's,^\(.*\)$$, \1,' < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)" | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
