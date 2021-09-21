@@ -30,6 +30,7 @@ DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --wit
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
+ --with-systemdtmpfilesdir='$${prefix}/usr/lib/tmpfiles.d' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
@@ -49,6 +50,9 @@ memcheck distcheck-valgrind:
 #	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 distcleancheck:
 	@:
+
+clean-local:
+	rm -f *-spellchecked
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
