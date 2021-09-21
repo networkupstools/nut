@@ -169,6 +169,13 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # (or cause them to produce undefined results if some bad timing happens).
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
+
+# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
+# prerequisites like done below, and GNU Make of some versions complains;
+# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
+# says the prerequisites were ignored while a suffix rule was created;
+# eventually the POSIX stance would be taken to define a rule for a weird
+# verbatim target file name with prerequisites.
 .txt.html: common.xsl xhtml.xsl
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
