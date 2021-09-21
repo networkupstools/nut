@@ -177,17 +177,24 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # eventually the POSIX stance would be taken to define a rule for a weird
 # verbatim target file name with prerequisites:
 # ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
-.txt.html: common.xsl xhtml.xsl
+# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
+# as done below may be pointless in the end (with regard to a portable way
+# to trigger builds by a changed dependency), but at least predictable and
+# not toxic.
+*.html: common.xsl xhtml.xsl
+.txt.html:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
-.txt.chunked: common.xsl chunked.xsl
+*.chunked: common.xsl chunked.xsl
+.txt.chunked:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
-.txt.pdf: docinfo.xml
+*.pdf: docinfo.xml
+.txt.pdf:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
