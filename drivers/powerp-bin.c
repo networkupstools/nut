@@ -34,6 +34,8 @@
 
 #include <math.h>
 
+#define POWERPANEL_BIN_VERSION "Powerpanel-Binary 0.5"
+
 typedef struct {
 	unsigned char	start;
 	unsigned char	i_volt;
@@ -655,6 +657,7 @@ static int powpan_initups(void)
 
 subdriver_t powpan_binary = {
 	"binary",
+	POWERPANEL_BIN_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,

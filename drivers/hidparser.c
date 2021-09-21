@@ -41,7 +41,7 @@ typedef struct {
 
 	uint16_t	Pos;				/* Store current pos in descriptor	*/
 	uint8_t		Item;				/* Store current Item		*/
-	long		Value;				/* Store current Value		*/
+	uint32_t	Value;				/* Store current Value		*/
 
 	HIDData_t	Data;				/* Store current environment	*/
 
@@ -121,10 +121,10 @@ static uint8_t *GetReportOffset(HIDParser_t* pParser, const uint8_t ReportID, co
 }
 
 /*
- * FormatValue(long Value, uint8_t Size)
+ * FormatValue(uint32_t Value, uint8_t Size)
  * Format Value to fit with long format with respect of negative values
  * -------------------------------------------------------------------------- */
-static long FormatValue(long Value, uint8_t Size)
+static long FormatValue(uint32_t Value, uint8_t Size)
 {
 	switch(Size)
 	{
@@ -150,27 +150,16 @@ static long FormatValue(long Value, uint8_t Size)
  * -------------------------------------------------------------------------- */
 static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 {
-	int	Found = -1;
+	int	Found = -1, i;
 
 	while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) {
 		/* Get new pParser->Item if current pParser->Count is empty */
 		if (pParser->Count == 0) {
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-#if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
-			{
-				int	i;
-				unsigned long	valTmp = 0;
-
-				for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
-					memcpy(&valTmp, &pParser->ReportDesc[(pParser->Pos)+i], 1);
-					pParser->Value += valTmp >> ((3-i)*8);
-					valTmp = 0;
-				}
+			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
+				pParser->Value += pParser->ReportDesc[(pParser->Pos)+i] << (8*i);
 			}
-#else
-			memcpy(&pParser->Value, &pParser->ReportDesc[pParser->Pos], ItemSize[pParser->Item & SIZE_MASK]);
-#endif
 			/* Pos on next item */
 			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
 		}

@@ -22,10 +22,10 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "nut_stdint.h"
 #include "str.h"
 
 char	*str_trim(char *string, const char character)

@@ -153,7 +153,7 @@ static char* nsscertpasswd = NULL;
 
 static void ssl_debug(void)
 {
-	int	e;
+	unsigned long	e;
 	char	errmsg[SMALLBUF];
 
 	while ((e = ERR_get_error()) != 0) {
@@ -315,6 +315,8 @@ int upscli_init(int certverify, const char *certpath,
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #else
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -427,6 +429,11 @@ int upscli_init(int certverify, const char *certpath,
 		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
+#else
+	/* Note: historically we do not return with error here,
+	 * just fall through to below and treat as initialized.
+	 */
+	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
@@ -607,17 +614,37 @@ static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, 
 	return read(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
-static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
 {
 	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_read(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_read(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Read(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Read(ups->ssl, buf, (PRInt32)buflen);
 #endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
@@ -643,6 +670,9 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int t
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
@@ -668,17 +698,37 @@ static ssize_t upscli_select_write(const int fd, const void *buf, const size_t b
 	return write(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
-static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
 {
 	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_write(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_write(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Write(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Write(ups->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
@@ -704,6 +754,9 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigne
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 
 #ifdef WITH_SSL
@@ -881,6 +934,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
 	return 0;	/* not supported */
 }
 
@@ -1161,9 +1217,9 @@ static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 }
 
 static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
-	int numarg, const char **arg)
+	size_t numarg, const char **arg)
 {
-	int	i;
+	size_t	i;
 	size_t	len;
 	char	enc[UPSCLI_NETBUF_LEN];
 	const char	*format;
@@ -1204,9 +1260,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 }
 
 /* make sure upsd is giving us what we asked for */
-static int verify_resp(int num, const char **q, char **a)
+static int verify_resp(unsigned int num, const char **q, char **a)
 {
-	int	i;
+	unsigned int	i;
 
 	for (i = 0; i < num; i++) {
 		if (strcasecmp(q[i], a[i]) != 0) {
@@ -1379,7 +1435,7 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
 {
 	ssize_t	ret;
 
@@ -1417,7 +1473,7 @@ ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
 {
 	ssize_t	ret;
 	size_t	recv;
@@ -1452,7 +1508,10 @@ ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsign
 				return -1;
 			}
 
-			ups->readlen = ret;
+			/* Here ret is safe to cast since it is >=1 and certainly
+			 * fits under SIZE_MAX being it signed sibling
+			 */
+			ups->readlen = (size_t)ret;
 			ups->readidx = 0;
 		}
 

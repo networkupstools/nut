@@ -203,7 +203,7 @@ include the new library and certain patches for it, and the library
 itself matured, the NUT project also added an ability to build with
 libusb-1.0 either directly or using its 0.1-compat API.
 
-Currently this is not part of the master codebase and thus tagged
+Currently this is not part of the common codebase and thus tagged
 releases, but is experimented in several competing GitHub branches
 until one gets chosen as the best to integrate:
 

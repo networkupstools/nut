@@ -1,6 +1,10 @@
 DISTCLEANFILES =
 EXTRA_DIST =
 
+# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
+EGREP = egrep
+#EGREP = grep -E
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
@@ -17,7 +21,7 @@ IMAGE_FILES = images/asciidoc.png \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
-USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
+USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt config-prereqs.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -69,8 +73,8 @@ ASCIIDOC_PDF = user-manual.pdf \
 	cables.pdf \
 	FAQ.pdf
 
-SUBDIRS = man
-SUFFIXES = .txt .html .pdf
+SUBDIRS = man cables
+SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
@@ -87,7 +91,7 @@ html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 check-pdf: $(ASCIIDOC_PDF)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_PDF) ; do \
-	    test -s "$$F" && { file "$$F" | egrep 'PDF document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i 'PDF document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
@@ -95,7 +99,7 @@ check-pdf: $(ASCIIDOC_PDF)
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
-	    test -s "$$F" && { file "$$F" | egrep '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-single sanity check"; exit 0
@@ -104,10 +108,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for D in $(ASCIIDOC_HTML_CHUNKED); do \
 	    for F in "$$D"/*.html ; do \
-	        test -s "$$F" && { file "$$F" | egrep '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	        test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	    done; \
 	    for F in "$$D"/*.css ; do \
-	        test -s "$$F" && { egrep 'CSS stylesheet' "$$F" > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	        test -s "$$F" && { $(EGREP) -i 'CSS stylesheet' "$$F" > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	    done; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-chunked sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
@@ -119,7 +123,7 @@ check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
 clean-local:
-	rm -f *.pdf *.html docbook-xsl.css
+	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
 	rm -rf *.chunked *.bak
 
 ### TODO: automatic dependency generation
@@ -140,10 +144,10 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
-    --xsltproc-opts "--nonet" \
-    --xsltproc-opts "--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
-    --xsltproc-opts "--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
-    --xsltproc-opts "--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
+    --xsltproc-opts="--nonet" \
+    --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
+    --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
+    --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
     --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \
@@ -164,17 +168,32 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # (or cause them to produce undefined results if some bad timing happens).
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
-.txt.html: common.xsl xhtml.xsl
+
+# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
+# prerequisites like done below, and GNU Make of some versions complains;
+# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
+# says the prerequisites were ignored while a suffix rule was created;
+# eventually the POSIX stance would be taken to define a rule for a weird
+# verbatim target file name with prerequisites:
+# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
+# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
+# as done below may be pointless in the end (with regard to a portable way
+# to trigger builds by a changed dependency), but at least predictable and
+# not toxic.
+*.html: common.xsl xhtml.xsl
+.txt.html:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
-.txt.chunked: common.xsl chunked.xsl
+*.chunked: common.xsl chunked.xsl
+.txt.chunked:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
-.txt.pdf: docinfo.xml
+*.pdf: docinfo.xml
+.txt.pdf:
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
@@ -183,9 +202,17 @@ if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
+# NOTE: ../ChangeLog is nowadays generated from commit messages, so
+# its spelling (or errors in that) are not fixable and thus irrelevant.
+# Similarly for the ../INSTALL file that is prepared by autoconf and not
+# tracked as a source file by NUT Git repository.
 SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
-	../tools/nut-scanner/README
+	../tools/nut-scanner/README \
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3
+
+# Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
+SPELLCHECK_DIR = $(srcdir)
 
 # Note: de-facto our documentation is beyond ASCII (at least in names of
 # international committers). The grep tests below look if the aspell output
@@ -196,7 +223,6 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # interpreted as commands, and seems this feature can not be turned off.
 # See also http://aspell.net/man-html/Through-A-Pipe.html
 # TODO: Is "grep -a" or "grep -b" (treat input as ascii/bin) portable enough?
-# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 # Set SPELLCHECK_ERROR_FATAL=no if there are some unavoidable issues
 # due to spellchecking, to temporarily not fail builds due to this.
 # For Travis CI in particular, see ci_build.sh in NUT codebase root.
@@ -207,29 +233,54 @@ ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+# WARNING: The percent wildcard is a GNU extension; otherwise we need
+# a ".txt.txt-spellchecked" type of rule and files like "README" all
+# renamed to *.txt, or lots of rules for files without the extensions
+# Other Makefiles have a relatively simple life, dealing with just a
+# few texts and name/extension patterns in their directories.
+#?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
+# at a time, with an outer Makefile caller ensuring the looping:
+$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 rm -f "$@" || true ; \
+	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
+		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+		     test -z "$$OUT" ; } \
+		|| { RES=$$? ; \
+		     echo "FAILED : Aspell reported errors here:" >&2 \
+		     && echo "----- vvv" >&2 \
+		     && echo "$$OUT" >&2 \
+		     && echo "----- ^^^" >&2 ; \
+		     exit $$RES; } ; \
+	 touch "$@"
+
 spellcheck: 
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
 		dpkg -l |grep -i aspell || true ; \
-		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | egrep -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
-			  test -z "$$OUT" ; } || \
-			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $$docsrc"; } ; \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
+		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_DIR="$(SPELLCHECK_DIR)" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
-		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
+		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`): $$FAILED" ; \
 		echo "=====================================================================" ; \
-		echo "Please 'cd $(abs_srcdir) && make spellcheck-interactive'"; \
+		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
 		echo "words and spellings listed in the '$(NUT_SPELL_DICT)' file there."; \
 		echo "Either way, please follow up by posting a pull request or a patch"; \
@@ -269,12 +320,12 @@ DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
-			FAILED="$$FAILED $$docsrc"; \
+		echo "Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_DIR)/$$docsrc || \
+			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
-		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
+		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
 	$(MAKE) spellcheck-sortdict
@@ -285,6 +336,9 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
+# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+*/*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 spellcheck-interactive:
