@@ -293,8 +293,6 @@ shutdown. You might want to disable this condition entirely, when relying on
 such feature).
 
 Simple example:
-
-[source,conf]
 ----
 [apc]
     ignorelb

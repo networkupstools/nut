@@ -32,8 +32,6 @@ More information about Moxa ioLogik R1212, E1212 can be found here::
 https://www.moxa.com/en/products/industrial-edge-connectivity/controllers-and-ios
 
 The PULS UPS UB40.241 supports the following signals:
-
-[source, conf]
 ----
 Ready contact      (DO) <--> HB
 Buffering contact  (DO) <--> OL | OB
@@ -54,8 +52,6 @@ HARDWARE INTERCONNECTION
 The commission of modbus remote I/O server as well as UPS device is carried
 out following the corresponding instruction manuals. The following figure
 depicts the anticipated communication path and hardware interconnection:
-
-[source, conf]
 ----
 +------+       +----------------+       +------------+       +------------+
 | UPSD | <---> | GENERIC_MODBUS | <---> | MODBUS RIO | <---> | UPS DEVICE |
@@ -115,14 +111,12 @@ A number specifying the modbus address for the X state.
 A number specifying the modbus register type for the X state
 Default values:::
 +
-[source, conf]
 ----
 1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
 0 for X = FSD
 ----
 Valid values:::
 +
-[source, conf]
 ----
 0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
 ----
@@ -131,7 +125,6 @@ Valid values:::
 A number specifying the contact configuration for the X state (default 1).
 Valid values:::
 +
-[source, conf]
 ----
 0:NC, 1:NO
 ----
@@ -147,7 +140,6 @@ If it's not defined, signal has only one transition depending
 on FSD_noro configuration.
 +
 Examples for FSD signal configuration:
-[source, conf]
 ----
 FSD_noro = 1
 FSD_pulse_duration = 150
@@ -171,7 +163,6 @@ CONFIGURATION
 -------------
 
 Here is an example of generic_modbus driver configuration in *ups.conf* file:
-[source, conf]
 ----
 [generic_modbus]
   driver = generic_modbus
