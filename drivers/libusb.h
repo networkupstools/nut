@@ -28,15 +28,15 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef LIBUSB_H
-#define LIBUSB_H
+#ifndef NUT_LIBUSB_H_SEEN
+#define NUT_LIBUSB_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
 #include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
 
 #include <usb.h>	/* libusb header file */
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * usb_communication_subdriver_s: structure to describe the communication routines
@@ -62,5 +62,5 @@ typedef struct usb_communication_subdriver_s {
 
 extern usb_communication_subdriver_t	usb_subdriver;
 
-#endif /* LIBUSB_H */
+#endif /* NUT_LIBUSB_H_SEEN */
 

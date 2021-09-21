@@ -25,8 +25,8 @@
 #include "netssl.h"
 #include <ctype.h>
 
-	ups_t	*upstable = NULL;
-	int	num_ups = 0;
+static ups_t	*upstable = NULL;
+int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -111,10 +111,10 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 	/* always set this on reload */
 	temp->retain = 1;
-}		
+}
 
 /* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
@@ -167,7 +167,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		if (isdigit(arg[1][0])) {
-			maxconn = atoi(arg[1]);
+			maxconn = atol(arg[1]);
 			return 1;
 		}
 		else {
@@ -218,7 +218,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */
-	
+
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
@@ -249,7 +249,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
-	
+
 #ifdef WITH_NSS
 	/* CERTIDENT <name> <passwd> */
 	if (!strcmp(arg[0], "CERTIDENT")) {
@@ -306,11 +306,11 @@ void load_upsdconf(int reloading)
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
-			snprintf(errmsg, sizeof(errmsg), 
+			snprintf(errmsg, sizeof(errmsg),
 				"upsd.conf: invalid directive");
 
 			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
+				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
@@ -318,7 +318,7 @@ void load_upsdconf(int reloading)
 
 	}
 
-	pconf_finish(&ctx);		
+	pconf_finish(&ctx);
 }
 
 /* callback during parsing of ups.conf */
@@ -382,7 +382,7 @@ void upsconf_add(int reloading)
 
 		/* don't accept an entry that's missing items */
 		if ((!tmp->driver) || (!tmp->port)) {
-			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n", 
+			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n",
 				tmp->upsname);
 		} else {
 			snprintf(statefn, sizeof(statefn), "%s-%s",
@@ -455,7 +455,7 @@ static void delete_ups(upstype_t *target)
 
 	/* shouldn't happen */
 	upslogx(LOG_ERR, "delete_ups: UPS not found");
-}			
+}
 
 /* see if we can open a file */
 static int check_file(const char *fn)

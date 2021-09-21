@@ -3,14 +3,15 @@ dnl | Network UPS Tools: configure.ac                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT([nut], [2.7.4.1], [https://github.com/networkupstools/nut/issues])
+AC_INIT([nut],[2.7.4.1],[https://github.com/networkupstools/nut/issues])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 NUT_CHECK_OS
-AC_CONFIG_HEADER(include/config.h)
+NUT_STASH_WARNINGS
+AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -33,14 +34,20 @@ AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
     [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     PKG_PROG_PKG_CONFIG
-     dummy_RES=$?
-     AS_IF([test $dummy_RES = 0],
+     have_PKG_CONFIG=no
+     dummy_RES=0
+     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
+     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
+     AS_IF([test "${dummy_RES}" = 0],
         [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
-            [], [have_PKG_CONFIG=no])
-        ], [have_PKG_CONFIG=no])]
-)
+         dnl The m4 macro below may be not defined if pkg-config package is not
+         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
+         dnl allows to avoid shell syntax errors in generated configure script
+         dnl by defining a dummy macro in-place.
+         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
+        ])
+])
 AS_IF([test x"$have_PKG_CONFIG" = xno],
     [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
 
@@ -119,8 +126,10 @@ AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl +-------------------------------------------------------------------
 
-AC_PROG_CC
-AC_PROG_CC_C99
+dnl AC_PROG_CC
+dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+dnl Note that NUT does not support building with C89 anyway
+dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
@@ -132,16 +141,65 @@ AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
-dnl Postpone call to AC_PROG_LIBTOOL to allow disabling static lib
+dnl Postpone call to LT_INIT/AC_CONFIG_FILES to allow disabling static lib
 AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
+dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
+NUT_COMPILER_FAMILY
+NUT_COMPILER_FAMILY_FLAGS
+AX_C_PRAGMAS
+AX_C___ATTRIBUTE__
+AX_C_PRINTF_STRING_NULL
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+
+AC_CHECK_HEADER([float.h],
+    [AC_DEFINE([HAVE_FLOAT_H], [1],
+        [Define to 1 if you have <float.h>.])])
+AC_CHECK_HEADER([math.h],
+    [AC_DEFINE([HAVE_MATH_H], [1],
+        [Define to 1 if you have <math.h>.])])
+AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
+[#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+#ifdef HAVE_FLOAT_H
+# include <float.h>
+#endif])
+
+AC_CHECK_HEADER([limits.h],
+    [AC_DEFINE([HAVE_LIMITS_H], [1],
+        [Define to 1 if you have <limits.h>.])])
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
+
+dnl These common routines are not available in strict C standard library
+dnl compilation modes, only in GNU, POSIX or other extension modes:
+AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+The next few tests look for required C library routines; if something is
+not found, you may need to enable a different C standard or extension macro
+version. You may also have to configure without extreme warning levels
+since autotools tests fail those on their own and assume system lacks
+stuff (although note we try to not involve standard -W* flags here).
+-----------------------------------------------------------------------])
+AC_CHECK_FUNCS(strcasecmp strncasecmp,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
+dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
+AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+dnl These routines' arg types differ in strict C standard mode
+dnl from what they use in the modes expected by NUT codebase:
+dnl   bind() :     /usr/include/x86_64-linux-gnu/sys/socket.h:123:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   accept() :   /usr/include/x86_64-linux-gnu/sys/socket.h:243:12: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   connect() :  /usr/include/x86_64-linux-gnu/sys/socket.h:137:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'const struct sockaddr *'
+dnl   sendto() :   /usr/include/x86_64-linux-gnu/sys/socket.h:163:16: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   recvfrom() : /usr/include/x86_64-linux-gnu/bits/socket2.h:64:1: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
 
 AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
@@ -171,15 +229,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 ])
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
-
-
-dnl
-dnl Only use these when compiling with gcc
-dnl
-if ( test "${GCC}" = "yes" )
-then
-  CFLAGS="${CFLAGS} -Wall -Wsign-compare"
-fi
 
 case ${target_os} in
    solaris2* )
@@ -242,8 +291,18 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+dnl All current systems provide time.h; it need not be checked for.
+dnl Not all systems provide sys/time.h, but those that do, all allow
+dnl you to include it and time.h simultaneously.
+dnl NUT codebase provides the include/timehead.h to wrap these nuances.
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+AS_IF([test "$ac_cv_header_sys_time_h" = yes],
+    [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is deemed obsolete by autotools.])
+    ], [])
+
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
+
 
 dnl pthread related checks
 AC_SEARCH_LIBS([pthread_create], [pthread],
@@ -300,6 +359,8 @@ dnl the usual builds can pass by default on systems without asciidoc.
 nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
+NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -346,9 +407,77 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 
 dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_serial}" != "no"; then
-  nut_with_serial="yes"
-fi
+dnl Below we try to detect if we can build serial drivers, and if we must?
+AS_IF([test "${nut_with_serial}" != "no"],
+    [AS_IF([test "${nut_with_serial}" != "yes"],[nut_with_serial="auto"])
+
+    CFLAGS_SAVED_SERIAL="${CFLAGS}"
+    AS_IF([test "${GCC}" = yes],
+        [CFLAGS_SAVED_WERROR="${CFLAGS} -Wall -Werror"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS} -Wno-error"
+        ],
+        [CFLAGS_SAVED_WERROR="${CFLAGS}"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS}"
+        ])
+
+    dnl At least recent *BSD distros have deprecated sys/termios.h and spew
+    dnl warnings that termios.h should be used instead. This is redundantly
+    dnl fatal for pedantic builds where we aim to have no warnings in code.
+    dnl So there AC_CHECK_HEADERS does find the header, but we don't really
+    dnl want to use it unless we have no choice: if there is a warning while
+    dnl trying sys/ version, try the plain header path (without fatal warnings),
+    dnl and only if that is missing - retry with the sys/ version again (and
+    dnl no warnings still).
+
+    CFLAGS="${CFLAGS_SAVED_WERROR}"
+    AC_CHECK_HEADERS(sys/termios.h, [], [
+        CFLAGS="${CFLAGS_SAVED_WNOERROR}"
+        AC_CHECK_HEADERS(termios.h, [], [
+            AC_CHECK_HEADERS(sys/termios.h, [], [], [AC_INCLUDES_DEFAULT])
+            ], [AC_INCLUDES_DEFAULT])
+        ], [AC_INCLUDES_DEFAULT])
+
+    dnl CFLAGS at this point suffice for surviving a compilation with termios.h
+
+    dnl Don't mind the stupid code below, it just probes the tokens and
+    dnl sails around compiler warnings
+    AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if defined(HAVE_SYS_TERMIOS_H)
+#  include <sys/termios.h>      /* for speed_t */
+#else
+# if defined(HAVE_TERMIOS_H)
+#  include <termios.h>
+# endif /* HAVE_TERMIOS_H */
+#endif /* HAVE_SYS_TERMIOS_H */
+void getspeed(speed_t* b) { *b = B19200; }
+],
+[struct termios tio;
+if (!tcgetattr(0, &tio)) { return 1; }
+speed_t baudrate;
+getspeed(&baudrate);
+]
+        )],
+        [AC_MSG_RESULT([ok])
+         nut_have_serial_types=yes
+        ],
+        [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
+         nut_have_serial_types=no
+        ])
+
+        dnl Restore common set-or-discovered CFLAGS
+        CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+        AC_MSG_CHECKING([whether we can build serial drivers])
+        AS_IF([test "${nut_have_serial_types}" = yes],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
+            ])
+        AS_IF([test "${nut_with_serial}" = "yes"],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])])
+    ])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
@@ -440,7 +569,7 @@ NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
 NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
 dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 
-dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipmi}" != "no"; then
    dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
    if test "${nut_with_freeipmi}" = "yes"; then
@@ -536,7 +665,7 @@ if test "${nut_with_linux_i2c}" != no; then
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
-                [nut_with_linux_i2c="no"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -546,7 +675,13 @@ if test "${nut_with_linux_i2c}" != no; then
                  #endif
                 ]
             )
-            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
+            dnl Builds for bitness/arch other than system default can be
+            dnl "compromised" by lack of respective binary library, so
+            dnl even if we have the right headers, ultimate link fails.
+            dnl Note: here we keep the verdict from above, or make it worse.
+            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c], [],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -572,7 +707,7 @@ NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
    if test "${nut_with_nss}" = "yes"; then
@@ -700,16 +835,16 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 DOC_INSTALL_DISTED_MANS=no
 
 case "${nut_with_doc}" in
-	yes|all)
+	yes|all|all=yes)
 		nut_doc_build_list="man html-single html-chunked pdf"
 		;;
-	auto)
+	auto|all=auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
-	skip)
+	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
-	no)
+	no|all=no)
 		nut_doc_build_list=""
 		;;
 dnl If user passed --with-doc='' they they want nothing, right?
@@ -834,7 +969,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
 		if test "${nut_have_asciidoc}" = yes ; then
-			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
 		if test "${can_build_doc_man}" = yes ; then
@@ -897,6 +1032,15 @@ esac
 NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
+# To cater for less portable make's, precalculate the target list
+# for "make check" in "docs/" here...
+DOC_CHECK_LIST=""
+if test "${nut_with_doc}" = yes ; then
+    for V in $DOC_BUILD_LIST ; do
+        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+    done
+fi
+
 WITH_MANS=no
 SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
@@ -918,7 +1062,53 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
 dnl We only init libtool there to allow AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
+if ( test "${GCC}" = "yes" )
+then
+	dnl # Avoid new compilers' warnings/errors about libtool distro flaws in this test like:
+	dnl #   error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+	dnl #   {"nm_test_func", (void *) &nm_test_func},
+	dnl # or ones about LTO (-flto -fno-common) as discussed and suggested
+	dnl # in https://www.mail-archive.com/libtool@gnu.org/msg14037.html -
+	dnl # all leading to undefined "global_symbol_pipe" in the generated
+	dnl # libtool script, and resulting in errors like `... | | ...` below :
+	dnl # libtool: link: /usr/bin/nm -B .libs/upsclient.o \
+	dnl #   ../common/.libs/libcommonclient.a |  | /usr/bin/sed 's/.* //' \
+	dnl #   | sort | uniq > .libs/libupsclient.exp
+	dnl # ../libtool: syntax error: `|' unexpected
+
+	CFLAGS_SAVED_NOPEDANTIC="$CFLAGS"
+	AS_CASE(["${CFLAGS}"],[*"-pedantic"*],[CFLAGS="${CFLAGS} -Wno-pedantic"])
+	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
+	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
+fi
+
+dnl See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+dnl #OBSOLETED:# LT_INIT and AC_PROG_LIBTOOL
+
+dnl # Hack around the libtool script: as of version 58 (current in 2021),
+dnl # they use code like below to detect library paths:
+dnl #   if test yes = "$GCC"; then ... lt_search_path_spec=`$CC -print-search-dirs | ...
+dnl # which explodes when non-default architecture is used for the build,
+dnl # where e.g. "CC=gcc" and "CFLAGS=-m32" on a 64-bit capable system.
+dnl # And similarly for compilation-checks to link third-party libraries.
+SAVED_GCC="$GCC"
+SAVED_CC="$CC"
+if ( test "${GCC}" = "yes" )
+then
+    case "$CFLAGS$LDFLAGS" in
+        *-m32*) CC="$CC -m32" ;;
+        *-m64*) CC="$CC -m64" ;;
+    esac
+fi
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
+GCC="$SAVED_GCC"
+CC="$SAVED_CC"
+
+if ( test "${GCC}" = "yes" )
+then
+	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
+fi
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then
@@ -1298,13 +1488,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-AC_MSG_CHECKING(whether to install systemd files)
+dnl Note: Currently there is no automatic detection enabled -
+dnl users have to ask they want systemd units installed.
+dnl It may be changed based on popular demand to just always
+dnl run the "case" below for ${systemdsystemunitdir} values,
+dnl like we do for systemdtmpfilesdir further below.
+AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1323,14 +1518,52 @@ AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
+AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
 	[systemdshutdowndir=${withval}])
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		;;
+	no)
+		systemdshutdowndir=""
+		;;
+	*)
+		systemdshutdowndir="${withval}"
+		;;
 	esac
+fi
+if test -n "${systemdshutdowndir}"; then
+	AC_MSG_RESULT(using ${systemdshutdowndir})
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
+dnl daemons starting not as systemd units
+AC_MSG_CHECKING([whether to install systemd tmpfiles files])
+AC_ARG_WITH([systemdtmpfilesdir],
+	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
+	[systemdtmpfilesdir=${withval}])
+case "${systemdtmpfilesdir}" in
+	yes|auto|"")
+		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		;;
+	no)
+		systemdtmpfilesdir=""
+		;;
+	*)
+		systemdtmpfilesdir="${withval}"
+		;;
+esac
+if test -n "${systemdtmpfilesdir}"; then
+	AC_MSG_RESULT(using ${systemdtmpfilesdir})
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl
@@ -1365,27 +1598,33 @@ CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
-    [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
-         have_cxx11=yes],
-        [CXXFLAGS="$CXXFLAGS -std=c++0x"
-         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
-             have_cxx11=yes],
-            [AC_MSG_RESULT([no])
-             CXXFLAGS="$my_CXXFLAGS"
-             have_cxx11=no])])])
+    [AS_CASE(["${CXXFLAGS}"],
+        [*"-std="*], [
+            AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
+            have_cxx11=no,
+        ],[
+            CXXFLAGS="$CXXFLAGS -std=c++11"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+                 have_cxx11=yes],
+                [CXXFLAGS="$CXXFLAGS -std=c++0x"
+                 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                    [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+                     have_cxx11=yes],
+                    [AC_MSG_RESULT([no])
+                     CXXFLAGS="$my_CXXFLAGS"
+                     have_cxx11=no])])])])
 AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
 
+AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
     [AS_IF([test x"${have_cxx11}" = xyes],
-        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+        [ifdef([PKG_CHECK_MODULES], [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)], [have_cppunit=no])
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
@@ -1397,6 +1636,69 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
         have_cppunit=no]
 )
+AC_MSG_RESULT(${have_cppunit})
+
+AS_IF([test "${have_cppunit}" = "yes"],
+    [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
+     dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
+     CPLUSPLUS_DECL='
+#include <stdexcept>
+#include <cppunit/extensions/HelperMacros.h>
+#include <cppunit/CompilerOutputter.h>
+#include <cppunit/extensions/TestFactoryRegistry.h>
+#include <cppunit/ui/text/TestRunner.h>
+
+class ExampleTest : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE( ExampleTest );
+    CPPUNIT_TEST( testOne );
+  CPPUNIT_TEST_SUITE_END();
+public:
+  void setUp() {};
+  void tearDown() {};
+  void testOne();
+};
+CPPUNIT_TEST_SUITE_REGISTRATION( ExampleTest );
+void ExampleTest::testOne()
+{
+  int i = 1;
+  float f = 1.0;
+  int cast = static_cast<int>(f);
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+}
+'
+
+     CPLUSPLUS_MAIN='
+CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
+CppUnit::TextUi::TestRunner runner;
+runner.addTest( suite );
+runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(), std::cerr ) );
+bool res = runner.run();
+return res ? 0 : 1;
+'
+
+     my_CXXFLAGS="$CXXFLAGS"
+     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
+     AC_LANG_PUSH([C++])
+     AC_RUN_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [have_cppunit=yes], [have_cppunit=no])
+     CXXFLAGS="$my_CXXFLAGS"
+     AC_LANG_POP([C++])
+     unset CPLUSPLUS_MAIN
+     unset CPLUSPLUS_DECL
+     ])
+AC_MSG_RESULT(${have_cppunit})
+
+dnl # By default keep the originally detected have_cppunit value
+AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
+AC_ARG_ENABLE(cppunit,
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_CASE(["${enableval}"],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["no"], [have_cppunit=no]
+	)])
+AC_MSG_RESULT(${have_cppunit})
+
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
@@ -1711,6 +2013,7 @@ AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
+AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
@@ -1741,11 +2044,142 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
+AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
-AC_OUTPUT([
+dnl Filter through known variants first, so automatic choices can be made.
+dnl Note that clang identifies as gcc-compatible so should be probed first.
+dnl TODO: Flip this default to "hard" when we clear existing codebase.
+dnl Note: the "gcc-legacy" option is intentionally undocumented, it acts as
+dnl least-surprise default if caller did not specify any --enable-warnings.
+nut_warning_difficulty="minimal"
+AC_MSG_CHECKING([whether to pre-set warnings])
+AS_CASE(["${nut_enable_warnings}"],
+    [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
+    [gcc|clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
+    [yes|auto|""], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-${nut_warning_difficulty}"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-${nut_warning_difficulty}"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [hard|auto-hard|auto=hard], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-hard"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-hard"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [medium|auto-medium|auto=medium], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-medium"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-medium"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [minimal|auto-minimal|auto=minimal], [
+        AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-minimal"],
+            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-minimal"], [nut_enable_warnings="all"])
+            ])
+        ],
+    [legacy], [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-legacy"], [nut_enable_warnings="no"])],
+    [AC_MSG_WARN([Unsupported variant for --enable-warnings=${nut_enable_warnings}, ignored])
+     nut_enable_warnings="no"
+    ]
+)
+AC_MSG_RESULT(["${nut_enable_warnings}"])
+
+dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
+dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
+dnl # make a difference.
+dnl # Some of the compiler flags (including those added by pkg-config of some
+dnl # third-party dependency packages) can upset older compiler releases which
+dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
+dnl # "-Wno-unknown-warning-option" for CLANG should take care of that at least
+dnl # for toolkit versions that support these - set in NUT_COMPILER_FAMILY_FLAGS
+dnl # Majority of sanity checks are enabled by "-Wextra" on both GCC and CLANG
+dnl # and "-Weverything" additionally on CLANG. They are impractically picky,
+dnl # especially with fallout from system headers that we can not impact anyway
+dnl # so the "difficulty level" pre-sets exclude certain warning classes from
+dnl # that report.
+dnl ### Special exclusion picks for clang-hard:
+dnl # -Wno-unused-macros -- system headers define a lot of stuff we do not use,
+dnl #    gotta be fatal right?
+dnl # -Wno-reserved-id-macro -- configure script tends to define _GNU_SOURCE_,
+dnl #    __EXTENSIONS__ etc. which are underscored and reserved for compilers
+dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
+dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
+dnl #    as requested by newer linters, and C++98 does not. We require C++11
+dnl #    or newer anyway, and skip building C++ library and test otherwise.
+dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
+dnl # -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion
+dnl #    -- reduce noise due to floating-point literals like "3.14" being a C
+dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
+dnl #    float variables. Also variadic functions like printf() cast their
+dnl #    floating-point arguments into double (and small integer types into
+dnl #    "int") which then confuses pedantic checks of printf("%f", floatval).
+AS_CASE(["${nut_enable_warnings}"],
+    [all], [
+        CFLAGS="${CFLAGS} -Wall"
+        CXXFLAGS="${CXXFLAGS} -Wall"
+        ],
+    [clang-hard], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        ],
+    [clang-medium], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        ],
+    [clang-minimal], [
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        ],
+    [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
+    [gcc-minimal|gcc-medium|gcc-hard], [
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
+        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        ]
+)
+
+AC_MSG_CHECKING([whether to make warnings fatal])
+AS_CASE(["${nut_enable_Werror}"],
+    [yes|auto], [
+        CFLAGS="${CFLAGS} -Werror"
+        CXXFLAGS="${CXXFLAGS} -Werror"
+        ],
+    [no], [
+        CFLAGS="${CFLAGS} -Wno-error"
+        CXXFLAGS="${CXXFLAGS} -Wno-error"
+        ]
+)
+AC_MSG_RESULT(["${nut_enable_Werror}"])
+
+dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
+NUT_POP_WARNINGS
+
+dnl Due to possibly repetitive content, generate unique settings:
+AS_IF([test -n "$systemdtmpfilesdir"],
+    [cat > scripts/systemd/nut-common.tmpfiles.in << EOF
+# State file (e.g. upsd to driver) and pidfile location for NUT:
+d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@/nut
+EOF
+    AS_IF([test "$STATEPATH" != "$PIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@/nut
+EOF])
+    AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
+        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@/nut
+EOF])
+])
+
+AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
@@ -1756,6 +2190,7 @@ AC_OUTPUT([
  data/Makefile
  data/driver.list
  docs/Makefile
+ docs/cables/Makefile
  docs/docinfo.xml
  docs/man/Makefile
  drivers/Makefile
@@ -1763,6 +2198,7 @@ AC_OUTPUT([
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile
  scripts/Aix/nut-aix.spec
@@ -1788,6 +2224,7 @@ AC_OUTPUT([
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
+ scripts/systemd/nut-common.tmpfiles
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
@@ -1812,6 +2249,7 @@ AC_OUTPUT([
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
+ scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
  server/Makefile
@@ -1820,5 +2258,6 @@ AC_OUTPUT([
  tests/Makefile
  Makefile
 ])
+AC_OUTPUT
 
 NUT_PRINT_FEATURE_REPORT

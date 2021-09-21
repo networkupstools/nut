@@ -1,5 +1,10 @@
 /* bestups.c - model specific routines for Best-UPS Fortress models
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
    ID config option by Jason White <jdwhite@jdwhite.org>
@@ -122,7 +127,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -142,7 +147,7 @@ static int get_ident(char *buf, size_t bufsize)
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rID\r");
 
-		ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "", 
+		ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret > 0)
@@ -210,7 +215,7 @@ static void ups_ident(void)
 	if ((!model) || (!rating)) {
 		fatalx(EXIT_FAILURE, "Didn't get a valid ident string");
 	}
-	
+
 	model_set(model, rating);
 
 	/* Battery voltage multiplier */
@@ -245,7 +250,7 @@ static void ups_sync(void)
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
 
-		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "", 
+		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
 		/* return once we get something that looks usable */
@@ -263,7 +268,7 @@ void upsdrv_initinfo(void)
 	ups_sync();
 	ups_ident();
 
-	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"), 
+	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"),
 		dstate_getinfo("ups.model"), device_path);
 
 	/* paranoia - cancel any shutdown that might already be running */
@@ -283,7 +288,7 @@ static int ups_on_line(void)
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
 
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "", 
+		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
 		/* Q1 must return 46 bytes starting with a ( */
@@ -303,7 +308,7 @@ static int ups_on_line(void)
 	upslogx(LOG_ERR, "Status read failed: assuming on battery");
 
 	return 0;	/* on battery */
-}	
+}
 
 void upsdrv_shutdown(void)
 {
@@ -319,7 +324,7 @@ void upsdrv_shutdown(void)
 
 void upsdrv_updateinfo(void)
 {
-	char	involt[16], outvolt[16], loadpct[16], acfreq[16], 
+	char	involt[16], outvolt[16], loadpct[16], acfreq[16],
 		battvolt[16], upstemp[16], pstat[16], buf[256];
 	float	bvoltp;
 	int	ret;
@@ -335,7 +340,7 @@ void upsdrv_updateinfo(void)
 	/* these things need a long time to respond completely */
 	usleep(200000);
 
-	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "", 
+	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if (ret < 1) {
@@ -366,7 +371,7 @@ void upsdrv_updateinfo(void)
 
 	ser_comm_good();
 
-	sscanf(buf, "%*c%s %*s %s %s %s %s %s %s", involt, outvolt, 
+	sscanf(buf, "%*c%s %*s %s %s %s %s %s %s", involt, outvolt,
 		loadpct, acfreq, battvolt, upstemp, pstat);
 
 	/* Guesstimation of battery charge left (inaccurate) */

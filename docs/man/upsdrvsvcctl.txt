@@ -1,4 +1,4 @@
-UPSDRVSVCCTL(8) 
+UPSDRVSVCCTL(8)
 ===============
 
 NAME

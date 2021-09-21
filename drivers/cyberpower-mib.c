@@ -1,7 +1,7 @@
 /*  cyberpower-mib.c - data to monitor Cyberpower RMCARD
  *
  *  Copyright (C) 2010 - Eric Schultz <paradxum@mentaljynx.com>
- *  
+ *
  *  derived (i.e. basically copied and modified) of bestpower by:
  *  Copyright (C) 2010 - Arnaud Quette <arnaud.quette@free.fr>
  *
@@ -24,41 +24,41 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.2"
+#define CYBERPOWER_MIB_VERSION		"0.3"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL" },
-	{ 3, "OB" },
-	{ 4, "OL BOOST" },
-	{ 5, "OFF" },
-	{ 7, "OL" },
-	{ 1, "NULL" },
-	{ 6, "OFF" },
-	{ 0, NULL }
+	{ 2, "OL", NULL, NULL },
+	{ 3, "OB", NULL, NULL },
+	{ 4, "OL BOOST", NULL, NULL },
+	{ 5, "OFF", NULL, NULL },
+	{ 7, "OL", NULL, NULL },
+	{ 1, "NULL", NULL, NULL },
+	{ 6, "OFF", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 } ;
 
 static info_lkp_t cyberpower_battery_status[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" },	/* batteryLow */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "", NULL, NULL },	/* batteryNormal */
+	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 0, NULL, NULL, NULL }
 } ;
 
 static info_lkp_t cyberpower_cal_status[] = {
-	{ 1, "" },          /* Calibration Successful */
-	{ 2, "" },          /* Calibration Invalid */
-	{ 3, "CAL" },       /* Calibration in progress */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },          /* Calibration Successful */
+	{ 2, "", NULL, NULL },          /* Calibration Invalid */
+	{ 3, "CAL", NULL, NULL },       /* Calibration in progress */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t cyberpower_battrepl_status[] = {
-	{ 1, "" },          /* No battery needs replacing */
-	{ 2, "RB" },        /* Batteries need to be replaced */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },          /* No battery needs replacing */
+	{ 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for CyberPower MIB */
@@ -97,11 +97,21 @@ static snmp_info_t cyberpower_mib[] = {
 	 * UPS has switched to battery power */
 	{ "battery.runtime.elapsed", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.1.2.0", "",
 		0, NULL },
+	/* Different generations/models reported "battery.voltage" by different OIDs: */
+	{ "battery.voltage", 0, 0.1, ".1.3.6.1.2.1.33.1.2.5.0", "",
+		0, NULL },
 	{ "battery.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.2.2.2.0", "",
+		0, NULL },
+	{ "battery.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.8.0", "",
+		0, NULL },
+	/* Different generations/models reported "battery.current" by different OIDs: */
+	{ "battery.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.4.0", "",
 		0, NULL },
 	{ "battery.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.2.2.7.0", "",
 		0, NULL },
 	{ "battery.charge", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.1.0", "",
+		0, NULL },
+	{ "battery.temperature", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.3.0", "",
 		0, NULL },
 
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.3.2.1.0", "",
@@ -110,6 +120,10 @@ static snmp_info_t cyberpower_mib[] = {
 		0, NULL },
 
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
+		0, NULL },
+	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.2.0", "",
+		0, NULL },
+	{ "output.current", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.4.0", "",
 		0, NULL },
 
 	/* Delays affecting instant commands */
@@ -147,4 +161,4 @@ static snmp_info_t cyberpower_mib[] = {
 } ;
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
-	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID };
+	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID, NULL };

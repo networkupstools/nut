@@ -38,12 +38,12 @@
 #define DO_ON		"1"
 #define DO_CYCLE	"2"
 
-static info_lkp_t outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+static info_lkp_t raritan_pdu_outlet_status_info[] = {
+	{ -1, "error", NULL, NULL },
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "cycling", NULL, NULL }, /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for Raritan MIB */
@@ -91,7 +91,7 @@ static snmp_info_t raritan_mib[] = {
 	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL },
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.1.2.2.1.2.%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0] },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", NULL, SU_FLAG_OK | SU_OUTLET, &raritan_pdu_outlet_status_info[0] },
 	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.13742.1.2.2.1.4.%i", NULL, SU_OUTLET, NULL },
 	{ "outlet.%i.current.maximum", 0, 0.001, ".1.3.6.1.4.1.13742.1.2.2.1.5.%i", NULL, SU_OUTLET, NULL },
 	{ "outlet.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.13742.1.2.2.1.7.%i", NULL, SU_OUTLET, NULL },
@@ -121,4 +121,4 @@ static snmp_info_t raritan_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID };
+mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID, NULL };

@@ -86,4 +86,4 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 };
 
 
-mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_GENESIS2_MIB_VERSION, NULL, APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID };
+mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_GENESIS2_MIB_VERSION, NULL, APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID, NULL };

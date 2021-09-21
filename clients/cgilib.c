@@ -46,9 +46,12 @@ static char *unescape(char *buf)
 			hex[1] = buf[++i];
 			hex[2] = '\0';
 			if (!isxdigit((unsigned char) hex[0])
-				|| !isxdigit((unsigned char) hex[0]))
+				|| !isxdigit((unsigned char) hex[1]))
 				fatalx(EXIT_FAILURE, "bad escape char");
-			ch = strtol(hex, NULL, 16);
+			long l = strtol(hex, NULL, 16);
+			assert(l>=0);
+			assert(l<=255);
+			ch = (char)l;	/* FIXME: Loophole about non-ASCII symbols in top 128 values, or negatives for signed char... */
 
 			if ((ch == 10) || (ch == 13))
 				ch = ' ';
@@ -89,7 +92,7 @@ void extractcgiargs(void)
 
 			continue;
 		}
-		
+
 		*eq = '\0';
 		value = eq + 1;
 		amp = strchr(value, '&');
@@ -101,7 +104,7 @@ void extractcgiargs(void)
 			ptr = NULL;
 
 		cleanvar = unescape(varname);
-		cleanval = unescape(value);	
+		cleanval = unescape(value);
 		parsearg(cleanvar, cleanval);
 		free(cleanvar);
 		free(cleanval);
@@ -199,4 +202,4 @@ int checkhost(const char *host, char **desc)
 	pconf_finish(&ctx);
 
 	return 0;	/* not found: access denied */
-}	
+}

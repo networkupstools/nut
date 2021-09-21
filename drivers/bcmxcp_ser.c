@@ -1,8 +1,9 @@
 #include "main.h"
 #include "bcmxcp.h"
 #include "bcmxcp_io.h"
+#include "bcmxcp_ser.h"
 #include "serial.h"
-
+#include "nut_stdint.h"
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
 #define SUBDRIVER_VERSION "0.20"
@@ -18,10 +19,8 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define PW_MAX_BAUD 5
 
-struct pw_baud_rate {
-	int rate;
-	int name;
-} pw_baud_rates[] = {
+/* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
+pw_baud_rate_t pw_baud_rates[] = {
 	{ B19200, 19200 },
 	{ B9600,  9600 },
 	{ B4800,  4800 },
@@ -31,12 +30,19 @@ struct pw_baud_rate {
 	{ 0,  0 }
 };
 
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Autorisation command */
+/* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
+unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
-static void send_command(unsigned char *command, int command_length)
+static void send_command(unsigned char *command, size_t command_length)
 {
-	int retry = 0, sent;
-	unsigned char sbuf[128];
+	int retry = 0;
+	ssize_t sent;
+	unsigned char sbuf[1024];
+
+	if (command_length > UCHAR_MAX) {
+		upsdebugx (3, "%s: ERROR: command_length too long for the character protocol", __func__);
+		return;
+	}
 
 	/* Prepare the send buffer */
 	sbuf[0] = PW_COMMAND_START_BYTE;
@@ -59,7 +65,12 @@ static void send_command(unsigned char *command, int command_length)
 
 		sent = ser_send_buf(upsfd, sbuf, command_length);
 
-		if (sent == command_length) {
+		if (sent < 0) {
+			upslogx(LOG_ERR, "%s(): error reading from ser_send_buf()", __func__);
+			return;
+		}
+
+		if ((size_t)sent == command_length) {
 			return;
 		}
 	}
@@ -70,7 +81,7 @@ void send_read_command(unsigned char command)
 	send_command(&command, 1);
 }
 
-void send_write_command(unsigned char *command, int command_length)
+void send_write_command(unsigned char *command, size_t command_length)
 {
 	send_command(command, command_length);
 }
@@ -79,7 +90,8 @@ void send_write_command(unsigned char *command, int command_length)
 int get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char	my_buf[128]; /* packet has a maximum length of 121+5 bytes */
-	int		length, end_length = 0, res, endblock = 0, start = 0;
+	int		res;
+	size_t	length, end_length = 0, endblock = 0, start = 0;
 	unsigned char	block_number, sequence, pre_sequence = 0;
 
 	while (endblock != 1){
@@ -96,7 +108,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			start++;
 
 		} while ((my_buf[0] != PW_COMMAND_START_BYTE) && (start < 128));
-		
+
 		if (start == 128) {
 			ser_comm_fail("Receive error (PW_COMMAND_START_BYTE): packet not on start!!%x\n", my_buf[0]);
 			return -1;
@@ -142,7 +154,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		length = (unsigned char)my_buf[2];
 
 		if (length < 1) {
-			ser_comm_fail("Receive error (length): packet length %x!!!\n", length);
+			ser_comm_fail("Receive error (length): packet length %zx!!!\n", length);
 			return -1;
 		}
 
@@ -167,11 +179,15 @@ int get_answer(unsigned char *data, unsigned char command)
 
 		pre_sequence = sequence;
 
-		/* Try to read all the remainig bytes */
+		/* Try to read all the remaining bytes */
 		res = ser_get_buf_len(upsfd, my_buf+4, length, 1, 0);
+		if (res < 0) {
+			ser_comm_fail("%s(): ser_get_buf_len() returned error code %d", __func__, res);
+			return res;
+		}
 
-		if (res != length) {
-			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, length);
+		if ((size_t)res != length) {
+			ser_comm_fail("Receive error (data): got %d bytes instead of %zu!!!\n", res, length);
 			return -1;
 		}
 
@@ -197,10 +213,11 @@ int get_answer(unsigned char *data, unsigned char command)
 	upsdebug_hex (5, "get_answer", data, end_length);
 	ser_comm_good();
 
-	return end_length;
+	assert(end_length < INT_MAX);
+	return (int)end_length;
 }
 
-static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
+static int command_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
 	int bytes_read, retry = 0;
 
@@ -237,7 +254,7 @@ int command_read_sequence(unsigned char command, unsigned char *answer)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
+int command_write_sequence(unsigned char *command, size_t command_length, unsigned	char *answer)
 {
 	int bytes_read;
 
@@ -255,17 +272,65 @@ void upsdrv_comm_good()
 	ser_comm_good();
 }
 
-void pw_comm_setup(const char *port)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+static void pw_comm_setup(const char *port)
 {
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
 	unsigned char id_command = PW_ID_BLOCK_REQ;
 	unsigned char answer[256];
-	int i = 0, baud, mybaud = 0, ret = -1;
+	int i = 0, ret = -1;
+	speed_t mybaud = 0, baud;
 
 	if (getval("baud_rate") != NULL)
 	{
-		baud = atoi(getval("baud_rate"));
-		
+		int br = atoi(getval("baud_rate"));
+		/* Note that atoi() behavior on erroneous input is undefined */
+		if (br < 0) {
+			upslogx(LOG_ERR, "baud_rate option is invalid");
+			return;
+		}
+
+		/* FIXME: speed_t does not define a SPEED_MAX value nor
+		 * guarantee that it is an int (just a typedef from
+		 * termios.h happens to say that on some systems)...
+		 * But since we convert this setting from int, we assume...
+		 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		switch(sizeof(speed_t)) {
+			case 8:	assert (br < INT64_MAX); break;
+			case 4:	assert (br < INT32_MAX); break;
+			case 2:	assert (br < INT16_MAX); break;
+			default:	assert (br < INT_MAX);
+		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		baud = (speed_t)br;
+
 		for(i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
 				mybaud = pw_baud_rates[i].rate;
@@ -289,11 +354,14 @@ void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, baud);
+			/* Cast baud into max length unsigned, despite the POSIX
+			 * standard some systems vary in definition of this type
+			 */
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 			return;
 		}
 
-		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %d", port, baud);
+		upslogx(LOG_ERR, "No response from UPS on %s with baudrate %llu", port, (unsigned long long int)baud);
 	}
 
 	upslogx(LOG_INFO, "Attempting to autodect baudrate");
@@ -312,15 +380,18 @@ void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 			return;
 		}
 
-		upsdebugx(2, "No response from UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
+		upsdebugx(2, "No response from UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
 	}
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void upsdrv_initups(void)
 {

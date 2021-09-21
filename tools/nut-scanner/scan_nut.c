@@ -52,7 +52,8 @@ struct scan_nut_arg {
 	long timeout;
 };
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
@@ -177,24 +178,22 @@ static void * list_nut_devices(void * arg)
 		/* FIXME:
 		 * - also print answer[2] if != "Unavailable"?
 		 * - for upsmon.conf or ups.conf (using dummy-ups)? */
-		if (numa >= 3) {
-			dev = nutscan_new_device();
-			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
-			/* +1+1 is for '@' character and terminating 0 */
-			buf_size = strlen(answer[1])+strlen(hostname)+1+1;
-			dev->port = malloc(buf_size);
-			if( dev->port ) {
-				snprintf(dev->port,buf_size,"%s@%s",answer[1],
-						hostname);
+		dev = nutscan_new_device();
+		dev->type = TYPE_NUT;
+		dev->driver = strdup("nutclient");
+		/* +1+1 is for '@' character and terminating 0 */
+		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+		dev->port = malloc(buf_size);
+		if( dev->port ) {
+			snprintf(dev->port,buf_size,"%s@%s",answer[1],
+					hostname);
 #ifdef HAVE_PTHREAD
-				pthread_mutex_lock(&dev_mutex);
+			pthread_mutex_lock(&dev_mutex);
 #endif
-				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 #ifdef HAVE_PTHREAD
-				pthread_mutex_unlock(&dev_mutex);
+			pthread_mutex_unlock(&dev_mutex);
 #endif
-			}
 
 		}
 	}
@@ -224,16 +223,23 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-        if( !nutscan_avail_nut ) {
-                return NULL;
-        }
+	if( !nutscan_avail_nut ) {
+		return NULL;
+	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 		if( oldact.sa_handler == SIG_DFL ) {
 			change_action_handler = 1;
-			signal(SIGPIPE,SIG_IGN);
+			signal(SIGPIPE, SIG_IGN);
 		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
@@ -291,7 +297,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 
 	if(change_action_handler) {
-		signal(SIGPIPE,SIG_DFL);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
+		signal(SIGPIPE, SIG_DFL);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	return nutscan_rewind_device(dev_ret);

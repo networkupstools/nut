@@ -28,7 +28,7 @@
 
 #include "netinstcmd.h"
 
-static void send_instcmd(nut_ctype_t *client, const char *upsname, 
+static void send_instcmd(nut_ctype_t *client, const char *upsname,
 	const char *cmdname, const char *value, const char *tracking_id)
 {
 	int	found, have_tracking_id = 0;
@@ -108,7 +108,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		sendback(client, "OK\n");
 }
 
-void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
+void net_instcmd(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	const char *devname = NULL;
 	const char *cmdname = NULL;

@@ -1,6 +1,11 @@
 # Network UPS Tools: clients
 EXTRA_DIST =
 
+# nutclient.cpp for some legacy reason (maybe initial detached development?)
+# optionally includes "common.h" with the NUT build setup - and this option
+# was never triggered in fact, not until pushed through command line like this:
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
+
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
@@ -24,9 +29,10 @@ sbin_PROGRAMS = upsmon upssched
 lib_LTLIBRARIES = libupsclient.la
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
+  lib_LTLIBRARIES += libnutclientstub.la
 endif
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
+ include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h nutclientmem.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
@@ -67,6 +73,18 @@ if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
+# Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
+# which is defined for in-tree CXX builds above:
+libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 else
 EXTRA_DIST += nutclient.h nutclient.cpp
+endif
+
+if HAVE_CXX11
+# libnutclientstub version information and build
+libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
+libnutclientstub_la_LDFLAGS = -version-info 1:0:0
+libnutclientstub_la_LIBADD = libnutclient.la
+else
+EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif

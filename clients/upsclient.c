@@ -75,7 +75,7 @@
 #define shutdown_how 2
 #endif
 
-struct {
+static struct {
 	int	flags;
 	const	char	*str;
 } upscli_errlist[] =
@@ -131,7 +131,7 @@ typedef struct HOST_CERT_s {
 	const char	*certname;
 	int			certverify;
 	int			forcessl;
-	
+
 	struct HOST_CERT_s	*next;
 }	HOST_CERT_t;
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
@@ -153,7 +153,7 @@ static char* nsscertpasswd = NULL;
 
 static void ssl_debug(void)
 {
-	int	e;
+	unsigned long	e;
 	char	errmsg[SMALLBUF];
 
 	while ((e = ERR_get_error()) != 0) {
@@ -196,9 +196,12 @@ static int ssl_error(SSL *ssl, int ret)
 
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
-static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
+static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	NUT_UNUSED_VARIABLE(retry);
+	NUT_UNUSED_VARIABLE(arg);
+
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot), nsscertpasswd?"":"not ");
 	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
@@ -233,6 +236,10 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 	PRBool checksig, PRBool isServer)
 {
 	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(checksig);
+	NUT_UNUSED_VARIABLE(isServer);
+
 	upslogx(LOG_INFO, "Do not intend to authenticate server %s",
 		ups?ups->host:"<unnamed>");
 	return SECSuccess;
@@ -241,6 +248,8 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 {
 	HOST_CERT_t* cert;
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->host)?arg->host:"<unnamed>");
 	/* BadCertHandler is called when the NSS certificate validation is failed.
@@ -288,27 +297,35 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 
 static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_INFO, "SSL handshake done successfully with server %s",
 		client_data->host);
 }
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-int upscli_init(int certverify, const char *certpath, 
+int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certpasswd);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
+#else
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(certpath);
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
-
 
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
 		return -1;
 	}
-	
+
 #ifdef WITH_OPENSSL
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -324,7 +341,7 @@ int upscli_init(int certverify, const char *certpath,
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
-	
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	/* set minimum protocol TLSv1 */
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
@@ -358,13 +375,13 @@ int upscli_init(int certverify, const char *certpath,
 			return -1;
 		}
 
-		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);		
+		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
 	}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-	
+
 	PK11_SetPasswordFunc(nss_password_callback);
-	
+
 	if (certpath) {
 		upslogx(LOG_INFO, "Init SSL with cerificate database located at %s", certpath);
 		status = NSS_Init(certpath);
@@ -377,16 +394,16 @@ int upscli_init(int certverify, const char *certpath,
 		nss_error("upscli_init / NSS_[NoDB]_Init");
 		return -1;
 	}
-	
+
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
 		nss_error("upscli_init / NSS_SetDomesticPolicy");
 		return -1;
 	}
-	
+
 	SSL_ClearSessionCache();
-	
+
 	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable SSLv3");
@@ -412,8 +429,13 @@ int upscli_init(int certverify, const char *certpath,
 		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
+#else
+	/* Note: historically we do not return with error here,
+	 * just fall through to below and treat as initialized.
+	 */
+	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 #endif /* WITH_OPENSSL | WITH_NSS */
-	
+
 	upscli_initialized = 1;
 	return 1;
 }
@@ -428,6 +450,11 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 	cert->certverify = certverify;
 	cert->forcessl = forcessl;
 	first_host_cert = cert;
+#else
+	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(forcessl);
 #endif /* WITH_NSS */
 }
 
@@ -443,6 +470,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 			cert = cert->next;
 		}
 	}
+#else
+	NUT_UNUSED_VARIABLE(hostname);
 #endif /* WITH_NSS */
 	return NULL;
 }
@@ -457,7 +486,7 @@ int upscli_cleanup(void)
 
 #endif /* WITH_OPENSSL */
 
-#ifdef WITH_NSS	
+#ifdef WITH_NSS
 	/* Called to force cache clearing to prevent NSS shutdown failures.
 	 * http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslfnc.html#1138601
 	 */
@@ -470,7 +499,7 @@ int upscli_cleanup(void)
 	 */
 	PL_ArenaFinish();
 #endif /* WITH_NSS */
-	
+
 	upscli_initialized = 0;
 	return 1;
 }
@@ -480,6 +509,16 @@ const char *upscli_strerror(UPSCONN_t *ups)
 #ifdef WITH_OPENSSL
 	unsigned long	err;
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
+#endif
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
 	if (!ups) {
@@ -522,12 +561,12 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		if (PR_GetErrorTextLength() < UPSCLI_ERRBUF_LEN) {
 			PR_GetErrorText(ups->errbuf);
 		} else {
-			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
+			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
 				"SSL error #%ld, message too long to be displayed",
 				(long)PR_GetError());
 		}
 #else
-		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
+		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
 			"SSL error, but SSL wasn't enabled at compile-time");
 #endif	/* WITH_OPENSSL | WITH_NSS */
 		return ups->errbuf;
@@ -538,6 +577,10 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			ups->pc_ctx.errmsg);
 		return ups->errbuf;
 	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	/* fallthrough */
 
@@ -550,9 +593,9 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
-	int		ret;
+	ssize_t		ret;
 	fd_set		fds;
 	struct timeval	tv;
 
@@ -571,17 +614,37 @@ static int upscli_select_read(const int fd, void *buf, const size_t buflen, cons
 	return read(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
-static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_read(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_read(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Read(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Read(ups->ssl, buf, (PRInt32)buflen);
 #endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
@@ -607,13 +670,16 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeo
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
-	int		ret;
+	ssize_t		ret;
 	fd_set		fds;
 	struct timeval	tv;
 
@@ -632,17 +698,37 @@ static int upscli_select_write(const int fd, const void *buf, const size_t bufle
 	return write(fd, buf, buflen);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* internal: abstract the SSL calls for the other functions */
-static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
 {
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
-		ret = SSL_write(ups->ssl, buf, buflen);
+		/* SSL_* routines deal with int type for return and buflen
+		 * We might need to window our I/O if we exceed 2GB (in
+		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
+		 * but smaller systems with 16-bits might be endangered :)
+		 */
+		assert(buflen <= INT_MAX);
+		int iret = SSL_write(ups->ssl, buf, (int)buflen);
+		assert(iret <= SSIZE_MAX);
+		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		ret = PR_Write(ups->ssl, buf, buflen);
+		/* PR_* routines deal in PRInt32 type
+		 * We might need to window our I/O if we exceed 2GB :) */
+		assert(buflen <= PR_INT32_MAX);
+		ret = PR_Write(ups->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
@@ -668,6 +754,9 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned in
 
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 
 #ifdef WITH_SSL
@@ -675,7 +764,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned in
 /*
  * 1 : OK
  * -1 : ERROR
- * 0 : SSL NOT SUPPORTED 
+ * 0 : SSL NOT SUPPORTED
  */
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
@@ -684,7 +773,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 	PRFileDesc	*socket;
-	HOST_CERT_t *cert; 
+	HOST_CERT_t *cert;
 #endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
@@ -696,7 +785,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			"force initialisation without SSL configuration");
 		upscli_init(0, NULL, NULL, NULL);
 	}
-	
+
 	/* see if upsd even talks SSL/TLS */
 	snprintf(buf, sizeof(buf), "STARTTLS\n");
 
@@ -713,7 +802,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	/* upsd is happy, so let's crank up the client */
-	
+
 #ifdef WITH_OPENSSL
 
 	if (!ssl_ctx) {
@@ -752,7 +841,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		upslog_with_errno(1, "Unknown return value from SSL_connect %d", res);
 		ssl_error(ups->ssl, res);
 		return -1;
-	}	
+	}
 
 	return 1;
 
@@ -769,12 +858,12 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		nss_error("upscli_sslinit / SSL_ImportFD");
 		return -1;
 	}
-	
+
 	if (SSL_SetPKCS11PinArg(ups->ssl, ups) == -1){
 		nss_error("upscli_sslinit / SSL_SetPKCS11PinArg");
 		return -1;
 	}
-	
+
 	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
 			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
@@ -786,19 +875,19 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		nss_error("upscli_sslinit / SSL_AuthCertificateHook");
 		return -1;
 	}
-	
+
 	status = SSL_BadCertHook(ups->ssl, (SSLBadCertHandler)BadCertHandler, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_BadCertHook");
 		return -1;
 	}
-	
+
 	status = SSL_GetClientAuthDataHook(ups->ssl, (SSLGetClientAuthData)GetClientAuthData, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_GetClientAuthDataHook");
 		return -1;
 	}
-	
+
 	status = SSL_HandshakeCallback(ups->ssl, (SSLHandshakeCallback)HandshakeCallback, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_HandshakeCallback");
@@ -835,9 +924,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		/* TODO : Close the connection. */
 		return -1;
 	}
-	
+
 	return 1;
-	
+
 #endif /* WITH_OPENSSL | WITH_NSS */
 }
 
@@ -845,6 +934,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
 	return 0;	/* not supported */
 }
 
@@ -1010,7 +1102,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	ups->port = port;
 
 	hostcert = upscli_find_host_cert(host);
-	
+
 	if (hostcert != NULL) {
 		/* An host security rule is specified. */
 		certverify	= hostcert->certverify;
@@ -1020,7 +1112,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		forcessl	= (flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0;
 	}
 	tryssl = (flags & UPSCLI_CONN_TRYSSL) != 0 ? 1 : 0;
-	
+
 	if (tryssl || forcessl) {
 		ret = upscli_sslinit(ups, certverify);
 		if (forcessl && ret != 1) {
@@ -1048,7 +1140,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 			}
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -1063,7 +1155,7 @@ static struct {
 	const	char	*text;
 }	upsd_errlist[] =
 {
-	{ UPSCLI_ERR_VARNOTSUPP,	"VAR-NOT-SUPPORTED"	},	
+	{ UPSCLI_ERR_VARNOTSUPP,	"VAR-NOT-SUPPORTED"	},
 	{ UPSCLI_ERR_UNKNOWNUPS,	"UNKNOWN-UPS"		},
 	{ UPSCLI_ERR_ACCESSDENIED, 	"ACCESS-DENIED"		},
 	{ UPSCLI_ERR_PWDREQUIRED,	"PASSWORD-REQUIRED"	},
@@ -1088,7 +1180,7 @@ static struct {
 	{ UPSCLI_ERR_INVPASSWORD,	"INVALID-PASSWORD"	},
 	{ UPSCLI_ERR_USERREQUIRED,	"USERNAME-REQUIRED"	},
 	{ UPSCLI_ERR_DRVNOTCONN,	"DRIVER-NOT-CONNECTED"	},
-	
+
 	{ 0,			NULL,		}
 };
 
@@ -1125,9 +1217,9 @@ static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 }
 
 static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
-	int numarg, const char **arg)
+	size_t numarg, const char **arg)
 {
-	int	i;
+	size_t	i;
 	size_t	len;
 	char	enc[UPSCLI_NETBUF_LEN];
 	const char	*format;
@@ -1147,8 +1239,20 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 		/* snprintfcat would tie us to common */
 
 		len = strlen(buf);
-		snprintf(buf + len, bufsize - len, format, 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		snprintf(buf + len, bufsize - len, format,
 			pconf_encode(arg[i], enc, sizeof(enc)));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	len = strlen(buf);
@@ -1156,9 +1260,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 }
 
 /* make sure upsd is giving us what we asked for */
-static int verify_resp(int num, const char **q, char **a)
+static int verify_resp(unsigned int num, const char **q, char **a)
 {
-	int	i;
+	unsigned int	i;
 
 	for (i = 0; i < num; i++) {
 		if (strcasecmp(q[i], a[i]) != 0) {
@@ -1171,11 +1275,11 @@ static int verify_resp(int num, const char **q, char **a)
 	return 1;	/* OK */
 }
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
+int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 		unsigned int *numa, char ***answer)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
-	
+
 	if (!ups) {
 		return -1;
 	}
@@ -1282,7 +1386,7 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 	return 0;
 }
 
-int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query, 
+int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 		unsigned int *numa, char ***answer)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
@@ -1331,9 +1435,9 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
 {
-	int	ret;
+	ssize_t	ret;
 
 	if (!ups) {
 		return -1;
@@ -1364,14 +1468,14 @@ int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsi
 	return 0;
 }
 
-int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
+ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
 {
-	int	ret;
+	ssize_t	ret;
 	size_t	recv;
 
 	if (!ups) {
@@ -1404,7 +1508,10 @@ int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned i
 				return -1;
 			}
 
-			ups->readlen = ret;
+			/* Here ret is safe to cast since it is >=1 and certainly
+			 * fits under SIZE_MAX being it signed sibling
+			 */
+			ups->readlen = (size_t)ret;
 			ups->readidx = 0;
 		}
 
@@ -1419,7 +1526,7 @@ int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned i
 	return 0;
 }
 
-int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
+ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	return upscli_readline_timeout(ups, buf, buflen, DEFAULT_NETWORK_TIMEOUT);
 }

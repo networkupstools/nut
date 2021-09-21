@@ -35,8 +35,28 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-/* Depends on i2c-dev.h, Linux only */
-#include <linux/i2c-dev.h>
+
+/* Depends on i2c-dev.h, Linux only
+ * Linux I2C userland is a bit of a mess until distros refresh to
+ * the i2c-tools 4.x release that profides i2c/smbus.h for userspace
+ * instead of (re)using linux/i2c-dev.h, which conflicts with a
+ * kernel header of the same name.
+ *
+ * See:
+ * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4
+ */
+#if HAVE_LINUX_SMBUS_H
+#	include <i2c/smbus.h>
+#endif
+#if HAVE_LINUX_I2C_DEV_H
+#	include <linux/i2c-dev.h> /* for I2C_SLAVE */
+# if !HAVE_LINUX_SMBUS_H
+#  ifndef I2C_FUNC_I2C
+#	include <linux/i2c.h>
+#  endif
+# endif
+#endif
+
 #include <sys/ioctl.h>
 
 #ifndef __STR__
@@ -60,7 +80,7 @@
 
 #define ACCESS_DEVICE(fd, address) \
 	if (ioctl(fd, I2C_SLAVE, address) < 0) { \
-		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to slave 0x%02X", address); \
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to i2c slave 0x%02X", address); \
 	}
 
 static unsigned long lb_threshold = LOW_BATTERY_THRESHOLD;
@@ -246,7 +266,7 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	status_set(online ? "OL" : "OB");
-	if (!discharging & !fully_charged)
+	if (!discharging && !fully_charged)
 		status_set("CHRG");
 	else if (discharging && current < 0)
 		status_set("DISCHRG");

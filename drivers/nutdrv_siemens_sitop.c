@@ -53,7 +53,7 @@
 
 #include "main.h"
 #include "serial.h"
-#include "limits.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
 #define DRIVER_VERSION	"0.02"
@@ -180,7 +180,7 @@ static int instcmd(const char *cmdname, const char *extra) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -143,6 +143,10 @@ function do_stuff(void)
 At this point NUT is expected to work correctly when built with a C99
 (or GNU99 on Linux) or newer standard.
 
+See the `.travis.yml` file in project sources for detailed matrix of
+`CFLAGS` and compiler versions currently known to work or to not (yet)
+work on operating systems available to that CI solution.
+
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
 If somebody in the community requires to build and run NUT on systems
@@ -152,10 +156,107 @@ The NUT project on GitHub has integration with Travis CI to test a large
 set of compiler and option combinations, covering different versions of
 gcc and clang, C standards, and requiring to pass builds at least in a
 mode without warnings (and checking the other cases where any warnings
-are made fatal). Developers can use the scripts involved to fix existing
-code or ensure support for new compilers and C standard revisions.
+are made fatal).
+
+Developers can directly use the scripts involved in CI builds to fix
+existing code on their workstations or to ensure support for new
+compilers and C standard revisions, e.g. save a local file like this:
+
+	$ cat _fightwarn-gcc10-gnu17.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
+	CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
+	CC=gcc-10 CXX=g++-10 \
+		./ci_build.sh
+
+...and then execute it to prepare a workspace, after which you can go
+fixing bugs file-by-file running a `make` after each save to confirm
+your solutions and uncover the next issue to address :-)
+
+Note that while spelling out sets of warnings can help in a quest to
+fix certain bugs during development (if only by removing noise from
+classes of warnings not relevant to the issue one is working on), there
+is a reasonable set of warnings which NUT codebase actively tries to
+be clean about (and checks in CI), detailed in the next section.
+
+For the `ci_build.sh` usage like above, one can instead pass the setting
+via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
+for their build, e.g.:
+
+	$ cat _fightwarn-clang9-gnu11.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
+	CFLAGS="-std=gnu11" \
+	CXXFLAGS="-std=gnu++11" \
+	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
+		./ci_build.sh
+
+As a rule of thumb, new contributions must not emit any warnings when
+built in GNU99 mode with a `minimal` "difficulty" level of warnings.
+Technically they must survive the part of test matrix across the several
+platforms tested by Travis CI and marked in project settings as required
+to pass, to be accepted for a pull request merge.
+
+Developers aiming to post successful pull requests to improve NUT can
+pass the `--enable-warnings` option to the `configure` script in local
+builds to see how that behaves and ensure that at least in some set-up
+their contribution is viable. Note that different compiler versions and
+vendors (gcc/clang/...), building against different OS and third-party
+dependencies, with different CPU architectures and different language
+specification revisions, might all complain about different issues --
+and catching this in as diverse range of set-ups as possible is why we
+have CI tests.
+
+It can be beneficial for serial developers to set up a local BuildBot
+or a Jenkins instance with a matrix test job, to test their local git
+repository branches with whatever systems they have available.
 
 * https://github.com/networkupstools/nut/issues/823
+
+Pre-set warning options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The options chosen into pre-sets that can be selected by `configure`
+script options are ones we use for different layers of CI tests.
+
+Values to note include:
+
+* `--enable-Werror(=yes/no)` -- make warnings fatal;
+
+* `--enable-warnings(=.../no)` -- enable certain warning presets:
+
+** `gcc-hard`, `clang-hard`, `gcc-medium`, `clang-medium`, `gcc-minimal`,
+   `clang-minimal`, `all` -- actual definitions that are compiler-dependent
+   (the latter just adds `-Wall` which may be relatively portable);
+
+** `hard`, `medium` or `minimal` -- if current compiler is detected as
+   CLANG or GCC, apply corresponding setting from above (or `all` otherwise);
+
+** `gcc` or `clang` -- apply the set of options (regardless of detected
+   compiler) with default "difficulty" hard-coded in `configure` script,
+   to tweak as our codebase becomes cleaner;
+
+** `yes`/`auto` (also takes effect if `--enable-warnings` is requested
+   without an `=ARG` part) -- if current compiler is detected as CLANG
+   or GCC, apply corresponding setting with default "difficulty" from
+   above (or `all` otherwise).
+
+Note that for backwards-compatibility reasons and to help filter out
+introduction of blatant errors, builds with compilers that claim GCC
+compatibility can enable a few easy warning presets by default. This
+can be avoided with an explicit argument to `--disable-warnings` (or
+`--enable-warnings=no`).
+
+Hopefully this mechanism is extensible enough if we would need to add
+more compilers and/or "difficulty levels" in the future.
+
+Finally, note that such pre-set warnings can be mixed with options
+passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
+run, but it is up to your compiler how it interprets the resulting mix.
 
 Coding style
 ------------
@@ -261,6 +362,32 @@ if (condition) {
 }
 -------------------------------------------------------------------------------
 
+Un-used variables and function arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whenever a function needs to satisfy a particular API, it can end up
+taking arguments that are not used in practice (think a too-trivial
+signal handler). While some compilers offer the facility of decorations
+like `__attribute__(unused)`, this proved not to be a portable solution.
+Also the abilities of newer C++ standard revisions are of no help to
+the vast range of existing systems that run NUT today and expect to be
+able to do so tomorrow (hence the required C99+ support noted above).
+
+In NUT codebase we prefer to mark un-used variables explicitly in the
+body of the function (or an `#ifdef` branch of its code) using the
+`NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
+body, referring to the macro defined in `common.h`.
+
+To display in a rough example:
+
+-------------------------------------------------------------------------------
+	static void signal_X_handler(int signal_X) {
+		NUT_UNUSED_VARIABLE(signal_X);
+		/* We have explicitly got nothing to do if we catch signal X */
+		return;
+	}
+-------------------------------------------------------------------------------
+
 Miscellaneous coding style tools
 --------------------------------
 
@@ -313,11 +440,46 @@ or access something outside their scope will throw a warning or even
 fail to compile in some cases.  This is what we want.
 
 
+Switch case fall-through
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+While C standards allow to write `switch` statements to "fall through"
+from handling one case into another, modern compilers frown upon that
+practice and spew warnings which complicate detecting real bugs in the
+code (and also looking back at some of the cases written decades ago,
+it is not trivial to state whether the fall-through was intentional or
+really is a bug).
+
+Compilers which detect such problem usually offer ways to decorate the
+code with comments or attributes to keep it quiet it in cases where the
+jump is intentional; also C++17 introduces special keywords for that in
+the standard. NUT aiming to be portable and independent of compilers as
+much as possible, prefers the arguably clearer and standards-based way
+of using `goto` into the next intended operation, even though it is a
+couple of lines away, e.g.:
+
+	int uppercase = 0;
+	switch (char_opt) {
+		case 'U':
+			uppercase = 1;
+			goto fallthrough_case_u_option;
+		case 'u':
+		fallthrough_case_u_option:
+			process_u_option(uppercase);
+			break;
+	}
+
+In trivial cases, like falling through to `default` which just returns,
+it may be clearer and more maintainable (adding other option cases in
+the future) to just `return same_result` in the code block that would
+fall through otherwise and avoid `goto` statements altogether.
+
 Spaghetti
 ~~~~~~~~~
 
-If you use a goto, expect us to drop it when our head stops spinning.
-It gives us flashbacks to the very old code we wrote.
+If you use a `goto` that jumps over long distances (see "Switch case
+fall-through" section above), expect us to drop it when our head stops
+spinning. It gives us flashbacks to the very old code we wrote.
 We've tried to clean up our act, and you should make the effort
 as well.
 
@@ -416,10 +578,12 @@ Alioth) to track changes to the NUT source code. This allows you to
 clone the repository (or fork, in GitHub parlance), make changes, and
 post them online for review prior to integration.
 
-To obtain permission to commit directly to the master NUT repository,
+To obtain permission to commit directly to the common upstream NUT repository,
 you must be prepared to spend a fair amount of time contributing to the
 NUT codebase. Most developers will be well served by committing to their
-own Git repository, and having the NUT team merge their changes.
+own forked Git repository (preferably in a uniquely named branch for each
+new contribution), and having the NUT team merge their changes using pull
+requests.
 
 Git offers a little more flexibility than the +svn update+ command.
 You may fetch other developers' changes into your repository, but hold
@@ -545,11 +709,18 @@ and should *not* be used as a guide for future commits.
 Repository etiquette and quality assurance
 ------------------------------------------
 
-Please keep the Git master branch in working condition at all times. The
-master branch may be used to generate daily tarballs, and should not contain
-broken code. If you need to commit incremental changes that leave the system
-in a broken state, please do so in a separate branch and merge the changes
-back into master once they are complete.
+For developers who have commit access to the common upstream NUT repository:
+Please keep the Git "master" branch in working condition at all times.
+The "master" branch may be used to generate daily tarballs, it provides the
+baseline for new contributions, and occasionally is tagged for a new release.
+It should not contain broken code. If you need to commit incremental changes
+that leave the system in a broken state, please do so in a separate branch
+and merge the changes back into "master" once they are complete.
+
+To help keep the codebase ever-green, we run a number of CI tests and builds
+in various conditions, including older compilers, different C/C++ standard
+revisions, and an assortment of operating systems; a section below elaborates
+on this in more detail.
 
 You are encouraged to use `git rebase -i` on your private Git branches to
 separate your changes into <<_patch_cohesion,logical changes>>.
@@ -648,7 +819,7 @@ optional libraries and features installed.
 Finally note, that since 2017 the GitHub upstream project is monitored by
 Travis CI (in addition to multi-platform buildbots which occasionally do not
 work). This means that if your posted improvements are based on current NUT
-master branch, the resulting pull request should get tested for a number of
+"master" branch, the resulting pull request should get tested for a number of
 scenarios automatically. If your code adds a substantial feature, consider
 extending the `.travis.yml` and/or `ci_build.sh` scripts in the workspace
 root to add another `BUILD_TYPE` to the matrix of tests run in parallel.
