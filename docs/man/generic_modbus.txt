@@ -25,10 +25,10 @@ UPS devices, connected via modbus RIO (remote I/O) either serial or TCP/IP.
 The driver has been tested against PULS UPS (model UB40.241)
 via MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP).
 
-More information about this UPS can be found here::
+More information about this UPS can be found here: ::
 https://products.pulspower.com/ca/ubc10-241-n1.html
 
-More information about Moxa ioLogik R1212, E1212 can be found here::
+More information about Moxa ioLogik R1212, E1212 can be found here: ::
 https://www.moxa.com/en/products/industrial-edge-connectivity/controllers-and-ios
 
 The PULS UPS UB40.241 supports the following signals:
@@ -109,13 +109,13 @@ A number specifying the modbus address for the X state.
 
 *<X>_regtype*='value'::
 A number specifying the modbus register type for the X state
-Default values:::
+Default values: ::
 +
 ----
 1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
 0 for X = FSD
 ----
-Valid values:::
+Valid values: ::
 +
 ----
 0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
@@ -123,7 +123,7 @@ Valid values:::
 
 *<X>_noro*='value'::
 A number specifying the contact configuration for the X state (default 1).
-Valid values:::
+Valid values: ::
 +
 ----
 0:NC, 1:NO
