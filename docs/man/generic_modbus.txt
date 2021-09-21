@@ -13,22 +13,25 @@ SYNOPSIS
 
 *generic_modbus* -a 'DEVICE_NAME' ['OPTIONS']
 
-NOTE: This man page only documents the specific features of the *generic_modbus* driver. For information about the core driver, see linkman:nutupsdrv[8].
+NOTE: This man page only documents the specific features of the *generic_modbus*
+driver. For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
-This is a generic modbus driver expected to work with contact (direct) signal UPS devices, connected via modbus RIO (remote I/O) either serial or TCP/IP. The driver has been tested against PULS UPS (model UB40.241) via MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP).
+This is a generic modbus driver expected to work with contact (direct) signal
+UPS devices, connected via modbus RIO (remote I/O) either serial or TCP/IP.
 
-More information about this UPS can be found here:: 
+The driver has been tested against PULS UPS (model UB40.241)
+via MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP).
+
+More information about this UPS can be found here: ::
 https://products.pulspower.com/ca/ubc10-241-n1.html
 
-More information about Moxa ioLogik R1212, E1212 can be found here:: 
+More information about Moxa ioLogik R1212, E1212 can be found here: ::
 https://www.moxa.com/en/products/industrial-edge-connectivity/controllers-and-ios
 
 The PULS UPS UB40.241 supports the following signals:
-
-[source, conf]
 ----
 Ready contact      (DO) <--> HB
 Buffering contact  (DO) <--> OL | OB
@@ -39,14 +42,16 @@ Inhibit            (DI) <--> FSD
 
 Digital port direction (DI/DO) assumes the device perspective
 
-The driver's concept is to map the UPS states (as defined in nut) onto UPS contacts' states. The driver has an extended configuration interface implemented using variables defined in ups.conf.
+The driver's concept is to map the UPS states (as defined in NUT) onto
+UPS contacts' states. The driver has an extended configuration interface
+implemented using variables defined in ups.conf.
 
 HARDWARE INTERCONNECTION
 ------------------------
 
-The commission of modbus remote I/O server as well as UPS device is carried out following the corresponding instruction manuals. The following figure depicts the anticipated communication path and hardware interconnection:
-
-[source, conf]
+The commission of modbus remote I/O server as well as UPS device is carried
+out following the corresponding instruction manuals. The following figure
+depicts the anticipated communication path and hardware interconnection:
 ----
 +------+       +----------------+       +------------+       +------------+
 | UPSD | <---> | GENERIC_MODBUS | <---> | MODBUS RIO | <---> | UPS DEVICE |
@@ -63,7 +68,8 @@ The commission of modbus remote I/O server as well as UPS device is carried out 
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports the following optional settings in the linkman:ups.conf[5] file:
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
 
 Generic:
 ~~~~~~~
@@ -102,26 +108,23 @@ States (X = OL, OB, LB, HB, RB, CHRG, DISCHRG, FSD)
 A number specifying the modbus address for the X state.
 
 *<X>_regtype*='value'::
-A number specifying the modbus register type for the X state 
-Default values:::
+A number specifying the modbus register type for the X state
+Default values: ::
 +
-[source, conf]
 ----
 1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
 0 for X = FSD
 ----
-Valid values:::
+Valid values: ::
 +
-[source, conf]
 ----
 0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
 ----
 
 *<X>_noro*='value'::
-A number specifying the contact configuration for the X state (default 1).  
-Valid values:::
+A number specifying the contact configuration for the X state (default 1).
+Valid values: ::
 +
-[source, conf]
 ----
 0:NC, 1:NO
 ----
@@ -132,10 +135,11 @@ Shutdown
 ~~~~~~~~
 
 *FSD_pulse_duration*='value'::
-A number specifying the duration in ms for the inhibit pulse. If it's not defined, signal has only one transition depending on FSD_noro configuration. 
+A number specifying the duration in ms for the inhibit pulse.
+If it's not defined, signal has only one transition depending
+on FSD_noro configuration.
 +
 Examples for FSD signal configuration:
-[source, conf]
 ----
 FSD_noro = 1
 FSD_pulse_duration = 150
@@ -144,22 +148,21 @@ FSD_pulse_duration = 150
                      |     |
 inhibit pulse  >-----+     +------------------>
                       <--->
-	              150ms
+                      150ms
 
 
 FSD_noro = 0
 
 inhibit pulse  >-----+
-                     |     
-		     +------------------------> 
-		      
+                     |
+                     +------------------------>
+
 ----
 
 CONFIGURATION
 -------------
 
 Here is an example of generic_modbus driver configuration in *ups.conf* file:
-[source, conf]
 ----
 [generic_modbus]
   driver = generic_modbus
@@ -201,13 +204,32 @@ executes "instant poweroff"
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by installing libmodbus and running `configure --with-modbus=yes`.
+This driver is not built by default. You can build it by installing
+libmodbus and running `configure --with-modbus=yes`.
 
-You also need to give proper permissions on the local serial device file (/dev/ttyUSB0 for example) to allow the NUT user to access it.
+You also need to give proper permissions on the local serial device
+file (/dev/ttyUSB0 for example) to allow the run-time NUT driver user
+account to access it.
+
+OTHER NOTES
+-----------
+
+The `generic_modbus` driver intends to support generic UPS devices with
+contact signals through modbus TCP/RTU gateways (also known as RIO --
+remote I/Os). The data and signal path looks like this:
+
+----
+[UPSD] <--- IPC ---> [GENERIC_UPS] <--- modbus TCP/RTU ---> MODBUS-RIO <--- contacts ---> [UPS DEVICE]
+----
+
+On the other hand, you can setup any kind of modbus server, and configure
+the `generic_modbus` driver to connect and read or write specific registers.
+Your application / modbus server could then drive NUT statuses (e.g. OL, OB,
+HB etc) by writing over those registers.
 
 AUTHOR
 ------
-Dimitris Economou  <dimitris.s.economou@gmail.com>
+Dimitris Economou <dimitris.s.economou@gmail.com>
 
 SEE ALSO
 --------
