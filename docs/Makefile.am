@@ -324,8 +324,9 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
-*-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@echo "  SKIP-ASPELL   Spell checking on $< : Documentation spell check not available since 'aspell' was not found." >&2
+#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+*/*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 spellcheck-interactive:
