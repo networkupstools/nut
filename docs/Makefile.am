@@ -175,7 +175,8 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
 # says the prerequisites were ignored while a suffix rule was created;
 # eventually the POSIX stance would be taken to define a rule for a weird
-# verbatim target file name with prerequisites.
+# verbatim target file name with prerequisites:
+# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
 .txt.html: common.xsl xhtml.xsl
 	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
 	@chmod -R u+w .
