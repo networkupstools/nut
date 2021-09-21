@@ -22,6 +22,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "common.h"
 #include "usbhid-ups.h"
 #include "legrand-hid.h"
 #include "main.h"
@@ -36,6 +37,8 @@
 
 static void *disable_interrupt_pipe(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+	
 	if (!use_interrupt_pipe)
 		return NULL;
 	use_interrupt_pipe = FALSE;
@@ -75,7 +78,8 @@ static const char *legrand_times10(double value)
 }
 
 static info_lkp_t legrand_times10_info[] = {
-	{ 0, NULL, legrand_times10 }
+	{ 0, NULL, legrand_times10, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *legrand_times100k(double value)
@@ -86,7 +90,8 @@ static const char *legrand_times100k(double value)
 }
 
 static info_lkp_t legrand_times100k_info[] = {
-	{ 0, NULL, legrand_times100k }
+	{ 0, NULL, legrand_times100k, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *legrand_times1M(double value)
@@ -97,7 +102,8 @@ static const char *legrand_times1M(double value)
 }
 
 static info_lkp_t legrand_times1M_info[] = {
-	{ 0, NULL, legrand_times1M }
+	{ 0, NULL, legrand_times1M, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *legrand_times10M(double value)
@@ -108,7 +114,8 @@ static const char *legrand_times10M(double value)
 }
 
 static info_lkp_t legrand_times10M_info[] = {
-	{ 0, NULL, legrand_times10M }
+	{ 0, NULL, legrand_times10M, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
