@@ -233,7 +233,7 @@ spellcheck:
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
-		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
+		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`): $$FAILED" ; \
 		echo "=====================================================================" ; \
 		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
@@ -280,7 +280,7 @@ spellcheck-interactive:
 			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
-		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
+		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
 	$(MAKE) spellcheck-sortdict
