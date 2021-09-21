@@ -885,10 +885,14 @@ else !HAVE_ASCIIDOC
 endif !HAVE_ASCIIDOC
 
 clean-local:
-	rm -f *.pdf *.html *.spellchecked
+	rm -f *.pdf *.html *-spellchecked
 	rm -f *.1 *.3 *.5 *.8
 
-%.spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
+
+.txt.txt-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$<" SPELLCHECK_DIR="$(srcdir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:

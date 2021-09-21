@@ -35,7 +35,7 @@ Makefile.in
 /missing
 /test-driver
 common/.dirstamp
-*.spellchecked
+*-spellchecked
 /.ci*.log
 /.ci*.log.*
 

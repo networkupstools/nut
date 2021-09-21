@@ -34,4 +34,4 @@ if WITH_AUGLENS
 endif
 
 clean-local:
-	rm -f *.spellchecked
+	rm -f *-spellchecked

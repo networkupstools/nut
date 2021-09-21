@@ -72,4 +72,4 @@ endif
 CLEANFILES = $(BUILT_SOURCES)
 
 clean-local:
-	rm -f *.spellchecked
+	rm -f *-spellchecked
