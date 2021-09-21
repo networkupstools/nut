@@ -188,11 +188,13 @@ if HAVE_ASPELL
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
 # NOTE: ../ChangeLog is nowadays generated from commit messages, so
-# its spelling (or errors in that) are not fixable and thus irrelevant
+# its spelling (or errors in that) are not fixable and thus irrelevant.
+# Similarly for the ../INSTALL file that is prepared by autoconf and not
+# tracked as a source file by NUT Git repository.
 SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README \
-	../INSTALL ../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
 SPELLCHECK_DIR = $(srcdir)
