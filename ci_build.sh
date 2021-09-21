@@ -278,11 +278,38 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
-    if [ -n "$PKG_CONFIG_PATH" ] ; then
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}")
-    else
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+
+    DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
+    SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
+    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+        *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
+            case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
+                *-m64*)
+                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                    ;;
+                *)
+                    case "$ARCH$BITS" in
+                        *64*)
+                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+    if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
+        if [ -n "$PKG_CONFIG_PATH" ] ; then
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
+        else
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
+        fi
     fi
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}")
+    else
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
+    fi
+
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
