@@ -74,7 +74,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf
+SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
