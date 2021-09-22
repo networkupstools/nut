@@ -52,7 +52,9 @@ Changes from 2.7.4 to 2.7.5
 
 - apcsmart: updates to CS "hack" (see docs/man/apcsmart.txt for details)
 
-- upsdebugx(): add `[D#]` prefix to log entries with level > 0
+- upsdebugx(): added `[D#]` prefix to log entries with level > 0
+  so if any scripts or other tools relied on parsing those messages
+  making some assumptions, they should be updated
 
 - upsrw: display the variable type beside ENUM / RANGE
 
