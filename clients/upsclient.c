@@ -1613,7 +1613,9 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 		}
 	}
 
-	if ((*(++s) == '\0') || ((*port = strtol(s, NULL, 10)) < 1 )) {
+	/* FIXME: This assumes but does not check that "long" port
+	 * fits in an "int" and is in IP range (under 65535) */
+	if ((*(++s) == '\0') || ((*port = (int)strtol(s, NULL, 10)) < 1 )) {
 		fprintf(stderr, "upscli_splitaddr: no port specified after ':' separator\n");
 		return -1;
 	}
