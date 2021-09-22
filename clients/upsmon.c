@@ -487,7 +487,7 @@ static void doshutdown(void)
 static void setfsd(utype_t *ups)
 {
 	char	buf[SMALLBUF];
-	int	ret;
+	ssize_t	ret;
 
 	/* this shouldn't happen */
 	if (!ups->upsname) {
