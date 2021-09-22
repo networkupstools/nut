@@ -83,9 +83,9 @@ void parsearg(char *var, char *value)
 	for (i = 0; imgarg[i].name != NULL; i++) {
 		if (!strcmp(imgarg[i].name, var)) {
 			if (!strncmp(value, "0x", 2))
-				v = strtoul(value + 2, (char **)NULL, 16);
+				v = (long long)strtoul(value + 2, (char **)NULL, 16);
 			else
-				v = atoi(value);
+				v = (long long)atoi(value);
 
 			/* avoid false numbers from bad people */
 			if (v < imgarg[i].min)
