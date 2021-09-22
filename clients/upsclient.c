@@ -1260,9 +1260,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 }
 
 /* make sure upsd is giving us what we asked for */
-static int verify_resp(unsigned int num, const char **q, char **a)
+static int verify_resp(size_t num, const char **q, char **a)
 {
-	unsigned int	i;
+	size_t	i;
 
 	for (i = 0; i < num; i++) {
 		if (strcasecmp(q[i], a[i]) != 0) {
@@ -1275,8 +1275,8 @@ static int verify_resp(unsigned int num, const char **q, char **a)
 	return 1;	/* OK */
 }
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer)
+int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 
@@ -1328,7 +1328,7 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 0;
 }
 
-int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
+int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 
@@ -1386,8 +1386,8 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 	return 0;
 }
 
-int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer)
+int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
 

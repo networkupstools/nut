@@ -104,7 +104,7 @@ static int check_ups_fd(int do_report)
 static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -869,7 +869,7 @@ static void display_template(const char *tfn)
 
 static void display_tree(int verbose)
 {
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 

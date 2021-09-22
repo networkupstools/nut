@@ -591,7 +591,7 @@ static void draw_humidity(double var, int min, int nom, int max,
 static int get_var(const char *var, char *buf, size_t buflen)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
