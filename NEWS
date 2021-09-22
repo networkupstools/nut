@@ -222,6 +222,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      to survive and build without it too
    * "slibtool" pedantic nuances now supported, allowing an alternative to
      GNU libtool
+   * Build scripts updated to remove obsoleted calls to cleanly work with
+     autoconf-2.70 releases in 2020 (also works with 2.69 which was the
+     earlier release since 2012)
    * Dynamic library loading used in certain programs and use-cases improved,
      especially for 64-bit vs 32-bit builds on multiple-bitness OSes
    * Numerous classes of compilation warnings eradicated, many of those being
