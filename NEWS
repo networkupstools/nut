@@ -216,6 +216,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      the distribution tarball, for instance)
    * Makefile contents rearranged for more resilient out-of-tree and in-tree
      builds beside those made from the root workspace directory
+   * Makefiles are tested with GNU Make and BSD Make to ensure portable recipes
    * More use of `pkg-config` to detect dependencies at configure time, as
      well as fail-safe detection of presence of pkg-config (and its macros)
      to survive and build without it too
