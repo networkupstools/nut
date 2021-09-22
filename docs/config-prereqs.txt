@@ -1,6 +1,9 @@
-= Prerequisites for building NUT on different OSes
+ifdef::website[]
+Prerequisites for building NUT on different OSes
+================================================
+endif::website[]
 
-This file aims to list packages with the tools needed on a freshly minimally
+This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
 
@@ -15,7 +18,8 @@ that are not yet included into `master` branch dependencies, e.g. the DMF
 More packages and/or system setup may be needed to actually run NUT with
 all features enabled; chapters below concern just with building it.
 
-== General call to Test the ability to configure and build
+General call to Test the ability to configure and build
+-------------------------------------------------------
 
 ----
 :; mkdir -p nut ; cd nut
@@ -44,7 +48,8 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 * Parallel builds should be okay in current development version (is a bug
   to log, if not), but may be failure-prone in 2.7.4 and earlier releases
 
-== Debian 10
+Debian 10
+~~~~~~~~~
 
 ----
 :; apt-get update
@@ -102,7 +107,8 @@ complete environments):
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
 (technically, needs at least JRE 8+).
 
-== FreeBSD 12.2
+FreeBSD 12.2
+~~~~~~~~~~~~
 
 Note that `PATH` for builds on BSD should include `local`:
 
@@ -166,7 +172,8 @@ scripts), better use this routine to test the config/build:
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-== OpenIndiana 2021.04
+OpenIndiana 2021.04
+~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
 illumos-based OS; this may not be the case on some other illumos distributions
@@ -241,7 +248,8 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).
 
-== OmniOS CE (as of release 151036)
+OmniOS CE (as of release 151036)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Being a minimal-footprint system, OmniOS CE provides very few packages out
 of the box. There are additional repositories supported by the project, as

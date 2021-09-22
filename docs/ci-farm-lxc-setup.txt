@@ -1,6 +1,8 @@
-= Setting up the multi-arch Linux LXC container farm for NUT CI
+Setting up the multi-arch Linux LXC container farm for NUT CI
+-------------------------------------------------------------
 
-== Common preparations
+Common preparations
+~~~~~~~~~~~~~~~~~~~
 
 * Prepare LXC and LIBVIRT-LXC integration, including an "independent"
   (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
@@ -43,7 +45,8 @@ export LIBVIRT_DEFAULT_URI
 ** Maybe similarly relocate shared `/home/abuild` to reduce strain on rootfs?
 
 
-== Setup a container
+Setup a container
+~~~~~~~~~~~~~~~~~
 
 Note that completeness of qemu CPU emulation varies, so not all distros
 can be installed, e.g. "s390x" failed for both debian10 and debian11 to
@@ -130,7 +133,8 @@ NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
    removed by example above.
 
 
-== Shepherd the herd
+Shepherd the herd
+~~~~~~~~~~~~~~~~~
 
 * Monitor deployed container rootfs'es with:
 +
@@ -196,7 +200,8 @@ fails to find the group anyway; then we have to "manually" add them.
    done >> /etc/hosts
 ------
 
-== Further setup of the containers
+Further setup of the containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See NUT `docs/config-prereqs.txt` about dependency package installation
 for Debian-based Linux systems.
