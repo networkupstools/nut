@@ -254,10 +254,11 @@ OmniOS CE (as of release 151036)
 Being a minimal-footprint system, OmniOS CE provides very few packages out
 of the box. There are additional repositories supported by the project, as
 well as third-party repositories such as SFE. For some dependencies, it may
-happen that you would need to roll and install your own builds.
+happen that you would need to roll and install your own builds in accordance
+with that project's design goals.
 
-Note you may need not just the "Core" package publisher, but also the "Extra"
-one. See OmniOS CE web site for setup details.
+Note you may need not just the "Core" IPS package publisher, but also the
+"Extra" one. See OmniOS CE web site for setup details.
 
 ----
 :; pkg install \
