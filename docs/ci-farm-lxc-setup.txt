@@ -252,3 +252,6 @@ This can be achieved with e.g.:
     done ; \
    done
 ------
+
+TODO: Test and document a working NAT and firewall setup for this, to allow
+SSH access to the containers via dedicated TCP ports exposed on the host.
