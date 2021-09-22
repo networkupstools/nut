@@ -195,6 +195,11 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      having those drivers available in the project vs. least surprise
      for when the explicitly experimental names are changed to something
      stable and standardized.
+   * Proposed to track Date and Time values (still as "opaque strings")
+     preferably in representations compatible to ISO-8601/RFC-3339 [PR #1076]
+     (standards update; changes to actual codebase to be applied in the future)
+   ** New routine to convert a US formatted date string "MM/DD/YYYY" to an
+      ISO 8601 Calendar date "YYYY-MM-DD" was added to snmp-ups.c [PR #1078]
 
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
    modes of upsmon client. Respective keywords in the configuration are
