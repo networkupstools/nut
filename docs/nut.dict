@@ -3,6 +3,7 @@ AAS
 ACFAIL
 ACFREQ
 ACK
+ACM
 ACPI
 ACPresent
 ACrms
@@ -145,6 +146,7 @@ CAs
 CBLimit
 CCC
 CCCC
+CDC
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -266,6 +268,7 @@ EEPROM
 EG
 EL
 ELCD
+EMI
 ENDFOR
 ENV
 EOF
@@ -300,6 +303,7 @@ EqlzTm
 Erikson
 Eriksson
 Evgeny
+Exar
 FEMEA
 FFF
 FH
@@ -466,6 +470,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+KTTS
 Kain
 Kaminski
 Kanji
@@ -580,6 +585,7 @@ Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
+MaxLinear
 McKinnon
 Megaline
 Metheringham
@@ -957,6 +963,7 @@ SOFF
 SOLA
 SOLA's
 SOV
+SPC
 SPECs
 SPLY
 SPS
@@ -1211,6 +1218,7 @@ acVoltsout
 acampsiOut
 acampsiout
 acl
+acm
 acpi
 acquisited
 acvoltsin
@@ -1378,6 +1386,7 @@ cbl
 cblimit
 ccache
 cd
+cdc
 cerr
 certfile
 certname
@@ -1776,6 +1785,7 @@ ippon
 ipv
 isbmex
 iso
+isolator
 ivtscd
 jNUT
 jNut
@@ -2433,8 +2443,10 @@ tripplitesu
 troff
 tsd
 tty
+ttyACM
 ttyS
 ttySx
+ttyU
 ttyUPS
 ttyUSB
 ttya
@@ -2476,6 +2488,7 @@ unpowered
 unshutup
 updateinfo
 upexia
+upower
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage
