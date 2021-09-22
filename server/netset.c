@@ -69,7 +69,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	/* see if the new value is allowed for this variable */
 
 	if (sstate_getflags(ups, var) & ST_FLAG_STRING) {
-		int	aux;
+		long	aux;
 
 		aux = sstate_getaux(ups, var);
 
@@ -82,6 +82,10 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 			return;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int) strlen(newval)) {
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
