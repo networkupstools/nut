@@ -95,6 +95,9 @@ int sendsignal(const char *progname, int sig);
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
+/* Report maximum platform value for the pid_t */
+pid_t get_max_pid_t(void);
+
 /* open <pidfn>, get the pid, then send it <sig> */
 int sendsignalfn(const char *pidfn, int sig);
 
