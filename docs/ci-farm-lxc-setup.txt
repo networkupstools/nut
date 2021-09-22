@@ -1,6 +1,16 @@
 Setting up the multi-arch Linux LXC container farm for NUT CI
 -------------------------------------------------------------
 
+Due to some historical reasons including earlier personal experience,
+the Linux container setup implemented as described below was done with
+persistent LXC containers wrapped by LIBVIRT for management. There was
+no particular use-case for systems like Docker (and no firepower for a
+Kubernetes cluster) in that the build environment intended for testing
+non-regression against a certain release does not need to be regularly
+updated -- its purpose is to be stale and represent what users still
+running that system for whatever reason (e.g. embedded, IoT, corporate)
+have in their environments.
+
 Common preparations
 ~~~~~~~~~~~~~~~~~~~
 
