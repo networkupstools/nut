@@ -40,6 +40,7 @@
 
 #include "upsclient.h"
 #include "common.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
@@ -162,32 +163,36 @@ static void ssl_debug(void)
 	}
 }
 
-static int ssl_error(SSL *ssl, int ret)
+static int ssl_error(SSL *ssl, ssize_t ret)
 {
 	int	e;
 
-	e = SSL_get_error(ssl, ret);
+	if (ret >= INT_MAX) {
+		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		return -1;
+	}
+	e = SSL_get_error(ssl, (int)ret);
 
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_READ", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upslogx(LOG_ERR, "ssl_error() EOF from client");
 		} else {
-			upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_SYSCALL", ret);
+			upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
