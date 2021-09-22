@@ -150,18 +150,18 @@ static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 /* nothing fancy - just make the driver say something back to us */
 static void sendping(upstype_t *ups)
 {
-	int	ret;
+	ssize_t	ret;
 	const char	*cmd = "PING\n";
+	size_t	cmdlen = strlen(cmd);
 
 	if ((!ups) || (ups->sock_fd < 0)) {
 		return;
 	}
 
 	upsdebugx(3, "Pinging UPS [%s]", ups->name);
+	ret = write(ups->sock_fd, cmd, cmdlen);
 
-	ret = write(ups->sock_fd, cmd, strlen(cmd));
-
-	if (ret != (int)strlen(cmd))  {
+	if ((ret < 1) || (ret != (ssize_t)cmdlen))  {
 		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
 		sstate_disconnect(ups);
 		return;
@@ -174,8 +174,10 @@ static void sendping(upstype_t *ups)
 
 int sstate_connect(upstype_t *ups)
 {
-	int	ret, fd;
+	int	fd;
 	const char	*dumpcmd = "DUMPALL\n";
+	size_t	dumpcmdlen = strlen(dumpcmd);
+	ssize_t	ret;
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -225,9 +227,9 @@ int sstate_connect(upstype_t *ups)
 	}
 
 	/* get a dump started so we have a fresh set of data */
-	ret = write(fd, dumpcmd, strlen(dumpcmd));
+	ret = write(fd, dumpcmd, dumpcmdlen);
 
-	if (ret != (int)strlen(dumpcmd)) {
+	if ((ret < 1) || (ret != (ssize_t)dumpcmdlen))  {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		close(fd);
 		return -1;
@@ -266,7 +268,7 @@ void sstate_disconnect(upstype_t *ups)
 
 void sstate_readline(upstype_t *ups)
 {
-	int	i, ret;
+	ssize_t	i, ret;
 	char	buf[SMALLBUF];
 
 	if ((!ups) || (ups->sock_fd < 0)) {
@@ -392,15 +394,23 @@ void sstate_cmdfree(upstype_t *ups)
 
 int sstate_sendline(upstype_t *ups, const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
+	size_t	buflen;
 
 	if ((!ups) ||(ups->sock_fd < 0)) {
 		return 0;	/* failed */
 	}
 
-	ret = write(ups->sock_fd, buf, strlen(buf));
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret... */
+		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed: buffered message too large", ups->name);
+		return 0;	/* failed */
+	}
 
-	if (ret == (int)strlen(buf)) {
+	ret = write(ups->sock_fd, buf, buflen);
+
+	if (ret == (ssize_t)buflen) {
 		return 1;
 	}
 
