@@ -27,6 +27,7 @@
 #include "sstate.h"
 #include "upsd.h"
 #include "upstype.h"
+#include "nut_stdint.h"
 
 #include <fcntl.h>
 #include <stdio.h>
