@@ -166,6 +166,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - systemd support improvements:
    * POWEROFF_WAIT
    * reload support for upsd
+   * Deliver systemd-tmpfiles config to pre-create runtime locations
+     [PR #1037 for Issue #1030]
+   * Update units with SyslogIdentifier=%N for better logging [PR #1054]
 
  - upsrw: display the variable type beside ENUM / RANGE
 
