@@ -316,7 +316,7 @@ int	str_to_ushort_strict(const char *string, unsigned short *number, const int b
 
 int	str_to_int(const char *string, int *number, const int base)
 {
-	long	num;
+	long	num; // long >= int, make sure we fit well
 
 	*number = 0;
 
@@ -331,13 +331,13 @@ int	str_to_int(const char *string, int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (int)num;
 	return 1;
 }
 
 int	str_to_int_strict(const char *string, int *number, const int base)
 {
-	long	num;
+	long	num; // long >= int, make sure we fit well
 
 	*number = 0;
 
@@ -352,13 +352,13 @@ int	str_to_int_strict(const char *string, int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (int)num;
 	return 1;
 }
 
 int	str_to_uint(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num;
+	unsigned long	num; // long >= int, make sure we fit well
 
 	*number = 0;
 
@@ -370,13 +370,13 @@ int	str_to_uint(const char *string, unsigned int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned int)num;
 	return 1;
 }
 
 int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num;
+	unsigned long	num; // long >= int, make sure we fit well
 
 	*number = 0;
 
@@ -388,7 +388,7 @@ int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned int)num;
 	return 1;
 }
 
