@@ -362,7 +362,7 @@ int state_getflags(st_tree_t *root, const char *var)
 	return sttmp->flags;
 }
 
-int state_getaux(st_tree_t *root, const char *var)
+long state_getaux(st_tree_t *root, const char *var)
 {
 	st_tree_t	*sttmp;
 
