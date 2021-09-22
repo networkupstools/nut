@@ -321,7 +321,7 @@ int sstate_getflags(const upstype_t *ups, const char *var)
 	return state_getflags(ups->inforoot, var);
 }
 
-int sstate_getaux(const upstype_t *ups, const char *var)
+long sstate_getaux(const upstype_t *ups, const char *var)
 {
 	return state_getaux(ups->inforoot, var);
 }
