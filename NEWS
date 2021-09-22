@@ -250,6 +250,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      earlier release since 2012)
    * Dynamic library loading used in certain programs and use-cases improved,
      especially for 64-bit vs 32-bit builds on multiple-bitness OSes
+   * Logging routines like `upsdebugx()` were refactored as macros so there
+     is slightly less overhead when logging is disabled [PRs #685 and #1100]
    * Numerous classes of compilation warnings eradicated, many of those being
      potential issues with implicit data type conversions and varied numeric
      type width, signedness, string buffer size, uninitialized variables or
