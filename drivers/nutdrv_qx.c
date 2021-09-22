@@ -1884,7 +1884,7 @@ int	setvar(const char *varname, const char *val)
 	/* Check if given value is not too long (string) */
 	} else if (item->info_flags & ST_FLAG_STRING) {
 
-		const int	aux = state_getaux(root, item->info_type);
+		const long	aux = state_getaux(root, item->info_type);
 
 		/* Unable to find tree node for var */
 		if (aux < 0) {
@@ -1892,6 +1892,10 @@ int	setvar(const char *varname, const char *val)
 			return STAT_SET_UNKNOWN;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int)strlen(value)) {
 			upslogx(LOG_ERR, "%s: value is too long [%s: %s]", __func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
