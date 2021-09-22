@@ -1842,7 +1842,7 @@ dnl AIX system
 AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 
 dnl processor type
-AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
+AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
