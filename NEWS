@@ -209,7 +209,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Added cppunit testing with valgrind for the C++ client library
    * Make targets added for shell script syntax checks for helper and service
      scripts
-   * Make targets added for spellcheck and for maintenance of the dictionary
+   * Make targets added for spellcheck and for maintenance of the dictionary,
+     including incremental spellcheck to only parse recently edited text files
    * The AsciiDoc detection has been reworked to allow NUT to be built from
      source without requiring asciidoc/a2x (using pre-built man pages from
      the distribution tarball, for instance)
