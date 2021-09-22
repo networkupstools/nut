@@ -191,6 +191,12 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * `input.phase.shift`
    * `outlet.N.name`
    * `outlet.N.type`
+   * `battery.voltage.cell.max`, `battery.voltage.cell.min`
+   * `battery.temperature.cell.max`, `battery.temperature.cell.min`
+   * `battery.status`
+   * `battery.capacity.nominal`
+   * `battery.date.maintenance` (and clarified purpose of `battery.date`)
+   * `battery.packs.external` (and clarified purpose of `battery.packs`)
    * `experimental.*` namespace introduced [PR #1046] to facilitate
      introduction of NUT drivers and their data points for which we do
      not yet have concepts, or which the original driver contributors
