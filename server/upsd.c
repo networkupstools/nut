@@ -936,7 +936,7 @@ int nut_uuid_v4(char *uuid_str)
 		return 0;
 
 	for (i = 0; i < UUID4_BYTESIZE; i++)
-		nut_uuid[i] = (unsigned)rand() + (unsigned)rand();
+		nut_uuid[i] = (uint8_t)rand() + (uint8_t)rand();
 
 	/* set variant and version */
 	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
