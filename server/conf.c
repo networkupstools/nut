@@ -176,7 +176,8 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		if (isdigit(arg[1][0])) {
-			maxconn = atol(arg[1]);
+			/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+			maxconn = (nfds_t)atol(arg[1]);
 			return 1;
 		}
 		else {
