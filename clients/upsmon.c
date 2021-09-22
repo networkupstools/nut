@@ -613,7 +613,7 @@ static void sync_secondaries(void)
 	utype_t	*ups;
 	char	temp[SMALLBUF];
 	time_t	start, now;
-	int	maxlogins, logins;
+	long	maxlogins, logins;
 
 	time(&start);
 
