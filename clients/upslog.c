@@ -202,7 +202,7 @@ static void do_time(const char *arg)
 static void getvar(const char *var)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 

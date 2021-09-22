@@ -547,7 +547,7 @@ static void clear_alarm(void)
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -598,7 +598,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %d args, need at least %d)",
+			"(got %zu args, need at least %zu)",
 			var, numa, numq);
 		return -1;
 	}

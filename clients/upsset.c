@@ -350,7 +350,7 @@ static void upsd_connect(void)
 static void print_cmd(const char *cmd)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -373,7 +373,7 @@ static void print_cmd(const char *cmd)
 static void showcmds(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -410,7 +410,7 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %u args, need at least 3)\n", numa);
+				"(got %zu args, need at least 3)\n", numa);
 
 			return;
 		}
@@ -617,7 +617,7 @@ static void docmd(void)
 static const char *get_data(const char *type, const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -655,7 +655,7 @@ static void do_string(const char *varname, int maxlen)
 static void do_enum(const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer, *val;
 	const	char	*query[4], *tmp;
 
@@ -697,7 +697,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %u args, need at least 4)\n", numa);
+				"(got %zu args, need at least 4)\n", numa);
 
 			free(val);
 			return;
@@ -720,7 +720,7 @@ static void do_enum(const char *varname)
 static void do_type(const char *varname)
 {
 	int	ret;
-	unsigned int	i, numq, numa;
+	size_t	i, numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -798,7 +798,7 @@ static void showsettings(void)
 static void showsettings(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer, *desc = NULL;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
