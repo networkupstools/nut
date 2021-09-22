@@ -51,6 +51,7 @@
 
 #include "upssched.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 
 typedef struct ttype_s {
 	char	*name;
@@ -241,7 +242,7 @@ static void cancel_timer(const char *name, const char *cname)
 static void us_serialize(int op)
 {
 	static	int	pipefd[2];
-	int	ret;
+	ssize_t	ret;
 	char	ch;
 
 	switch(op) {
@@ -333,7 +334,8 @@ static void conn_del(conn_t *target)
 
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
+	size_t	buflen;
 	va_list	ap;
 	char	buf[US_SOCK_BUF_LEN];
 
@@ -353,9 +355,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 	va_end(ap);
 
-	ret = write(conn->fd, buf, strlen(buf));
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret */
+		upsdebugx(2, "send_to_one(): buffered message too large");
 
-	if ((ret < 1) || (ret != (int) strlen(buf))) {
+		close(conn->fd);
+		conn_del(conn);
+
+		return 0;	/* failed */
+	}
+	ret = write(conn->fd, buf, buflen);
+
+	if ((ret < 1) || (ret != (ssize_t) buflen)) {
 		upsdebugx(2, "write to fd %d failed", conn->fd);
 
 		close(conn->fd);
@@ -471,7 +483,8 @@ static void log_unknown(size_t numarg, char **arg)
 
 static int sock_read(conn_t *conn)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	ch;
 
 	for (i = 0; i < US_MAX_READ; i++) {
@@ -700,7 +713,9 @@ static void setup_sigalrm(void)
 
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
-	int	i, pipefd, ret;
+	int	i, pipefd;
+	ssize_t	ret;
+	size_t enclen;
 	char	buf[SMALLBUF], enc[SMALLBUF + 8];
 
 	/* insanity */
@@ -716,6 +731,12 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			pconf_encode(arg2, enc, sizeof(enc)));
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
+
+	enclen = strlen(buf);
+	if (enclen >= SSIZE_MAX) {
+		/* Can't compare enclen to ret below */
+		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
+	}
 
 	/* see if the parent needs to be started (and maybe start it) */
 
@@ -736,10 +757,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, enc, strlen(enc));
+		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (int) strlen(enc))) {
+		if ((ret < 1) || (ret != (ssize_t) enclen)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
