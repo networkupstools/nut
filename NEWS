@@ -88,6 +88,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Eaton 9PX (XML/USB/SHUT)
    * Eaton Ellipse PRO 650 VA (USB)
    * Numeric Digital 800 (USB)
+   * Opti-UPS PS1500E (USB)
    * Powercool 350VA to 1600VA (USB)
 
  - C++11 support in nutclient library and cppunit tests
