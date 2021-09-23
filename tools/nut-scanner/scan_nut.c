@@ -221,7 +221,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char buf[SMALLBUF];
 	struct sigaction oldact;
 	int change_action_handler = 0;
-	int i;
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -231,7 +230,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
