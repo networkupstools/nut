@@ -76,7 +76,7 @@ static int ntop6(struct in6_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_
 /* Return the first ip or NULL if error */
 char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const char * stopIP)
 {
-	int addr;
+	uint32_t addr; /* 32-bit IPv4 address */
 	int i;
 	struct addrinfo hints;
 	struct addrinfo *res;
