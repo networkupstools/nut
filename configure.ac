@@ -314,6 +314,7 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
+NUT_FUNC_GETNAMEINFO_ARGTYPES
 
 dnl ----------------------------------------------------------------------
 dnl Check for python binary program names per language version
