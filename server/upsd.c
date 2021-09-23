@@ -711,7 +711,7 @@ static void poll_reload(void)
 
 	ret = sysconf(_SC_OPEN_MAX);
 
-	if (ret < maxconn) {
+	if ((intmax_t)ret < (intmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"Your system limits the maximum number of connections to %ld\n"
 			"but you requested %jd. The server won't start until this\n"
@@ -726,7 +726,7 @@ static void poll_reload(void)
 
 	/* How many items can we stuff into the array? */
 	size_t maxalloc = SIZE_MAX / sizeof(void *);
-	if ((unsigned long long)maxalloc < (unsigned long long)maxconn) {
+	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %jd as maximum number of connections, but we can only allocate %zu.\n"
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn, maxalloc);
