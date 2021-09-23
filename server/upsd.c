@@ -705,18 +705,6 @@ static void upsd_cleanup(void)
 	free(handler);
 }
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE_BESIDEFUNC
-# pragma GCC diagnostic ignored "-Wsign-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE_BESIDEFUNC
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
 static void poll_reload(void)
 {
 	long	ret;
@@ -730,21 +718,7 @@ static void poll_reload(void)
 			"problem is resolved.\n", ret, (intmax_t)maxconn);
 	}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS)
-# pragma GCC diagnostic push
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-	/* Some platforms define nfds_t as an unsigned int type which
-	 * then can not go negative */
-	/* FIXME: By the way, is maxconn==0 also a "toxic" value? */
-	if (0 > maxconn) {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS)
-# pragma GCC diagnostic pop
-#endif
+	if (1 > maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %jd as maximum number of connections.\n"
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
@@ -762,9 +736,6 @@ static void poll_reload(void)
 	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
 	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
 }
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) )
-# pragma GCC diagnostic pop
-#endif
 
 /* instant command and setvar status tracking */
 
