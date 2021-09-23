@@ -36,7 +36,7 @@ static int errcnt = 0;                                     /* modbus access erro
 static char *device_mfr = DEVICE_MFR;                      /* device manufacturer */
 static char *device_model = DEVICE_MODEL;                  /* device model */
 static int ser_baud_rate = BAUD_RATE;                      /* serial port baud rate */
-static int ser_parity = PARITY;                            /* serial port parity */
+static char ser_parity = PARITY;                           /* serial port parity */
 static int ser_data_bit = DATA_BIT;                        /* serial port data bit */
 static int ser_stop_bit = STOP_BIT;                        /* serial port stop bit */
 static int rio_slave_id = MODBUS_SLAVE_ID;                 /* set device ID to default value */
@@ -648,7 +648,14 @@ void get_config_vars()
 
 	/* check if serial parity is set ang get the value */
 	if (testvar("ser_parity")) {
-		ser_parity = *(int *)getval("ser_parity");
+		/* Dereference the char* we get */
+		char *sp = getval("ser_parity");
+		if (sp) {
+			/* TODO? Sanity-check the char we get? */
+			ser_parity = *sp;
+		} else {
+			upsdebugx(2, "Could not determine ser_parity, will keep default");
+		}
 	}
 	upsdebugx(2, "ser_parity %c", ser_parity);
 
@@ -880,7 +887,7 @@ modbus_t *modbus_new(const char *port)
 	modbus_t *mb;
 	char *sp;
 	if (strstr(port, "/dev/tty") != NULL) {
-		mb = modbus_new_rtu(port, ser_baud_rate, (char )ser_parity, ser_data_bit, ser_stop_bit);
+		mb = modbus_new_rtu(port, ser_baud_rate, ser_parity, ser_data_bit, ser_stop_bit);
 		if (mb == NULL) {
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
 		}
