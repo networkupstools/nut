@@ -93,7 +93,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 #endif
 

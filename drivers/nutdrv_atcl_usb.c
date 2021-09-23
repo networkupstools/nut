@@ -56,8 +56,8 @@ static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
 	{ USB_DEVICE(0x0001, 0x0000),  NULL },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 static usb_dev_handle	*udev = NULL;

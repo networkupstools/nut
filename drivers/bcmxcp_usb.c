@@ -87,7 +87,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f02), &phoenixtec_ups },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */

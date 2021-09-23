@@ -257,8 +257,8 @@ static usb_device_id_t riello_usb_id[] = {
 	/* various models */
 	{ USB_DEVICE(RIELLO_VENDORID, 0x5500), &cypress_subdriver },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 

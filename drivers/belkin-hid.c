@@ -77,7 +77,7 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0008), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static const char *liebert_online_fun(double value);

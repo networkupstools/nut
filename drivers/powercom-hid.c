@@ -48,7 +48,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static char powercom_scratch_buf[32];
