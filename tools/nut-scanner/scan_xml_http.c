@@ -391,7 +391,6 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_xml_t * tmp_sec = NULL;
 	nutscan_device_t * result = NULL;
-	int i;
 
 	if (!nutscan_avail_xml_http) {
 		return NULL;
@@ -418,7 +417,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 # endif /* HAVE_SEMAPHORE */
 			pthread_t thread;
 			nutscan_thread_t * thread_array = NULL;
-			int thread_count = 0;
+			size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 			size_t  max_threads_scantype = max_threads_netxml;
 # endif
