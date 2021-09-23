@@ -689,7 +689,7 @@ void get_config_vars()
 	}
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
-		sigar[OL_T].type = (int)strtol(getval("OL_regtype"), NULL, 10);
+		sigar[OL_T].type = (unsigned int)strtol(getval("OL_regtype"), NULL, 10);
 		if (sigar[OL_T].type < COIL || sigar[OL_T].type > HOLDING) {
 			sigar[OL_T].type = INPUT_B;
 		}
@@ -709,7 +709,7 @@ void get_config_vars()
 	}
 	/* check if OB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OB_regtype")) {
-		sigar[OB_T].type = (int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[OB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[OB_T].type < COIL || sigar[OB_T].type > HOLDING) {
 			sigar[OB_T].type = INPUT_B;
 		}
@@ -729,7 +729,7 @@ void get_config_vars()
 	}
 	/* check if LB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("LB_regtype")) {
-		sigar[LB_T].type = (int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[LB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[LB_T].type < COIL || sigar[LB_T].type > HOLDING) {
 			sigar[LB_T].type = INPUT_B;
 		}
@@ -749,7 +749,7 @@ void get_config_vars()
 	}
 	/* check if HB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("HB_regtype")) {
-		sigar[HB_T].type = (int)strtol(getval("HB_regtype"), NULL, 10);
+		sigar[HB_T].type = (unsigned int)strtol(getval("HB_regtype"), NULL, 10);
 		if (sigar[HB_T].type < COIL || sigar[HB_T].type > HOLDING) {
 			sigar[HB_T].type = INPUT_B;
 		}
@@ -769,7 +769,7 @@ void get_config_vars()
 	}
 	/* check if RB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("RB_regtype")) {
-		sigar[RB_T].type = (int)strtol(getval("RB_regtype"), NULL, 10);
+		sigar[RB_T].type = (unsigned int)strtol(getval("RB_regtype"), NULL, 10);
 		if (sigar[RB_T].type < COIL || sigar[RB_T].type > HOLDING) {
 			sigar[RB_T].type = INPUT_B;
 		}
@@ -789,7 +789,7 @@ void get_config_vars()
 	}
 	/* check if CHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("CHRG_regtype")) {
-		sigar[CHRG_T].type = (int)strtol(getval("CHRG_regtype"), NULL, 10);
+		sigar[CHRG_T].type = (unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
 		if (sigar[CHRG_T].type < COIL || sigar[CHRG_T].type > HOLDING) {
 			sigar[CHRG_T].type = INPUT_B;
 		}
@@ -809,7 +809,7 @@ void get_config_vars()
 	}
 	/* check if DISCHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("DISCHRG_regtype")) {
-		sigar[DISCHRG_T].type = (int)strtol(getval("DISCHRG_regtype"), NULL, 10);
+		sigar[DISCHRG_T].type = (unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
 		if (sigar[DISCHRG_T].type < COIL || sigar[DISCHRG_T].type > HOLDING) {
 			sigar[DISCHRG_T].type = INPUT_B;
 		}
@@ -829,7 +829,7 @@ void get_config_vars()
 	}
 	/* check if FSD register type is set and get the value otherwise set to COIL */
 	if (testvar("FSD_regtype")) {
-		sigar[FSD_T].type = (int)strtol(getval("FSD_regtype"), NULL, 10);
+		sigar[FSD_T].type = (unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
 		if (sigar[FSD_T].type < COIL || sigar[FSD_T].type > HOLDING) {
 			sigar[FSD_T].type = COIL;
 		}
