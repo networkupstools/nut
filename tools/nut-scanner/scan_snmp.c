@@ -101,7 +101,11 @@ static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
 			const oid *in_name2, size_t len2);
 static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
-static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
+/* NOTE: Older code had "u_int" as hashtype_len; are there different
+ * relevant versions of NetSNMP out there with different ABI's?
+ * Should we match in configure like for "getnameinfo()" arg types?
+ */
+static int (*nut_generate_Ku)(const oid * hashtype, size_t hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
