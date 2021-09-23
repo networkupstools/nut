@@ -93,7 +93,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
 #define USB_ERR_LIMIT 10 /* start limiting after 10 in a row  */
 #define USB_ERR_RATE 10  /* then only print every 10th error */
-#define XCP_USB_TIMEOUT 5000
+#define XCP_USB_TIMEOUT 5000 /* in msec */
 
 /* global variables */
 static usb_dev_handle *upsdev = NULL;
@@ -141,7 +141,8 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
 	ssize_t res;
-	int endblock, ellapsed_time, need_data;
+	int endblock, need_data;
+	long elapsed_time; /* milliseconds */
 	int tail;
 	size_t bytes_read, end_length, length;
 	unsigned char block_number, sequence, seq_num;
@@ -155,7 +156,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 	endblock = 0;      /* signal the last sequence in the block */
 	bytes_read = 0;    /* total length of data read, including XCP header */
 	res = 0;
-	ellapsed_time = 0;
+	elapsed_time = 0;
 	seq_num = 1;       /* current theoric sequence */
 
 	upsdebugx(1, "entering get_answer(%x)", command);
@@ -164,17 +165,21 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 	gettimeofday(&start_time, NULL);
 	memset(&buf, 0x0, PW_CMD_BUFSIZE);
 
-	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
+	assert (XCP_USB_TIMEOUT < INT_MAX);
+
+	while ( (!endblock) && ((XCP_USB_TIMEOUT - elapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
 		if (need_data > 0) {
-			res = usb_interrupt_read(upsdev, 0x81, (char *) buf + bytes_read,
+			res = usb_interrupt_read(upsdev,
+				0x81,
+				(char *) buf + bytes_read,
 				128,
-				(XCP_USB_TIMEOUT - ellapsed_time));
+				(int)(XCP_USB_TIMEOUT - elapsed_time));
 
 			/* Update time */
 			gettimeofday(&now, NULL);
-			ellapsed_time = (now.tv_sec - start_time.tv_sec)*1000 +
+			elapsed_time = (now.tv_sec - start_time.tv_sec)*1000 +
 					(now.tv_usec - start_time.tv_usec)/1000;
 
 			/* Check libusb return value */
