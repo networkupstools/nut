@@ -371,7 +371,19 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
 			*(uint *)data = *(uint *)data & mask16;
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			upsdebugx(2,"ERROR: register_read: invalid register type %d\n", type);
 			break;
 	}
@@ -407,7 +419,21 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			*(uint *)data = *(uint *)data & mask16;
 			rval = modbus_write_register(mb, addr, *(uint16_t *)data);
 			break;
+
+		case INPUT_B:
+		case INPUT_R:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			upsdebugx(2,"ERROR: register_write: invalid register type %d\n", type);
 			break;
 	}
@@ -560,7 +586,26 @@ int get_signal_state(devstate_t state)
 			addr = sigar[DISCHRG_T].addr;
 			rtype = sigar[DISCHRG_T].type;
 			break;
+
+		case BYPASS_T:
+		case CAL_T:
+		case FSD_T:
+		case OFF_T:
+		case OVER_T:
+		case TRIM_T:
+		case BOOST_T:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
 		default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			break;
 	}
 
