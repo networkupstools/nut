@@ -205,7 +205,8 @@ static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int i, ret, devfd = -1;
+	int i, devfd = -1;
+	ssize_t ret;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
 
@@ -295,7 +296,8 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	struct termios tio;
-	int ret = 0, retry;
+	ssize_t ret = 0;
+	int retry;
 	int devfd = -1;
 	char buf[128];
 
