@@ -137,10 +137,11 @@ void send_write_command(unsigned char *command, size_t command_length)
 #define PW_HEADER_SIZE (PW_HEADER_LENGTH + 1)
 #define PW_CMD_BUFSIZE	256
 /* get the answer of a command from the ups. And check that the answer is for this command */
-int get_answer(unsigned char *data, unsigned char command)
+ssize_t get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
-	int res, endblock, ellapsed_time, need_data;
+	ssize_t res;
+	int endblock, ellapsed_time, need_data;
 	int tail;
 	size_t bytes_read, end_length, length;
 	unsigned char block_number, sequence, seq_num;
@@ -281,15 +282,15 @@ int get_answer(unsigned char *data, unsigned char command)
 	}
 
 	upsdebug_hex (5, "get_answer", data, end_length);
-	assert (end_length < INT_MAX);
-	return (int)end_length;
+	assert (end_length < SSIZE_MAX);
+	return (ssize_t)end_length;
 }
 
 /* Sends a single command (length=1). and get the answer */
-int command_read_sequence(unsigned char command, unsigned char *data)
+ssize_t command_read_sequence(unsigned char command, unsigned char *data)
 {
-	int bytes_read = 0;
-	int retry = 0;
+	ssize_t bytes_read = 0;
+	size_t retry = 0;
 
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
@@ -307,10 +308,10 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
+ssize_t command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
-	int bytes_read = 0;
-	int retry = 0;
+	ssize_t bytes_read = 0;
+	size_t retry = 0;
 
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_write_command(command, command_length);
