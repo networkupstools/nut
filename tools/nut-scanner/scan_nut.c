@@ -140,7 +140,7 @@ static void * list_nut_devices(void * arg)
 	char *hostname = NULL;
 	UPSCONN_t *ups = malloc(sizeof(*ups));
 	nutscan_device_t * dev = NULL;
-	int buf_size;
+	size_t buf_size;
 
 	tv.tv_sec = nut_arg->timeout / (1000*1000);
 	tv.tv_usec = nut_arg->timeout % (1000*1000);
