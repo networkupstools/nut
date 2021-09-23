@@ -280,7 +280,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				buf_size = strlen(device) +
 					strlen(host_name) +
 					5 + 1 + 1 + 1;
-				dev->port=malloc(buf_size);
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s:%u",
 						device, host_name, port);
@@ -288,8 +288,8 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			}
 			else {
 				/*+1+1 is for '@' character and terminating 0 */
-				buf_size = strlen(device)+strlen(host_name)+1+1;
-				dev->port=malloc(buf_size);
+				buf_size = strlen(device) + strlen(host_name) + 1 + 1;
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s",
 						device, host_name);
@@ -330,15 +330,15 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			if (port != PORT) {
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
-				buf_size = strlen(host_name)+strlen(buf)+1+1;
-				dev->port=malloc(buf_size);
+				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s:%s",
 						host_name, buf);
 				}
 			}
 			else {
-				dev->port=strdup(host_name);
+				dev->port = strdup(host_name);
 			}
 			if (dev->port) {
 				dev_ret = nutscan_add_device_to_device(dev_ret, dev);
