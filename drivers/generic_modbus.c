@@ -29,21 +29,21 @@
 #define DRIVER_VERSION	"0.01"
 
 /* variables */
-modbus_t *mbctx = NULL;                             /* modbus memory context */
-sigattr_t sigar[NUMOF_SIG_STATES];                  /* array of ups signal attributes */
-int errcnt = 0;                                     /* modbus access error counter */
+static modbus_t *mbctx = NULL;                             /* modbus memory context */
+static sigattr_t sigar[NUMOF_SIG_STATES];                  /* array of ups signal attributes */
+static int errcnt = 0;                                     /* modbus access error counter */
 
-char *device_mfr = DEVICE_MFR;                      /* device manufacturer */
-char *device_model = DEVICE_MODEL;                  /* device model */
-int ser_baud_rate = BAUD_RATE;                      /* serial port baud rate */
-int ser_parity = PARITY;                            /* serial port parity */
-int ser_data_bit = DATA_BIT;                        /* serial port data bit */
-int ser_stop_bit = STOP_BIT;                        /* serial port stop bit */
-int rio_slave_id = MODBUS_SLAVE_ID;                 /* set device ID to default value */
-int FSD_pulse_duration = SHTDOWN_PULSE_DURATION;    /* set the FSD pulse duration */
+static char *device_mfr = DEVICE_MFR;                      /* device manufacturer */
+static char *device_model = DEVICE_MODEL;                  /* device model */
+static int ser_baud_rate = BAUD_RATE;                      /* serial port baud rate */
+static int ser_parity = PARITY;                            /* serial port parity */
+static int ser_data_bit = DATA_BIT;                        /* serial port data bit */
+static int ser_stop_bit = STOP_BIT;                        /* serial port stop bit */
+static int rio_slave_id = MODBUS_SLAVE_ID;                 /* set device ID to default value */
+static int FSD_pulse_duration = SHTDOWN_PULSE_DURATION;    /* set the FSD pulse duration */
 
 /* get config vars set by -x or defined in ups.conf driver section */
-void get_config_vars();
+void get_config_vars(void);
 
 /* create a new modbus context based on connection type (serial or TCP) */
 modbus_t *modbus_new(const char *port);
@@ -59,6 +59,8 @@ int get_signal_state(devstate_t state);
 
 /* count the time elapsed since start */
 long time_elapsed(struct timeval *start);
+
+int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
