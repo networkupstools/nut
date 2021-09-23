@@ -279,7 +279,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					(struct sockaddr *)&sockAddress_udp,
 					&sockAddressLength);
 
-				if (recv_size == -1) {
+				if (recv_size < 0) {
 					fprintf(stderr,
 						"Error reading \
 						socket: %d, #%d/%d\n", errno, (i + 1), MAX_RETRIES);
@@ -318,7 +318,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
-				(*nut_ne_xml_parse)(parser, buf, recv_size);
+				/* recv_size is a ssize_t, so in range of size_t */
+				(*nut_ne_xml_parse)(parser, buf, (size_t)recv_size);
 				int parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
 				(*nut_ne_xml_destroy)(parser);
 
