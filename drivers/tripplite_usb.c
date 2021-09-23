@@ -159,7 +159,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001), NULL },
 	
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static int subdriver_match_func(USBDevice_t *arghd, void *privdata)

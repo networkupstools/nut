@@ -378,8 +378,9 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
-	/* end of list */
-	{-1, -1, NULL}
+
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 

@@ -56,8 +56,8 @@ static usb_device_id_t richcomm_usb_id[] = {
 	/* Sweex 1000VA */
 	{ USB_DEVICE(0x0925, 0x1234),  NULL },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 static usb_dev_handle	*udev = NULL;
