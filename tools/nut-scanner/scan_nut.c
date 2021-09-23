@@ -35,10 +35,10 @@ static const char *dl_error = NULL;
 static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
 static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
 					int flags, struct timeval * timeout);
-static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
+static int (*nut_upscli_list_start)(UPSCONN_t *ups, size_t numq,
 					const char **query);
-static int (*nut_upscli_list_next)(UPSCONN_t *ups, unsigned int numq,
-			const char **query, unsigned int *numa, char ***answer);
+static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
+			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 
 static nutscan_device_t * dev_ret = NULL;
@@ -134,7 +134,7 @@ static void * list_nut_devices(void * arg)
 	char *target_hostname = nut_arg->hostname;
 	struct timeval tv;
 	int port;
-	unsigned int numq, numa;
+	size_t numq, numa;
 	const char *query[4];
 	char **answer;
 	char *hostname = NULL;
