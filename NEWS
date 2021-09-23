@@ -157,6 +157,11 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - liebert-esp2: Correct battery V scaling, update docs, implement split-phase
    unit support [PR #412]
 
+ - tripplite: the "Tripp-Lite SmartUPS driver" as tested with SMART2200NET
+   learned to discover the firmware generation and some device features,
+   and in particular to manage power separately on one or two outlet groups
+   [PR #1048]
+
  - libnutclient: introduce getDevicesVariableValues() to improve performances
    when querying many devices (up to 15 times faster)
 
