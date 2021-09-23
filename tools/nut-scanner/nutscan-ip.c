@@ -49,7 +49,7 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 	memcpy(addr2->s6_addr, addr.s6_addr,   sizeof(addr.s6_addr));
 }
 
-static int ntop(struct in_addr * ip, char * host, size_t host_size)
+static int ntop(struct in_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_size)
 {
 	struct sockaddr_in in;
 	memset(&in, 0, sizeof(struct sockaddr_in));
@@ -61,7 +61,7 @@ static int ntop(struct in_addr * ip, char * host, size_t host_size)
 		host, host_size, NULL, 0, NI_NUMERICHOST);
 }
 
-static int ntop6(struct in6_addr * ip, char * host, size_t host_size)
+static int ntop6(struct in6_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_size)
 {
 	struct sockaddr_in6 in6;
 	memset(&in6, 0, sizeof(struct sockaddr_in6));
