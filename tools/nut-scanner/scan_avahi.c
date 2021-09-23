@@ -234,7 +234,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 	char * device_saveptr = NULL;
 	int device_found = 0;
 	char buf[6];
-	int buf_size;
+	size_t buf_size;
 
 	if (text == NULL) {
 		return;
