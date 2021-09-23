@@ -8,6 +8,10 @@ dnl of getnameinfo function, and define those types in
 dnl macros GETNAMEINFO_TYPE_ARG1, GETNAMEINFO_TYPE_ARG2,
 dnl GETNAMEINFO_TYPE_ARG46 (4 and 6) and GETNAMEINFO_TYPE_ARG7.
 dnl As seen from the loop, these vary a lot between OSes...
+dnl Order of attempts in the loop below was updated to first
+dnl try and quickly match current X/Open definition at
+dnl   https://pubs.opengroup.org/onlinepubs/9699919799/functions/getnameinfo.html
+dnl for modern conforming OSes.
 
 AC_DEFUN([NUT_FUNC_GETNAMEINFO_ARGTYPES], [
   AC_REQUIRE([NUT_CHECK_HEADER_WS2TCPIP])dnl
@@ -16,9 +20,9 @@ AC_DEFUN([NUT_FUNC_GETNAMEINFO_ARGTYPES], [
   AC_CACHE_CHECK([types of arguments for getnameinfo],
     [nut_cv_func_getnameinfo_args], [
     nut_cv_func_getnameinfo_args="unknown"
-    for gni_arg1 in 'struct sockaddr *' 'const struct sockaddr *' 'void *'; do
+    for gni_arg1 in 'const struct sockaddr *' 'struct sockaddr *' 'void *'; do
       for gni_arg2 in 'socklen_t' 'size_t' 'int'; do
-        for gni_arg46 in 'size_t' 'int' 'socklen_t' 'unsigned int'; do
+        for gni_arg46 in 'socklen_t' 'size_t' 'int' 'unsigned int'; do
           for gni_arg7 in 'int' 'unsigned int'; do
             AC_COMPILE_IFELSE([
               AC_LANG_PROGRAM([
