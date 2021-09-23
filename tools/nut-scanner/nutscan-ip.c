@@ -255,7 +255,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	nutscan_ip_iter_t ip;
 	int mask_val;
 	int mask_byte;
-	unsigned long mask_bit;
+	uint32_t mask_bit; /* 32-bit IPv4 address bitmask */
 	char host[SMALLBUF];
 	struct addrinfo hints;
 	struct addrinfo *res;
