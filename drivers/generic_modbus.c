@@ -175,12 +175,12 @@ void upsdrv_initups(void)
 void upsdrv_updateinfo(void)
 {
 	int rval;
-	int online = -1;	/* keep online state */
+	int online = -1;    /* keep online state */
 	errcnt = 0;
 
 	upsdebugx(2, "upsdrv_updateinfo");
-	status_init();	/* initialize ups.status update */
-	alarm_init();	/* initialize ups.alarm update */
+	status_init();      /* initialize ups.status update */
+	alarm_init();       /* initialize ups.alarm update */
 
 	/*
 	 * update UPS status regarding MAINS state either via OL | OB.
@@ -314,7 +314,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	int rval;
-	int cnt = FSD_REPEAT_CNT;	/* shutdown repeat counter */
+	int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
 	struct timeval start;
 	long etime;
 
@@ -554,7 +554,7 @@ int upscmd(const char *cmd, const char *arg)
 
 	if (!strcasecmp(cmd, "load.off")) {
 		if (sigar[FSD_T].addr != NOTUSED &&
-			(sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
+		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
 		) {
 			data = 1 ^ sigar[FSD_T].noro;
 			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
