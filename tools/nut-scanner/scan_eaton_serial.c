@@ -397,14 +397,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
-	int i;
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
 # endif
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */
