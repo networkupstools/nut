@@ -112,7 +112,7 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-static long g_usec_timeout ;
+static useconds_t g_usec_timeout ;
 
 // Pointer to the array we ultimately use (builtin or dynamic)
 snmp_device_id_t *snmp_device_table = NULL;
@@ -1001,7 +1001,7 @@ try_SysOID_free:
 }
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_snmp_t * tmp_sec;
@@ -1280,7 +1280,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #else /* WITH_SNMP */
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(stop_ip);
