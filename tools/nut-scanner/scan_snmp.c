@@ -1000,8 +1000,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
                                      long usec_timeout, nutscan_snmp_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
-/*	bool pass = true; */
-	int i;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -1013,7 +1011,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
