@@ -168,8 +168,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	char *scanMsg = "<SCAN_REQUEST/>";
 /* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
-/*	int port_http = 80; */
-	int port_udp = 4679;
+/*	uint16_t port_http = 80; */
+	uint16_t port_udp = 4679;
 /* A NULL "ip" causes a broadcast scan; otherwise the single ip address is queried directly */
 	char *ip = NULL;
 	long usec_timeout = -1;
