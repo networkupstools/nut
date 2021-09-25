@@ -33,7 +33,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.31"
+#define MGE_XML_VERSION		"MGEXML/0.30"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -949,10 +949,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
-	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
-	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
-	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
 	{ "battery.protection", 0, 0, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
 	{ "battery.energysave", 0, 0, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 

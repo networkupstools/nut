@@ -35,6 +35,9 @@ Makefile.in
 /missing
 /test-driver
 common/.dirstamp
+*-spellchecked
+/.ci*.log
+/.ci*.log.*
 
 # Dist
 /nut-*.*.*/

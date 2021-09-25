@@ -560,7 +560,7 @@ void upsdrv_initups(void)
 #ifndef TESTING
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
-	char	*regex_array[6];
+	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
 
@@ -570,6 +570,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -685,5 +686,6 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 #endif	/* TESTING */
 }

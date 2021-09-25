@@ -35,3 +35,6 @@ if WITH_AUGLENS
  auglenstests_DATA = \
     tests/test_nut.aug
 endif
+
+clean-local:
+	rm -f *-spellchecked
