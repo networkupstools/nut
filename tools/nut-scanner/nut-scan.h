@@ -107,7 +107,7 @@ nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, c
 
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 
-nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
+nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
