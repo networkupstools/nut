@@ -465,7 +465,7 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
-                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO'],
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
                 requiredNodelabels: ["NUT_BUILD_CAPS=docs:all"],
                 excludedNodelabels: [],
 
@@ -506,7 +506,7 @@ set | sort -n """
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
-                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO'],
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
                 requiredNodelabels: ["NUT_BUILD_CAPS=docs:man"],
                 excludedNodelabels: ["NUT_BUILD_CAPS=docs:all"],
 
