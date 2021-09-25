@@ -138,7 +138,7 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k -j 8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
@@ -670,7 +670,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k -j8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k -j 8 all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
       $CI_TIME $MAKE VERBOSE=1 all )
 
