@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2731 utf-8
+personal_ws-1.1 en 2740 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -341,6 +341,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
+FossHost
 Frama
 FreeBSD
 FreeDesktop
@@ -460,8 +461,8 @@ InvMin
 Invensys
 InverterV
 Invter
-Ioannou
 IoT
+Ioannou
 JAWAN
 JBus
 JKL
@@ -474,6 +475,7 @@ Jasuny
 JavaScript
 Javadoc
 Javascript
+Jenkinsfile
 Joon
 Jumpered
 KNutClient
@@ -774,6 +776,7 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PRs
 PSA
 PSD
 PSFn
@@ -1126,6 +1129,7 @@ UB
 UBD
 UBR
 UDP
+UI
 UID
 UIDA
 UINT
@@ -1245,10 +1249,12 @@ Yoyodyne
 Yukai
 Yunto
 ZFS
+ZProject
 ZZZZZZZZ
 Zaika
 Zampieri
 Zawadzki
+ZeroMQ
 abcd
 abuild
 acVoltsIn
@@ -1397,6 +1403,7 @@ binfmt
 binutils
 bitmapped
 bitness
+bitnesses
 bitwise
 bn
 boolean
@@ -1614,6 +1621,7 @@ dummypass
 dummyups
 dumpxml
 dv
+dynamatrix
 ePDU
 ePDUs
 eaton
@@ -1634,6 +1642,7 @@ energizerups
 energysave
 english
 enum
+envvar
 ep
 epdu
 epodebounce
