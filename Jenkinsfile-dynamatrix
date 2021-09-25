@@ -54,7 +54,8 @@ import org.nut.dynamatrix.*;
     // are used (just assigning it among build agent labels is not enough).
     dynacfgPipeline['shellcheck'] = [
         //'stageNameFunc': null,
-        'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
+        //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
+        'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
         'single': '( \${MAKE} shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
