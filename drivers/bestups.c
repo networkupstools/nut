@@ -133,7 +133,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int get_ident(char *buf, size_t bufsize)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	*ID;
 
 	ID = getval("ID");	/* user-supplied override from ups.conf */
@@ -245,7 +246,8 @@ static void ups_ident(void)
 static void ups_sync(void)
 {
 	char	buf[256];
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
@@ -282,7 +284,8 @@ void upsdrv_initinfo(void)
 
 static int ups_on_line(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	temp[256], pstat[32];
 
 	for (i = 0; i < MAXTRIES; i++) {
@@ -327,7 +330,7 @@ void upsdrv_updateinfo(void)
 	char	involt[16], outvolt[16], loadpct[16], acfreq[16],
 		battvolt[16], upstemp[16], pstat[16], buf[256];
 	float	bvoltp;
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
 
@@ -350,13 +353,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %zd bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %d bytes)",
+		ser_comm_fail("Poll failed: response too long (got %zd bytes)",
 			ret);
 		dstate_datastale();
 		return;
