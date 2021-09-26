@@ -129,7 +129,7 @@ static void extract_info(const char *buf, const mge_info_item_t *mge,
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
-static int mge_command(char *reply, int replylen, const char *fmt, ...);
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -224,14 +224,14 @@ void upsdrv_initinfo(void)
 	int  table;
 	int  tries;
 	int  status_ok = 0;
-	int  bytes_rcvd;
+	ssize_t  bytes_rcvd;
 	int  si_data1 = 0;
 	int  si_data2 = 0;
 	mge_info_item_t *item;
 	models_name_t *model_info;
 	mge_model_info_t *legacy_model;
 	char infostr[32];
-	int  chars_rcvd;
+	ssize_t  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
@@ -404,7 +404,7 @@ void upsdrv_updateinfo(void)
 	char buf[BUFFLEN];
 	char infostr[32];
 	int status_ok;
-	int bytes_rcvd;
+	ssize_t bytes_rcvd;
 	mge_info_item_t *item;
 
 	/* make sure that communication is enabled */
@@ -726,7 +726,7 @@ static int get_ups_status(void)
 	int over_set= FALSE;  /* has OVER flag been set ? */
 	int tries = 0;
 	int ok    = FALSE;
-	int bytes_rcvd = 0;
+	ssize_t bytes_rcvd = 0;
 
 	do {
 		/* Check if we are asked to stop (reactivity++) */
@@ -867,12 +867,12 @@ static const char *info_variable_cmd(const char *type)
 
    returns :  no of chars received, -1 if error
 */
-static int mge_command(char *reply, int replylen, const char *fmt, ...)
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 {
 	const char *p;
 	char command[BUFFLEN];
-	int bytes_sent = 0;
-	int bytes_rcvd = 0;
+	ssize_t bytes_sent = 0;
+	ssize_t bytes_rcvd = 0;
 	int ret;
 	va_list ap;
 
@@ -940,7 +940,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %d byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: received %zd byte(s)", bytes_rcvd);
 
 	return bytes_rcvd;
 }
