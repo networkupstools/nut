@@ -30,8 +30,8 @@
 #define DRIVER_NAME	"Belkin Smart protocol driver"
 #define DRIVER_VERSION	"0.24"
 
-static int init_communication(void);
-static int get_belkin_reply(char *buf);
+static ssize_t init_communication(void);
+static ssize_t get_belkin_reply(char *buf);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -51,9 +51,10 @@ static void send_belkin_command(char cmd, const char *subcmd, const char *data)
 	upsdebugx(3, "Send Command: %s, %s", subcmd, data);
 }
 
-static int init_communication(void)
+static ssize_t init_communication(void)
 {
-	int	i, res;
+	int	i;
+	ssize_t	res;
 	char	temp[SMALLBUF];
 
 	for (i = 0; i < 10; i++) {
@@ -107,9 +108,9 @@ static char *get_belkin_field(const char *in, char *out, size_t outlen, size_t n
 	return NULL;
 }
 
-static int get_belkin_reply(char *buf)
+static ssize_t get_belkin_reply(char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 	long	cnt;
 	char	tmp[8];
 
@@ -119,7 +120,7 @@ static int get_belkin_reply(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %d bytes", ret);
+		ser_comm_fail("Initial read returned %zd bytes", ret);
 		return -1;
 	}
 
@@ -145,7 +146,7 @@ static int get_belkin_reply(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %d bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -154,9 +155,9 @@ static int get_belkin_reply(char *buf)
 	return ret;
 }
 
-static int do_broken_rat(char *buf)
+static ssize_t do_broken_rat(char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 	long	cnt;
 	char	tmp[8];
 
@@ -166,7 +167,7 @@ static int do_broken_rat(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %d bytes", ret);
+		ser_comm_fail("Initial read returned %zd bytes", ret);
 		return -1;
 	}
 
@@ -197,7 +198,7 @@ static int do_broken_rat(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %d bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -210,7 +211,7 @@ static int do_broken_rat(char *buf)
 void upsdrv_updateinfo(void)
 {
 	static int retry = 0;
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF], st[SMALLBUF];
 
 	send_belkin_command(STATUS, STAT_STATUS, "");
@@ -348,7 +349,7 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	int	res;
+	ssize_t	res;
 
 	res = init_communication();
 	if (res < 0) {
@@ -371,7 +372,7 @@ void upsdrv_shutdown(void)
 
 /* handle "beeper.disable" */
 static void do_beeper_off(void) {
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF];
 	const char	*arg;
 
@@ -482,7 +483,7 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF], st[SMALLBUF];
 
 	res = init_communication();
