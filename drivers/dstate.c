@@ -561,7 +561,7 @@ static void sock_read(conn_t *conn)
 
 				upslogx(LOG_INFO, "Unknown command on socket: ");
 
-				for (arg = 0; arg < conn->ctx.numargs; arg++) {
+				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
 			}
