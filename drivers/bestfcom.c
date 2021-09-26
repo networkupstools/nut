@@ -196,9 +196,9 @@ static void alert_handler(char ch)
 time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 ----------------------------------------------------
 */
-static int execute(const char *cmd, char *result, size_t resultsize)
+static ssize_t execute(const char *cmd, char *result, size_t resultsize)
 {
-	int ret;
+	ssize_t ret;
 	char buf[SMALLBUF];
 	unsigned char ch;
 
