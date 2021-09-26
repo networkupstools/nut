@@ -168,8 +168,9 @@ static void sock_disconnect(conn_t *conn)
 
 static void send_to_all(const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
 	char	buf[ST_SOCK_BUF_LEN];
+	size_t	buflen;
 	va_list	ap;
 	conn_t	*conn, *cnext;
 
@@ -194,15 +195,23 @@ static void send_to_all(const char *fmt, ...)
 		return;
 	}
 
-	upsdebugx(5, "%s: %.*s", __func__, ret-1, buf);
+	if (ret <= INT_MAX)
+		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
+
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret... though should not happen with ST_SOCK_BUF_LEN */
+		upslog_with_errno(LOG_NOTICE, "%s failed: buffered message too large", __func__);
+		return;
+	}
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
 
-		ret = write(conn->fd, buf, strlen(buf));
+		ret = write(conn->fd, buf, buflen);
 
-		if (ret != (int)strlen(buf)) {
-			upsdebugx(1, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+		if ((ret < 1) || (ret != (ssize_t)buflen)) {
+			upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
 			sock_disconnect(conn);
 		}
 	}
@@ -210,9 +219,10 @@ static void send_to_all(const char *fmt, ...)
 
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
 	va_list	ap;
 	char	buf[ST_SOCK_BUF_LEN];
+	size_t	buflen;
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -236,12 +246,20 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		return 1;
 	}
 
-	upsdebugx(5, "%s: %.*s", __func__, ret-1, buf);
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret... though should not happen with ST_SOCK_BUF_LEN */
+		upslog_with_errno(LOG_NOTICE, "%s failed: buffered message too large", __func__);
+		return 0;	/* failed */
+	}
+
+	if (ret <= INT_MAX)
+		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
 	ret = write(conn->fd, buf, strlen(buf));
 
-	if (ret != (int)strlen(buf)) {
-		upsdebugx(1, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+	if ((ret < 1) || (ret != (ssize_t)buflen)) {
+		upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
 		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
@@ -512,7 +530,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 static void sock_read(conn_t *conn)
 {
-	int	i, ret;
+	ssize_t	ret, i;
 	char	buf[SMALLBUF];
 
 	ret = read(conn->fd, buf, sizeof(buf));
