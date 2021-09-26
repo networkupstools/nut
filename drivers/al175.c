@@ -79,7 +79,7 @@ upsdrv_info_t upsdrv_info = {
  */
 typedef struct {
 	byte_t     *buf;	/*!< the whole buffer address	*/
-	unsigned    buf_size;	/*!< the whole buffer size	*/
+	size_t      buf_size;	/*!< the whole buffer size	*/
 
 	byte_t     *begin;	/*!< begin of content		*/
 	byte_t     *end;	/*!< one-past-end of content	*/
@@ -163,8 +163,8 @@ typedef struct {
  * @see 1. INTRODUCTION
  */
 typedef struct {
-	unsigned  addr;	/*!< Addr[5:8]		*/
-	unsigned  len;	/*!< NOB[9:10]		*/
+	size_t  addr;	/*!< Addr[5:8]		*/
+	size_t  len;	/*!< NOB[9:10]		*/
 } io_head_t;
 
 /**
@@ -232,7 +232,7 @@ static long from_hex(const byte_t *head, unsigned len)
 static byte_t compute_bcc(const byte_t *buf, size_t count)
 {
 	byte_t bcc=0;
-	unsigned i;
+	size_t i;
 
 	for (i=0; i<count; ++i)
 		bcc ^= buf[i];
@@ -332,7 +332,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
-	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04X%02X", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
+	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
 
 	memcpy(out+11, buf, count);
 	reverse_bits(out+11, count);
@@ -354,7 +354,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
  * @param   addr    start address of requested area
  * @param   count   no. of requested bytes
  */
-static void al_prep_read_req(raw_data_t *dest, unsigned addr, size_t count)
+static void al_prep_read_req(raw_data_t *dest, size_t addr, size_t count)
 {
 	comli_head_t h;
 
@@ -478,7 +478,7 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
  *     begin							       end
  */
 
-	unsigned long io_addr, io_len;
+	size_t io_addr, io_len;
 	const byte_t *reply_head = raw_reply_head.begin - 1;
 
 	if ( (raw_reply_head.end - raw_reply_head.begin) != 10)  {
@@ -504,21 +504,21 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 	/* Avoid signed/unsigned implicit conversion warnings
 	 * At least, when shuffling a signed long into unsigned long,
 	 * don't have to worry about overflows */
-	io_addr = (unsigned long)from_hex(&reply_head[5], 4);
+	io_addr = (size_t)from_hex(&reply_head[5], 4);
 	if (io_addr == -1UL)  {
 		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__,
 			reply_head[5], reply_head[6], reply_head[7], reply_head[8]);
 		return -1;		/* wrong addr	*/
 	}
 
-	io_len = (unsigned long)from_hex(&reply_head[9], 2);
+	io_len = (size_t)from_hex(&reply_head[9], 2);
 	if (io_len == -1UL)   {
 		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9], reply_head[10]);
 		return -1;		/* wrong NOB	*/
 	}
 
 	if (io_len > IO_LEN_MAX) {
-		upsdebugx(3, "nob too big\t(%lu > %i)", io_len, IO_LEN_MAX);
+		upsdebugx(3, "nob too big\t(%zu > %i)", io_len, IO_LEN_MAX);
 		return -1;		/* too much data claimed */
 	}
 
@@ -554,7 +554,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
  */
 
 	int err;
-	unsigned i;
+	size_t i;
 	const byte_t *reply = NULL;
 
 	/* 1: extract header and parse it */
@@ -572,7 +572,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %i)",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %zi)",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -580,7 +580,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 
 	/* extract the data */
 	if (io_buf->buf_size < io_head->len)	{
-		upsdebugx(3, "%s: too much data to fit in io_buf\t(%u > %u)",
+		upsdebugx(3, "%s: too much data to fit in io_buf\t(%zu > %zu)",
 				__func__, io_head->len, io_buf->buf_size);
 		return -1;		/* too much data to fit in io_buf	*/
 	}
@@ -891,7 +891,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.begin -= 1;  /* restore STX */
 
-	upsdebugx(4, "\t\t--> addr: 0x%x  len: 0x%x", io->addr, io->len);
+	upsdebugx(4, "\t\t--> addr: 0x%zx  len: 0x%zx", io->addr, io->len);
 
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
@@ -905,7 +905,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%zi (!= %i)", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%zi (!= %zi)", err, io->len+2);
 		ret = -1; goto out;
 	}
 
@@ -972,7 +972,7 @@ static int al175_do(byte_t cmd, byte_t subcmd, uint16_t pr1, uint16_t pr2, uint1
  * 'READ REGISTER'
  *
  */
-static int al175_read(byte_t *dst, unsigned addr, size_t count)
+static int al175_read(byte_t *dst, size_t addr, size_t count)
 {
 	int err;
 	raw_data_t REQ_frame;
@@ -1000,13 +1000,13 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
 	if (err==-1)
 		return -1;
 
-	if ((rx_data.end - rx_data.begin) != (int)count)
+	if ((rx_data.end - rx_data.begin) < 0 ||
+	    (size_t)(rx_data.end - rx_data.begin) != count)
 		return -1;
 
 	if ( (io.addr != addr) || (io.len != count) ) {
-		upsdebugx(3, "%s: io_head mismatch\t(%x,%x != %x,%x)",
-				__func__, io.addr, io.len, addr,
-				(unsigned int)count);
+		upsdebugx(3, "%s: io_head mismatch\t(%zx,%zx != %zx,%zx)",
+				__func__, io.addr, io.len, addr, count);
 		return -1;
 	}
 
