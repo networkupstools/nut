@@ -94,6 +94,10 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.stashnameSrc = 'nut-ci-src'
 
+    if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
+        dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
+    }
+
     if ( !( env?.BRANCH_NAME ==~ /master|main|stable/ ) ) {
         // else: For main branches we want all builds,
         // to keep reference for warnings-ng up to date
