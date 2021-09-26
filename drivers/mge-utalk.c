@@ -125,7 +125,7 @@ static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
 static void extract_info(const char *buf, const mge_info_item_t *mge,
-			 char *infostr, int infolen);
+			 char *infostr, size_t infolen);
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
@@ -675,7 +675,7 @@ static void enable_ups_comm(void)
          buf is changed inspite of const !!!!!
 */
 static void extract_info(const char *buf, const mge_info_item_t *item,
-			 char *infostr, int infolen)
+			 char *infostr, size_t infolen)
 {
 	/* initialize info string */
 	infostr[0] = '\0';
