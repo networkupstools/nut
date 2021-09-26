@@ -745,7 +745,7 @@ static void io_new_transaction(int timeout)
  * @return -1 (error)  0 (timeout)  >0 (got it)
  *
  */
-static int get_char(char *ch)
+static ssize_t get_char(char *ch)
 {
 	time_t now = time(NULL);
 	long rx_timeout;
@@ -767,7 +767,7 @@ static int get_char(char *ch)
  * @return -1 (error)  0 (timeout)  >0 (no. of characters actually read)
  *
  */
-static int get_buf(byte_t *buf, size_t len)
+static ssize_t get_buf(byte_t *buf, size_t len)
 {
 	time_t now = time(NULL);
 	long rx_timeout;
@@ -787,7 +787,7 @@ static int get_buf(byte_t *buf, size_t len)
 static int scan_for(char c)
 {
 	char in;
-	int  err;
+	ssize_t  err;
 
 	while (1) {
 		err = get_char(&in);
@@ -809,7 +809,7 @@ static int scan_for(char c)
  */
 static int recv_command_ack()
 {
-	int err;
+	ssize_t err;
 	raw_data_t ack;
 	byte_t     ack_buf[8];
 
@@ -855,11 +855,12 @@ static int recv_command_ack()
  */
 static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 {
-	int err, ret;
+	ssize_t err;
+	int ret;
 	raw_data_t reply_head;
 	raw_data_t reply;
 
-	byte_t	   reply_head_buf[11];
+	byte_t     reply_head_buf[11];
 
 	/* 1:  STX  */
 	err = scan_for(STX);
@@ -904,7 +905,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%i (!= %i)", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%zi (!= %i)", err, io->len+2);
 		ret = -1; goto out;
 	}
 
