@@ -2277,7 +2277,6 @@ AC_CONFIG_FILES([
  lib/Makefile
  scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
- scripts/augeas/gen-nutupsconf-aug.py
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsconf.aug
  scripts/augeas/nutupsdconf.aug
@@ -2317,8 +2316,6 @@ AC_CONFIG_FILES([
  scripts/Makefile
  server/Makefile
  tools/Makefile
- tools/gitlog2changelog.py
- tools/nut-snmpinfo.py
  tools/nut-scanner/Makefile
  tests/Makefile
  Makefile
