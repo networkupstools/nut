@@ -2189,6 +2189,7 @@ X @ALTSTATEPATH@/nut
 EOF])
 ])
 
+AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
@@ -2213,7 +2214,6 @@ AC_CONFIG_FILES([
  lib/Makefile
  scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
- scripts/augeas/gen-nutupsconf-aug.py
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsconf.aug
  scripts/augeas/nutupsdconf.aug
@@ -2227,16 +2227,10 @@ AC_CONFIG_FILES([
  scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
- scripts/Aix/nut.init
  scripts/HP-UX/nut.psf
- scripts/HP-UX/postinstall
  scripts/python/Makefile
- scripts/python/app/NUT-Monitor
  scripts/python/module/PyNUT.py
- scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/Makefile
- scripts/upsdrvsvcctl/nut-driver-enumerator.sh
- scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
  scripts/systemd/nut-common.tmpfiles
  scripts/systemd/nut-driver@.service
@@ -2244,23 +2238,13 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
  scripts/systemd/nut-driver-enumerator.path
- scripts/systemd/nutshutdown
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-monitor.xml
  scripts/Solaris/nut-server.xml
  scripts/Solaris/nut.xml
- scripts/Solaris/svc-nut-server
- scripts/Solaris/svc-nut-monitor
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
- scripts/Solaris/precheck.py
- scripts/Solaris/preinstall
- scripts/Solaris/postinstall
- scripts/Solaris/preremove
- scripts/Solaris/postremove
- scripts/Solaris/preproto.pl
- scripts/Solaris/nut
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
@@ -2269,12 +2253,39 @@ AC_CONFIG_FILES([
  scripts/Makefile
  server/Makefile
  tools/Makefile
- tools/gitlog2changelog.py
- tools/nut-snmpinfo.py
  tools/nut-scanner/Makefile
  tests/Makefile
  Makefile
 ])
+
+AC_MSG_NOTICE([Generating templated script files that should be marked executable])
+m4_foreach_w([SCRIPTFILE], [
+ scripts/Aix/nut.init
+ scripts/HP-UX/postinstall
+ scripts/python/app/NUT-Monitor
+ scripts/augeas/gen-nutupsconf-aug.py
+ scripts/python/module/test_nutclient.py
+ scripts/upsdrvsvcctl/nut-driver-enumerator.sh
+ scripts/upsdrvsvcctl/upsdrvsvcctl
+ scripts/systemd/nutshutdown
+ scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-monitor
+ scripts/Solaris/precheck.py
+ scripts/Solaris/preinstall
+ scripts/Solaris/postinstall
+ scripts/Solaris/preremove
+ scripts/Solaris/postremove
+ scripts/Solaris/preproto.pl
+ scripts/Solaris/nut
+ tools/gitlog2changelog.py
+ tools/nut-snmpinfo.py
+], [
+ dnl Autoconf substitutes the token above specified in plain text,
+ dnl e.g. the brace below is empty and bracket gives verbatim varname
+ dnl AC_MSG_NOTICE([Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
+ AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
+])
+
 AC_OUTPUT
 
 NUT_PRINT_FEATURE_REPORT
