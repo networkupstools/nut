@@ -316,6 +316,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    if [ -n "${PYTHON-}" ]; then
+        # WARNING: Watch out for whitespaces, not handled here!
+        CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
+
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
     # skip the case...

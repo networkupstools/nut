@@ -11,8 +11,10 @@
 # make, to handle developer workflow (editing the *.c sources this uses).
 SUBDIRS = . nut-scanner
 
+PYTHON = @PYTHON@
+
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
-  gitlog2changelog.py nut-snmpinfo.py driver-list-format.sh
+  gitlog2changelog.py.in nut-snmpinfo.py.in driver-list-format.sh
 
 GENERATED_SNMP_FILES = nut-scanner/nutscan-snmp.h
 
@@ -39,12 +41,14 @@ nut-scanner-deps: $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
 nut-scanner-deps-snmpinfo: $(GENERATED_SNMP_FILES)
 nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
+# The distributed nut-snmpinfo.py.in template is assumed to only differ from
+# a generated nut-snmpinfo.py by the @PYTHON@ shebang.
 $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
-	@if python -c 1; then \
-		echo "Regenerating the SNMP helper files in SRC dir."; \
+	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c 1; then \
+		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		cd $(builddir) && $(top_srcdir)/tools/nut-snmpinfo.py; \
+		cd $(builddir) && $(PYTHON) $(top_srcdir)/tools/nut-snmpinfo.py.in; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
@@ -72,12 +76,14 @@ $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb
 # NOTE: Beware that current working directory for the script should be builddir
 # so it may write the files in "dist" case (read-only sources), but the script
 # is called from the distdir where its copy is present.
+# The distributed nut-snmpinfo.py.in template is assumed to only differ from
+# a generated nut-snmpinfo.py by the @PYTHON@ shebang.
 dist-hook:
-	@if python -c 1; then \
-		echo "Regenerating the SNMP helper files in DIST dir."; \
+	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c 1; then \
+		echo "Regenerating the SNMP helper files in DIST dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		$(distdir)/nut-snmpinfo.py; \
+		$(PYTHON) $(distdir)/nut-snmpinfo.py.in; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
