@@ -179,7 +179,7 @@ static int upssend(const char *fmt,...) {
 	char buf[1024], *p;
 	va_list ap;
 	unsigned int	sent = 0;
-	int d_usec = UPSDELAY;
+	useconds_t d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -200,6 +200,7 @@ static int upssend(const char *fmt,...) {
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
 				"than %d bytes", (int)sizeof(buf));
+
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
@@ -212,7 +213,7 @@ static int upssend(const char *fmt,...) {
 		 * becomes modified, in later iterations.
 		 */
 		if (d_usec > 0)
-			usleep((useconds_t)d_usec);
+			usleep(d_usec);
 
 		sent++;
 		if (sent >= INT_MAX) {
