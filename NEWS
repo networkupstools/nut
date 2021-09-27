@@ -270,6 +270,16 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Basic coding style (indentations, lack of trailing white space) applied
      per developer guide, but not automatically enforced/checked yet.
 
+ - Due to changes needed to resolve build warnings, mostly about mismatching
+   data types for some variables, some structure definitions and API signatures
+   of several routines had to be changed for argument types, return types,
+   or both. Primarily this change concerns internal implementation details
+   (may impact update of NUT forks with custom drivers using those), but a
+   few changes also happened in header files installed for builds configured
+   `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
+   At the very least, binaries for those consumers should be rebuilt to remain
+   stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+
  - As usual, more bugfixes, cleanup and improvements, on both source code
    and documentation.
 

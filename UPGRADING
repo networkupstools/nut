@@ -17,6 +17,16 @@ PLANNED: Changes from 2.7.5 to 2.7.6
 Changes from 2.7.4 to 2.7.5
 ---------------------------
 
+- Due to changes needed to resolve build warnings, mostly about mismatching
+  data types for some variables, some structure definitions and API signatures
+  of several routines had to be changed for argument types, return types,
+  or both. Primarily this change concerns internal implementation details
+  (may impact update of NUT forks with custom drivers using those), but a
+  few changes also happened in header files installed for builds configured
+  `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
+  At the very least, binaries for those consumers should be rebuilt to remain
+  stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+
 - apcupsd-ups: When monitoring a remote apcupsd server, interpret "SHUTTING
   DOWN" as a NUT "LB" status. If you were relying on the previous behavior
   (for instance, in a monitor-only situation), please adjust your upsmon
