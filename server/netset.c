@@ -209,7 +209,11 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 			/* then only disable the general one if no other clients use it!
 			 * Note: don't call tracking_free() since we want info to
 			 * persist, and tracking_cleanup() takes care of cleaning */
-			tracking_disable();
+			if (tracking_disable()) {
+				upsdebugx(2, "%s: TRACKING disabled for one client, more remain.", __func__);
+			} else {
+				upsdebugx(2, "%s: TRACKING disabled for last client.", __func__);
+			}
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
