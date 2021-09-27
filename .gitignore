@@ -9,6 +9,7 @@
 .deps/
 .libs/
 .inst/
+/tmp/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
