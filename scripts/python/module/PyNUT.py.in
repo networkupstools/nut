@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON@
 # -*- coding: utf-8 -*-
 
 #   Copyright (C) 2008 David Goncalves <david@lestat.st>
