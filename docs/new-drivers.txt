@@ -395,7 +395,7 @@ transmissions.  It returns the results of the call to write.
 
 This is just ser_send_buf with an intercharacter delay.
 
-	- ssize_t ser_get_char(int fd, void *ch, long d_sec, useconds_t d_usec)
+	- ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
 
 This will wait up to d_sec seconds + d_usec microseconds for one
 character to arrive, storing it at ch.  It returns 1 on success, -1
@@ -407,7 +407,7 @@ upsd.  That will cause an oscillation between staleness and normal
 behavior.
 
 	- ssize_t ser_get_buf(int fd, void *buf, size_t buflen,
-	                      long d_sec, useconds_t d_usec)
+	                      time_t d_sec, useconds_t d_usec)
 
 Like ser_get_char, but this one reads up to buflen bytes storing all of
 them in buf.  The buffer is zeroed regardless of success or failure.  It
@@ -416,7 +416,7 @@ returns the number of bytes read, -1 on failure and 0 on a timeout.
 This is essentially a single read() function with a timeout.
 
 	- ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen,
-	                          long d_sec, useconds_t d_usec)
+	                          time_t d_sec, useconds_t d_usec)
 
 Like ser_get_buf, but this one waits for buflen bytes to arrive,
 storing all of them in buf.  The buffer is zeroed regardless of success
@@ -428,7 +428,7 @@ protocols that are terminated by characters like CR or LF.
 
 	- ssize_t ser_get_line(int fd, void *buf, size_t buflen,
 	                       char endchar, const char *ignset,
-	                       long d_sec, useconds_t d_usec)
+	                       time_t d_sec, useconds_t d_usec)
 
 This is the reading function you should use if your UPS tends to send
 responses like "OK\r" or "1234\n".  It reads up to buflen bytes and
@@ -460,7 +460,7 @@ Send a query, then read the response, then send the next query.
 	                             char endchar, const char *ignset,
 	                             const char *alertset,
 	                             void handler(char ch),
-	                             long d_sec, useconds_t d_usec)
+	                             time_t d_sec, useconds_t d_usec)
 
 This is just like ser_get_line, but it allows you to specify a set of
 alert characters which may be received at any time.  They are not added
