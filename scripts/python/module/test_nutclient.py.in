@@ -16,7 +16,11 @@ if __name__ == "__main__" :
     result = nut.GetUPSList( )
     print( "\033[01;33m%s\033[0m\n" % result )
 
-    print( 80*"-" + "\nTesting 'GetUPSVars' :")
+    # [dummy]
+    # driver = dummy-ups
+    # desc = "Test device"
+    # port = /src/nut/data/evolution500.seq
+    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in upsd.conf) :")
     result = nut.GetUPSVars( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
