@@ -143,7 +143,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 	ssize_t res;
 	int endblock, need_data;
 	long elapsed_time; /* milliseconds */
-	int tail;
+	ssize_t tail;
 	size_t bytes_read, end_length, length;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
@@ -236,6 +236,11 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 			return -1;
 		}
 
+		if (bytes_read >= SSIZE_MAX) {
+			upsdebugx(2, "get_answer: bad length (incredibly large read)");
+			return -1;
+		}
+
 		/* Test the Sequence # */
 		sequence = my_buf[3];
 		if ((sequence & PW_SEQ_MASK) != seq_num) {
@@ -271,15 +276,15 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* increment pointers to process the next sequence */
 		end_length += length;
 
-		/* Work around signedness of comparison result: */
-		tail = (int)bytes_read;
-		tail -= (int)(length + PW_HEADER_SIZE);
+		/* Work around signedness of comparison result, SSIZE_MAX checked above: */
+		tail = (ssize_t)bytes_read;
+		tail -= (ssize_t)(length + PW_HEADER_SIZE);
 		if (tail > 0)
 			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
-		else /* if (tail < 0) */ {
-			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %d", tail);
+		else { /* if (tail < 0) */
+			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %zd", tail);
 			return -1;
 		}
 
