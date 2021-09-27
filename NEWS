@@ -105,7 +105,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - Added C++ testing mock for TcpClient class (nutclientmem/MemClientStub:
    data stored in local memory) [PR #1034]
 
- - Python 3 compatibility in development scripts
+ - Dual Python 2 and 3 compatibility in development scripts; ability to
+   run build activities and resulting built NUT programs on systems that
+   do not have a binary named "python" [PR #1115 and some before it]
 
  - Added Russian translation for NUT-Monitor GUI client [PR #806]
 
