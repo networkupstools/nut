@@ -317,6 +317,13 @@ NUT_TYPE_SOCKLEN_T
 NUT_FUNC_GETNAMEINFO_ARGTYPES
 
 dnl ----------------------------------------------------------------------
+dnl Check for python binary program names per language version
+dnl to embed into scripts and Make rules
+NUT_CHECK_PYTHON
+NUT_CHECK_PYTHON2
+NUT_CHECK_PYTHON3
+
+dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
