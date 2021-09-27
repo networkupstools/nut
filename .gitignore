@@ -41,6 +41,10 @@ common/.dirstamp
 /.ci*.log
 /.ci*.log.*
 
+# Python precompiled files
+__pycache__/
+*.pyc
+
 # Dist
 /nut-*.*.*/
 /nut-*.tar.gz
