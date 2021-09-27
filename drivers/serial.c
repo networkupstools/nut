@@ -376,12 +376,12 @@ ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
 	return sent;
 }
 
-ssize_t ser_get_char(int fd, void *ch, long d_sec, useconds_t d_usec)
+ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
 {
 	return select_read(fd, ch, 1, d_sec, d_usec);
 }
 
-ssize_t ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, useconds_t d_usec)
+ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	memset(buf, '\0', buflen);
 
@@ -389,7 +389,7 @@ ssize_t ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, useconds_t d_u
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, useconds_t d_usec)
+ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	ssize_t	ret;
 	ssize_t	recv;
@@ -414,7 +414,7 @@ ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, useconds_t
    with callouts to the handler if anything matches the alertset */
 ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch),
-	long d_sec, useconds_t d_usec)
+	time_t d_sec, useconds_t d_usec)
 {
 	ssize_t	i, ret;
 	char	tmp[64];
@@ -458,7 +458,7 @@ ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 
 /* as above, only with no alertset handling (just a wrapper) */
 ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, long d_sec, useconds_t d_usec)
+	const char *ignset, time_t d_sec, useconds_t d_usec)
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
