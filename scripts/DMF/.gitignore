@@ -13,6 +13,8 @@ dmf-fun-test
 *_TEST.c
 *_TEST.exe
 *-mib.c
+xmlify-mib.py
+jsonify-mib.py
 legacy-mibfiles-list.mk.in
 legacy-mibfiles-list.mk
 dmfcore.c

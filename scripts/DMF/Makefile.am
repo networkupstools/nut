@@ -181,9 +181,9 @@ endif
 # removed, these DMF files would become redistributable contents by themselves.
 # The generation rules might stay, to help modernize third-party or in-house
 # packages that maintain their own C MIB structures not part of NUT upstream.
-DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
-DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
-EXTRA_DIST += $(DMFGEN_DEPS_FILES)
+DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/nut_cpp
+DMFGEN_DEPS = $(DMFGEN_DEPS_FILES) $(builddir)/jsonify-mib.py $(builddir)/xmlify-mib.py
+EXTRA_DIST += $(DMFGEN_DEPS_FILES) $(srcdir)/jsonify-mib.py.in $(srcdir)/xmlify-mib.py.in
 EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 
 # NOTE: In "dmfify-mib.sh" runs, the C preprocessor must be called without

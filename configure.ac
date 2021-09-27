@@ -2827,6 +2827,8 @@ AC_CONFIG_FILES([
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
  scripts/Aix/nut.init
+ scripts/DMF/jsonify-mib.py
+ scripts/DMF/xmlify-mib.py
  scripts/HP-UX/postinstall
  scripts/python/app/NUT-Monitor
  scripts/augeas/gen-nutupsconf-aug.py
