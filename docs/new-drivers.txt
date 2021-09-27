@@ -362,14 +362,14 @@ logic 1.
 This function unlocks the port if possible and closes the fd.  You
 should call this in your upsdrv_cleanup handler.
 
-	- int ser_send_char(int fd, char ch)
+	- ssize_t ser_send_char(int fd, unsigned char ch)
 
 This attempts to write one character and returns the return value from
 write.  You could call write directly, but using this function allows
 for future error handling in one place.
 
-	- int ser_send_pace(int fd, unsigned long d_usec,
-	                    const char *fmt, ...)
+	- ssize_t ser_send_pace(int fd, useconds_t d_usec,
+	                        const char *fmt, ...)
 
 If you need to send a formatted buffer with an intercharacter delay, use
 this function.  There are a number of UPS controllers which can't take
@@ -380,22 +380,22 @@ one.
 The return value is the number of characters that was sent to the port,
 or -1 if something failed.
 
-	- int ser_send(int fd, const char *fmt, ...)
+	- ssize_t ser_send(int fd, const char *fmt, ...)
 
 Like ser_send_pace, but without a delay.  Only use this if you're sure
 that your UPS can handle characters at the full line rate.
 
-	- int ser_send_buf(int fd, const char *buf, size_t buflen)
+	- ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
 
 This sends a raw buffer to the fd.  It is typically used for binary
 transmissions.  It returns the results of the call to write.
 
-	- int ser_send_buf_pace(int fd, unsigned long d_usec,
-	                        const char *buf, size_t buflen)
+	- ssize_t ser_send_buf_pace(int fd, useconds_t d_usec,
+	                            const void *buf, size_t buflen)
 
 This is just ser_send_buf with an intercharacter delay.
 
-	- int ser_get_char(int fd, char *ch, long d_sec, long d_usec)
+	- ssize_t ser_get_char(int fd, void *ch, long d_sec, useconds_t d_usec)
 
 This will wait up to d_sec seconds + d_usec microseconds for one
 character to arrive, storing it at ch.  It returns 1 on success, -1
@@ -406,7 +406,8 @@ back to the usual idle loop in main in time to answer the PINGs from
 upsd.  That will cause an oscillation between staleness and normal
 behavior.
 
-	- int ser_get_buf(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
+	- ssize_t ser_get_buf(int fd, void *buf, size_t buflen,
+	                      long d_sec, useconds_t d_usec)
 
 Like ser_get_char, but this one reads up to buflen bytes storing all of
 them in buf.  The buffer is zeroed regardless of success or failure.  It
@@ -414,7 +415,8 @@ returns the number of bytes read, -1 on failure and 0 on a timeout.
 
 This is essentially a single read() function with a timeout.
 
-	- int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
+	- ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen,
+	                          long d_sec, useconds_t d_usec)
 
 Like ser_get_buf, but this one waits for buflen bytes to arrive,
 storing all of them in buf.  The buffer is zeroed regardless of success
@@ -424,8 +426,9 @@ and 0 on a timeout.
 This should only be used for binary reads.  See ser_get_line for
 protocols that are terminated by characters like CR or LF.
 
-	- int ser_get_line(int fd, char *buf, size_t buflen, char endchar,
-		const char *ignset, long d_sec, long d_usec)
+	- ssize_t ser_get_line(int fd, void *buf, size_t buflen,
+	                       char endchar, const char *ignset,
+	                       long d_sec, useconds_t d_usec)
 
 This is the reading function you should use if your UPS tends to send
 responses like "OK\r" or "1234\n".  It reads up to buflen bytes and
@@ -453,10 +456,11 @@ there.  Your driver will get `"OK"`, and the rest is gone forever.
 This also means that you should not "pipeline" commands to the UPS.
 Send a query, then read the response, then send the next query.
 
-
-	- int ser_get_line_alert(int fd, char *buf, size_t buflen,
-		char endchar, const char *ignset, const char *alertset,
-		void handler(char ch), long d_sec, long d_usec)
+	- ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen,
+	                             char endchar, const char *ignset,
+	                             const char *alertset,
+	                             void handler(char ch),
+	                             long d_sec, useconds_t d_usec)
 
 This is just like ser_get_line, but it allows you to specify a set of
 alert characters which may be received at any time.  They are not added
@@ -467,7 +471,7 @@ Implementation note: this function actually does all of the work, and
 ser_get_line is just a wrapper that sets an empty alertset and a NULL
 handler.
 
-	- int ser_flush_in(int fd, const char *ignset, int verbose)
+	- ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
 
 This function will drain the input buffer.  If verbose is set to a
 positive number, then it will announce the characters which have been
@@ -478,7 +482,7 @@ This function returns the number of characters which were read, so you
 can check for extra bytes by looking for a nonzero return value.  Zero
 will also be returned if the read fails for some reason.
 
-	- int set_flush_io(int fd)
+	- int ser_flush_io(int fd)
 
 This function drains both the in- and output buffers. Return zero on
 success.
@@ -520,9 +524,13 @@ Drivers which use USB functions should include usb-common.h and use these:
 Structure and macro
 ~~~~~~~~~~~~~~~~~~~
 
-You should us the usb_device_id structure, and the USB_DEVICE macro to
+You should use the usb_device_id_t structure, and the USB_DEVICE macro to
 declare the supported devices. This allows the automatic extraction of
 USB information, to generate the Hotplug, udev and UPower support files.
+
+The structure allows to convey `uint16_t` values of VendorID and ProductID,
+and an optional matching-function callback to interrogate the device in
+more detail (constrain known supported firmware versions, OEM brands, etc.)
 
 For example:
 
@@ -531,25 +539,30 @@ For example:
 #define SOMEVENDOR_VENDORID		0xXXXX
 
 /* USB IDs device table */
-static usb_device_id sv_usb_device_table [] = {
+static usb_device_id_t sv_usb_device_table [] = {
 	/* some models 1 */
 	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xYYYY), NULL },
+
 	/* various models */
 	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xZZZZ), NULL },
 	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xAAAA), NULL },
+
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 --------------------------------------------------------------------------------
 
 Function
 ~~~~~~~~
 
-	- is_usb_device_supported(usb_device_id **usb_device_id_list,
-	                          int dev_VendorID, int dev_ProductID)
+	- is_usb_device_supported(usb_device_id_t *usb_device_id_list,
+	                          USBDevice_t *device)
 
-Call this in your device opening / matching function. Pass your usb_device_id
-structure, and a set of VendorID / DeviceID.
+Call this in your device opening / matching function. Pass your usb_device_id_t
+list structure, and a set of VendorID, DeviceID, as well as Vendor, Product and
+Serial strings, possibly also Bus, bcdDevice (device release number) and Device
+name on the bus strings, in the USBDevice_t fields describing the specific piece
+of hardware you are inspecting.
 
 This function returns one of the following value:
 
