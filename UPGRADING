@@ -66,6 +66,10 @@ Changes from 2.7.4 to 2.7.5
   so if any scripts or other tools relied on parsing those messages
   making some assumptions, they should be updated
 
+- libraries, tools and protocol now support a `TRACKING` ID to be used with
+  an `INSTCMD` or `SET VAR` requests; for details see docs/net-protocol.txt
+  and docs/sock-protocol.txt
+
 - upsrw: display the variable type beside ENUM / RANGE
 
 - Augeas: new `--with-augeas-lenses-dir` configure option.
