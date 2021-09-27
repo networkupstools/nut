@@ -3,19 +3,39 @@
 # Autoreconf wrapper script to ensure that the source tree is
 # in a buildable state
 
+if [ -n "${PYTHON-}" ] ; then
+	# May be a name/path of binary, or one with args - check both
+	(command -v "$PYTHON") \
+	|| $PYTHON -c "import re,glob,codecs" \
+	|| {
+		echo "----------------------------------------------------------------------"
+		echo "WARNING: Caller-specified PYTHON='$PYTHON' is not available."
+		echo "----------------------------------------------------------------------"
+		# Do not die just here, we may not need the interpreter
+	}
+else
+	PYTHON=""
+	for P in python python3 python2 ; do
+		if (command -v "$P" >/dev/null) && $P -c "import re,glob,codecs" ; then
+			PYTHON="$P"
+			break
+		fi
+	done
+fi
+
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
-	if python -c "import re,glob,codecs"; then
-		echo "Regenerating Augeas ups.conf lens..."
+	if [ -n "${PYTHON-}" ] && $PYTHON -c "import re,glob,codecs"; then
+		echo "Regenerating Augeas ups.conf lens with '$PYTHON'..."
 		cd scripts/augeas && {
-			./gen-nutupsconf-aug.py || exit 1
+			$PYTHON ./gen-nutupsconf-aug.py || exit 1
 			cd ../..
 		}
 	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Python is not available."
-		echo "Unable to regenerate Augeas ups.conf lens."
+		echo "Unable to regenerate Augeas lens for ups.conf parsing."
 		echo "----------------------------------------------------------------------"
 		exit 1
 	fi
