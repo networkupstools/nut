@@ -5,12 +5,13 @@ EXTRA_DIST = gen-nutupsconf-aug.py.in nutupsconf.aug.tpl \
 PYTHON = @PYTHON@
 
 # only call the script to generate Augeas ups.conf lens upon "make dist",
-# and if Python is present; the gen-nutupsconf-aug.py is assumed generated
-# from gen-nutupsconf-aug.py.in template by the configure script
+# and if Python is present; the distributed gen-nutupsconf-aug.py.in template
+# is assumed to only differ from a generated gen-nutupsconf-aug.py by the
+# @PYTHON@ shebang.
 dist-hook:
 	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c "import re,glob,codecs"; then \
 		echo "Regenerating Augeas ups.conf lens with '$(PYTHON)'."; \
-		$(PYTHON) $(distdir)/gen-nutupsconf-aug.py $(distdir)/; \
+		$(PYTHON) $(distdir)/gen-nutupsconf-aug.py.in $(distdir)/; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
