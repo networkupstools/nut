@@ -29,7 +29,9 @@ then
 	if [ -n "${PYTHON-}" ] && $PYTHON -c "import re,glob,codecs"; then
 		echo "Regenerating Augeas ups.conf lens with '$PYTHON'..."
 		cd scripts/augeas && {
-			$PYTHON ./gen-nutupsconf-aug.py || exit 1
+			# That script is templated; assume @PYTHON@ is the only
+			# road-bump there
+			$PYTHON ./gen-nutupsconf-aug.py.in || exit 1
 			cd ../..
 		}
 	else
