@@ -124,6 +124,7 @@ static ssize_t get_belkin_reply(char *buf)
 		return -1;
 	}
 
+	/* cnt is <=999 so long is overkill; ok to cast into useconds_t though */
 	tmp[7] = 0;
 	cnt = strtol(tmp + 4, NULL, 10);
 	upsdebugx(3, "Received: %s", tmp);
@@ -171,6 +172,7 @@ static ssize_t do_broken_rat(char *buf)
 		return -1;
 	}
 
+	/* cnt is <=999 so long is overkill; ok to cast into useconds_t though */
 	tmp[7] = 0;
 	cnt = strtol(tmp + 4, NULL, 10);
 	upsdebugx(3, "Received: %s", tmp);
