@@ -1,17 +1,21 @@
 
-EXTRA_DIST = gen-nutupsconf-aug.py nutupsconf.aug.tpl \
+EXTRA_DIST = gen-nutupsconf-aug.py.in nutupsconf.aug.tpl \
 	README tests/test_nut.aug
 
+PYTHON = @PYTHON@
+
 # only call the script to generate Augeas ups.conf lens upon "make dist",
-# and if Python is present
+# and if Python is present; the distributed gen-nutupsconf-aug.py.in template
+# is assumed to only differ from a generated gen-nutupsconf-aug.py by the
+# @PYTHON@ shebang.
 dist-hook:
-	@if python -c "import re,glob,codecs"; then \
-		echo "Regenerating Augeas ups.conf lens."; \
-		$(distdir)/gen-nutupsconf-aug.py $(distdir)/; \
+	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c "import re,glob,codecs"; then \
+		echo "Regenerating Augeas ups.conf lens with '$(PYTHON)'."; \
+		$(PYTHON) $(distdir)/gen-nutupsconf-aug.py.in $(distdir)/; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
-		echo "Skipping Augeas ups.conf lens regeneration."; \
+		echo "Skipping regeneration of Augeas lens for ups.conf parsing." ; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 
@@ -35,3 +39,6 @@ if WITH_AUGLENS
  auglenstests_DATA = \
     tests/test_nut.aug
 endif
+
+clean-local:
+	rm -f *-spellchecked

@@ -29,6 +29,11 @@
 #include <set>
 #include <exception>
 
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
+
 namespace nut
 {
 
@@ -474,6 +479,7 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -629,6 +635,7 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -712,6 +719,7 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif

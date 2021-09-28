@@ -5,7 +5,7 @@
 # It expects to be located in (executed from) $NUT_SOURCEDIR/scripts/DMF
 #
 #   Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#   Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 # A bashism, important for us here
@@ -19,9 +19,29 @@ XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
 _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
 
+if [ -n "${PYTHON-}" ] ; then
+    # May be a name/path of binary, or one with args - check both
+    (command -v "$PYTHON") \
+    || $PYTHON -c "import re,glob,codecs" \
+    || {
+        echo "----------------------------------------------------------------------"
+        echo "WARNING: Caller-specified PYTHON='$PYTHON' is not available."
+        echo "----------------------------------------------------------------------"
+        # Do not die just here, we may not need the interpreter
+    }
+else
+    PYTHON=""
+    for P in python python3 python2.7 python2 ; do
+        if (command -v "$P" >/dev/null) && $P -c "import re,glob,codecs" ; then
+            PYTHON="$P"
+            break
+        fi
+    done
+fi
+
 # TODO: The PYTHON and CC variables currently assume pathnames (no args)
-[ -n "${PYTHON-}" ] || PYTHON="`which python2.7`"
-[ -n "${PYTHON}" ] && [ -x "$PYTHON" ] || { echo "ERROR: Can not find Python 2.7: '$PYTHON'" >&2; exit 2; }
+[ -n "${PYTHON}" ] && PYTHON="`command -v "$P"`" && [ -x "$PYTHON" ] \
+|| { echo "ERROR: Can not find Python 2.7+: '$PYTHON'" >&2; exit 2; }
 
 # The pycparser uses GCC-compatible flags
 [ -n "${CC-}" ] || CC="`which gcc`"
@@ -94,7 +114,7 @@ else
     # Other included modules will be checked when scripts are executed.
     echo "INFO: Validating some basics about your Python installation" >&2
     for PYMOD in argparse pycparser json; do
-        "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
+        "${PYTHON}" -c "import $PYMOD; print ($PYMOD);" || \
             { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
     done
 
@@ -126,8 +146,17 @@ dmfify_c_file() {
 
     echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..." >&2
 
-    ( "${PYTHON}" "${_SCRIPT_DIR}"/jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
-      "${PYTHON}" "${_SCRIPT_DIR}"/xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
+    # Code below assumes that the *.py.in only template the shebang line
+    JNAME=""
+    for F in "${_SCRIPT_DIR}"/jsonify-mib.py.in "${_SCRIPT_DIR}"/jsonify-mib.py ; do
+        [ -s "$F" ] && JNAME="$F" && break
+    done
+    XNAME=""
+    for F in "${_SCRIPT_DIR}"/xmlify-mib.py.in "${_SCRIPT_DIR}"/xmlify-mib.py ; do
+        [ -s "$F" ] && XNAME="$F" && break
+    done
+    ( "${PYTHON}" "${JNAME}" --test "${cmib}" > "${mib}.json.tmp" && \
+      "${PYTHON}" "${XNAME}" < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
     && [ -s "${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2

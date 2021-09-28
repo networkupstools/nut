@@ -39,6 +39,8 @@ sed \
     -e 's/__attribute__((availability(.*)))//' \
     -e 's/__attribute__((format.*)));$/;/' \
     -e 's/__inline__/inline/' \
+    -e 's/__signed__/signed/' \
+    -e 's/__unsigned__/unsigned/' \
     -e 's/__THROW;$/;/' \
     -e 's/__END_DECLS//' \
     -e 's/__BEGIN_DECLS//' \
