@@ -114,7 +114,7 @@ else
     # Other included modules will be checked when scripts are executed.
     echo "INFO: Validating some basics about your Python installation" >&2
     for PYMOD in argparse pycparser json; do
-        "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
+        "${PYTHON}" -c "import $PYMOD; print ($PYMOD);" || \
             { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
     done
 
