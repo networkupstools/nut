@@ -153,8 +153,8 @@ reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
    collected from the hardware; not yet converted to official NUT
    status or alarms */
 typedef struct {
-	const char	*status_str;	/* ups status string */
-	const int	status_mask;	/* ups status mask */
+	const char	*status_str;			/* ups status string */
+	const unsigned int	status_mask;	/* ups status mask */
 } status_lkp_t;
 
 static status_lkp_t status_info[] = {
