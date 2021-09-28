@@ -82,7 +82,9 @@ def debug (msg):
         print ("D: " + msg, file=sys.stderr)
 
 def mkElement (_element, **attrs):
-    el = MD.Element (_element)
+    global doc
+    #el = MD.Element (_element)
+    el = doc.createElement (_element)
     for name, value in attrs.items ():
         if value is None:
             continue
