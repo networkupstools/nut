@@ -980,7 +980,12 @@ void upsdrv_initups(void)
 	}
 	val = getval("interruptsize");
 	if (val) {
-		interrupt_size = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
