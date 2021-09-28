@@ -70,12 +70,12 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* The maximum number of consecutive polls in which the UPS does not provide any data: */
-static int max_polls_without_data;
+static unsigned int max_polls_without_data;
 /* The current number: */
-static int nr_polls_without_data;
+static unsigned int nr_polls_without_data;
 /* receive buffer */
 static char rx_buffer[RX_BUFFER_SIZE];
-static int rx_count;
+static size_t rx_count;
 
 static struct {
 	int battery_alarm;
@@ -85,7 +85,7 @@ static struct {
 } current_ups_status;
 
 /* remove n bytes from the head of rx_buffer, shift the remaining bytes to the start */
-static void rm_buffer_head(int n) {
+static void rm_buffer_head(unsigned int n) {
 	if (rx_count <= n) {
 		/* nothing left */
 		rx_count = 0;
@@ -125,7 +125,7 @@ static int check_for_new_data() {
 			/* no (more) new data */
 			done = 1;
 		} else {
-			rx_count += num_received;
+			rx_count += (unsigned int)num_received;
 
 			/* parse received input data: */
 			while (rx_count >= 5) { /* all valid input messages are strings of 5 characters */
@@ -216,7 +216,8 @@ void upsdrv_updateinfo(void) {
 		nr_polls_without_data = 0;
 	} else {
 		nr_polls_without_data++;
-		if (nr_polls_without_data < 0)
+		/* With unsigned int type, we can limit half-way like this: */
+		if (nr_polls_without_data > INT_MAX)
 			nr_polls_without_data = INT_MAX;
 	}
 
