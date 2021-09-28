@@ -425,7 +425,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Don't overload old units (at startup) */
-	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + poll_interval) )
+	if ( time(NULL) <= (lastpoll + poll_interval) )
 		return;
 
 	/* update all other ok variables */

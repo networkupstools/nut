@@ -22,6 +22,7 @@
 
 #include "common.h"
 #include "main.h"
+#include "nut_stdint.h"
 #include "dstate.h"
 #include "attribute.h"
 
@@ -45,7 +46,7 @@ static	int	upsname_found = 0;
 static vartab_t	*vartab_h = NULL;
 
 /* variables possibly set by the global part of ups.conf */
-unsigned int	poll_interval = 2;
+time_t	poll_interval = 2;
 static char	*chroot_path = NULL, *user = NULL;
 
 /* signal handling */
@@ -744,7 +745,7 @@ int main(int argc, char **argv)
 		dstate_init(progname, upsname);
 
 	/* The poll_interval may have been changed from the default */
-	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",

@@ -754,7 +754,7 @@ void upsdrv_updateinfo(void)
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
 		/* don't flood reconnection attempts */
-		if (now < (int)(lastpoll + poll_interval)) {
+		if (now < (lastpoll + poll_interval)) {
 			return;
 		}
 
