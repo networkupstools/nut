@@ -275,7 +275,9 @@ void upsdrv_initups(void) {
 	 *    (< 10sec runtime), so every second might count.
 	 */
 	if (poll_interval > 5) {
-		upslogx(LOG_NOTICE, "Option poll_interval is recommended to be lower than 5 (found: %d)", poll_interval);
+		upslogx(LOG_NOTICE,
+			"Option poll_interval is recommended to be lower than 5 (found: %jd)",
+			(intmax_t)poll_interval);
 	}
 
 	/* option max_polls_without_data: */
