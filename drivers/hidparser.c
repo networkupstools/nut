@@ -190,10 +190,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if (pParser->UsageSize > 0) {
-				int	i;
+				int	j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
 
 				/* Remove Usage */
@@ -242,11 +242,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if(pParser->UsageSize > 0) {
-				int i;
+				int j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
+
 				/* Remove Usage */
 				pParser->UsageSize--;
 			}
