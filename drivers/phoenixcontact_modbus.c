@@ -30,8 +30,8 @@
 #define MODBUS_SLAVE_ID 192
 
 /* Variables */
-modbus_t *modbus_ctx = NULL;
-int errcount = 0;
+static modbus_t *modbus_ctx = NULL;
+static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
