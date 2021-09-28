@@ -378,14 +378,18 @@ ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
 
 ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
 {
-	return select_read(fd, ch, 1, d_sec, d_usec);
+	/* Per standard below, we can cast here, because required ranges are
+	 * effectively the same (and signed -1 for suseconds_t), and at most long:
+	 * https://pubs.opengroup.org/onlinepubs/009604599/basedefs/sys/types.h.html
+	 */
+	return select_read(fd, ch, 1, d_sec, (suseconds_t)d_usec);
 }
 
 ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	memset(buf, '\0', buflen);
 
-	return select_read(fd, buf, buflen, d_sec, d_usec);
+	return select_read(fd, buf, buflen, d_sec, (suseconds_t)d_usec);
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
@@ -400,7 +404,9 @@ ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds
 
 	for (recv = 0; recv < (ssize_t)buflen; recv += ret) {
 
-		ret = select_read(fd, &data[recv], (size_t)((ssize_t)buflen - recv), d_sec, d_usec);
+		ret = select_read(fd, &data[recv],
+			(size_t)((ssize_t)buflen - recv),
+			d_sec, (suseconds_t)d_usec);
 
 		if (ret < 1) {
 			return ret;
@@ -427,7 +433,7 @@ ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	maxcount = (ssize_t)buflen - 1;		/* for trailing \0 */
 
 	while (count < maxcount) {
-		ret = select_read(fd, tmp, sizeof(tmp), d_sec, d_usec);
+		ret = select_read(fd, tmp, sizeof(tmp), d_sec, (suseconds_t)d_usec);
 
 		if (ret < 1) {
 			return ret;
