@@ -26,15 +26,14 @@
 	anything else is mandatory
 */
 
-#define	ENTERPRISE_PROTOCOL
-
-#include "microdowell.h"
-
 #include "main.h"
 #include "serial.h"
 #include <sys/ioctl.h>
 #include "timehead.h"
+#include "nut_stdint.h"
 
+#define	ENTERPRISE_PROTOCOL
+#include "microdowell.h"
 
 #define MAX_START_DELAY    999999
 #define MAX_SHUTDOWN_DELAY 32767
