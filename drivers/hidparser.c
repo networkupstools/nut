@@ -135,7 +135,7 @@ static long FormatValue(uint32_t Value, uint8_t Size)
 	case 4:
 		return (long)(int32_t)Value;
 	default:
-		return Value;
+		return (long)Value;
 	}
 }
 
