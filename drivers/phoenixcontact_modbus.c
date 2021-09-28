@@ -132,6 +132,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
