@@ -63,9 +63,9 @@ int setvar(const char *varname, const char *val);
 /* he knew... macros should evaluate their arguments only once */
 #define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
 
-static int CheckDataChecksum(unsigned char *Buff, int Len)
+static int CheckDataChecksum(unsigned char *Buff, size_t Len)
 {
-	int i, Idx ;
+	size_t i, Idx ;
 	unsigned char Xor ;
 
 	ups.FramePointer = Xor = 0 ;
@@ -189,7 +189,7 @@ static int CheckErrCode(unsigned char * Buff)
 }
 
 
-static void SendCmdToSerial(unsigned char *Buff, int Len)
+static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 {
 	int i;
 	unsigned char Tmp[20], Xor ;
@@ -210,14 +210,14 @@ static void SendCmdToSerial(unsigned char *Buff, int Len)
 	ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
 }
 
-static unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
+static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
 	#define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;
 	unsigned char *p ;
-	int BuffLen ;
+	size_t BuffLen ;
 
 	/* The default error code (no received character) */
 	ErrCode = ERR_COM_NO_CHARS ;
@@ -294,7 +294,7 @@ static int detect_hardware(void)
 			{
 			/* got UPS model */
 			for (i=0 ; i<8 ; i++)
-				ups.UpsModel[i] = p[i+5] ;
+				ups.UpsModel[i] = (char)p[i+5] ;
 			ups.UpsModel[8] = '\0' ;
 			upsdebugx(2, "get 'UPS model': %s", PrintErr(ups.ErrCode));
 			break ;	/* UPS identified: exit from ' for' LOOP */
@@ -319,7 +319,7 @@ static int detect_hardware(void)
 		{
 		/* got UPS serial # */
 		for (i=0 ; i<8 ; i++)
-			ups.SerialNumber[i] = p[i+5] ;
+			ups.SerialNumber[i] = (char)p[i+5] ;
 		ups.SerialNumber[8] = '\0' ;
 		upsdebugx(2, "get 'UPS Serial #': %s", PrintErr(ups.ErrCode));
 		}
@@ -500,9 +500,9 @@ static int detect_hardware(void)
 
 	OutBuff[0] = CMD_SET_TIMER ;	/* set UPS internal timer */
 	OutBuff[1] = (Time->tm_wday+6) % 7 ;	/* week day (0=monday) */
-	OutBuff[2] = Time->tm_hour ;	/* hours */
-	OutBuff[3] = Time->tm_min ;	/* minutes */
-	OutBuff[4] = Time->tm_sec;		/* seconds */
+	OutBuff[2] = (unsigned char)Time->tm_hour ;	/* hours */
+	OutBuff[3] = (unsigned char)Time->tm_min ;	/* minutes */
+	OutBuff[4] = (unsigned char)Time->tm_sec ;	/* seconds */
 	if ((p = CmdSerial(OutBuff, LEN_SET_TIMER, InpBuff)) != NULL)
 		{
 		upsdebugx(2, "set 'UPS internal clock': %s", PrintErr(ups.ErrCode));
@@ -536,10 +536,14 @@ void upsdrv_updateinfo(void)
 		status_init();	/* reset status flags */
 
 		/* store last UPS status */
-		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
-		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
-		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
+		ups.StatusUPS  =  (uint32_t)p[0] ;
+		ups.StatusUPS |= ((uint32_t)p[1]<<8) ;
+		ups.StatusUPS |= ((uint32_t)p[2]<<16) ;
+		ups.StatusUPS |= ((uint32_t)p[3]<<24) ;
+		ups.ShortStatus  =  (uint16_t)p[0];
+		ups.ShortStatus |= ((uint16_t)p[1]<<8) ;
+		upsdebugx(1, "ups.StatusUPS: %08" PRIX32, ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04" PRIX16, ups.ShortStatus);
 
 		/* on battery? */
 		if (p[0] & 0x01)
@@ -772,7 +776,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 int setvar(const char *varname, const char *val)
 {
-	int delay;
+	unsigned int delay;
 
 	if (sscanf(val, "%d", &delay) != 1)
 		{
@@ -806,14 +810,16 @@ void upsdrv_initinfo(void)
 {
 	/* Get vars from ups.conf */
 	if (getval("ups.delay.shutdown")) {
-		ups.ShutdownDelay = CLAMP(atoi(getval("ups.delay.shutdown")), 0, MAX_SHUTDOWN_DELAY);
+		int ipv = atoi(getval("ups.delay.shutdown"));
+		ups.ShutdownDelay = (unsigned int) CLAMP(ipv, 0, MAX_SHUTDOWN_DELAY);
 	}
 	else {
 		ups.ShutdownDelay = 120;	/* Shutdown delay in seconds */
 	}
 
 	if (getval("ups.delay.start")) {
-		ups.WakeUpDelay = CLAMP(atoi(getval("ups.delay.start")), 0, MAX_START_DELAY);
+		int ipv = atoi(getval("ups.delay.start"));
+		ups.WakeUpDelay = (unsigned int) CLAMP(ipv, 0, MAX_START_DELAY);
 	}
 	else {
 		ups.WakeUpDelay = 10;	/* WakeUp delay in seconds */
@@ -887,10 +893,14 @@ void upsdrv_shutdown(void)
 		status_init();	/* reset status flags */
 
 		/* store last UPS status */
-		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
-		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
-		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
+		ups.StatusUPS  =  (uint32_t)p[0] ;
+		ups.StatusUPS |= ((uint32_t)p[1]<<8) ;
+		ups.StatusUPS |= ((uint32_t)p[2]<<16) ;
+		ups.StatusUPS |= ((uint32_t)p[3]<<24) ;
+		ups.ShortStatus  =  (uint16_t)p[0] ;
+		ups.ShortStatus |= ((uint16_t)p[1]<<8) ;
+		upsdebugx(1, "ups.StatusUPS: %08" PRIX32, ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04" PRIX16, ups.ShortStatus);
 
 		/* on battery? */
 		if (p[0] & 0x01)
