@@ -327,8 +327,11 @@ static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
 		int ipv = atoi(val);
-		if (ipv >= 0)
-			poll_interval = (unsigned int)ipv;
+		if (ipv >= 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		}
 		return;
 	}
 
@@ -394,8 +397,12 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
 		int ipv = atoi(val);
-		if (ipv >= 0)
-			poll_interval = (unsigned int)ipv;
+		if (ipv >= 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+				confupsname, ipv);
+		}
 		return;
 	}
 
@@ -559,10 +566,14 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
-			case 'i': {
-				int ipv = atoi(optarg);
-				if (ipv >= 0)
-					poll_interval = (unsigned int)ipv;
+			case 'i': { // scope
+					int ipv = atoi(optarg);
+					if (ipv >= 0) {
+						poll_interval = (time_t)ipv;
+					} else {
+						fatalx(EXIT_FAILURE, "Error: command-line: invalid pollinterval: %d",
+							ipv);
+					}
 				}
 				break;
 			case 'k':
