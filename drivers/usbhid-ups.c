@@ -114,7 +114,7 @@ static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 #endif
 static int pollfreq = DEFAULT_POLLFREQ;
-static int ups_status = 0;
+static unsigned ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 #ifndef SUN_LIBUSB
 bool_t use_interrupt_pipe = TRUE;
@@ -1451,7 +1451,7 @@ static void ups_alarm_set(void)
 }
 
 /* Return the current value of ups_status */
-int ups_status_get(void)
+unsigned ups_status_get(void)
 {
 	return ups_status;
 }
