@@ -892,7 +892,10 @@ static void * try_SysOID(void * arg)
 	}
 
 	snmp_sess.retries = 0;
-	snmp_sess.timeout = g_usec_timeout;
+	/* netsnmp timeout is accounted in uS, but typed as long
+	 * and not useconds_t (which is at most long per POSIX)
+	 */
+	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
