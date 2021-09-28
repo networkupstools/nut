@@ -114,7 +114,7 @@ static char* convert_days(char *cop) {
 	static char alt[8];
 
 	int ish, fim;
-	if (weekn == 6)
+	if (weekn >= 6 || weekn < 0)
 		ish = 0;
 	else
 		ish = 1 + weekn;
@@ -122,10 +122,10 @@ static char* convert_days(char *cop) {
 	fim = 7 - ish;
 	/* rotate left only 7 bits */
 
-	memcpy(alt, &cop[ish], fim);
+	memcpy(alt, &cop[ish], (size_t)fim);
 
 	if (ish > 0)
-		memcpy(&alt[fim], cop, ish);
+		memcpy(&alt[fim], cop, (size_t)ish);
 
 	alt[7] = 0; /* string terminator */
 
