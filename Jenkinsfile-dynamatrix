@@ -200,7 +200,7 @@ set | sort -n """
      * directly and ci_build.sh with stricter warnings, in particular.
      */
     dynacfgPipeline.slowBuild = [
-        [name: 'Default autotools driven build',
+        [name: 'Default autotools driven build with default warning levels (gnu99/gnu++11)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -240,9 +240,9 @@ set | sort -n """
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
-        ] // one slowBuild filter configuration
+        ] // one slowBuild filter configuration, autotools-minimal
 
-        ,[name: 'Default autotools driven build with max warnings (allowed to fail)',
+        ,[name: 'Default autotools driven build with max warnings and varied C/C++ revisions (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -286,9 +286,9 @@ set | sort -n """
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
-        ] // one slowBuild filter configuration
+        ] // one slowBuild filter configuration, autotools-Wall
 
-        ,[name: 'Various non-docs target builds (must pass on all platforms)',
+        ,[name: 'Various non-docs distchecked target builds with main and ~newest supported C/C++ revisions (must pass on all platforms)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -331,7 +331,8 @@ set | sort -n """
         ,[name: 'A build with all driver types on capable systems with distcheck for main supported C/C++ revision (must pass)',
          // NOTE: Here we constrain distcheck builds (more CI stress load)
          // to run as few combos as possible; arguably this filter config
-         // is more about recipes than about codebase quality
+         // is more about recipes distributing those drivers than about
+         // directly codebase quality.
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: ~/^(master|main|stable)$/,
@@ -344,7 +345,8 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     // TODO: Find a way to constrain these builds to one
-                    // per OS type, whatever bitness(es) supported there
+                    // per OS type, whatever bitness(es) supported there,
+                    // so we really primarily only test the dist-ability.
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
@@ -372,7 +374,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all driver types on capable systems without distcheck for more C/C++ revisions (must pass)',
+        ,[name: 'A build with all driver types on capable systems without distcheck for other C/C++ revisions (must pass)',
          // NOTE: We reduce the build load here since the Makefile recipes
          // (for distcheck part) are deemed tested above with the supported
          // C/C++ standard revision
