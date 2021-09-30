@@ -544,7 +544,7 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -568,7 +568,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with fatal warnings, without distcheck and docs (allowed to fail with non-GCC, and for GCC with gnu89 builds)',
+        ,[name: 'GNU C standard builds with fatal warnings, without distcheck and docs (allowed to fail with non-GCC compilers)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
@@ -578,9 +578,56 @@ set | sort -n """
                 requiredNodelabels: [],
                 excludedNodelabels: [],
 
+                // NOTE: C89 not included here as its warnings are quite
+                // noisy as in "not relevant for more modern revisions".
+                // It has a separate slowBuild filter configuration below.
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'], ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ]
+                    ],
+                allowedFailure: [
+                    [~/OS_FAMILY=windows/],
+                    [~/BUILD_WARNOPT=hard/]
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: [
+                    [~/BITS=32/, ~/ARCH_BITS=64/],
+                    [~/BITS=64/, ~/ARCH_BITS=32/],
+                    [~/CSTDVARIANT=c/],
+                    //[~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/],
+                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                    ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'GNU C89 standard builds with fatal warnings with non-GCC compilers, without distcheck and docs (allowed to fail)',
+         // NOTE: This build scenario is quite noisy with regard to warnings
+         // analysis and not too beneficial unless someone looking at the
+         // logs is actively fixing the C89 compatibility. So off by default,
+         // and would only run for a PR against a "fightwarn.*89.*" named
+         // branch or for a build of such branch.
+         disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
+         branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
+         branchRegexTarget: ~/fightwarn.*89.*/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
