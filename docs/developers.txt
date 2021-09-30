@@ -140,13 +140,22 @@ function do_stuff(void)
 }
 --------------------------------------------------------------------------------
 
-At this point NUT is expected to work correctly when built with a C99
-(or GNU99 on Linux) or newer standard.
+TIP: At this point NUT is expected to work correctly when built with a
+C99 (or rather GNU99 on many systems) or newer standard.
 
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
 If somebody in the community requires to build and run NUT on systems
 that old, pull requests to fix the offending coding issues are welcome.
+
+Note also that the NUT codebase currently relies on certain features,
+such as the printf format modifiers for `(s)size_t`, that a pedantic C90
+mode compilation warns is not part of the standard but a GNU extension
+(and part of C99 and newer standard revisions).
+
+That said, the NUT CI farm does run non-regression builds with GNU C89
+standard revision and minimal warnings level, to ensure that codebase
+remains at least basically compliant.
 
 Continuous Integration and Automated Builds
 -------------------------------------------
