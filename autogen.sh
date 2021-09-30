@@ -51,7 +51,7 @@ then
 			./nut-usbinfo.pl || exit 1
 			cd ..
 		}
-	else 
+	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
 		echo "Unable to regenerate USB helper files."
@@ -67,6 +67,6 @@ fi
 # now we can safely call autoreconf
 echo "Calling autoreconf..."
 autoreconf -iv && {
-    sh -n configure 2>/dev/null >/dev/null \
-    || { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+	sh -n configure 2>/dev/null >/dev/null \
+	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
 }
