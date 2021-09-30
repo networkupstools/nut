@@ -68,7 +68,7 @@ echo "Regenerating the list of legacy *-mib.c files in current codebase to produ
 ( cd scripts/DMF && ./gen-legacy-mibfiles-list.sh )
 
 if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
-    echo '# autoconf requires this file exists before generating configure script' > scripts/systemd/nut-common.tmpfiles.in
+	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
 fi
 
 # now we can safely call autoreconf
