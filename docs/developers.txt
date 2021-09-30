@@ -272,6 +272,12 @@ deliberately missed by default warnings levels in "master" branch builds
 (the bar moves over time, as some classes of warnings become extinct from
 our codebase).
 
+Further special handling for branches named like `fightwarn.*89.*` regex
+enables more intensive warning levels for a GNU89 build specifically (which
+are otherwise disabled as noisy yet not useful for supported C99+ builds),
+and is intended to help develop fixes for support of this older language
+revision, if anyone would dare.
+
 Many of those unsuccessful build stages are precisely the focus of the
 "fightwarn" effort, and are currently marked as "may fail", so they end
 up as "UNSTABLE" (seen as orange bubbles in the Jenkins BlueOcean UI, or
