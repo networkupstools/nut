@@ -2165,29 +2165,45 @@ AC_MSG_RESULT(["${nut_enable_Werror}"])
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
-dnl Due to possibly repetitive content, generate unique settings:
+dnl Due to possibly repetitive content, generate unique settings
+dnl relative to the top_builddir (distcheck and all):
+AC_MSG_CHECKING([for top build dir for this configure run])
+TOP_BUILDDIR=""
+AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
+    [TOP_BUILDDIR="${ac_abs_top_builddir}"],
+    [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
+        [TOP_BUILDDIR="${ac_pwd}"],
+        [TOP_BUILDDIR="`dirname "$0"`"
+         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`"]
+    )]
+)
+AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+
+AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
-    [cat > scripts/systemd/nut-common.tmpfiles.in << EOF
+    [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
+     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 # State file (e.g. upsd to driver) and pidfile location for NUT:
 d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @STATEPATH@/nut
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
-        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @PIDPATH@/nut
 EOF])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
-        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTPIDPATH@/nut
 EOF])
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
-        [cat >> scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTSTATEPATH@/nut
 EOF])
 ])
+AC_MSG_RESULT([done])
 
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([

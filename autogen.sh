@@ -51,7 +51,7 @@ then
 			./nut-usbinfo.pl || exit 1
 			cd ..
 		}
-	else 
+	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
 		echo "Unable to regenerate USB helper files."
@@ -61,12 +61,12 @@ then
 fi
 
 if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
-    echo '# autoconf requires this file exists before generating configure script' > scripts/systemd/nut-common.tmpfiles.in
+	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
 fi
 
 # now we can safely call autoreconf
 echo "Calling autoreconf..."
 autoreconf -iv && {
-    sh -n configure 2>/dev/null >/dev/null \
-    || { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+	sh -n configure 2>/dev/null >/dev/null \
+	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
 }

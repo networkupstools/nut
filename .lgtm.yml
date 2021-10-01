@@ -10,7 +10,7 @@ queries:
 
 extraction:
   python:
-    python_setup: 
+    python_setup:
       # Is there a way to LGTM both 2 and 3?..
       version: 2
       setup_py: false
@@ -18,10 +18,3 @@ extraction:
       filters:
         - include: "**/*.py.in"
         - include: "**/NUT-Monitor.in"
-#          - include: ./tools/nut-snmpinfo.py.in
-#          - include: ./tools/gitlog2changelog.py.in
-#          - include: ./scripts/python/app/NUT-Monitor.in
-#          - include: ./scripts/python/module/test_nutclient.py.in
-#          - include: ./scripts/python/module/PyNUT.py.in
-#          - include: ./scripts/augeas/gen-nutupsconf-aug.py.in
-#          - include: ./scripts/Solaris/precheck.py.in
