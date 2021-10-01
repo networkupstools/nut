@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2740 utf-8
+personal_ws-1.1 en 2745 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -129,6 +129,7 @@ BigServers
 BlaXwan
 BlackOut
 BladeUPS
+BlueOcean
 Bo
 Bohe
 Borns
@@ -455,6 +456,7 @@ IZ
 Infosec
 Innova
 Integrators
+IntelCC
 InvCDly
 InvCPol
 InvMin
@@ -776,6 +778,7 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR'ed
 PRs
 PSA
 PSD
@@ -1294,6 +1297,7 @@ alarmtest
 alertset
 alioth
 alist
+alldrv
 alloc
 allowfrom
 altinterface
@@ -1660,6 +1664,7 @@ et
 etapro
 eth
 ev
+eval
 everups
 everyone's
 everything's
