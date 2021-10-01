@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2682 utf-8
+personal_ws-1.1 en 2745 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -18,6 +18,7 @@ AES
 AFE
 AGM
 AIX
+ALTROOT
 AMETEK
 APC's
 API
@@ -128,6 +129,7 @@ BigServers
 BlaXwan
 BlackOut
 BladeUPS
+BlueOcean
 Bo
 Bohe
 Borns
@@ -166,6 +168,7 @@ COMLI
 COMMBAD
 COMMFAULT
 COMMOK
+CONFILE
 CONTEXTs
 CPAN
 CPM
@@ -276,6 +279,7 @@ ELCD
 ENDFOR
 ENV
 EOF
+EOLed
 EPERM
 EPO
 EPS
@@ -338,6 +342,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
+FossHost
 Frama
 FreeBSD
 FreeDesktop
@@ -451,12 +456,14 @@ IZ
 Infosec
 Innova
 Integrators
+IntelCC
 InvCDly
 InvCPol
 InvMin
 Invensys
 InverterV
 Invter
+IoT
 Ioannou
 JAWAN
 JBus
@@ -470,6 +477,7 @@ Jasuny
 JavaScript
 Javadoc
 Javascript
+Jenkinsfile
 Joon
 Jumpered
 KNutClient
@@ -496,6 +504,7 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubernetes
 Kx
 LASTXFER
 LBT
@@ -524,6 +533,7 @@ LOADPCT
 LOCKFN
 LOTRANS
 LUA
+LVM
 LVT
 LYONN
 Lacerda
@@ -701,6 +711,7 @@ OMNIVS
 OMNIVSINT
 ONF
 ONV
+OOM
 OSF
 OSs
 OUTPUTV
@@ -767,6 +778,8 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR'ed
+PRs
 PSA
 PSD
 PSFn
@@ -1074,6 +1087,7 @@ TIOCM
 TIOCMBIC
 TIOCMBIS
 TLS
+TLSv
 TODO
 TRACKINGDELAY
 TREELINK
@@ -1118,6 +1132,7 @@ UB
 UBD
 UBR
 UDP
+UI
 UID
 UIDA
 UINT
@@ -1142,7 +1157,9 @@ UPSonic
 UPSs
 UPStation
 UPower
+URI
 USBDEVFS
+USERADDed
 USV
 USVs
 UTC
@@ -1165,6 +1182,7 @@ VERFW
 VFI
 VIB
 VMIN
+VMM
 VMware
 VNC
 VPATH
@@ -1233,15 +1251,20 @@ Ygor
 Yoyodyne
 Yukai
 Yunto
+ZFS
+ZProject
 ZZZZZZZZ
 Zaika
 Zampieri
 Zawadzki
+ZeroMQ
 abcd
+abuild
 acVoltsIn
 acVoltsout
 acampsiOut
 acampsiout
+accessmode
 acl
 acpi
 acquisited
@@ -1274,6 +1297,7 @@ alarmtest
 alertset
 alioth
 alist
+alldrv
 alloc
 allowfrom
 altinterface
@@ -1339,6 +1363,7 @@ avPHK
 avahi
 avr
 awd
+awk
 bAlternateSetting
 backend
 backgrounding
@@ -1378,9 +1403,11 @@ bigone
 bigserver
 bigups
 bindir
+binfmt
 binutils
 bitmapped
 bitness
+bitnesses
 bitwise
 bn
 boolean
@@ -1400,6 +1427,7 @@ buflen
 bugfix
 bugfixes
 buildbots
+bullseye
 busybox
 bv
 bypassvolts
@@ -1432,6 +1460,7 @@ cflag
 cflags
 cgi
 cgipath
+cgroup
 chargedvbattery
 chargermode
 chargetime
@@ -1538,6 +1567,7 @@ deci
 decrement
 decrypt
 dedb
+dedup
 defun
 dep
 dephasing
@@ -1551,6 +1581,7 @@ devd
 devel
 devscan
 dfl
+dhcp
 dialout
 dipsw
 dir
@@ -1564,10 +1595,12 @@ dll
 dlopen
 dmesg
 dnl
+dnsmasq
 docbook
 dockapp
 docs
 dod
+domxml
 dpkg
 dq
 driverexec
@@ -1585,11 +1618,14 @@ dstate
 dt
 dtds
 dtr
+du
 dumbterm
 dummycons
 dummypass
 dummyups
+dumpxml
 dv
+dynamatrix
 ePDU
 ePDUs
 eaton
@@ -1599,6 +1635,7 @@ eco
 edb
 edl
 ei
+el
 emacs
 endchar
 enddate
@@ -1609,6 +1646,7 @@ energizerups
 energysave
 english
 enum
+envvar
 ep
 epdu
 epodebounce
@@ -1624,7 +1662,9 @@ esac
 esupssmart
 et
 etapro
+eth
 ev
+eval
 everups
 everyone's
 everything's
@@ -1692,6 +1732,7 @@ getDevice
 getTrackingResult
 getValue
 getVariable
+getent
 getenv
 getopt
 getvar
@@ -1707,6 +1748,7 @@ goto
 gotos
 gpg
 graphviz
+groupadd
 groupname
 guardpend
 guardpstart
@@ -1731,6 +1773,7 @@ highbattery
 highfrequency
 hostname
 hostnames
+hostsfile
 hotplug
 hotplugging
 href
@@ -1817,6 +1860,8 @@ jNUT
 jNut
 jNutWebAPI
 jdk
+jenkins
+jessie
 journalctl
 jpg
 jpgraph
@@ -1871,6 +1916,7 @@ libtool
 libupsclient
 libusb
 libusbugen
+libvirt
 libwrap
 libxslt
 libxxx
@@ -1914,6 +1960,8 @@ lu
 lua
 lv
 lvo
+lxc
+lxcbr
 lxml
 lxyz
 mA
@@ -1942,6 +1990,7 @@ maxva
 maxvalue
 maxvi
 maxvo
+mc
 md
 mdadm
 mecer
@@ -1974,6 +2023,7 @@ minva
 minvalue
 minvi
 minvo
+mips
 mis
 misconfigured
 mkdir
@@ -2111,20 +2161,25 @@ openSUSE
 openjdk
 openlog
 opensolaris
+openssh
 openssl
 optiups
 oq
+os
 ostream
 otherprotocols
+outliers
 pF
 paramkeywords
 parsable
 parseconf
 passname
+passthrough
 passwd
 passwordlevel
 pathname
 pathnames
+pbzip
 pc
 pconf
 pcs
@@ -2143,6 +2198,7 @@ phoenixtec
 picocom
 pid
 pidpath
+pigz
 pijuice
 pinout
 pinouts
@@ -2256,6 +2312,7 @@ ret
 retrydelay
 revdate
 revnumber
+rf
 rfc
 rh
 richcomm
@@ -2270,6 +2327,8 @@ rn
 ro
 roadmap
 rootca
+rootfs
+rootfs'es
 rq
 rqt
 rsync
@@ -2324,6 +2383,7 @@ setq
 setuid
 setvar
 setvar's
+sfr
 sgml
 sgs
 shutdownArguments
@@ -2371,6 +2431,7 @@ splitname
 sr
 src
 srcdir
+srv
 srw
 ss
 ssl
@@ -2502,7 +2563,6 @@ tx
 txt
 typedef
 uA
-UB
 uD
 uM
 ua
@@ -2588,6 +2648,7 @@ usbups
 usbus
 usd
 usec
+useradd
 userid
 usermap
 username
@@ -2599,6 +2660,7 @@ utalk
 utf
 uu
 uucp
+vCPU
 va
 valgrind
 validationSequence
@@ -2620,6 +2682,7 @@ victron
 victronups
 vid
 vin
+virsh
 virtualization
 vo
 vod

@@ -44,38 +44,38 @@
 
 /* definition of register type */
 enum regtype {
-    COIL = 0,
-    INPUT_B,
-    INPUT_R,
-    HOLDING
+	COIL = 0,
+	INPUT_B,
+	INPUT_R,
+	HOLDING
 };
 typedef enum regtype regtype_t;
 
 /* UPS device state enum */
 enum devstate {
-    OL_T = 0,
-    OB_T,
-    LB_T,
-    HB_T,
-    RB_T,
-    CHRG_T,
-    DISCHRG_T,
-    BYPASS_T,
-    CAL_T,
-    OFF_T,
-    OVER_T,
-    TRIM_T,
-    BOOST_T,
-    FSD_T
+	OL_T = 0,
+	OB_T,
+	LB_T,
+	HB_T,
+	RB_T,
+	CHRG_T,
+	DISCHRG_T,
+	BYPASS_T,
+	CAL_T,
+	OFF_T,
+	OVER_T,
+	TRIM_T,
+	BOOST_T,
+	FSD_T
 };
 typedef enum devstate devstate_t;
 
 /* UPS state signal attributes */
 struct sigattr {
-    int addr;           /* register address */
-    regtype_t type;     /* register type */
-    int noro;           /* 1: normally open contact 0: normally closed contact.
-                           noro is used to indicate the logical ON or OFF in regard
+	int addr;           /* register address */
+	regtype_t type;     /* register type */
+	int noro;           /* 1: normally open contact 0: normally closed contact. */
+                        /* noro is used to indicate the logical ON or OFF in regard
                            of the contact state. if noro is set to 1 then ON corresponds
                            to an open contact */
 };
