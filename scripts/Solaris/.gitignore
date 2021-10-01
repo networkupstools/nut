@@ -4,6 +4,7 @@
 /postinstall
 /preremove
 /postremove
+/precheck.py
 /preproto.pl
 /svc-nut-server
 /svc-nut-monitor

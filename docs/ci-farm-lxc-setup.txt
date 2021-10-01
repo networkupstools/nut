@@ -1,0 +1,257 @@
+Setting up the multi-arch Linux LXC container farm for NUT CI
+-------------------------------------------------------------
+
+Due to some historical reasons including earlier personal experience,
+the Linux container setup implemented as described below was done with
+persistent LXC containers wrapped by LIBVIRT for management. There was
+no particular use-case for systems like Docker (and no firepower for a
+Kubernetes cluster) in that the build environment intended for testing
+non-regression against a certain release does not need to be regularly
+updated -- its purpose is to be stale and represent what users still
+running that system for whatever reason (e.g. embedded, IoT, corporate)
+have in their environments.
+
+Common preparations
+~~~~~~~~~~~~~~~~~~~
+
+* Prepare LXC and LIBVIRT-LXC integration, including an "independent"
+  (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
+  and https://wiki.debian.org/LXC/SimpleBridge
+** For dnsmasq integration on the independent bridge (`lxcbr0` following
+   the documentation examples), be sure to mention:
+*** `LXC_DHCP_CONFILE="/etc/lxc/dnsmasq.conf"` in `/etc/default/lxc-net`
+*** `dhcp-hostsfile=/etc/lxc/dnsmasq-hosts.conf` in/as the content of
+    `/etc/lxc/dnsmasq.conf`
+*** `touch /etc/lxc/dnsmasq-hosts.conf` which would list simple `name,IP`
+    pairs, one per line (so one per container)
+*** `systemctl restart lxc-net` to apply config (is this needed after
+    setup of containers too, to apply new items before booting them?)
+
+* Install qemu with its `/usr/bin/qemu-*-static` and registration in
+  `/var/lib/binfmt`
+
+* Prepare an LVM partition (or preferably some other tech like ZFS)
+  as `/srv/libvirt` and create a `/srv/libvirt/rootfs` to hold the containers
+
+* Prepare `/home/abuild` on the host system (preferably in ZFS with dedup);
+  account user and group ID numbers are `399` as on the rest of the CI farm
+  (historically, inherited from OBS workers)
+
+* Edit the `~/.profile` to default virsh provider with:
++
+------
+LIBVIRT_DEFAULT_URI=lxc:///system
+export LIBVIRT_DEFAULT_URI
+------
+
+* If host root filesystem is small, relocate the LXC download cache to the
+  (larger) `/srv/libvirt` partition:
++
+------
+:; mkdir -p /srv/libvirt/cache-lxc
+:; rm -rf /var/cache/lxc
+:; ln -sfr /srv/libvirt/cache-lxc /var/cache/lxc
+------
+** Maybe similarly relocate shared `/home/abuild` to reduce strain on rootfs?
+
+
+Setup a container
+~~~~~~~~~~~~~~~~~
+
+Note that completeness of qemu CPU emulation varies, so not all distros
+can be installed, e.g. "s390x" failed for both debian10 and debian11 to
+set up the openssh-server package, or once even to run /bin/true (seems
+to have installed an older release though, to match the outdated emulation?)
+
+While the `lxc-create` tool does not really specify the error cause and
+deletes the directories after failure, it shows the pathname where it
+writes the log (also deleted). Before re-trying the container creation, this
+file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
+
+* Install containers like this:
++
+------
+:; lxc-create -n jenkins-debian11-mips64el -P /srv/libvirt/rootfs -t debian -- \
+    -r bullseye -a mips64el
+------
+** to specify a particular mirror (not everyone hosts everything --
+   so if you get something like
+   `"E: Invalid Release file, no entry for main/binary-mips/Packages"`
+   then see https://www.debian.org/mirror/list for details, and double-check
+   the chosen site to verify if the distro version of choice is hosted with
+   your arch of choice):
++
+------
+:; MIRROR="http://ftp.br.debian.org/debian/" \
+   lxc-create -n jenkins-debian10-mips -P /srv/libvirt/rootfs -t debian -- \
+    -r buster -a mips
+------
+** ...or for EOLed distros, use the archive, e.g.:
++
+------
+:; MIRROR="http://archive.debian.org/debian-archive/debian/" \
+   lxc-create -n jenkins-debian8-s390x -P /srv/libvirt/rootfs -t debian -- \
+    -r jessie -a s390x
+------
+** See further options for the "template" with its help, e.g.:
++
+------
+:; lxc-create -t debian -h
+------
+
+* Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
+  on the host, e.g.:
++
+------
+jenkins-debian11-mips,10.0.3.245
+------
+
+* Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
+  markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
++
+------
+:; virsh -c lxc:///system domxml-from-native lxc-tools \
+    /srv/libvirt/rootfs/jenkins-debian11-armhf/config \
+    | sed -e 's,dir:/srv,/srv,' \
+    > /tmp/x && virsh define /tmp/x
+------
++
+NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
+   the launched QEMU containers were OOM-killed as they exceeded their memory
+   cgroup limit. In practice they do not eat that much resident memory, just
+   want to have it addressable by VMM, I guess (swap is not very used either).
++
+** It may be needed to revert the generated "os/arch" to `x86_64` (and let
+   QEMU handle the rest) in the `/tmp/x` file, and re-try the definition:
++
+------
+:; virsh define /tmp/x
+------
+
+* Then `virsh edit jenkins-debian11-armhf` (and other containers) to bind-mount
+  the common `/home/abuild`, adding this tag to their "devices":
++
+------
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='/home/abuild'/>
+      <target dir='/home/abuild'/>
+    </filesystem>
+------
+** Note that generated XML might not conform to current LXC schema so it
+   fails validation during save; this can be bypassed with "i" when it asks.
+   One such case was however with indeed invalid contents, the "dir:" schema
+   removed by example above.
+
+
+Shepherd the herd
+~~~~~~~~~~~~~~~~~
+
+* Monitor deployed container rootfs'es with:
++
+------
+:; du -ks /srv/libvirt/rootfs/*
+------
++
+(should have non-trivial size for deployments without fatal infant errors)
+
+* Mass-edit/review libvirt configurations with:
++
+------
+:; virsh list --all | awk '{print $2}' \
+   | grep jenkins | while read X ; do \
+     virsh edit --skip-validate $X ; done
+------
+** ...or avoid `--skip-validate` when markup is initially good :)
+
+* Mass-define network interfaces:
++
+------
+:; virsh list --all | awk '{print $2}' \
+   | grep jenkins | while read X ; do \
+     virsh dumpxml "$X" | grep "bridge='lxcbr0'" \
+     || virsh attach-interface --domain "$X" --config \
+        --type bridge --source lxcbr0 ; \
+   done
+------
+
+* Populate with `abuild` account, as well as with the `bash` shell and
+  `sudo` ability, and reporting of assigned IP addresses on the console:
++
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    echo "=== $ALTROOT :" >&2; \
+    chroot "$ALTROOT" apt-get install sudo bash ; \
+    grep eth0 "$ALTROOT/etc/issue" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
+    grep eth0 "$ALTROOT/etc/issue.net" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
+    groupadd -R "$ALTROOT" -g 399 abuild ; \
+    useradd -R "$ALTROOT" -u 399 -g abuild -M -N -s /bin/bash abuild \
+    || useradd -R "$ALTROOT" -u 399 -g 399 -M -N -s /bin/bash abuild \
+    || { if ! grep -w abuild "$ALTROOT/etc/passwd" ; then \
+            echo 'abuild:x:399:399::/home/abuild:/bin/bash' \
+            >> "$ALTROOT/etc/passwd" ; \
+            echo "USERADDed manually: passwd" >&2 ; \
+         fi ; \
+         if ! grep -w abuild "$ALTROOT/etc/shadow" ; then \
+            echo 'abuild:!:18889:0:99999:7:::' >> "$ALTROOT/etc/shadow" ; \
+            echo "USERADDed manually: shadow" >&2 ; \
+         fi ; \
+       } ; \
+   done
+------
++
+Note that for some reason, in some of those other-arch distros `useradd`
+fails to find the group anyway; then we have to "manually" add them.
+
+* Let the host know names/IPs of containers you assigned:
++
+------
+:; grep -v '#' /etc/lxc/dnsmasq.conf  | while IFS=, read N I ; do \
+    getent hosts "$N" >&2 || echo "$I $N" ; \
+   done >> /etc/hosts
+------
+
+Further setup of the containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See NUT `docs/config-prereqs.txt` about dependency package installation
+for Debian-based Linux systems.
+
+It may be wise to not install e.g. documentation generation tools (or at
+least not the full set for HTML/PDF generation) in each environment, in
+order to conserve space and run-time stress.
+
+Still, if there are significant version outliers (such as using an older
+distribution due to vCPU requirements), it can be installed fully just
+to ensure non-regression -- that when adapting Makefile rule definitions
+to modern tools, we do not lose ability to build with older ones.
+
+For this, `chroot` from the host system can be used, e.g. to improve the
+interactive usability for a population of Debian(-compatible) containers
+(and to use its networking, while the operating environment in containers
+may be not yet configured or still struggling to access the Internet):
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    echo "=== $ALTROOT :" ; \
+    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 \
+   ; done
+------
+
+Note that technically `(sudo) chroot ...` can also be used from the CI worker
+account on the host system to build in the prepared filesystems without the
+overhead of running containers and several copies of Jenkins `agent.jar`.
+
+Also note that set-up of some packages, including the `ca-certificates` and
+the JDK/JRE, require that the `/proc` filesystem is usable in the chroot.
+This can be achieved with e.g.:
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    for D in proc ; do \
+      echo "=== $ALTROOT/$D :" ; \
+      mkdir -p "$ALTROOT/$D" ; \
+      mount -o bind,rw "/$D" "$ALTROOT/$D" ; \
+    done ; \
+   done
+------
+
+TODO: Test and document a working NAT and firewall setup for this, to allow
+SSH access to the containers via dedicated TCP ports exposed on the host.

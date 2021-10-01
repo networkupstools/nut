@@ -34,8 +34,8 @@ extern "C" {
 #endif
 
 enum network_type {
-        IPv4,
-        IPv6
+	IPv4,
+	IPv6
 };
 
 typedef struct nutscan_ip_iter {
