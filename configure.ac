@@ -1846,6 +1846,25 @@ AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
+dnl Even if the tool is installed, it may be not usable on build platform.
+dnl QEMU may further complicate things, providing CPUs that formally match
+dnl a supported family but crash in practice, or hopefully rejected early:
+dnl valgrind: fatal error: unsupported CPU.
+dnl    Supported CPUs are:
+dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
+dnl    * AMD Athlon64/Opteron
+dnl    * ARM (armv7)
+dnl    * MIPS (mips32 and above; mips64 and above)
+dnl    * PowerPC (most; ppc405 and above)
+dnl    * System z (64bit only - s390x; z990 and above)
+AS_IF([test -n "${VALGRIND}"], [
+	AC_MSG_CHECKING([whether valgrind is usable on current platform])
+	AS_IF([( ${VALGRIND} --help )],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		 VALGRIND="none"
+		])
+])
 with_valgrind="auto"
 AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
 AC_ARG_WITH(valgrind,
