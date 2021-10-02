@@ -1859,7 +1859,7 @@ dnl    * PowerPC (most; ppc405 and above)
 dnl    * System z (64bit only - s390x; z990 and above)
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
-	AS_IF([( ${VALGRIND} --help )],
+	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
 		[AC_MSG_RESULT([yes])],
 		[AC_MSG_RESULT([no])
 		 VALGRIND="none"
