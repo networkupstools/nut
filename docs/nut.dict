@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2784 utf-8
+personal_ws-1.1 en 2787 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1174,6 +1174,7 @@ UTC
 UTalk
 UUU
 UX
+Ubuntu
 Ulf
 Uncomment
 Unices
@@ -1572,6 +1573,7 @@ ddl
 de
 deUNV
 debian
+debootstrap
 debouncing
 deci
 decrement
@@ -2599,6 +2601,7 @@ uA
 uD
 uM
 ua
+ubuntu
 uc
 ucb
 udev
