@@ -1846,6 +1846,25 @@ AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
+dnl Even if the tool is installed, it may be not usable on build platform.
+dnl QEMU may further complicate things, providing CPUs that formally match
+dnl a supported family but crash in practice, or hopefully rejected early:
+dnl valgrind: fatal error: unsupported CPU.
+dnl    Supported CPUs are:
+dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
+dnl    * AMD Athlon64/Opteron
+dnl    * ARM (armv7)
+dnl    * MIPS (mips32 and above; mips64 and above)
+dnl    * PowerPC (most; ppc405 and above)
+dnl    * System z (64bit only - s390x; z990 and above)
+AS_IF([test -n "${VALGRIND}"], [
+	AC_MSG_CHECKING([whether valgrind is usable on current platform])
+	AS_IF([( ${VALGRIND} --help )],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		 VALGRIND="none"
+		])
+])
 with_valgrind="auto"
 AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
 AC_ARG_WITH(valgrind,
@@ -2064,14 +2083,26 @@ dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
 dnl Note: the "gcc-legacy" option is intentionally undocumented, it acts as
 dnl least-surprise default if caller did not specify any --enable-warnings.
+dnl Note: Currently the "gcc-minimal" mode below adapts to builds with
+dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
+dnl default "nut_warning_difficulty" and/or the case handling below.
 nut_warning_difficulty="minimal"
 AC_MSG_CHECKING([whether to pre-set warnings])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
-    [gcc|clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
+    [clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
+    [gcc], [
+        AS_CASE(["${CFLAGS}"],
+            [*89*|*90*|*ansi*], [nut_enable_warnings="${nut_enable_warnings}-minimal"],
+            [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"]
+        )],
     [yes|auto|""], [
         AS_IF([test "${CLANGCC}" = "yes"], [nut_enable_warnings="clang-${nut_warning_difficulty}"],
-            [AS_IF([test "${GCC}" = "yes"], [nut_enable_warnings="gcc-${nut_warning_difficulty}"], [nut_enable_warnings="all"])
+            [AS_IF([test "${GCC}" = "yes"], [
+                AS_CASE(["${CFLAGS}"],
+                    [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
+                    [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
+                )], [nut_enable_warnings="all"])
             ])
         ],
     [hard|auto-hard|auto=hard], [
@@ -2143,7 +2174,17 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
-    [gcc-minimal|gcc-medium|gcc-hard], [
+    [gcc-minimal], [
+        dnl Builds with C89 (and aliases) are quite noisy for C99+ syntax used
+        dnl in NUT. The minimal-warnings should not complain in these builds.
+        CFLAGS="${CFLAGS} -Wall -Wsign-compare"
+        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        AS_CASE(["${CFLAGS}"],
+            [*89*|*90*|*ansi*], [],
+            [CFLAGS="${CFLAGS} -Wextra -pedantic"]
+        )
+        ],
+    [gcc-medium|gcc-hard], [
         CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
         ]
