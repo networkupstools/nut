@@ -212,7 +212,7 @@ fails to find the group anyway; then we have to "manually" add them.
 * Let the host know names/IPs of containers you assigned:
 +
 ------
-:; grep -v '#' /etc/lxc/dnsmasq.conf  | while IFS=, read N I ; do \
+:; grep -v '#' /etc/lxc/dnsmasq-hosts.conf | while IFS=, read N I ; do \
     getent hosts "$N" >&2 || echo "$I $N" ; \
    done >> /etc/hosts
 ------
