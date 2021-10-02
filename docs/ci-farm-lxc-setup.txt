@@ -93,6 +93,13 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
    lxc-create -n jenkins-debian8-s390x -P /srv/libvirt/rootfs -t debian -- \
     -r jessie -a s390x
 ------
+** ...Alternatively, other distributions can be used (as supported by your
+   LXC scripts, typically in `/usr/share/debootstrap/scripts`), e.g. Ubuntu:
++
+------
+:; lxc-create -n jenkins-ubuntu1804-s390x -P /srv/libvirt/rootfs -t ubuntu -- \
+    -r bionic -a s390x
+------
 ** See further options for the "template" with its help, e.g.:
 +
 ------
