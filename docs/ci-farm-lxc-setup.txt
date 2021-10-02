@@ -232,7 +232,7 @@ may be not yet configured or still struggling to access the Internet):
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" ; \
-    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 \
+    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 git \
    ; done
 ------
 
