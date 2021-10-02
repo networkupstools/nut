@@ -50,8 +50,10 @@ void Usage(char *name) {
 }
 
 void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
+	size_t i;
+
 	printf("buf \"");
-	for (size_t i = 0; i < bufSize - 1; i++) {
+	for (i = 0; i < bufSize - 1; i++) {
 		printf("%02x ", buf[i]);
 	}
 	printf("%02x\"", buf[bufSize - 1]);
@@ -63,6 +65,7 @@ int RunBuiltInTests(char *argv[]) {
 	NUT_UNUSED_VARIABLE(argv);
 
 	int exitStatus = 0;
+	size_t i;
 	char *next;
 	uint8_t reportBuf[64];
 	int bufSize;
@@ -97,7 +100,7 @@ int RunBuiltInTests(char *argv[]) {
 		{.buf = "16 0c 00 00 00", .Offset = 10, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0}
 	};
 
-	for (unsigned i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
+	for (i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
 		next = testData[i].buf;
 		for (bufSize = 0; *next != 0; bufSize++) {
 			reportBuf[bufSize] = (uint8_t) strtol(next, (char **)&next, 16);
@@ -110,7 +113,7 @@ int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%d ", i + 1);
+		printf("Test #%zd ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);
