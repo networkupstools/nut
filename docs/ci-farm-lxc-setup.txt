@@ -182,7 +182,9 @@ Shepherd the herd
 ------
 
 * Populate with `abuild` account, as well as with the `bash` shell and
-  `sudo` ability, and reporting of assigned IP addresses on the console:
+  `sudo` ability, reporting of assigned IP addresses on the console,
+  and SSH server access complete with envvar passing from CI clients
+  by virtue of `ssh -o SendEnv='*' container-name`:
 +
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
@@ -203,6 +205,12 @@ Shepherd the herd
             echo "USERADDed manually: shadow" >&2 ; \
          fi ; \
        } ; \
+    if [ -s "$ALTROOT/etc/ssh/sshd_config" ]; then \
+        grep 'AcceptEnv \*' "$ALTROOT/etc/ssh/sshd_config" || ( \
+            ( echo ""; echo "# For CI: Allow passing any envvars:"; echo 'AcceptEnv *' ) \
+            >> "$ALTROOT/etc/ssh/sshd_config" \
+        ) ; \
+    fi ; \
    done
 ------
 +
