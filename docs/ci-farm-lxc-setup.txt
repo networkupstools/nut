@@ -37,7 +37,22 @@ Common preparations
   account user and group ID numbers are `399` as on the rest of the CI farm
   (historically, inherited from OBS workers)
 
-* Edit the `~/.profile` to default virsh provider with:
+** It may help to generate an ssh key without a passphrase for `abuild`
+   that it would trust, to sub-login from CI agent sessions into the
+   container. Then again, it may be not required if CI logs into the
+   host by SSH using authorized_keys and an SSH Agent, and the inner
+   ssh client would forward that auth channel to the original agent.
++
+------
+abuild$ ssh-keygen
+# accept defaults
+
+abuild$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+abuild$ chmod 640 ~/.ssh/authorized_keys
+------
+
+* Edit the root (or whoever manages libvirt) `~/.profile` to default the
+  virsh provider with:
 +
 ------
 LIBVIRT_DEFAULT_URI=lxc:///system
