@@ -27,6 +27,21 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
 
+    // The NUT CI farm offers a few other architectures in containers backed
+    // by QEMU virtual CPUs. Running builds in these is expensive (takes a
+    // lot of time and can lag the NUT pipeline), so we would run just a few
+    // scenarios there to ensure code compatibility with headers and libs,
+    // but not exhaustive tests that can be done elsewhere. Currently this
+    // workload hits the Linux builder that completes its usual work earlier
+    // than some other builders, so a few minutes more would not hit pipeline
+    // wallclock time frame much. The slowBuild filter rules rely on separate
+    // label patterns with "qemu-nut-builder" and/or "qemu-nut-builder:alldrv".
+    dynacfgPipeline.disableSlowBuildCIBuild_QEMU = true
+    //if ( env?.BRANCH_NAME ==~ /master|main|stable|.*qemu.*/ ) {
+    if ( env?.BRANCH_NAME ==~ /.*qemu.*/ ) {
+        dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
+    }
+
     dynacfgPipeline.traceBuildShell_configureEnvvars = false// true 
     dynacfgPipeline.traceBuildShell = false //true
 
@@ -566,6 +581,47 @@ set | sort -n """
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: [
+                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
+                    [~/CSTDVARIANT=c/],
+                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                    ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'GNU C standard builds with non-fatal warnings, without distcheck and docs, one compiler with main supported C/C++ revision on slower QEMU builders (may fail due to those workers)',
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild_QEMU,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*|.*qemu.*)$/,
+         //branchRegexTarget: ~/^(master|main|stable|.*qemu.*)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                //commonLabelExpr: "qemu-" + dynacfgBase.commonLabelExpr,
+                commonLabelExpr: "qemu-nut-builder",
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'ARCH${ARCH_BITS}'],
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||qemu-nut-builder:alldrv)"],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
+                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                    ]
+                    ],
+                allowedFailure: [
+                    //[~/ARCH(32|64)=(?!i386|amd64))/],
+                    //[~/OS_FAMILY=windows/]
+                    [~/OS_FAMILY=.+/]
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: [
                     [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
                     [~/CSTDVARIANT=c/],
