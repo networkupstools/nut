@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2787 utf-8
+personal_ws-1.1 en 2792 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -39,6 +39,7 @@ AVR
 AVRLCD
 AWG
 Ablerex
+AcceptEnv
 ActivePower
 AdMiN
 Affero
@@ -1024,6 +1025,7 @@ Schonefeld
 Schroder
 Sekury
 Selinger
+SendEnv
 Senoidal
 Sep
 Serv
@@ -1670,6 +1672,7 @@ energysave
 english
 enum
 envvar
+envvars
 ep
 epdu
 epodebounce
@@ -1896,6 +1899,7 @@ kadets
 kaminski
 kde
 keyclick
+keygen
 keyout
 killall
 killpower
@@ -2468,6 +2472,7 @@ srcdir
 srv
 srw
 ss
+sshd
 ssl
 stan
 startIP
