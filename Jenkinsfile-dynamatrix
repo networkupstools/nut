@@ -195,7 +195,6 @@ set | sort -n """
             dynacfgPipeline_ciBuild.buildPhases = [:]
             dynacfgPipeline_ciBuild = ci_build.sanityCheckDynacfgPipeline(dynacfgPipeline_ciBuild)
 
-            unstashCleanSrc(dynacfgPipeline.stashnameSrc)
             buildMatrixCellCI(dynacfgPipeline_ciBuild, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline_ciBuild, dsbc, stageName)
         }
