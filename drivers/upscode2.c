@@ -446,8 +446,8 @@ static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
 	const char *resp, const char *var, char *ret);
-static int upscsend(const char *cmd);
-static int upscrecv(char *buf);
+static ssize_t upscsend(const char *cmd);
+static ssize_t upscrecv(char *buf);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
 static void check_uppm(void);
 static float batt_charge_pct(void);
@@ -1001,9 +1001,9 @@ static void upsc_setstatus(unsigned int upsc_status)
 
 /* Add \r to end of command and send to UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscsend(const char *cmd)
+static ssize_t upscsend(const char *cmd)
 {
-	int	res;
+	ssize_t	res;
 
 	res = ser_send_pace(upsfd, output_pace_usec, "%s%s%s",
 		use_pre_lf ? "\n" : "",
@@ -1024,9 +1024,9 @@ static int upscsend(const char *cmd)
 
 /* Return a string read from UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscrecv(char *buf)
+static ssize_t upscrecv(char *buf)
 {
-	int	res;
+	ssize_t	res;
 
 	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
 	   which means ser_get_buf() either returns one line terminated with
@@ -1047,7 +1047,7 @@ static int upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
 	}
 
 	return res;
