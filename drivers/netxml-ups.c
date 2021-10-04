@@ -698,7 +698,8 @@ static int netxml_get_page(const char *page)
 
 static int netxml_alarm_subscribe(const char *page)
 {
-	int	ret, port = -1, secret = -1;
+	int	ret, secret = -1;
+	unsigned int	port = 0;
 	char	buf[LARGEBUF], *s;
 	ne_request	*request;
 	ne_sock_addr	*addr;
@@ -800,12 +801,12 @@ static int netxml_alarm_subscribe(const char *page)
 		}
 
 		/* Range of valid values constrained above */
-		port = (int)tmp_port;
+		port = (unsigned int)tmp_port;
 		secret = (int)tmp_secret;
 
 	}
 
-	if ((port == -1) || (secret == -1)) {
+	if ((port < 1) || (secret == -1)) {
 		upsdebugx(2, "%s: parsing initial subcription failed", __func__);
 		return NE_RETRY;
 	}
