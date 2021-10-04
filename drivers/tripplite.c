@@ -112,6 +112,7 @@
 #include "main.h"
 #include "serial.h"
 #include "tripplite.h"
+#include "nut_stdint.h"
 #include <math.h>
 #include <ctype.h>
 
@@ -152,14 +153,14 @@ static int hex2d(char *start, unsigned int len)
  * return: # of chars in buf, excluding terminating \0 */
 static int send_cmd(const char *str, char *buf, size_t len)
 {
-	unsigned char c;
+	char c;
 	int ret = 0;
-	size_t i = 0;
+	int i = 0;
 
 	ser_flush_io(upsfd);
 	ser_send(upsfd, "%s", str);
 
-	if (!len || !buf)
+	if (!len || !buf || len > INT_MAX)
 		return -1;
 
 	for (;;) {
@@ -177,7 +178,7 @@ static int send_cmd(const char *str, char *buf, size_t len)
 		if (c == IGNCHAR || c == ENDCHAR)
 			continue;
 		buf[i++] = c;
-	} while (c != ENDCHAR && i < len);
+	} while (c != ENDCHAR && i < (int)len);
 	buf[i] = '\0';
 	return i;
 }
