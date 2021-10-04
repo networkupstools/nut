@@ -108,19 +108,19 @@ typedef struct item_t {
 } item_t;
 
 /* Driver's own flags */
-#define QX_FLAG_STATIC		2	/* Retrieve info only once. */
-#define QX_FLAG_SEMI_STATIC	4	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
-#define QX_FLAG_ABSENT		8	/* Data is absent in the device, use default value. */
-#define QX_FLAG_QUICK_POLL	16	/* Mandatory vars, polled also in QX_WALKMODE_QUICK_UPDATE.
+#define QX_FLAG_STATIC		2UL	/* Retrieve info only once. */
+#define QX_FLAG_SEMI_STATIC	4UL	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
+#define QX_FLAG_ABSENT		8UL	/* Data is absent in the device, use default value. */
+#define QX_FLAG_QUICK_POLL	16UL	/* Mandatory vars, polled also in QX_WALKMODE_QUICK_UPDATE.
 					 * If there's a problem with a var not flagged as QX_FLAG_QUICK_POLL in QX_WALKMODE_INIT, the driver will automagically set QX_FLAG_SKIP on it and then it'll skip that item in QX_WALKMODE_{QUICK,FULL}_UPDATE.
 					 * Otherwise, if the item has the flag QX_FLAG_QUICK_POLL set, in case of errors in QX_WALKMODE_INIT the driver will set datastale. */
-#define QX_FLAG_CMD		32	/* Instant command. */
-#define QX_FLAG_SETVAR		64	/* The var is settable and the actual item stores info on how to set it. */
-#define QX_FLAG_TRIM		128	/* This var's value need to be trimmed of leading/trailing spaces/hashes. */
-#define QX_FLAG_ENUM		256	/* Enum values exist and are stored in info_rw. */
-#define QX_FLAG_RANGE		512	/* Ranges for this var available and are stored in info_rw. */
-#define QX_FLAG_NONUT		1024	/* This var doesn't have a corresponding var in NUT. */
-#define QX_FLAG_SKIP		2048	/* Skip this var: this item won't be processed. */
+#define QX_FLAG_CMD		32UL	/* Instant command. */
+#define QX_FLAG_SETVAR		64UL	/* The var is settable and the actual item stores info on how to set it. */
+#define QX_FLAG_TRIM		128UL	/* This var's value need to be trimmed of leading/trailing spaces/hashes. */
+#define QX_FLAG_ENUM		256UL	/* Enum values exist and are stored in info_rw. */
+#define QX_FLAG_RANGE		512UL	/* Ranges for this var available and are stored in info_rw. */
+#define QX_FLAG_NONUT		1024UL	/* This var doesn't have a corresponding var in NUT. */
+#define QX_FLAG_SKIP		2048UL	/* Skip this var: this item won't be processed. */
 
 #define MAXTRIES		3	/* Max number of retries */
 
