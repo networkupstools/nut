@@ -462,7 +462,7 @@ void upsdrv_help(void)
 void upsdrv_initups(void)
 {
 	struct termios tio;
-	int baud = B1200;
+	speed_t baud = B1200;
 	char *str;
 
 	if ((str = getval("baudrate")) != NULL) {
