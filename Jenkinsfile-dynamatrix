@@ -598,8 +598,8 @@ set | sort -n """
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "qemu-" + dynacfgBase.commonLabelExpr,
-                commonLabelExpr: "qemu-nut-builder",
-                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'ARCH${ARCH_BITS}'],
+                commonLabelExpr: "qemu-nut-builder || ssh-qemu-nut-builder",
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'ARCH${ARCH_BITS}', 'COMPILER'],
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||qemu-nut-builder:alldrv)"],
                 excludedNodelabels: [],
 
