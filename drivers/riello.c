@@ -457,7 +457,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKVA = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKVA = (uint16_t)pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
@@ -467,7 +468,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKW = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKW = (uint16_t)pom_long;
 
 	pom_word = (buffer[j++]-0x30)*256;
 	pom_word += (buffer[j++]-0x30)*16;
