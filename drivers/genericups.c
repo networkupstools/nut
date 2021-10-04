@@ -83,7 +83,7 @@ static void parse_output_signals(const char *value, int *line)
 		fatalx(EXIT_FAILURE, "Can't override output with DSR (not an output)");
 	}
 
-	if (strstr(value, "NULL")) {
+	if (strstr(value, "NULL") || strstr(value, "none")) {
 		upsdebugx(3, "%s: disable", __func__);
 		*line = 0;
 	}
@@ -161,7 +161,7 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
 	}
 
-	if (strstr(value, "NULL")) {
+	if (strstr(value, "NULL") || strstr(value, "none")) {
 		*line = 0;
 		*val = 0;
 		upsdebugx(3, "%s: disable", __func__);
