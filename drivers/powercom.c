@@ -289,7 +289,7 @@ static void shutdown_halt(void)
 
 static void shutdown_halt(void)
 {
-	ser_send_char (upsfd, SHUTDOWN);
+	ser_send_char (upsfd, (unsigned char)SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -302,8 +302,8 @@ static void shutdown_ret(void)
 
 static void shutdown_ret(void)
 {
-	ser_send_char (upsfd, RESTART);
-	ser_send_char (upsfd, COUNTER);
+	ser_send_char (upsfd, (unsigned char)RESTART);
+	ser_send_char (upsfd, (unsigned char)COUNTER);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -922,8 +922,10 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
+	/* NOTE: %hhu is not supported before C99; that would need reading
+	 * arguments into an uint as %u, checking range and casting */
 	if (getval("shutdownArguments")  &&
-	    sscanf(getval("shutdownArguments"), "{{%u,%u},%c}",
+	    sscanf(getval("shutdownArguments"), "{{%hhu,%hhu},%c}",
 	                &types[type].shutdown_arguments.delay[0],
 	                &types[type].shutdown_arguments.delay[1],
 	                &types[type].shutdown_arguments.minutesShouldBeUsed

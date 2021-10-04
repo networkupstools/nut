@@ -64,7 +64,7 @@ struct type {
 	 * seconds argument alone.
 	 */
 	struct delay_for_power_kill {
-	    unsigned int  delay[2];   /* { minutes, seconds } */
+	    unsigned char delay[2];   /* { minutes, seconds } */
 	    unsigned char minutesShouldBeUsed;
 	    /* 'n' in case the minutes value, which is delay[0], should
 		 * be skipped and not sent to the UPS.
