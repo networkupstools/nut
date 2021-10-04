@@ -574,22 +574,22 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 				return -1;
 		}
 	} else if (strncmp(item->dfl, "thms", 4) == 0) {
-		int t, h, m, sec;
-		if (sscanf(item->value, "%d:%d:%d:%d", &t, &h, &m, &sec) == 4) {
-			if (t < 0 || t > 9999 || h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59) goto ill;
+		int tt, h, m, sec;
+		if (sscanf(item->value, "%d:%d:%d:%d", &tt, &h, &m, &sec) == 4) {
+			if (tt < 0 || tt > 9999 || h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59) goto ill;
 		} else {
 			long l;
-			char *p;
+			char *pl;
 
-			l = strtol(value, &p, 10);
-			if (*p != '\0') goto ill;
+			l = strtol(value, &pl, 10);
+			if (*pl != '\0') goto ill;
 			sec = l % 60; l /= 60;
 			m = l % 60; l /= 60;
 			h = l % 24; l /= 24;
 			if (l > 9999) goto ill;
-			t = l;
+			tt = (int)l;
 		}
-		snprintf(s, sizeof s, "%04d:%02d:%02d:%02d", t, h, m, sec);
+		snprintf(s, sizeof s, "%04d:%02d:%02d:%02d", tt, h, m, sec);
 	} else {
 		upsdebugx(2, "setvar: unknown dfl %s", item->dfl);
 		return -1;
