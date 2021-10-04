@@ -776,9 +776,10 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uinp1 = buffer[35]*230/100;
 		data->Uinp2 = buffer[36]*230/100;
 		data->Uinp3 = buffer[37]*230/100;
-		data->Iinp1 = ((pom/690)*buffer[38])/100;
-		data->Iinp2 = ((pom/690)*buffer[39])/100;
-		data->Iinp3 = ((pom/690)*buffer[40])/100;
+		/* TODO: Range-check the casts to uint16_t? */
+		data->Iinp1 = (uint16_t)(((pom/690)*buffer[38])/100);
+		data->Iinp2 = (uint16_t)(((pom/690)*buffer[39])/100);
+		data->Iinp3 = (uint16_t)(((pom/690)*buffer[40])/100);
 		data->Finp = buffer[41]+256*buffer[42];
 
 		if (buffer[79] & 0x80) {
@@ -793,14 +794,16 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		}
 
 		if (buffer[73]) {
+			/* FIXME: Wondering how the addition below works for uint8_t[] buffer... */
+			/* TODO: Range-check the casts to uint16_t? */
 			if (buffer[73] < 100)
 				buffer[73]+=256;
 			if (data->Model < 3000) /* singlephase */
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100);
 			else
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100/3;
-			data->Iout2 = ((pom/buffer[73])*buffer[63])/100/3;
-			data->Iout3 = ((pom/buffer[73])*buffer[64])/100/3;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100/3);
+			data->Iout2 = (uint16_t)(((pom/buffer[73])*buffer[63])/100/3);
+			data->Iout3 = (uint16_t)(((pom/buffer[73])*buffer[64])/100/3);
 		}
 		else {
 			data->Iout1 = 0;
