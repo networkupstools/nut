@@ -594,6 +594,15 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 		upsdebugx(2, "setvar: unknown dfl %s", item->dfl);
 		return -1;
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	switch (t) {
 		case 'd':
 			snprintf(value, valuelen, item->command, i);
@@ -605,6 +614,9 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 			snprintf(value, valuelen, item->command, s);
 			break;
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	return 0;
 ill:
 	upsdebugx(2, "setvar: illegal %s value %s", item->dfl, value);
