@@ -740,11 +740,11 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 
 	data->SWversion = buffer[4]+256*buffer[5];
 
-	data->Version[0] = (uint8_t)(48 + ((data->SWversion / 1000) % 10));
-	data->Version[1] = (uint8_t)(48 + ((data->SWversion / 100) % 10));
+	data->Version[0] = (char)(uint8_t)(48 + ((data->SWversion / 1000) % 10));
+	data->Version[1] = (char)(uint8_t)(48 + ((data->SWversion / 100) % 10));
 	data->Version[2] = '.';
-	data->Version[3] = (uint8_t)(48 + ((data->SWversion / 10) % 10));
-	data->Version[4] = (uint8_t)(48 + (data->SWversion % 10));
+	data->Version[3] = (char)(uint8_t)(48 + ((data->SWversion / 10) % 10));
+	data->Version[4] = (char)(uint8_t)(48 + (data->SWversion % 10));
 
 	if (data->Model < 3000)
 		pom = data->Model*100;
