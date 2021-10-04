@@ -689,7 +689,7 @@ void riello_parse_rc(uint8_t* buffer, TRielloData* data)
 
 	j = 7;
 	for (i = 0; i < 22; i++, j+=2) {
-		data->StatusCodeT[i] = (buffer[j+1]-0x30);
+		data->StatusCodeT[i] = (char)(buffer[j+1]-0x30);
 		data->StatusCodeT[i] |= ((buffer[j]-0x30) << 4);
 	}
 	data->StatusCodeT[23] = 0;
