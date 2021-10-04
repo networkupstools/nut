@@ -786,7 +786,11 @@ cleanup:
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 
-	return ipmi_dev->sensors_count;
+	if (ipmi_dev->sensors_count > INT_MAX) {
+		upsdebugx(1, "%s: Found %i sensors which is too many",
+			__func__, ipmi_dev->sensors_count);
+	}
+	return (int)ipmi_dev->sensors_count;
 }
 
 
