@@ -181,8 +181,8 @@ Shepherd the herd
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
     chroot "$ALTROOT" apt-get install sudo bash ; \
-    grep eth0 "$ALTROOT/etc/issue" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
-    grep eth0 "$ALTROOT/etc/issue.net" || { echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
+    grep eth0 "$ALTROOT/etc/issue" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
+    grep eth0 "$ALTROOT/etc/issue.net" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
     useradd -R "$ALTROOT" -u 399 -g abuild -M -N -s /bin/bash abuild \
     || useradd -R "$ALTROOT" -u 399 -g 399 -M -N -s /bin/bash abuild \
@@ -255,3 +255,173 @@ This can be achieved with e.g.:
 
 TODO: Test and document a working NAT and firewall setup for this, to allow
 SSH access to the containers via dedicated TCP ports exposed on the host.
+
+
+Connecting Jenkins to the containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To cooperate with the jenkins-dynamatrix driving NUT CI builds, each build
+environment should be exposed as an individual agent with labels describing
+its capabilities.
+
+Labels
+^^^^^^
+
+Emulated-CPU container builds are CPU-intensive, so for them we define as
+few capabilities as possible: here CI is more interested in checking how
+binaries behave on those CPUs, *not* in checking the quality of recipes
+(distcheck, Make implementations, etc.), shell scripts or documentation,
+which is more efficient to test on native platforms.
+
+Still, we are interested in results from different compiler suites, so
+specify at least one version of each.
+
+NOTE: Currently the NUT Jenkinsfile-dynamatrix only looks at various
+`COMPILER` variants for this use-case, disregarding the versions and
+just using one that the environment defaults to.
+
+The reduced set of labels for QEMU workers looks like:
+
+------
+qemu-nut-builder qemu-nut-builder:alldrv
+NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit
+OS_FAMILY=linux OS_DISTRO=debian11 GCCVER=10 CLANGVER=11
+COMPILER=GCC COMPILER=CLANG
+ARCH64=ppc64le ARCH_BITS=64
+------
+
+For contrast, a "real" build agent's set of labels, depending on
+presence or known lack of some capabilities, looks like:
+------
+doc-builder nut-builder nut-builder:alldrv
+NUT_BUILD_CAPS=docs:man NUT_BUILD_CAPS=docs:all
+NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit=no
+OS_FAMILY=bsd OS_DISTRO=freebsd12 GCCVER=10 CLANGVER=10
+COMPILER=GCC COMPILER=CLANG
+ARCH64=amd64 ARCH_BITS=64
+SHELL_PROGS=sh SHELL_PROGS=dash SHELL_PROGS=zsh SHELL_PROGS=bash
+SHELL_PROGS=csh SHELL_PROGS=tcsh SHELL_PROGS=busybox
+MAKE=make MAKE=gmake
+------
+
+Generic agent attributes
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Name: e.g. `ci-debian-altroot--jenkins-debian10-arm64` (note the
+  pattern for "Conflicts With" detailed below)
+
+* Usage: "Only build jobs with label expressions matching this node"
+
+* Node properties / Environment variables:
+
+** `PATH+LOCAL` => `/usr/lib/ccache`
+
+Where to run agent.jar
+^^^^^^^^^^^^^^^^^^^^^^
+
+Depending on circumstances of the container, there are several options
+available to the NUT CI farm:
+
+* Java can run in the container, efficiently (native CPU, different distro)
+  => the container may be exposed as a standalone host for direct SSH access
+  (usually by NAT, exposing SSH on a dedicated port of the host; or by first
+  connecting the Jenkins controller with the host as an SSH Build Agent, and
+  then calling SSH to the container as a prefix for running the agent), so
+  ultimately the build `agent.jar` would run in the container.
+  Filesystem for the `abuild` account may be or not be shared with the host.
+
+* Java can not run in the container (crashes on emulated CPU, or is too old
+  in the agent container's distro -- currently Jenkins requires JRE 8+, but
+  eventually will require 11+) => the agent would run on the host, and then
+  the host would `ssh` or `chroot` (networking not required, but bind-mount
+  of `/home/abuild` and maybe other paths from host would be needed) called
+  for executing `sh` steps in the container environment. Either way, home
+  directory of the `abuild` account is maintained on the host and shared with
+  the guest environment, user and group IDs should match.
+
+* Java is inefficient in the container (operations like un-stashing the source
+  succeed but take minutes instead of seconds) => either of the above
+
+Methods below involving SSH assume that you have configured a password-less
+key authentication from the host machine to the `abuild` account in container.
+This can be an `ssh-keygen` result posted into `authorized_keys`, or a trusted
+key passed by a chain of ssh agents from a Jenkins credential for connection
+to the container-hoster into the container.
+
+* For passing the agent through an SSH connection from host to container,
+  so that the `agent.jar` runs inside the container environment, configure:
+
+** Launch method: "Agents via SSH"
+
+** Host, Credentials, Port: as suitable for accessing the container hoster
+
+** Prefix Start Agent Command: content depends on the container name,
+   but generally looks like the example below to report some info about
+   the final target platform (and make sure `java` is usable) in the
+   agent's log. Note that it ends with un-closed quote and a space char:
++
+------
+ssh jenkins-debian10-amd64 '( java -version & uname -a ; getconf LONG_BIT; getconf WORD_BIT; wait ) && 
+------
+
+** Suffix Start Agent Command: a single quote to close the text opened above:
+------
+'
+------
+
+
+* The other option is to run the `agent.jar` on the host, for all the
+  network and filesystem magic the agent does, and only execute shell
+  steps in the container. The solution relies on overridden `sh` step
+  implementation in the jenkins-dynamatrix shared library that uses a
+  magic `CI_WRAP_SH` environment variable to execute a pipe into the
+  container. Such pipes can be `ssh` or `chroot` with appropriate host
+  setup described above.
++
+NOTE: In case of ssh piping, remember that the container's
+`/etc/ssh/sshd_config` should `AcceptEnv *` and the SSH
+server should be restarted after such change.
+
+** Launch method: "Agents via SSH"
+
+** Host, Credentials, Port: as suitable for accessing the container hoster
+
+** Prefix Start Agent Command: content depends on the container name,
+   but generally looks like the example below to report some info about
+   the final target platform (and make sure it is accessible) in the
+   agent's log. Note that it ends with a space char:
++
+------
+echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && ssh jenkins-debian11-ppc64el 'uname -a ; getconf LONG_BIT; getconf WORD_BIT; true;' && 
+------
+
+** Suffix Start Agent Command: empty
+
+* Node properties / Environment variables:
+
+** `CI_WRAP_SH` => `ssh -o SendEnv='*' "jenkins-debian11-ppc64el" /bin/sh -xe `
+
+
+Sequentializing the stress
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Another aspect of farm management is that emulation is a slow and intensive
+operation, so we can not run all agents and execute builds at the same time.
+
+The current solution relies on https://github.com/jenkinsci/jenkins/pull/5764
+to allow build agents to conflict with each other -- one picks up a job from
+the queue and blocks others from starting; when it is done, another may start.
+
+Containers can be configured with "Availability => On demand", with shorter
+cycle to switch over faster (the core code sleeps a minute between attempts):
+
+* In demand delay: `0`;
+
+* Idle delay: `0` (Jenkins may change it to `1`);
+
+* Conflicts with: `^ci-debian-altroot--.*$` assuming that is the pattern
+  for agent definitions in Jenkins -- not necessarily linked to hostnames.
+
+Also, the "executors" count should be reduced to the amount of compilers
+in that system (usually 2) and so avoid extra stress of scheduling too many
+emulated-CPU builds at once.
