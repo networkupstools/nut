@@ -60,22 +60,22 @@ static uint8_t output_monophase;
 static TRielloData DevData;
 
 /**********************************************************************
- * char_read (char *bytes, int size, int read_timeout)
+ * char_read (char *bytes, size_t size, int read_timeout)
  *
  * reads size bytes from the serial port
  *
- * bytes	  			- buffer to store the data
+ * bytes			- buffer to store the data
  * size				- size of the data to get
  * read_timeout 	- serial timeout (in milliseconds)
  *
  * return -1 on error, -2 on timeout, nb_bytes_readen on success
  *
  *********************************************************************/
-static int char_read (char *bytes, int size, int read_timeout)
+static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 {
 	struct timeval serial_timeout;
 	fd_set readfs;
-	int readen = 0;
+	ssize_t readen = 0;
 	int rc = 0;
 
 	FD_ZERO (&readfs);
@@ -89,7 +89,7 @@ static int char_read (char *bytes, int size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		int now = read (upsfd, bytes, size - readen);
+		ssize_t now = read (upsfd, bytes, size - (size_t)readen);
 
 		if (now < 0) {
 			return -1;
@@ -114,12 +114,12 @@ static int char_read (char *bytes, int size, int read_timeout)
  * returns 0 on success, -1 on error, -2 on timeout
  *
  **********************************************************************/
-static int serial_read (int read_timeout, unsigned char *readbuf)
+static ssize_t serial_read (int read_timeout, unsigned char *readbuf)
 {
 	static unsigned char cache[512];
 	static unsigned char *cachep = cache;
 	static unsigned char *cachee = cache;
-	int recv;
+	ssize_t recv;
 	*readbuf = '\0';
 
 	/* if still data in cache, get it */
