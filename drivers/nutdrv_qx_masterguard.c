@@ -536,8 +536,8 @@ ill:	upsdebugx(2, "battery test: illegal duration %s", value);
 static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) {
 	char *p;
 	char t = 's';
-	long i;
-	double f;
+	long i = 0;
+	double f = 0.0;
 	char s[80];
 
 	if (value[0] == '\0') {
@@ -984,7 +984,7 @@ static int masterguard_claim(void) {
 
 	/* set SKIP flag for unimplemented commands */
 	for (item = masterguard_qx2nut; item->info_type != NULL; item++) {
-		int match;
+		int match = 0;
 		if (item->command == NULL || item->command[0] == '\0') continue;
 		for (sp = commands; sp != NULL; sp++) {
 			const char *p = *sp, *q = item->command;
