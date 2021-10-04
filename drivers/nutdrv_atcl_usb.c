@@ -134,7 +134,8 @@ static int query_ups(char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "read", reply, ret);
+	assert ((uintmax_t)ret < (uintmax_t)SIZE_MAX);
+	upsdebug_hex(3, "read", reply, (size_t)ret);
 	return ret;
 }
 
