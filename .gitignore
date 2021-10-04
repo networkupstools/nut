@@ -20,11 +20,13 @@ Makefile.in
 /config.log
 /config.status
 /config.sub
+/config.h
 /config.cache
 /configure
 /conf_nut_report_feature
 /conf??????/
 /dir.??????/
+/dir?.???????/
 /configure-test*/
 /cscope.*
 /depcomp
