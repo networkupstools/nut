@@ -383,8 +383,11 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -461,8 +464,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -511,8 +518,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
