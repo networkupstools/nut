@@ -28,11 +28,11 @@
 #define MASTERGUARD_VERSION "Masterguard 0.01"
 
 /* series (for un-SKIP) */
-char masterguard_my_series = '?';
+static char masterguard_my_series = '?';
 /* slave address for commands that require it */
 static char masterguard_my_slaveaddr[3] = "??"; /* null-terminated for strtol() in claim() */
 /* next slaveaddr to use after the SS command (which needs the old one) has been run */
-int masterguard_next_slaveaddr;
+static int masterguard_next_slaveaddr;
 /* output current/power computation */
 static int masterguard_my_power = 0;
 /* battery voltage computation */
@@ -899,17 +899,17 @@ how to report nominal hold time at half/full load?
 
 
 /* commands supported by A series */
-char *masterguard_commands_a[] = {
+static char *masterguard_commands_a[] = {
 	"Q", "Q1", "Q3", "T", "TL", "S", "C", "CT", "WH", "M", "N", "O", "DECO", "DRC", "SRC", "FLT", "FCLR", "G", "SS", "GS", "MSO", "PNV", "FOFF", "FON", "TUD", "GBS", "SSN", "GSN", NULL
 };
 
 /* commands supported by E series */
-char *masterguard_commands_e[] = {
+static char *masterguard_commands_e[] = {
 	"Q", "Q1", "Q3", "PSR", "T", "TL", "S", "C", "CT", "WH", "DRC", "SRC", "FLT", "FCLR", "SS", "GS", "MSO", "PNV", "FOFF", "FON", "TUD", "GBS", "SSN", "GSN", "BUS", "V", "INVDC", "BUSP", "BUSN", NULL
 };
 
 /* claim function. fetch some mandatory values, disable unsupported commands, set enum for supported output voltages */
-int masterguard_claim(void) {
+static int masterguard_claim(void) {
 	item_t *item;
 	/* mandatory values */
 	char *mandatory[] = {
@@ -1025,7 +1025,7 @@ int masterguard_claim(void) {
 }
 
 
-void masterguard_makevartable(void) {
+static void masterguard_makevartable(void) {
 	addvar(VAR_VALUE, "series", "Series (A/E)");
 	addvar(VAR_VALUE, "slave_address", "Slave address (UPS id) to match");
 	addvar(VAR_VALUE, "input_fault_voltage", "Input fault voltage (whatever that means)");
