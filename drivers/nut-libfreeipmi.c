@@ -645,7 +645,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 		}
 		if (ipmi_sdr_parse_record_id_and_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				NULL,
 				&record_type) < 0)
 		{
@@ -663,7 +663,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_fru_device_locator_parameters (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				NULL,
 				&logical_fru_device_device_slave_address,
 				NULL,
@@ -686,7 +686,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 			if (ipmi_sdr_parse_fru_entity_id_and_instance (SDR_PARSE_CTX,
 					sdr_record,
-					sdr_record_len,
+					(unsigned int)sdr_record_len,
 					&entity_id,
 					&entity_instance) < 0)
 			{
@@ -732,7 +732,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_record_id_and_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				&record_id,
 				&record_type) < 0)
 		{
@@ -751,7 +751,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_entity_id_instance_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				&tmp_entity_id,
 				&tmp_entity_instance,
 				NULL) < 0)
