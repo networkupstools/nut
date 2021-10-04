@@ -356,7 +356,7 @@ static void no_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	tio.c_iflag &= ~ ((tcflag_t)IXON | (tcflag_t)IXOFF);
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
