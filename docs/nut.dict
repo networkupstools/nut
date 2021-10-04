@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2765 utf-8
+personal_ws-1.1 en 2767 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1310,6 +1310,7 @@ allowfrom
 altinterface
 altpidpath
 altroot
+altroots
 amd
 anded
 aod
@@ -1328,6 +1329,7 @@ arg
 argc
 args
 argv
+armel
 armhf
 asapm
 ascii
