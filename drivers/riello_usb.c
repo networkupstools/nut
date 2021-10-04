@@ -62,7 +62,7 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
-static void ussleep(long usec)
+static void ussleep(useconds_t usec)
 {
 
 	if (usec == 1)
