@@ -502,7 +502,6 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 			ipmi_fru_ctx_errormsg (fru_ctx));
 	}
 
-
 	if (IPMI_FRU_LANGUAGE_CODE_VALID (language_code)) {
 		upsdebugx (5, "FRU Board Language: %s", ipmi_fru_language_codes[language_code]);
 	}
@@ -514,7 +513,16 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 	 * 'struct tm', thus passing 'struct tm' between functions could
 	 * have issues.  So we need to memset */
 	memset (&mfg_date_time_tm, '\0', sizeof (struct tm));
-	timetmp = mfg_date_time;
+
+	/* Without a standard TIME_MAX, signedness may suffer;
+	 * but we can at least check the number should fit */
+	if (sizeof(mfg_date_time) < sizeof(timetmp))
+	{
+		libfreeipmi_cleanup();
+		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process");
+	}
+
+	timetmp = (time_t)mfg_date_time;
 	localtime_r (&timetmp, &mfg_date_time_tm);
 	memset (mfg_date_time_buf, '\0', IPMI_FRU_STR_BUFLEN + 1);
 	strftime (mfg_date_time_buf, IPMI_FRU_STR_BUFLEN, "%D - %T", &mfg_date_time_tm);
