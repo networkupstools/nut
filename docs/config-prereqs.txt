@@ -60,7 +60,7 @@ Debian 10
     make autoconf automake libltdl-dev libtool-bin libtool \
     valgrind \
     pkg-config \
-    gcc clang \
+    gcc g++ clang \
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
