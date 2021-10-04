@@ -377,7 +377,7 @@ uint8_t riello_prepare_shutsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 6;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -399,7 +399,7 @@ uint8_t riello_prepare_setrebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 2;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -410,7 +410,7 @@ uint8_t riello_prepare_rebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 1;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
