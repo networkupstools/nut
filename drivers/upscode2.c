@@ -99,7 +99,7 @@ typedef struct simple_s {
 	const char *code;
 	type_t type;
 	const char *desc;
-	int status;
+	uint32_t status;
 	float *aux;
 	struct simple_s *stats;
 } simple_t;
