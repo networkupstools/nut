@@ -37,7 +37,7 @@ typedef struct {
 	const char	*versionString; /* TODO: Rename: this is the actual subdriver version */
 	int	(*instcmd)(const char *cmdname, const char *extra);
 	int	(*setvar)(const char *varname, const char *val);
-	int	(*initups)(void);
+	ssize_t	(*initups)(void);
 	void	(*initinfo)(void);
 	int	(*updateinfo)(void);
 } subdriver_t;
