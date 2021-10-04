@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2748 utf-8
+personal_ws-1.1 en 2767 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -39,6 +39,7 @@ AVR
 AVRLCD
 AWG
 Ablerex
+AcceptEnv
 ActivePower
 AdMiN
 Affero
@@ -159,6 +160,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLANGVER
 CLI
 CLOCAL
 CMDDESC
@@ -351,6 +353,7 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GCCVER
 GES
 GETADDRINFO
 GKrellM
@@ -779,6 +782,7 @@ PPDnnn
 PPP
 PPPPPPPPPP
 PR'ed
+PROGS
 PRs
 PSA
 PSD
@@ -1018,8 +1022,10 @@ Schonefeld
 Schroder
 Sekury
 Selinger
+SendEnv
 Senoidal
 Sep
+Sequentializing
 Serv
 Shara
 Shaul
@@ -1303,6 +1309,8 @@ alloc
 allowfrom
 altinterface
 altpidpath
+altroot
+altroots
 amd
 anded
 aod
@@ -1321,6 +1329,7 @@ arg
 argc
 args
 argv
+armel
 armhf
 asapm
 ascii
@@ -1416,6 +1425,7 @@ boostvoolts
 bootable
 bp
 br
+bsd
 bsv
 bt
 bti
@@ -1649,6 +1659,7 @@ energysave
 english
 enum
 envvar
+envvars
 ep
 epdu
 epodebounce
@@ -1708,6 +1719,7 @@ forcessl
 formatconfig
 formatparam
 fp
+freebsd
 freeipmi
 freqsensitivity
 frob
@@ -1734,6 +1746,7 @@ getDevice
 getTrackingResult
 getValue
 getVariable
+getconf
 getent
 getenv
 getopt
@@ -1773,6 +1786,7 @@ hidparser
 hidups
 highbattery
 highfrequency
+hoster
 hostname
 hostnames
 hostsfile
@@ -1873,6 +1887,7 @@ kadets
 kaminski
 kde
 keyclick
+keygen
 keyout
 killall
 killpower
@@ -1886,6 +1901,7 @@ lan
 langid
 lasaine
 ld
+le
 len
 lf
 libaugeas
@@ -2436,6 +2452,7 @@ srcdir
 srv
 srw
 ss
+sshd
 ssl
 stan
 startIP
@@ -2578,6 +2595,7 @@ ugen
 ukUNV
 ul
 un
+uname
 uncomment
 unconfigured
 undefine
@@ -2717,6 +2735,7 @@ xa
 xaabbcc
 xcalloc
 xd
+xe
 xferdelay
 xff
 xfff
