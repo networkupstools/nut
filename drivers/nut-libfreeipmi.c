@@ -49,6 +49,7 @@
 #include <ipmi_monitoring_bitmasks.h>
 #endif
 #include "nut-ipmi.h"
+#include "nut_stdint.h"
 #include "dstate.h"
 
 /* FreeIPMI defines */
@@ -419,14 +420,29 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 			ipmi_fru_ctx_errormsg (fru_ctx));
 	}
 
-	ipmi_dev->overall_capacity = overall_capacity;
+	if (overall_capacity > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: overall_capacity exceeds expected range: %u",
+			overall_capacity);
+	}
+	ipmi_dev->overall_capacity = (int)overall_capacity;
 
 	/* Voltages are in mV! */
 	ipmi_dev->input_minvoltage = low_end_input_voltage_range_1 / 1000;
 	ipmi_dev->input_maxvoltage = high_end_input_voltage_range_1 / 1000;
 
-	ipmi_dev->input_minfreq = low_end_input_frequency_range;
-	ipmi_dev->input_maxfreq = high_end_input_frequency_range;
+	if (low_end_input_frequency_range > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: low_end_input_frequency_range exceeds expected range: %u",
+			low_end_input_frequency_range);
+	}
+	if (high_end_input_frequency_range > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: high_end_input_frequency_range exceeds expected range: %u",
+			high_end_input_frequency_range);
+	}
+	ipmi_dev->input_minfreq = (int)low_end_input_frequency_range;
+	ipmi_dev->input_maxfreq = (int)high_end_input_frequency_range;
 
 	if (voltage_1 > (int)UINT8_MAX)
 	{
