@@ -578,8 +578,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -629,8 +633,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -656,8 +664,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
