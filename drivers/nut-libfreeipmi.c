@@ -367,7 +367,7 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 	int high_end_input_voltage_range_1;
 	unsigned int low_end_input_frequency_range;
 	unsigned int high_end_input_frequency_range;
-	unsigned int voltage_1;
+	unsigned int voltage_1; /* code for conversion into a float */
 
 	/* FIXME: check for the interest and capability to use these data */
 	unsigned int peak_va;
@@ -428,7 +428,12 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 	ipmi_dev->input_minfreq = low_end_input_frequency_range;
 	ipmi_dev->input_maxfreq = high_end_input_frequency_range;
 
-	ipmi_dev->voltage = libfreeipmi_get_voltage(voltage_1);
+	if (voltage_1 > (int)UINT8_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: voltage_1 code exceeds expected range: %u",
+			voltage_1);
+	}
+	ipmi_dev->voltage = libfreeipmi_get_voltage((uint8_t)voltage_1);
 
 	upsdebugx(1, "libfreeipmi_get_psu_info() retrieved successfully");
 
