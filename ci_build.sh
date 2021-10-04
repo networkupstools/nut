@@ -134,7 +134,7 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k -j 8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
@@ -315,6 +315,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+
+    if [ -n "${PYTHON-}" ]; then
+        # WARNING: Watch out for whitespaces, not handled here!
+        CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
 
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
@@ -658,7 +663,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k -j8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k -j 8 all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
       $CI_TIME $MAKE VERBOSE=1 all )
 
@@ -703,7 +708,12 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 "")
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual"
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any options" >&2
+    if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
+        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
+        sleep 5
+    fi
+    echo ""
     ./autogen.sh
     ./configure
     $MAKE all && $MAKE check

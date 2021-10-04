@@ -96,22 +96,22 @@ void nutscan_init(void)
 
 void nutscan_free(void)
 {
-	if( nutscan_avail_usb ) {
+	if (nutscan_avail_usb) {
 		lt_dlexit();
 	}
-	if( nutscan_avail_snmp ) {
+	if (nutscan_avail_snmp) {
 		lt_dlexit();
 	}
-	if( nutscan_avail_xml_http ) {
+	if (nutscan_avail_xml_http) {
 		lt_dlexit();
 	}
-	if( nutscan_avail_avahi ) {
+	if (nutscan_avail_avahi) {
 		lt_dlexit();
 	}
-	if( nutscan_avail_ipmi ) {
+	if (nutscan_avail_ipmi) {
 		lt_dlexit();
 	}
-	if( nutscan_avail_nut ) {
+	if (nutscan_avail_nut) {
 		lt_dlexit();
 	}
 }

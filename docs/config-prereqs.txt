@@ -1,6 +1,9 @@
-# Prerequisites for building NUT on different OSes
+ifdef::website[]
+Prerequisites for building NUT on different OSes
+================================================
+endif::website[]
 
-This file aims to list packages with the tools needed on a freshly minimally
+This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
 
@@ -15,15 +18,16 @@ that are not yet included into `master` branch dependencies, e.g. the DMF
 More packages and/or system setup may be needed to actually run NUT with
 all features enabled; chapters below concern just with building it.
 
-## General call to Test the ability to configure and build
+General call to Test the ability to configure and build
+-------------------------------------------------------
 
-````
+----
 :; mkdir -p nut ; cd nut
 :; git clone https://github.com/networkupstools/nut/ -b fightwarn .
 :; ./autogen.sh && \
     ./configure --with-doc=all --with-all --with-cgi && \
     make all && make check && make spellcheck
-````
+----
 
 NOTE: You can toggle some build options to check different dependency
 variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
@@ -44,9 +48,10 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 * Parallel builds should be okay in current development version (is a bug
   to log, if not), but may be failure-prone in 2.7.4 and earlier releases
 
-## Debian 10
+Debian 10
+~~~~~~~~~
 
-````
+----
 :; apt-get update
 
 :; apt-get install \
@@ -55,7 +60,7 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
     make autoconf automake libltdl-dev libtool-bin libtool \
     valgrind \
     pkg-config \
-    gcc clang \
+    gcc g++ clang \
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
@@ -77,41 +82,42 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 
 :; apt-get install \
     bash dash ksh busybox
-````
+----
 
 Alternatives that can depend on your system's other packaging choices:
-````
+----
 :; apt-get install libneon27-dev
 # ... or
 :; apt-get install libneon27-gnutls-dev
-````
+----
 
 For cross-builds (note that not everything supports multilib approach,
 limiting standard package installations to one or another implementation;
 in that case local containers each with one ARCH may be a better choice,
 with `qemu-user-static` playing a role to "natively" run the other-ARCH
 complete environments):
-````
+----
 :; apt-get install \
     gcc-multilib g++-multilib \
     crossbuild-essential \
     gcc-10:armhf gcc-10-base:armhf \
     qemu-user-static
-````
+----
 
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
 (technically, needs at least JRE 8+).
 
-## FreeBSD 12.2
+FreeBSD 12.2
+~~~~~~~~~~~~
 
 Note that `PATH` for builds on BSD should include `local`:
 
-````
+----
 :; PATH=/usr/local/libexec/ccache:/usr/local/bin:/usr/bin:$PATH
 :; export PATH
-````
+----
 
-````
+----
 :; pkg install \
     git python curl \
     gmake autoconf automake autotools libltdl libtool \
@@ -137,13 +143,13 @@ Note that `PATH` for builds on BSD should include `local`:
 
 :; pkg install \
     bash dash busybox ksh93
-````
+----
 
 Recommended:
-````
+----
 :; pkg install ccache
 :; ccache-update-links
-````
+----
 
 For compatibility with common setups on other operating systems, can symlink
 `/usr/local/libexec/ccache` as `/usr/lib/ccache` and possibly add dash-number
@@ -157,16 +163,17 @@ mounts.
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT m4
 scripts), better use this routine to test the config/build:
-````
+----
 :; ./configure --with-doc=all --with-all --with-cgi \
     --without-avahi --without-powerman --without-modbus \
     ### CPPFLAGS="-I/usr/local/include -I/usr/include" LDFLAGS="-L/usr/local/lib -L/usr/lib"
-````
+----
 
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-## OpenIndiana 2021.04
+OpenIndiana 2021.04
+~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
 illumos-based OS; this may not be the case on some other illumos distributions
@@ -177,7 +184,7 @@ To build older NUT releases (2.7.4 and before), you may need to explicitly
 
 Typical tooling would include:
 
-````
+----
 :; pkg install \
     git curl wget \
     gnu-make autoconf automake libltdl libtool \
@@ -215,20 +222,20 @@ Typical tooling would include:
 ### Not yet in distro, PR pending:
 :; pkg install \
     libmodbus
-````
+----
 
 For extra compiler coverage, can also set up `gcc-4.4.4-il` (used to build
 the OS, or was recently, and is a viable example of an old GCC baseline);
 but note that so far it conflicts with libgd builds at `configure --with-cgi`
 stage:
-````
+----
 :; pkg install \
     illumos-gcc@4.4.4 \
     gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 \
     clang-80 clang-90
 
 :; svcadm refresh clang-update-symlinks
-````
+----
 
 OI currently also does not build cppunit-based tests well, at least
 not with GCC (they segfault at run-time with `ostream` issues); a CLANG
@@ -241,17 +248,19 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).
 
-## OmniOS CE (151036)
+OmniOS CE (as of release 151036)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Being a minimal-footprint system, OmniOS CE provides very few packages out
 of the box. There are additional repositories supported by the project, as
 well as third-party repositories such as SFE. For some dependencies, it may
-happen that you would need to roll and install your own builds.
+happen that you would need to roll and install your own builds in accordance
+with that project's design goals.
 
-Note you may need not just the "Core" package publisher, but also the "Extra"
-one. See OmniOS CE web site for setup details.
+Note you may need not just the "Core" IPS package publisher, but also the
+"Extra" one. See OmniOS CE web site for setup details.
 
-````
+----
 :; pkg install \
     developer/build/autoconf developer/build/automake developer/build/libtool \
     build-essential ccache git developer/pkg-config \
@@ -260,7 +269,7 @@ one. See OmniOS CE web site for setup details.
 
 :; pkg install \
     net-snmp
-````
+----
 
 OmniOS lacks a pre-packaged libusb, however the binary build from contemporary
 OpenIndiana can be used (copy the header files and the library+symlinks for
@@ -269,7 +278,7 @@ all architectures you would need).
 You may need to set up `ccache` with the same dir used in other OS recipes;
 assuming your Build Essentials pulled GCC 9, and ccache is under `/opt/ooce`
 namespace, that would be like:
-````
+----
 :; mkdir -p /usr/lib/ccache
 :; cd /usr/lib/ccache
 :; ln -fs ../../../opt/ooce/bin/ccache gcc
@@ -278,14 +287,14 @@ namespace, that would be like:
 :; ln -fs ../../../opt/ooce/bin/ccache gcc-9
 :; ln -fs ../../../opt/ooce/bin/ccache g++-9
 :; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
-````
+----
 
 Given that many of the dependencies can get installed into that namespace,
 you may have to specify where `pkg-config` will look for them (note that
 library and binary paths can be architecture bitness-dependent):
-````
+----
 :; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
-````
+----
 
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
