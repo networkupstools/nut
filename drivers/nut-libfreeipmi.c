@@ -136,6 +136,16 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 
 	upsdebugx(1, "nut-libfreeipmi: nutipmi_open()...");
 
+	/* FIXME? Check arg types for ipmi_fru_open_device_id() in configure?
+	 * At this time it is uint8_t for libfreeipmi implementation of IPMI.
+	 */
+	if (ipmi_id > (int)UINT8_MAX) {
+		libfreeipmi_cleanup();
+		fatal_with_errno(EXIT_FAILURE,
+			"nut_ipmi_open: ipmi_id %d is too large for libfreeipmi",
+			ipmi_id);
+	}
+
 	/* Initialize the FreeIPMI library. */
 	if (!(ipmi_ctx = ipmi_ctx_create ()))
 	{
@@ -182,7 +192,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 	}
 
 	/* Now open the requested (local) PSU */
-	if (ipmi_fru_open_device_id (fru_ctx, ipmi_id) < 0)
+	if (ipmi_fru_open_device_id (fru_ctx, (uint8_t)ipmi_id) < 0)
 	{
 		libfreeipmi_cleanup();
 		fatalx(EXIT_FAILURE, "ipmi_fru_open_device_id: %s\n",
@@ -214,12 +224,20 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 
 		if (area_length)
 		{
+
+			if (area_length > (int)UINT8_MAX) {
+				libfreeipmi_cleanup();
+				fatal_with_errno(EXIT_FAILURE,
+					"nut_ipmi_open: got area_length %d is too large for libfreeipmi",
+					area_length);
+			}
+
 			switch (area_type)
 			{
 				/* get generic board information */
 				case IPMI_FRU_AREA_TYPE_BOARD_INFO_AREA:
 
-					if(libfreeipmi_get_board_info (areabuf, area_length,
+					if(libfreeipmi_get_board_info (areabuf, (uint8_t)area_length,
 						ipmi_dev) < 0)
 					{
 						upsdebugx(1, "Can't retrieve board information");
@@ -228,7 +246,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 				/* get specific PSU information */
 				case IPMI_FRU_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION:
 
-					if(libfreeipmi_get_psu_info (areabuf, area_length, ipmi_dev) < 0)
+					if(libfreeipmi_get_psu_info (areabuf, (uint8_t)area_length, ipmi_dev) < 0)
 					{
 						upsdebugx(1, "Can't retrieve PSU information");
 					}
