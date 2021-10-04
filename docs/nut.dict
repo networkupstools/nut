@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2753 utf-8
+personal_ws-1.1 en 2765 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -160,6 +160,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLANGVER
 CLI
 CLOCAL
 CMDDESC
@@ -352,6 +353,7 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GCCVER
 GES
 GETADDRINFO
 GKrellM
@@ -780,6 +782,7 @@ PPDnnn
 PPP
 PPPPPPPPPP
 PR'ed
+PROGS
 PRs
 PSA
 PSD
@@ -1022,6 +1025,7 @@ Selinger
 SendEnv
 Senoidal
 Sep
+Sequentializing
 Serv
 Shara
 Shaul
@@ -1305,6 +1309,7 @@ alloc
 allowfrom
 altinterface
 altpidpath
+altroot
 amd
 anded
 aod
@@ -1418,6 +1423,7 @@ boostvoolts
 bootable
 bp
 br
+bsd
 bsv
 bt
 bti
@@ -1711,6 +1717,7 @@ forcessl
 formatconfig
 formatparam
 fp
+freebsd
 freeipmi
 freqsensitivity
 frob
@@ -1737,6 +1744,7 @@ getDevice
 getTrackingResult
 getValue
 getVariable
+getconf
 getent
 getenv
 getopt
@@ -1776,6 +1784,7 @@ hidparser
 hidups
 highbattery
 highfrequency
+hoster
 hostname
 hostnames
 hostsfile
@@ -1890,6 +1899,7 @@ lan
 langid
 lasaine
 ld
+le
 len
 lf
 libaugeas
@@ -2583,6 +2593,7 @@ ugen
 ukUNV
 ul
 un
+uname
 uncomment
 unconfigured
 undefine
@@ -2722,6 +2733,7 @@ xa
 xaabbcc
 xcalloc
 xd
+xe
 xferdelay
 xff
 xfff
