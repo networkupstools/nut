@@ -126,11 +126,13 @@ static char has_uppm_p[100];
 
 static int
 	input_timeout_sec = INP_TIMO_SEC,
-	output_pace_usec = OUT_PACE_USEC,
 	full_update_timer = FULL_UPDATE_TIMER,
 	use_crlf = 0,
 	use_pre_lf = 0,
 	buffer_empty = 0;
+
+static useconds_t
+	output_pace_usec = OUT_PACE_USEC;
 
 static uint32_t
 	status = UPSC_STAT_NOTINIT;
@@ -509,12 +511,13 @@ void upsdrv_initups(void)
 	upsdebugx(1, "input_timeout = %d Sec", input_timeout_sec);
 
 	if ((str = getval("output_pace")) != NULL) {
-		int temp = atoi(str);
+		/* Range should be at least up to 1000000; a C99+ long guarantees that */
+		long temp = atol(str);
 		if (temp <= 0)
 			fatalx(EXIT_FAILURE, "Bad output_pace parameter: %s", str);
-		output_pace_usec = temp;
+		output_pace_usec = (useconds_t)temp;
 	}
-	upsdebugx(1, "output_pace = %d uSec", output_pace_usec);
+	upsdebugx(1, "output_pace = %ju uSec", (uintmax_t)output_pace_usec);
 
 	if ((str = getval("full_update_timer")) != NULL) {
 		int temp = atoi(str);
