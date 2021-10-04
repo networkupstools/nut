@@ -1650,7 +1650,7 @@ static int send_http_request(
 				break;
 
 			if (NULL != resp_body)
-				ne_buffer_append(resp_body, buff, read);
+				ne_buffer_append(resp_body, buff, (size_t)read);
 		}
 
 		if (NE_OK != status) {
