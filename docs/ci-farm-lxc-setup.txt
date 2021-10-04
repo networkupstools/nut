@@ -310,6 +310,9 @@ Generic agent attributes
 * Name: e.g. `ci-debian-altroot--jenkins-debian10-arm64` (note the
   pattern for "Conflicts With" detailed below)
 
+* Remote root directory: preferably unique per agent, to avoid surprises;
+  e.g.: `/home/abuild/jenkins-nut-altroots/jenkins-debian10-armel`
+
 * Usage: "Only build jobs with label expressions matching this node"
 
 * Node properties / Environment variables:
