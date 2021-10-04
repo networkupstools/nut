@@ -697,7 +697,8 @@ static float load_level(void)
 
 static float batt_level(void)
 {
-	int bat0,bat29,bat100,model;
+	int bat0,bat29,bat100;
+	unsigned int model;
 	float battval;
 
 	if ( !strcmp(types[type].name, "BNT") ) {
@@ -844,7 +845,8 @@ void upsdrv_shutdown(void)
 /* initialize UPS */
 void upsdrv_initups(void)
 {
-	int tmp,model = 0;
+	int tmp;
+	unsigned int model = 0;
 	unsigned int i;
 	static char buf[20];
 
@@ -1017,9 +1019,9 @@ void upsdrv_initups(void)
 		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
 		if (!strcmp(types[type].name, "OPTI")) {
-			snprintf(buf,sizeof(buf),"%s-%d",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%u",types[type].name, model);
 		} else {
-			snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%uAP",types[type].name, model);
 		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
