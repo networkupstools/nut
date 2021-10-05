@@ -726,14 +726,15 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 "")
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any options" >&2
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
         sleep 5
     fi
     echo ""
     ./autogen.sh
-    ./configure
+    #./configure
+    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto
     $MAKE all && $MAKE check
     ;;
 *)
