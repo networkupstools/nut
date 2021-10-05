@@ -20,30 +20,15 @@
 */
 
 #include <stdexcept>
-#include <cppunit/TestResult.h>
 #include <cppunit/CompilerOutputter.h>
-#include <cppunit/TextTestProgressListener.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 #include "common.h"
 
-// Inspired by https://stackoverflow.com/a/66702001
-class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
-  public:
-    virtual void startTest(CppUnit::Test *test) {
-      //fprintf(stderr, "starting test %s\n", test->getName().c_str());
-      std::cerr << "starting test " << test->getName() << std::endl;
-    }
-};
-
 int main(int argc, char* argv[])
 {
-  bool verbose = false;
-  if (argc > 1) {
-    if (strcmp("-v", argv[1]) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
-      verbose = true;
-    }
-  }
+  NUT_UNUSED_VARIABLE(argc);
+  NUT_UNUSED_VARIABLE(argv);
 
   /* Get the top level suite from the registry */
   std::cerr << "D: Getting test suite..." << std::endl;
@@ -58,13 +43,6 @@ int main(int argc, char* argv[])
   std::cerr << "D: Setting test runner outputter..." << std::endl;
   runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(),
                                                        std::cerr ) );
-
-  if (verbose) {
-    /* Add a listener to report test names */
-    std::cerr << "D: Setting test runner listener for test names..." << std::endl;
-    MyCustomProgressTestListener progress;
-    runner.eventManager().addListener(&progress);
-  }
 
   /* Run the tests. */
   bool wasSucessful = false;

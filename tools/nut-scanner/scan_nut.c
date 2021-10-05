@@ -33,7 +33,7 @@
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
-static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
+static int (*nut_upscli_splitaddr)(const char *buf,char **hostname, int *port);
 static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
 					int flags,struct timeval * timeout);
 static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
@@ -56,9 +56,9 @@ struct scan_nut_arg {
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
-	if (dl_handle != NULL) {
+	if( dl_handle != NULL ) {
 			/* if previous init failed */
-			if (dl_handle == (void *)1) {
+			if( dl_handle == (void *)1 ) {
 					return 0;
 			}
 			/* init has already been done */
@@ -70,7 +70,7 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		return 0;
 	}
 
-	if (lt_dlinit() != 0) {
+	if( lt_dlinit() != 0 ) {
 			fprintf(stderr, "Error initializing lt_init\n");
 			return 0;
 	}
@@ -149,14 +149,14 @@ static void * list_nut_devices(void * arg)
 		return NULL;
 	}
 
-	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if ((*nut_upscli_tryconnect)(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
 		free(ups);
 		return NULL;
 	}
 
-	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
+	if((*nut_upscli_list_start)(ups, numq, query) < 0) {
 		(*nut_upscli_disconnect)(ups);
 		free(target_hostname);
 		free(nut_arg);
@@ -164,7 +164,7 @@ static void * list_nut_devices(void * arg)
 		return NULL;
 	}
 
-	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
+	while ((*nut_upscli_list_next)(ups,numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
 			(*nut_upscli_disconnect)(ups);
@@ -182,21 +182,20 @@ static void * list_nut_devices(void * arg)
 		dev->type = TYPE_NUT;
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
+		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
 		dev->port = malloc(buf_size);
-
-		if (dev->port) {
-			snprintf(dev->port, buf_size, "%s@%s", answer[1],
+		if( dev->port ) {
+			snprintf(dev->port,buf_size,"%s@%s",answer[1],
 					hostname);
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
 #endif
-			dev_ret = nutscan_add_device_to_device(dev_ret, dev);
+			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 #ifdef HAVE_PTHREAD
 			pthread_mutex_unlock(&dev_mutex);
 #endif
-		}
 
+		}
 	}
 
 	(*nut_upscli_disconnect)(ups);
@@ -206,7 +205,7 @@ static void * list_nut_devices(void * arg)
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, long usec_timeout)
+nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port,long usec_timeout)
 {
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -221,20 +220,20 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
 
-	pthread_mutex_init(&dev_mutex, NULL);
+	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-	if (!nutscan_avail_nut) {
+	if( !nutscan_avail_nut ) {
 		return NULL;
 	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
-	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
+	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-		if (oldact.sa_handler == SIG_DFL) {
+		if( oldact.sa_handler == SIG_DFL ) {
 			change_action_handler = 1;
 			signal(SIGPIPE, SIG_IGN);
 		}
@@ -243,16 +242,16 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 	}
 
-	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
+	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
 
-	while (ip_str != NULL)
+	while( ip_str != NULL )
 	{
-		if (port) {
-			if (ip.type == IPv4) {
-				snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+		if( port ) {
+			if( ip.type == IPv4 ) {
+				snprintf(buf,sizeof(buf),"%s:%s",ip_str,port);
 			}
 			else {
-				snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+				snprintf(buf,sizeof(buf),"[%s]:%s",ip_str,port);
 			}
 
 			ip_dest = strdup(buf);
@@ -261,7 +260,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			ip_dest = strdup(ip_str);
 		}
 
-		if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+		if((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL ) {
 			free(ip_dest);
 			break;
 		}
@@ -269,10 +268,10 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		nut_arg->timeout = usec_timeout;
 		nut_arg->hostname = ip_dest;
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+		if (pthread_create(&thread,NULL,list_nut_devices,(void*)nut_arg)==0){
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count * sizeof(pthread_t));
+						thread_count*sizeof(pthread_t));
 			if (new_thread_array == NULL) {
 				upsdebugx(1, "%s: Failed to realloc thread", __func__);
 				break;
@@ -290,14 +289,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i=0; i < thread_count ; i++) {
-		pthread_join(thread_array[i], NULL);
+	for ( i=0; i < thread_count ; i++) {
+		pthread_join(thread_array[i],NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
 #endif
 
-	if (change_action_handler) {
+	if(change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"

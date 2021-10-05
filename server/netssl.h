@@ -31,7 +31,6 @@ extern "C" {
 extern char	*certfile;
 extern char	*certname;
 extern char	*certpasswd;
-extern int	disable_weak_ssl;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 extern int certrequest;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */

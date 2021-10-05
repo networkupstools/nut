@@ -116,7 +116,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 	int i;
 
 	c = 0;
-	for (i = 0; i < 2 + buf[1]; i++)
+	for(i = 0; i < 2 + buf[1]; i++)
 		c -= buf[i];
 
 	return c;
@@ -160,7 +160,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 	nutscan_device_t * dev = NULL;
 	int devfd = -1;
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
 		/* set RTS to off and DTR to on to allow correct behavior
 		 * with UPS using PnP feature */
 		if (ser_set_dtr(devfd, 1) != -1) {
@@ -213,7 +213,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 
 	memset(sbuf, 0, 128);
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
@@ -258,7 +258,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 			}
 #endif
 
-			if ((ret > 0) && (answer[0] == PW_COMMAND_START_BYTE)) {
+			if ( (ret > 0) && (answer[0] == PW_COMMAND_START_BYTE) ) {
 				dev = nutscan_new_device();
 				dev->type = TYPE_EATON_SERIAL;
 				dev->driver = strdup(XCP_DRIVER_NAME);
@@ -301,7 +301,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	int devfd = -1;
 	char buf[128];
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
 		if (ser_set_speed_nf(devfd, port_name, B2400) != -1) {
 
 			if (!tcgetattr(devfd, &tio)) {
@@ -336,10 +336,10 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 
 						/* simplified code */
 						ser_flush_io(devfd);
-						if ((ret = ser_send(devfd, "Q1\r")) > 0) {
+						if ( (ret = ser_send(devfd, "Q1\r")) > 0) {
 
 							/* Get Q1 reply */
-							if ((ret = ser_get_buf(devfd, buf, sizeof(buf), SER_WAIT_SEC, 0)) > 0) {
+							if ( (ret = ser_get_buf(devfd, buf, sizeof(buf), SER_WAIT_SEC, 0)) > 0) {
 
 								/* Check answer */
 								/* should at least (and most) be 46 chars */
@@ -378,10 +378,10 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 	char* port_name = (char*) port_arg;
 
 	/* Try SHUT first */
-	if ((dev = nutscan_scan_eaton_serial_shut(port_name)) == NULL) {
+	if ( (dev = nutscan_scan_eaton_serial_shut(port_name)) == NULL) {
 		usleep(100000);
 		/* Else, try XCP */
-		if ((dev = nutscan_scan_eaton_serial_xcp(port_name)) == NULL) {
+		if ( (dev = nutscan_scan_eaton_serial_xcp(port_name)) == NULL) {
 			/* Else, try Q1 */
 			usleep(100000);
 			dev = nutscan_scan_eaton_serial_q1(port_name);
@@ -404,24 +404,24 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
 
-	pthread_mutex_init(&dev_mutex, NULL);
+	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
 	/* 1) Get ports_list */
 	serial_ports_list = nutscan_get_serial_ports_list(ports_range);
-	if (serial_ports_list == NULL) {
+	if( serial_ports_list == NULL ) {
 		return NULL;
 	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
-	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
+	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-		if (oldact.sa_handler == SIG_DFL) {
+		if( oldact.sa_handler == SIG_DFL ) {
 			change_action_handler = 1;
-			signal(SIGPIPE, SIG_IGN);
+			signal(SIGPIPE,SIG_IGN);
 		}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
@@ -430,10 +430,10 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 
 	/* port(s) iterator */
 	current_port_nb = 0;
-	while (serial_ports_list[current_port_nb] != NULL) {
+	while(serial_ports_list[current_port_nb] != NULL) {
 		current_port_name = serial_ports_list[current_port_nb];
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0){
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
@@ -453,27 +453,27 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i = 0; i < thread_count ; i++) {
-		pthread_join(thread_array[i], NULL);
+	for ( i = 0; i < thread_count ; i++) {
+		pthread_join(thread_array[i],NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
 #endif
 
-	if (change_action_handler) {
+	if(change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-		signal(SIGPIPE, SIG_DFL);
+		signal(SIGPIPE,SIG_DFL);
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
 	}
 
 	/* free everything... */
-	i = 0;
-	while (serial_ports_list[i] != NULL) {
+	i=0;
+	while(serial_ports_list[i] != NULL) {
 	 	free(serial_ports_list[i]);
 		i++;
 	}

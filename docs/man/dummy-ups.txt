@@ -65,15 +65,9 @@ only to modify values of these variables), and has the same format as an
 linkman:upsc[8] dump (`<varname>: <value>`). So you can easily create
 definition files from an existing UPS using `upsc > file.dev`.
 
-Note that the Network UPS project provides a DDL (Devices Dumps Library) at
-link:https://networkupstools.org/ddl/index.html with files which can be used
-for modelling real devices. Entries for the DDL library are prepared with the
-`./tools/nut-ddl-dump.sh` script from NUT sources instead of plain `upsc` to
-provide some other data points from other NUT clients as well.
-
-The file can also be empty, in which case only a basic set of data is
-available: `device.*`, `driver.*`, `ups.mfr`, `ups.model`, `ups.status`
-as filled by the driver itself.
+It can also be empty, in which case only a basic set of data is available:
+`device.*`, `driver.*`, `ups.mfr`, `ups.model`, `ups.status` as filled by
+the driver itself.
 
 Some sample definition files are available in the `data` directory of the
 NUT source tree, and generally in the sysconfig directory of your system

@@ -53,15 +53,15 @@ if [ -d "@STATEPATH@" ] ; then
 	chmod 770 "@STATEPATH@"
 fi
 
-if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datarootdir@/augeas-lenses" ] ; then
-	( cd "@datarootdir@/augeas-lenses" && cp -prf ./ "@auglensdir@"/ )
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
+	( cd "@datadir@/augeas-lenses" && cp -prf ./ "@auglensdir@"/ )
 fi
 
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	echo "Register SMF services..."
 	for S in nut-driver-enumerator nut-driver nut-server nut-monitor nut ; do
 		echo "Importing NUT service manifest: $S..."
-		/usr/sbin/svccfg import "@datarootdir@/solaris-smf/manifest/$S.xml"
+		/usr/sbin/svccfg import "@datadir@/solaris-smf/manifest/$S.xml"
 	done
 	# Enable services if the system already has a configuration (e.g. upgrade)
 	if test -s "@CONFPATH@/ups.conf" ; then

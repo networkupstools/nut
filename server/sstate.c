@@ -296,7 +296,7 @@ void sstate_readline(upstype_t *ups)
 		case 1:
 			/* set the 'last heard' time to now for later staleness checks */
 			if (parse_args(ups, ups->sock_ctx.numargs, ups->sock_ctx.arglist)) {
-				time(&ups->last_heard);
+			        time(&ups->last_heard);
 			}
 			continue;
 

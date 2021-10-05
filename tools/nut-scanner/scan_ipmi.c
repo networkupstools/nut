@@ -119,9 +119,9 @@ static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path)
 {
-	if (dl_handle != NULL) {
+	if( dl_handle != NULL ) {
 		/* if previous init failed */
-		if (dl_handle == (void *)1) {
+		if( dl_handle == (void *)1 ) {
 			return 0;
 		}
 		/* init has already been done */
@@ -133,7 +133,7 @@ int nutscan_load_ipmi_library(const char *libname_path)
 		return 0;
 	}
 
-	if (lt_dlinit() != 0) {
+	if( lt_dlinit() != 0 ) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
@@ -385,7 +385,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	int ipmi_id = 0;
 	char port_id[64];
 
-	if (!nutscan_avail_ipmi) {
+	if( !nutscan_avail_ipmi ) {
 		return NULL;
 	}
 
@@ -529,8 +529,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 		if (is_ipmi_device_supported(ipmi_ctx, ipmi_id)) {
 
-			if ( (nut_dev = nutscan_new_device()) == NULL) {
-				fprintf(stderr, "Memory allocation error\n");
+			if ( (nut_dev = nutscan_new_device()) == NULL ) {
+				fprintf(stderr,"Memory allocation error\n");
 				nutscan_free_device(current_nut_dev);
 				break;
 			}
@@ -555,7 +555,6 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 			memset (port_id, 0, sizeof(port_id));
 		}
-
 	}
 
 	/* Final cleanup */
@@ -578,7 +577,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-	if (!nutscan_avail_ipmi) {
+	if( !nutscan_avail_ipmi ) {
 		return NULL;
 	}
 
@@ -592,7 +591,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 	else {
 		ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
-		while (ip_str != NULL) {
+		while(ip_str != NULL) {
 			tmp_sec = malloc(sizeof(nutscan_ipmi_t));
 			memcpy(tmp_sec, sec, sizeof(nutscan_ipmi_t));
 

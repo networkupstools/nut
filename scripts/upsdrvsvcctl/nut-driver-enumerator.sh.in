@@ -92,11 +92,6 @@ if [ -n "$ZSH_VERSION" ]; then
 #    IFS="`printf ' \t\r\n'`" ; export IFS
 fi
 
-if set | egrep '^(shell|version|t?csh)' | egrep 't?csh' >/dev/null ; then
-    echo "FATAL: csh or tcsh is not supported in this script" >&2
-    exit 1
-fi
-
 # Third-party services to depend on (can be overridden by config file)
 ### Note that for systemd+udev integration, it may be better to set up
 ### triggers in udev, see e.g.

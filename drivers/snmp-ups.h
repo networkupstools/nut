@@ -107,7 +107,7 @@ typedef int bool_t;
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
-	const char *(*fun)(void *snmp_value); /* optional SNMP to NUT mapping function */
+	const char *(*fun)(int snmp_value); /* optional SNMP to NUT mapping function */
 	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
 } info_lkp_t;
 
@@ -271,13 +271,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
-const char *su_find_infoval(info_lkp_t *oid2info, void *value);
+const char *su_find_infoval(info_lkp_t *oid2info, long value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
-const char *su_find_strval(info_lkp_t *oid2info, void *value);
-
-/* Common conversion structs (functions) */
-const char *su_usdate_to_isodate_info_fun(void *raw_date);
-extern info_lkp_t su_convert_to_iso_date_info[];
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);

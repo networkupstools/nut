@@ -30,6 +30,9 @@ int main(void) {
 #  pragma GCC diagnostic ignored "-Wformat-overflow"
 #endif
     upsdebugx(0, "D: checking with libc handling of NULL: '%s' vs '%s'", s1, s2);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
+#  pragma GCC diagnostic pop
+#endif
 
 /* This explicitly does not work with -Wformat, due to verbatim NULL without a var:
  * nutlogtest.c:20:5: error: reading through null pointer (argument 4) [-Werror=format=]
@@ -47,19 +50,7 @@ int main(void) {
 
 #define NUT_STRARG(x) (x?x:"<N/A>")
 
-/* This explicitly does not work with -Wformat, due to a NULL in the '%s'
- * format string expansion (e.g. due to NUT PR #675 conversion to macros):
- *   ../include/common.h:155:41: warning: '%s' directive argument is null [-Wformat-overflow=]
- *   <...snip...>
- *   nutlogtest.c:45:63: note: format string is defined here
- *      45 |     upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs '%s'", NUT_STRARG(s2), s2);
- *         |                                                               ^~
- */
     upsdebugx(0, "D: checking that macro wrap trick works: '%s' vs '%s'", NUT_STRARG(s2), s2);
-
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
-#  pragma GCC diagnostic pop
-#endif
 
     return 0;
 }

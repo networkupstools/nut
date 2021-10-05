@@ -486,7 +486,6 @@
 "Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	"USB"	"blazer_usb (experimental)"
-"Ippon"	"ups"	"2"	"Back Comfo Pro II 650/850/1050"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser"
@@ -805,7 +804,6 @@
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 "Opti-UPS"	"ups"	"1"	"VS 575C"	"type=OPTI"	"powercom"
-"Opti-UPS"	"ups"	"1"	"Power Series"	"PS1500E"	"blazer_usb"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"

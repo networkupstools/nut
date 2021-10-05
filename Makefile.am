@@ -8,12 +8,6 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers tools \
   lib scripts server tests
 
-# Automatically update the libtool script if it becomes out-of-date
-# See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status libtool
-
 # COPYING is included automatically.
 EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
@@ -30,7 +24,6 @@ DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --wit
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
- --with-systemdtmpfilesdir='$${prefix}/usr/lib/tmpfiles.d' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
@@ -51,17 +44,14 @@ memcheck distcheck-valgrind:
 distcleancheck:
 	@:
 
-clean-local:
-	rm -f *-spellchecked
-
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
 spellcheck spellcheck-interactive:
 	@RES=0; \
-	(cd $(builddir)/docs && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/conf && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/data && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/docs && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/conf && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/data && $(MAKE) $@) || RES=$$? ; \
 	exit $$RES
 
 doc spellcheck-sortdict:
@@ -81,10 +71,9 @@ doc spellcheck-sortdict:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	@RUNBASH=bash; if [ -x /bin/bash ]; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
-	 for F in `git ls-files || find . -type f` ; do \
+	for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
-	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
+	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
 	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
 	done
@@ -96,12 +85,6 @@ shellcheck-disclaimer:
 	@echo "Later it may become a call to the real shellcheck tool (if available on the"
 	@echo "build system during the configure phase)"
 	@echo "==============================================================================="
-
-# Note: currently not part of shellcheck target, because the script below
-# can test the logic with numerous SHELL_PROGS in a CI setting, and because
-# check-scripts-syntax probably has checked the basic syntax above already.
-shellcheck-nde:
-	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
 
@@ -116,15 +99,10 @@ GITLOG_START_POINT=v2.6.0
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
-# Note that the script is hard-coded to generate "ChangeLog" in the current dir
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	cd $(top_builddir) && \
-	    ./tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	    { echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@ ; }
-
-nut_version.h include/nut_version.h:
-	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h
+	$(top_srcdir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes

@@ -143,31 +143,24 @@ function do_stuff(void)
 At this point NUT is expected to work correctly when built with a C99
 (or GNU99 on Linux) or newer standard.
 
+See the `.travis.yml` file in project sources for detailed matrix of
+`CFLAGS` and compiler versions currently known to work or to not (yet)
+work on operating systems available to that CI solution.
+
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
 If somebody in the community requires to build and run NUT on systems
 that old, pull requests to fix the offending coding issues are welcome.
 
-Continuous Integration and Automated Builds
--------------------------------------------
-
-To ease and automate the build scenarios which were deemed important for
-quality assurance and non-regression checks of NUT, several solutions
-were introduced over time.
-
-ci_build.sh
-^^^^^^^^^^^
-
-This script was originally introduced (following ZeroMQ/ZProject example)
-to automate CI builds, by automating certain scenarios driven by exported
-environment variables to set particular `configure` options and `make`
-some targets (chosen by the `BUILD_TYPE` envvar). It can also be used
-locally to avoid much typing to re-run those scenarios during development.
+The NUT project on GitHub has integration with Travis CI to test a large
+set of compiler and option combinations, covering different versions of
+gcc and clang, C standards, and requiring to pass builds at least in a
+mode without warnings (and checking the other cases where any warnings
+are made fatal).
 
 Developers can directly use the scripts involved in CI builds to fix
 existing code on their workstations or to ensure support for new
-compilers and C standard revisions, e.g. save a local file like this
-to call the common script with pre-sets:
+compilers and C standard revisions, e.g. save a local file like this:
 
 	$ cat _fightwarn-gcc10-gnu17.sh
 	#!/bin/sh
@@ -205,7 +198,7 @@ for their build, e.g.:
 As a rule of thumb, new contributions must not emit any warnings when
 built in GNU99 mode with a `minimal` "difficulty" level of warnings.
 Technically they must survive the part of test matrix across the several
-platforms tested by NUT CI and marked in project settings as required
+platforms tested by Travis CI and marked in project settings as required
 to pass, to be accepted for a pull request merge.
 
 Developers aiming to post successful pull requests to improve NUT can
@@ -218,56 +211,11 @@ specification revisions, might all complain about different issues --
 and catching this in as diverse range of set-ups as possible is why we
 have CI tests.
 
-It can be beneficial for serial developers to set up a local BuildBot,
-Travis or a Jenkins instance with a matrix test job, to test their local
-git repository branches with whatever systems they have available.
+It can be beneficial for serial developers to set up a local BuildBot
+or a Jenkins instance with a matrix test job, to test their local git
+repository branches with whatever systems they have available.
 
 * https://github.com/networkupstools/nut/issues/823
-
-Jenkins CI
-^^^^^^^^^^
-
-Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by FossHost. They run various operating systems as
-build agents, and a Jenkins instance to orchestrate the builds of NUT
-branches and pull requests on those agents.
-
-This is driven by `Jenkinsfile-dynamatrix` and a Jenkins Shared Library called
-link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
-which prepares a matrix of builds across as many operating systems,
-bitnesses/architectures, compilers, make programs and C/C++ revisions
-as it can -- based on the population of currently available build agents
-and capabilities which they expose as agent labels.
-
-This hopefully means that people interested in NUT can contribute to the
-build farm (and ensure NUT is and remains compatible with their platform)
-by running a Jenkins Swarm agent with certain labels, which would dial
-into https://ci.networkupstools.org/ controller. Please contact the NUT
-maintainer if you want to participate in this manner.
-
-Some further details about the NUT CI farm workers are available in
-link:config-prereqs.txt and link:ci-farm-lxc-setup.txt documents.
-
-Travis CI
-^^^^^^^^^
-
-See the `.travis.yml` file in project sources for a detailed list of third
-party dependencies and a large matrix of `CFLAGS` and compiler versions
-last known to work or to not (yet) work on operating systems available
-to that CI solution.
-
-NOTE: The cloud Travis CI offering became effectively defunct for
-open-source projects in mid-2021, so the `.travis.yml` file in NUT
-codebase is not actively maintained.
-+
-Local private deployments of Travis CI are possible, so if anybody does
-use it and has updated markup to share, they are welcome to post PRs.
-
-The NUT project on GitHub has integration with Travis CI to test a large
-set of compiler and option combinations, covering different versions of
-gcc and clang, C standards, and requiring to pass builds at least in a
-mode without warnings (and checking the other cases where any warnings
-are made fatal).
 
 Pre-set warning options
 ~~~~~~~~~~~~~~~~~~~~~~~

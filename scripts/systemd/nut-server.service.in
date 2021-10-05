@@ -19,7 +19,6 @@ PartOf=nut.target
 
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
-SyslogIdentifier=%N
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
 Type=forking

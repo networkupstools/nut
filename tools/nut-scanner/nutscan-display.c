@@ -43,16 +43,16 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	nutscan_options_t * opt;
 	static int nutdev_num = 1;
 
-	if (device == NULL) {
+	if(device==NULL) {
 		return;
 	}
 
 	/* Find start of the list */
-	while (current_dev->prev != NULL) {
+	while(current_dev->prev != NULL) {
 		current_dev = current_dev->prev;
 	}
 
-	/* Display each device */
+	/* Display each devices */
 	do {
 		printf("[nutdev%i]\n\tdriver = \"%s\"\n\tport = \"%s\"\n",
 				nutdev_num, current_dev->driver,
@@ -61,9 +61,9 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 		opt = current_dev->opt;
 
 		while (NULL != opt) {
-			if (opt->option != NULL) {
-				printf("\t%s", opt->option);
-				if (opt->value != NULL) {
+			if( opt->option != NULL ) {
+				printf("\t%s",opt->option);
+				if( opt->value != NULL ) {
 					printf(" = \"%s\"", opt->value);
 				}
 				printf("\n");
@@ -75,7 +75,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 		current_dev = current_dev->next;
 	}
-	while (current_dev != NULL);
+	while( current_dev != NULL );
 }
 
 void nutscan_display_parsable(nutscan_device_t * device)
@@ -83,18 +83,17 @@ void nutscan_display_parsable(nutscan_device_t * device)
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
 
-	if (device == NULL) {
+	if(device==NULL) {
 		return;
 	}
 
 	/* Find start of the list */
-	while (current_dev->prev != NULL) {
+	while(current_dev->prev != NULL) {
 		current_dev = current_dev->prev;
 	}
 
-	/* Display each device */
+	/* Display each devices */
 	do {
-		/* Do not separate by whitespace, in case someone already parses this */
 		printf("%s:driver=\"%s\",port=\"%s\"",
 			nutscan_device_type_string[current_dev->type],
 			current_dev->driver,
@@ -103,10 +102,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 		opt = current_dev->opt;
 
 		while (NULL != opt) {
-			if (opt->option != NULL) {
-				/* Do not separate by whitespace, in case someone already parses this */
-				printf(",%s", opt->option);
-				if (opt->value != NULL) {
+			if( opt->option != NULL ) {
+				printf(",%s",opt->option);
+				if( opt->value != NULL ) {
 					printf("=\"%s\"", opt->value);
 				}
 			}
@@ -117,5 +115,5 @@ void nutscan_display_parsable(nutscan_device_t * device)
 
 		current_dev = current_dev->next;
 	}
-	while (current_dev != NULL);
+	while( current_dev != NULL );
 }

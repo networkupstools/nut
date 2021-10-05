@@ -86,8 +86,6 @@ static int masterguard_slaveaddr(item_t *item, char *value, const size_t valuele
 
 /* set masterguard_my_series (for activating supported commands in masterguard_claim() */
 static int masterguard_series(item_t *item, char *value, const size_t valuelen) {
-	NUT_UNUSED_VARIABLE(valuelen);
-
 	switch (item->value[0]) {
 		case 'A':
 			break;
@@ -240,8 +238,6 @@ static int masterguard_ups_power(item_t *item, char *value, const size_t valuele
 
 /* helper routine, not to be called from table */
 static int masterguard_output_current_fraction(item_t *item, char *value, const size_t valuelen, float fraction) {
-	NUT_UNUSED_VARIABLE(item);
-
 	snprintf(value, valuelen, "%.2f", fraction * masterguard_my_power / strtod(dstate_getinfo("output.voltage") , NULL) + 0.005);
 	return 0;
 }
@@ -441,9 +437,6 @@ static int masterguard_fault(item_t *item, char *value, const size_t valuelen) {
 
 /* add slave address (from masterguard_my_slaveaddr) to commands that require it */
 static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t commandlen) {
-	NUT_UNUSED_VARIABLE(item);
-	NUT_UNUSED_VARIABLE(commandlen);
-
 	size_t l;
 
 	l = strlen(command);
@@ -462,8 +455,6 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 /* helper, not to be called directly from table */
 /*!! use parameter from the value field instead of ups.delay.{shutdown,return}?? */
 static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen, const int stayoff) {
-	NUT_UNUSED_VARIABLE(item);
-
 	int offdelay;
 	char *p;
 	const char *val, *name;
@@ -505,8 +496,6 @@ static int masterguard_shutdown_stayoff(item_t *item, char *value, const size_t 
 }
 
 static int masterguard_test_battery(item_t *item, char *value, const size_t valuelen) {
-	NUT_UNUSED_VARIABLE(item);
-
 	int duration;
 	char *p;
 
@@ -567,7 +556,6 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 				/* copy to s to avoid snprintf()ing value to itself */
 				if (strlen(value) >= sizeof s) goto ill;
 				strcpy(s, value);
-				break;
 			default:
 				upsdebugx(2, "setvar: unknown dfl %c", item->dfl[0]);
 				return -1;
@@ -628,8 +616,6 @@ static int masterguard_set_slaveaddr(item_t *item, char *value, const size_t val
 
 /* set my_slaveaddr to next_slaveaddr /after/ issuing the SS command (which, itself, needs the /old/ slaveaddr) */
 static int masterguard_new_slaveaddr(item_t *item, const int len) {
-	NUT_UNUSED_VARIABLE(item);
-
 	upsdebugx(3, "saved slaveaddr %d", masterguard_next_slaveaddr);
 	masterguard_my_slaveaddr[0] = '0' + masterguard_next_slaveaddr / 10;
 	masterguard_my_slaveaddr[1] = '0' + masterguard_next_slaveaddr % 10;
@@ -861,8 +847,8 @@ static item_t masterguard_qx2nut[] = {
 
 	/* server variables */
 	/* type			flags		rw			command	answer	len	leading	value	from	to	dfl			qxflags		precmd				preans	preproc */
-	{ "ups.delay.shutdown",	ST_FLAG_RW,	masterguard_r_offdelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	NULL },
-	{ "ups.delay.start",	ST_FLAG_RW,	masterguard_r_ondelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	NULL },
+	{ "ups.delay.shutdown",	ST_FLAG_RW,	masterguard_r_offdelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,NULL,	NULL },
+	{ "ups.delay.start",	ST_FLAG_RW,	masterguard_r_ondelay,	NULL,	"",	0,	'\0',	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,NULL,	NULL },
 
 
 	/* end marker */

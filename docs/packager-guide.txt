@@ -34,8 +34,8 @@ support and maintenance across the supported OSes.
 
 ------------------------------------------------------------------------
 *sandbox*
-This document assumes that you have read the other NUT documents such
-as INSTALL.nut, FAQ, config-notes.txt, config-prereqs.txt ...
+This document assumes that you have read the other NUT document such
+as INSTALL.nut, FAQ, config-notes.txt, ...
 
 Facts about NUT packaging
 =========================

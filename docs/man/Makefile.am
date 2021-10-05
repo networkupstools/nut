@@ -616,19 +616,16 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
-SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
-		   generic_modbus.txt
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
 if WITH_MANS
-MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
-		   generic_modbus.8
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8
 endif
 
 if WITH_MODBUS
    man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
-HTML_MODBUS_MANS = phoenixcontact_modbus.html \
-		   generic_modbus.html
+HTML_MODBUS_MANS = phoenixcontact_modbus.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -775,17 +772,11 @@ check-man-pages: $(MAN_MANS)
 
 check-man-source: check-man-txt
 
-# Note: (GNU) make can helpfully add VPATH to the short source filenames
-# which we had listed above, so the "case" below handles two possibilities
 check-man-txt: $(SRC_ALL_PAGES)
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	( cd $(abs_srcdir) ) || exit; \
+	cd $(abs_srcdir) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
-	    case "$$F" in \
-	        */*) ;; \
-	        *) F="$(abs_srcdir)/$$F" ;; \
-	    esac ; \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(ASCII|UTF-8|Unicode|ISO-8859|English).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
@@ -817,7 +808,7 @@ if HAVE_ASCIIDOC
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
-	--xsltproc-opts="--nonet" \
+	--xsltproc-opts "--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
@@ -884,16 +875,5 @@ else !HAVE_ASCIIDOC
 
 endif !HAVE_ASCIIDOC
 
-clean-local:
-	rm -f *.pdf *.html *-spellchecked
-	rm -f *.1 *.3 *.5 *.8
-
-# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
-#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
-
-.txt.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
-
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@

@@ -31,7 +31,6 @@ namespace nut
 
 Device MemClientStub::getDevice(const std::string& name)
 {
-	NUT_UNUSED_VARIABLE(name);
 	throw NutException("Not implemented");
 }
 
@@ -42,26 +41,21 @@ std::set<std::string> MemClientStub::getDeviceNames()
 
 std::string MemClientStub::getDeviceDescription(const std::string& name)
 {
-	NUT_UNUSED_VARIABLE(name);
 	throw NutException("Not implemented");
 }
 
 std::set<std::string> MemClientStub::getDeviceVariableNames(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 std::set<std::string> MemClientStub::getDeviceRWVariableNames(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 std::string MemClientStub::getDeviceVariableDescription(const std::string& dev, const std::string& name)
 {
-	NUT_UNUSED_VARIABLE(dev);
-	NUT_UNUSED_VARIABLE(name);
 	throw NutException("Not implemented");
 }
 
@@ -155,66 +149,51 @@ TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::s
 
 std::set<std::string> MemClientStub::getDeviceCommandNames(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 std::string MemClientStub::getDeviceCommandDescription(const std::string& dev, const std::string& name)
 {
-	NUT_UNUSED_VARIABLE(dev);
-	NUT_UNUSED_VARIABLE(name);
 	throw NutException("Not implemented");
 }
 
 TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
 {
-	NUT_UNUSED_VARIABLE(dev);
-	NUT_UNUSED_VARIABLE(name);
-	NUT_UNUSED_VARIABLE(param);
 	throw NutException("Not implemented");
 }
 
 void MemClientStub::deviceLogin(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 void MemClientStub::deviceMaster(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 void MemClientStub::deviceForcedShutdown(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 int MemClientStub::deviceGetNumLogins(const std::string& dev)
 {
-	NUT_UNUSED_VARIABLE(dev);
 	throw NutException("Not implemented");
 }
 
 TrackingResult MemClientStub::getTrackingResult(const TrackingID& id)
 {
-	NUT_UNUSED_VARIABLE(id);
 	throw NutException("Not implemented");
 	//return TrackingResult::SUCCESS;
 }
 
 bool MemClientStub::isFeatureEnabled(const Feature& feature)
 {
-	NUT_UNUSED_VARIABLE(feature);
 	throw NutException("Not implemented");
 }
-
 void MemClientStub::setFeature(const Feature& feature, bool status)
 {
-	NUT_UNUSED_VARIABLE(feature);
-	NUT_UNUSED_VARIABLE(status);
 	throw NutException("Not implemented");
 }
 
