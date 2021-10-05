@@ -24,8 +24,10 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 else
 EXTRA_DIST += \
-	nut-common.tmpfiles.in nut-driver@.service.in nut-monitor.service.in \
+	nut-driver@.service.in nut-monitor.service.in \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in
+
+# NOTE: Do not EXTRA_DIST nut-common.tmpfiles.in - it is generated per build
 endif
 

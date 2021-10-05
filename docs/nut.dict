@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2760 utf-8
+personal_ws-1.1 en 2788 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -39,6 +39,7 @@ AVR
 AVRLCD
 AWG
 Ablerex
+AcceptEnv
 ActivePower
 AdMiN
 Affero
@@ -131,6 +132,7 @@ BigServers
 BlaXwan
 BlackOut
 BladeUPS
+BlueOcean
 Bo
 Bohe
 Borns
@@ -160,6 +162,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLANGVER
 CLI
 CLOCAL
 CMDDESC
@@ -328,6 +331,7 @@ FREHn
 FRELn
 FRU
 FTS
+FTTx
 FTUPS
 FV
 Faber
@@ -353,6 +357,7 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GCCVER
 GES
 GETADDRINFO
 GKrellM
@@ -460,6 +465,7 @@ IZ
 Infosec
 Innova
 Integrators
+IntelCC
 InvCDly
 InvCPol
 InvMin
@@ -786,6 +792,8 @@ PPDnnn
 PPP
 PPPPPPPPPP
 PR
+PR'ed
+PROGS
 PRs
 PSA
 PSD
@@ -1026,8 +1034,10 @@ Schonefeld
 Schroder
 Sekury
 Selinger
+SendEnv
 Senoidal
 Sep
+Sequentializing
 Serv
 Shara
 Shaul
@@ -1176,6 +1186,7 @@ UTC
 UTalk
 UUU
 UX
+Ubuntu
 Ulf
 Uncomment
 Unices
@@ -1307,10 +1318,13 @@ alarmtest
 alertset
 alioth
 alist
+alldrv
 alloc
 allowfrom
 altinterface
 altpidpath
+altroot
+altroots
 amd
 anded
 aod
@@ -1329,6 +1343,7 @@ arg
 argc
 args
 argv
+armel
 armhf
 asapm
 ascii
@@ -1424,6 +1439,7 @@ boostvoolts
 bootable
 bp
 br
+bsd
 bsv
 bt
 bti
@@ -1571,6 +1587,7 @@ ddl
 de
 deUNV
 debian
+debootstrap
 debouncing
 deci
 decrement
@@ -1656,6 +1673,7 @@ energysave
 english
 enum
 envvar
+envvars
 ep
 epdu
 epodebounce
@@ -1673,6 +1691,7 @@ et
 etapro
 eth
 ev
+eval
 everups
 everyone's
 everything's
@@ -1714,6 +1733,7 @@ forcessl
 formatconfig
 formatparam
 fp
+freebsd
 freeipmi
 freqsensitivity
 frob
@@ -1741,6 +1761,7 @@ getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
+getconf
 getent
 getenv
 getopt
@@ -1780,6 +1801,7 @@ hidparser
 hidups
 highbattery
 highfrequency
+hoster
 hostname
 hostnames
 hostsfile
@@ -1880,6 +1902,7 @@ kadets
 kaminski
 kde
 keyclick
+keygen
 keyout
 killall
 killpower
@@ -1893,6 +1916,7 @@ lan
 langid
 lasaine
 ld
+le
 len
 lf
 libaugeas
@@ -2449,6 +2473,7 @@ srcdir
 srv
 srw
 ss
+sshd
 ssl
 stan
 startIP
@@ -2581,6 +2606,7 @@ uA
 uD
 uM
 ua
+ubuntu
 uc
 ucb
 udev
@@ -2590,6 +2616,7 @@ ugen
 ukUNV
 ul
 un
+uname
 uncomment
 unconfigured
 undefine
@@ -2729,6 +2756,7 @@ xa
 xaabbcc
 xcalloc
 xd
+xe
 xferdelay
 xff
 xfff
