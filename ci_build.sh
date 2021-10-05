@@ -87,7 +87,11 @@ if [ -z "$CI_OS_NAME" ]; then
         *sunos*)
             CI_OS_NAME="sunos" ;;
         "-") ;;
-        *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
+        *)  echo "WARNING: Could not recognize CI_OS_NAME from CI_OS_HINT='$CI_OS_HINT', update './ci_build.sh' if needed" >&2
+            if [ "$OS_FAMILY-$OS_DISTRO" != "-" ]; then
+                echo "WARNING: I was told that OS_FAMILY='$OS_FAMILY' and OS_DISTRO='$OS_DISTRO'" >&2
+            fi
+            ;;
     esac
     [ -z "$CI_OS_NAME" ] || echo "INFO: Detected CI_OS_NAME='$CI_OS_NAME'" >&2
 fi
