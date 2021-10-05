@@ -85,6 +85,11 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP), and configuration
    allows to map custom registers and addresses to NUT events [PR #1052]
 
+ - genericups: added support for FTTx battery backup devices, and new signal
+   type mappings for the contact closure pins interpretation (RB for replace
+   battery, BYPASS for disconnected battery, and "none" or NULL for signals
+   to ignore) [PR #1061]
+
  - add devices to HCL/DDL:
    * APC Back-UPS CS (USB)
    * CPS CP1500EPFCLCD (USB)
