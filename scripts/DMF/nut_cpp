@@ -33,6 +33,7 @@ sed \
     -e 's/ __asm(.*)$/;/' \
     -e 's/__asm__ (.*);/;/' \
     -e 's/__attribute__ ((visibility("default"))) //' \
+    -e 's/__attribute__((noreturn))//' \
     -e 's/__attribute__((unused))//' \
     -e 's/__attribute__((aligned(8)));/;/' \
     -e 's/__attribute__((availability(.*)));/;/' \
@@ -60,6 +61,8 @@ sed \
     -e 's/_Float[0-9]*x*/float/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
+    -e 's/[ \t]_Noreturn[ \t]/ /' \
+    -e 's/__NORETURN_*//' \
     -e 's/__builtin_va_list/int/'
 }
 
