@@ -17,6 +17,7 @@ import json
 import sys
 import subprocess
 import os
+import traceback
 
 from pycparser import c_parser, c_ast, parse_file
 
@@ -583,6 +584,9 @@ try:
         raise RuntimeError ("Got no data in resulting tree")
 except Exception as e:
     warn ("FAILED to parse %s: %s" % (args.source, e))
+    warn ("============== DETAILS:\n")
+    traceback.print_exc()
+    warn ("==============\n")
     sys.exit(1)
 
 info ("Parsed %s OK" % args.source)
