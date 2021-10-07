@@ -557,13 +557,13 @@ p = s_mkparser ()
 args = p.parse_args (sys.argv[1:])
 drivers_dir = os.path.dirname (os.path.abspath (args.source))
 include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
-info ("CALL parse_file():")
 
 try:
     gcc_cppflags = os.environ["CPPFLAGS"].split()
 except KeyError:
     gcc_cppflags = []
 
+info ("CALL parse_file(): %s with %s %s" % (args.source, s_cpp_path (), (["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags)))
 try:
     ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
     ### there is no exception; so to abort pycparser we also print some
