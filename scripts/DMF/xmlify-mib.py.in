@@ -85,7 +85,11 @@ def mkElement (_element, **attrs):
     global doc
     #el = MD.Element (_element)
     el = doc.createElement (_element)
-    for name, value in attrs.items ():
+    # To have reproducible results across platforms and python versions
+    # (2.7 did sort, 3.6 or 3.8 keeps original dict order, etc...), we
+    # enforce sorting here by attribute name, and for same-named attrs
+    # by their value.
+    for name, value in sorted(attrs.items (), key=lambda item: str(item[0]) + "=" + str(item[1])):
         if value is None:
             continue
         el.setAttribute (name, str(value))
@@ -105,7 +109,7 @@ def mk_lookup (inp, root):
         return
 
     debug("INPUT : '%s'" % inp ["INFO"].items() )
-    for name, lookup in inp ["INFO"].items ():
+    for name, lookup in sorted(inp ["INFO"].items (), key=lambda item: str(item[0]) + "=" + str(item[1])):
         lookup_el = mkElement ("lookup", name=name)
         debug ("name= '%s' lookup = '%s' (%d elem)" %(name, lookup, len(lookup) ))
 
@@ -128,7 +132,8 @@ def mk_lookup (inp, root):
 def mk_alarms (inp, root):
     if not "ALARMS-INFO" in inp:
         return
-    for name, lookup in inp ["ALARMS-INFO"].items ():
+
+    for name, lookup in sorted(inp ["ALARMS-INFO"].items (), key=lambda item: str(item[0]) + "=" + str(item[1])):
         lookup_el = mkElement ("alarm", name=name)
         for info in lookup:
             info_el = mkElement ("info_alarm", oid=info ["OID"], status=info ["status_value"], alarm=info ["alarm_value"])
@@ -138,7 +143,8 @@ def mk_alarms (inp, root):
 def mk_snmp (inp, root):
     if not "SNMP-INFO" in inp:
         return
-    for name, lookup in inp ["SNMP-INFO"].items ():
+
+    for name, lookup in sorted(inp ["SNMP-INFO"].items (), key=lambda item: str(item[0]) + "=" + str(item[1])):
         lookup_el = mkElement ("snmp", name=name)
         for info in lookup:
 
@@ -244,8 +250,7 @@ def mk_mib2nut (inp, root):
     if not "MIB2NUT" in inp:
         return
 
-    for name, lookup in inp ["MIB2NUT"].items ():
-
+    for name, lookup in sorted(inp ["MIB2NUT"].items (), key=lambda item: str(item[0]) + "=" + str(item[1])):
         kwargs = dict (name=name)
         for attr, key in (
                 ("oid", "sysOID"),
