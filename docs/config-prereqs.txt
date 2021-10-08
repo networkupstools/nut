@@ -13,7 +13,8 @@ both, at a disk space cost.
 
 NOTE: Some NUT branches may need additional or different software versions
 that are not yet included into `master` branch dependencies, e.g. the DMF
-(Dynamic Mapping Files) sub-project needs LUA 5.1.
+(Dynamic Mapping Files) sub-project needs LUA 5.1 for build and run-time,
+and some Python modules for build.
 
 More packages and/or system setup may be needed to actually run NUT with
 all features enabled; chapters below concern just with building it.
@@ -107,6 +108,9 @@ complete environments):
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
 (technically, needs at least JRE 8+).
 
+For DMF, additionally install `python-pycparser` (or in newer distributions,
+an explicitly versioned package, e.g. `python3-pycparser`).
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 
@@ -171,6 +175,8 @@ scripts), better use this routine to test the config/build:
 
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+DMF builds were not tested on BSD as of yet.
 
 OpenIndiana 2021.04
 ~~~~~~~~~~~~~~~~~~~
@@ -247,6 +253,10 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).
+
+For DMF, additionally install `library/python/pycparser` (or a versioned one
+matching your installed Python distribution, e.g. `library/python/pycparser-39`
+or `library/python/pycparser-27`).
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
