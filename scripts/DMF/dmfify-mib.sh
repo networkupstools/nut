@@ -40,7 +40,10 @@ else
 fi
 
 # TODO: The PYTHON and CC variables currently assume pathnames (no args)
-[ -n "${PYTHON}" ] && PYTHON="`command -v "$P"`" && [ -x "$PYTHON" ] \
+# NOTE: Here unquoted(!) `command -v $PYTHON` allows to expand e.g. a
+# "/usr/bin/env python" value into a real path; ignoring args to python
+# itself (if any).
+[ -n "${PYTHON}" ] && PYTHON="`command -v $PYTHON | tail -1`" && [ -x "$PYTHON" ] \
 || { echo "ERROR: Can not find Python 2.7+: '$PYTHON'" >&2; exit 2; }
 
 # The pycparser uses GCC-compatible flags

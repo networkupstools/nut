@@ -39,6 +39,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AC_MSG_RESULT([${PYTHON}])
         AC_SUBST([PYTHON], [${PYTHON}])
         AM_CONDITIONAL([HAVE_PYTHON], [test "${PYTHON}" != "no"])
+        AS_IF([test -n "${PYTHON}"], [export PYTHON])
     ])
 ])
 
@@ -80,6 +81,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AC_MSG_RESULT([${PYTHON2}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
         AM_CONDITIONAL([HAVE_PYTHON2], [test "${PYTHON2}" != "no"])
+        AS_IF([test -n "${PYTHON2}"], [export PYTHON2])
     ])
 ])
 
@@ -121,5 +123,6 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AC_MSG_RESULT([${PYTHON3}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
         AM_CONDITIONAL([HAVE_PYTHON3], [test "${PYTHON3}" != "no"])
+        AS_IF([test -n "${PYTHON3}"], [export PYTHON3])
     ])
 ])

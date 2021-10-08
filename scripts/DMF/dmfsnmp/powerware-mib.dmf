@@ -240,6 +240,8 @@
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L1-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.1"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L2-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.2"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L3-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.3"/>
+		<snmp_info default="0" multiplier="1.0" name="outlet.id" static="yes"/>
+		<snmp_info lookup="pw_yes_no_info" multiplier="1.0" name="outlet.switchable" oid=".1.3.6.1.4.1.534.1.9.7.0" static="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.534.1.12.1.0" static="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.id" oid=".1.3.6.1.4.1.534.1.12.2.1.1.%i" outlet="yes" static="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.1.12.2.1.1.%i" outlet="yes" static="yes"/>
