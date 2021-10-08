@@ -186,7 +186,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if which ccache && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
