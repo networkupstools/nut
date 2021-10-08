@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2782 utf-8
+personal_ws-1.1 en 2808 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -39,6 +39,7 @@ AVR
 AVRLCD
 AWG
 Ablerex
+AcceptEnv
 ActivePower
 AdMiN
 Affero
@@ -159,6 +160,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLANGVER
 CLI
 CLOCAL
 CMDDESC
@@ -328,6 +330,7 @@ FREHn
 FRELn
 FRU
 FTS
+FTTx
 FTUPS
 FV
 Faber
@@ -353,6 +356,7 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GCCVER
 GES
 GETADDRINFO
 GKrellM
@@ -784,6 +788,7 @@ PPDnnn
 PPP
 PPPPPPPPPP
 PR'ed
+PROGS
 PRs
 PSA
 PSD
@@ -1024,8 +1029,10 @@ Schonefeld
 Schroder
 Sekury
 Selinger
+SendEnv
 Senoidal
 Sep
+Sequentializing
 Serv
 Shara
 Shaul
@@ -1140,6 +1147,7 @@ UB
 UBD
 UBR
 UDP
+UI
 UID
 UIDA
 UINT
@@ -1173,6 +1181,7 @@ UTC
 UTalk
 UUU
 UX
+Ubuntu
 Ulf
 Uncomment
 Unices
@@ -1310,6 +1319,8 @@ alloc
 allowfrom
 altinterface
 altpidpath
+altroot
+altroots
 amd
 anded
 aod
@@ -1329,6 +1340,7 @@ argc
 argparse
 args
 argv
+armel
 armhf
 asapm
 ascii
@@ -1424,6 +1436,7 @@ boostvoolts
 bootable
 bp
 br
+bsd
 bsv
 bt
 bti
@@ -1571,6 +1584,7 @@ ddl
 de
 deUNV
 debian
+debootstrap
 debouncing
 deci
 decrement
@@ -1667,6 +1681,7 @@ energysave
 english
 enum
 envvar
+envvars
 ep
 epdu
 epodebounce
@@ -1726,6 +1741,7 @@ forcessl
 formatconfig
 formatparam
 fp
+freebsd
 freeipmi
 freqsensitivity
 frob
@@ -1753,6 +1769,7 @@ getDevice
 getTrackingResult
 getValue
 getVariable
+getconf
 getent
 getenv
 getopt
@@ -1792,6 +1809,7 @@ hidparser
 hidups
 highbattery
 highfrequency
+hoster
 hostname
 hostnames
 hostsfile
@@ -1893,6 +1911,7 @@ kadets
 kaminski
 kde
 keyclick
+keygen
 keyout
 killall
 killpower
@@ -1906,6 +1925,7 @@ lan
 langid
 lasaine
 ld
+le
 len
 lf
 libaugeas
@@ -2195,12 +2215,14 @@ oq
 os
 ostream
 otherprotocols
+outliers
 pF
 paramkeywords
 parsability
 parsable
 parseconf
 passname
+passphrase
 passthrough
 passwd
 passwordlevel
@@ -2464,6 +2486,7 @@ srcdir
 srv
 srw
 ss
+sshd
 ssl
 stan
 startIP
@@ -2597,6 +2620,7 @@ uA
 uD
 uM
 ua
+ubuntu
 uc
 ucb
 udev
@@ -2606,6 +2630,7 @@ ugen
 ukUNV
 ul
 un
+uname
 uncomment
 unconfigured
 undefine
@@ -2748,6 +2773,7 @@ xa
 xaabbcc
 xcalloc
 xd
+xe
 xferdelay
 xff
 xfff
