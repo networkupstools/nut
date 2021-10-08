@@ -1,5 +1,12 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="eaton_ats16_nmc_ambient_drycontacts_info">
+		<lookup_info oid="-1" value="unknown"/>
+		<lookup_info oid="1" value="opened"/>
+		<lookup_info oid="2" value="closed"/>
+		<lookup_info oid="3" value="opened"/>
+		<lookup_info oid="4" value="closed"/>
+	</lookup>
 	<lookup name="eaton_ats16_nmc_input_frequency_status_info">
 		<lookup_info oid="1" value="good"/>
 		<lookup_info oid="2" value="out-of-range"/>
@@ -19,21 +26,6 @@
 		<lookup_info oid="2" value="high"/>
 		<lookup_info oid="3" value="low"/>
 	</lookup>
-	<lookup name="eaton_ats16_nmc_test_result_info">
-		<lookup_info oid="1" value="done and passed"/>
-		<lookup_info oid="2" value="done and warning"/>
-		<lookup_info oid="3" value="done and error"/>
-		<lookup_info oid="4" value="aborted"/>
-		<lookup_info oid="5" value="in progress"/>
-		<lookup_info oid="6" value="no test initiated"/>
-	</lookup>
-	<lookup name="eaton_ats16_nmc_ambient_drycontacts_info">
-		<lookup_info oid="-1" value="unknown"/>
-		<lookup_info oid="1" value="opened"/>
-		<lookup_info oid="2" value="closed"/>
-		<lookup_info oid="3" value="opened"/>
-		<lookup_info oid="4" value="closed"/>
-	</lookup>
 	<lookup name="eaton_ats16_nmc_source_info">
 		<lookup_info oid="1" value="init"/>
 		<lookup_info oid="2" value="diagnosis"/>
@@ -42,6 +34,14 @@
 		<lookup_info oid="5" value="2"/>
 		<lookup_info oid="6" value="safe"/>
 		<lookup_info oid="7" value="fault"/>
+	</lookup>
+	<lookup name="eaton_ats16_nmc_test_result_info">
+		<lookup_info oid="1" value="done and passed"/>
+		<lookup_info oid="2" value="done and warning"/>
+		<lookup_info oid="3" value="done and error"/>
+		<lookup_info oid="4" value="aborted"/>
+		<lookup_info oid="5" value="in progress"/>
+		<lookup_info oid="6" value="no test initiated"/>
 	</lookup>
 	<snmp name="eaton_ats16_nmc_mib">
 		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>

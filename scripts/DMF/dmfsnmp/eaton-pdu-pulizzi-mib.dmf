@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="pulizzi_sw_outlet_switchability_info">
-		<lookup_info oid="1" value="yes"/>
-		<lookup_info oid="2" value="yes"/>
-	</lookup>
 	<lookup name="pulizzi_sw_outlet_status_info">
 		<lookup_info oid="1" value="on"/>
 		<lookup_info oid="2" value="off"/>
+	</lookup>
+	<lookup name="pulizzi_sw_outlet_switchability_info">
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="yes"/>
 	</lookup>
 	<snmp name="eaton_pulizzi_switched_mib">
 		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>

@@ -1,17 +1,8 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="cpqpower_outlet_switchability_info">
-		<lookup_info oid="1" value="yes"/>
-		<lookup_info oid="2" value="yes"/>
-		<lookup_info oid="3" value="yes"/>
-		<lookup_info oid="4" value="yes"/>
-	</lookup>
-	<lookup name="cpqpower_outlet_status_info">
-		<lookup_info oid="1" value="on"/>
-		<lookup_info oid="2" value="off"/>
-		<lookup_info oid="3" value="pendingOff"/>
-		<lookup_info oid="4" value="pendingOn"/>
-		<lookup_info oid="5" value="unknown"/>
+	<lookup name="cpqpower_battery_abm_status">
+		<lookup_info oid="1" value="CHRG"/>
+		<lookup_info oid="2" value="DISCHRG"/>
 	</lookup>
 	<lookup name="cpqpower_mode_info">
 		<lookup_info oid="1" value=""/>
@@ -24,6 +15,19 @@
 		<lookup_info oid="8" value="parallel capacity"/>
 		<lookup_info oid="9" value="parallel redundancy"/>
 		<lookup_info oid="10" value="high efficiency"/>
+	</lookup>
+	<lookup name="cpqpower_outlet_status_info">
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="off"/>
+		<lookup_info oid="3" value="pendingOff"/>
+		<lookup_info oid="4" value="pendingOn"/>
+		<lookup_info oid="5" value="unknown"/>
+	</lookup>
+	<lookup name="cpqpower_outlet_switchability_info">
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="yes"/>
+		<lookup_info oid="3" value="yes"/>
+		<lookup_info oid="4" value="yes"/>
 	</lookup>
 	<lookup name="cpqpower_pwr_info">
 		<lookup_info oid="1" value=""/>
@@ -45,10 +49,6 @@
 		<lookup_info oid="5" value="Not supported"/>
 		<lookup_info oid="6" value="Inhibited"/>
 		<lookup_info oid="7" value="Scheduled"/>
-	</lookup>
-	<lookup name="cpqpower_battery_abm_status">
-		<lookup_info oid="1" value="CHRG"/>
-		<lookup_info oid="2" value="DISCHRG"/>
 	</lookup>
 	<snmp name="cpqpower_mib">
 		<snmp_info default="HP/Compaq" multiplier="128.0" name="ups.mfr" oid=".1.3.6.1.4.1.232.165.3.1.1.0" static="yes" string="yes"/>

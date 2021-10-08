@@ -1,5 +1,18 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="eaton_ats30_input_sensitivity">
+		<lookup_info oid="1" value="high"/>
+		<lookup_info oid="2" value="low"/>
+	</lookup>
+	<lookup name="eaton_ats30_source_info">
+		<lookup_info oid="1" value="init"/>
+		<lookup_info oid="2" value="diagnosis"/>
+		<lookup_info oid="3" value="off"/>
+		<lookup_info oid="4" value="1"/>
+		<lookup_info oid="5" value="2"/>
+		<lookup_info oid="6" value="safe"/>
+		<lookup_info oid="7" value="fault"/>
+	</lookup>
 	<lookup name="eaton_ats30_status_info">
 		<lookup_info oid="0" value="OL"/>
 		<lookup_info oid="1" value="OL"/>
@@ -17,19 +30,6 @@
 		<lookup_info oid="13" value="OL OVER"/>
 		<lookup_info oid="14" value="OFF OVER"/>
 		<lookup_info oid="15" value="OFF OVER"/>
-	</lookup>
-	<lookup name="eaton_ats30_input_sensitivity">
-		<lookup_info oid="1" value="high"/>
-		<lookup_info oid="2" value="low"/>
-	</lookup>
-	<lookup name="eaton_ats30_source_info">
-		<lookup_info oid="1" value="init"/>
-		<lookup_info oid="2" value="diagnosis"/>
-		<lookup_info oid="3" value="off"/>
-		<lookup_info oid="4" value="1"/>
-		<lookup_info oid="5" value="2"/>
-		<lookup_info oid="6" value="safe"/>
-		<lookup_info oid="7" value="fault"/>
 	</lookup>
 	<snmp name="eaton_ats30_mib">
 		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>

@@ -7,33 +7,10 @@
 		<lookup_info oid="2" value="closed"/>
 		<lookup_info oid="3" value="bad"/>
 	</lookup>
-	<lookup name="hpe_pdu_threshold_humidity_alarms_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="low humidity warning!"/>
-		<lookup_info oid="3" value="low humidity critical!"/>
-		<lookup_info oid="4" value="high humidity warning!"/>
-		<lookup_info oid="5" value="high humidity critical!"/>
-	</lookup>
-	<lookup name="hpe_pdu_threshold_current_alarms_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="low current warning!"/>
-		<lookup_info oid="3" value="low current critical!"/>
-		<lookup_info oid="4" value="high current warning!"/>
-		<lookup_info oid="5" value="high current critical!"/>
-	</lookup>
-	<lookup name="hpe_pdu_threshold_voltage_alarms_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="low voltage warning!"/>
-		<lookup_info oid="3" value="low voltage critical!"/>
-		<lookup_info oid="4" value="high voltage warning!"/>
-		<lookup_info oid="5" value="high voltage critical!"/>
-	</lookup>
-	<lookup name="hpe_pdu_threshold_status_info">
-		<lookup_info oid="1" value="good"/>
-		<lookup_info oid="2" value="warning-low"/>
-		<lookup_info oid="3" value="critical-low"/>
-		<lookup_info oid="4" value="warning-high"/>
-		<lookup_info oid="5" value="critical-high"/>
+	<lookup name="hpe_pdu_ambient_presence_info">
+		<lookup_info oid="-1" value="unknown"/>
+		<lookup_info oid="1" value="no"/>
+		<lookup_info oid="2" value="yes"/>
 	</lookup>
 	<lookup name="hpe_pdu_input_type_info">
 		<lookup_info oid="1" value="1"/>
@@ -41,20 +18,32 @@
 		<lookup_info oid="3" value="3"/>
 		<lookup_info oid="4" value="3"/>
 	</lookup>
-	<lookup name="hpe_pdu_threshold_frequency_alarm_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="frequency out of range!"/>
+	<lookup name="hpe_pdu_outlet_group_phase_info">
+		<lookup_info oid="1" value="L1"/>
+		<lookup_info oid="2" value="L1"/>
+		<lookup_info oid="3" value="L2"/>
+		<lookup_info oid="4" value="L3"/>
+		<lookup_info oid="5" value="L1"/>
+		<lookup_info oid="6" value="L2"/>
+		<lookup_info oid="7" value="L3"/>
+	</lookup>
+	<lookup name="hpe_pdu_outlet_group_type_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="1" value="unknown"/>
+		<lookup_info oid="2" value="breaker1pole"/>
+		<lookup_info oid="3" value="breaker2pole"/>
+		<lookup_info oid="4" value="breaker3pole"/>
+		<lookup_info oid="5" value="outlet-section"/>
+	</lookup>
+	<lookup name="hpe_pdu_outlet_status_info">
+		<lookup_info oid="1" value="off"/>
+		<lookup_info oid="2" value="on"/>
+		<lookup_info oid="3" value="pendingOff"/>
+		<lookup_info oid="4" value="pendingOn"/>
 	</lookup>
 	<lookup name="hpe_pdu_outlet_switchability_info">
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="no"/>
-	</lookup>
-	<lookup name="hpe_pdu_threshold_temperature_alarms_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="low temperature warning!"/>
-		<lookup_info oid="3" value="low temperature critical!"/>
-		<lookup_info oid="4" value="high temperature warning!"/>
-		<lookup_info oid="5" value="high temperature critical!"/>
 	</lookup>
 	<lookup name="hpe_pdu_outlet_type_info">
 		<lookup_info oid="0" value="unknown"/>
@@ -75,42 +64,53 @@
 		<lookup_info oid="29" value="nemaL715"/>
 		<lookup_info oid="30" value="rf203p277"/>
 	</lookup>
-	<lookup name="hpe_pdu_outlet_group_type_info">
-		<lookup_info oid="0" value="unknown"/>
-		<lookup_info oid="1" value="unknown"/>
-		<lookup_info oid="2" value="breaker1pole"/>
-		<lookup_info oid="3" value="breaker2pole"/>
-		<lookup_info oid="4" value="breaker3pole"/>
-		<lookup_info oid="5" value="outlet-section"/>
-	</lookup>
-	<lookup name="hpe_pdu_outlet_group_phase_info">
-		<lookup_info oid="1" value="L1"/>
-		<lookup_info oid="2" value="L1"/>
-		<lookup_info oid="3" value="L2"/>
-		<lookup_info oid="4" value="L3"/>
-		<lookup_info oid="5" value="L1"/>
-		<lookup_info oid="6" value="L2"/>
-		<lookup_info oid="7" value="L3"/>
-	</lookup>
-	<lookup name="hpe_pdu_threshold_frequency_status_info">
-		<lookup_info oid="1" value="good"/>
-		<lookup_info oid="2" value="out-of-range"/>
-	</lookup>
 	<lookup name="hpe_pdu_outletgroups_status_info">
 		<lookup_info oid="1" value="N/A"/>
 		<lookup_info oid="2" value="on"/>
 		<lookup_info oid="3" value="off"/>
 	</lookup>
-	<lookup name="hpe_pdu_outlet_status_info">
-		<lookup_info oid="1" value="off"/>
-		<lookup_info oid="2" value="on"/>
-		<lookup_info oid="3" value="pendingOff"/>
-		<lookup_info oid="4" value="pendingOn"/>
+	<lookup name="hpe_pdu_threshold_current_alarms_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="low current warning!"/>
+		<lookup_info oid="3" value="low current critical!"/>
+		<lookup_info oid="4" value="high current warning!"/>
+		<lookup_info oid="5" value="high current critical!"/>
 	</lookup>
-	<lookup name="hpe_pdu_ambient_presence_info">
-		<lookup_info oid="-1" value="unknown"/>
-		<lookup_info oid="1" value="no"/>
-		<lookup_info oid="2" value="yes"/>
+	<lookup name="hpe_pdu_threshold_frequency_alarm_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="frequency out of range!"/>
+	</lookup>
+	<lookup name="hpe_pdu_threshold_frequency_status_info">
+		<lookup_info oid="1" value="good"/>
+		<lookup_info oid="2" value="out-of-range"/>
+	</lookup>
+	<lookup name="hpe_pdu_threshold_humidity_alarms_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="low humidity warning!"/>
+		<lookup_info oid="3" value="low humidity critical!"/>
+		<lookup_info oid="4" value="high humidity warning!"/>
+		<lookup_info oid="5" value="high humidity critical!"/>
+	</lookup>
+	<lookup name="hpe_pdu_threshold_status_info">
+		<lookup_info oid="1" value="good"/>
+		<lookup_info oid="2" value="warning-low"/>
+		<lookup_info oid="3" value="critical-low"/>
+		<lookup_info oid="4" value="warning-high"/>
+		<lookup_info oid="5" value="critical-high"/>
+	</lookup>
+	<lookup name="hpe_pdu_threshold_temperature_alarms_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="low temperature warning!"/>
+		<lookup_info oid="3" value="low temperature critical!"/>
+		<lookup_info oid="4" value="high temperature warning!"/>
+		<lookup_info oid="5" value="high temperature critical!"/>
+	</lookup>
+	<lookup name="hpe_pdu_threshold_voltage_alarms_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="low voltage warning!"/>
+		<lookup_info oid="3" value="low voltage critical!"/>
+		<lookup_info oid="4" value="high voltage warning!"/>
+		<lookup_info oid="5" value="high voltage critical!"/>
 	</lookup>
 	<snmp name="hpe_pdu_mib">
 		<snmp_info absent="yes" default="HPE" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>

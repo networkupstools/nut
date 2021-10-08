@@ -1,37 +1,13 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="apcc_transfer_reasons">
-		<lookup_info oid="1" value="noTransfer"/>
-		<lookup_info oid="2" value="highLineVoltage"/>
-		<lookup_info oid="3" value="brownout"/>
-		<lookup_info oid="4" value="blackout"/>
-		<lookup_info oid="5" value="smallMomentarySag"/>
-		<lookup_info oid="6" value="deepMomentarySag"/>
-		<lookup_info oid="7" value="smallMomentarySpike"/>
-		<lookup_info oid="8" value="largeMomentarySpike"/>
-		<lookup_info oid="9" value="selfTest"/>
-		<lookup_info oid="10" value="rateOfVoltageChange"/>
-	</lookup>
-	<lookup name="apcc_battrepl_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="RB"/>
-	</lookup>
-	<lookup name="apcc_testdiag_results">
-		<lookup_info oid="1" value="Ok"/>
-		<lookup_info oid="2" value="Failed"/>
-		<lookup_info oid="3" value="InvalidTest"/>
-		<lookup_info oid="4" value="TestInProgress"/>
-	</lookup>
-	<lookup name="apcc_sensitivity_modes">
-		<lookup_info oid="1" value="auto"/>
-		<lookup_info oid="2" value="low"/>
-		<lookup_info oid="3" value="medium"/>
-		<lookup_info oid="4" value="high"/>
-	</lookup>
 	<lookup name="apcc_batt_info">
 		<lookup_info oid="1" value=""/>
 		<lookup_info oid="2" value=""/>
 		<lookup_info oid="3" value="LB"/>
+	</lookup>
+	<lookup name="apcc_battrepl_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="RB"/>
 	</lookup>
 	<lookup name="apcc_cal_info">
 		<lookup_info oid="1" value=""/>
@@ -51,6 +27,30 @@
 		<lookup_info oid="10" value="BYPASS"/>
 		<lookup_info oid="11" value="OFF"/>
 		<lookup_info oid="12" value="OL TRIM"/>
+	</lookup>
+	<lookup name="apcc_sensitivity_modes">
+		<lookup_info oid="1" value="auto"/>
+		<lookup_info oid="2" value="low"/>
+		<lookup_info oid="3" value="medium"/>
+		<lookup_info oid="4" value="high"/>
+	</lookup>
+	<lookup name="apcc_testdiag_results">
+		<lookup_info oid="1" value="Ok"/>
+		<lookup_info oid="2" value="Failed"/>
+		<lookup_info oid="3" value="InvalidTest"/>
+		<lookup_info oid="4" value="TestInProgress"/>
+	</lookup>
+	<lookup name="apcc_transfer_reasons">
+		<lookup_info oid="1" value="noTransfer"/>
+		<lookup_info oid="2" value="highLineVoltage"/>
+		<lookup_info oid="3" value="brownout"/>
+		<lookup_info oid="4" value="blackout"/>
+		<lookup_info oid="5" value="smallMomentarySag"/>
+		<lookup_info oid="6" value="deepMomentarySag"/>
+		<lookup_info oid="7" value="smallMomentarySpike"/>
+		<lookup_info oid="8" value="largeMomentarySpike"/>
+		<lookup_info oid="9" value="selfTest"/>
+		<lookup_info oid="10" value="rateOfVoltageChange"/>
 	</lookup>
 	<snmp name="apcc_mib">
 		<snmp_info absent="yes" default="APC" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>

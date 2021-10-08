@@ -4,17 +4,15 @@
 		<lookup_info oid="1" value="good"/>
 		<lookup_info oid="2" value="out-of-range"/>
 	</lookup>
+	<lookup name="eaton_ats16_nm2_input_voltage_status_info">
+		<lookup_info oid="1" value="good"/>
+		<lookup_info oid="2" value="derated-range"/>
+		<lookup_info oid="3" value="out-of-range"/>
+		<lookup_info oid="4" value="unknown"/>
+	</lookup>
 	<lookup name="eaton_ats16_nm2_output_status_info">
 		<lookup_info oid="1" value="OFF"/>
 		<lookup_info oid="2" value="OL"/>
-	</lookup>
-	<lookup name="eaton_ats16_nm2_test_result_info">
-		<lookup_info oid="1" value="done and passed"/>
-		<lookup_info oid="2" value="done and warning"/>
-		<lookup_info oid="3" value="done and error"/>
-		<lookup_info oid="4" value="aborted"/>
-		<lookup_info oid="5" value="in progress"/>
-		<lookup_info oid="6" value="no test initiated"/>
 	</lookup>
 	<lookup name="eaton_ats16_nm2_sensitivity_info">
 		<lookup_info oid="1" value="normal"/>
@@ -30,11 +28,13 @@
 		<lookup_info oid="6" value="safe"/>
 		<lookup_info oid="7" value="fault"/>
 	</lookup>
-	<lookup name="eaton_ats16_nm2_input_voltage_status_info">
-		<lookup_info oid="1" value="good"/>
-		<lookup_info oid="2" value="derated-range"/>
-		<lookup_info oid="3" value="out-of-range"/>
-		<lookup_info oid="4" value="unknown"/>
+	<lookup name="eaton_ats16_nm2_test_result_info">
+		<lookup_info oid="1" value="done and passed"/>
+		<lookup_info oid="2" value="done and warning"/>
+		<lookup_info oid="3" value="done and error"/>
+		<lookup_info oid="4" value="aborted"/>
+		<lookup_info oid="5" value="in progress"/>
+		<lookup_info oid="6" value="no test initiated"/>
 	</lookup>
 	<snmp name="eaton_ats16_nm2_mib">
 		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>

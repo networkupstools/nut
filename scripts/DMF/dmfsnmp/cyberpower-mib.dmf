@@ -5,6 +5,10 @@
 		<lookup_info oid="2" value=""/>
 		<lookup_info oid="3" value="LB"/>
 	</lookup>
+	<lookup name="cyberpower_battrepl_status">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="RB"/>
+	</lookup>
 	<lookup name="cyberpower_cal_status">
 		<lookup_info oid="1" value=""/>
 		<lookup_info oid="2" value=""/>
@@ -18,10 +22,6 @@
 		<lookup_info oid="7" value="OL"/>
 		<lookup_info oid="1" value="NULL"/>
 		<lookup_info oid="6" value="OFF"/>
-	</lookup>
-	<lookup name="cyberpower_battrepl_status">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="RB"/>
 	</lookup>
 	<snmp name="cyberpower_mib">
 		<snmp_info absent="yes" default="ups" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
