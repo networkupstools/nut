@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2769 utf-8
+personal_ws-1.1 en 2782 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -129,6 +129,7 @@ BigServers
 BlaXwan
 BlackOut
 BladeUPS
+BlueOcean
 Bo
 Bohe
 Borns
@@ -343,6 +344,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
+FossHost
 Frama
 FreeBSD
 FreeDesktop
@@ -456,14 +458,15 @@ IZ
 Infosec
 Innova
 Integrators
+IntelCC
 InvCDly
 InvCPol
 InvMin
 Invensys
 InverterV
 Invter
-Ioannou
 IoT
+Ioannou
 JAWAN
 JBus
 JKL
@@ -476,6 +479,7 @@ Jasuny
 JavaScript
 Javadoc
 Javascript
+Jenkinsfile
 Joon
 Jumpered
 KNutClient
@@ -779,6 +783,8 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR'ed
+PRs
 PSA
 PSD
 PSFn
@@ -1254,10 +1260,12 @@ Yoyodyne
 Yukai
 Yunto
 ZFS
+ZProject
 ZZZZZZZZ
 Zaika
 Zampieri
 Zawadzki
+ZeroMQ
 abcd
 abuild
 acVoltsIn
@@ -1297,6 +1305,7 @@ alarmtest
 alertset
 alioth
 alist
+alldrv
 alloc
 allowfrom
 altinterface
@@ -1407,6 +1416,7 @@ binfmt
 binutils
 bitmapped
 bitness
+bitnesses
 bitwise
 bn
 boolean
@@ -1635,6 +1645,7 @@ dummypass
 dummyups
 dumpxml
 dv
+dynamatrix
 ePDU
 ePDUs
 eaton
@@ -1655,6 +1666,7 @@ energizerups
 energysave
 english
 enum
+envvar
 ep
 epdu
 epodebounce
@@ -1672,6 +1684,7 @@ et
 etapro
 eth
 ev
+eval
 everups
 everyone's
 everything's

@@ -51,7 +51,7 @@ then
 			./nut-usbinfo.pl || exit 1
 			cd ..
 		}
-	else 
+	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
 		echo "Unable to regenerate USB helper files."
@@ -68,12 +68,22 @@ echo "Regenerating the list of legacy *-mib.c files in current codebase to produ
 ( cd scripts/DMF && ./gen-legacy-mibfiles-list.sh )
 
 if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
-    echo '# autoconf requires this file exists before generating configure script' > scripts/systemd/nut-common.tmpfiles.in
+	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
 fi
 
 # now we can safely call autoreconf
+if ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
+	echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
+	echo "this may cause issues for m4 parsing with autotools below."
+	if [ -e .git ] ; then
+		echo "You may want to enforce that Git uses 'lf' line endings and re-checkout:"
+		echo "    :; git config core.autocrlf false && git config core.eol lf"
+	fi
+	echo ""
+fi >&2
+
 echo "Calling autoreconf..."
 autoreconf -iv && {
-    sh -n configure 2>/dev/null >/dev/null \
-    || { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+	sh -n configure 2>/dev/null >/dev/null \
+	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
 }
