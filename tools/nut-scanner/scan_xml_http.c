@@ -67,9 +67,9 @@ static pthread_mutex_t dev_mutex;
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
-	if( dl_handle != NULL ) {
+	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if( dl_handle == (void *)1 ) {
+		if (dl_handle == (void *)1) {
 				return 0;
 		}
 		/* init has already been done */
@@ -81,7 +81,7 @@ int nutscan_load_neon_library(const char *libname_path)
 		return 0;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
@@ -99,22 +99,22 @@ int nutscan_load_neon_library(const char *libname_path)
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,"ne_xml_destroy");
+	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle, "ne_xml_destroy");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,"ne_xml_create");
+	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle, "ne_xml_create");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,"ne_xml_parse");
+	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle, "ne_xml_parse");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
 
-	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle,"ne_xml_failed");
+	*(void **) (&nut_ne_xml_failed) = lt_dlsym(dl_handle, "ne_xml_failed");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
@@ -133,8 +133,8 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	char buf[SMALLBUF];
 	int i = 0;
 	int result = -1;
-	while( atts[i] != NULL ) {
-		upsdebugx(5,"startelm_cb() : parent=%d nspace='%s' name='%s' atts[%d]='%s' atts[%d]='%s'",
+	while (atts[i] != NULL) {
+		upsdebugx(5, "startelm_cb() : parent=%d nspace='%s' name='%s' atts[%d]='%s' atts[%d]='%s'",
 			parent, nspace, name, i, atts[i], (i+1), atts[i+1]);
 		/* The Eaton/MGE ePDUs almost exclusively support only XMLv4 protocol
 		 * (only the very first generation of G2/G3 NMCs supported an older
@@ -142,15 +142,15 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 		 * drivers don't yet support. To avoid failing drivers later, the
 		 * nut-scanner should not suggest netxml-ups configuration for ePDUs
 		 * at this time. */
-		if(strcmp(atts[i],"class") == 0 && strcmp(atts[i+1],"DEV.PDU") == 0 ) {
+		if (strcmp(atts[i], "class") == 0 && strcmp(atts[i+1], "DEV.PDU") == 0) {
 			upsdebugx(3, "startelm_cb() : XML v4 protocol is not supported by current NUT drivers, skipping device!");
 			/* netxml-ups currently only supports XML version 3 (for UPS),
 			 * and not version 4 (for UPS and PDU)! */
 			return -1;
 		}
-		if(strcmp(atts[i],"type") == 0) {
-			snprintf(buf,sizeof(buf),"%s",atts[i+1]);
-			nutscan_add_option_to_device(dev,"desc",buf);
+		if (strcmp(atts[i], "type") == 0) {
+			snprintf(buf, sizeof(buf), "%s", atts[i+1]);
+			nutscan_add_option_to_device(dev, "desc", buf);
 			result = 0;
 		}
 		i=i+2;
@@ -182,7 +182,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	int i;
 
 	nutscan_device_t * nut_dev = NULL;
-	if(sec != NULL) {
+	if (sec != NULL) {
 /*		if (sec->port_http > 0 && sec->port_http <= 65534)
  *			port_http = sec->port_http; */
 		if (sec->port_udp > 0 && sec->port_udp <= 65534)
@@ -195,12 +195,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	if (usec_timeout <= 0)
 		usec_timeout = 5000000; /* Driver default : 5sec */
 
-	if( !nutscan_avail_xml_http ) {
+	if (!nutscan_avail_xml_http) {
 		return NULL;
 	}
 
-	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		fprintf(stderr,"Error creating socket\n");
+	if ((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		fprintf(stderr, "Error creating socket\n");
 		return NULL;
 	}
 
@@ -222,11 +222,11 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		sockAddress_udp.sin_port = htons(port_udp);
 
 		/* Send scan request */
-		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
+		if (sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
 					(struct sockaddr *)&sockAddress_udp,
 					sockAddressLength) <= 0)
 		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES);
+			fprintf(stderr, "Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -234,56 +234,56 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		{
 			int retNum = 0;
 			FD_ZERO(&fds);
-			FD_SET(peerSocket,&fds);
+			FD_SET(peerSocket, &fds);
 
 			timeout.tv_sec = usec_timeout / 1000000;
 			timeout.tv_usec = usec_timeout % 1000000;
 
 			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, loop #%d/%d, waiting for responses", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES);
-			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
-						&timeout) )) {
+			while ((ret=select(peerSocket+1, &fds, NULL, NULL,
+						&timeout))) {
 				retNum ++;
 				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, loop #%d/%d, response #%d", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES, retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
 
-				if( ret == -1 ) {
+				if (ret == -1) {
 					fprintf(stderr,
 						"Error waiting on \
-						socket: %d\n",errno);
+						socket: %d\n", errno);
 					break;
 				}
 
 				sockAddressLength = sizeof(struct sockaddr_in);
-				recv_size = recvfrom(peerSocket,buf,
-						sizeof(buf),0,
+				recv_size = recvfrom(peerSocket, buf,
+						sizeof(buf), 0,
 						(struct sockaddr *)&sockAddress_udp,
 						&sockAddressLength);
 
-				if(recv_size==-1) {
+				if (recv_size==-1) {
 					fprintf(stderr,
 						"Error reading \
-						socket: %d, #%d/%d\n",errno, (i+1), MAX_RETRIES);
+						socket: %d, #%d/%d\n", errno, (i+1), MAX_RETRIES);
 					usleep(usec_timeout);
 					continue;
 				}
 
-				if( getnameinfo(
+				if (getnameinfo(
 					(struct sockaddr *)&sockAddress_udp,
-									sizeof(struct sockaddr_in),string,
-									sizeof(string),NULL,0,
+									sizeof(struct sockaddr_in), string,
+									sizeof(string), NULL, 0,
 					NI_NUMERICHOST) != 0) {
 
 					fprintf(stderr,
-						"Error converting IP address: %d\n",errno);
+						"Error converting IP address: %d\n", errno);
 					usleep(usec_timeout);
 					continue;
 				}
 
 				nut_dev = nutscan_new_device();
-				if(nut_dev == NULL) {
-					fprintf(stderr,"Memory allocation error\n");
+				if (nut_dev == NULL) {
+					fprintf(stderr, "Memory allocation error\n");
 					goto end_abort;
 				}
 
@@ -304,16 +304,16 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf, "http://%s", string);
 					nut_dev->port = strdup(buf);
-					upsdebugx(3,"nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
+					upsdebugx(3, "nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
-						dev_ret,nut_dev);
+						dev_ret, nut_dev);
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
 				}
 				else
 				{
-					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
+					fprintf(stderr, "Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
 					nutscan_free_device(nut_dev);
 					nut_dev = NULL;
 #ifdef HAVE_PTHREAD
@@ -324,21 +324,21 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				}
 
 				if (ip != NULL) {
-					upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
+					upsdebugx(2, "nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
 					goto end;
 				}
 			} /* while select() responses */
 			if (ip == NULL && dev_ret != NULL) {
-				upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
+				upsdebugx(2, "nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
 				goto end;
 			}
 		}
 	}
-	upsdebugx(2,"nutscan_scan_xml_http_generic(): no replies collected for %s, done", ip ? ip : "<broadcast>");
+	upsdebugx(2, "nutscan_scan_xml_http_generic(): no replies collected for %s, done", ip ? ip : "<broadcast>");
 	goto end;
 
 end_abort:
-	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
+	upsdebugx(1, "Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
 end:
 	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
@@ -352,7 +352,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	nutscan_device_t * result = NULL;
 	int i;
 
-	if( !nutscan_avail_xml_http ) {
+	if (!nutscan_avail_xml_http) {
 		return NULL;
 	}
 
@@ -360,11 +360,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		start_ip = end_ip;
 	}
 
-	if (start_ip == NULL ) {
-		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
+	if (start_ip == NULL) {
+		upsdebugx(1, "Scanning XML/HTTP bus using broadcast.");
 	} else {
-		if ( (start_ip == end_ip) || (end_ip == NULL) || (strncmp(start_ip,end_ip,128)==0) ) {
-			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
+		if ((start_ip == end_ip) || (end_ip == NULL) || (strncmp(start_ip, end_ip, 128)==0)) {
+			upsdebugx(1, "Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		} else {
 			/* Iterate the range of IPs to scan */
 			nutscan_ip_iter_t ip;
@@ -375,24 +375,24 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			pthread_t * thread_array = NULL;
 			int thread_count = 0;
 
-			pthread_mutex_init(&dev_mutex,NULL);
+			pthread_mutex_init(&dev_mutex, NULL);
 #endif
 
 			ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
 
-			while(ip_str != NULL) {
+			while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
-				if(thread_array == NULL) {
+				if (thread_array == NULL) {
 					sem_wait(semaphore);
 					pass=1;
 				} else {
 					pass = (sem_trywait(semaphore) == 0);
 				}
 #endif
-				if(pass) {
+				if (pass) {
 					tmp_sec = malloc(sizeof(nutscan_xml_t));
 					if (tmp_sec == NULL) {
-						fprintf(stderr,"Memory allocation \
+						fprintf(stderr, "Memory allocation \
 							error\n");
 						return NULL;
 					}
@@ -401,7 +401,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 					if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
 
 #ifdef HAVE_PTHREAD
-					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
+					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec)==0) {
 						thread_count++;
 						pthread_t *new_thread_array = realloc(thread_array,
 								thread_count*sizeof(pthread_t));
@@ -424,7 +424,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 				} else {
 					if (thread_array != NULL) {
 						for (i=0; i < thread_count; i++) {
-							pthread_join(thread_array[i],NULL);
+							pthread_join(thread_array[i], NULL);
 							sem_post(semaphore);
 						}
 						thread_count = 0;
@@ -452,7 +452,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 	tmp_sec = malloc(sizeof(nutscan_xml_t));
 	if (tmp_sec == NULL) {
-		fprintf(stderr,"Memory allocation \
+		fprintf(stderr, "Memory allocation \
 			error\n");
 		return NULL;
 	}

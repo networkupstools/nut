@@ -41,11 +41,11 @@ nutscan_device_t * nutscan_new_device()
 	nutscan_device_t * device;
 
 	device = malloc(sizeof(nutscan_device_t));
-	if( device==NULL) {
+	if (device==NULL) {
 		return NULL;
 	}
 
-	memset(device,0,sizeof(nutscan_device_t));
+	memset(device, 0, sizeof(nutscan_device_t));
 
 	return device;
 }
@@ -54,13 +54,13 @@ static void deep_free_device(nutscan_device_t * device)
 {
 	nutscan_options_t * current;
 
-	if(device==NULL) {
+	if (device==NULL) {
 		return;
 	}
-	if(device->driver)  {
+	if (device->driver)  {
 		free(device->driver);
 	}
-	if(device->port) {
+	if (device->port) {
 		free(device->port);
 	}
 
@@ -68,21 +68,21 @@ static void deep_free_device(nutscan_device_t * device)
 		current     = device->opt;
 		device->opt = current->next;
 
-		if(current->option != NULL) {
+		if (current->option != NULL) {
 			free(current->option);
 		}
 
-		if(current->value != NULL) {
+		if (current->value != NULL) {
 			free(current->value);
 		}
 
 		free(current);
 	}
 
-	if(device->prev) {
+	if (device->prev) {
 		device->prev->next = device->next;
 	}
-	if(device->next) {
+	if (device->next) {
 		device->next->prev = device->prev;
 	}
 
@@ -91,13 +91,13 @@ static void deep_free_device(nutscan_device_t * device)
 
 void nutscan_free_device(nutscan_device_t * device)
 {
-	if(device==NULL) {
+	if (device==NULL) {
 		return;
 	}
-	while(device->prev != NULL) {
+	while (device->prev != NULL) {
 		deep_free_device(device->prev);
 	}
-	while(device->next != NULL) {
+	while (device->next != NULL) {
 		deep_free_device(device->next);
 	}
 
@@ -121,14 +121,14 @@ void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char
 
 	memset(*opt, 0, sizeof(nutscan_options_t));
 
-	if( option != NULL ) {
+	if (option != NULL) {
 		(*opt)->option = strdup(option);
 	}
 	else {
 		(*opt)->option = NULL;
 	}
 
-	if( value != NULL ) {
+	if (value != NULL) {
 		(*opt)->value = strdup(value);
 	}
 	else {
@@ -142,35 +142,35 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 	nutscan_device_t * dev2=NULL;
 
 	/* Get end of first device */
-	if( first != NULL) {
+	if (first != NULL) {
 		dev1 = first;
-		while(dev1->next != NULL) {
+		while (dev1->next != NULL) {
 			dev1 = dev1->next;
 		}
 	}
 	else {
-		if( second == NULL ) {
+		if (second == NULL) {
 			return NULL;
 		}
 		/* return end of second */
 		dev2 = second;
-		while(dev2->next != NULL) {
+		while (dev2->next != NULL) {
 			dev2 = dev2->next;
 		}
 		return dev2;
 	}
 
 	/* Get start of second */
-	if( second != NULL ) {
+	if (second != NULL) {
 		dev2 = second;
-		while(dev2->prev != NULL) {
+		while (dev2->prev != NULL) {
 			dev2 = dev2->prev;
 		}
 	}
 	else {
 		/* return end of first */
 		dev1 = first;
-		while(dev1->next != NULL) {
+		while (dev1->next != NULL) {
 			dev1 = dev1->next;
 
 		}
@@ -182,7 +182,7 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 	dev2->prev = dev1;
 
 	/* return end of both */
-	while(dev2->next != NULL) {
+	while (dev2->next != NULL) {
 		dev2 = dev2->next;
 	}
 
