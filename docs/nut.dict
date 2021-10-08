@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2808 utf-8
+personal_ws-1.1 en 2809 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1457,10 +1457,12 @@ byv
 cablepower
 calloc
 cb
+cbe
 cbl
 cblimit
 ccache
 cd
+cef
 cerr
 certfile
 certname
@@ -1999,10 +2001,9 @@ lowvoltsout
 lposix
 lr
 lsusb
-lua
-luaOutlet
 lu
 lua
+luaOutlet
 lv
 lvo
 lxc
