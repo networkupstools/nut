@@ -1,24 +1,20 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="huawei_voltrating_info">
-		<lookup_info oid="1" value="200"/>
-		<lookup_info oid="2" value="208"/>
-		<lookup_info oid="3" value="220"/>
-		<lookup_info oid="4" value="380"/>
-		<lookup_info oid="5" value="400"/>
-		<lookup_info oid="6" value="415"/>
-		<lookup_info oid="7" value="480"/>
-		<lookup_info oid="8" value="600"/>
-		<lookup_info oid="9" value="690"/>
-	</lookup>
-	<lookup name="huawei_supplymethod_info">
+	<lookup name="huawei_battstate_info">
 		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="OL BYPASS"/>
-		<lookup_info oid="3" value="OL"/>
-		<lookup_info oid="4" value="OB"/>
-		<lookup_info oid="5" value=""/>
-		<lookup_info oid="6" value="OL ECO"/>
-		<lookup_info oid="7" value="OB ECO"/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value=""/>
+		<lookup_info oid="4" value=""/>
+		<lookup_info oid="5" value="CHRG"/>
+		<lookup_info oid="6" value="DISCHRG"/>
+	</lookup>
+	<lookup name="huawei_freqrating_info">
+		<lookup_info oid="1" value="50"/>
+		<lookup_info oid="2" value="60"/>
+	</lookup>
+	<lookup name="huawei_phase_info">
+		<lookup_info oid="1" value="1"/>
+		<lookup_info oid="2" value="3"/>
 	</lookup>
 	<lookup name="huawei_pwrrating_info">
 		<lookup_info oid="1" value="80000"/>
@@ -34,21 +30,14 @@
 		<lookup_info oid="11" value="2800000"/>
 		<lookup_info oid="12" value="3000000"/>
 	</lookup>
-	<lookup name="huawei_battstate_info">
+	<lookup name="huawei_supplymethod_info">
 		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value=""/>
-		<lookup_info oid="3" value=""/>
-		<lookup_info oid="4" value=""/>
-		<lookup_info oid="5" value="CHRG"/>
-		<lookup_info oid="6" value="DISCHRG"/>
-	</lookup>
-	<lookup name="huawei_phase_info">
-		<lookup_info oid="1" value="1"/>
-		<lookup_info oid="2" value="3"/>
-	</lookup>
-	<lookup name="huawei_freqrating_info">
-		<lookup_info oid="1" value="50"/>
-		<lookup_info oid="2" value="60"/>
+		<lookup_info oid="2" value="OL BYPASS"/>
+		<lookup_info oid="3" value="OL"/>
+		<lookup_info oid="4" value="OB"/>
+		<lookup_info oid="5" value=""/>
+		<lookup_info oid="6" value="OL ECO"/>
+		<lookup_info oid="7" value="OB ECO"/>
 	</lookup>
 	<lookup name="huawei_test_result_info">
 		<lookup_info oid="1" value="done and passed"/>
@@ -57,6 +46,17 @@
 		<lookup_info oid="4" value="aborted"/>
 		<lookup_info oid="5" value="in progress"/>
 		<lookup_info oid="6" value="no test initiated"/>
+	</lookup>
+	<lookup name="huawei_voltrating_info">
+		<lookup_info oid="1" value="200"/>
+		<lookup_info oid="2" value="208"/>
+		<lookup_info oid="3" value="220"/>
+		<lookup_info oid="4" value="380"/>
+		<lookup_info oid="5" value="400"/>
+		<lookup_info oid="6" value="415"/>
+		<lookup_info oid="7" value="480"/>
+		<lookup_info oid="8" value="600"/>
+		<lookup_info oid="9" value="690"/>
 	</lookup>
 	<snmp name="huawei_mib">
 		<snmp_info absent="yes" default="Huawei" flag_ok="yes" multiplier="128.0" name="ups.mfr" string="yes"/>

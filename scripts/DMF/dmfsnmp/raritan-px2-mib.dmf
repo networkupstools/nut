@@ -1,10 +1,5 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="raritanpx2_outlet_switchability_info">
-		<lookup_info oid="-1" value="yes"/>
-		<lookup_info oid="1" value="yes"/>
-		<lookup_info oid="2" value="no"/>
-	</lookup>
 	<lookup name="raritanpx2_outlet_status_info">
 		<lookup_info oid="-1" value="unavailable"/>
 		<lookup_info oid="0" value="open"/>
@@ -30,6 +25,11 @@
 		<lookup_info oid="20" value="inSync"/>
 		<lookup_info oid="21" value="outOfSync"/>
 		<lookup_info oid="0" value="NULL"/>
+	</lookup>
+	<lookup name="raritanpx2_outlet_switchability_info">
+		<lookup_info oid="-1" value="yes"/>
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="no"/>
 	</lookup>
 	<snmp name="raritan_px2_mib">
 		<snmp_info default="Raritan" flag_ok="yes" multiplier="128.0" name="device.mfr" oid=".1.3.6.1.4.1.13742.6.3.2.1.1.2.1" static="yes" string="yes"/>

@@ -1,24 +1,18 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="ietf_battery_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="LB"/>
+		<lookup_info oid="4" value="LB"/>
+	</lookup>
 	<lookup name="ietf_beeper_status_info">
 		<lookup_info oid="1" value="disabled"/>
 		<lookup_info oid="2" value="enabled"/>
 		<lookup_info oid="3" value="muted"/>
 	</lookup>
-	<lookup name="ietf_test_result_info">
-		<lookup_info oid="1" value="done and passed"/>
-		<lookup_info oid="2" value="done and warning"/>
-		<lookup_info oid="3" value="done and error"/>
-		<lookup_info oid="4" value="aborted"/>
-		<lookup_info oid="5" value="in progress"/>
-		<lookup_info oid="6" value="no test initiated"/>
-	</lookup>
-	<lookup name="ietf_test_active_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value=""/>
-		<lookup_info oid="3" value="TEST"/>
-		<lookup_info oid="4" value="TEST"/>
-		<lookup_info oid="5" value="CAL"/>
+	<lookup name="ietf_overload_info">
+		<lookup_info oid="1" value="OVER"/>
 	</lookup>
 	<lookup name="ietf_power_source_info">
 		<lookup_info oid="1" value=""/>
@@ -29,14 +23,20 @@
 		<lookup_info oid="6" value="OL BOOST"/>
 		<lookup_info oid="7" value="OL TRIM"/>
 	</lookup>
-	<lookup name="ietf_battery_info">
+	<lookup name="ietf_test_active_info">
 		<lookup_info oid="1" value=""/>
 		<lookup_info oid="2" value=""/>
-		<lookup_info oid="3" value="LB"/>
-		<lookup_info oid="4" value="LB"/>
+		<lookup_info oid="3" value="TEST"/>
+		<lookup_info oid="4" value="TEST"/>
+		<lookup_info oid="5" value="CAL"/>
 	</lookup>
-	<lookup name="ietf_overload_info">
-		<lookup_info oid="1" value="OVER"/>
+	<lookup name="ietf_test_result_info">
+		<lookup_info oid="1" value="done and passed"/>
+		<lookup_info oid="2" value="done and warning"/>
+		<lookup_info oid="3" value="done and error"/>
+		<lookup_info oid="4" value="aborted"/>
+		<lookup_info oid="5" value="in progress"/>
+		<lookup_info oid="6" value="no test initiated"/>
 	</lookup>
 	<lookup name="ietf_yes_no_info">
 		<lookup_info oid="1" value="yes"/>

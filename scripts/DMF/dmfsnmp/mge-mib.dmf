@@ -1,51 +1,5 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="mge_power_source_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="OFF"/>
-		<lookup_info oid="4" value="BYPASS"/>
-		<lookup_info oid="5" value="OB"/>
-		<lookup_info oid="6" value="BOOST"/>
-		<lookup_info oid="7" value="TRIM"/>
-	</lookup>
-	<lookup name="mge_output_util_off_info">
-		<lookup_info oid="1" value="OFF"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
-	<lookup name="mge_replacebatt_info">
-		<lookup_info oid="1" value="RB"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
-	<lookup name="mge_trim_info">
-		<lookup_info oid="1" value="TRIM"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
-	<lookup name="mge_onbatt_info">
-		<lookup_info oid="1" value="OB"/>
-		<lookup_info oid="2" value="OL"/>
-	</lookup>
-	<lookup name="mge_test_result_info">
-		<lookup_info oid="1" value="done and passed"/>
-		<lookup_info oid="2" value="done and warning"/>
-		<lookup_info oid="3" value="done and error"/>
-		<lookup_info oid="4" value="aborted"/>
-		<lookup_info oid="5" value="in progress"/>
-		<lookup_info oid="6" value="no test initiated"/>
-	</lookup>
-	<lookup name="mge_boost_info">
-		<lookup_info oid="1" value="BOOST"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
-	<lookup name="mge_transfer_reason_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value="input voltage out of range"/>
-		<lookup_info oid="3" value="input frequency out of range"/>
-		<lookup_info oid="4" value="utility off"/>
-	</lookup>
-	<lookup name="mge_bypass_info">
-		<lookup_info oid="1" value="BYPASS"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
 	<lookup name="mge_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
 		<lookup_info oid="1" value="closed"/>
@@ -56,12 +10,58 @@
 		<lookup_info oid="2" value="enabled"/>
 		<lookup_info oid="3" value="muted"/>
 	</lookup>
+	<lookup name="mge_boost_info">
+		<lookup_info oid="1" value="BOOST"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="mge_bypass_info">
+		<lookup_info oid="1" value="BYPASS"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
 	<lookup name="mge_lowbatt_info">
 		<lookup_info oid="1" value="LB"/>
 		<lookup_info oid="2" value=""/>
 	</lookup>
+	<lookup name="mge_onbatt_info">
+		<lookup_info oid="1" value="OB"/>
+		<lookup_info oid="2" value="OL"/>
+	</lookup>
+	<lookup name="mge_output_util_off_info">
+		<lookup_info oid="1" value="OFF"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
 	<lookup name="mge_overload_info">
 		<lookup_info oid="1" value="OVER"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="mge_power_source_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OFF"/>
+		<lookup_info oid="4" value="BYPASS"/>
+		<lookup_info oid="5" value="OB"/>
+		<lookup_info oid="6" value="BOOST"/>
+		<lookup_info oid="7" value="TRIM"/>
+	</lookup>
+	<lookup name="mge_replacebatt_info">
+		<lookup_info oid="1" value="RB"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="mge_test_result_info">
+		<lookup_info oid="1" value="done and passed"/>
+		<lookup_info oid="2" value="done and warning"/>
+		<lookup_info oid="3" value="done and error"/>
+		<lookup_info oid="4" value="aborted"/>
+		<lookup_info oid="5" value="in progress"/>
+		<lookup_info oid="6" value="no test initiated"/>
+	</lookup>
+	<lookup name="mge_transfer_reason_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="input voltage out of range"/>
+		<lookup_info oid="3" value="input frequency out of range"/>
+		<lookup_info oid="4" value="utility off"/>
+	</lookup>
+	<lookup name="mge_trim_info">
+		<lookup_info oid="1" value="TRIM"/>
 		<lookup_info oid="2" value=""/>
 	</lookup>
 	<lookup name="mge_yes_no_info">

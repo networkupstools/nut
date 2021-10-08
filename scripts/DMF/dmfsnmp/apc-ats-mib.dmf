@@ -1,9 +1,5 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="apc_ats_sensitivity_info">
-		<lookup_info oid="1" value="high"/>
-		<lookup_info oid="2" value="low"/>
-	</lookup>
 	<lookup name="apc_ats_outletgroups_name_info">
 		<lookup_info oid="1" value="total"/>
 		<lookup_info oid="2" value="bank1"/>
@@ -18,6 +14,10 @@
 	<lookup name="apc_ats_output_status_info">
 		<lookup_info oid="1" value="OFF"/>
 		<lookup_info oid="2" value="OL"/>
+	</lookup>
+	<lookup name="apc_ats_sensitivity_info">
+		<lookup_info oid="1" value="high"/>
+		<lookup_info oid="2" value="low"/>
 	</lookup>
 	<snmp name="apc_ats_mib">
 		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>

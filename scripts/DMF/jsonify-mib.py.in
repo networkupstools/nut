@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!@PYTHON@
 
 # This Python script takes structure contents from existing legacy
 # NUT *-mib.c sources. This is the first stage for DMF generation,
@@ -6,7 +6,7 @@
 # by anyone interested.
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 from __future__ import print_function
