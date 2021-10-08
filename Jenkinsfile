@@ -490,7 +490,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \
                     branch 'master'
                     branch "release/*"
                     changeRequest()
-                }    
+                }
             }
             stages {
                 stage('Compile') {
