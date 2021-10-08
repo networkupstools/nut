@@ -47,7 +47,7 @@ fi
 || { echo "ERROR: Can not find Python 2.7+: '$PYTHON'" >&2; exit 2; }
 
 # The pycparser uses GCC-compatible flags
-[ -n "${CC-}" ] || CC="`which gcc`"
+[ -n "${CC-}" ] || CC="`command -v gcc`"
 CC_ENV=""
 if [ -n "${CC-}" ] ; then
     case "$CC" in
@@ -72,13 +72,13 @@ if [ -n "${CC-}" ] ; then
     esac
     case "$CC" in
         /*) ;;
-        *)  CC="`which "$CC"`" ;;
+        *)  CC="`command -v "$CC"`" ;;
     esac
 fi
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
 export CC CFLAGS CC_ENV
 
-[ -n "${CPP-}" ] || CPP="`which cpp`"
+[ -n "${CPP-}" ] || CPP="`command -v cpp`"
 CPP_ENV=""
 if [ -n "${CPP-}" ] ; then
     case "$CPP" in
@@ -103,7 +103,7 @@ if [ -n "${CPP-}" ] ; then
     esac
     case "$CPP" in
         /*) ;;
-        *)  CPP="`which "$CPP"`" ;;
+        *)  CPP="`command -v "$CPP"`" ;;
     esac
 fi
 [ -n "${CPP}" ] && [ -x "$CPP" ] || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
