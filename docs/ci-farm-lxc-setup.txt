@@ -127,6 +127,9 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 ------
 jenkins-debian11-mips,10.0.3.245
 ------
++
+NOTE: Don't forget to eventually `systemctl restart lxc-net` to apply the
+new host reservation!
 
 * Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
   markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
