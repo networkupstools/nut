@@ -90,9 +90,9 @@ static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
-	if( dl_handle != NULL ) {
+	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if( dl_handle == (void *)1 ) {
+		if (dl_handle == (void *)1) {
 				return 0;
 		}
 		/* init has already been done */
@@ -104,7 +104,7 @@ int nutscan_load_avahi_library(const char *libname_path)
 		return 0;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
@@ -116,92 +116,92 @@ int nutscan_load_avahi_library(const char *libname_path)
 	}
 	lt_dlerror();      /* Clear any existing error */
 	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
@@ -218,7 +218,7 @@ static AvahiSimplePoll *simple_poll = NULL;
 static nutscan_device_t * dev_ret = NULL;
 static long avahi_usec_timeout = 0;
 
-static void update_device(const char * host_name,const char *ip, uint16_t port,char * text, int proto)
+static void update_device(const char * host_name, const char *ip, uint16_t port, char * text, int proto)
 {
 	nutscan_device_t * dev = NULL;
 
@@ -234,111 +234,111 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 	char buf[6];
 	int buf_size;
 
-	if( text == NULL ) {
+	if (text == NULL) {
 		return;
 	}
 
 	t = strdup(text);
-	phrase = strtok_r(t,"\"",&t_saveptr);
-	while(phrase != NULL ) {
-		word = strtok_r(phrase,"=",&phrase_saveptr);
-		if( word == NULL ) {
-			phrase = strtok_r(NULL,"\"",&t_saveptr);
+	phrase = strtok_r(t, "\"", &t_saveptr);
+	while (phrase != NULL) {
+		word = strtok_r(phrase, "=", &phrase_saveptr);
+		if (word == NULL) {
+			phrase = strtok_r(NULL, "\"", &t_saveptr);
 			continue;
 		}
-		value = strtok_r(NULL,"=",&phrase_saveptr);
-		if( value == NULL ) {
-			phrase = strtok_r(NULL,"\"",&t_saveptr);
-			continue;
-		}
-
-		if( strcmp(word,"device_list") != 0 ) {
-			phrase = strtok_r(NULL,"\"",&t_saveptr);
+		value = strtok_r(NULL, "=", &phrase_saveptr);
+		if (value == NULL) {
+			phrase = strtok_r(NULL, "\"", &t_saveptr);
 			continue;
 		}
 
-		device = strtok_r(value,";",&device_saveptr);
-		while( device != NULL ) {
+		if (strcmp(word, "device_list") != 0) {
+			phrase = strtok_r(NULL, "\"", &t_saveptr);
+			continue;
+		}
+
+		device = strtok_r(value, ";", &device_saveptr);
+		while (device != NULL) {
 			device_found = 1;
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
-			if( proto == AVAHI_PROTO_INET) {
-				nutscan_add_option_to_device(dev,"desc","IPv4");
+			if (proto == AVAHI_PROTO_INET) {
+				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
-			if( proto == AVAHI_PROTO_INET6 ) {
-				nutscan_add_option_to_device(dev,"desc","IPv6");
+			if (proto == AVAHI_PROTO_INET6) {
+				nutscan_add_option_to_device(dev, "desc", "IPv6");
 			}
 
-			if( port != PORT) {
+			if (port != PORT) {
 				/* +5+1+1+1 is for :
 				 - port number (max 65535 so 5 characters),
 				 - '@' and ':' characters
 				 - terminating 0 */
-				buf_size = strlen(device)+strlen(host_name)+
-						5+1+1+1;
-				dev->port=malloc(buf_size);
-				if(dev->port) {
-					snprintf(dev->port,buf_size,"%s@%s:%u",
-							device,host_name,port);
+				buf_size = strlen(device) + strlen(host_name)+
+						5 + 1 + 1 + 1;
+				dev->port = malloc(buf_size);
+				if (dev->port) {
+					snprintf(dev->port, buf_size, "%s@%s:%u",
+							device, host_name, port);
 				}
 			}
 			else {
 				/*+1+1 is for '@' character and terminating 0 */
-				buf_size = strlen(device)+strlen(host_name)+1+1;
-				dev->port=malloc(buf_size);
-				if(dev->port) {
-					snprintf(dev->port,buf_size,"%s@%s",
-							device,host_name);
+				buf_size = strlen(device) + strlen(host_name) + 1 + 1;
+				dev->port = malloc(buf_size);
+				if (dev->port) {
+					snprintf(dev->port, buf_size, "%s@%s",
+							device, host_name);
 				}
 			}
-			if( dev->port ) {
-				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+			if (dev->port) {
+				dev_ret = nutscan_add_device_to_device(dev_ret, dev);
 			}
 			else {
 				nutscan_free_device(dev);
 			}
-			device = strtok_r(NULL,";",&device_saveptr);
+			device = strtok_r(NULL, ";", &device_saveptr);
 		}
 
-		phrase = strtok_r(NULL,"\"",&t_saveptr);
+		phrase = strtok_r(NULL, "\"", &t_saveptr);
 	}
 	free(t);
 
 	/* If no device published in avahi data, try to get the device by
 	connecting directly to upsd */
-	if( !device_found) {
-		snprintf(buf,sizeof(buf),"%u",port);
-		dev = nutscan_scan_nut(ip,ip,buf,avahi_usec_timeout);
-		if(dev) {
-			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+	if (!device_found) {
+		snprintf(buf, sizeof(buf), "%u", port);
+		dev = nutscan_scan_nut(ip, ip, buf, avahi_usec_timeout);
+		if (dev) {
+			dev_ret = nutscan_add_device_to_device(dev_ret, dev);
 		}
 		/* add an upsd entry without associated device */
 		else {
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
-			if( proto == AVAHI_PROTO_INET) {
-				nutscan_add_option_to_device(dev,"desc","IPv4");
+			if (proto == AVAHI_PROTO_INET) {
+				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
-			if( proto == AVAHI_PROTO_INET6 ) {
-				nutscan_add_option_to_device(dev,"desc","IPv6");
+			if (proto == AVAHI_PROTO_INET6) {
+				nutscan_add_option_to_device(dev, "desc", "IPv6");
 			}
-			if( port != PORT) {
+			if (port != PORT) {
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
-				buf_size = strlen(host_name)+strlen(buf)+1+1;
-				dev->port=malloc(buf_size);
-				if(dev->port) {
-					snprintf(dev->port,buf_size,"%s:%s",
-							host_name,buf);
+				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
+				dev->port = malloc(buf_size);
+				if (dev->port) {
+					snprintf(dev->port, buf_size, "%s:%s",
+							host_name, buf);
 				}
 			}
 			else {
-				dev->port=strdup(host_name);
+				dev->port = strdup(host_name);
 			}
-			if( dev->port ) {
-				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+			if (dev->port) {
+				dev_ret = nutscan_add_device_to_device(dev_ret, dev);
 			}
 			else {
 				nutscan_free_device(dev);
@@ -404,7 +404,7 @@ static void resolve_callback(
 				!!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
 				!!(flags & AVAHI_LOOKUP_RESULT_CACHED));
 */
-			update_device(host_name,a,port,t,address->proto);
+			update_device(host_name, a, port, t, address->proto);
 			(*nut_avahi_free)(t);
 		}
 	}
@@ -496,7 +496,7 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	AvahiServiceBrowser *sb = NULL;
 	int error;
 
-	if( !nutscan_avail_avahi ) {
+	if (!nutscan_avail_avahi) {
 		return NULL;
 	}
 
