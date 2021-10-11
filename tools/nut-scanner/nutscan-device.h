@@ -41,7 +41,7 @@ extern "C" {
 	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
 
 typedef enum nutscan_device_type {
-	TYPE_NONE=0,
+	TYPE_NONE = 0,
 	TYPE_USB,
 	TYPE_SNMP,
 	TYPE_XML,
