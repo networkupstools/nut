@@ -164,7 +164,7 @@ void uninit_snmp_device_table() {
 #if WITH_DMFMIB
 	if (snmp_device_table == snmp_device_table_dmf)
 		snmp_device_table = NULL;
-	if (dmfnutscan_snmp_dmp!=NULL)
+	if (dmfnutscan_snmp_dmp != NULL)
 		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
 	snmp_device_table_dmf = NULL;
 	dmfnutscan_snmp_dmp = NULL;
@@ -191,8 +191,8 @@ int init_snmp_device_table()
 			mibdmf_parse_dir(dmfnutscan_snmp_dir, dmfnutscan_snmp_dmp);
 			snmp_device_table_dmf = mibdmf_get_device_table(dmfnutscan_snmp_dmp);
 			int device_table_counter = mibdmf_get_device_table_counter(dmfnutscan_snmp_dmp);
-			if (snmp_device_table_dmf != NULL && 
-			    device_table_counter>1) 
+			if (snmp_device_table_dmf != NULL &&
+			    device_table_counter > 1)
 			{
 				snmp_device_table = snmp_device_table_dmf;
 				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from "
@@ -208,7 +208,7 @@ int init_snmp_device_table()
 #endif /* if WITH_DMFMIB */
 
 #ifdef DEVSCAN_SNMP_BUILTIN
-	if (snmp_device_table == NULL && snmp_device_table_builtin!=NULL) {
+	if (snmp_device_table == NULL && snmp_device_table_builtin != NULL) {
 		upsdebugx(1, "SUCCESS: Can use the built-in SNMP device mapping table");
 		snmp_device_table = (snmp_device_id_t *)(&snmp_device_table_builtin);
 	}
@@ -255,112 +255,112 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 	lt_dlerror();	/* Clear any existing error */
 	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle, "init_snmp");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_init) = lt_dlsym(dl_handle,
 							"snmp_sess_init");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_open) = lt_dlsym(dl_handle,
 							"snmp_sess_open");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_close) = lt_dlsym(dl_handle,
 							"snmp_sess_close");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_session) = lt_dlsym(dl_handle,
 							"snmp_sess_session");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_parse_oid) = lt_dlsym(dl_handle,
 							"snmp_parse_oid");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_pdu_create) = lt_dlsym(dl_handle,
 							"snmp_pdu_create");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_add_null_var) = lt_dlsym(dl_handle,
 							"snmp_add_null_var");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_sess_synch_response) = lt_dlsym(dl_handle,
 						"snmp_sess_synch_response");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_oid_compare) = lt_dlsym(dl_handle,
 							"snmp_oid_compare");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_free_pdu) = lt_dlsym(dl_handle, "snmp_free_pdu");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_generate_Ku) = lt_dlsym(dl_handle, "generate_Ku");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_out_toggle_options) = lt_dlsym(dl_handle,
 							"snmp_out_toggle_options");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_api_errstring) = lt_dlsym(dl_handle,
 							"snmp_api_errstring");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_snmp_errno) = lt_dlsym(dl_handle, "snmp_errno");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
 							USMAESPRIVPROTOCOL);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usmHMACMD5AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACMD5AuthProtocol");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usmHMACSHA1AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACSHA1AuthProtocol");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_usmDESPrivProtocol) = lt_dlsym(dl_handle,
 						"usmDESPrivProtocol");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
@@ -391,7 +391,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev->driver = NULL;
 	if (dmfnutscan_snmp_dmp != NULL) {
 		/* DMF is loaded thus used, successfully */
-		if (mib && strcmp(mib, "eaton_epdu")==0) {
+		if (mib && strcmp(mib, "eaton_epdu") == 0) {
 			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
 			// in DMF is fixed, this clause has to be amended back, too.
 			// Also note that currently this suggestion concerns just one
@@ -401,7 +401,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 			upslogx(1, "This device mapping uses lookup functions which is not yet supported by DMF driver");
 		} else {
 			dev->driver = strdup("snmp-ups-dmf");
-			if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
+			if (dmfnutscan_snmp_dir != NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
 				nutscan_add_option_to_device(dev, SU_VAR_DMFDIR,
 					dmfnutscan_snmp_dir);
 			}
@@ -419,7 +419,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		if (buf) {
 			memcpy(buf, response->variables->val.string,
 				response->variables->val_len);
-			buf[response->variables->val_len]=0;
+			buf[response->variables->val_len] = 0;
 			nutscan_add_option_to_device(dev, "desc", buf);
 			free(buf);
 		}
@@ -459,7 +459,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		if (buf) {
 			memcpy(buf, session->community,
 				session->community_len);
-			buf[session->community_len]=0;
+			buf[session->community_len] = 0;
 			nutscan_add_option_to_device(dev, "community", buf);
 			free(buf);
 		}
@@ -505,7 +505,7 @@ static struct snmp_pdu * scan_snmp_get_oid(char* oid_str, void* handle)
 		return NULL;
 	}
 
-	if (status!=STAT_SUCCESS||response->errstat!=SNMP_ERR_NOERROR||
+	if (status != STAT_SUCCESS||response->errstat != SNMP_ERR_NOERROR||
 			response->variables == NULL ||
 			response->variables->name == NULL ||
 			(*nut_snmp_oid_compare)(response->variables->name,
@@ -882,7 +882,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #ifdef HAVE_PTHREAD
 		if (thread_array == NULL) {
 			sem_wait(semaphore);
-			pass=true;
+			pass = true;
 		} else {
 			pass = (sem_trywait(semaphore) == 0);
 		}
@@ -893,7 +893,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec)==0) {
+			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
 				thread_count++;
 				pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
@@ -914,7 +914,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 //			free(tmp_sec);
 #ifdef HAVE_PTHREAD
 		} else {
-			for (i=0; i < thread_count; i++) {
+			for (i = 0; i < thread_count; i++) {
 				pthread_join(thread_array[i], NULL);
 				sem_post(semaphore);
 			}
@@ -926,7 +926,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i=0; i < thread_count ; i++) {
+	for (i = 0; i < thread_count ; i++) {
 		pthread_join(thread_array[i], NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
