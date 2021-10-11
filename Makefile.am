@@ -58,10 +58,10 @@ clean-local:
 # Note: these are optionally available (as determined during configure runs)
 spellcheck spellcheck-interactive:
 	@RES=0; \
-	(cd $(builddir)/docs && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/conf && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/data && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/docs && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 doc spellcheck-sortdict:
