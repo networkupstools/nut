@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
 	optind = 1;
 	/* Note: the getopts print an error message about unknown arguments
 	 * or arguments which need a second token and that is missing now */
-	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
+	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 
 		switch(opt_ret) {
 			case 't':
