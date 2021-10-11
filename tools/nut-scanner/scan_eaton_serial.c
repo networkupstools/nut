@@ -60,8 +60,8 @@
 /*
 extern unsigned char AUT[4];
 extern struct pw_baud_rate {
-        int rate;
-        int name;
+	int rate;
+	int name;
 } pw_baud_rates[];
 */
 
@@ -222,7 +222,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 		pthread_mutex_unlock(&dev_mutex);
 #endif
 
-		for (i=0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
+		for (i = 0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
 		{
 			memset(answer, 0, 256);
 
