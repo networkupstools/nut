@@ -85,31 +85,31 @@ int nutscan_load_upsclient_library(const char *libname_path)
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 													"upscli_splitaddr");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
 						"upscli_tryconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
 						"upscli_list_start");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
 						"upscli_list_next");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
 						"upscli_disconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -182,7 +182,7 @@ static void * list_nut_devices(void * arg)
 		dev->type = TYPE_NUT;
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
 		dev->port = malloc(buf_size);
 		if (dev->port) {
 			snprintf(dev->port, buf_size, "%s@%s", answer[1],
@@ -246,7 +246,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
 
-	while (ip_str != NULL) 
+	while (ip_str != NULL)
 	{
 #ifdef HAVE_PTHREAD
             if (thread_array == NULL) {
@@ -279,7 +279,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		nut_arg->timeout = usec_timeout;
 		nut_arg->hostname = ip_dest;
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg)==0) {
+		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
@@ -300,7 +300,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #ifdef HAVE_PTHREAD
             } else {
 		if (thread_array != NULL) {
-			for (i=0; i < thread_count; i++) {
+			for (i = 0; i < thread_count; i++) {
 				pthread_join(thread_array[i], NULL);
 				sem_post(semaphore);
 			}
@@ -313,7 +313,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i=0; i < thread_count ; i++) {
+	for (i = 0; i < thread_count ; i++) {
 		pthread_join(thread_array[i], NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
