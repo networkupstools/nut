@@ -24,11 +24,10 @@
 #include <stddef.h> /*define NULL */
 
 typedef struct {
-        char *          oid;
-        char *          mib;
-        char *       sysoid;
+	char *	oid;
+	char *	mib;
+	char *	sysoid;
 } snmp_device_id_t;
-
 
 #endif /* DEVSCAN_SNMP_H */
 
@@ -50,7 +49,7 @@ extern "C" {
 # ifndef DEVSCAN_SNMP_BUILTIN
 #  define DEVSCAN_SNMP_BUILTIN
 /* Can use a copy of the structure that was pre-compiled into the binary */
-    extern snmp_device_id_t *snmp_device_table_builtin;
+	extern snmp_device_id_t *snmp_device_table_builtin;
 # endif /* DEVSCAN_SNMP_BUILTIN */
 #endif /* WANT_DEVSCAN_SNMP_BUILTIN */
 
@@ -58,7 +57,7 @@ extern "C" {
 # ifndef DEVSCAN_SNMP_DMF
 #  define DEVSCAN_SNMP_DMF
 /* Can use a copy of the structure that will be populated dynamically */
-    extern snmp_device_id_t *snmp_device_table_dmf;
+	extern snmp_device_id_t *snmp_device_table_dmf;
 # endif /* DEVSCAN_SNMP_DMF */
 #endif /* WANT_DEVSCAN_SNMP_DMF */
 
@@ -66,12 +65,12 @@ extern "C" {
 # ifndef LIBNUTSCAN_SNMP_DMF
 #  ifdef DMF_SNMP_H
 #   define LIBNUTSCAN_SNMP_DMF
-    /* Note: This requires types defined in "dmf.h" */
-    /* Variable implemented in scan_snmp.c */
-    extern char *dmfnutscan_snmp_dir;
-    extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
-    /* Just reference this to NULLify when client quits and frees DMF stuff */
-    void uninit_snmp_device_table();
+	/* Note: This requires types defined in "dmf.h" */
+	/* Variable implemented in scan_snmp.c */
+	extern char *dmfnutscan_snmp_dir;
+	extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
+	/* Just reference this to NULLify when client quits and frees DMF stuff */
+	void uninit_snmp_device_table();
 #  endif /* DMF_SNMP_H already included */
 # endif /* LIBNUTSCAN_SNMP_DMF */
 #endif /* WANT_LIBNUTSCAN_SNMP_DMF */
