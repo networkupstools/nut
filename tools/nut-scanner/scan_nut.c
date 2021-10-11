@@ -85,31 +85,31 @@ int nutscan_load_upsclient_library(const char *libname_path)
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 													"upscli_splitaddr");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
 						"upscli_tryconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
 						"upscli_list_start");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
 						"upscli_list_next");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
 						"upscli_disconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -290,7 +290,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i=0; i < thread_count ; i++) {
+	for (i = 0; i < thread_count ; i++) {
 		pthread_join(thread_array[i], NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
