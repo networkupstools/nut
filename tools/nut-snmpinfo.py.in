@@ -68,7 +68,7 @@ def expand_define(filename,constant):
 	return ret_line
 
 
-output_file.write( "/* nutscan-snmp.c - fully generated during build of NUT\n" )
+output_file.write( "/* nutscan-snmp.h - fully generated during build of NUT\n" )
 output_file.write( " *  Copyright (C) 2011-2019 EATON\n" )
 output_file.write( " *  	Authors: Frederic Bohe <FredericBohe@Eaton.com>\n" )
 output_file.write( " *               Arnaud Quette <ArnaudQuette@Eaton.com>\n" )
