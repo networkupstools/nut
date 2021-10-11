@@ -74,43 +74,43 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 	lt_dlerror();      /* Clear any existing error */
 	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, "usb_close");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, "usb_strerror");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, "usb_init");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
 					"usb_get_string_simple");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, "usb_open");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle, "usb_find_devices");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -128,10 +128,10 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 {
 	usb_device_id_t *usbdev;
 
-	for (usbdev=usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
+	for (usbdev = usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
 		if ((usbdev->vendorID == dev_VendorID)
-				&& (usbdev->productID == dev_ProductID)) {
-
+		 && (usbdev->productID == dev_ProductID)
+		) {
 			return usbdev->driver_name;
 		}
 	}
