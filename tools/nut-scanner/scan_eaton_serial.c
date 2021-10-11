@@ -222,7 +222,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 		pthread_mutex_unlock(&dev_mutex);
 #endif
 
-		for (i=0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
+		for (i = 0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
 		{
 			memset(answer, 0, 256);
 
@@ -436,7 +436,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #ifdef HAVE_PTHREAD
             if (thread_array == NULL) {
                 sem_wait(semaphore);
-                pass=1;
+                pass = 1;
             } else {
                 pass = (sem_trywait(semaphore) == 0);
             }
@@ -464,7 +464,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #ifdef HAVE_PTHREAD
             } else {
 		if (thread_array != NULL) {
-			for (i=0; i < thread_count; i++) {
+			for (i = 0; i < thread_count; i++) {
 				pthread_join(thread_array[i], NULL);
 				sem_post(semaphore);
 			}
@@ -496,9 +496,9 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	}
 
 	/* free everything... */
-	i=0;
+	i = 0;
 	while (serial_ports_list[i] != NULL) {
-	 	free(serial_ports_list[i]);
+		free(serial_ports_list[i]);
 		i++;
 	}
 	free( serial_ports_list);
