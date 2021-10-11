@@ -107,7 +107,7 @@ static char ** add_port(char ** list, char * port)
 		return list;
 	}
 	res[count] = strdup(port);
-	res[count+1] = NULL;
+	res[count + 1] = NULL;
 
 	return res;
 }
@@ -138,7 +138,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		 * - single element: X (digit) or port name (COM1, /dev/ttyS0, ...)
 		 * - range list: X-Y
 		 * - multiple elements (comma separated): /dev/ttyS0,/dev/ttyUSB0 */
-		if ( (list_sep_ptr = strchr(range, '-')) != NULL) {
+		if ((list_sep_ptr = strchr(range, '-')) != NULL) {
 			tok = strtok_r(range, "-", &saveptr);
 			if (tok[1] != 0) {
 				fprintf(stderr, ERR_OUT_OF_BOUND);
@@ -159,7 +159,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 				stop_port = start_port;
 			}
 		}
-		else if ( ((list_sep_ptr = strchr(ports_range, ',')) != NULL)
+		else if (((list_sep_ptr = strchr(ports_range, ',')) != NULL)
 				&& (is_serial_port_path(ports_range))
 		) {
 			tok = strtok_r(range, ",", &saveptr);
@@ -191,7 +191,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 			start_port = cur_device->auto_start_port;
 			stop_port = cur_device->auto_stop_port;
 		}
-		for (current_port=start_port; current_port <= stop_port;
+		for (current_port = start_port; current_port <= stop_port;
 				current_port++) {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
