@@ -556,7 +556,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					fprintf(stderr,
 						"Bad SNMPv3 privProtocol: %s\n",
 						sec->privProtocol);
-				return 0;
+					return 0;
 				}
 			}
 		}
