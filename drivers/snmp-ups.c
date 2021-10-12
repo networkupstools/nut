@@ -1600,7 +1600,7 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 	return NULL;
 }
 
-/* find the INFO_* value matching that OID value */
+/* find the INFO_* value matching that OID numeric (long) value */
 const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
