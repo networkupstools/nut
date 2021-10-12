@@ -107,8 +107,17 @@ typedef int bool_t;
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
-	const char *(*fun)(void *snmp_value); /* optional SNMP to NUT mapping function */
-	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
+/*
+ * Currently there are a few cases using a "fun" type of lookup
+ * function, while the "nuf" type was added for completeness but
+ * is not really handled and does not have real consumers in the
+ * existing NUT codebase (static mib2nut tables in *-mib.c files).
+ * Related to su_find_infoval() (long* => string), su_find_valinfo()
+ * (string => long) and su_find_strval() (char* => string) routines
+ * defined below.
+ */
+	const char *(*fun)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
+	long (*nuf)(const char *nut_value);    /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
