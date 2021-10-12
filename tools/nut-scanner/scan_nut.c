@@ -85,31 +85,31 @@ int nutscan_load_upsclient_library(const char *libname_path)
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 													"upscli_splitaddr");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
 						"upscli_tryconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
 						"upscli_list_start");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
 						"upscli_list_next");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
 						"upscli_disconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -182,8 +182,9 @@ static void * list_nut_devices(void * arg)
 		dev->type = TYPE_NUT;
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
 		dev->port = malloc(buf_size);
+
 		if (dev->port) {
 			snprintf(dev->port, buf_size, "%s@%s", answer[1],
 					hostname);
@@ -194,8 +195,8 @@ static void * list_nut_devices(void * arg)
 #ifdef HAVE_PTHREAD
 			pthread_mutex_unlock(&dev_mutex);
 #endif
-
 		}
+
 	}
 
 	(*nut_upscli_disconnect)(ups);
@@ -207,7 +208,7 @@ static void * list_nut_devices(void * arg)
 
 nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, long usec_timeout)
 {
-        int pass = 1;
+	int pass = 1;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
@@ -217,7 +218,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	int i;
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
-        sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -246,74 +247,74 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
 
-	while (ip_str != NULL) 
+	while (ip_str != NULL)
 	{
 #ifdef HAVE_PTHREAD
-            if (thread_array == NULL) {
-                sem_wait(semaphore);
-                pass = 1;
-            } else {
-                pass = (sem_trywait(semaphore) == 0);
-            }
+		if (thread_array == NULL) {
+			sem_wait(semaphore);
+			pass = 1;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
+		}
 #endif
-            if (pass) {
-		if (port) {
-			if (ip.type == IPv4) {
-				snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+		if (pass) {
+			if (port) {
+				if (ip.type == IPv4) {
+					snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+				}
+				else {
+					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+				}
+
+				ip_dest = strdup(buf);
 			}
 			else {
-				snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+				ip_dest = strdup(ip_str);
 			}
 
-			ip_dest = strdup(buf);
-		}
-		else {
-			ip_dest = strdup(ip_str);
-		}
-
-		if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
-			free(ip_dest);
-			break;
-		}
-
-		nut_arg->timeout = usec_timeout;
-		nut_arg->hostname = ip_dest;
-#ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg)==0) {
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+				free(ip_dest);
 				break;
 			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
-		}
-#else
-		list_nut_devices(nut_arg);
-#endif
-		free(ip_str);
-		ip_str = nutscan_ip_iter_inc(&ip);
+
+			nut_arg->timeout = usec_timeout;
+			nut_arg->hostname = ip_dest;
 #ifdef HAVE_PTHREAD
-            } else {
-		if (thread_array != NULL) {
-			for (i=0; i < thread_count; i++) {
-				pthread_join(thread_array[i], NULL);
-				sem_post(semaphore);
+			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+				thread_count++;
+				pthread_t *new_thread_array = realloc(thread_array,
+						thread_count * sizeof(pthread_t));
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count - 1] = thread;
 			}
-			thread_count = 0;
-			free(thread_array);
-			thread_array = NULL;
-		}
+#else
+			list_nut_devices(nut_arg);
 #endif
-            }
+			free(ip_str);
+			ip_str = nutscan_ip_iter_inc(&ip);
+#ifdef HAVE_PTHREAD
+		} else {
+			if (thread_array != NULL) {
+				for (i = 0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
+					sem_post(semaphore);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
+			}
+#endif
+		}
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i=0; i < thread_count ; i++) {
+	for (i = 0; i < thread_count ; i++) {
 		pthread_join(thread_array[i], NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);

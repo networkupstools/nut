@@ -39,18 +39,28 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-clang ;;
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
+
+        # Some (QEMU) builders have issues running valgrind as a tool
+        "NUT_BUILD_CAPS=valgrind=no")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=no ;;
+        "NUT_BUILD_CAPS=valgrind"|"NUT_BUILD_CAPS=valgrind=yes")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=yes ;;
+
         "NUT_BUILD_CAPS=docs:all=no")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=no ;;
         "NUT_BUILD_CAPS=docs:all"|"NUT_BUILD_CAPS=docs:all=yes")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=drivers:all=no")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=no ;;
         "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=cgi=no")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
@@ -186,7 +196,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if which ccache && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
@@ -334,6 +344,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     ; then
         echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
         CONFIG_OPTS+=("--enable-cppunit=no")
+    fi
+
+    if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
+        echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
+        CONFIG_OPTS+=("--with-valgrind=no")
     fi
 
     # This flag is primarily linked with (lack of) docs generation enabled

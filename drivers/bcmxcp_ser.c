@@ -94,14 +94,16 @@ int get_answer(unsigned char *data, unsigned char command)
 	size_t	length, end_length = 0, endblock = 0, start = 0;
 	unsigned char	block_number, sequence, pre_sequence = 0;
 
-	while (endblock != 1){
+	while (endblock != 1) {
 
 		do {
 			/* Read PW_COMMAND_START_BYTE byte */
 			res = ser_get_char(upsfd, my_buf, 1, 0);
 
 			if (res != 1) {
-				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d, cmd=%x!!!\n", res, command);
+				upsdebugx(1,
+					"Receive error (PW_COMMAND_START_BYTE): %d, cmd=%x!!!\n",
+					res, command);
 				return -1;
 			}
 
@@ -115,7 +117,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read block number byte */
-		res = ser_get_char(upsfd, my_buf+1, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 1, 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (Block number): %d!!!\n", res);
@@ -125,26 +127,26 @@ int get_answer(unsigned char *data, unsigned char command)
 		block_number = (unsigned char)my_buf[1];
 
 		if (command <= 0x43) {
-			if ((command - 0x30) != block_number){
+			if ((command - 0x30) != block_number) {
 				ser_comm_fail("Receive error (Request command): %x!!!\n", block_number);
 				return -1;
 			}
 		}
 
 		if (command >= 0x89) {
-			if ((command == 0xA0) && (block_number != 0x01)){
+			if ((command == 0xA0) && (block_number != 0x01)) {
 				ser_comm_fail("Receive error (Requested only mode command): %x!!!\n", block_number);
 				return -1;
 			}
 
-			if ((command != 0xA0) && (block_number != 0x09)){
+			if ((command != 0xA0) && (block_number != 0x09)) {
 				ser_comm_fail("Receive error (Control command): %x!!!\n", block_number);
 				return -1;
 			}
 		}
 
 		/* Read data length byte */
-		res = ser_get_char(upsfd, my_buf+2, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 2, 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (length): %d!!!\n", res);
@@ -159,7 +161,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read sequence byte */
-		res = ser_get_char(upsfd, my_buf+3, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 3, 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (sequence): %d!!!\n", res);
@@ -180,7 +182,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		pre_sequence = sequence;
 
 		/* Try to read all the remaining bytes */
-		res = ser_get_buf_len(upsfd, my_buf+4, length, 1, 0);
+		res = ser_get_buf_len(upsfd, my_buf + 4, length, 1, 0);
 		if (res < 0) {
 			ser_comm_fail("%s(): ser_get_buf_len() returned error code %d", __func__, res);
 			return res;
@@ -192,7 +194,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Get the checksum byte */
-		res = ser_get_char(upsfd, my_buf+(4+length), 1, 0);
+		res = ser_get_char(upsfd, my_buf + (4 + length), 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (checksum): %x!!!\n", res);
@@ -205,7 +207,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			return -1;
 		}
 
-		memcpy(data+end_length, my_buf+4, length);
+		memcpy(data+end_length, my_buf + 4, length);
 		end_length += length;
 
 	}
@@ -331,7 +333,7 @@ static void pw_comm_setup(const char *port)
 #endif
 		baud = (speed_t)br;
 
-		for(i = 0; i < PW_MAX_BAUD; i++) {
+		for (i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
 				mybaud = pw_baud_rates[i].rate;
 				break;

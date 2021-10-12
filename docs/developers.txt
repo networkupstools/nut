@@ -237,9 +237,10 @@ Jenkins CI
 ^^^^^^^^^^
 
 Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by FossHost. They run various operating systems as
-build agents, and a Jenkins instance to orchestrate the builds of NUT
-branches and pull requests on those agents.
+courteously provided by http://fosshost.org
+
+These run various operating systems as build agents, and a Jenkins instance
+to orchestrate the builds of NUT branches and pull requests on those agents.
 
 This is driven by `Jenkinsfile-dynamatrix` and a Jenkins Shared Library called
 link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]

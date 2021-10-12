@@ -222,7 +222,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 		pthread_mutex_unlock(&dev_mutex);
 #endif
 
-		for (i=0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
+		for (i = 0; (pw_baud_rates[i].rate != 0) && (dev == NULL); i++)
 		{
 			memset(answer, 0, 256);
 
@@ -393,7 +393,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
-        int pass = 1;
+	int pass = 1;
 	struct sigaction oldact;
 	int change_action_handler = 0;
 	char *current_port_name = NULL;
@@ -401,7 +401,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int  current_port_nb;
 	int i;
 #ifdef HAVE_PTHREAD
-        sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -434,46 +434,46 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	current_port_nb = 0;
 	while (serial_ports_list[current_port_nb] != NULL) {
 #ifdef HAVE_PTHREAD
-            if (thread_array == NULL) {
-                sem_wait(semaphore);
-                pass=1;
-            } else {
-                pass = (sem_trywait(semaphore) == 0);
-            }
-#endif
-            if (pass) {
-		current_port_name = serial_ports_list[current_port_nb];
-#ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
-				break;
-			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
+		if (thread_array == NULL) {
+			sem_wait(semaphore);
+			pass = 1;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
 		}
+#endif
+		if (pass) {
+			current_port_name = serial_ports_list[current_port_nb];
+#ifdef HAVE_PTHREAD
+			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+				thread_count++;
+				pthread_t *new_thread_array = realloc(thread_array,
+						thread_count * sizeof(pthread_t));
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count - 1] = thread;
+			}
 #else
-		nutscan_scan_eaton_serial_device(current_port_name);
+			nutscan_scan_eaton_serial_device(current_port_name);
 #endif
-		current_port_nb++;
+			current_port_nb++;
 #ifdef HAVE_PTHREAD
-            } else {
-		if (thread_array != NULL) {
-			for (i=0; i < thread_count; i++) {
-				pthread_join(thread_array[i], NULL);
-				sem_post(semaphore);
+		} else {
+			if (thread_array != NULL) {
+				for (i = 0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
+					sem_post(semaphore);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
 			}
-			thread_count = 0;
-			free(thread_array);
-			thread_array = NULL;
-		}
 #endif
-            }
+		}
 	}
 
 #ifdef HAVE_PTHREAD
@@ -496,9 +496,9 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	}
 
 	/* free everything... */
-	i=0;
+	i = 0;
 	while (serial_ports_list[i] != NULL) {
-	 	free(serial_ports_list[i]);
+		free(serial_ports_list[i]);
 		i++;
 	}
 	free( serial_ports_list);

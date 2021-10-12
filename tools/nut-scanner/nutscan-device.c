@@ -41,7 +41,7 @@ nutscan_device_t * nutscan_new_device()
 	nutscan_device_t * device;
 
 	device = malloc(sizeof(nutscan_device_t));
-	if (device==NULL) {
+	if (device == NULL) {
 		return NULL;
 	}
 
@@ -54,10 +54,10 @@ static void deep_free_device(nutscan_device_t * device)
 {
 	nutscan_options_t * current;
 
-	if (device==NULL) {
+	if (device == NULL) {
 		return;
 	}
-	if (device->driver)  {
+	if (device->driver) {
 		free(device->driver);
 	}
 	if (device->port) {
@@ -91,7 +91,7 @@ static void deep_free_device(nutscan_device_t * device)
 
 void nutscan_free_device(nutscan_device_t * device)
 {
-	if (device==NULL) {
+	if (device == NULL) {
 		return;
 	}
 	while (device->prev != NULL) {
@@ -138,8 +138,8 @@ void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char
 
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second)
 {
-	nutscan_device_t * dev1=NULL;
-	nutscan_device_t * dev2=NULL;
+	nutscan_device_t * dev1 = NULL;
+	nutscan_device_t * dev2 = NULL;
 
 	/* Get end of first device */
 	if (first != NULL) {
@@ -172,7 +172,6 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 		dev1 = first;
 		while (dev1->next != NULL) {
 			dev1 = dev1->next;
-
 		}
 		return dev1;
 	}

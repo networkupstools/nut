@@ -144,10 +144,10 @@ clean-local:
 # Note: these are optionally available (as determined during configure runs)
 spellcheck spellcheck-interactive:
 	@RES=0; \
-	(cd $(builddir)/docs && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/conf && $(MAKE) $@) || RES=$$? ; \
-	(cd $(builddir)/data && $(MAKE) $@) || RES=$$? ; \
+	(cd $(builddir)/docs && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 doc spellcheck-sortdict:
@@ -210,9 +210,6 @@ ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	cd $(top_builddir) && \
 	    ./tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	    { echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@ ; }
-
-nut_version.h include/nut_version.h:
-	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h
 
 nut_version.h include/nut_version.h:
 	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h

@@ -43,8 +43,8 @@
 #include "timehead.h"
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
-#if (defined NUT_PLATFORM_SOLARIS && CPU_TYPE == i386)
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (ENOENT == (status))
+#if (defined NUT_PLATFORM_SOLARIS)
+	#define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
 #else
 	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
 #endif  /* end of Solaris/i386 WA for non-blocking connect */
