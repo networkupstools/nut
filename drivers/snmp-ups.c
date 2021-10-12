@@ -885,7 +885,11 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_GAUGE:
 		if(oid2info) {
 			const char *str;
-			if((str=su_find_infoval(oid2info, pdu->variables->val.integer))) {
+			/* See union netsnmp_vardata in net-snmp/types.h: "integer" is a "long*" */
+			assert(sizeof(pdu->variables->val.integer) == sizeof(long*));
+			/* If in future net-snmp headers val becomes not-a-pointer,
+			 * compiler should complain about (void*) arg casting here */
+			if((str = su_find_infoval(oid2info, pdu->variables->val.integer))) {
 				strncpy(buf, str, buf_len-1);
 			}
 			/* when oid2info returns NULL, don't publish the variable! */
