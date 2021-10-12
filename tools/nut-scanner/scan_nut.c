@@ -207,7 +207,7 @@ static void * list_nut_devices(void * arg)
 
 nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, long usec_timeout)
 {
-        int pass = 1;
+	int pass = 1;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
@@ -217,7 +217,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	int i;
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
-        sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
