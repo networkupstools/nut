@@ -169,11 +169,22 @@ typedef struct {
 /* FIXME: Currently we do not have a way to provide custom C code
  * via DMF - keep old approach until we get the ability, e.g. by
  * requiring a LUA implementation to be passed alongside C lookups.
+ * So while DMF parser generally allows for mapping functions, the
+ * mapping files generated automatically from drivers/*-mib.c do
+ * not have them.
+ * Currently the few cases using a fun_vp2s type of lookup function
+ * get away by serving fallback static mapping tables that get into
+ * generated DMF, while the nuf_s2l, fun_s2l and nuf_vp2s types are
+ * added for completeness but are not handled and do not have real
+ * consumers in existing NUT codebase (static mib2nut tables).
+ * Related to su_find_infoval() (long* => string), su_find_valinfo()
+ * (string => long) and su_find_strval() (char* => string) routines
+ * defined below.
  */
-	const char *(*fun_l2s)(long snmp_value);  /* optional SNMP to NUT mapping function, converting SNMP numeric data into a NUT string */
-	long (*nuf_s2l)(const char *nut_value);   /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
-	long (*fun_s2l)(const char *snmp_value);  /* optional SNMP to NUT mapping function, converting SNMP string data into a NUT number */
-	const char *(*nuf_l2s)(long nut_value);   /* optional NUT to SNMP mapping function, converting a NUT number into SNMP string data */
+	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
+	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
+	long (*fun_s2l)(const char *snmp_value);    /* optional SNMP to NUT mapping function, converting SNMP string data into a NUT number */
+	const char *(*nuf_vp2s)(void *nut_value);   /* optional NUT to SNMP mapping function, converting a pointer to NUT value (e.g. numeric or string) into SNMP string data */
 #endif
 } info_lkp_t;
 
@@ -355,8 +366,25 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
-const char *su_find_infoval(info_lkp_t *oid2info, long value);
+const char *su_find_infoval(info_lkp_t *oid2info, void *value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
+const char *su_find_strval(info_lkp_t *oid2info, void *value);
+
+/* Common conversion structs (functions) */
+const char *su_usdate_to_isodate_info_fun(void *raw_date);
+extern info_lkp_t su_convert_to_iso_date_info[];
+
+/* Subdrivers shared helpers functions */
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(void *raw_snmp_value);
+
+/* Temperature handling, to convert back to Celsius (NUT standard) */
+extern int temperature_unit;
+
+#define TEMPERATURE_UNKNOWN    0
+#define TEMPERATURE_CELSIUS    1
+#define TEMPERATURE_KELVIN     2
+#define TEMPERATURE_FAHRENHEIT 3
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
@@ -369,14 +397,6 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int semistaticfreq; /* semistatic entry update frequency */
-
-/* Temperature handling, to convert back to Celsius (NUT standard) */
-extern int temperature_unit;
-
-#define TEMPERATURE_UNKNOWN    0
-#define TEMPERATURE_CELSIUS    1
-#define TEMPERATURE_KELVIN     2
-#define TEMPERATURE_FAHRENHEIT 3
 
 /* pointer to the Snmp2Nut lookup table */
 extern mib2nut_info_t *mib2nut_info;
@@ -396,9 +416,5 @@ typedef struct {
 	long output_phases;
 	long bypass_phases;
 } daisychain_info_t;
-
-/* Subdrivers shared helpers functions */
-/* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(long snmp_value);
 
 #endif /* SNMP_UPS_H */

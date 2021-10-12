@@ -189,7 +189,7 @@ static const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.15"
+#define DRIVER_VERSION		"1.16"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -237,6 +237,77 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
 int get_template_type(const char* varname);
+
+
+/***********************************************************************
+ * Subdrivers shared helpers functions
+ **********************************************************************/
+
+static char su_scratch_buf[255];
+
+/* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
+const char *su_usdate_to_isodate_info_fun(void *raw_date)
+{
+	const char *usdate = (char *)raw_date;
+	struct tm tm;
+	memset(&tm, 0, sizeof(struct tm));
+	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
+
+	upsdebugx(3, "%s: US date = %s", __func__, usdate);
+
+	/* Try to convert from US date string to time */
+	/* Note strptime returns NULL upon failure, and a ptr to the last
+	   null char of the string upon success. Just try blindly the conversion! */
+	strptime(usdate, "%m/%d/%Y", &tm);
+	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
+		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
+		return su_scratch_buf;
+	}
+
+	return NULL;
+}
+
+info_lkp_t su_convert_to_iso_date_info[] = {
+	{ 1, "dummy"
+#if WITH_SNMP_LKP_FUN
+		, su_usdate_to_isodate_info_fun, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
+};
+
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(void *raw_snmp_value)
+{
+	const long snmp_value = *((long*)raw_snmp_value);
+	long celsius_value = snmp_value;
+
+	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
+
+	switch (temperature_unit) {
+		case TEMPERATURE_KELVIN:
+			celsius_value = (snmp_value / 10) - 273.15;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_CELSIUS:
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
+			break;
+		case TEMPERATURE_FAHRENHEIT:
+			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_UNKNOWN:
+		default:
+			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
+			break;
+	}
+	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
+	return su_scratch_buf;
+}
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -1008,7 +1079,11 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_GAUGE:
 		if(oid2info) {
 			const char *str;
-			if((str=su_find_infoval(oid2info, *pdu->variables->val.integer))) {
+			/* See union netsnmp_vardata in net-snmp/types.h: "integer" is a "long*" */
+			assert(sizeof(pdu->variables->val.integer) == sizeof(long*));
+			/* If in future net-snmp headers val becomes not-a-pointer,
+			 * compiler should complain about (void*) arg casting here */
+			if((str = su_find_infoval(oid2info, pdu->variables->val.integer))) {
 				strncpy(buf, str, buf_len-1);
 			}
 			/* when oid2info returns NULL, don't publish the variable! */
@@ -1385,7 +1460,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s()", __func__);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
 			status_set(info_value);
@@ -1416,7 +1491,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "%s: using definition %s", __func__, info_type);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
+	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
 		/* Special handling for outlet & outlet groups alarms */
@@ -1710,16 +1785,31 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 	return -1;
 }
 
-/* find the INFO_* value matching that OID value */
-const char *su_find_infoval(info_lkp_t *oid2info, long value)
+/* String reformating function */
+const char *su_find_strval(info_lkp_t *oid2info, void *value)
+{
+	/* First test if we have a generic lookup function */
+	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
+		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
+		const char * retvalue = oid2info->fun_vp2s(value);
+		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		return retvalue;
+	}
+	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
+	return NULL;
+}
+
+/* find the INFO_* value matching that OID numeric (long) value */
+const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
+	long value = *((long *)raw_value);
 
 #if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
-	if ( (oid2info != NULL) && (oid2info->fun_l2s != NULL) ) {
-		upsdebugx(2, "%s: using generic long-to-string lookup function", __func__);
-		const char * retvalue = oid2info->fun_l2s(value);
+	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
+		upsdebugx(2, "%s: using generic lookup function", __func__);
+		const char * retvalue = oid2info->fun_vp2s(raw_value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2737,7 +2827,8 @@ bool_t snmp_ups_walk(int mode)
 			 * switch(current_device_number) {
 			 * case 0: devtype = "daisychain whole"
 			 * case 1: devtype = "daisychain master"
-			 * default: devtype = "daisychain slave" */
+			 * default: devtype = "daisychain slave"
+			 */
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
@@ -2759,7 +2850,10 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 /* FIXME: daisychain-whole, what to do? */
-/* Note that when addressing the FIXME above, if (current_device_number == 0 && daisychain_enabled == FALSE) then we'd skip it still (unitary device is at current_device_number == 1)... */
+/* Note that when addressing the FIXME above,
+ *   if (current_device_number == 0 && daisychain_enabled == FALSE)
+ * then we'd skip it still (unitary device is at current_device_number == 1)...
+ */
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
@@ -3097,6 +3191,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
+			/* Check if there is a string reformating function */
+			const char *fmt_buf = NULL;
+			if ((fmt_buf = su_find_strval(su_info_p->oid2info, buf)) != NULL) {
+				snprintf(buf, sizeof(buf), "%s", fmt_buf);
+			}
 		}
 	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
@@ -3112,7 +3211,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				return FALSE;
 			}
 			/* Check if there is a value to be looked up */
-			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+			if ((strValue = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
 			else {
 				/* Check if there is a need to publish decimal too,
@@ -3546,37 +3645,3 @@ void read_mibconf(char *mib)
 	}
 	pconf_finish(&ctx);
 }
-
-/***********************************************************************
- * Subdrivers shared helpers functions
- **********************************************************************/
-
-static char su_scratch_buf[20];
-
-/* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(long snmp_value)
-{
-	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
-	long celsius_value = snmp_value;
-
-	switch (temperature_unit) {
-		case TEMPERATURE_KELVIN:
-			celsius_value = (snmp_value / 10) - 273.15;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_CELSIUS:
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
-			break;
-		case TEMPERATURE_FAHRENHEIT:
-			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_UNKNOWN:
-		default:
-			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
-			break;
-	}
-	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
-	return su_scratch_buf;
-}
-

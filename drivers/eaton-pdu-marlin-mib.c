@@ -602,10 +602,10 @@ static info_lkp_t marlin_input_type_info[] = {
 };
 
 /* /// From opensource/master:
- // 2021-01-20: Note that FTY/DMF version is more correct and
- // opensource/master to be replaced eventually. The lookup
- // function was below a hack until MIB got stabilized and
- // Genepi firmware with it was released.
+ // 2021-01-20 / 2021-09-24: Note that FTY/DMF version is more correct
+ // and opensource/master to be replaced eventually. The lookup function
+ // below was a hack until MIB got stabilized and newer Genepi firmware
+ // with it was released.
 static char marlin_scratch_buf[20];
 */
 /* Compute the phase to which an outlet group is connected
@@ -613,8 +613,9 @@ static char marlin_scratch_buf[20];
  * Note that the group type (marlin_outlet_group_type_info) is
  *  not considered since this applies to any kind of group */
 /* /// From opensource/master:
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 {
+	int outlet_group_nb = *((int *)raw_outlet_group_nb);
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
 	if (str_phases_nb && (outlet_group_nb >= 0) ) {
