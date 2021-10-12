@@ -310,5 +310,4 @@ typedef struct {
 	long bypass_phases;
 } daisychain_info_t;
 
-
 #endif /* SNMP_UPS_H */
