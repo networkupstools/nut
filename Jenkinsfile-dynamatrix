@@ -108,7 +108,7 @@ import org.nut.dynamatrix.*;
         // but at least modern windows can handle a sh step with that
         // character, so no big deal for NUT supported platforms
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX = ~/^(\/*|.*\/)/
-        dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE = ~/(configure\.ac|.*\.m4|C?Make.*|ci_.*\.sh|\.git.*|Jenkinsfile.*|.*\.groovy)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE = ~/(configure\.ac|.*\.m4|C?Make.*|ci_.*\.sh|autogen\.sh|\.git.*|Jenkinsfile.*|.*\.groovy)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
