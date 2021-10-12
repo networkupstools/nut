@@ -211,22 +211,30 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		/* Initialize socket */
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
-			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning connected network segment(s) with a broadcast, attempt %d of %d with a timeout of %ld usec", (i + 1), MAX_RETRIES, usec_timeout);
+			upsdebugx(2,
+				"nutscan_scan_xml_http_generic() : scanning connected network segment(s) "
+				"with a broadcast, attempt %d of %d with a timeout of %ld usec",
+				(i + 1), MAX_RETRIES, usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
 			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
-			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, attempt %d of %d with a timeout of %ld usec", ip, (i + 1), MAX_RETRIES, usec_timeout);
+			upsdebugx(2,
+				"nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, "
+				"attempt %d of %d with a timeout of %ld usec",
+				ip, (i + 1), MAX_RETRIES, usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
 		sockAddress_udp.sin_port = htons(port_udp);
 
 		/* Send scan request */
 		if (sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
-					(struct sockaddr *)&sockAddress_udp,
-					sockAddressLength) <= 0)
-		{
-			fprintf(stderr, "Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", ip ? ip : "<broadcast>", (i + 1), MAX_RETRIES);
+			(struct sockaddr *)&sockAddress_udp,
+			sockAddressLength) <= 0
+		) {
+			fprintf(stderr,
+				"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n",
+				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -239,11 +247,16 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			timeout.tv_sec = usec_timeout / 1000000;
 			timeout.tv_usec = usec_timeout % 1000000;
 
-			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, loop #%d/%d, waiting for responses", ip ? ip : "<broadcast>", (i + 1), MAX_RETRIES);
+			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, "
+				"loop #%d/%d, waiting for responses",
+				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
-						&timeout))) {
+						&timeout))
+			) {
 				retNum ++;
-				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, loop #%d/%d, response #%d", ip ? ip : "<broadcast>", (i + 1), MAX_RETRIES, retNum);
+				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, "
+					"loop #%d/%d, response #%d",
+					(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES, retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
@@ -257,9 +270,9 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				sockAddressLength = sizeof(struct sockaddr_in);
 				recv_size = recvfrom(peerSocket, buf,
-						sizeof(buf), 0,
-						(struct sockaddr *)&sockAddress_udp,
-						&sockAddressLength);
+					sizeof(buf), 0,
+					(struct sockaddr *)&sockAddress_udp,
+					&sockAddressLength);
 
 				if (recv_size == -1) {
 					fprintf(stderr,
@@ -271,10 +284,10 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				if (getnameinfo(
 					(struct sockaddr *)&sockAddress_udp,
-									sizeof(struct sockaddr_in), string,
-									sizeof(string), NULL, 0,
-					NI_NUMERICHOST) != 0) {
-
+					sizeof(struct sockaddr_in), string,
+					sizeof(string), NULL, 0,
+					NI_NUMERICHOST) != 0
+				) {
 					fprintf(stderr,
 						"Error converting IP address: %d\n", errno);
 					usleep(usec_timeout);
@@ -290,7 +303,10 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 #ifdef HAVE_PTHREAD
 				pthread_mutex_lock(&dev_mutex);
 #endif
-				upsdebugx(5, "Some host at IP %s replied to NetXML UDP request on port %d, inspecting the response...", string, port_udp);
+				upsdebugx(5,
+					"Some host at IP %s replied to NetXML UDP request on port %d, "
+					"inspecting the response...",
+					string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
@@ -304,7 +320,10 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf, "http://%s", string);
 					nut_dev->port = strdup(buf);
-					upsdebugx(3, "nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
+					upsdebugx(3,
+						"nutscan_scan_xml_http_generic(): "
+						"Adding configuration for driver='%s' port='%s'",
+						nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
 						dev_ret, nut_dev);
 #ifdef HAVE_PTHREAD
@@ -313,32 +332,48 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				}
 				else
 				{
-					fprintf(stderr, "Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
+					fprintf(stderr,
+						"Device at IP %s replied with NetXML but was not deemed compatible "
+						"with 'netxml-ups' driver (unsupported protocol version, etc.)\n",
+						string);
 					nutscan_free_device(nut_dev);
 					nut_dev = NULL;
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
-					if (ip == NULL)
-						continue; /* skip this device; note that for broadcast scan there may be more in the loop's queue */
+					if (ip == NULL) {
+						/* skip this device; note that for a
+						 * broadcast scan there may be more
+						 * in the loop's queue */
+						continue;
+					}
 				}
 
 				if (ip != NULL) {
-					upsdebugx(2, "nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
+					upsdebugx(2,
+						"nutscan_scan_xml_http_generic(): we collected one reply "
+						"to unicast for %s (repsponse from %s), done",
+						ip, string);
 					goto end;
 				}
 			} /* while select() responses */
 			if (ip == NULL && dev_ret != NULL) {
-				upsdebugx(2, "nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
+				upsdebugx(2,
+					"nutscan_scan_xml_http_generic(): we collected one round of replies "
+					"to broadcast with no errors, done");
 				goto end;
 			}
 		}
 	}
-	upsdebugx(2, "nutscan_scan_xml_http_generic(): no replies collected for %s, done", ip ? ip : "<broadcast>");
+	upsdebugx(2,
+		"nutscan_scan_xml_http_generic(): no replies collected for %s, done",
+		(ip ? ip : "<broadcast>"));
 	goto end;
 
 end_abort:
-	upsdebugx(1, "Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
+	upsdebugx(1,
+		"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above",
+		(ip ? ip : "<broadcast>"));
 end:
 	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
@@ -363,7 +398,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	if (start_ip == NULL) {
 		upsdebugx(1, "Scanning XML/HTTP bus using broadcast.");
 	} else {
-		if ((start_ip == end_ip) || (end_ip == NULL) || (strncmp(start_ip, end_ip, 128) == 0)) {
+		if ((start_ip == end_ip) || (end_ip == NULL) || (0 == strncmp(start_ip, end_ip, 128))) {
 			upsdebugx(1, "Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		} else {
 			/* Iterate the range of IPs to scan */
@@ -392,8 +427,8 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 				if (pass) {
 					tmp_sec = malloc(sizeof(nutscan_xml_t));
 					if (tmp_sec == NULL) {
-						fprintf(stderr, "Memory allocation \
-							error\n");
+						fprintf(stderr,
+							"Memory allocation error\n");
 						return NULL;
 					}
 					memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
@@ -404,7 +439,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec) == 0) {
 						thread_count++;
 						pthread_t *new_thread_array = realloc(thread_array,
-								thread_count*sizeof(pthread_t));
+								thread_count * sizeof(pthread_t));
 						if (new_thread_array == NULL) {
 							upsdebugx(1, "%s: Failed to realloc thread", __func__);
 							break;
@@ -452,8 +487,8 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 	tmp_sec = malloc(sizeof(nutscan_xml_t));
 	if (tmp_sec == NULL) {
-		fprintf(stderr, "Memory allocation \
-			error\n");
+		fprintf(stderr,
+			"Memory allocation error\n");
 		return NULL;
 	}
 
@@ -463,7 +498,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	} else {
 		tmp_sec->peername = strdup(start_ip);
 	}
-	if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
+
+	if (tmp_sec->usec_timeout < 0) {
+		tmp_sec->usec_timeout = usec_timeout;
+	}
+
 	nutscan_scan_xml_http_generic(tmp_sec);
 	result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;

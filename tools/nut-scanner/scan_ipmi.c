@@ -555,6 +555,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 			memset (port_id, 0, sizeof(port_id));
 		}
+
 	}
 
 	/* Final cleanup */

@@ -101,7 +101,7 @@ static char ** add_port(char ** list, char * port)
 
 	/*+1 to get the number of port from the index nb_ports*/
 	/*+1 for the terminal NULL */
-	res = realloc(list, (count + 1 + 1)*sizeof(char*));
+	res = realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
 		upsdebugx(1, "%s: Failed to realloc port list", __func__);
 		return list;
@@ -137,7 +137,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		/* we have a list:
 		 * - single element: X (digit) or port name (COM1, /dev/ttyS0, ...)
 		 * - range list: X-Y
-		 * - multiple elements (coma separated): /dev/ttyS0,/dev/ttyUSB0 */
+		 * - multiple elements (comma separated): /dev/ttyS0,/dev/ttyUSB0 */
 		if ((list_sep_ptr = strchr(range, '-')) != NULL) {
 			tok = strtok_r(range, "-", &saveptr);
 			if (tok[1] != 0) {
@@ -159,8 +159,9 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 				stop_port = start_port;
 			}
 		}
-		else if (((list_sep_ptr = strchr(ports_range, ',')) != NULL )
-				&& (is_serial_port_path(ports_range))) {
+		else if (((list_sep_ptr = strchr(ports_range, ',')) != NULL)
+				&& (is_serial_port_path(ports_range))
+		) {
 			tok = strtok_r(range, ",", &saveptr);
 			while (tok != NULL) {
 				ports_list = add_port(ports_list, tok);
@@ -180,7 +181,6 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		}
 		free(range);
 	}
-
 
 	if (start_port == 0 && !flag_auto) {
 		return ports_list;

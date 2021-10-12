@@ -415,7 +415,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 #endif /* if WITH_DMFMIB */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
-		buf = malloc( response->variables->val_len + 1) ;
+		buf = malloc (response->variables->val_len + 1);
 		if (buf) {
 			memcpy(buf, response->variables->val.string,
 				response->variables->val_len);
@@ -431,31 +431,31 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 
 		if (sec->secLevel) {
 			nutscan_add_option_to_device(dev, "secLevel",
-					sec->secLevel);
+				sec->secLevel);
 		}
 		if (sec->secName) {
 			nutscan_add_option_to_device(dev, "secName",
-					sec->secName);
+				sec->secName);
 		}
 		if (sec->authPassword) {
 			nutscan_add_option_to_device(dev, "authPassword",
-					sec->authPassword);
+				sec->authPassword);
 		}
 		if (sec->privPassword) {
 			nutscan_add_option_to_device(dev, "privPassword",
-					sec->privPassword);
+				sec->privPassword);
 		}
 		if (sec->authProtocol) {
 			nutscan_add_option_to_device(dev, "authProtocol",
-					sec->authProtocol);
+				sec->authProtocol);
 		}
 		if (sec->privProtocol) {
 			nutscan_add_option_to_device(dev, "privProtocol",
-					sec->privProtocol);
+				sec->privProtocol);
 		}
 	}
 	else {
-		buf = malloc( session->community_len + 1) ;
+		buf = malloc (session->community_len + 1);
 		if (buf) {
 			memcpy(buf, session->community,
 				session->community_len);
@@ -505,13 +505,15 @@ static struct snmp_pdu * scan_snmp_get_oid(char* oid_str, void* handle)
 		return NULL;
 	}
 
-	if (status != STAT_SUCCESS||response->errstat != SNMP_ERR_NOERROR||
-			response->variables == NULL ||
-			response->variables->name == NULL ||
-			(*nut_snmp_oid_compare)(response->variables->name,
-				response->variables->name_length,
-				name, name_len) != 0 ||
-			response->variables->val.string == NULL) {
+	if (status != STAT_SUCCESS
+	 || response->errstat != SNMP_ERR_NOERROR
+	 || response->variables == NULL
+	 || response->variables->name == NULL
+	 || ((*nut_snmp_oid_compare)(response->variables->name,
+	        response->variables->name_length,
+	        name, name_len) != 0)
+	 || response->variables->val.string == NULL
+	) {
 		(*nut_snmp_free_pdu)(response);
 		index++;
 		return NULL;
@@ -586,8 +588,9 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		else if (strcmp(sec->secLevel, "authPriv") == 0)
 			snmp_sess->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
 		else {
-			fprintf(stderr, "Bad SNMPv3 securityLevel: %s\n",
-								sec->secLevel);
+			fprintf(stderr,
+				"Bad SNMPv3 securityLevel: %s\n",
+				sec->secLevel);
 			return 0;
 		}
 
@@ -636,8 +639,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* default to MD5 */
 		snmp_sess->securityAuthProto = nut_usmHMACMD5AuthProtocol;
 		snmp_sess->securityAuthProtoLen =
-				sizeof(usmHMACMD5AuthProtocol)/
-				sizeof(oid);
+			sizeof(usmHMACMD5AuthProtocol)/
+			sizeof(oid);
 
 		if (sec->authProtocol) {
 			if (strcmp(sec->authProtocol, "SHA") == 0) {
@@ -664,11 +667,12 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					strlen(sec->authPassword),
 					snmp_sess->securityAuthKey,
 					&snmp_sess->securityAuthKeyLen)
-					!= SNMPERR_SUCCESS) {
-							fprintf(stderr,
-							"Error generating Ku from "
-							"authentication pass phrase\n");
-							return 0;
+					!= SNMPERR_SUCCESS
+		) {
+			fprintf(stderr,
+				"Error generating Ku from "
+				"authentication pass phrase\n");
+			return 0;
 		}
 
 		/* Everything is ready for AUTHNOPRIV */
@@ -691,9 +695,9 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			else {
 				if (strcmp(sec->privProtocol, "DES") != 0) {
 					fprintf(stderr,
-						"Bad SNMPv3 privProtocol: %s\n"
-						, sec->privProtocol);
-				return 0;
+						"Bad SNMPv3 privProtocol: %s\n",
+						sec->privProtocol);
+					return 0;
 				}
 			}
 		}
@@ -707,11 +711,12 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					strlen(sec->privPassword),
 					snmp_sess->securityPrivKey,
 					&snmp_sess->securityPrivKeyLen)
-					!= SNMPERR_SUCCESS) {
-							fprintf(stderr,
-							"Error generating Ku from "
-							"private pass phrase\n");
-							return 0;
+					!= SNMPERR_SUCCESS
+		) {
+			fprintf(stderr,
+				"Error generating Ku from "
+				"private pass phrase\n");
+			return 0;
 		}
 
 	}
@@ -743,15 +748,17 @@ static void * try_SysOID(void * arg)
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
-		fprintf(stderr, "Failed to open SNMP session for %s.\n",
+		fprintf(stderr,
+			"Failed to open SNMP session for %s.\n",
 			sec->peername);
 		goto try_SysOID_free;
 	}
 
 	/* create and send request. */
 	if (!(*nut_snmp_parse_oid)(SysOID, name, &name_len)) {
-		fprintf(stderr, "SNMP errors: %s\n",
-				(*nut_snmp_api_errstring)((*nut_snmp_errno)));
+		fprintf(stderr,
+			"SNMP errors: %s\n",
+			(*nut_snmp_api_errstring)((*nut_snmp_errno)));
 		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;
 	}
@@ -777,16 +784,19 @@ static void * try_SysOID(void * arg)
 
 		/* Check if the received OID match with a known sysOID */
 		if (response->variables != NULL &&
-				response->variables->val.objid != NULL) {
+				response->variables->val.objid != NULL
+		) {
 			while (snmp_device_table[index].mib != NULL) {
 				if (snmp_device_table[index].sysoid == NULL) {
 					index++;
 					continue;
 				}
 				name_len = MAX_OID_LEN;
+
 				if (!(*nut_snmp_parse_oid)(
 					snmp_device_table[index].sysoid,
-					name, &name_len)) {
+					name, &name_len)
+				) {
 					index++;
 					continue;
 				}
@@ -794,14 +804,15 @@ static void * try_SysOID(void * arg)
 				if ((*nut_snmp_oid_compare)(
 					response->variables->val.objid,
 					response->variables->val_len/sizeof(oid),
-					name, name_len) == 0) {
-
+					name, name_len) == 0
+				) {
 					/* we have found a relevant sysoid */
 
 					/* add mib if no complementary oid is present */
 					/* FIXME: No desc defined when add device */
 					if (snmp_device_table[index].oid == NULL
-						|| strcmp(snmp_device_table[index].oid, "") == 0) {
+						|| strcmp(snmp_device_table[index].oid, "") == 0
+					) {
 						scan_snmp_add_device(sec, NULL, snmp_device_table[index].mib);
 						mib_found = snmp_device_table[index].sysoid;
 					}
@@ -896,7 +907,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
 				thread_count++;
 				pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
+						thread_count * sizeof(pthread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread", __func__);
 					break;
@@ -904,7 +915,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 				else {
 					thread_array = new_thread_array;
 				}
-				thread_array[thread_count-1] = thread;
+				thread_array[thread_count - 1] = thread;
 			}
 #else
 			try_SysOID((void *)tmp_sec);

@@ -52,7 +52,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 		current_dev = current_dev->prev;
 	}
 
-	/* Display each devices */
+	/* Display each device */
 	do {
 		printf("[nutdev%i]\n\tdriver = \"%s\"\n\tport = \"%s\"\n",
 				nutdev_num, current_dev->driver,
@@ -75,7 +75,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 		current_dev = current_dev->next;
 	}
-	while (current_dev != NULL );
+	while (current_dev != NULL);
 }
 
 void nutscan_display_parsable(nutscan_device_t * device)
@@ -92,8 +92,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 		current_dev = current_dev->prev;
 	}
 
-	/* Display each devices */
+	/* Display each device */
 	do {
+		/* Do not separate by whitespace, in case someone already parses this */
 		printf("%s:driver=\"%s\",port=\"%s\"",
 			nutscan_device_type_string[current_dev->type],
 			current_dev->driver,
@@ -103,6 +104,7 @@ void nutscan_display_parsable(nutscan_device_t * device)
 
 		while (NULL != opt) {
 			if (opt->option != NULL) {
+				/* Do not separate by whitespace, in case someone already parses this */
 				printf(",%s", opt->option);
 				if (opt->value != NULL) {
 					printf("=\"%s\"", opt->value);

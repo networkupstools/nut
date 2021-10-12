@@ -306,9 +306,10 @@ int main(int argc, char *argv[])
 	/* Parse command line options -- First loop: only get debug level */
 	/* Suppress error messages, for now -- leave them to the second loop. */
 	opterr = 0;
-	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 		if (opt_ret == 'D')
 			nut_debug_level++;
+	}
 
 	nutscan_init();
 
@@ -327,7 +328,9 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = atol(optarg)*1000*1000; /*in usec*/
 				if (timeout == 0) {
-					fprintf(stderr, "Illegal timeout value, using default %ds\n", DEFAULT_NETWORK_TIMEOUT);
+					fprintf(stderr,
+						"Illegal timeout value, using default %ds\n",
+						DEFAULT_NETWORK_TIMEOUT);
 					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 				}
 				break;
@@ -462,7 +465,9 @@ int main(int argc, char *argv[])
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {
-					fprintf(stderr, "Unknown authentication type (%s). Defaulting to MD5\n", optarg);
+					fprintf(stderr,
+						"Unknown authentication type (%s). Defaulting to MD5\n",
+						optarg);
 				}
 				break;
 			case 'L':
@@ -570,7 +575,8 @@ display_help:
 	}
 
 	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
-		!allow_avahi && !allow_ipmi && !allow_eaton_serial) {
+		!allow_avahi && !allow_ipmi && !allow_eaton_serial
+	) {
 		allow_all = 1;
 	}
 
@@ -610,13 +616,18 @@ display_help:
 		else {
 #if WITH_DMFMIB
 			if (dmfnutscan_snmp_dir != NULL) {
-				upsdebugx(quiet, "Scanning SNMP bus with DMF MIB support, using '%s', if possible.", dmfnutscan_snmp_dir);
+				upsdebugx(quiet,
+					"Scanning SNMP bus with DMF MIB support, using '%s', if possible.",
+					dmfnutscan_snmp_dir);
 			} else { /* Nuance for not-yet-firstclass-citizen code */
-				upsdebugx(quiet, "Scanning SNMP bus with built-in MIBs only, because DMF MIB run-time support was not enabled with '-z'.");
+				upsdebugx(quiet,
+					"Scanning SNMP bus with built-in MIBs only, because "
+					"DMF MIB run-time support was not enabled with '-z'.");
 			}
 #else
 			upsdebugx(quiet, "Scanning SNMP bus with built-in MIBs only.");
 #endif
+
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "SNMP SCAN: starting pthread_create with run_snmp...");
 			if (pthread_create(&thread[TYPE_SNMP], NULL, run_snmp, &snmp_sec)) {

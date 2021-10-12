@@ -37,7 +37,22 @@ Common preparations
   account user and group ID numbers are `399` as on the rest of the CI farm
   (historically, inherited from OBS workers)
 
-* Edit the `~/.profile` to default virsh provider with:
+** It may help to generate an ssh key without a passphrase for `abuild`
+   that it would trust, to sub-login from CI agent sessions into the
+   container. Then again, it may be not required if CI logs into the
+   host by SSH using authorized_keys and an SSH Agent, and the inner
+   ssh client would forward that auth channel to the original agent.
++
+------
+abuild$ ssh-keygen
+# accept defaults
+
+abuild$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+abuild$ chmod 640 ~/.ssh/authorized_keys
+------
+
+* Edit the root (or whoever manages libvirt) `~/.profile` to default the
+  virsh provider with:
 +
 ------
 LIBVIRT_DEFAULT_URI=lxc:///system
@@ -93,6 +108,13 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
    lxc-create -n jenkins-debian8-s390x -P /srv/libvirt/rootfs -t debian -- \
     -r jessie -a s390x
 ------
+** ...Alternatively, other distributions can be used (as supported by your
+   LXC scripts, typically in `/usr/share/debootstrap/scripts`), e.g. Ubuntu:
++
+------
+:; lxc-create -n jenkins-ubuntu1804-s390x -P /srv/libvirt/rootfs -t ubuntu -- \
+    -r bionic -a s390x
+------
 ** See further options for the "template" with its help, e.g.:
 +
 ------
@@ -105,6 +127,9 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 ------
 jenkins-debian11-mips,10.0.3.245
 ------
++
+NOTE: Don't forget to eventually `systemctl restart lxc-net` to apply the
+new host reservation!
 
 * Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
   markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
@@ -175,7 +200,9 @@ Shepherd the herd
 ------
 
 * Populate with `abuild` account, as well as with the `bash` shell and
-  `sudo` ability, and reporting of assigned IP addresses on the console:
+  `sudo` ability, reporting of assigned IP addresses on the console,
+  and SSH server access complete with envvar passing from CI clients
+  by virtue of `ssh -o SendEnv='*' container-name`:
 +
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
@@ -196,6 +223,12 @@ Shepherd the herd
             echo "USERADDed manually: shadow" >&2 ; \
          fi ; \
        } ; \
+    if [ -s "$ALTROOT/etc/ssh/sshd_config" ]; then \
+        grep 'AcceptEnv \*' "$ALTROOT/etc/ssh/sshd_config" || ( \
+            ( echo ""; echo "# For CI: Allow passing any envvars:"; echo 'AcceptEnv *' ) \
+            >> "$ALTROOT/etc/ssh/sshd_config" \
+        ) ; \
+    fi ; \
    done
 ------
 +
@@ -205,7 +238,7 @@ fails to find the group anyway; then we have to "manually" add them.
 * Let the host know names/IPs of containers you assigned:
 +
 ------
-:; grep -v '#' /etc/lxc/dnsmasq.conf  | while IFS=, read N I ; do \
+:; grep -v '#' /etc/lxc/dnsmasq-hosts.conf | while IFS=, read N I ; do \
     getent hosts "$N" >&2 || echo "$I $N" ; \
    done >> /etc/hosts
 ------
@@ -232,7 +265,7 @@ may be not yet configured or still struggling to access the Internet):
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" ; \
-    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 \
+    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 git \
    ; done
 ------
 
@@ -392,10 +425,12 @@ server should be restarted after such change.
 ** Prefix Start Agent Command: content depends on the container name,
    but generally looks like the example below to report some info about
    the final target platform (and make sure it is accessible) in the
-   agent's log. Note that it ends with a space char:
+   agent's log. Note that it ends with a space char, and that the command
+   here should not normally print anything into stderr/stdout (this tends
+   to confuse the Jenkins Remoting protocol):
 +
 ------
-echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && ssh jenkins-debian11-ppc64el 'uname -a ; getconf LONG_BIT; getconf WORD_BIT; true;' && 
+echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && 
 ------
 
 ** Suffix Start Agent Command: empty

@@ -172,7 +172,6 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 		dev1 = first;
 		while (dev1->next != NULL) {
 			dev1 = dev1->next;
-
 		}
 		return dev1;
 	}

@@ -169,7 +169,8 @@ nutscan_device_t * nutscan_scan_usb()
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
 					dev->descriptor.idVendor,
-					dev->descriptor.idProduct)) != NULL) {
+					dev->descriptor.idProduct)) != NULL
+			) {
 
 				/* open the device */
 				udev = (*nut_usb_open)(dev);
@@ -189,6 +190,7 @@ nutscan_device_t * nutscan_scan_usb()
 						serialnumber = strdup(str_rtrim(string, ' '));
 					}
 				}
+
 				/* get product name */
 				if (dev->descriptor.iProduct) {
 					ret = (*nut_usb_get_string_simple)(udev,
@@ -211,8 +213,8 @@ nutscan_device_t * nutscan_scan_usb()
 
 				nut_dev = nutscan_new_device();
 				if (nut_dev == NULL) {
-					fprintf(stderr, "Memory allocation \
-					error\n");
+					fprintf(stderr,
+						"Memory allocation error\n");
 					nutscan_free_device(current_nut_dev);
 					free(serialnumber);
 					free(device_name);
@@ -225,40 +227,50 @@ nutscan_device_t * nutscan_scan_usb()
 					nut_dev->driver = strdup(driver_name);
 				}
 				nut_dev->port = strdup("auto");
-				sprintf(string, "%04X", dev->descriptor.idVendor);
-				nutscan_add_option_to_device(nut_dev, "vendorid",
-								string);
+
+				sprintf(string, "%04X",
+					dev->descriptor.idVendor);
+				nutscan_add_option_to_device(nut_dev,
+					"vendorid",
+					string);
+
 				sprintf(string, "%04X",
 					dev->descriptor.idProduct);
-				nutscan_add_option_to_device(nut_dev, "productid",
-							string);
+				nutscan_add_option_to_device(nut_dev,
+					"productid",
+					string);
+
 				if (device_name) {
 					nutscan_add_option_to_device(nut_dev,
-								"product",
-								device_name);
+						"product",
+						device_name);
 					free(device_name);
 					device_name = NULL;
 				}
+
 				if (serialnumber) {
 					nutscan_add_option_to_device(nut_dev,
-								"serial",
-								serialnumber);
+						"serial",
+						serialnumber);
 					free(serialnumber);
 					serialnumber = NULL;
 				}
+
 				if (vendor_name) {
 					nutscan_add_option_to_device(nut_dev,
-								"vendor",
-								vendor_name);
+						"vendor",
+						vendor_name);
 					free(vendor_name);
 					vendor_name = NULL;
 				}
-				nutscan_add_option_to_device(nut_dev, "bus",
-							bus->dirname);
+
+				nutscan_add_option_to_device(nut_dev,
+					"bus",
+					bus->dirname);
 
 				current_nut_dev = nutscan_add_device_to_device(
-								current_nut_dev,
-								nut_dev);
+					current_nut_dev,
+					nut_dev);
 
 				memset (string, 0, sizeof(string));
 
@@ -275,4 +287,3 @@ nutscan_device_t * nutscan_scan_usb()
 	return NULL;
 }
 #endif /* WITH_USB */
-

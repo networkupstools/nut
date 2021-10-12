@@ -184,6 +184,7 @@ static void * list_nut_devices(void * arg)
 		/* +1+1 is for '@' character and terminating 0 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
 		dev->port = malloc(buf_size);
+
 		if (dev->port) {
 			snprintf(dev->port, buf_size, "%s@%s", answer[1],
 					hostname);
@@ -194,8 +195,8 @@ static void * list_nut_devices(void * arg)
 #ifdef HAVE_PTHREAD
 			pthread_mutex_unlock(&dev_mutex);
 #endif
-
 		}
+
 	}
 
 	(*nut_upscli_disconnect)(ups);
@@ -282,7 +283,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
 				thread_count++;
 				pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
+						thread_count * sizeof(pthread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread", __func__);
 					break;
@@ -290,7 +291,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 				else {
 					thread_array = new_thread_array;
 				}
-				thread_array[thread_count-1] = thread;
+				thread_array[thread_count - 1] = thread;
 			}
 #else
 			list_nut_devices(nut_arg);

@@ -212,14 +212,14 @@ static const float REAL_POWER_MULTIPLIER_B3[MODEL_COUNT][8] = {
  * Second index: Recharging battery flag: charging (1) or charged/discharging (0)
  */
 static const float MAX_BATTERY_VOLTAGE[MODEL_COUNT][2] = {
-  { 27.0, 29.5 } /* Model 183 */ ,
+	{ 27.0, 29.5 } /* Model 183 */ ,
 	{ 27.0, 29.5 } /* Model 190 */ ,
 	{ 27.0, 29.5 }	/* Model 191 */
 };
 
 /** Minimum battery voltage, used to estimate battery charge */
 static const float MIN_BATTERY_VOLTAGE[MODEL_COUNT] = {
-  20 /* Model 183 */ ,
+	20 /* Model 183 */ ,
 	20 /* Model 190 */ ,
 	20 /* Model 191 */
 };
