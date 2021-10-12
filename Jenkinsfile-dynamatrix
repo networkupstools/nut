@@ -94,6 +94,44 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.stashnameSrc = 'nut-ci-src'
 
+    // These platforms do not serve a functional cppunit for gcc,
+    // so a diverse C++ build matrix on them is pointless; thus
+    // so far we allow-failure (or avoid C++11 and newer builds)
+    // on OpenIndiana (cppcheck pkg seems flawed, at least in
+    // various versions of GCC builds) and BSD (also just for GCC):
+    dynacfgPipeline.axisCombos_CPPUNIT = [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+
+    // Avoid mix-up of bitness-related requests and abilities
+    dynacfgPipeline.axisCombos_ARCH32x64 = [~/BITS=32/, ~/ARCH_BITS=64/]
+    dynacfgPipeline.axisCombos_ARCH64x32 = [~/BITS=64/, ~/ARCH_BITS=32/]
+
+    // Some (but not all) builds skip strict-C standard due to
+    // current build failures with its requirements
+    dynacfgPipeline.axisCombos_STRICT_C = [~/CSTDVARIANT=c/]
+    dynacfgPipeline.axisCombos_GNU_C = [~/CSTDVARIANT=gnu/]
+
+    dynacfgPipeline.axisCombos_WINDOWS = [~/OS_FAMILY=windows/]
+    dynacfgPipeline.axisCombos_NOT_WINDOWS = [~/OS_FAMILY=(?!windows)/]
+
+    dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT = [
+        dynacfgPipeline.axisCombos_CPPUNIT,
+        dynacfgPipeline.axisCombos_ARCH32x64,
+        dynacfgPipeline.axisCombos_ARCH64x32
+        ]
+
+    dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C = [
+        dynacfgPipeline.axisCombos_STRICT_C,
+        dynacfgPipeline.axisCombos_ARCH32x64,
+        dynacfgPipeline.axisCombos_ARCH64x32
+        ]
+
+    dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C = [
+        dynacfgPipeline.axisCombos_CPPUNIT,
+        dynacfgPipeline.axisCombos_STRICT_C,
+        dynacfgPipeline.axisCombos_ARCH32x64,
+        dynacfgPipeline.axisCombos_ARCH64x32
+        ]
+
     dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
@@ -241,19 +279,13 @@ set | sort -n """
 
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'merge', 'excludeCombos': 'merge' ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
-                    [~/CSTDVARIANT=c/]
+                    dynacfgPipeline.axisCombos_WINDOWS,
+                    dynacfgPipeline.axisCombos_STRICT_C
                     ],
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
-                excludeCombos: [
-                    // Avoid mix-up of bitness-related requests and abilities
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    // These platforms do not serve a functional cppunit for gcc,
-                    // so a diverse C++ build matrix on them is pointless:
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
@@ -289,17 +321,14 @@ set | sort -n """
                     ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall']
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
-                    [~/CSTDVARIANT=c/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
+                    dynacfgPipeline.axisCombos_STRICT_C,
                     [~/C.*FLAGS=.+Werror/]
                     ],
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
@@ -330,16 +359,11 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/]
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                // So far allow-failure (or avoid C++11 +) on OpenIndiana (cppcheck pkg seems flawed, at least in various versions of GCC builds) and BSD (also just for GCC)
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -376,16 +400,12 @@ set | sort -n """
                     ],
                 // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    //[~/OS_DISTRO=openindiana/],
-                    [~/CSTDVARIANT=c/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -418,16 +438,12 @@ set | sort -n """
                     ],
                 // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldr(v|v:no-distcheck)/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    //[~/OS_DISTRO=openindiana/],
-                    [~/CSTDVARIANT=c/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -457,17 +473,13 @@ set | sort -n """
                     ],
                 // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/BUILD_WARNOPT=hard/],
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -500,15 +512,11 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/]
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -542,15 +550,11 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/]
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -583,16 +587,12 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/BUILD_TYPE=default-withdoc:man/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -620,15 +620,11 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/]
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -659,18 +655,13 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/],
-                    [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    //[~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
-                    ]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    //+ [ [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/] ]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -703,17 +694,13 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/],
-                    [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=c/],
-                    [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
+                    [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/]
                     ]
                 ], body)
             }, // getParStages
@@ -742,13 +729,12 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/OS_FAMILY=windows/]
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [ [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/], [~/CSTDVARIANT=c/],
-                    [~/COMPILER=(?!GCC)/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
+                    [~/COMPILER=(?!GCC)/]
                     ]
                 ], body)
             }, // getParStages
@@ -776,16 +762,14 @@ set | sort -n """
                     [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
                     ],
                 allowedFailure: [
-                    [~/CSTDVARIANT=c/],
+                    dynacfgPipeline.axisCombos_STRICT_C,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
-                excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/CSTDVARIANT=gnu/],
-                    [~/OS_FAMILY=windows/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
+                    dynacfgPipeline.axisCombos_GNU_C,
+                    dynacfgPipeline.axisCombos_WINDOWS
                     ]
                 ], body)
             }, // getParStages
@@ -815,15 +799,16 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
-                    [~/CSTDVARIANT=c/],
-                    [~/OS_FAMILY=windows/],
+                    dynacfgPipeline.axisCombos_STRICT_C,
+                    dynacfgPipeline.axisCombos_WINDOWS,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: [
-                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
-                    [~/OS_FAMILY=(?!windows)/]
+                    dynacfgPipeline.axisCombos_ARCH32x64,
+                    dynacfgPipeline.axisCombos_ARCH64x32,
+                    dynacfgPipeline.axisCombos_NOT_WINDOWS
                     ]
                 ], body)
             }, // getParStages
