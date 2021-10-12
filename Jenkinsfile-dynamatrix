@@ -155,7 +155,7 @@ import org.nut.dynamatrix.*;
 
         // Changes of interest for DMF builds include their scripts and recipes,
         // SCM-tracked pre-generated DMF files, and drivers/*-mib.c sources.
-        dynacfgPipeline.appliesToChangedFilesRegex_FILES_DMF = ~/^(drivers/*(snmp|mib)*.*\.(c|h)|.*\.[Dd][Mm][Ff]|scripts/DMF/.*)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_DMF = ~/^(drivers\/*(snmp|mib)*.*\.(c|h)|.*\.[Dd][Mm][Ff]|scripts\/DMF\/.*)/
 
         // Recipe changes and C source changes go here:
         dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
