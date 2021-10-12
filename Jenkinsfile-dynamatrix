@@ -153,10 +153,16 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY = ~/^(.*\.py|scripts/python/app/Nut-Monitor)/
 
+        // Changes of interest for DMF builds include their scripts and recipes,
+        // SCM-tracked pre-generated DMF files, and drivers/*-mib.c sources.
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_DMF = ~/^(drivers/*(snmp|mib)*.*\.(c|h)|.*\.[Dd][Mm][Ff]|scripts/DMF/.*)/
+
         // Recipe changes and C source changes go here:
         dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
         dynacfgPipeline.appliesToChangedFilesRegex_C = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_C})(|\.in)$/
         dynacfgPipeline.appliesToChangedFilesRegex_PY = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY})(|\.in)$/
+        dynacfgPipeline.appliesToChangedFilesRegex_DMF = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_DMF})(|\.in)$/
+        dynacfgPipeline.appliesToChangedFilesRegex_DMF_PY = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_DMF}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY})(|\.in)$/
 
         // Recipe changes and docs source changes go here:
         dynacfgPipeline.appliesToChangedFilesRegex_TXT = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}(${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}|${dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT}(|\.in)$)/
@@ -485,26 +491,44 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Various build combos with Python versions for helper scripts',
-         // This is a recipe (and target OS) test for ability to use helper
-         // scripts with various Python interpreter versions.
+        ,[name: 'Various build combos with DMF and Python versions for helper scripts, and a distcheck for them',
+         // TODO: This is a recipe (and target OS) test for ability to build,
+         // re-generate and sanity-check Dynamic Mapping Format files, as well
+         // as recipe/helper scripts with various Python interpreter versions.
+         // DMF requires Python (2.7+ and 3.x should be okay) with pycparser,
+         // LUA, NEON, xmllint and so a special nut-builder:DMF agent label.
+         // These build agents should also expose a filename for the PYTHON
+         // versions they provide (basename in PATH or full pathname), same
+         // as for iterating MAKE implementations (also checked to ensure
+         // the special Makefile recipes do work).
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
-         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_PY,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_DMF_PY,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
-                //commonLabelExpr: "nut-builder:alldrv",
+                commonLabelExpr: "nut-builder:DMF",
                 // TOTHINK: Should we also vary compilers here?
                 dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'MAKE', 'PYTHON'],
-                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:DMF||nut-builder:DMF)"],
                 excludedNodelabels: [],
 
                 dynamatrixAxesVirtualLabelsMap: [
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-alldrv']
+                    'BUILD_TYPE': [
+                        'default-tgt:distcheck-dmf-features-REGEN_NO',
+                        'default-tgt:distcheck-dmf-features-LTDL_YES',
+                        'default-tgt:distcheck-dmf-features-LTDL_NO',
+                        'default-tgt:distcheck-dmf-features-LUA_YES',
+                        'default-tgt:distcheck-dmf-features-LUA_YESNO',
+                        'default-tgt:distcheck-dmf-features-LUA_NO',
+                        'default-tgt:distcheck-dmf-features-REGEN_YES',
+                        'default-tgt:distcheck-dmf-all-yes',
+                        'default-tgt:distcheck-dmf-no',
+                        'default-tgt:distcheck-dmf-warnings'
+                        ]
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
