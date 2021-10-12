@@ -32,7 +32,7 @@ static void increment_IPv6(struct in6_addr * addr)
 {
 	int i;
 
-	for (i = 15 ; i>= 0 ; i--) {
+	for (i = 15 ; i >= 0 ; i--) {
 		addr->s6_addr[i]++;
 		if (addr->s6_addr[i] != 0) {
 			break;
