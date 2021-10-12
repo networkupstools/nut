@@ -218,6 +218,7 @@ const char *su_usdate_to_isodate_info_fun(void *raw_date)
 }
 
 info_lkp_t su_convert_to_iso_date_info[] = {
+	/* array index = FUNMAP_USDATE_TO_ISODATE: */
 	{ 1, "dummy", su_usdate_to_isodate_info_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
