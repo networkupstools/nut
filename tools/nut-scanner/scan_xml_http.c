@@ -370,7 +370,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			nutscan_ip_iter_t ip;
 			char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
-                        sem_t *semaphore = nutscan_semaphore();
+			sem_t *semaphore = nutscan_semaphore();
 			pthread_t thread;
 			pthread_t * thread_array = NULL;
 			int thread_count = 0;
