@@ -327,6 +327,7 @@ For contrast, a "real" build agent's set of labels, depending on
 presence or known lack of some capabilities, looks like:
 ------
 doc-builder nut-builder nut-builder:alldrv
+nut-builder:DMF NUT_BUILD_CAPS=drivers:all
 NUT_BUILD_CAPS=docs:man NUT_BUILD_CAPS=docs:all
 NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit=no
 OS_FAMILY=bsd OS_DISTRO=freebsd12 GCCVER=10 CLANGVER=10
@@ -335,6 +336,7 @@ ARCH64=amd64 ARCH_BITS=64
 SHELL_PROGS=sh SHELL_PROGS=dash SHELL_PROGS=zsh SHELL_PROGS=bash
 SHELL_PROGS=csh SHELL_PROGS=tcsh SHELL_PROGS=busybox
 MAKE=make MAKE=gmake
+PYTHON=python2.7 PYTHON=python3.8
 ------
 
 Generic agent attributes
