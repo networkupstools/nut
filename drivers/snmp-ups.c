@@ -90,41 +90,41 @@
 #endif
 
 static mib2nut_info_t *mib2nut[] = {
-	&apc,
-	&mge,
-	&netvision,
-	&powerware,
-	&pxgx_ups,
-	&aphel_genesisII,
-	&aphel_revelation,
-	&eaton_marlin,
-	&pulizzi_switched1,
-	&pulizzi_switched2,
-	&raritan,
-	&baytech,
-	&compaq,
-	&bestpower,
-	&cyberpower,
-	&delta_ups,
-	&xppc,
-	&huawei,
-	&tripplite_ietf,
-	&eaton_ats16_nmc,
-	&eaton_ats16_nm2,
-	&apc_ats,
-	&raritan_px2,
-	&eaton_ats30,
-	&apc_pdu_rpdu,
-	&apc_pdu_rpdu2,
-	&apc_pdu_msp,
-	&emerson_avocent_pdu,
-	&hpe_pdu,
+	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
+	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
+	&apc,				/* This struct comes from : apc-mib.c */
+	&baytech,			/* This struct comes from : baytech-mib.c */
+	&bestpower,			/* This struct comes from : bestpower-mib.c */
+	&compaq,			/* This struct comes from : compaq-mib.c */
+	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
+	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
+	&eaton_ats16_nmc,		/* This struct comes from : eaton-ats16-nmc-mib.c */
+	&eaton_ats16_nm2,	/* This struct comes from : eaton-ats16-nm2-mib.c */
+	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
+	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
+	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */
+	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
+	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
+	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
+	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
+	&hpe_pdu,			/* This struct comes from : hpe-pdu-mib.c */
+	&huawei,			/* This struct comes from : huawei-mib.c */
+	&mge,				/* This struct comes from : mge-mib.c */
+	&netvision,			/* This struct comes from : netvision-mib.c */
+	&powerware,			/* This struct comes from : powerware-mib.c */
+	&pxgx_ups,			/* This struct comes from : powerware-mib.c */
+	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
+	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
 	 * the vendor specific one takes precedence (when mibs=auto)
 	 */
-	&ietf,
+	&tripplite_ietf,	/* This struct comes from : ietf-mib.c */
+	&ietf,				/* This struct comes from : ietf-mib.c */
 	/* end of structure. */
 	NULL
 };
@@ -161,6 +161,7 @@ upsdrv_info_t	upsdrv_info = {
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
 	"Niels Baggesen <niels@baggesen.net>\n" \
+	"Jim Klimov <EvgenyKlimov@Eaton.com>\n" \
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
 	DRV_STABLE,
 	{ NULL }
