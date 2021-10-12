@@ -186,7 +186,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		return ports_list;
 	}
 
-	for (cur_device = device_portname; cur_device->name!= NULL; cur_device++) {
+	for (cur_device = device_portname; cur_device->name != NULL; cur_device++) {
 		if (flag_auto) {
 			start_port = cur_device->auto_start_port;
 			stop_port = cur_device->auto_stop_port;
