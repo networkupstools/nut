@@ -393,7 +393,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
-        int pass = 1;
+	int pass = 1;
 	struct sigaction oldact;
 	int change_action_handler = 0;
 	char *current_port_name = NULL;
@@ -401,7 +401,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int  current_port_nb;
 	int i;
 #ifdef HAVE_PTHREAD
-        sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
