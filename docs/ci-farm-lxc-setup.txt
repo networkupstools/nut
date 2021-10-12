@@ -335,6 +335,7 @@ ARCH64=amd64 ARCH_BITS=64
 SHELL_PROGS=sh SHELL_PROGS=dash SHELL_PROGS=zsh SHELL_PROGS=bash
 SHELL_PROGS=csh SHELL_PROGS=tcsh SHELL_PROGS=busybox
 MAKE=make MAKE=gmake
+PYTHON=python2.7 PYTHON=python3.8
 ------
 
 Generic agent attributes
