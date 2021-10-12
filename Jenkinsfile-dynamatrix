@@ -151,7 +151,7 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
-        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY = ~/^(.*\.py|scripts/python/app/Nut-Monitor)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY = ~/^(.*\.py|scripts\/python\/app\/Nut-Monitor)/
 
         // Changes of interest for DMF builds include their scripts and recipes,
         // SCM-tracked pre-generated DMF files, and drivers/*-mib.c sources.
