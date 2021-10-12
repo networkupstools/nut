@@ -176,7 +176,8 @@ scripts), better use this routine to test the config/build:
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-DMF builds were not tested on BSD as of yet.
+For DMF, additionally `pkg install py27-pycparser-2.20 py38-pycparser-2.20`
+(assuming you want to test both relevant generations of Python).
 
 OpenIndiana 2021.04
 ~~~~~~~~~~~~~~~~~~~
