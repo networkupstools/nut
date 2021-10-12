@@ -249,67 +249,67 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	while (ip_str != NULL)
 	{
 #ifdef HAVE_PTHREAD
-            if (thread_array == NULL) {
-                sem_wait(semaphore);
-                pass = 1;
-            } else {
-                pass = (sem_trywait(semaphore) == 0);
-            }
+		if (thread_array == NULL) {
+			sem_wait(semaphore);
+			pass = 1;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
+		}
 #endif
-            if (pass) {
-		if (port) {
-			if (ip.type == IPv4) {
-				snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+		if (pass) {
+			if (port) {
+				if (ip.type == IPv4) {
+					snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+				}
+				else {
+					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+				}
+
+				ip_dest = strdup(buf);
 			}
 			else {
-				snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+				ip_dest = strdup(ip_str);
 			}
 
-			ip_dest = strdup(buf);
-		}
-		else {
-			ip_dest = strdup(ip_str);
-		}
-
-		if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
-			free(ip_dest);
-			break;
-		}
-
-		nut_arg->timeout = usec_timeout;
-		nut_arg->hostname = ip_dest;
-#ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+				free(ip_dest);
 				break;
 			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
-		}
-#else
-		list_nut_devices(nut_arg);
-#endif
-		free(ip_str);
-		ip_str = nutscan_ip_iter_inc(&ip);
+
+			nut_arg->timeout = usec_timeout;
+			nut_arg->hostname = ip_dest;
 #ifdef HAVE_PTHREAD
-            } else {
-		if (thread_array != NULL) {
-			for (i = 0; i < thread_count; i++) {
-				pthread_join(thread_array[i], NULL);
-				sem_post(semaphore);
+			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+				thread_count++;
+				pthread_t *new_thread_array = realloc(thread_array,
+						thread_count*sizeof(pthread_t));
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count-1] = thread;
 			}
-			thread_count = 0;
-			free(thread_array);
-			thread_array = NULL;
-		}
+#else
+			list_nut_devices(nut_arg);
 #endif
-            }
+			free(ip_str);
+			ip_str = nutscan_ip_iter_inc(&ip);
+#ifdef HAVE_PTHREAD
+		} else {
+			if (thread_array != NULL) {
+				for (i = 0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
+					sem_post(semaphore);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
+			}
+#endif
+		}
 	}
 
 #ifdef HAVE_PTHREAD
