@@ -394,9 +394,9 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		freeaddrinfo(res);
 
 		mask_byte = mask_val / 8;
-		if (mask_byte < 16) {
-			memset(&(ip.stop6.s6_addr[mask_byte + 1]), 0xFF, 15 - mask_byte);
-			memset(&(ip.start6.s6_addr[mask_byte + 1]), 0x00, 15 - mask_byte);
+		if (mask_byte < 16 && mask_byte >= 0) {
+			memset(&(ip.stop6.s6_addr[mask_byte + 1]), 0xFF, 15 - (uint8_t)mask_byte);
+			memset(&(ip.start6.s6_addr[mask_byte + 1]), 0x00, 15 - (uint8_t)mask_byte);
 
 			mask_bit = (0x100 >> mask_val%8) - 1;
 			ip.stop6.s6_addr[mask_byte] |= mask_bit;
