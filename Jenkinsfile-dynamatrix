@@ -151,7 +151,7 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_C = ~/^(.*\.h|.*\.hpp|.*\.c|.*\.cxx|.*\.cpp)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_TXT = ~/^(.*\.txt|.*\.dict|asciidoc.*|.*\.xsl|.*\.css|AUTHORS.*|CHANGELOG.*|COPYING.*|INSTALL.*|LICENSE.*|MAINT.*|NEWS.*|README.*|TODO.*|UPGRAD.*)/
         dynacfgPipeline.appliesToChangedFilesRegex_FILES_IMG = ~/^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg|.*\.gif)/
-        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY = ~/^(.*\.py|scripts/python/app/Nut-Monitor)/
+        dynacfgPipeline.appliesToChangedFilesRegex_FILES_PY = ~/^(.*\.py|scripts\/python\/app\/Nut-Monitor)/
 
         // Recipe changes and C source changes go here:
         dynacfgPipeline.appliesToChangedFilesRegex_RECIPE = ~/${dynacfgPipeline.appliesToChangedFilesRegex_FILES_PREFIX}${dynacfgPipeline.appliesToChangedFilesRegex_FILES_RECIPE}(|\.in)$/
