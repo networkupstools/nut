@@ -61,6 +61,11 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
 
+        "NUT_BUILD_CAPS=drivers:DMF=no")
+            [ -n "$CANBUILD_DRIVERS_DMF" ] || CANBUILD_DRIVERS_DMF=no ;;
+        "NUT_BUILD_CAPS=drivers:DMF"|"NUT_BUILD_CAPS=drivers:DMF=yes")
+            [ -n "$CANBUILD_DRIVERS_DMF" ] || CANBUILD_DRIVERS_DMF=yes ;;
+
         "NUT_BUILD_CAPS=cgi=no")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
@@ -434,7 +439,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "WARNING: this is effectively default-tgt:distcheck-light then" >&2
                 fi
                 CONFIG_OPTS+=("--with-all=auto")
-                CONFIG_OPTS+=("--with-dmf=auto")
+                if [ "${CANBUILD_DRIVERS_DMF-}" = yes ]; then
+                    CONFIG_OPTS+=("--with-dmf=yes")
+                else
+                    CONFIG_OPTS+=("--with-dmf=auto")
+                fi
             else
                 CONFIG_OPTS+=("--with-all=yes")
                 CONFIG_OPTS+=("--with-dmf=yes")
