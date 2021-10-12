@@ -170,10 +170,10 @@ typedef struct {
  * via DMF - keep old approach until we get the ability, e.g. by
  * requiring a LUA implementation to be passed alongside C lookups.
  */
-	const char *(*fun_l2s)(long snmp_value);  /* optional SNMP to NUT mapping function */
-	long (*nuf_s2l)(const char *nut_value);   /* optional NUT to SNMP mapping function */
-	long (*fun_s2l)(const char *snmp_value);  /* optional SNMP to NUT mapping function */
-	const char *(*nuf_l2s)(long nut_value);   /* optional NUT to SNMP mapping function */
+	const char *(*fun_l2s)(long snmp_value);  /* optional SNMP to NUT mapping function, converting SNMP numeric data into a NUT string */
+	long (*nuf_s2l)(const char *nut_value);   /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
+	long (*fun_s2l)(const char *snmp_value);  /* optional SNMP to NUT mapping function, converting SNMP string data into a NUT number */
+	const char *(*nuf_l2s)(long nut_value);   /* optional NUT to SNMP mapping function, converting a NUT number into SNMP string data */
 #endif
 } info_lkp_t;
 
