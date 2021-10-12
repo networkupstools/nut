@@ -1591,7 +1591,7 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
-		upsdebugx(2, "%s: using generic lookup function (string reformating)", __func__);
+		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
 		const char * retvalue = oid2info->fun(value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
