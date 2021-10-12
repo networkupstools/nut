@@ -472,6 +472,47 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        ,[name: 'Various build combos with Python versions for helper scripts',
+         // This is a recipe (and target OS) test for ability to use helper
+         // scripts with various Python interpreter versions.
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         //branchRegexTarget: ~/^(master|main|stable)$/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_PY,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                //commonLabelExpr: "nut-builder:alldrv",
+                // TOTHINK: Should we also vary compilers here?
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'MAKE', 'PYTHON'],
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    //'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    'BUILD_TYPE': ['default-alldrv']
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'
+                    ]
+                    ],
+                allowedFailure: [
+                    [~/OS_FAMILY=windows/]
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: [
+                    [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
+                    [~/CSTDVARIANT=c/],
+                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                    ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
         ,[name: 'A build with all docs types on capable systems, and a distcheck (must pass)',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers (maybe
