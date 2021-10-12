@@ -1590,9 +1590,9 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 	/* First test if we have a generic lookup function */
-	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
+	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
-		const char * retvalue = oid2info->fun(value);
+		const char * retvalue = oid2info->fun_vp2s(value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -1607,9 +1607,9 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 	long value = *((long *)raw_value);
 
 	/* First test if we have a generic lookup function */
-	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
+	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun(raw_value);
+		const char * retvalue = oid2info->fun_vp2s(raw_value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
