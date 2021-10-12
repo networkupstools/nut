@@ -132,7 +132,7 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.axisCombos_ARCH64x32
         ]
 
-    dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
+    dynacfgPipeline.branchStableRegex = ~/^(master|main|stable|FTY|DMF)$/
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
     }
