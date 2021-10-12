@@ -434,46 +434,46 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	current_port_nb = 0;
 	while (serial_ports_list[current_port_nb] != NULL) {
 #ifdef HAVE_PTHREAD
-            if (thread_array == NULL) {
-                sem_wait(semaphore);
-                pass = 1;
-            } else {
-                pass = (sem_trywait(semaphore) == 0);
-            }
+		if (thread_array == NULL) {
+			sem_wait(semaphore);
+			pass = 1;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
+		}
 #endif
-            if (pass) {
-		current_port_name = serial_ports_list[current_port_nb];
+		if (pass) {
+			current_port_name = serial_ports_list[current_port_nb];
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
+			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+				thread_count++;
+				pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
-				break;
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count-1] = thread;
 			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
-		}
 #else
-		nutscan_scan_eaton_serial_device(current_port_name);
+			nutscan_scan_eaton_serial_device(current_port_name);
 #endif
-		current_port_nb++;
+			current_port_nb++;
 #ifdef HAVE_PTHREAD
-            } else {
-		if (thread_array != NULL) {
-			for (i = 0; i < thread_count; i++) {
-				pthread_join(thread_array[i], NULL);
-				sem_post(semaphore);
+		} else {
+			if (thread_array != NULL) {
+				for (i = 0; i < thread_count; i++) {
+					pthread_join(thread_array[i], NULL);
+					sem_post(semaphore);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
 			}
-			thread_count = 0;
-			free(thread_array);
-			thread_array = NULL;
-		}
 #endif
-            }
+		}
 	}
 
 #ifdef HAVE_PTHREAD
