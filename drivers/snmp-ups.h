@@ -107,8 +107,17 @@ typedef int bool_t;
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
-	const char *(*fun)(void *snmp_value); /* optional SNMP to NUT mapping function */
-	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
+/*
+ * Currently there are a few cases using a "fun_vp2s" type of lookup
+ * function, while the "nuf_s2l" type was added for completeness but
+ * is not really handled and does not have real consumers in the
+ * existing NUT codebase (static mib2nut tables in *-mib.c files).
+ * Related to su_find_infoval() (long* => string), su_find_valinfo()
+ * (string => long) and su_find_strval() (char* => string) routines
+ * defined below.
+ */
+	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
+	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -278,6 +287,8 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value);
 /* Common conversion structs (functions) */
 const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
+/* Name the mapping location in that array for consumers to reference */
+#define FUNMAP_USDATE_TO_ISODATE 0
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
@@ -309,6 +320,5 @@ typedef struct {
 	long output_phases;
 	long bypass_phases;
 } daisychain_info_t;
-
 
 #endif /* SNMP_UPS_H */
