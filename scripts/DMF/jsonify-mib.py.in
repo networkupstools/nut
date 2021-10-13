@@ -553,7 +553,8 @@ def s_mkparser ():
     p = argparse.ArgumentParser ()
     p.add_argument ("--test", default=False, action='store_true',
             help="compile json dump back to C and compare against original static structure")
-    p.add_argument ("source", help="source code of MIB.c")
+    p.add_argument ("source", help="required source code of MIB.c")
+    p.add_argument ("sharedSources", help="optional additional shared resource code for MIB.c", nargs='*', type=str)
     return p
 
 ## MAIN
