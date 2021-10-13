@@ -16,6 +16,7 @@
 [ -n "${CPPFLAGS-}" ] || CPPFLAGS="-I../../include -I../../../include"
 [ -n "${CFLAGS-}" ] || CFLAGS=""
 [ -z "${CPP_ENV-}" ] || eval export $CPP_ENV
+[ "${DEBUG_NUT_CPP-}" = "true" ] || DEBUG_NUT_CPP=false
 
 set -o pipefail
 #set -exv
@@ -64,13 +65,14 @@ sed \
     -e 's/[ \t]_Noreturn[ \t]/ /' \
     -e 's/__NORETURN_*//' \
     -e 's/__builtin_va_list/int/'
-}
+} # // end of do_filter()
 
 # Repeat same filter a few times to strip appearing blank lines and trailing semicolons
 $CPP $CFLAGS $CPPFLAGS "${@}" | \
     do_filter | \
     do_filter | \
-    do_filter #| tee temp-cpp-filt.tmp
+    do_filter \
+    | if $DEBUG_NUT_CPP ; then tee temp-cpp-filt.tmp ; else cat ; fi
 
 RET=$?
 if [ "$RET" = 0 ]; then
