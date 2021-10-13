@@ -170,7 +170,7 @@ typedef struct {
  * via DMF - keep old approach until we get the ability, e.g. by
  * requiring a LUA implementation to be passed alongside C lookups.
  * So while DMF parser generally allows for mapping functions, the
- * mapping files generated automatically from drivers/*-mib.c do
+ * mapping files generated automatically from *-mib.c drivers do
  * not have them.
  * Currently the few cases using a fun_vp2s type of lookup function
  * get away by serving fallback static mapping tables that get into
