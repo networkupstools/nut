@@ -2097,6 +2097,7 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 /* String reformating function */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
+#if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
@@ -2105,6 +2106,9 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 		return retvalue;
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
+#else
+	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
+#endif // WITH_SNMP_LKP_FUN
 	return NULL;
 }
 
