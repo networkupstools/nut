@@ -601,14 +601,14 @@ sources = [args.source]
 if args.sharedSources is not None:
     sources += args.sharedSources
 
-warn ("List of source(s) to parse: %s" % str(sources))
-warn ("Main source: %s" % str(args.source))
-warn ("Shared source(s): %s" % str(args.sharedSources))
+info ("List of source(s) to parse: %s" % str(sources))
+info ("args: Main source: %s" % str(args.source))
+info ("args: Shared source(s): %s" % str(args.sharedSources))
 asts = []
 i = 0
 for source in sources :
     ast = parse_ast(source)
-    warn ("Parsed and got AST: %s" % str(ast))
+    #info ("Parsed and got AST: %s" % str(ast))
     asts.append(ast)
     i = i + 1
 
@@ -618,7 +618,7 @@ if i == 0 :
 info ("CALL Visitor():")
 v = Visitor ()
 for ast in asts:
-    warn ("Visit AST: %s" % str(ast))
+    #info ("Visit AST: %s" % str(ast))
     for idx, node in ast.children ():
         v.visit (node)
 
