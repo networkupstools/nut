@@ -61,13 +61,17 @@ DMFNUTSCAN_SUBDIR = dmfnutscan.d
 # This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
 # based on existing C sources for ../../drivers/*-mib.c
 DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
-# Use "-include" to avoid errors in automake (the file is not yet available
-# in builddir at this moment)
--include legacy-mibfiles-list.mk
+# Use "include" with macro to avoid errors in automake: the file is not
+# yet available in builddir at the moment we call autoreconf from NUT
+# autogen.sh script which has just generated the .in template -- and
+# passes its name instead for formal consistency.
+LEGACY_MIBFILES_LIST = legacy-mibfiles-list.mk
+include $(LEGACY_MIBFILES_LIST)
 
 # Support development experiments for lookup with functions
 testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
+
 $(abs_builddir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
 
