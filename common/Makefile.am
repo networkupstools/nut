@@ -56,8 +56,6 @@ endif
 
 # Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
 if WITH_DMF_LUA
-# TODO: This path better be passed from configure ...
-  LUA_INCLUDE = -I/usr/include/lua5.1
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
   libnutdmfsnmp_la_LIBADD += $(LUA_LIB)
 else

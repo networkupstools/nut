@@ -13,8 +13,6 @@ BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 $(NUT_SCANNER_DEPS):
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
-# TODO: This path better be passed from configure ...
-LUA_INCLUDE = -I/usr/include/lua5.1
 CFLAGS_LUA  = $(LUA_INCLUDE)
 LDFLAGS_LUA = $(LUA_LIB)
 if WITH_DMF_LUA
