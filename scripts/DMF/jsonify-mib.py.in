@@ -622,14 +622,22 @@ for ast in asts:
     for idx, node in ast.children ():
         v.visit (node)
 
-if args.test:
-    info ("CALL test()")
-    test_file = os.path.basename (args.source)
-    MIB_name = os.path.splitext (test_file) [0]
-    test_file = MIB_name + "_TEST.c"
-    prog_file = MIB_name + "_TEST.exe"
-    with open (test_file, "wt") as fout:
-        s_json2c (fout, MIB_name, v._mappings)
+def test_compile(source, MIB_name = None):
+    info ("CALL test_compile(%s, %s)" % (source, str(MIB_name)))
+
+    # Numerous sources can be composed into a resulting test binary
+    # The main source goes as NONE and others added with its MIB_name
+    if MIB_name is None:
+        test_file = os.path.basename (source)
+        MIB_name = os.path.splitext (test_file) [0]
+        test_file = MIB_name + "_TEST.c"
+        obj_file =  MIB_name + "_TEST.o"
+        with open (test_file, "wt") as fout:
+            s_json2c (fout, MIB_name, v._mappings)
+    else:
+        # Take the additional shared source as is to link it in
+        test_file = source
+        obj_file = MIB_name + "_" + os.path.splitext (os.path.basename (test_file)) [0] + "_TEST.o"
 
     try:
         gcc = os.environ["CC"]
@@ -639,7 +647,55 @@ if args.test:
     try:
         gcc_cflags = os.environ["CFLAGS"].split()
     except KeyError:
+        # TODO: Template this via .py.in from some CLAGS or
+        # INCLUDES values detected by NUT configure script?
+        #gcc_cflags = ["-I/usr/include"]
         gcc_cflags = []
+
+    # Pass $CC_ENV as a list of envvars, if any gets used
+    try:
+        gcc_env = None
+        gcc_env_str = os.environ["CC_ENV"]
+        if gcc_env_str is not None and gcc_env_str != "" :
+            gcc_env = os.environ.copy()
+            # Nifty splitter from https://stackoverflow.com/a/5044384/4715872
+            gcc_env_list = gcc_env_str.split(" ")
+            for pair in gcc_env_list:
+                E,V = pair.split("=")
+                gcc_env[E] = V
+    except KeyError:
+        gcc_env = None
+
+    cmd = [gcc, "-c", "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", obj_file, test_file]
+
+    info ("COMPILE: " + " ".join (cmd))
+    try:
+        if gcc_env is None :
+            subprocess.check_call (cmd)
+        else :
+            subprocess.check_call (cmd, env = gcc_env)
+    except subprocess.CalledProcessError as retcode:
+        warn ("COMPILE FAILED with code %s" % retcode.returncode)
+        sys.exit (retcode.returncode)
+
+    return obj_file
+
+if args.test:
+    info ("CALL test()")
+    test_file = os.path.basename (args.source)
+    MIB_name = os.path.splitext (test_file) [0]
+    prog_file = MIB_name + "_TEST.exe"
+
+    obj_files = []
+    obj_files.append(test_compile(args.source, None))
+    if args.sharedSources is not None:
+        for source in args.sharedSources :
+            obj_files.append(test_compile(source, MIB_name))
+
+    try:
+        gcc = os.environ["CC"]
+    except KeyError:
+        gcc = "cc"
 
     try:
         gcc_ldflags = os.environ["LDFLAGS"].split()
@@ -660,8 +716,8 @@ if args.test:
     except KeyError:
         gcc_env = None
 
-    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
-    info ("COMPILE: " + " ".join (cmd))
+    cmd = [gcc, "-ggdb", "-o", prog_file] + obj_files + gcc_ldflags
+    info ("LINK: " + " ".join (cmd))
     try:
         if gcc_env is None :
             subprocess.check_call (cmd)
