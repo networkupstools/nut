@@ -408,10 +408,10 @@ dmf-uptodate: $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate
 # Make sure all present DMFs are valid vs. XSD schema
 dmf-validate: dmf-uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
-
-LUA_INCLUDE ?= -I/usr/include/lua5.1
-CFLAGS_LUA ?= $(LUA_INCLUDE)
-LDFLAGS_LUA ?= $(LUA_LIB)
+# TODO: This path better be passed from configure ...
+LUA_INCLUDE = -I/usr/include/lua5.1
+CFLAGS_LUA  = $(LUA_INCLUDE)
+LDFLAGS_LUA = $(LUA_LIB)
 if WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
