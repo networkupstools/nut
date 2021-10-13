@@ -183,6 +183,9 @@ class Visitor(c_ast.NodeVisitor):
         # the source code structure can have 2 fields (oid, value) or 6 fields
         # adding (fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s) pointers to lookup processing functions.
         ret = []
+        if node.init is None:
+            warn ("Got an empty node for an info_lkp_t '%s', it may be defined in a separate C source file?" % node.name)
+            return ret
         for _, ilist in node.init.children ():
             key_node = ilist.exprs [0]
             if isinstance (key_node, c_ast.UnaryOp):
