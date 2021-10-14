@@ -118,6 +118,10 @@
 #undef HAVE_DMALLOC_H
 #endif
 
+/* Net-SNMP relies on "u_char", "u_short", "u_long" and such,
+ * but does not pull the system types definitions in its headers.
+ */
+#include <sys/types.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
