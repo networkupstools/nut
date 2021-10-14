@@ -5,10 +5,13 @@
  *  Copyright (C)
  *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
-  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
+ *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
+ *      2015 - 2021     Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *      2016 - 2021     Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *
- *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *  Sponsored by Eaton <http://www.eaton.com>
+ *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
