@@ -32,6 +32,15 @@
 #include "nut_stdint.h"
 #include "snmp-ups.h"
 
+/* Shunt the debugging calls when building self-test DMF driver code */
+/* FIXME: Go the next mile to pull common.o etc? We would rather not... */
+#ifdef WITH_DMFMIB_SELFTEST
+# ifdef upsdebugx
+#  undef upsdebugx
+# endif
+# define upsdebugx(...) {while(0);}
+#endif
+
 /***********************************************************************
  * Subdrivers shared helpers functions
  * Code below is primarily used in snmp-ups driver, but may be part
