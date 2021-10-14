@@ -42,6 +42,9 @@
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="no"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="ietf_mib">
 		<snmp_info default="Generic" multiplier="128.0" name="ups.mfr" oid="1.3.6.1.2.1.33.1.1.1.0" static="yes" string="yes"/>
 		<snmp_info default="Generic SNMP UPS" multiplier="128.0" name="ups.model" oid="1.3.6.1.2.1.33.1.1.2.0" static="yes" string="yes"/>

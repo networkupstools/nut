@@ -16,6 +16,9 @@
 		<lookup_info oid="4" value="3phase"/>
 		<lookup_info oid="5" value="splite-phase"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="delta_ups_mib">
 		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.mfr" oid=".1.3.6.1.4.1.2254.2.4.1.1.0" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.2254.2.4.1.2.0" string="yes"/>

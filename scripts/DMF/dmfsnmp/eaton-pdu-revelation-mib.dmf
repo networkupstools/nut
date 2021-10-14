@@ -12,6 +12,9 @@
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="yes"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="eaton_aphel_revelation_mib">
 		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
 		<snmp_info default="Eaton Powerware ePDU Managed" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" static="yes" string="yes"/>

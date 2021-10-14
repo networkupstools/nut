@@ -141,6 +141,9 @@
 		<lookup_info oid="3" value="yes"/>
 		<lookup_info oid="4" value="no"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="eaton_marlin_mib">
 		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
 		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i" static="yes" string="yes"/>

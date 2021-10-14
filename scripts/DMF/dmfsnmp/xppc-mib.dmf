@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<lookup name="xpcc_onbatt_info">
 		<lookup_info oid="1" value=""/>
 		<lookup_info oid="2" value=""/>

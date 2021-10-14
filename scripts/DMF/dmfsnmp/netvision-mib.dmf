@@ -22,6 +22,9 @@
 		<lookup_info oid="8" value="OL"/>
 		<lookup_info oid="9" value=""/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="netvision_mib">
 		<snmp_info default="SOCOMEC SICON UPS" flag_ok="yes" multiplier="128.0" name="ups.mfr" oid=".1.3.6.1.4.1.4555.1.1.1.1.1.3.0" static="yes" string="yes"/>
 		<snmp_info default="Generic SNMP UPS" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" static="yes" string="yes"/>
