@@ -24,12 +24,12 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-#include <time.h>  /* for strptime() */
-
 /* NUT SNMP common functions */
 #include "common.h"
 #include "snmp-ups.h"
+
+#include <ctype.h> /* for isprint() */
+#include <time.h>  /* for strptime() */
 
 /* Shunt the debugging calls when building self-test DMF driver code */
 /* FIXME: Go the next mile to pull common.o etc? We would rather not... */
