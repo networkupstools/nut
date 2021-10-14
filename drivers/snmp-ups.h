@@ -172,11 +172,11 @@ typedef struct {
  * So while DMF parser generally allows for mapping functions, the
  * mapping files generated automatically from *-mib.c drivers do
  * not have them.
- * Currently the few cases using a fun_vp2s type of lookup function
+ * Currently the few cases using a "fun_vp2s" type of lookup function
  * get away by serving fallback static mapping tables that get into
- * generated DMF, while the nuf_s2l, fun_s2l and nuf_vp2s types are
- * added for completeness but are not handled and do not have real
- * consumers in existing NUT codebase (static mib2nut tables).
+ * generated DMF, while the "nuf_s2l", "fun_s2l" and "nuf_vp2s" types
+ * are added for completeness but are not handled and do not have
+ * real consumers in existing NUT codebase (static mib2nut tables).
  * Related to su_find_infoval() (long* => string), su_find_valinfo()
  * (string => long) and su_find_strval() (char* => string) routines
  * defined below.
@@ -373,6 +373,8 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value);
 /* Common conversion structs (functions) */
 const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
+/* Name the mapping location in that array for consumers to reference */
+#define FUNMAP_USDATE_TO_ISODATE 0
 
 /* Subdrivers shared helpers functions */
 /* Process temperature value according to 'temperature_unit' */
