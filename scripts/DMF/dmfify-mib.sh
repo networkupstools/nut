@@ -135,10 +135,11 @@ dmfify_c_file() {
     # Optional second one names the output file (and temporary files)
     # Optional third (and beyond) name additional files to look into
     # (e.g. the snmp-ups-helpers.c for shared tables and routines)
+    #echo "dmfify_c_file: '$1' '$2' '$3' ..." >&2
     local cmib="$1"
-    shift
     local mib="$2"
-    shift || true
+    shift
+    shift || true # $2+ may be missing
 
     if [ -z "${mib}" ] ; then
         mib="$(basename "${cmib}" .c)"
@@ -152,7 +153,7 @@ dmfify_c_file() {
         { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
           return 2; }
 
-    echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..." >&2
+    echo "INFO: Parsing '${cmib}' into '${mib}.dmf'; do not worry if 'missing setvar' warnings pop up..." >&2
     if [ $# -gt 0 ]; then echo "INFO: Additionally parsing resources from: $*" >&2; fi
 
     # Code below assumes that the *.py.in only template the shebang line
