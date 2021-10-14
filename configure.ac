@@ -2379,8 +2379,15 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
 			  done ; } ; \
 		}
-		RES=$?; cd "${CURDIR}"; rm -rf "${OUTDIR}"; test "${RES}" = 0
-	) >&5 2>&5 \
+		RES=$?
+		if test "${RES}" != 0 ; then
+			echo "${can_generate_dmf_snmp}" >&9
+		fi
+		cd "${CURDIR}" && \
+		rm -rf "${OUTDIR}" \
+		|| RES=$?
+		exit $RES
+	) 9>&2 >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
 	fi
 	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi
