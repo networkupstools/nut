@@ -134,7 +134,7 @@ dmfify_c_file() {
     # One reqiured argument: path to a `*-mib.c` filename
     # Optional second one names the output file (and temporary files)
     # Optional third (and beyond) name additional files to look into
-    # (e.g. the snmp-ups.c for shared tables and routines)
+    # (e.g. the snmp-ups-helpers.c for shared tables and routines)
     local cmib="$1"
     shift
     local mib="$2"
@@ -195,9 +195,9 @@ list_shared_sources() {
     # somehow? Support a nested loop and separate storage var
     # to find many such files?
     SNAME=""
-    for F in ../../../drivers/snmp-ups.c ../../drivers/snmp-ups.c \
-        "${_SCRIPT_DIR}"/../../../drivers/snmp-ups.c \
-        "${_SCRIPT_DIR}"/../../drivers/snmp-ups.c \
+    for F in ../../../drivers/snmp-ups-helpers.c ../../drivers/snmp-ups-helpers.c \
+        "${_SCRIPT_DIR}"/../../../drivers/snmp-ups-helpers.c \
+        "${_SCRIPT_DIR}"/../../drivers/snmp-ups-helpers.c \
     ; do
         [ -s "$F" ] && SNAME="$F" && break
     done
@@ -215,9 +215,6 @@ dmfify_NUT_drivers() {
     # make some way to parse it once and add that JSON as the
     # helper for quick inclusion to jsonify and beyond.
     # TODO: Conflicts resolution (if several files define same token?)
-    # TODO: Split snmp-ups.c source to store conversion helper methods
-    # and mapping tables separately, to reduce scope for (re)parsing,
-    # link it as part of resulting snmp-ups-dmf or snmp-ups-old binary.
     SNAME="`list_shared_sources`"
     for cmib in ../../../drivers/*-mib.c ../../drivers/*-mib.c; do
         [ -s "${cmib}" ] || \
