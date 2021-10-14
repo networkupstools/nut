@@ -5,7 +5,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016 - 2021	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -187,41 +187,6 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
 int get_template_type(const char* varname);
-
-
-/***********************************************************************
- * Subdrivers shared helpers functions
- **********************************************************************/
-
-static char su_scratch_buf[255];
-
-/* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
-const char *su_usdate_to_isodate_info_fun(void *raw_date)
-{
-	const char *usdate = (char *)raw_date;
-	struct tm tm;
-	memset(&tm, 0, sizeof(struct tm));
-	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
-
-	upsdebugx(3, "%s: US date = %s", __func__, usdate);
-
-	/* Try to convert from US date string to time */
-	/* Note strptime returns NULL upon failure, and a ptr to the last
-	   null char of the string upon success. Just try blindly the conversion! */
-	strptime(usdate, "%m/%d/%Y", &tm);
-	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
-		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
-		return su_scratch_buf;
-	}
-
-	return NULL;
-}
-
-info_lkp_t su_convert_to_iso_date_info[] = {
-	/* array index = FUNMAP_USDATE_TO_ISODATE: */
-	{ 1, "dummy", su_usdate_to_isodate_info_fun, NULL },
-	{ 0, NULL, NULL, NULL }
-};
 
 /* ---------------------------------------------
  * driver functions implementations
