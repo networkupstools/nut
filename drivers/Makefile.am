@@ -210,7 +210,7 @@ mge_shut_LDADD = $(LDADD) -lm
 # SNMP
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
 # by vendor too) to ease maintenance and codebase fork resynchronisations
-snmp_ups_SOURCES = snmp-ups.c \
+snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  apc-mib.c apc-pdu-mib.c \
  baytech-mib.c bestpower-mib.c \
  compaq-mib.c cyberpower-mib.c \
