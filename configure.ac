@@ -2355,7 +2355,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	if test "${nut_with_dmf}" = "yes"; then
 	(	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
-		trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 && \
+		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 ; fi && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
 		{	cd "${DMFDIR}" && \
@@ -2384,8 +2384,11 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 			echo "${can_generate_dmf_snmp}" >&9
 		fi
 		cd "${CURDIR}" && \
-		rm -rf "${OUTDIR}" \
-		|| RES=$?
+		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then
+			rm -rf "${OUTDIR}"
+		else
+			echo "You can inspect DMF build-test results in '${OUTDIR}'" >&9
+		fi || RES=$?
 		exit $RES
 	) 9>&2 >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
