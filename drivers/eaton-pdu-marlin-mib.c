@@ -602,10 +602,10 @@ static info_lkp_t marlin_input_type_info[] = {
 };
 
 /* /// From opensource/master:
- // 2021-01-20: Note that FTY/DMF version is more correct and
- // opensource/master to be replaced eventually. The lookup
- // function was below a hack until MIB got stabilized and
- // Genepi firmware with it was released.
+ // 2021-01-20 / 2021-09-24: Note that FTY/DMF version is more correct
+ // and opensource/master to be replaced eventually. The lookup function
+ // below was a hack until MIB got stabilized and newer Genepi firmware
+ // with it was released.
 static char marlin_scratch_buf[20];
 */
 /* Compute the phase to which an outlet group is connected
@@ -613,8 +613,9 @@ static char marlin_scratch_buf[20];
  * Note that the group type (marlin_outlet_group_type_info) is
  *  not considered since this applies to any kind of group */
 /* /// From opensource/master:
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 {
+	int outlet_group_nb = *((int *)raw_outlet_group_nb);
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
 	if (str_phases_nb && (outlet_group_nb >= 0) ) {
@@ -703,16 +704,23 @@ static info_lkp_t marlin_outlet_group_phase_info[] = {
 
 #if WITH_SNMP_LKP_FUN
 /* Note: eaton_sensor_temperature_unit_fun() is defined in eaton-pdu-marlin-helpers.c
- * Future work for DMF might provide a same-named routine via LUA-C gateway.
+ * and su_temperature_read_fun() is in snmp-ups.c
+ * Future work for DMF might provide same-named routines via LUA-C gateway.
  */
 
 #if WITH_SNMP_LKP_FUN_DUMMY
 /* Temperature unit consideration */
-const char *eaton_sensor_temperature_unit_fun(long snmp_value)
-		{ return "unknown"; }
+const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value) {
+	/* snmp_value here would be a (long*) */
+	NUT_UNUSED_VARIABLE(raw_snmp_value);
+	return "unknown";
+}
 /* FIXME: please DMF, though this should be in snmp-ups.c or equiv. */
-const char *su_temperature_read_fun(long snmp_value)
-	{ return "dummy"; }
+const char *su_temperature_read_fun(void *raw_snmp_value) {
+	/* snmp_value here would be a (long*) */
+	NUT_UNUSED_VARIABLE(raw_snmp_value);
+	return "dummy";
+};
 #endif // WITH_SNMP_LKP_FUN_DUMMY
 
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {

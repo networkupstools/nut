@@ -4,7 +4,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2019 Arnaud Quette <ArnaudQuette@Eaton.com>
+ *       2015-2021 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -676,17 +676,24 @@ static info_lkp_t pw_ambient_drycontacts_info[] = {
 };
 
 #if WITH_SNMP_LKP_FUN
-/* Note: eaton_sensor_temperature_unit_fun() is defined in powerware-helpers.c
- * Future work for DMF might provide a same-named routine via LUA-C gateway.
+/* Note: eaton_sensor_temperature_unit_fun() is defined in eaton-pdu-marlin-helpers.c
+ * and su_temperature_read_fun() is in snmp-ups.c
+ * Future work for DMF might provide same-named routines via LUA-C gateway.
  */
 
 #if WITH_SNMP_LKP_FUN_DUMMY
 /* Temperature unit consideration */
-const char *eaton_sensor_temperature_unit_fun(long snmp_value)
-		{ return "unknown"; }
+const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value) {
+	/* snmp_value here would be a (long*) */
+	NUT_UNUSED_VARIABLE(raw_snmp_value);
+	return "unknown";
+}
 /* FIXME: please DMF, though this should be in snmp-ups.c or equiv. */
-const char *su_temperature_read_fun(long snmp_value)
-	{ return "dummy"; };
+const char *su_temperature_read_fun(void *raw_snmp_value) {
+	/* snmp_value here would be a (long*) */
+	NUT_UNUSED_VARIABLE(raw_snmp_value);
+	return "dummy";
+};
 #endif // WITH_SNMP_LKP_FUN_DUMMY
 
 static info_lkp_t pw_sensor_temperature_unit_info[] = {
@@ -980,7 +987,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
-	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, NULL },
+	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, &su_convert_to_iso_date_info[FUNMAP_USDATE_TO_ISODATE] },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL },

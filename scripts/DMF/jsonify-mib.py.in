@@ -181,8 +181,11 @@ class Visitor(c_ast.NodeVisitor):
     def _visit_info_lkp_t (self, node):
         # Depending on version of NUT and presence of WITH_SNMP_LKP_FUN macro,
         # the source code structure can have 2 fields (oid, value) or 6 fields
-        # adding (fun_l2s, nuf_s2l, fun_s2l, nuf_l2s) pointers to lookup processing functions.
+        # adding (fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s) pointers to lookup processing functions.
         ret = []
+        if node.init is None:
+            warn ("Got an empty node for an info_lkp_t '%s', it may be defined in a separate C source file?" % node.name)
+            return ret
         for _, ilist in node.init.children ():
             key_node = ilist.exprs [0]
             if isinstance (key_node, c_ast.UnaryOp):
@@ -206,17 +209,17 @@ class Visitor(c_ast.NodeVisitor):
             # See https://stackoverflow.com/questions/21728808/extracting-input-parameters-and-its-identifier-type-while-parsing-a-c-file-using
             # for a bigger example of function introspection
             try:
-                fun_l2s = ilist.exprs [2]
-                if fun_l2s is not None:
-                    debug("fun_l2s : %s" % (fun_l2s))
-                    if fun_l2s.name is None:
-                        debug("fun_l2s.name : None")
-                        fun_l2s = '"' + fun_l2s + '"'
+                fun_vp2s = ilist.exprs [2]
+                if fun_vp2s is not None:
+                    debug("fun_vp2s : %s" % (fun_vp2s))
+                    if fun_vp2s.name is None:
+                        debug("fun_vp2s.name : None")
+                        fun_vp2s = '"' + fun_vp2s + '"'
                     else:
-                        debug("fun_l2s.name : %s" % (fun_l2s.name))
-                        fun_l2s = str(fun_l2s.name)
+                        debug("fun_vp2s.name : %s" % (fun_vp2s.name))
+                        fun_vp2s = str(fun_vp2s.name)
             except (IndexError, NameError, AttributeError):
-                fun_l2s = None
+                fun_vp2s = None
 
             try:
                 nuf_s2l = ilist.exprs [3]
@@ -245,19 +248,19 @@ class Visitor(c_ast.NodeVisitor):
                 fun_s2l = None
 
             try:
-                nuf_l2s = ilist.exprs [5]
-                if nuf_l2s is not None:
-                    debug("nuf_l2s : %s" % (nuf_l2s))
-                    if nuf_l2s.name is None:
-                        debug("nuf_l2s.name : None")
-                        nuf_l2s = '"' + nuf_l2s + '"'
+                nuf_vp2s = ilist.exprs [5]
+                if nuf_vp2s is not None:
+                    debug("nuf_vp2s : %s" % (nuf_vp2s))
+                    if nuf_vp2s.name is None:
+                        debug("nuf_vp2s.name : None")
+                        nuf_vp2s = '"' + nuf_vp2s + '"'
                     else:
-                        debug("nuf_l2s.name : %s" % (nuf_l2s.name))
-                        nuf_l2s = str(nuf_l2s.name)
+                        debug("nuf_vp2s.name : %s" % (nuf_vp2s.name))
+                        nuf_vp2s = str(nuf_vp2s.name)
             except (IndexError, NameError, AttributeError):
-                nuf_l2s = None
+                nuf_vp2s = None
 
-            ret.append ((key, ilist.exprs [1].value.strip ('"'), fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))
+            ret.append ((key, ilist.exprs [1].value.strip ('"'), fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s))
         return ret
 
     def _visit_mib2nut_info_t (self, node):
@@ -360,26 +363,26 @@ def s_info2c (fout, jsinfo):
     for key in jsinfo.keys ():
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
         gotfun = 0
-        for key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s in widen_tuples(jsinfo [key],6):
-            if nuf_l2s is None:
+        for key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s in widen_tuples(jsinfo [key],6):
+            if nuf_vp2s is None:
                 if fun_s2l is None:
                     if nuf_s2l is None:
-                        if fun_l2s is None:
+                        if fun_vp2s is None:
                             # No NULLs in the end, because depending on macro value
                             # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
                             print ("    { %d, \"%s\" }," % (key, value), file=fout)
                         else:
                             # No quotation for fun/nuf names!
-                            print ("    { %d, \"%s\", %s }," % (key, value, fun_l2s), file=fout)
+                            print ("    { %d, \"%s\", %s }," % (key, value, fun_vp2s), file=fout)
                             gotfun = 1
                     else:
-                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_l2s, nuf_s2l), file=fout)
+                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_vp2s, nuf_s2l), file=fout)
                             gotfun = 1
                 else:
-                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l), file=fout)
+                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l), file=fout)
                             gotfun = 1
             else:
-                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s), file=fout)
+                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s), file=fout)
                 gotfun = 1
         if gotfun == 0:
             print ("    { 0, NULL }\n};\n", file=fout)
@@ -550,7 +553,8 @@ def s_mkparser ():
     p = argparse.ArgumentParser ()
     p.add_argument ("--test", default=False, action='store_true',
             help="compile json dump back to C and compare against original static structure")
-    p.add_argument ("source", help="source code of MIB.c")
+    p.add_argument ("source", help="required source code of MIB.c")
+    p.add_argument ("sharedSources", help="optional additional shared resource code for MIB.c", nargs='*', type=str)
     return p
 
 ## MAIN
@@ -564,46 +568,75 @@ try:
 except KeyError:
     gcc_cppflags = []
 
-info ("CALL parse_file(): %s with %s %s" % (args.source, s_cpp_path (), (["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags)))
-try:
-    ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
-    ### there is no exception; so to abort pycparser we also print some
-    ### invalid C pragma so the parser does die early.
-    ast = parse_file (
-        args.source,
-        use_cpp=True,
-        cpp_path=s_cpp_path (),
-        cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags
-        )
-    if not isinstance(ast, c_ast.FileAST):
-        raise RuntimeError("Got a not c_ast.FileAST instance after parsing")
-    c = 0
-    for idx, node in ast.children ():
-        c = c+1
-    if c == 0 :
-        raise RuntimeError ("Got no data in resulting tree")
-except Exception as e:
-    warn ("FAILED to parse %s: %s" % (args.source, e))
-    warn ("============== DETAILS:\n")
-    traceback.print_exc()
-    warn ("==============\n")
-    sys.exit(1)
+def parse_ast(source):
+    info ("CALL parse_file(): %s with %s %s" % (source, s_cpp_path (), (["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags)))
+    try:
+        ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
+        ### there is no exception; so to abort pycparser we also print some
+        ### invalid C pragma so the parser does die early.
+        ast = parse_file (
+            source,
+            use_cpp=True,
+            cpp_path=s_cpp_path (),
+            cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags
+            )
+        if not isinstance(ast, c_ast.FileAST):
+            raise RuntimeError("Got a not c_ast.FileAST instance after parsing %s" % source)
+        c = 0
+        for idx, node in ast.children ():
+            c = c + 1
+        if c == 0 :
+            raise RuntimeError ("Got no data in resulting tree")
+    except Exception as e:
+        warn ("FAILED to parse %s: %s" % (source, e))
+        warn ("============== DETAILS:\n")
+        traceback.print_exc()
+        warn ("==============\n")
+        sys.exit(1)
 
-info ("Parsed %s OK" % args.source)
+    info ("Parsed %s OK" % source)
+    return ast
+
+sources = [args.source]
+if args.sharedSources is not None:
+    sources += args.sharedSources
+
+info ("List of source(s) to parse: %s" % str(sources))
+info ("args: Main source: %s" % str(args.source))
+info ("args: Shared source(s): %s" % str(args.sharedSources))
+asts = []
+i = 0
+for source in sources :
+    ast = parse_ast(source)
+    #info ("Parsed and got AST: %s" % str(ast))
+    asts.append(ast)
+    i = i + 1
+
+if i == 0 :
+    raise RuntimeError ("Got no data in resulting AST trees, were there any sources?")
 
 info ("CALL Visitor():")
 v = Visitor ()
-for idx, node in ast.children ():
-    v.visit (node)
+for ast in asts:
+    #info ("Visit AST: %s" % str(ast))
+    for idx, node in ast.children ():
+        v.visit (node)
 
-if args.test:
-    info ("CALL test()")
-    test_file = os.path.basename (args.source)
-    MIB_name = os.path.splitext (test_file) [0]
-    test_file = MIB_name + "_TEST.c"
-    prog_file = MIB_name + "_TEST.exe"
-    with open (test_file, "wt") as fout:
-        s_json2c (fout, MIB_name, v._mappings)
+def test_compile(MIB_name, source = None):
+    info ("CALL test_compile(%s, %s)" % (str(MIB_name), source))
+
+    # Numerous sources can be composed into a resulting test binary
+    # The main source goes as NONE and others added with its MIB_name
+    if source is None:
+        test_file = MIB_name + "_TEST.c"
+        obj_file =  MIB_name + "_TEST.o"
+        info ("CALL test_compile(): generate back %s from JSON, to compile below" % (test_file))
+        with open (test_file, "wt") as fout:
+            s_json2c (fout, MIB_name, v._mappings)
+    else:
+        # Take the additional shared source as is to link it in
+        test_file = source
+        obj_file = MIB_name + "_" + os.path.splitext (os.path.basename (test_file)) [0] + "_TEST.o"
 
     try:
         gcc = os.environ["CC"]
@@ -613,7 +646,57 @@ if args.test:
     try:
         gcc_cflags = os.environ["CFLAGS"].split()
     except KeyError:
+        # TODO: Template this via .py.in from some CLAGS or
+        # INCLUDES values detected by NUT configure script?
+        #gcc_cflags = ["-I/usr/include"]
         gcc_cflags = []
+
+    # Pass $CC_ENV as a list of envvars, if any gets used
+    try:
+        gcc_env = None
+        gcc_env_str = os.environ["CC_ENV"]
+        if gcc_env_str is not None and gcc_env_str != "" :
+            gcc_env = os.environ.copy()
+            # Nifty splitter from https://stackoverflow.com/a/5044384/4715872
+            gcc_env_list = gcc_env_str.split(" ")
+            for pair in gcc_env_list:
+                E,V = pair.split("=")
+                gcc_env[E] = V
+    except KeyError:
+        gcc_env = None
+
+    cmd = [gcc, "-c", "-std=c99", "-ggdb"] + gcc_cflags + ["-I"+drivers_dir, "-I"+include_dir, "-DWITH_DMFMIB_SELFTEST=1", "-o", obj_file, test_file]
+
+    info ("COMPILE: " + " ".join (cmd))
+    try:
+        if gcc_env is None :
+            subprocess.check_call (cmd)
+        else :
+            subprocess.check_call (cmd, env = gcc_env)
+    except subprocess.CalledProcessError as retcode:
+        warn ("COMPILE FAILED with code %s" % retcode.returncode)
+        sys.exit (retcode.returncode)
+
+    return obj_file
+
+if args.test:
+    info ("CALL test()")
+    test_file = os.path.basename (args.source)
+    MIB_name = os.path.splitext (test_file) [0]
+    prog_file = MIB_name + "_TEST.exe"
+
+    obj_files = []
+    # First file is generated from our JSON:
+    obj_files.append(test_compile(MIB_name, None))
+    # Shared-source helpers are used "as is":
+    if args.sharedSources is not None:
+        for source in args.sharedSources :
+            obj_files.append(test_compile(MIB_name, source))
+
+    try:
+        gcc = os.environ["CC"]
+    except KeyError:
+        gcc = "cc"
 
     try:
         gcc_ldflags = os.environ["LDFLAGS"].split()
@@ -634,8 +717,8 @@ if args.test:
     except KeyError:
         gcc_env = None
 
-    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
-    info ("COMPILE: " + " ".join (cmd))
+    cmd = [gcc, "-ggdb"] + gcc_ldflags + ["-o", prog_file] + obj_files
+    info ("LINK: " + " ".join (cmd))
     try:
         if gcc_env is None :
             subprocess.check_call (cmd)

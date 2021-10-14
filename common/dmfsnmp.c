@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  * Copyright (C) 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -76,14 +76,14 @@ print_snmp_memory_struct(snmp_info_t *self)
 				upsdebugx(5, "  value---> %s",
 					self->oid2info[i].info_value);
 #if WITH_SNMP_LKP_FUN
-			upsdebugx(5, "  fun_l2s  ---> %s",
-				self->oid2info[i].fun_l2s ? "defined" : "(null)");
+			upsdebugx(5, "  fun_vp2s  ---> %s",
+				self->oid2info[i].fun_vp2s ? "defined" : "(null)");
 			upsdebugx(5, "  nuf_s2l  ---> %s",
 				self->oid2info[i].nuf_s2l ? "defined" : "(null)");
 			upsdebugx(5, "  fun_s2l  ---> %s",
 				self->oid2info[i].fun_s2l ? "defined" : "(null)");
-			upsdebugx(5, "  nuf_l2s  ---> %s",
-				self->oid2info[i].nuf_l2s ? "defined" : "(null)");
+			upsdebugx(5, "  nuf_vp2s  ---> %s",
+				self->oid2info[i].nuf_vp2s ? "defined" : "(null)");
 #endif // WITH_SNMP_LKP_FUN
 			i++;
 		}
@@ -227,10 +227,10 @@ get_param_by_name (const char *name, const char **items)
 info_lkp_t *
 info_lkp_new (int oid, const char *value
 #if WITH_SNMP_LKP_FUN
-	, const char *(*fun_l2s)(long snmp_value)
+	, const char *(*fun_vp2s)(void *raw_snmp_value)
 	, long (*nuf_s2l)(const char *nut_value)
 	, long (*fun_s2l)(const char *snmp_value)
-	, const char *(*nuf_l2s)(long nut_value)
+	, const char *(*nuf_vp2s)(void *raw_nut_value)
 #endif // WITH_SNMP_LKP_FUN
 )
 {
@@ -241,16 +241,16 @@ info_lkp_new (int oid, const char *value
 		self->info_value = strdup (value);
 #if WITH_SNMP_LKP_FUN
 // consider WITH_DMF_FUNCTIONS too?
-	if (fun_l2s || nuf_s2l || fun_s2l || nuf_l2s) {
+	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
 			"so the provided value is effectively ignored: "
-			"fun_l2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_l2s='%p'",
-			(void*)fun_l2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_l2s);
+			"fun_vp2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_vp2s='%p'",
+			(void*)fun_vp2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_vp2s);
 	}
-	self->fun_l2s = NULL;
+	self->fun_vp2s = NULL;
 	self->nuf_s2l = NULL;
 	self->fun_s2l = NULL;
-	self->nuf_l2s = NULL;
+	self->nuf_vp2s = NULL;
 #endif // WITH_SNMP_LKP_FUN
 	return self;
 }
@@ -422,7 +422,7 @@ info_lkp_destroy (void **self_p)
 			self->info_value = NULL;
 		}
 // FIXME: When DMF support for lookup functions comes to fruition,
-// we may need to handle teardown of fun_l2s/nuf_s2l/fun_s2l/nuf_l2s here somehow.
+// we may need to handle teardown of fun_vp2s/nuf_s2l/fun_s2l/nuf_vp2s here somehow.
 		free (self);
 		*self_p = NULL;
 	}
@@ -867,22 +867,22 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	arg[0] = get_param_by_name(LOOKUP_OID, attrs);
 	arg[1] = get_param_by_name(LOOKUP_VALUE, attrs);
 #if WITH_SNMP_LKP_FUN
-	arg[2] = get_param_by_name(LOOKUP_FUN_L2S, attrs);
+	arg[2] = get_param_by_name(LOOKUP_FUN_VP2S, attrs);
 	arg[3] = get_param_by_name(LOOKUP_NUF_S2L, attrs);
 	arg[4] = get_param_by_name(LOOKUP_FUN_S2L, attrs);
-	arg[5] = get_param_by_name(LOOKUP_NUF_L2S, attrs);
+	arg[5] = get_param_by_name(LOOKUP_NUF_VP2S, attrs);
 	arg[6] = get_param_by_name(LOOKUP_FUNCTIONSET, attrs);
 
-	const char *(*fun_l2s)(long snmp_value) = NULL;
+	const char *(*fun_vp2s)(void *raw_snmp_value) = NULL;
 	long (*nuf_s2l)(const char *nut_value) = NULL;
 	long (*fun_s2l)(const char *snmp_value) = NULL;
-	const char *(*nuf_l2s)(long nut_value) = NULL;
+	const char *(*nuf_vp2s)(void *raw_nut_value) = NULL;
 
 	if (arg[2] || arg[3] || arg[4] || arg[5] || arg[6]) {
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
 			"so the provided value is effectively ignored: "
 			"oid='%s' value='%s' "
-			"fun_l2s='%s' nuf_s2l='%s' fun_s2l='%s' nuf_l2s='%s' functionset='%s'",
+			"fun_vp2s='%s' nuf_s2l='%s' fun_s2l='%s' nuf_vp2s='%s' functionset='%s'",
 			arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6]);
 		// FIXME : set up fun and nuf pointers based on functionset, language,
 		// being linked against LUA / with DMF functions, etc. Maybe use some
@@ -898,15 +898,15 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 // real pointers to a function, and if we get any strings from XML -
 // see WITH_DMF_FUNCTIONS for conversion. Note that these are not
 // really (char*) in info_lkp_t, as defined in array above...
-			, const char *(*)(long snmp_value)
+			, const char *(*)(void *raw_snmp_value)
 			, long (*)(const char *nut_value)
 			, long (*)(const char *snmp_value)
-			, const char *(*)(long nut_value)
+			, const char *(*)(void *raw_nut_value)
 #endif // WITH_SNMP_LKP_FUN
 ))element->new_element)
 			(atoi(arg[0]), arg[1]
 #if WITH_SNMP_LKP_FUN
-			, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s
+			, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s
 #endif // WITH_SNMP_LKP_FUN
 			));
 
@@ -1601,8 +1601,8 @@ is_sentinel__info_lkp_t(const info_lkp_t *pstruct) {
 	assert (pstruct);
 	return ( pstruct->info_value == NULL && pstruct->oid_value == 0
 #if WITH_SNMP_LKP_FUN
-	        && pstruct->fun_l2s == NULL && pstruct->nuf_s2l == NULL
-	        && pstruct->fun_s2l == NULL && pstruct->nuf_l2s == NULL
+	        && pstruct->fun_vp2s == NULL && pstruct->nuf_s2l == NULL
+	        && pstruct->fun_s2l == NULL && pstruct->nuf_vp2s == NULL
 #endif
 	);
 }

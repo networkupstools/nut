@@ -129,6 +129,9 @@
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="no"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<alarm name="pw_alarms">
 		<info_alarm oid="1.3.6.1.4.1.534.1.7.4" status="LB"/>
 		<info_alarm alarm="Output overload!" oid=".1.3.6.1.4.1.534.1.7.7" status="OVER"/>
@@ -191,7 +194,7 @@
 		<snmp_info default="" multiplier="1.0" name="battery.voltage" oid="1.3.6.1.4.1.534.1.2.2.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="battery.current" oid="1.3.6.1.4.1.534.1.2.3.0" power_status="yes"/>
 		<snmp_info default="" multiplier="60.0" name="battery.runtime.low" oid="1.3.6.1.2.1.33.1.9.7.0" power_status="yes"/>
-		<snmp_info flag_ok="yes" multiplier="128.0" name="battery.date" oid=".1.3.6.1.4.1.534.1.2.6.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="su_convert_to_iso_date_info" multiplier="128.0" name="battery.date" oid=".1.3.6.1.4.1.534.1.2.6.0" string="yes" writable="yes"/>
 		<snmp_info default="" multiplier="1.0" name="output.phases" oid="1.3.6.1.4.1.534.1.4.3.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="output.frequency" oid="1.3.6.1.4.1.534.1.4.2.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="output.frequency.nominal" oid="1.3.6.1.4.1.534.1.10.4.0" power_status="yes"/>

@@ -83,6 +83,7 @@ if ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; t
 fi >&2
 
 echo "Calling autoreconf..."
+LEGACY_MIBFILES_LIST=legacy-mibfiles-list.mk.in \
 autoreconf -iv && {
 	sh -n configure 2>/dev/null >/dev/null \
 	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }

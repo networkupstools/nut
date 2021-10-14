@@ -31,6 +31,9 @@
 		<lookup_info oid="14" value="OFF OVER"/>
 		<lookup_info oid="15" value="OFF OVER"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="eaton_ats30_mib">
 		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="128.0" name="device.description" oid=".1.3.6.1.2.1.1.1.0" string="yes" writable="yes"/>

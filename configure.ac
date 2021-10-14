@@ -2355,7 +2355,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	if test "${nut_with_dmf}" = "yes"; then
 	(	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
-		trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 && \
+		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 ; fi && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
 		{	cd "${DMFDIR}" && \
@@ -2364,7 +2364,11 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 				|| { can_generate_dmf_snmp="no: ERROR: Missing prerequisites for C to DMF parsing"; false; } && \
 			{ cd "${OUTDIR}" && \
 				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2 && \
-				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+				rm -rf "./apc-ats-mib.dmf" && \
+					echo "#ifndef _AUTOTEST_CONDEFS_H" > config.h && \
+					cat "${CURDIR}/confdefs.h" >> config.h && \
+					echo "#define _AUTOTEST_CONDEFS_H 1" >> config.h && \
+					echo "#endif" >> config.h && \
 				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
 				test -s "./apc-ats-mib.dmf" \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
@@ -2375,8 +2379,18 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
 			  done ; } ; \
 		}
-		RES=$?; cd "${CURDIR}"; rm -rf "${OUTDIR}"; test "${RES}" = 0
-	) >&5 2>&5 \
+		RES=$?
+		if test "${RES}" != 0 ; then
+			echo "${can_generate_dmf_snmp}" >&9
+		fi
+		cd "${CURDIR}" && \
+		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then
+			rm -rf "${OUTDIR}"
+		else
+			echo "You can inspect DMF build-test results in '${OUTDIR}'" >&9
+		fi || RES=$?
+		exit $RES
+	) 9>&2 >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
 	fi
 	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi

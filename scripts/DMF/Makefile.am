@@ -61,22 +61,30 @@ DMFNUTSCAN_SUBDIR = dmfnutscan.d
 # This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
 # based on existing C sources for ../../drivers/*-mib.c
 DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
-# Use "-include" to avoid errors in automake (the file is not yet available
-# in builddir at this moment)
--include legacy-mibfiles-list.mk
+# Use "include" with macro to avoid errors in automake: the file is not
+# yet available in builddir at the moment we call autoreconf from NUT
+# autogen.sh script which has just generated the .in template -- and
+# passes its name instead for formal consistency.
+LEGACY_MIBFILES_LIST = legacy-mibfiles-list.mk
+include $(LEGACY_MIBFILES_LIST)
 
 # Support development experiments for lookup with functions
 testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
+
 $(abs_builddir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
 
-$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
-$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
-$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+#$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
+#$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+#$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
 $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf : $(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c $(DMFGEN_DEPS)
 	@DMFFILE="$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf"; \
-	 CMIBFILE="$(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c"; export DEBUG; \
+	 CMIBFILE="$(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c"; \
+	 DEBUG=yes; \
+	 DMFTOOLS_CFLAGS="$(DMFTOOLS_CFLAGS) -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1"; \
+	 DMFTOOLS_CPPFLAGS="$(DMFTOOLS_CPPFLAGS) -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1"; \
+	 export DEBUG DMFTOOLS_CFLAGS DMFTOOLS_CPPFLAGS; \
 	 $(DMFGEN_CMD)
 
 # Automake installation - currently only if built WITH_DMF (we don't have the
@@ -408,10 +416,8 @@ dmf-uptodate: $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate
 # Make sure all present DMFs are valid vs. XSD schema
 dmf-validate: dmf-uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
-
-LUA_INCLUDE ?= -I/usr/include/lua5.1
-CFLAGS_LUA ?= $(LUA_INCLUDE)
-LDFLAGS_LUA ?= $(LUA_LIB)
+CFLAGS_LUA  = $(LUA_INCLUDE)
+LDFLAGS_LUA = $(LUA_LIB)
 if WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)

@@ -115,15 +115,15 @@ def mk_lookup (inp, root):
 
         # We can have variable-length C structures, with trailing entries
         # assumed to be NULLified by the compiler if unspecified explicitly.
-        for (oid, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s) in widen_tuples(lookup, 6):
-            debug ("Lookup '%s'[%d] = '%s' '%s' '%s' '%s' '%s'" %(name, oid, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))
-            if fun_l2s is not None or nuf_s2l is not None or fun_s2l is not None or nuf_l2s is not None:
+        for (oid, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s) in widen_tuples(lookup, 6):
+            debug ("Lookup '%s'[%d] = '%s' '%s' '%s' '%s' '%s'" %(name, oid, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s))
+            if fun_vp2s is not None or nuf_s2l is not None or fun_s2l is not None or nuf_vp2s is not None:
                 # TODO: Provide equivalent LUA under special comments
                 # markup in the C file, so we can copy-paste it in DMF?
                 # The functionset can then be used to define the block
                 # of LUA-C gateway functions used in these lookups.
                 warn("BIG WARNING: DMF does not currently support lookup functions in original C code")
-                info_el = mkElement ("lookup_info", oid=oid, value="dummy", fun_l2s=fun_l2s, nuf_s2l=nuf_s2l, fun_s2l=fun_s2l, nuf_l2s=nuf_l2s, functionset="lkp_func__"+name)
+                info_el = mkElement ("lookup_info", oid=oid, value="dummy", fun_vp2s=fun_vp2s, nuf_s2l=nuf_s2l, fun_s2l=fun_s2l, nuf_vp2s=nuf_vp2s, functionset="lkp_func__"+name)
             else:
                 info_el = mkElement ("lookup_info", oid=oid, value=value)
             lookup_el.appendChild (info_el)

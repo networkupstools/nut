@@ -133,8 +133,14 @@ fi
 dmfify_c_file() {
     # One reqiured argument: path to a `*-mib.c` filename
     # Optional second one names the output file (and temporary files)
+    # Optional third (and beyond) name additional files to look into
+    # (e.g. the snmp-ups-helpers.c for shared tables and routines)
+    #echo "dmfify_c_file: '$1' '$2' '$3' ..." >&2
     local cmib="$1"
     local mib="$2"
+    shift
+    shift || true # $2+ may be missing
+
     if [ -z "${mib}" ] ; then
         mib="$(basename "${cmib}" .c)"
     else
@@ -147,7 +153,8 @@ dmfify_c_file() {
         { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
           return 2; }
 
-    echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..." >&2
+    echo "INFO: Parsing '${cmib}' into '${mib}.dmf'; do not worry if 'missing setvar' warnings pop up..." >&2
+    if [ $# -gt 0 ]; then echo "INFO: Additionally parsing resources from: $*" >&2; fi
 
     # Code below assumes that the *.py.in only template the shebang line
     JNAME=""
@@ -158,11 +165,15 @@ dmfify_c_file() {
     for F in "${_SCRIPT_DIR}"/xmlify-mib.py.in "${_SCRIPT_DIR}"/xmlify-mib.py ; do
         [ -s "$F" ] && XNAME="$F" && break
     done
-    ( "${PYTHON}" "${JNAME}" --test "${cmib}" > "${mib}.json.tmp" && \
+    ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${mib}.json.tmp" && \
       "${PYTHON}" "${XNAME}" < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
     && [ -s "${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
-        echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
+        if [ $# -gt 0 ]; then
+            echo "ERROR: Could not parse '${cmib}' + $* into '${mib}.dmf'" >&2
+        else
+            echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
+        fi
         echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
         return $ERRCODE; }
 
@@ -176,14 +187,42 @@ dmfify_c_file() {
 #    && rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
 }
 
+list_shared_sources() {
+    # Current codebase provides additional shared mappings to
+    # conversion functions in snmp-ups -- and that is available
+    # to all drivers, both DMF and non-DMF. Required built-in
+    # to each DMF file because of `extern` in snmp-ups.h
+    # TODO: Detect this sort of resources (presence, location)
+    # somehow? Support a nested loop and separate storage var
+    # to find many such files?
+    SNAME=""
+    for F in ../../../drivers/snmp-ups-helpers.c ../../drivers/snmp-ups-helpers.c \
+        "${_SCRIPT_DIR}"/../../../drivers/snmp-ups-helpers.c \
+        "${_SCRIPT_DIR}"/../../drivers/snmp-ups-helpers.c \
+    ; do
+        [ -s "$F" ] && SNAME="$F" && break
+    done
+    echo "$SNAME"
+}
+
 dmfify_NUT_drivers() {
     local i=0
     # TODO? Use LEGACY_NUT_C_MIBS instead of filesystem query?
     # Got to know abs_srcdir to use it well then :)
+    cd "${_SCRIPT_DIR}" || exit
+
+    # TODO: It may be not too efficient to re-parse SNAME from C
+    # to JSON and XML about 30 times for each mapping. Better
+    # make some way to parse it once and add that JSON as the
+    # helper for quick inclusion to jsonify and beyond.
+    # TODO: Conflicts resolution (if several files define same token?)
+    SNAME="`list_shared_sources`"
     for cmib in ../../../drivers/*-mib.c ../../drivers/*-mib.c; do
         [ -s "${cmib}" ] || \
             { echo "ERROR: File not found or is empty: '${cmib}'" >&2; continue; }
-        dmfify_c_file "${cmib}" || return
+        # Note: helper sources must be arg 3+ below;
+        # arg2 may be empty but must then be present
+        dmfify_c_file "${cmib}" "" $SNAME || return
         i=$(($i+1))
     done
     [ "$i" = 0 ] && echo "ERROR: No files processed" >&2 && return 2
@@ -193,14 +232,17 @@ dmfify_NUT_drivers() {
 
 if [[ "$#" -gt 0 ]]; then
     echo "INFO: Got some arguments, assuming they are NUT filenames for parsing" >&2
+    SNAME="`list_shared_sources`"
+    # Note: helper sources must be arg 3+ below;
+    # arg2 may be empty but must then be present
     while [[ "$#" -gt 0 ]]; do
         case "${2-}" in
             *.dmf)
-                dmfify_c_file "$1" "$2" || exit
+                dmfify_c_file "$1" "$2" $SNAME || exit
                 shift
                 ;;
             *)
-                dmfify_c_file "$1" || exit
+                dmfify_c_file "$1" "" $SNAME || exit
                 ;;
         esac
         shift

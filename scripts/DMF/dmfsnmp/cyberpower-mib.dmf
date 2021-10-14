@@ -23,6 +23,9 @@
 		<lookup_info oid="1" value="NULL"/>
 		<lookup_info oid="6" value="OFF"/>
 	</lookup>
+	<lookup name="su_convert_to_iso_date_info">
+		<lookup_info oid="1" value="dummy"/>
+	</lookup>
 	<snmp name="cyberpower_mib">
 		<snmp_info absent="yes" default="ups" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
 		<snmp_info absent="yes" default="CYBERPOWER" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
