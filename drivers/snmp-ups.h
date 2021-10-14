@@ -283,6 +283,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
+/* Practical logic around lookup functions, see fun_vp2s and nuf_s2l
+ * fields in struct info_lkp_t */
 const char *su_find_infoval(info_lkp_t *oid2info, void *value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 const char *su_find_strval(info_lkp_t *oid2info, void *value);
