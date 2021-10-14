@@ -2364,7 +2364,11 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 				|| { can_generate_dmf_snmp="no: ERROR: Missing prerequisites for C to DMF parsing"; false; } && \
 			{ cd "${OUTDIR}" && \
 				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2 && \
-				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+				rm -rf "./apc-ats-mib.dmf" && \
+					echo "#ifndef _AUTOTEST_CONDEFS_H" > config.h && \
+					cat "${CURDIR}/confdefs.h" >> config.h && \
+					echo "#define _AUTOTEST_CONDEFS_H 1" >> config.h && \
+					echo "#endif" >> config.h && \
 				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
 				test -s "./apc-ats-mib.dmf" \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
