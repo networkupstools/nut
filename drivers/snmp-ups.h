@@ -289,13 +289,19 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 const char *su_find_strval(info_lkp_t *oid2info, void *value);
 
-/* Common conversion structs and functions provided by snmp-ups-helpers.c
+/*****************************************************
+ * Common conversion structs and functions provided by snmp-ups-helpers.c
  * so they can be used and so "shared" by different subdrivers
- */
+ *****************************************************/
+
 const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
 /* Name the mapping location in that array for consumers to reference */
 #define FUNMAP_USDATE_TO_ISODATE 0
+
+/*****************************************************
+ * End of Subdrivers shared helpers functions
+ *****************************************************/
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
