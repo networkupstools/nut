@@ -622,16 +622,15 @@ for ast in asts:
     for idx, node in ast.children ():
         v.visit (node)
 
-def test_compile(source, MIB_name = None):
-    info ("CALL test_compile(%s, %s)" % (source, str(MIB_name)))
+def test_compile(MIB_name, source = None):
+    info ("CALL test_compile(%s, %s)" % (str(MIB_name), source))
 
     # Numerous sources can be composed into a resulting test binary
     # The main source goes as NONE and others added with its MIB_name
-    if MIB_name is None:
-        test_file = os.path.basename (source)
-        MIB_name = os.path.splitext (test_file) [0]
+    if source is None:
         test_file = MIB_name + "_TEST.c"
         obj_file =  MIB_name + "_TEST.o"
+        info ("CALL test_compile(): generate back %s from JSON, to compile below" % (test_file))
         with open (test_file, "wt") as fout:
             s_json2c (fout, MIB_name, v._mappings)
     else:
@@ -687,10 +686,12 @@ if args.test:
     prog_file = MIB_name + "_TEST.exe"
 
     obj_files = []
-    obj_files.append(test_compile(args.source, None))
+    # First file is generated from our JSON:
+    obj_files.append(test_compile(MIB_name, None))
+    # Shared-source helpers are used "as is":
     if args.sharedSources is not None:
         for source in args.sharedSources :
-            obj_files.append(test_compile(source, MIB_name))
+            obj_files.append(test_compile(MIB_name, source))
 
     try:
         gcc = os.environ["CC"]
