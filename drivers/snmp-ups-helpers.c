@@ -28,9 +28,7 @@
 #include <time.h>  /* for strptime() */
 
 /* NUT SNMP common functions */
-#include "main.h"
-#include "nut_float.h"
-#include "nut_stdint.h"
+#include "common.h"
 #include "snmp-ups.h"
 
 /* Shunt the debugging calls when building self-test DMF driver code */
