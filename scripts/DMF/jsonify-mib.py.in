@@ -665,7 +665,7 @@ def test_compile(MIB_name, source = None):
     except KeyError:
         gcc_env = None
 
-    cmd = [gcc, "-c", "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir, "-DWITH_DMFMIB_SELFTEST=1"] + gcc_cflags + ["-o", obj_file, test_file]
+    cmd = [gcc, "-c", "-std=c99", "-ggdb"] + gcc_cflags + ["-I"+drivers_dir, "-I"+include_dir, "-DWITH_DMFMIB_SELFTEST=1", "-o", obj_file, test_file]
 
     info ("COMPILE: " + " ".join (cmd))
     try:
@@ -717,7 +717,7 @@ if args.test:
     except KeyError:
         gcc_env = None
 
-    cmd = [gcc, "-ggdb", "-o", prog_file] + obj_files + gcc_ldflags
+    cmd = [gcc, "-ggdb"] + gcc_ldflags + ["-o", prog_file] + obj_files
     info ("LINK: " + " ".join (cmd))
     try:
         if gcc_env is None :
