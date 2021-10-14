@@ -25,6 +25,7 @@
  */
 
 #include <ctype.h> /* for isprint() */
+#include <time.h>  /* for strptime() */
 
 /* NUT SNMP common functions */
 #include "main.h"
