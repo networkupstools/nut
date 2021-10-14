@@ -4,14 +4,15 @@
  *
  *  Copyright (C)
  *  2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
- *  2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *  2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *  2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *  2016 - 2021	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *  2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *  2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
- *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *  Sponsored by Eaton <http://www.eaton.com>
+ *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -366,17 +367,22 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
+/* Practical logic around lookup functions, see fun_vp2s and nuf_s2l
+ * fields in struct info_lkp_t */
 const char *su_find_infoval(info_lkp_t *oid2info, void *value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 const char *su_find_strval(info_lkp_t *oid2info, void *value);
 
-/* Common conversion structs (functions) */
+/*****************************************************
+ * Common conversion structs and functions provided by snmp-ups-helpers.c
+ * so they can be used and so "shared" by different subdrivers
+ *****************************************************/
+
 const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
 /* Name the mapping location in that array for consumers to reference */
 #define FUNMAP_USDATE_TO_ISODATE 0
 
-/* Subdrivers shared helpers functions */
 /* Process temperature value according to 'temperature_unit' */
 const char *su_temperature_read_fun(void *raw_snmp_value);
 
@@ -387,6 +393,10 @@ extern int temperature_unit;
 #define TEMPERATURE_CELSIUS    1
 #define TEMPERATURE_KELVIN     2
 #define TEMPERATURE_FAHRENHEIT 3
+
+/*****************************************************
+ * End of Subdrivers shared helpers functions
+ *****************************************************/
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);

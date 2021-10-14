@@ -6,7 +6,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016 - 2021	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -226,9 +226,6 @@ static int outletgroup_template_index_base = -1;
 static int ambient_template_index_base = -1;
 static int device_template_offset = -1;
 
-/* Temperature handling, to convert back to Celsius */
-int temperature_unit = TEMPERATURE_UNKNOWN;
-
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
 
@@ -237,78 +234,6 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
 int get_template_type(const char* varname);
-
-
-/***********************************************************************
- * Subdrivers shared helpers functions
- **********************************************************************/
-
-static char su_scratch_buf[255];
-
-/* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
-const char *su_usdate_to_isodate_info_fun(void *raw_date)
-{
-	const char *usdate = (char *)raw_date;
-	struct tm tm;
-	memset(&tm, 0, sizeof(struct tm));
-	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
-
-	upsdebugx(3, "%s: US date = %s", __func__, usdate);
-
-	/* Try to convert from US date string to time */
-	/* Note strptime returns NULL upon failure, and a ptr to the last
-	   null char of the string upon success. Just try blindly the conversion! */
-	strptime(usdate, "%m/%d/%Y", &tm);
-	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
-		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
-		return su_scratch_buf;
-	}
-
-	return NULL;
-}
-
-info_lkp_t su_convert_to_iso_date_info[] = {
-	/* array index = FUNMAP_USDATE_TO_ISODATE: */
-	{ 1, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, su_usdate_to_isodate_info_fun, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-};
-
-/* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(void *raw_snmp_value)
-{
-	const long snmp_value = *((long*)raw_snmp_value);
-	long celsius_value = snmp_value;
-
-	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
-
-	switch (temperature_unit) {
-		case TEMPERATURE_KELVIN:
-			celsius_value = (snmp_value / 10) - 273.15;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_CELSIUS:
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
-			break;
-		case TEMPERATURE_FAHRENHEIT:
-			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_UNKNOWN:
-		default:
-			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
-			break;
-	}
-	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
-	return su_scratch_buf;
-}
 
 /* ---------------------------------------------
  * driver functions implementations
