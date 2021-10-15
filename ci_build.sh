@@ -201,6 +201,13 @@ build_to_only_catch_errors() {
 }
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
+
+echo "Build host settings:"
+set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE)=' || true
+uname -a
+echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
+if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
+
 case "$BUILD_TYPE" in
 default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
