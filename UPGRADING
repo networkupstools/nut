@@ -54,6 +54,10 @@ Changes from 2.7.4 to 2.7.5
   a factor of 10, consider the `do_convert_deci` flag. See
   docs/man/netxml-ups.txt for details.
 
+- usbhid-ups: numeric data conversion from wire protocol to CPU representation
+  in GetValue() was completely reworked, aiming to be correct on all CPU types.
+  That said, regressions are possible and feedback is welcome.
+
 - nut-scanner: Packagers, take note of the changes to the library
   search code in common/common.c. Please file an issue if this does not work
   with your platform.
@@ -65,6 +69,10 @@ Changes from 2.7.4 to 2.7.5
 - upsdebugx(): added `[D#]` prefix to log entries with level > 0
   so if any scripts or other tools relied on parsing those messages
   making some assumptions, they should be updated
+
+- upsdebugx() and related methods are now macros, optionally calling similarly
+  named implementations like s_upsdebugx() as a slight optimization; this may
+  show up in linking of binaries for some customized build scenarios
 
 - libraries, tools and protocol now support a `TRACKING` ID to be used with
   an `INSTCMD` or `SET VAR` requests; for details see docs/net-protocol.txt

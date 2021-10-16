@@ -134,6 +134,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * add IBM USB VID
    * add deep battery test for CyberPower OL3000RMXL2U
    * report the libusb version used
+   * fixed CPU architecture dependent bitmask math issues, causing wrong
+     numbers interpreted from wire protocol data in Big-Endian LP64 builds
+     (SPARC64, s390x, etc.) [issue #1023, PRs #1024, #1040, #1055]
    * add Delta UPS Amplon R Series, tested on R1K and R3K model [PR #987]
    * add AMETEK Powervar UPM [PR #733]
    * add Tripplite AVR750U (ProductID 0x3024) [PR #963]
