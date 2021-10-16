@@ -32,7 +32,7 @@ static void increment_IPv6(struct in6_addr * addr)
 {
 	int i;
 
-	for (i=15 ; i>= 0 ; i--) {
+	for (i = 15 ; i >= 0 ; i--) {
 		addr->s6_addr[i]++;
 		if (addr->s6_addr[i] != 0) {
 			break;
@@ -190,9 +190,9 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		return strdup(host);
 	}
 	else { /* IPv6 */
-		for (i=0; i<16; i++) {
+		for (i = 0; i < 16; i++) {
 			if (ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i]) {
-				if (ip->start6.s6_addr[i]>ip->stop6.s6_addr[i]) {
+				if (ip->start6.s6_addr[i] > ip->stop6.s6_addr[i]) {
 					invert_IPv6(&ip->start6, &ip->stop6);
 				}
 				break;
@@ -222,7 +222,7 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		}
 		/* increment the address (need to pass address in host
 		   byte order, then pass back in network byte order */
-		ip->start.s_addr = htonl((ntohl(ip->start.s_addr)+1));
+		ip->start.s_addr = htonl((ntohl(ip->start.s_addr) + 1));
 
 		if (ntop(&ip->start, host, sizeof(host)) != 0) {
 			return NULL;
@@ -374,8 +374,8 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 		mask_byte = mask_val / 8;
 		if (mask_byte < 16) {
-			memset(&(ip.stop6.s6_addr[mask_byte+1]), 0xFF, 15 - mask_byte);
-			memset(&(ip.start6.s6_addr[mask_byte+1]), 0x00, 15 - mask_byte);
+			memset(&(ip.stop6.s6_addr[mask_byte + 1]), 0xFF, 15 - mask_byte);
+			memset(&(ip.start6.s6_addr[mask_byte + 1]), 0x00, 15 - mask_byte);
 
 			mask_bit = (0x100 >> mask_val%8) - 1;
 			ip.stop6.s6_addr[mask_byte] |= mask_bit;

@@ -127,6 +127,9 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 ------
 jenkins-debian11-mips,10.0.3.245
 ------
++
+NOTE: Don't forget to eventually `systemctl restart lxc-net` to apply the
+new host reservation!
 
 * Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
   markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
@@ -332,6 +335,7 @@ ARCH64=amd64 ARCH_BITS=64
 SHELL_PROGS=sh SHELL_PROGS=dash SHELL_PROGS=zsh SHELL_PROGS=bash
 SHELL_PROGS=csh SHELL_PROGS=tcsh SHELL_PROGS=busybox
 MAKE=make MAKE=gmake
+PYTHON=python2.7 PYTHON=python3.8
 ------
 
 Generic agent attributes
@@ -422,10 +426,12 @@ server should be restarted after such change.
 ** Prefix Start Agent Command: content depends on the container name,
    but generally looks like the example below to report some info about
    the final target platform (and make sure it is accessible) in the
-   agent's log. Note that it ends with a space char:
+   agent's log. Note that it ends with a space char, and that the command
+   here should not normally print anything into stderr/stdout (this tends
+   to confuse the Jenkins Remoting protocol):
 +
 ------
-echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && ssh jenkins-debian11-ppc64el 'uname -a ; getconf LONG_BIT; getconf WORD_BIT; true;' && 
+echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && 
 ------
 
 ** Suffix Start Agent Command: empty

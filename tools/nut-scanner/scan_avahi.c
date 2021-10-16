@@ -116,92 +116,92 @@ int nutscan_load_avahi_library(const char *libname_path)
 	}
 	lt_dlerror();      /* Clear any existing error */
 	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
 	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
 
@@ -280,7 +280,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 				buf_size = strlen(device) +
 					strlen(host_name) +
 					5 + 1 + 1 + 1;
-				dev->port=malloc(buf_size);
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s:%u",
 						device, host_name, port);
@@ -288,8 +288,8 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			}
 			else {
 				/*+1+1 is for '@' character and terminating 0 */
-				buf_size = strlen(device)+strlen(host_name)+1+1;
-				dev->port=malloc(buf_size);
+				buf_size = strlen(device) + strlen(host_name) + 1 + 1;
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s@%s",
 						device, host_name);
@@ -330,15 +330,15 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			if (port != PORT) {
 				/*+1+1 is for ':' character and terminating 0 */
 				/*buf is the string containing the port number*/
-				buf_size = strlen(host_name)+strlen(buf)+1+1;
-				dev->port=malloc(buf_size);
+				buf_size = strlen(host_name) + strlen(buf) + 1 + 1;
+				dev->port = malloc(buf_size);
 				if (dev->port) {
 					snprintf(dev->port, buf_size, "%s:%s",
 						host_name, buf);
 				}
 			}
 			else {
-				dev->port=strdup(host_name);
+				dev->port = strdup(host_name);
 			}
 			if (dev->port) {
 				dev_ret = nutscan_add_device_to_device(dev_ret, dev);

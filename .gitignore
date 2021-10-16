@@ -9,6 +9,7 @@
 .deps/
 .libs/
 .inst/
+/tmp/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
@@ -40,6 +41,10 @@ common/.dirstamp
 *-spellchecked
 /.ci*.log
 /.ci*.log.*
+
+# Python precompiled files
+__pycache__/
+*.pyc
 
 # Dist
 /nut-*.*.*/

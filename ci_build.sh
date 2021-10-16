@@ -39,18 +39,28 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-clang ;;
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
+
+        # Some (QEMU) builders have issues running valgrind as a tool
+        "NUT_BUILD_CAPS=valgrind=no")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=no ;;
+        "NUT_BUILD_CAPS=valgrind"|"NUT_BUILD_CAPS=valgrind=yes")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=yes ;;
+
         "NUT_BUILD_CAPS=docs:all=no")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=no ;;
         "NUT_BUILD_CAPS=docs:all"|"NUT_BUILD_CAPS=docs:all=yes")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=drivers:all=no")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=no ;;
         "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=cgi=no")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
@@ -87,7 +97,11 @@ if [ -z "$CI_OS_NAME" ]; then
         *sunos*)
             CI_OS_NAME="sunos" ;;
         "-") ;;
-        *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
+        *)  echo "WARNING: Could not recognize CI_OS_NAME from CI_OS_HINT='$CI_OS_HINT', update './ci_build.sh' if needed" >&2
+            if [ "$OS_FAMILY-$OS_DISTRO" != "-" ]; then
+                echo "WARNING: I was told that OS_FAMILY='$OS_FAMILY' and OS_DISTRO='$OS_DISTRO'" >&2
+            fi
+            ;;
     esac
     [ -z "$CI_OS_NAME" ] || echo "INFO: Detected CI_OS_NAME='$CI_OS_NAME'" >&2
 fi
@@ -182,7 +196,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if which ccache && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
@@ -330,6 +344,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     ; then
         echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
         CONFIG_OPTS+=("--enable-cppunit=no")
+    fi
+
+    if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
+        echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
+        CONFIG_OPTS+=("--with-valgrind=no")
     fi
 
     # This flag is primarily linked with (lack of) docs generation enabled
@@ -708,14 +727,15 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 "")
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any options" >&2
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
         sleep 5
     fi
     echo ""
     ./autogen.sh
-    ./configure
+    #./configure
+    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto
     $MAKE all && $MAKE check
     ;;
 *)

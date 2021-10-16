@@ -808,6 +808,7 @@ endif
 if HAVE_ASCIIDOC
 
 .txt.html:
+	@echo "  DOC-HTML Generating $@"; \
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
@@ -824,15 +825,19 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--destination-dir=.
 
 .txt.1:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.3:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.5:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.8:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 else !HAVE_ASCIIDOC
