@@ -6,6 +6,41 @@
 
 set -e
 
+# Quick hijack for interactive development like this:
+#   BUILD_TYPE=fightwarn-clang ./ci_build.sh
+case "$BUILD_TYPE" in
+    fightwarn) ;; # for default compiler
+    fightwarn-gcc)
+        CC="gcc"
+        CXX="g++"
+        CPP="cpp"
+        BUILD_TYPE=fightwarn
+        ;;
+    fightwarn-clang)
+        CC="clang"
+        CXX="clang++"
+        CPP="clang-cpp"
+        BUILD_TYPE=fightwarn
+        ;;
+esac
+
+if [ "$BUILD_TYPE" = fightwarn ]; then
+    # For CFLAGS/CXXFLAGS keep caller or compiler defaults
+    # (including C/C++ revision)
+    BUILD_TYPE=default-all-errors
+    BUILD_WARNFATAL=yes
+
+    # Current fightwarn goal is to have no warnings at preset level below:
+    #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
+    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+
+    # Eventually this constraint would be removed to check all present
+    # SSL implementations since their ifdef-driven codebases differ and
+    # emit varied warnings. But so far would be nice to get the majority
+    # of shared codebase clean first:
+    [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+fi
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
