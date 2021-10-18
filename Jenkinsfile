@@ -102,6 +102,7 @@ pipeline {
     }
 // Note: your Jenkins setup may benefit from similar setup on side of agents:
 //        PATH="/usr/lib64/ccache:/usr/lib/ccache:/usr/bin:/bin:${PATH}"
+
     stages {
         stage ('pre-clean') {
                     steps {
@@ -114,6 +115,7 @@ pipeline {
                         sh 'rm -f ccache.log cppcheck.xml'
                     }
         }
+
         stage ('git') {
                     steps {
                         retry(3) {
@@ -122,6 +124,7 @@ pipeline {
                         milestone ordinal: 30, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     }
         }
+
         stage ('prepare') {
                     steps {
                         sh './autogen.sh'
@@ -129,11 +132,13 @@ pipeline {
                         milestone ordinal: 40, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     }
         }
+
         stage ('configure') {
                     steps {
                         sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes'
                     }
         }
+
         stage ('compile') {
                     steps {
                         sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make -k -j4 all || make all'
@@ -162,6 +167,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
         }
+
         stage ('dist') {
                     when { expression { return ( params.DO_DIST_DOCS ) } }
                     steps {
@@ -170,6 +176,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                                 sh "rm -f __dist.tar.gz"
                     }
         }
+
         stage ('check') {
             parallel {
                 stage ('cppcheck') {
@@ -183,6 +190,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         sh 'rm -f cppcheck.xml'
                     }
                 }
+
                 stage ('nut-driver-enumerator-test') {
                     when { expression { return ( params.DO_TEST_NDE ) } }
                     steps {
@@ -202,6 +210,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make check') {
                     when { expression { return ( params.DO_TEST_CHECK ) } }
                     steps {
@@ -260,6 +269,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make memcheck') {
                     when { expression { return ( params.DO_TEST_MEMCHECK ) } }
                     steps {
@@ -318,6 +328,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                       }
                     }
                 }
+
                 stage ('make distcheck') {
                     when { expression { return ( params.DO_TEST_DISTCHECK ) } }
                     steps {
@@ -376,6 +387,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make distcheck-dmf-all-yes') {
                     when { expression { return ( params.DO_TEST_DISTCHECK_DMF_ALL_YES ) } }
                     steps {
@@ -434,6 +446,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make install check') {
                     when { expression { return ( params.DO_TEST_INSTALL ) } }
                     steps {
@@ -494,6 +507,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                 }
             }
         }
+
         stage('Analyse with Coverity') {
             when {
                 beforeAgent true
@@ -503,6 +517,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     changeRequest()
                 }
             }
+
             stages {
                 stage('Compile') {
                     steps {
@@ -514,6 +529,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                             '''
                     }
                 }
+
                 stage('Analyse') {
                     steps {
                         sh '''
@@ -524,6 +540,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                            '''
                     }
                 }
+
                 stage('Commit') {
                     when {
                         beforeAgent true
@@ -543,6 +560,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     }
                 }
             }
+
             post {
                 always {
                     recordIssues (
@@ -554,6 +572,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                 }
             }
         }
+
         stage ('deploy if appropriate') {
             steps {
                 script {
@@ -589,6 +608,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                 }
             }
         }
+
         stage ('cleanup') {
             when { expression { return ( params.DO_CLEANUP_AFTER_BUILD ) } }
             steps {
@@ -596,6 +616,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
             }
         }
     }
+
     post {
         success {
             script {
