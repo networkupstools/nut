@@ -66,6 +66,10 @@ pipeline {
             defaultValue: true,
             description: 'Require that there are no files not discovered changed/untracked via .gitignore after builds and tests?',
             name: 'CI_REQUIRE_GOOD_GITIGNORE')
+        booleanParam (
+            defaultValue: true,
+            description: 'Run code analysis (applies for certain branches)?',
+            name: 'DO_COVERITY')
         string (
             defaultValue: "30",
             description: 'When running tests, use this timeout (in minutes; be sure to leave enough for double-job of a distcheck too)',
@@ -511,13 +515,16 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
         stage('Analyse with Coverity') {
             when {
                 beforeAgent true
-                anyOf {
-                    branch 'master'
-                    branch "release/*"
-                    branch 'FTY'
-                    branch '*-FTY-master'
-                    branch '*-FTY'
-                    changeRequest()
+                allOf {
+                    expression { return ("true" == "${params.DO_COVERITY}") }
+                    anyOf {
+                        branch 'master'
+                        branch "release/*"
+                        branch 'FTY'
+                        branch '*-FTY-master'
+                        branch '*-FTY'
+                        changeRequest()
+                    }
                 }
             }
 
@@ -544,15 +551,18 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     }
                 }
 
-                stage('Commit') {
+                    stage('Commit Coverity') {
                     when {
                         beforeAgent true
-                        anyOf {
-                            branch 'master'
-                            branch 'release/*'
-                            branch 'FTY'
-                            branch '*-FTY-master'
-                            branch '*-FTY'
+                        allOf {
+                            expression { return ("true" == "${params.DO_COVERITY}") }
+                            anyOf {
+                                branch 'master'
+                                branch 'release/*'
+                                branch 'FTY'
+                                branch '*-FTY-master'
+                                branch '*-FTY'
+                            }
                         }
                     }
                     steps {
