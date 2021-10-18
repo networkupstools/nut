@@ -524,7 +524,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     }
 
                     stages {
-                        stage('Compile') {
+                        stage('Compile Coverity') {
                             steps {
                                 dir("tmp/build-coverity") {
                                     deleteDir()
@@ -542,7 +542,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                             }
                         }
 
-                        stage('Analyse') {
+                        stage('Analyse Coverity') {
                             steps {
                                 script {
                                     coverity.analyse("tmp/build-coverity")
