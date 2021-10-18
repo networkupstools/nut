@@ -514,6 +514,9 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                 anyOf {
                     branch 'master'
                     branch "release/*"
+                    branch 'FTY'
+                    branch '*-FTY-master'
+                    branch '*-FTY'
                     changeRequest()
                 }
             }
@@ -547,6 +550,9 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         anyOf {
                             branch 'master'
                             branch 'release/*'
+                            branch 'FTY'
+                            branch '*-FTY-master'
+                            branch '*-FTY'
                         }
                     }
                     steps {
