@@ -4,15 +4,18 @@ all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
-TESTS = nutlogtest
+TESTS = nutlogtest getvaluetest
 
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+
+getvaluetest_SOURCES = getvaluetest.c $(top_srcdir)/drivers/hidparser.c
+getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests

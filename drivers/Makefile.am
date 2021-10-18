@@ -208,13 +208,24 @@ mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 mge_shut_LDADD = $(LDADD) -lm
 
 # SNMP
-snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
+# Please keep the MIB table below sorted roughly alphabetically (incidentally
+# by vendor too) to ease maintenance and codebase fork resynchronisations
+snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
+ apc-mib.c apc-pdu-mib.c \
+ baytech-mib.c bestpower-mib.c \
+ compaq-mib.c cyberpower-mib.c \
+ delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c \
  eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
- ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
- bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
- eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
- apc-pdu-mib.c emerson-avocent-pdu-mib.c hpe-pdu-mib.c
+ eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
+ emerson-avocent-pdu-mib.c \
+ hpe-pdu-mib.c huawei-mib.c \
+ ietf-mib.c \
+ mge-mib.c \
+ netvision-mib.c \
+ powerware-mib.c \
+ raritan-pdu-mib.c raritan-px2-mib.c \
+ xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
