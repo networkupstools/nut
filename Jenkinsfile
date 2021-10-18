@@ -557,7 +557,9 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     post {
                         always {
                             script {
-                                coverity.postAnalysis()
+                                dir("tmp/build-coverity") {
+                                    coverity.postAnalysis()
+                                }
                             }
                         }
                     }
