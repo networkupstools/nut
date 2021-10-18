@@ -584,7 +584,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
             }
         }
 
-        stage ('Upload results'){
+        stage ('Upload results') {
             parallel {
 
                 stage('Commit Coverity') {
