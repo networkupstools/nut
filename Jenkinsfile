@@ -66,6 +66,10 @@ pipeline {
             defaultValue: true,
             description: 'Require that there are no files not discovered changed/untracked via .gitignore after builds and tests?',
             name: 'CI_REQUIRE_GOOD_GITIGNORE')
+        booleanParam (
+            defaultValue: true,
+            description: 'Run code analysis (applies for certain branches)?',
+            name: 'DO_COVERITY')
         string (
             defaultValue: "30",
             description: 'When running tests, use this timeout (in minutes; be sure to leave enough for double-job of a distcheck too)',
@@ -102,6 +106,7 @@ pipeline {
     }
 // Note: your Jenkins setup may benefit from similar setup on side of agents:
 //        PATH="/usr/lib64/ccache:/usr/lib/ccache:/usr/bin:/bin:${PATH}"
+
     stages {
         stage ('pre-clean') {
                     steps {
@@ -114,6 +119,7 @@ pipeline {
                         sh 'rm -f ccache.log cppcheck.xml'
                     }
         }
+
         stage ('git') {
                     steps {
                         retry(3) {
@@ -122,6 +128,7 @@ pipeline {
                         milestone ordinal: 30, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     }
         }
+
         stage ('prepare') {
                     steps {
                         sh './autogen.sh'
@@ -129,11 +136,13 @@ pipeline {
                         milestone ordinal: 40, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     }
         }
+
         stage ('configure') {
                     steps {
                         sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes'
                     }
         }
+
         stage ('compile') {
                     steps {
                         sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make -k -j4 all || make all'
@@ -162,6 +171,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
         }
+
         stage ('dist') {
                     when { expression { return ( params.DO_DIST_DOCS ) } }
                     steps {
@@ -170,19 +180,18 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                                 sh "rm -f __dist.tar.gz"
                     }
         }
+
         stage ('check') {
             parallel {
                 stage ('cppcheck') {
                     when { expression { return ( params.DO_CPPCHECK ) } }
                     steps {
-                        dir("tmp") {
-                            deleteDir()
-                        }
                         sh 'cppcheck --std=c++11 --enable=all --inconclusive --xml --xml-version=2 . 2>cppcheck.xml'
                         archiveArtifacts artifacts: '**/cppcheck.xml'
                         sh 'rm -f cppcheck.xml'
                     }
                 }
+
                 stage ('nut-driver-enumerator-test') {
                     when { expression { return ( params.DO_TEST_NDE ) } }
                     steps {
@@ -202,6 +211,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make check') {
                     when { expression { return ( params.DO_TEST_CHECK ) } }
                     steps {
@@ -260,6 +270,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make memcheck') {
                     when { expression { return ( params.DO_TEST_MEMCHECK ) } }
                     steps {
@@ -318,6 +329,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                       }
                     }
                 }
+
                 stage ('make distcheck') {
                     when { expression { return ( params.DO_TEST_DISTCHECK ) } }
                     steps {
@@ -376,6 +388,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make distcheck-dmf-all-yes') {
                     when { expression { return ( params.DO_TEST_DISTCHECK_DMF_ALL_YES ) } }
                     steps {
@@ -434,6 +447,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
+
                 stage ('make install check') {
                     when { expression { return ( params.DO_TEST_INSTALL ) } }
                     steps {
@@ -492,103 +506,155 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         }
                     }
                 }
-            }
-        }
-        stage('Analyse with Coverity') {
-            when {
-                beforeAgent true
-                anyOf {
-                    branch 'master'
-                    branch "release/*"
-                    changeRequest()
-                }
-            }
-            stages {
-                stage('Compile') {
-                    steps {
-                        sh '''
-                            ./autogen.sh
-                            ./configure
-                            make clean
-                            coverity.sh --build $PWD
-                            '''
-                    }
-                }
-                stage('Analyse') {
-                    steps {
-                        sh '''
-                            coverity.sh --analyse $PWD
-                           '''
-                        sh '''
-                           coverity-warning-parser.py $PWD $PWD
-                           '''
-                    }
-                }
-                stage('Commit') {
+
+                stage('Analyse with Coverity') {
                     when {
                         beforeAgent true
-                        anyOf {
-                            branch 'master'
-                            branch 'release/*'
+                        allOf {
+                            expression { return ("true" == "${params.DO_COVERITY}") }
+                            anyOf {
+                                branch 'master'
+                                branch "release/*"
+                                branch 'FTY'
+                                branch '*-FTY-master'
+                                branch '*-FTY'
+                                changeRequest()
+                            }
+                        }
+                    }
+
+                    stages {
+                        stage('Compile Coverity') {
+                            steps {
+                                dir("tmp/build-coverity") {
+                                    deleteDir()
+                                }
+                                dir("tmp/build-coverity") {
+                                    unstash 'prepped'
+                                }
+                                script {
+                                    // Autogen is currently part of "prepped" archive
+                                    //compile.autogen("tmp/build-coverity")
+                                    compile.configure("tmp/build-coverity", "--enable-Werror=yes --with-docs=no")
+                                    compile.make("tmp/build-coverity", "clean")
+                                    coverity.compile("tmp/build-coverity")
+                                }
+                            }
+                        }
+
+                        stage('Analyse Coverity') {
+                            steps {
+                                script {
+                                    coverity.analyse("tmp/build-coverity")
+                                }
+                            }
+                        }
+
+                        /* Committing the result - that happens below */
+                    }
+
+                    // TODO: Use coverity steps from lib below for the post{}
+                    post {
+                        always {
+                            script {
+                                dir("tmp/build-coverity") {
+                                    coverity.postAnalysis()
+                                }
+                            }
+                        }
+                    }
+                } // Analyze with Coverity
+
+            }
+        }
+
+        stage('Ready to push') {
+            steps {
+                script {
+                    manager.addShortText("Build, analysis and tests passed okay")
+                }
+                milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
+            }
+        }
+
+        stage ('Upload results') {
+            parallel {
+
+                stage('Commit Coverity') {
+                    when {
+                        beforeAgent true
+                        allOf {
+                            expression { return ("true" == "${params.DO_COVERITY}") }
+                            anyOf {
+                                branch 'master'
+                                branch 'release/*'
+                                branch 'FTY'
+                                branch '*-FTY-master'
+                                branch '*-FTY'
+                            }
                         }
                     }
                     steps {
-                        sh '''
-                            COV_GIT_URL=$(git remote -v | egrep '^origin' | awk '{print $2}' | head -1)
-                            COV_GIT_PROJECT_NAME=$(basename ${COV_GIT_URL} | sed 's#.git##g')
-                            COV_GIT_BRANCH=$(echo ${BRANCH_NAME} | sed 's#/#_#g')
-                            COV_GIT_COMMIT_ID=$(git rev-parse --short HEAD)
-                            coverity.sh --commit $PWD "${COV_GIT_PROJECT_NAME}" "${COV_GIT_BRANCH}" "${COV_GIT_COMMIT_ID}"
-                        '''
-                    }
-                }
-            }
-            post {
-                always {
-                    recordIssues (
-                        enabledForFailure: true,
-                        aggregatingResults: true,
-                        qualityGates: [[threshold: 1, type: 'DELTA_ERROR', fail: true]],
-                        tools: [issues(name: "Coverity Analysis",pattern: '**/tmp_cov_dir/output/*.errors.json')]
-                    )
-                }
-            }
-        }
-        stage ('deploy if appropriate') {
-            steps {
-                script {
-                    def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
-                    def myDEPLOY_BRANCH_PATTERN = sh(returnStdout: true, script: """echo "${params["DEPLOY_BRANCH_PATTERN"]}" """).trim();
-                    def myDEPLOY_REPORT_RESULT = sh(returnStdout: true, script: """echo "${params["DEPLOY_REPORT_RESULT"]}" """).trim().toBoolean();
-                    echo "Original: DEPLOY_JOB_NAME : ${params["DEPLOY_JOB_NAME"]} DEPLOY_BRANCH_PATTERN : ${params["DEPLOY_BRANCH_PATTERN"]} DEPLOY_REPORT_RESULT : ${params["DEPLOY_REPORT_RESULT"]}"
-                    echo "Used:     myDEPLOY_JOB_NAME:${myDEPLOY_JOB_NAME} myDEPLOY_BRANCH_PATTERN:${myDEPLOY_BRANCH_PATTERN} myDEPLOY_REPORT_RESULT:${myDEPLOY_REPORT_RESULT}"
-                    if ( (myDEPLOY_JOB_NAME != "") && (myDEPLOY_BRANCH_PATTERN != "") ) {
-                        if ( env.BRANCH_NAME =~ myDEPLOY_BRANCH_PATTERN ) {
-                            def GIT_URL = sh(returnStdout: true, script: """git remote -v | egrep '^origin' | awk '{print \$2}' | head -1""").trim()
-                            def GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
-                            def DIST_ARCHIVE = ""
-                            def msg = "Would deploy ${GIT_URL} ${GIT_COMMIT} because tested branch '${env.BRANCH_NAME}' matches filter '${myDEPLOY_BRANCH_PATTERN}'"
-                            if ( params.DO_DIST_DOCS ) {
-                                DIST_ARCHIVE = env.BUILD_URL + "artifact/__dist.tar.gz"
-                                msg += ", using dist archive '${DIST_ARCHIVE}' to speed up deployment"
-                            }
-                            echo msg
-                            milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
-                            build job: "${myDEPLOY_JOB_NAME}", parameters: [
-                                string(name: 'DEPLOY_GIT_URL', value: "${GIT_URL}"),
-                                string(name: 'DEPLOY_GIT_BRANCH', value: env.BRANCH_NAME),
-                                string(name: 'DEPLOY_GIT_COMMIT', value: "${GIT_COMMIT}"),
-                                string(name: 'DEPLOY_DIST_ARCHIVE', value: "${DIST_ARCHIVE}")
-                                ], quietPeriod: 0, wait: myDEPLOY_REPORT_RESULT, propagate: myDEPLOY_REPORT_RESULT
-                        } else {
-                            echo "Not deploying because branch '${env.BRANCH_NAME}' did not match filter '${myDEPLOY_BRANCH_PATTERN}'"
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                                script {
+                                    /* Many components upload in 2-5 minutes; but some
+                                     * seem to require complex processing on server side */
+                                    //coverity.commitResults("tmp/build-coverity", parameters.coverityUploadTimeoutLen, parameters.coverityUploadTimeoutUnit)
+                                    coverity.commitResults("tmp/build-coverity")
+                                    manager.addShortText("Coverity upload completed")
+                                }
                         }
-                    } else {
-                        echo "Not deploying because deploy-job parameters are not set"
+                    }
+                    post {
+                        unsuccessful {
+                            script {
+                                manager.addShortText("Coverity upload failed")
+                            }
+                        }
+                    }
+                } // Commit Coverity
+
+                stage ('deploy if appropriate') {
+                    steps {
+                        script {
+                            def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
+                            def myDEPLOY_BRANCH_PATTERN = sh(returnStdout: true, script: """echo "${params["DEPLOY_BRANCH_PATTERN"]}" """).trim();
+                            def myDEPLOY_REPORT_RESULT = sh(returnStdout: true, script: """echo "${params["DEPLOY_REPORT_RESULT"]}" """).trim().toBoolean();
+                            echo "Original: DEPLOY_JOB_NAME : ${params["DEPLOY_JOB_NAME"]} DEPLOY_BRANCH_PATTERN : ${params["DEPLOY_BRANCH_PATTERN"]} DEPLOY_REPORT_RESULT : ${params["DEPLOY_REPORT_RESULT"]}"
+                            echo "Used:     myDEPLOY_JOB_NAME:${myDEPLOY_JOB_NAME} myDEPLOY_BRANCH_PATTERN:${myDEPLOY_BRANCH_PATTERN} myDEPLOY_REPORT_RESULT:${myDEPLOY_REPORT_RESULT}"
+                            if ( (myDEPLOY_JOB_NAME != "") && (myDEPLOY_BRANCH_PATTERN != "") ) {
+                                if ( env.BRANCH_NAME =~ myDEPLOY_BRANCH_PATTERN ) {
+                                    def GIT_URL = sh(returnStdout: true, script: """git remote -v | egrep '^origin' | awk '{print \$2}' | head -1""").trim()
+                                    def GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
+                                    def DIST_ARCHIVE = ""
+                                    def msg = "Would deploy ${GIT_URL} ${GIT_COMMIT} because tested branch '${env.BRANCH_NAME}' matches filter '${myDEPLOY_BRANCH_PATTERN}'"
+                                    if ( params.DO_DIST_DOCS ) {
+                                        DIST_ARCHIVE = env.BUILD_URL + "artifact/__dist.tar.gz"
+                                        msg += ", using dist archive '${DIST_ARCHIVE}' to speed up deployment"
+                                    }
+                                    echo msg
+                                    //milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
+                                    build job: "${myDEPLOY_JOB_NAME}", parameters: [
+                                        string(name: 'DEPLOY_GIT_URL', value: "${GIT_URL}"),
+                                        string(name: 'DEPLOY_GIT_BRANCH', value: env.BRANCH_NAME),
+                                        string(name: 'DEPLOY_GIT_COMMIT', value: "${GIT_COMMIT}"),
+                                        string(name: 'DEPLOY_DIST_ARCHIVE', value: "${DIST_ARCHIVE}")
+                                        ], quietPeriod: 0, wait: myDEPLOY_REPORT_RESULT, propagate: myDEPLOY_REPORT_RESULT
+                                } else {
+                                    echo "Not deploying because branch '${env.BRANCH_NAME}' did not match filter '${myDEPLOY_BRANCH_PATTERN}'"
+                                }
+                            } else {
+                                echo "Not deploying because deploy-job parameters are not set"
+                            }
+
+                            manager.addShortText("Processing of push to packaging completed")
+                        }
                     }
                 }
             }
+
         }
+
         stage ('cleanup') {
             when { expression { return ( params.DO_CLEANUP_AFTER_BUILD ) } }
             steps {
@@ -596,6 +662,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
             }
         }
     }
+
     post {
         success {
             script {
