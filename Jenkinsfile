@@ -633,7 +633,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                                         msg += ", using dist archive '${DIST_ARCHIVE}' to speed up deployment"
                                     }
                                     echo msg
-                                    milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
+                                    //milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                                     build job: "${myDEPLOY_JOB_NAME}", parameters: [
                                         string(name: 'DEPLOY_GIT_URL', value: "${GIT_URL}"),
                                         string(name: 'DEPLOY_GIT_BRANCH', value: env.BRANCH_NAME),
