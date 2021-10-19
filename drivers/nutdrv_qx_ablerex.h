@@ -1,7 +1,8 @@
-/* nutdrv_qx_megatec.h - Subdriver for Megatec protocol based UPSes
+/* nutdrv_qx_ablerex.h - Subdriver for Ablerex Qx protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
+ *   2021 Ablerex Software <Ablerex.software@ablerex.com.tw>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
