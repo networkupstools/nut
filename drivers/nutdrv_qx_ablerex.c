@@ -31,78 +31,76 @@ static int Q5_Vbc = -1;
 static int ablerexQ5Vb = -1;
 
 static int ablerex_Q5(item_t *item, char *value, const size_t valuelen) {
-    /*
+/*
 	int RawValue = 0;
 
-    RawValue  = (unsigned char)item->value[0] * 256 + (unsigned char)item->value[1];
-    */
-    
-    //ablerexQ5Vb = (unsigned char)buf[7] * 256 + (unsigned char)buf[8];
-    //Q5_Vbc = (unsigned char)buf[9] * 256 + (unsigned char)buf[10];
-    upsdebugx(2, "Q51: %d %d %d %d %d %d", item->answer[0], item->answer[1], item->answer[2], item->answer[3], item->answer[4], item->answer[5]);
-    upsdebugx(2, "Q52: %d %d %d %d %d %d", item->answer[6], item->answer[7], item->answer[8], item->answer[9], item->answer[10], item->answer[11]);
-    upsdebugx(2, "Q53: %d %d %d %d", item->answer[12], item->answer[13], item->answer[14], item->answer[15]);
-    
-    int Q5_Fout = (unsigned char)item->answer[1] * 256 + (unsigned char)item->answer[2];
-    int Q5_Vb = (unsigned char)item->answer[7] * 256 + (unsigned char)item->answer[8];
-    Q5_Vbc = (unsigned char)item->answer[9] * 256 + (unsigned char)item->answer[10];
-    //int Q5_InvW = (unsigned char)item->answer[11] * 256 + (unsigned char)item->answer[12];
-    int Q5_Err = (unsigned char)item->answer[13] * 256 + (unsigned char)item->answer[14];
-    int Q5_O_Cur = (unsigned char)item->answer[15] * 256 + (unsigned char)item->answer[16];
-    
-    ablerexQ5Vb = Q5_Vb;
-    upsdebugx(2, "Q5: %.1f %d %.1f", 0.1 * Q5_Fout, Q5_Err, 0.1 * Q5_O_Cur);
-    upsdebugx(2, "Q5Vb: %d Vbc %d", Q5_Vb, Q5_Vbc);
-    dstate_setinfo("output.frequency", "%.1f", 0.1 * Q5_Fout);
-    dstate_setinfo("ups.alarm", "%d", Q5_Err);
-    dstate_setinfo("output.current", "%.1f", 0.1 * Q5_O_Cur);
-       
-    
-    snprintf(value, valuelen, "%.1f", Q5_Fout * 0.1);   
-	
-    /*
-    switch (item->from)
+	RawValue  = (unsigned char)item->value[0] * 256 + (unsigned char)item->value[1];
+*/
+
+	//ablerexQ5Vb = (unsigned char)buf[7] * 256 + (unsigned char)buf[8];
+	//Q5_Vbc = (unsigned char)buf[9] * 256 + (unsigned char)buf[10];
+	upsdebugx(2, "Q51: %d %d %d %d %d %d", item->answer[0], item->answer[1], item->answer[2], item->answer[3], item->answer[4], item->answer[5]);
+	upsdebugx(2, "Q52: %d %d %d %d %d %d", item->answer[6], item->answer[7], item->answer[8], item->answer[9], item->answer[10], item->answer[11]);
+	upsdebugx(2, "Q53: %d %d %d %d", item->answer[12], item->answer[13], item->answer[14], item->answer[15]);
+
+	int Q5_Fout = (unsigned char)item->answer[1] * 256 + (unsigned char)item->answer[2];
+	int Q5_Vb = (unsigned char)item->answer[7] * 256 + (unsigned char)item->answer[8];
+	Q5_Vbc = (unsigned char)item->answer[9] * 256 + (unsigned char)item->answer[10];
+	//int Q5_InvW = (unsigned char)item->answer[11] * 256 + (unsigned char)item->answer[12];
+	int Q5_Err = (unsigned char)item->answer[13] * 256 + (unsigned char)item->answer[14];
+	int Q5_O_Cur = (unsigned char)item->answer[15] * 256 + (unsigned char)item->answer[16];
+
+	ablerexQ5Vb = Q5_Vb;
+	upsdebugx(2, "Q5: %.1f %d %.1f", 0.1 * Q5_Fout, Q5_Err, 0.1 * Q5_O_Cur);
+	upsdebugx(2, "Q5Vb: %d Vbc %d", Q5_Vb, Q5_Vbc);
+	dstate_setinfo("output.frequency", "%.1f", 0.1 * Q5_Fout);
+	dstate_setinfo("ups.alarm", "%d", Q5_Err);
+	dstate_setinfo("output.current", "%.1f", 0.1 * Q5_O_Cur);
+
+	snprintf(value, valuelen, "%.1f", Q5_Fout * 0.1);
+
+/*
+	switch (item->from)
 	{
 	case 1:
-        snprintf(value, valuelen, "%.1f", RawValue * 0.1);
-        upsdebugx(2, "Q51: %.1f", 0.1*RawValue);
+		snprintf(value, valuelen, "%.1f", RawValue * 0.1);
+		upsdebugx(2, "Q51: %.1f", 0.1*RawValue);
 		break;
 	case 13:
-        snprintf(value, valuelen, "%.0f", RawValue);
-        upsdebugx(2, "Q52: %.0f", 0.1*RawValue);
+		snprintf(value, valuelen, "%.0f", RawValue);
+		upsdebugx(2, "Q52: %.0f", 0.1*RawValue);
 		break;
 	case 15:
-        snprintf(value, valuelen, "%.1f", RawValue * 0.1);
-        upsdebugx(2, "Q53: %.1f", 0.1*RawValue);
+		snprintf(value, valuelen, "%.1f", RawValue * 0.1);
+		upsdebugx(2, "Q53: %.1f", 0.1*RawValue);
 		break;
 
 	default:
 		//Don't know what happened
 		return -1;
 	}
-    */
-    
+*/
+
 	return 0;
 }
 
 static int ablerex_battery(item_t *item, char *value, const size_t valuelen) {
-
 	double BattV = 0.0;
-    BattV = strtod(item->value, NULL);
-    upsdebugx(2, "battvoltact2: %.2f", BattV);
-    if (!dstate_getinfo("battery.voltage.nominal"))
-    {
-        snprintf(value, valuelen, "%.2f", BattV);
-        return 0;
-    }
-    
-	double nomBattV = 0.0;
-    nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
-    upsdebugx(2, "battvoltact1: %.2f", nomBattV);
-    //return 0;
+	BattV = strtod(item->value, NULL);
+	upsdebugx(2, "battvoltact2: %.2f", BattV);
+	if (!dstate_getinfo("battery.voltage.nominal"))
+	{
+		snprintf(value, valuelen, "%.2f", BattV);
+		return 0;
+	}
 
-    double battvoltact = 0.0;
-    
+	double nomBattV = 0.0;
+	nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+	upsdebugx(2, "battvoltact1: %.2f", nomBattV);
+	//return 0;
+
+	double battvoltact = 0.0;
+
 	if (ablerexQ5Vb > 0) {
 		battvoltact = ablerexQ5Vb * nomBattV / 1200;
 	} else {
@@ -113,9 +111,8 @@ static int ablerex_battery(item_t *item, char *value, const size_t valuelen) {
 		}
 	}
 
-
-    snprintf(value, valuelen, "%.2f", battvoltact);
-    upsdebugx(2, "battvoltact: %.2f / %.2f", battvoltact, BattV);
+	snprintf(value, valuelen, "%.2f", battvoltact);
+	upsdebugx(2, "battvoltact: %.2f / %.2f", battvoltact, BattV);
 
 	return 0;
 }
@@ -128,7 +125,7 @@ static int ablerex_battery_charge(double BattIn)
 		2.02, 2.01, 2.00, 1.99, 1.98, 1.97, 1.96, 1.95, 1.94, 1.93,
 		1.92, 1.91, 1.90, 1.89, 1.88, 1.87, 1.86, 1.85, 1.84, 1.83,
 		1.82, 1.81, 1.80, 1.79, 1.78, 1.77, 1.76, 1.75, 1.74, 1.73,
-		1.72, 1.71, 1.70, 1.69, 1.68, 1.67 
+		1.72, 1.71, 1.70, 1.69, 1.68, 1.67
 	};
 	const int onlineC[] = {
 		100, 90, 88, 87, 85, 83, 82, 80, 78, 77,
@@ -137,7 +134,7 @@ static int ablerex_battery_charge(double BattIn)
 		42, 40, 38, 37, 35, 33, 32, 30, 28, 27,
 		25, 23, 22, 20, 18, 17, 15, 13, 12, 10,
 		8, 7, 5, 3, 2, 0, -1
-	};	
+	};
 	const double offlineP[] = {
 		13.5, 13.3, 13.2, 13.1, 13, 12.9, 12.8, 12.7, 12.6, 12.5,
 		12.4, 12.3, 12.2, 12.1, 12, 11.9, 11.8, 11.7, 11.6, 11.5,
@@ -150,10 +147,10 @@ static int ablerex_battery_charge(double BattIn)
 		38, 36, 33, 30, 27, 24, 22, 19, 16, 13,
 		11, 8, 5, 2, 0, -1
 	};
-	
+
 	int charge = 0;
 	int i;
-	
+
 	if (BattIn < 3.0) {
 		for (i = 0; onlineC[i] > 0; i++) {
 			if (BattIn >= onlineP[i]) {
@@ -164,7 +161,7 @@ static int ablerex_battery_charge(double BattIn)
 	} else {
 		//double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
 		//double battV = BattIn / (nomBattV / 12);
-		
+
 		for (i = 0; offlineC[i] > 0; i++) {
 			if (BattIn >= offlineP[i]) {
 				charge = offlineC[i];
@@ -176,29 +173,28 @@ static int ablerex_battery_charge(double BattIn)
 }
 
 static int ablerex_batterycharge(item_t *item, char *value, const size_t valuelen) {
-
 	double BattV = 0.0;
-    BattV = strtod(item->value, NULL);
-    upsdebugx(2, "battvoltc2: %.2f", BattV);
-    if (!dstate_getinfo("battery.voltage.nominal"))
-    {
-        snprintf(value, valuelen, "%d", 100);
-        return 0;
-    }
-    
+	BattV = strtod(item->value, NULL);
+	upsdebugx(2, "battvoltc2: %.2f", BattV);
+	if (!dstate_getinfo("battery.voltage.nominal"))
+	{
+		snprintf(value, valuelen, "%d", 100);
+		return 0;
+	}
+
 	double nomBattV = 0.0;
-    nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
-    upsdebugx(2, "battvv1: %.2f", nomBattV);
-    //return 0;
+	nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
+	upsdebugx(2, "battvv1: %.2f", nomBattV);
+	//return 0;
 
 	if (BattV > 3.0) {
 		BattV = BattV / (nomBattV / 12);
-	}		
+	}
 	int BattP = ablerex_battery_charge(BattV);
 	//dstate_setinfo("battery.charge", "%.0f", BattP);
 
-    snprintf(value, valuelen, "%d", BattP);
-    upsdebugx(2, "battcharge: %d", BattP);
+	snprintf(value, valuelen, "%d", BattP);
+	upsdebugx(2, "battcharge: %d", BattP);
 
 	return 0;
 }
@@ -206,9 +202,9 @@ static int ablerex_batterycharge(item_t *item, char *value, const size_t valuele
 static int ablerex_initbattery(item_t *item, char *value, const size_t valuelen) {
 
 	double nomBattV = strtod(dstate_getinfo("battery.voltage.nominal"),  NULL);
-    double batthigh = 0.0;
-    double battlow = 0.0;
-    
+	double batthigh = 0.0;
+	double battlow = 0.0;
+
 	if (Q5_Vbc > 0) {
 		battlow = Q5_Vbc * nomBattV / 1200;
 	} else {
@@ -219,12 +215,12 @@ static int ablerex_initbattery(item_t *item, char *value, const size_t valuelen)
 	switch (item->from)
 	{
 	case 1:
-        snprintf(value, valuelen, "%.2f", battlow);
-        upsdebugx(2, "BattLow: %.2f", battlow);
+		snprintf(value, valuelen, "%.2f", battlow);
+		upsdebugx(2, "BattLow: %.2f", battlow);
 		break;
 	case 2:
-        snprintf(value, valuelen, "%.2f", batthigh);
-        upsdebugx(2, "BattHigh: %.2f", batthigh);
+		snprintf(value, valuelen, "%.2f", batthigh);
+		upsdebugx(2, "BattHigh: %.2f", batthigh);
 		break;
 
 	default:
@@ -237,27 +233,27 @@ static int ablerex_initbattery(item_t *item, char *value, const size_t valuelen)
 
 static int ablerex_At(item_t *item, char *value, const size_t valuelen) {
 	int RawValue = 0;
-	
-    RawValue = (unsigned char)item->answer[1] * 65536 * 256 + (unsigned char)item->answer[2] * 65536 
-             + (unsigned char)item->answer[3] * 256 + (unsigned char)item->answer[4];
 
-    snprintf(value, valuelen, "%d", RawValue);
-    upsdebugx(2, "At: %d", RawValue);
+	RawValue = (unsigned char)item->answer[1] * 65536 * 256 + (unsigned char)item->answer[2] * 65536
+	         + (unsigned char)item->answer[3] * 256 + (unsigned char)item->answer[4];
+
+	snprintf(value, valuelen, "%d", RawValue);
+	upsdebugx(2, "At: %d", RawValue);
 
 	return 0;
 }
 
 static int ablerex_TR(item_t *item, char *value, const size_t valuelen) {
-    char TR[8];
-    
-    TR[0] = item->answer[1];
-    TR[1] = item->answer[2];
-    TR[2] = item->answer[3];
-    TR[3] = item->answer[4];
-    TR[4] = 0;
+	char TR[8];
 
-    snprintf(value, valuelen, "%s", TR);
-    upsdebugx(2, "At: %s", TR);
+	TR[0] = item->answer[1];
+	TR[1] = item->answer[2];
+	TR[2] = item->answer[3];
+	TR[3] = item->answer[4];
+	TR[4] = 0;
+
+	snprintf(value, valuelen, "%s", TR);
+	upsdebugx(2, "At: %s", TR);
 
 	return 0;
 }
@@ -277,38 +273,38 @@ int	ablerex_process_status_bits(item_t *item, char *value, const size_t valuelen
 			vi = strtod(dstate_getinfo("input.voltage"), NULL);
 			vo = strtod(dstate_getinfo("output.voltage"), NULL);
 
-            if (item->value[2] == '1') {/* UPS Type is Standby (0 is On_line) */
-    			if (vo < 0.5 * vi) {
-    				upsdebugx(2, "%s: output voltage too low", __func__);
-                    return -1;
-    			} else if (vo < 0.95 * vi) {
-    				status_set("TRIM");
-    			} else if (vo < 1.05 * vi) {
-    				status_set("BYPASS");
-    			} else if (vo < 1.5 * vi) {
-    				status_set("BOOST");
-    			} else {
-    				upsdebugx(2, "%s: output voltage too high", __func__);
-                    return -1;
-    			}
-    		} else {
-    			status_set("BYPASS");
-    		}
+			if (item->value[2] == '1') {/* UPS Type is Standby (0 is On_line) */
+				if (vo < 0.5 * vi) {
+					upsdebugx(2, "%s: output voltage too low", __func__);
+					return -1;
+				} else if (vo < 0.95 * vi) {
+					status_set("TRIM");
+				} else if (vo < 1.05 * vi) {
+					status_set("BYPASS");
+				} else if (vo < 1.5 * vi) {
+					status_set("BOOST");
+				} else {
+					upsdebugx(2, "%s: output voltage too high", __func__);
+					return -1;
+				}
+			} else {
+				status_set("BYPASS");
+			}
 		}
 
 		break;
 
 	case 41:	/* UPS Failed - ups.alarm */
 
-    	if (item->value[0] == '1') {	/* Battery abnormal */
-    		status_set("RB");
-    	}
+		if (item->value[0] == '1') {	/* Battery abnormal */
+			status_set("RB");
+		}
 
-    	double vout = strtod(dstate_getinfo("output.voltage"), NULL);
-    	
-    	if (vout < 50.0) {
-    		status_set("OFF");
-    	}
+		double vout = strtod(dstate_getinfo("output.voltage"), NULL);
+
+		if (vout < 50.0) {
+			status_set("OFF");
+		}
 		break;
 
 	default:
@@ -337,7 +333,7 @@ static item_t	ablerex_qx2nut[] = {
 	{ "ups.load",			   0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	ablerex_battery },
-    { "battery.charge",		   0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	ablerex_batterycharge },
+	{ "battery.charge",		   0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	ablerex_batterycharge },
 	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Utility Fail (Immediate) */
@@ -361,16 +357,16 @@ static item_t	ablerex_qx2nut[] = {
 	{ "output.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
 	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
 	{ "output.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
-    { "battery.voltage.low",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	2,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	ablerex_initbattery },
-    { "battery.voltage.high",	0,	NULL,	"F\r",	"",	22,	'#',	"",	2,	3,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	ablerex_initbattery },  
-        
-    /* Ablerex */
-    { "output.frequency",	0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	18,	"%.1f",	0,	NULL,	NULL,	ablerex_Q5 },
-    { "battery.runtime",	0,	NULL,	"At\r",	"",	0,	'(',	"",	0,	0,	"%d",	0,	NULL,	NULL,	ablerex_At },
-    //{ "ups.alarm",		    0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	14,	"%.0f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
-    { "ups.test.result",	0,	NULL,	"TR\r",	"",	0,	'#',	"",	0,	0,	"%s",	0,	NULL,	NULL,	ablerex_TR },
-    //{ "output.current",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	16,	"%.1f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
-    
+	{ "battery.voltage.low",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	2,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	ablerex_initbattery },
+	{ "battery.voltage.high",	0,	NULL,	"F\r",	"",	22,	'#',	"",	2,	3,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	ablerex_initbattery },
+
+	/* Ablerex */
+	{ "output.frequency",	0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	18,	"%.1f",	0,	NULL,	NULL,	ablerex_Q5 },
+	{ "battery.runtime",	0,	NULL,	"At\r",	"",	0,	'(',	"",	0,	0,	"%d",	0,	NULL,	NULL,	ablerex_At },
+	//{ "ups.alarm",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	14,	"%.0f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+	{ "ups.test.result",	0,	NULL,	"TR\r",	"",	0,	'#',	"",	0,	0,	"%s",	0,	NULL,	NULL,	ablerex_TR },
+	//{ "output.current",		0,	NULL,	"Q5\r",	"",	22,	'(',	"",	1,	16,	"%.1f",	0,	QX_FLAG_QUICK_POLL,	NULL,	ablerex_Q5 },
+
 	/*
 	 * > [I\r]
 	 * < [#-------------   ------     VT12046Q  \r]

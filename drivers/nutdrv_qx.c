@@ -92,7 +92,7 @@ static subdriver_t	*subdriver_list[] = {
 	&zinto_subdriver,
 	&masterguard_subdriver,
 	&hunnox_subdriver,
-    &ablerex_subdriver,
+	&ablerex_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -1369,21 +1369,18 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 {
 	int	i;
-    int iii;
+	int iii;
 	int	len;
-    int idx;
+	int idx;
 	char	tmp[64];
-	char    tmpryy[64];
+	char	tmpryy[64];
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
-
 	int	retry;
-
 
 	for (retry = 0; retry < 3; retry++) {
 		int	ret;
-
 
 		tmp[0] = 0x05;
 		tmp[1] = 0;
@@ -1428,23 +1425,21 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 		if ((!strcasecmp(cmd, "I\r")) && len != 39) continue;
 		if ((!strcasecmp(cmd, "F\r")) && len != 22) continue;
 		if ((!strcasecmp(cmd, "Q5\r")) && len != 22) //continue;
-        {
-            buf[0] = '(';
-            for (idx = 1 ; idx < 47 ; idx++)
-            {
-                buf[idx] = 0;
-            }
-            upsdebugx(3, "read Q5 Fail...");
-            return 22;        
-        }
+		{
+			buf[0] = '(';
+			for (idx = 1 ; idx < 47 ; idx++)
+			{
+				buf[idx] = 0;
+			}
+			upsdebugx(3, "read Q5 Fail...");
+			return 22;
+		}
 
 		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 		return len;
 	}
 
 	return 0;
-
-
 }
 
 static void	*cypress_subdriver(USBDevice_t *device)
@@ -2125,7 +2120,7 @@ void	upsdrv_shutdown(void)
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
 			{ "snr", &snr_command },
-            { "ablerex", &ablerex_command },
+			{ "ablerex", &ablerex_command },
 			{ NULL, NULL }
 		};
 	#endif
