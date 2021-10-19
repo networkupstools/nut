@@ -808,6 +808,7 @@ endif
 if HAVE_ASCIIDOC
 
 .txt.html:
+	@echo "  DOC-HTML Generating $@"; \
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
@@ -824,15 +825,19 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--destination-dir=.
 
 .txt.1:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.3:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.5:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.8:
+	@echo "  DOC-MAN  Generating $@"; \
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 else !HAVE_ASCIIDOC
@@ -892,7 +897,10 @@ clean-local:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
 
-.txt.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+.txt.txt-spellchecked:
 	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:

@@ -135,21 +135,21 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	int result = -1;
 	while (atts[i] != NULL) {
 		upsdebugx(5, "startelm_cb() : parent=%d nspace='%s' name='%s' atts[%d]='%s' atts[%d]='%s'",
-			parent, nspace, name, i, atts[i], (i+1), atts[i+1]);
+			parent, nspace, name, i, atts[i], (i + 1), atts[i + 1]);
 		/* The Eaton/MGE ePDUs almost exclusively support only XMLv4 protocol
 		 * (only the very first generation of G2/G3 NMCs supported an older
 		 * protocol, but all should have been FW upgraded by now), which NUT
 		 * drivers don't yet support. To avoid failing drivers later, the
 		 * nut-scanner should not suggest netxml-ups configuration for ePDUs
 		 * at this time. */
-		if (strcmp(atts[i], "class") == 0 && strcmp(atts[i+1], "DEV.PDU") == 0) {
+		if (strcmp(atts[i], "class") == 0 && strcmp(atts[i + 1], "DEV.PDU") == 0) {
 			upsdebugx(3, "startelm_cb() : XML v4 protocol is not supported by current NUT drivers, skipping device!");
 			/* netxml-ups currently only supports XML version 3 (for UPS),
 			 * and not version 4 (for UPS and PDU)! */
 			return -1;
 		}
 		if (strcmp(atts[i], "type") == 0) {
-			snprintf(buf, sizeof(buf), "%s", atts[i+1]);
+			snprintf(buf, sizeof(buf), "%s", atts[i + 1]);
 			nutscan_add_option_to_device(dev, "desc", buf);
 			result = 0;
 		}
@@ -214,7 +214,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			upsdebugx(2,
 				"nutscan_scan_xml_http_generic() : scanning connected network segment(s) "
 				"with a broadcast, attempt %d of %d with a timeout of %ld usec",
-				(i+1), MAX_RETRIES, usec_timeout);
+				(i + 1), MAX_RETRIES, usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
 			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
 				sizeof(sockopt_on));
@@ -222,7 +222,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			upsdebugx(2,
 				"nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, "
 				"attempt %d of %d with a timeout of %ld usec",
-				ip, (i+1), MAX_RETRIES, usec_timeout);
+				ip, (i + 1), MAX_RETRIES, usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
 		sockAddress_udp.sin_port = htons(port_udp);
@@ -234,7 +234,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		) {
 			fprintf(stderr,
 				"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n",
-				(ip ? ip : "<broadcast>"), (i+1), MAX_RETRIES);
+				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -249,14 +249,14 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, "
 				"loop #%d/%d, waiting for responses",
-				(ip ? ip : "<broadcast>"), (i+1), MAX_RETRIES);
-			while ((ret = select(peerSocket+1, &fds, NULL, NULL,
+				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
+			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
 						&timeout))
 			) {
 				retNum ++;
 				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, "
 					"loop #%d/%d, response #%d",
-					(ip ? ip : "<broadcast>"), (i+1), MAX_RETRIES, retNum);
+					(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES, retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
@@ -277,7 +277,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				if (recv_size == -1) {
 					fprintf(stderr,
 						"Error reading \
-						socket: %d, #%d/%d\n", errno, (i+1), MAX_RETRIES);
+						socket: %d, #%d/%d\n", errno, (i + 1), MAX_RETRIES);
 					usleep(usec_timeout);
 					continue;
 				}
@@ -398,7 +398,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	if (start_ip == NULL) {
 		upsdebugx(1, "Scanning XML/HTTP bus using broadcast.");
 	} else {
-		if ( (start_ip == end_ip) || (end_ip == NULL) || (0 == strncmp(start_ip, end_ip, 128))) {
+		if ((start_ip == end_ip) || (end_ip == NULL) || (0 == strncmp(start_ip, end_ip, 128))) {
 			upsdebugx(1, "Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		} else {
 			/* Iterate the range of IPs to scan */
@@ -437,7 +437,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 					else {
 						thread_array = new_thread_array;
 					}
-					thread_array[thread_count-1] = thread;
+					thread_array[thread_count - 1] = thread;
 				}
 #else
 				nutscan_scan_xml_http_generic((void *)tmp_sec);
@@ -449,7 +449,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 #ifdef HAVE_PTHREAD
 			if (thread_array != NULL) {
-				for (i=0; i < thread_count; i++) {
+				for (i = 0; i < thread_count; i++) {
 					pthread_join(thread_array[i], NULL);
 				}
 				free(thread_array);
