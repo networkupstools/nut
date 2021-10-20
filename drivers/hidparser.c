@@ -73,6 +73,24 @@ static inline unsigned int hibit(unsigned long x)
 	return res;
 }
 
+/* TEMPORARY re-placement of code obsoleted by NUT PR #1040 */
+static inline unsigned int hibit_pre_PR1040(unsigned int x)
+{
+	unsigned int	res = 0;
+
+	while (x > 0xff) {
+		x >>= 8;
+		res += 8;
+	}
+
+	while (x) {
+		x >>= 1;
+		res += 1;
+	}
+
+	return res;
+}
+
 /* Note: The USB HID specification states that Local items do not
    carry over to the next Main item (version 1.11, section
    6.2.2.8). Therefore the local state must be reset after each main
@@ -487,6 +505,106 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	}
 
 	/* clamp returned value to range [LogMin..LogMax] */
+	if (value < pData->LogMin) {
+		value = pData->LogMin;
+	} else if (value > pData->LogMax) {
+		value = pData->LogMax;
+	}
+
+	*pValue = value;
+	return;
+}
+
+/*
+ * GetValue_pre_PR1040
+ * Extract data from a report stored in Buf.
+ * Use Value, Offset, Size and LogMax of pData.
+ * Return response in Value.
+ * -------------------------------------------------------------------------- */
+/* TEMPORARY re-placement of code obsoleted by NUT PR #1040 */
+void GetValue_pre_PR1040(const unsigned char *Buf, HIDData_t *pData, long *pValue);
+void GetValue_pre_PR1040(const unsigned char *Buf, HIDData_t *pData, long *pValue)
+{
+	int	Weight, Bit;
+	long	value = 0, rawvalue;
+	long	range, mask, signbit, b, m;
+
+	Bit = pData->Offset + 8;	/* First byte of report is report ID */
+
+	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {
+		int	State = Buf[Bit >> 3] & (1 << (Bit & 7));
+
+		if(State) {
+			value += (1 << Weight);
+		}
+	}
+
+	/* translate Value into a signed/unsigned value in the range
+	LogMin..LogMax, as appropriate. See HID spec, p.38: "If both the
+	Logical Minimum and Logical Maximum extents are defined as
+	positive values (0 or greater), then the report field can be
+	assumed to be an unsigned value. Otherwise, all integer values
+	are signed values represented in 2's complement format."
+
+	Also note that the variable can take values from LogMin
+	(inclusive) to LogMax (inclusive), so there are LogMax - LogMin +
+	1 possible values.
+
+	Special cases arise if the value that has been read lies outside
+	the interval LogMin..LogMax. Some devices, notably the APC
+	Back-UPS BF500, do this. In one case I observed, LogMin=0,
+	LogMax=0xffff, Size=32, and the supplied value is
+	0xffffffff80080a00. Presumably they expect us to throw away the
+	higher-order bits, and use 0x0a00, rather than choosing the
+	closest value in the interval, which would be 0xffff.  However,
+	if LogMax - LogMin + 1 isn't a power of 2, it is not clear what
+	"throwing away higher-order bits" exacly means, so we try to do
+	something sensible. -PS */
+
+	rawvalue = value; /* remember this for later */
+
+	/* figure out how many bits are significant */
+	range = pData->LogMax - pData->LogMin + 1;
+	if (range <= 0) {
+		/* makes no sense, give up */
+		*pValue = value;
+		return;
+	}
+	/*b = hibit(range-1);*/
+	b = hibit_pre_PR1040(range-1);
+
+	/* throw away insignificant bits; the result is >= 0 */
+	mask = (1 << b) - 1;
+	signbit = 1 << (b - 1);
+	value = value & mask;
+
+	/* sign-extend it, if appropriate */
+	if (pData->LogMin < 0 && (value & signbit) != 0) {
+		value |= ~mask;
+	}
+
+	/* if the resulting value is in the desired range, stop */
+	if (value >= pData->LogMin && value <= pData->LogMax) {
+		*pValue = value;
+		return;
+	}
+
+	/* else, try to reach interval by adjusting high-order bits */
+	m = (value - pData->LogMin) & mask;
+	value = pData->LogMin + m;
+	if (value <= pData->LogMax) {
+		*pValue = value;
+		return;
+	}
+
+	/* if everything else failed, sign-extend the original raw value,
+	and simply round it to the closest point in the interval. */
+	value = rawvalue;
+	mask = (1 << pData->Size) - 1;
+	signbit = 1 << (pData->Size - 1);
+	if (pData->LogMin < 0 && (value & signbit) != 0) {
+		value |= ~mask;
+	}
 	if (value < pData->LogMin) {
 		value = pData->LogMin;
 	} else if (value > pData->LogMax) {
