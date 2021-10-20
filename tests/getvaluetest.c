@@ -35,6 +35,7 @@
 #include "common.h"
 
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
+void GetValue_pre_PR1040(const unsigned char *Buf, HIDData_t *pData, long *pValue);
 
 static void Usage(char *name) {
 	printf("%s [<buf> <offset> <size> <min> <max> <expect>]\n", name);
@@ -116,13 +117,24 @@ static int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%zd ", i + 1);
+		printf("Test #%zd - NEW - ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);
 		} else {
 			printf(" value %ld FAIL expected %ld\n", value, testData[i].expectedValue);
 			exitStatus = 1;
+		}
+
+		GetValue_pre_PR1040(reportBuf, &data, &value);
+
+		printf("Test #%zd - OLD - ", i + 1);
+		PrintBufAndData(reportBuf, bufSize,  &data);
+		if (value == testData[i].expectedValue) {
+			printf(" value %ld PASS\n", value);
+		} else {
+			printf(" value %ld FAIL_IGNORE expected %ld\n", value, testData[i].expectedValue);
+			//exitStatus = 1;
 		}
 	}
 	return (exitStatus);
