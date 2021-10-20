@@ -352,8 +352,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     # This flag is primarily linked with (lack of) docs generation enabled
-    # (or not) in some BUILD_TYPE scenarios or workers
-    DO_DISTCHECK=yes
+    # (or not) in some BUILD_TYPE scenarios or workers. Initial value may
+    # be set by caller, but codepaths below have the final word.
+    [ "${DO_DISTCHECK-}" = no ] || DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
