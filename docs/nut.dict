@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2770 utf-8
+personal_ws-1.1 en 2771 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1536,6 +1536,7 @@ cout
 coverity
 cp
 cpp
+cppcheck
 cppunit
 cpqpower
 cpsups
