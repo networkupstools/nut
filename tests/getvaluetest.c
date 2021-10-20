@@ -82,6 +82,8 @@ int RunBuiltInTests(char *argv[]) {
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = -1, .LogMax = 127, .expectedValue = -1},
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 127, .expectedValue = 127},
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 255},
+		{.buf = "13 14", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 20},
+		{.buf = "0f 17 09", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 65535, .expectedValue = 2327}, // 0x0917 => 232.7V in a UPS.Input.Voltage after conversions
 		{.buf = "33 00 0a 08 80", .Offset = 0, .Size = 32, .LogMin = 0, .LogMax = 65535, .expectedValue = 2560},
 		{.buf = "00 00 08 00 00", .Offset = 0, .Size = 32, .LogMin = 0, .LogMax = 65535, .expectedValue = 2048},
 		{.buf = "06 00 00 08", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 0},
