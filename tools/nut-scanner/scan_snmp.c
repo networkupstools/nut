@@ -691,8 +691,9 @@ static void * try_SysOID(void * arg)
 			}
 		}
 
-		/* try a list of known OID */
-		try_all_oid(sec, mib_found);
+		/* try a list of known OID, if no device was found otherwise */
+		if (mib_found == NULL)
+			try_all_oid(sec, mib_found);
 
 		(*nut_snmp_free_pdu)(response);
 		response = NULL;
