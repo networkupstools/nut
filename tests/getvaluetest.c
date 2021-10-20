@@ -35,6 +35,7 @@
 #include "common.h"
 
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
+void GetValue_pre_PR1040(const unsigned char *Buf, HIDData_t *pData, long *pValue);
 
 void Usage(char *name) {
 	printf("%s [<buf> <offset> <size> <min> <max> <expect>]\n", name);
@@ -82,6 +83,8 @@ int RunBuiltInTests(char *argv[]) {
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = -1, .LogMax = 127, .expectedValue = -1},
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 127, .expectedValue = 127},
 		{.buf = "00 ff", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 255},
+		{.buf = "13 14", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 20},
+		{.buf = "0f 17 09", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 65535, .expectedValue = 2327}, // 0x0917 => 232.7V in a UPS.Input.Voltage after conversions
 		{.buf = "33 00 0a 08 80", .Offset = 0, .Size = 32, .LogMin = 0, .LogMax = 65535, .expectedValue = 2560},
 		{.buf = "00 00 08 00 00", .Offset = 0, .Size = 32, .LogMin = 0, .LogMax = 65535, .expectedValue = 2048},
 		{.buf = "06 00 00 08", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 0},
@@ -113,13 +116,24 @@ int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%zd ", i + 1);
+		printf("Test #%zd - NEW - ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);
 		} else {
 			printf(" value %ld FAIL expected %ld\n", value, testData[i].expectedValue);
 			exitStatus = 1;
+		}
+
+		GetValue_pre_PR1040(reportBuf, &data, &value);
+
+		printf("Test #%zd - OLD - ", i + 1);
+		PrintBufAndData(reportBuf, bufSize,  &data);
+		if (value == testData[i].expectedValue) {
+			printf(" value %ld PASS\n", value);
+		} else {
+			printf(" value %ld FAIL_IGNORE expected %ld\n", value, testData[i].expectedValue);
+			//exitStatus = 1;
 		}
 	}
 	return (exitStatus);
