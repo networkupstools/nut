@@ -385,8 +385,16 @@ set | sort -n """
 
         ,[name: 'A cppcheck analysis build',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
-         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         // NOTE: At the time of this posting, there are a handful of "high"
+         // priority issues, and hundreds of lesser problems which may overlap
+         // or not with those reported by other analysers. So currently this
+         // source of unstable builds would be made part of "fightwarn" scope;
+         // it may make sense to separate the call into (making sure there are
+         // none) high-prop warnings as part of all builds, and checking for
+         // all still "expected" issues in fightwarn builds.
+         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
+         branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
