@@ -53,6 +53,7 @@ distcleancheck:
 
 clean-local:
 	rm -f *-spellchecked
+	rm -f cppcheck*.xml
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
@@ -104,6 +105,20 @@ shellcheck-nde:
 	cd $(srcdir)/tests && SERVICE_FRAMEWORK="selftest" ./nut-driver-enumerator-test.sh
 
 shellcheck: shellcheck-disclaimer check-scripts-syntax
+
+CPPCHECK = @CPPCHECK@
+if HAVE_CPPCHECK
+cppcheck: cppcheck-cxx11.xml cppcheck-c99.xml
+
+cppcheck-cxx11.xml: $(top_srcdir)/*.cpp $(top_srcdir)/*/*.cpp $(top_srcdir)/*/*/*.cpp $(top_srcdir)/*.h $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.h
+	$(CPPCHECK) --std=c++11 --enable=all --inconclusive --xml --xml-version=2 . 2>$@
+
+cppcheck-c99.xml: $(top_srcdir)/*.c $(top_srcdir)/*/*.c $(top_srcdir)/*/*/*.c $(top_srcdir)/*.h $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.h
+	$(CPPCHECK) --std=c99 --enable=all --inconclusive --xml --xml-version=2 . 2>$@
+else !HAVE_CPPCHECK
+cppcheck:
+	@echo "CPPCHECK analysis not available since 'cppcheck' was not found."
+endif !HAVE_CPPCHECK
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:

@@ -831,7 +831,32 @@ NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 
 
 dnl ----------------------------------------------------------------------
+dnl checks related to --enable-cppcheck
 
+dnl Currently this is experimental; maybe change default to auto in the future
+dnl At that point, see also defaults in ci_build.sh then (to avoid the workload
+dnl unless desired).
+NUT_ARG_ENABLE([cppcheck], [Run a cppcheck on the codebase among checks], [no])
+NUT_CHECK_CPPCHECK
+
+case "${nut_enable_cppcheck}" in
+	yes) if test "${nut_have_cppcheck}" = "no" ; then
+	        AC_MSG_ERROR([Requested to --enable-cppcheck but did not find a good one])
+	     fi
+	     WITH_CPPCHECK=yes
+	     ;;
+	no)  WITH_CPPCHECK=no ;;
+	auto) if test "${nut_have_cppcheck}" = "yes" ; then
+	        WITH_CPPCHECK=no
+	    else
+	        WITH_CPPCHECK=no
+	    fi
+	    ;;
+esac
+
+AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
