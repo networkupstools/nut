@@ -1882,6 +1882,9 @@ dnl    * ARM (armv7)
 dnl    * MIPS (mips32 and above; mips64 and above)
 dnl    * PowerPC (most; ppc405 and above)
 dnl    * System z (64bit only - s390x; z990 and above)
+dnl Even if the tool does basically start, on some QEMU systems it crashes
+dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
+dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
@@ -1890,11 +1893,11 @@ AS_IF([test -n "${VALGRIND}"], [
 		 VALGRIND="none"
 		])
 ])
-with_valgrind="auto"
 AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
 [
+	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
 	case "${withval}" in
 	yes)
 		if test "x$VALGRIND" = "xnone"; then
