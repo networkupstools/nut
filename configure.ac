@@ -366,7 +366,6 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
-nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
@@ -1882,6 +1881,9 @@ dnl    * ARM (armv7)
 dnl    * MIPS (mips32 and above; mips64 and above)
 dnl    * PowerPC (most; ppc405 and above)
 dnl    * System z (64bit only - s390x; z990 and above)
+dnl Even if the tool does basically start, on some QEMU systems it crashes
+dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
+dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
@@ -1890,11 +1892,11 @@ AS_IF([test -n "${VALGRIND}"], [
 		 VALGRIND="none"
 		])
 ])
-with_valgrind="auto"
 AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
 [
+	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
 	case "${withval}" in
 	yes)
 		if test "x$VALGRIND" = "xnone"; then
