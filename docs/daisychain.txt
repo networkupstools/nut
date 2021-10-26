@@ -190,7 +190,7 @@ Two functions are available to handle alarms on daisychain devices in your
 driver:
 
 * device_alarm_init(): clear the current alarm buffer
-* device_alarm_commit(const int device_number): commit the current alarm
+* device_alarm_commit(const size_t device_number): commit the current alarm
 buffer to "device.<device_number>.ups.alarm", and increase the count of
 alarms. If the current alarms buffer is empty, the count of alarm is
 decreased, and the variable "device.<device_number>.ups.alarm" is removed

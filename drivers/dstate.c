@@ -1179,14 +1179,14 @@ void device_alarm_init(void)
 }
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
-void device_alarm_commit(const int device_number)
+void device_alarm_commit(const size_t device_number)
 {
 	char info_name[20];
 
 	memset(info_name, 0, 20);
 
-	if (device_number != 0) /* would then go into "device.%i.alarm" */
-		snprintf(info_name, 20, "device.%i.ups.alarm", device_number);
+	if (device_number != 0) /* would then go into "device.%zu.alarm" */
+		snprintf(info_name, 20, "device.%zu.ups.alarm", device_number);
 	else /* would then go into "device.alarm" */
 		snprintf(info_name, 20, "ups.alarm");
 

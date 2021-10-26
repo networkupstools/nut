@@ -136,8 +136,8 @@ int pollfreq; /* polling frequency */
 static int quirk_symmetra_threephase = 0;
 
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
-static long devices_count = 1;
-static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+static size_t devices_count = 1;
+static size_t current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
 static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
 static daisychain_info_t **daisychain_info = NULL;
 
@@ -359,7 +359,7 @@ void upsdrv_initups(void)
 	char model[SU_INFOSIZE];
 	bool_t status= FALSE;
 	const char *mibs;
-	int curdev = 0;
+	size_t curdev = 0;
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
@@ -695,7 +695,7 @@ static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, size_t max_iteration)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -704,12 +704,12 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	oid * current_name;
 	size_t current_name_len;
 	static unsigned int numerr = 0;
-	int nb_iteration = 0;
+	size_t nb_iteration = 0;
 	struct snmp_pdu ** ret_array = NULL;
 	int type = SNMP_MSG_GET;
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
-	upsdebugx(4, "%s: max. iteration = %i", __func__, max_iteration);
+	upsdebugx(4, "%s: max. iteration = %zu", __func__, max_iteration);
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
@@ -1174,7 +1174,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 /* FIXME: This 20 seems very wrong (should be "128", macro or sizeof? see above) */
 	memset(info_type, 0, 20);
 	/* pre-fill with the device name for checking */
-	snprintf(info_type, 128, "device.%i", current_device_number);
+	snprintf(info_type, 128, "device.%zu", current_device_number);
 
 	if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
 		/* Only append "device.X" for master and slaves, if not already done! */
@@ -1182,11 +1182,11 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 			/* Special case: we remove "device" from the device collection not to
 			 * get "device.X.device.<something>", but "device.X.<something>" */
 			if (!strncmp(su_info_p->info_type, "device.", 7)) {
-				snprintf(info_type, 128, "device.%i.%s",
+				snprintf(info_type, 128, "device.%zu.%s",
 					current_device_number, su_info_p->info_type + 7);
 			}
 			else {
-				snprintf(info_type, 128, "device.%i.%s",
+				snprintf(info_type, 128, "device.%zu.%s",
 					current_device_number, su_info_p->info_type);
 			}
 		}
@@ -1748,13 +1748,18 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			/* Test if this template also includes daisychain, in which case
 			 * we just use the current device index */
 			if (is_multiple_template(su_info_p->OID) == TRUE) {
+				if (device_template_offset < 0)
+					upsdebugx (1, "%s: device_template_offset < 0: %d",
+					__func__, device_template_offset);
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf(test_OID, sizeof(test_OID), su_info_p->OID,
-						current_device_number + device_template_offset, base_index);
+						current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)),
+						base_index);
 				}
 				else {
 					snprintf(test_OID, sizeof(test_OID), su_info_p->OID,
-						base_index, current_device_number + device_template_offset);
+						base_index,
+						current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)));
 				}
 			}
 			else {
@@ -1799,11 +1804,11 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 /* Try to determine the number of items (outlets, outlet groups, ...),
  * using a template definition. Walk through the template until we can't
  * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
-static int guestimate_template_count(snmp_info_t *su_info_p)
+static size_t guestimate_template_count(snmp_info_t *su_info_p)
 {
-	int base_index = 0;
+	size_t base_index = 0;
 	char test_OID[SU_INFOSIZE];
-	int base_count;
+	size_t base_count;
 	const char *OID_template = su_info_p->OID;
 
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
@@ -1853,7 +1858,7 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 			break;
 	}
 
-	upsdebugx(3, "%s: %i", __func__, base_count);
+	upsdebugx(3, "%s: %zu", __func__, base_count);
 	return base_count;
 }
 
@@ -1866,10 +1871,10 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	 * to FALSE when actually getting data from devices, to avoid false
 	 * negative with server side data */
 	bool_t status = TRUE;
-	int cur_template_number = 1;
-	int cur_nut_index = 0;
-	int template_count = 0;
-	int base_snmp_index = 0;
+	size_t cur_template_number = 1;
+	size_t cur_nut_index = 0;
+	size_t template_count = 0;
+	size_t base_snmp_index = 0;
 	snmp_info_t cur_info_p;
 	char template_count_var[SU_BUFSIZE];
 	char tmp_buf[SU_INFOSIZE];
@@ -1877,9 +1882,11 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
 
 	if ((strncmp(type, "device", 6)) && (devices_count > 1) && (current_device_number > 0)) {
-		snprintf(template_count_var, sizeof(template_count_var), "device.%i.%s.count", current_device_number, type);
+		snprintf(template_count_var, sizeof(template_count_var),
+			"device.%zu.%s.count", current_device_number, type);
 	} else {
-		snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
+		snprintf(template_count_var, sizeof(template_count_var),
+			"%s.count", type);
 	}
 
 	if(dstate_getinfo(template_count_var) == NULL) {
@@ -1889,11 +1896,15 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 		template_count = guestimate_template_count(su_info_p);
 		/* Publish the count estimation */
 		if (template_count > 0) {
-			dstate_setinfo(template_count_var, "%i", template_count);
+			dstate_setinfo(template_count_var, "%zu", template_count);
 		}
 	}
 	else {
-		template_count = atoi(dstate_getinfo(template_count_var));
+		int tc = atoi(dstate_getinfo(template_count_var));
+		if (tc > 0)
+			template_count = (size_t)tc;
+		else
+			upsdebugx(1, "%s: failed to get template_count", __func__);
 	}
 
 	/* Only instantiate templates if needed! */
@@ -1901,7 +1912,13 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 		/* general init of data using the template */
 		instantiate_info(su_info_p, &cur_info_p);
 
-		base_snmp_index = base_snmp_template_index(su_info_p);
+		int bsi = base_snmp_template_index(su_info_p);
+		if (bsi < 0) {
+			upsdebugx(1, "%s: failed to get base_snmp_index", __func__);
+			return FALSE;
+		}
+
+		base_snmp_index = (size_t)bsi;
 
 		for (cur_template_number = base_snmp_index ;
 				cur_template_number < (template_count + base_snmp_index) ;
@@ -1923,7 +1940,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 						ptr = (char*)su_info_p->info_type;
 
 					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-							"device.%i.%s", current_device_number, ptr);
+							"device.%zu.%s", current_device_number, ptr);
 				}
 				else
 				{
@@ -1995,7 +2012,12 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				/* Special processing for daisychain */
 				if (!strncmp(type, "device", 6)) {
 					if (current_device_number > 0) {
-						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number + device_template_offset);
+						if (device_template_offset < 0)
+							upsdebugx (1, "%s: device_template_offset < 0: %d",
+							__func__, device_template_offset);
+
+						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID,
+							current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)));
 					}
 					//else
 					// FIXME: daisychain-whole, what to do?
@@ -2006,13 +2028,21 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 					 * so we have to check if the daisychain is enabled, and if
 					 * the formatting info for it are in 1rst or 2nd position */
 					if (daisychain_enabled == TRUE) {
+						if (device_template_offset < 0)
+							upsdebugx (1, "%s: device_template_offset < 0: %d",
+							__func__, device_template_offset);
+
 						if (su_info_p->flags & SU_TYPE_DAISY_1) {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, current_device_number + device_template_offset, cur_template_number);
+								su_info_p->OID,
+								current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)),
+								cur_template_number);
 						}
 						else {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, cur_template_number + device_template_offset, current_device_number - device_template_offset);
+								su_info_p->OID,
+								cur_template_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)),
+								current_device_number - (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)));
 						}
 					}
 					else {
@@ -2173,10 +2203,15 @@ bool_t daisychain_init()
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
-			if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
-				upsdebugx(1, "There are %ld device(s) present", devices_count);
-			else
-			{
+			long val = -1;
+			if (nut_snmp_get_int(su_info_p->OID, &val) == TRUE) {
+				if (val >= 0) {
+					devices_count = (size_t)val;
+					upsdebugx(1, "There are %zu device(s) present", devices_count);
+				}
+			}
+
+			if (val < 0) {
 				upsdebugx(1, "Error: can't get the number of device(s) present!");
 				upsdebugx(1, "Falling back to 1 device!");
 				devices_count = 1;
@@ -2187,7 +2222,7 @@ bool_t daisychain_init()
 		else
 		{
 			devices_count = guestimate_template_count(su_info_p);
-			upsdebugx(1, "Guesstimation: there are %ld device(s) present", devices_count);
+			upsdebugx(1, "Guesstimation: there are %zu device(s) present", devices_count);
 		}
 
 		/* Sanity check before data publication */
@@ -2200,7 +2235,7 @@ bool_t daisychain_init()
 
 		/* Publish the device(s) count */
 		if (devices_count > 1) {
-			dstate_setinfo("device.count", "%ld", devices_count);
+			dstate_setinfo("device.count", "%zu", devices_count);
 
 			/* Also publish the default value for mfr and a forged model
 			 * for device.0 (whole daisychain) */
@@ -2214,12 +2249,12 @@ bool_t daisychain_init()
 			/* Forge model using device.type and number */
 			su_info_p = su_find_info("device.type");
 			if ((su_info_p != NULL) && (su_info_p->dfl != NULL)) {
-				dstate_setinfo("device.model", "daisychain %s (1+%ld)",
+				dstate_setinfo("device.model", "daisychain %s (1+%zu)",
 					su_info_p->dfl, devices_count - 1);
 				dstate_setinfo("device.type", "%s", su_info_p->dfl);
 			}
 			else {
-				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
+				dstate_setinfo("device.model", "daisychain (1+%zu)", devices_count - 1);
 			}
 		}
 	}
@@ -2291,7 +2326,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 
 	/* Init the phase(s) info for this device, if not already done */
 	if (*nb_phases == -1) {
-		upsdebugx(2, "%s phases information not initialized for device %i",
+		upsdebugx(2, "%s phases information not initialized for device %zu",
 			type, current_device_number);
 
 		memset(tmpInfo, 0, SU_INFOSIZE);
@@ -2300,7 +2335,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 		if ( (daisychain_enabled == TRUE) && (current_device_number > 0) ) {
 			/* Device(s) 2-N (slave(s)) need to append 'device.x' */
 			snprintf(tmpInfo, SU_INFOSIZE,
-					"device.%i.%s.phases", current_device_number, type);
+					"device.%zu.%s.phases", current_device_number, type);
 		}
 		else {
 			snprintf(tmpInfo, SU_INFOSIZE, "%s.phases", type);
@@ -2318,6 +2353,10 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
 					upsdebugx(2, "Found template, need to be adapted");
+
+					if (device_template_offset < 0)
+						upsdebugx (1, "%s: device_template_offset < 0: %d",
+						__func__, device_template_offset);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -2327,7 +2366,8 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number + device_template_offset);
+					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID,
+						current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -2358,7 +2398,8 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 		}
 		/* Publish the number of phase(s) */
 		dstate_setinfo(tmpInfo, "%ld", *nb_phases);
-		upsdebugx(2, "device %i has %ld %s.phases", current_device_number, *nb_phases, type);
+		upsdebugx(2, "device %zu has %ld %s.phases",
+			current_device_number, *nb_phases, type);
 	}
 	/* FIXME: what to do here?
 	else if (*nb_phases == 0) {
@@ -2436,9 +2477,9 @@ bool_t snmp_ups_walk(int mode)
 			 * default: devtype = "daisychain slave"
 			 */
 			if (daisychain_enabled == TRUE) {
-				upsdebugx(1, "%s: processing device %i (%s)", __func__,
+				upsdebugx(1, "%s: processing device %zu (%s)", __func__,
 					current_device_number,
-					(current_device_number == 1)?"master":"slave"); // FIXME: daisychain
+					(current_device_number == 1) ? "master" : "slave"); // FIXME: daisychain
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
@@ -2603,6 +2644,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if (tmp_info_p != NULL) {
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
+				if (device_template_offset < 0)
+					upsdebugx (1, "%s: device_template_offset < 0: %d",
+					__func__, device_template_offset);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -2613,7 +2657,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
-					current_device_number + device_template_offset);
+					current_device_number + (device_template_offset < 0 ? 0 : (size_t)(device_template_offset)));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -2867,8 +2911,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
 			tmp_varname, daisychain_device_number);
 
-		if (daisychain_device_number > devices_count)
-			upsdebugx(2, "%s: item is out of bound (%i / %ld)",
+		if (daisychain_device_number < 0 || (size_t)daisychain_device_number > devices_count)
+			upsdebugx(2, "%s: item is out of bound (%i / %zu)",
 				__func__, daisychain_device_number, devices_count);
 	}
 	else {

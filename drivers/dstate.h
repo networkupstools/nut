@@ -90,7 +90,7 @@ void alarm_init(void);
 void alarm_set(const char *buf);
 void alarm_commit(void);
 void device_alarm_init(void);
-void device_alarm_commit(const int device_number);
+void device_alarm_commit(const size_t device_number);
 
 int dstate_detect_phasecount(
         const char *xput_prefix,
