@@ -224,7 +224,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
    report has been obtained without having been explicitly requested,
    e.g., it arrived through an interrupt transfer. Returns 0 on
    success, -1 on error with errno set. */
-static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
+static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t buflen)
 {
 	int id = buf[0];
 
@@ -496,7 +496,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
-	r = file_report_buffer(reportbuf, buf, buflen);
+	r = file_report_buffer(reportbuf, buf, (size_t)buflen);
 	if (r < 0) {
 		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
 		return -errno;
