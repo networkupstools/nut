@@ -371,7 +371,7 @@ int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
  * -------------------------------------------------------------------------- */
 HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
@@ -397,7 +397,7 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
  * -------------------------------------------------------------------------- */
 HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
@@ -542,7 +542,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    returned by this function must be freed with Free_ReportDesc(). */
 HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 {
-	int		ret;
+	int		ret = 0;
 	HIDDesc_t	*pDesc;
 	HIDParser_t	*parser;
 
@@ -566,7 +566,7 @@ HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 	parser->ReportDesc = ReportDesc;
 	parser->ReportDescSize = n;
 
-	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += ret) {
+	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += (size_t)ret) {
 		int	id, max;
 
 		ret = HIDParse(parser, &pDesc->item[pDesc->nitems]);
