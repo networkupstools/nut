@@ -36,7 +36,7 @@
 
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
 
-void Usage(char *name) {
+static void Usage(char *name) {
 	printf("%s [<buf> <offset> <size> <min> <max> <expect>]\n", name);
 	printf("  <buf>     - string of hex digit pairs, space separated\n");
 	printf("  <offset>  - offset of the report item value in bits, typically 0..31\n");
@@ -49,7 +49,7 @@ void Usage(char *name) {
 	printf("\nIf no arguments are given a builtin set of tests are run.\n");
 }
 
-void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
+static void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 	size_t i;
 
 	printf("buf \"");
@@ -61,7 +61,7 @@ void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 		pData->Offset, pData->Size, pData->LogMin, pData->LogMin, pData->LogMax, pData->LogMax);
 }
 
-int RunBuiltInTests(char *argv[]) {
+static int RunBuiltInTests(char *argv[]) {
 	NUT_UNUSED_VARIABLE(argv);
 
 	int exitStatus = 0;
@@ -71,6 +71,7 @@ int RunBuiltInTests(char *argv[]) {
 	int bufSize;
 	HIDData_t data;
 	long value;
+
 	static struct {
 		char *buf;		/* item data, starts with report id byte, then remaining report bytes */
 		int Offset;		/* item offset in bits, typically 0..31 */
@@ -125,7 +126,7 @@ int RunBuiltInTests(char *argv[]) {
 	return (exitStatus);
 }
 
-int RunCommandLineTest(char *argv[]) {
+static int RunCommandLineTest(char *argv[]) {
 	uint8_t reportBuf[64];
 	size_t bufSize;
 	char *start, *end;
