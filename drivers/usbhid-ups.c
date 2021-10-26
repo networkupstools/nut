@@ -1106,7 +1106,7 @@ static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char 
 	int ret;
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
-	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+	upsdebug_hex(3, "Report Descriptor", rdbuf, (size_t)rdlen);
 
 	/* Save the global "hd" for this driver instance */
 	hd = arghd;
