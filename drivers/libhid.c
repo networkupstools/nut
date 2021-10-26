@@ -658,26 +658,36 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{
 		/* lookup tables first (to override defaults) */
-		if ((usage = hid_lookup_usage(token, utab)) != -1)
+		if ((usage = hid_lookup_usage(token, utab)) >= 0)
 		{
-			path->Node[i++] = usage;
+			path->Node[i++] = (HIDNode_t)usage;
 			continue;
 		}
 
 		/* translate unnamed path components such as "ff860024" */
 		if (strlen(token) == strspn(token, "1234567890abcdefABCDEF"))
 		{
-			path->Node[i++] = strtol(token, NULL, 16);
+			long l = strtol(token, NULL, 16);
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				goto badvalue;
+			}
+			path->Node[i++] = (HIDNode_t)l;
 			continue;
 		}
 
 		/* indexed collection */
 		if (strlen(token) == strspn(token, "[1234567890]"))
 		{
-			path->Node[i++] = 0x00ff0000 + atoi(token+1);
+			int l = atoi(token + 1); /* +1: skip the bracket */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				goto badvalue;
+			}
+			path->Node[i++] = 0x00ff0000 + (HIDNode_t)l;
 			continue;
 		}
 
+badvalue:
 		/* Uh oh, typo in usage table? */
 		upsdebugx(1, "string_to_path: couldn't parse %s from %s", token, string);
 	}
