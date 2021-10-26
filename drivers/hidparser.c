@@ -158,7 +158,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
 			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
-				pParser->Value += pParser->ReportDesc[(pParser->Pos)+i] << (8*i);
+				pParser->Value += (uint32_t)(pParser->ReportDesc[(pParser->Pos)+i]) << (8*i);
 			}
 			/* Pos on next item */
 			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
@@ -176,7 +176,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			if ((pParser->Item & SIZE_MASK) > 2) {
 				pParser->UsageTab[pParser->UsageSize] = pParser->Value;
 			} else {
-				pParser->UsageTab[pParser->UsageSize] = (pParser->UPage << 16) | (pParser->Value & 0xFFFF);
+				pParser->UsageTab[pParser->UsageSize] = ((HIDNode_t)(pParser->UPage) << 16) | (pParser->Value & 0xFFFF);
 			}
 
 			/* Increment Usage stack size */
@@ -300,7 +300,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_UNIT :
-			pParser->Data.Unit = pParser->Value;
+			/* TOTHINK: Are there cases where Unit is not-signed,
+			 * but a Value too big becomes signed after casting --
+			 * and unintentionally so? */
+			pParser->Data.Unit = (long)pParser->Value;
 			break;
 
 		case ITEM_LOG_MIN :
@@ -443,7 +446,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		int	State = Buf[Bit >> 3] & (1 << (Bit & 7));
 
 		if(State) {
-			value += (1 << Weight);
+			value += (1L << Weight);
 		}
 	}
 
@@ -481,8 +484,8 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	something sensible. -PS */
 
 	/* determine representation without sign bit */
-	magMax = pData->LogMax >= 0 ? pData->LogMax : -(pData->LogMax + 1);
-	magMin = pData->LogMin >= 0 ? pData->LogMin : -(pData->LogMin + 1);
+	magMax = pData->LogMax >= 0 ? (unsigned long)(pData->LogMax) : (unsigned long)(-(pData->LogMax + 1));
+	magMin = pData->LogMin >= 0 ? (unsigned long)(pData->LogMin) : (unsigned long)(-(pData->LogMin + 1));
 
 	/* calculate where the sign bit will be if needed */
 	signbit = 1L << hibit(magMax > magMin ? magMax : magMin);
@@ -491,10 +494,10 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	mask = (signbit - 1) | ((pData->LogMin < 0) ? signbit : 0);
 
 	/* throw away excess high order bits (which may contain garbage) */
-	value = value & mask;
+	value = (long)((unsigned long)(value) & mask);
 
 	/* sign-extend it, if appropriate */
-	if (pData->LogMin < 0 && (value & signbit) != 0) {
+	if (pData->LogMin < 0 && ((unsigned long)(value) & signbit) != 0) {
 		value |= ~mask;
 	}
 
@@ -521,7 +524,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
 	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {
-		int	State = Value & (1 << Weight);
+		long	State = Value & (1L << Weight);
 
 		if (State) {
 			Buf[Bit >> 3] |= (1 << (Bit & 7));
