@@ -30,40 +30,21 @@
 static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	const char *newval, const char *tracking_id)
 {
-	upstype_t	*ups;
 	const	char	*val;
 	const	enum_t  *etmp;
 	const	range_t  *rtmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
 	int	have_tracking_id = 0;
 
-	ups = get_ups_ptr(upsname);
-
-	if (!ups) {
-		send_err(client, NUT_ERR_UNKNOWN_UPS);
-		return;
-	}
-
-	if (!ups_available(ups, client))
-		return;
-
-	/* make sure this user is allowed to do SET */
-	if (!user_checkaction(client->username, client->password, "SET")) {
-		send_err(client, NUT_ERR_ACCESS_DENIED);
-		return;
-	}
-
 	val = sstate_getinfo(ups, var);
 
 	if (!val) {
-		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
-		return;
+		return SET_VAR_CHECK_VAL_VAR_NOT_SUPPORTED;
 	}
 
 	/* make sure this variable is writable (RW) */
 	if ((sstate_getflags(ups, var) & ST_FLAG_RW) == 0) {
-		send_err(client, NUT_ERR_READONLY);
-		return;
+		return SET_VAR_CHECK_VAL_READONLY;
 	}
 
 	/* see if the new value is allowed for this variable */
@@ -75,16 +56,11 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 		/* check for insanity from the driver */
 		if (aux < 1) {
-			upslogx(LOG_WARNING, "UPS [%s]: auxdata for %s is invalid",
-				ups->name, var);
-
-			send_err(client, NUT_ERR_SET_FAILED);
-			return;
+			return SET_VAR_CHECK_VAL_SET_FAILED;
 		}
 
 		if (aux < (int) strlen(newval)) {
-			send_err(client, NUT_ERR_TOO_LONG);
-			return;
+			return SET_VAR_CHECK_VAL_TOO_LONG;
 		}
 	}
 
@@ -105,8 +81,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
-			send_err(client, NUT_ERR_INVALID_VALUE);
-			return;
+			return SET_VAR_CHECK_VAL_INVALID_VALUE;
 		}
 	}
 
@@ -128,9 +103,58 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			return SET_VAR_CHECK_VAL_INVALID_VALUE;
+		}
+	}
+
+	return SET_VAR_CHECK_VAL_OK;
+}
+
+static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
+	const char *newval)
+{
+	upstype_t	*ups;
+	set_var_check_val_t check;
+
+	ups = get_ups_ptr(upsname);
+
+	if (!ups) {
+		send_err(client, NUT_ERR_UNKNOWN_UPS);
+		return;
+	}
+
+	if (!ups_available(ups, client))
+		return;
+
+	/* make sure this user is allowed to do SET */
+	if (!user_checkaction(client->username, client->password, "SET")) {
+		send_err(client, NUT_ERR_ACCESS_DENIED);
+		return;
+	}
+
+	check = set_var_check_val(ups, var, newval);
+	switch(check)
+	{
+		case SET_VAR_CHECK_VAL_VAR_NOT_SUPPORTED:
+			send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
+			return;
+		case SET_VAR_CHECK_VAL_READONLY:
+			send_err(client, NUT_ERR_READONLY);
+			return;
+		case SET_VAR_CHECK_VAL_SET_FAILED:
+			upslogx(LOG_WARNING, "UPS [%s]: auxdata for %s is invalid",
+				ups->name, var);
+			send_err(client, NUT_ERR_SET_FAILED);
+			return;
+		case SET_VAR_CHECK_VAL_TOO_LONG:
+			send_err(client, NUT_ERR_TOO_LONG);
+			return;
+		case SET_VAR_CHECK_VAL_INVALID_VALUE:
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
-		}
+		default:
+			/* Do nothing, continue. */
+			break;
 	}
 
 	/* must be OK now */
@@ -164,6 +188,16 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		sendback(client, "OK TRACKING %s\n", tracking_id);
 	else
 		sendback(client, "OK\n");
+}
+
+int do_set_var(upstype_t *ups, const char *var, const char *newval)
+{
+	char cmd[SMALLBUF], esc[SMALLBUF];
+
+	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
+		var, pconf_encode(newval, esc, sizeof(esc)));
+
+	return sstate_sendline(ups, cmd);
 }
 
 void net_set(nut_ctype_t *client, size_t numarg, const char **arg)

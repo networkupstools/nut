@@ -58,6 +58,7 @@ addons:
     - libxpm-dev
     - libxml2-utils
     - libmodbus-dev
+    - libdbus-1-dev
     - libnss3-dev
     - libssl-dev
 # NOTE: Keep the list above in sync with replicas like deps_driverlibs_cross_i386 below
@@ -397,6 +398,7 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         - libxpm-dev:i386
         - libxml2-utils:i386
         - libmodbus-dev:i386
+        - libdbus-1-dev:i386
         - libnss3-dev:i386
         - libssl-dev:i386
     # See comments above about perl

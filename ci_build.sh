@@ -334,6 +334,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+    CONFIG_OPTS+=("--with-dbus-dir=${BUILD_PREFIX}/etc/dbus-1")
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!

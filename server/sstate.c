@@ -27,6 +27,7 @@
 #include "sstate.h"
 #include "upsd.h"
 #include "upstype.h"
+#include "dbus.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -95,7 +96,9 @@ static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 
 	/* SETINFO <varname> <value> */
 	if (!strcasecmp(arg[0], "SETINFO")) {
-		state_setinfo(&ups->inforoot, arg[1], arg[2]);
+		if (state_setinfo(&ups->inforoot, arg[1], arg[2])) {
+			dbus_notify_property_change(ups, arg[1], arg[2]);
+		}
 		return 1;
 	}
 

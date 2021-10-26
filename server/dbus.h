@@ -1,11 +1,6 @@
-/* netset.h - SET handler for upsd
+/* dbus.h - dbus communication functions
 
-   Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2005	Arnaud Quette <arnaud.quette@free.fr>
-	2007	Peter Selinger <selinger@users.sourceforge.net>
-	2013	Emilien Kia <kiae.dev@gmail.com>
-	2020	Jim Klimov <jimklimov@gmail.com>
+   Copyright (C) 2018  Emilien Kia <emilien.kia+dev@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,8 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef NUT_NETSET_H_SEEN
-#define NUT_NETSET_H_SEEN 1
+#ifndef DBUS_H_SEEN
+#define DBUS_H_SEEN
+
+#include "common.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -31,20 +28,17 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-typedef enum 
-{
-	SET_VAR_CHECK_VAL_OK = 0,
-	SET_VAR_CHECK_VAL_VAR_NOT_SUPPORTED,
-	SET_VAR_CHECK_VAL_READONLY,
-	SET_VAR_CHECK_VAL_SET_FAILED,
-	SET_VAR_CHECK_VAL_TOO_LONG,
-	SET_VAR_CHECK_VAL_INVALID_VALUE
-} set_var_check_val_t;
+#define DBUS_INTERFACE_NUT_DEVICE "org.networkupstools.Device"
+#define DBUS_NUT_UPSD_PATH "/org/networkupstools/Upsd"
+#define DBUS_NUT_UPSD_NAME "org.networkupstools.Upsd"
 
-set_var_check_val_t set_var_check_val(upstype_t *ups, const char *var, const char *newval);
-int do_set_var(upstype_t *ups, const char *var, const char *newval);
+typedef struct upstype_s upstype_t;
 
-void net_set(nut_ctype_t *client, size_t numarg, const char **arg);
+int dbus_init();
+void dbus_cleanup();
+void dbus_loop();
+
+void dbus_notify_property_change(upstype_t* ups, const char* name, const char* value);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -52,4 +46,4 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg);
 /* *INDENT-ON* */
 #endif
 
-#endif /* NUT_NETSET_H_SEEN */
+#endif	/* UPSD_H_SEEN */

@@ -162,6 +162,11 @@ Core and Client parts.
 Enable libltdl (Libtool dlopen abstraction) support.
 This is required to build nut-scanner.
 
+	--with-dbus (default: auto-detect)
+
+Enable dbus support. upsd will provide device information on the
+local system bus.
+
 Other configuration options
 ---------------------------
 
