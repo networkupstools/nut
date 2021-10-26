@@ -567,7 +567,8 @@ HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 	parser->ReportDescSize = n;
 
 	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += (size_t)ret) {
-		int	id, max;
+		uint8_t	id;
+		size_t	max;
 
 		ret = HIDParse(parser, &pDesc->item[pDesc->nitems]);
 		if (ret < 0) {
