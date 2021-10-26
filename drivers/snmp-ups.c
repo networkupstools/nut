@@ -866,12 +866,22 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf[buf_len-1]='\0';
 		}
 		else {
-			len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+			int ret = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+			if (ret < 0)
+				upsdebugx(3, "Failed to retrieve ASN_GAUGE");
+			else
+				len = (size_t)ret;
 		}
 		break;
 	case ASN_TIMETICKS:
 		/* convert timeticks to seconds */
-		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
+		{
+			int ret = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
+			if (ret < 0)
+				upsdebugx(3, "Failed to retrieve ASN_TIMETICKS");
+			else
+				len = (size_t)ret;
+		}
 		break;
 	case ASN_OBJECT_ID:
 		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
