@@ -92,7 +92,7 @@ extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
 extern size_t max_report_size;
 extern int interrupt_only;
-extern unsigned int interrupt_size;
+extern size_t interrupt_size;
 
 /* ---------------------------------------------------------------------- */
 
