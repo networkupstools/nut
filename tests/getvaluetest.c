@@ -68,7 +68,7 @@ static int RunBuiltInTests(char *argv[]) {
 	size_t i;
 	char *next;
 	uint8_t reportBuf[64];
-	int bufSize;
+	size_t bufSize;
 	HIDData_t data;
 	long value;
 
