@@ -585,7 +585,7 @@ void upsdrv_initups(void)
 			upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 		}
 		else {
-			langid_fix = u_langid_fix;
+			langid_fix = (int)u_langid_fix;
 			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
 		}
 	}
