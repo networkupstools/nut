@@ -94,7 +94,8 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
-	int		i, id;
+	int		id;
+	size_t	i;
 
 	if (!arg_pDesc)
 		return NULL;
@@ -150,7 +151,8 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
-	int	r;
+	int	ret;
+	size_t	r;
 
 	if (interrupt_only || rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -158,15 +160,16 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id],
+	ret = comm_driver->get_report(udev, id, rbuf->data[id],
 		max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id]);
 
-	if (r <= 0) {
+	if (ret <= 0) {
 		return -1;
 	}
+	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
+		upsdebugx(2, "%s: expected %d bytes, but got %zd instead", __func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
 	} else {
 		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
@@ -272,7 +275,7 @@ static struct {
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
-	int	i;
+	size_t	i;
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
 	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
