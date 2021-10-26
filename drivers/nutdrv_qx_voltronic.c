@@ -2530,8 +2530,11 @@ static int	voltronic_capability_reset(item_t *item, char *value, const size_t va
 		return -1;
 
 	/* UPS capability options can be reset only when the UPS is in 'Standby Mode' (=OFF) (from QMOD) */
-	if (!(qx_status() & STATUS(OFF))) {
-		upslogx(LOG_ERR, "%s: UPS capability options can be reset only when the UPS is in Standby Mode (i.e. ups.status = 'OFF').", item->info_type);
+	if (!((unsigned int)(qx_status()) & STATUS(OFF))) {
+		upslogx(LOG_ERR,
+			"%s: UPS capability options can be reset only when the "
+			"UPS is in Standby Mode (i.e. ups.status = 'OFF').",
+			item->info_type);
 		return -1;
 	}
 
