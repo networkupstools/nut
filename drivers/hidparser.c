@@ -450,6 +450,10 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	if (range <= 0) {
 		/* makes no sense, give up */
 		*pValue = value;
+		/* Discussion: https://github.com/networkupstools/nut/pull/1138 */
+		upslogx(LOG_ERR, "ERROR in %s: LogMin is greater than LogMax, "
+			"possibly vendor HID is incorrect on device side; "
+			"skipping evaluation of these constraints", __func__);
 		return;
 	}
 
