@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <sys/types.h>
+#include "nut_stdint.h"
 #include "hidtypes.h"
 
 #include "timehead.h"
@@ -89,7 +90,7 @@ typedef struct reportbuf_s {
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
-extern int max_report_size;
+extern size_t max_report_size;
 extern int interrupt_only;
 extern unsigned int interrupt_size;
 
