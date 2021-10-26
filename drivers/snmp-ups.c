@@ -185,8 +185,8 @@ static int device_template_offset = -1;
 /* Forward functions declarations */
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
-int extract_template_number(int template_type, const char* varname);
-int get_template_type(const char* varname);
+int extract_template_number(unsigned long template_type, const char* varname);
+unsigned long get_template_type(const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -1972,7 +1972,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 
 	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
-	int template_type = get_template_type(su_info_p->info_type);
+	unsigned long template_type = get_template_type(su_info_p->info_type);
 
 	if (!su_info_p->OID)
 		return base_index;
@@ -2315,7 +2315,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 /* Return the type of template, according to a variable name.
  * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
-int get_template_type(const char* varname)
+unsigned long get_template_type(const char* varname)
 {
 	if (!strncmp(varname, "outlet.group", 12)) {
 		upsdebugx(4, "outlet.group template");
@@ -2337,7 +2337,7 @@ int get_template_type(const char* varname)
 
 /* Extract the id number of an instantiated template.
  * Example: return '1' for type = 'outlet.1.desc', -1 if unknown */
-int extract_template_number(int template_type, const char* varname)
+int extract_template_number(unsigned long template_type, const char* varname)
 {
 	const char* item_number_ptr = NULL;
 	int item_number = -1;
@@ -2527,7 +2527,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 	char tmpOID[SU_INFOSIZE];
 	char tmpInfo[SU_INFOSIZE];
 	long tmpValue;
-	int phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
+	unsigned long phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
 
 	/* Phase specific data */
 	if (!strncmp(type, "input", 5)) {
@@ -3102,7 +3102,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int cmd_offset = 0;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
-	int vartype = -1;
+	unsigned long vartype = 0;
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;

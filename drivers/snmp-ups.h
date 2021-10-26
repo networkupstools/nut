@@ -138,19 +138,19 @@ typedef struct {
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#define SU_FLAG_OK		(1 << 0)	/* show element to upsd - internal to snmp driver */
-#define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
-#define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
+#define SU_FLAG_OK			(1UL << 0)	/* show element to upsd - internal to snmp driver */
+#define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
+#define SU_FLAG_ABSENT		(1UL << 2)	/* data is absent in the device,
 										 * use default value. */
-#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often - internal to snmp driver */
-#define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
-#define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
+#define SU_FLAG_STALE		(1UL << 3)	/* data stale, don't try too often - internal to snmp driver */
+#define SU_FLAG_NEGINVALID	(1UL << 4)	/* Invalid if negative value */
+#define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
 /* Free slot
- * #define SU_FLAG_SETINT	(1 << 6)*/	/* save value */
-#define SU_OUTLET		(1 << 7)	/* outlet template definition */
-#define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
+ * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
+#define SU_OUTLET			(1UL << 7)	/* outlet template definition */
+#define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
  * Otherwise, the driver will try to determine it by itself...
