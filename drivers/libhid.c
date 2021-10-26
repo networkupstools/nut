@@ -725,7 +725,9 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 	return i;
 }
 
-/* usage conversion string -> numeric */
+/* usage conversion string -> numeric
+ * Returns -1 for error, or a (HIDNode_t) ranged code value
+ */
 static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 {
 	int i, j;
@@ -737,8 +739,9 @@ static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 			if (strcasecmp(utab[i][j].usage_name, name))
 				continue;
 
-			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (unsigned int)utab[i][j].usage_code);
-			return utab[i][j].usage_code;
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (uint32_t)utab[i][j].usage_code);
+			return (long)(utab[i][j].usage_code);
 		}
 	}
 
