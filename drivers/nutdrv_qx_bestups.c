@@ -393,7 +393,7 @@ static int	bestups_process_setvar(item_t *item, char *value, const size_t valuel
 static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_t valuelen)
 {
 	/* Bypass/Boost/Buck bit is not reliable when a battery test, shutdown or on battery condition occurs: always ignore it in these cases */
-	if (!(qx_status() & STATUS(OL)) || (qx_status() & (STATUS(CAL) | STATUS(FSD)))) {
+	if (!((unsigned int)(qx_status()) & STATUS(OL)) || ((unsigned int)(qx_status()) & (STATUS(CAL) | STATUS(FSD)))) {
 
 		if (item->value[0] == '1')
 			item->value[0] = '0';
