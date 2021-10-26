@@ -73,9 +73,9 @@ static int RunBuiltInTests(char *argv[]) {
 	long value;
 
 	static struct {
-		char *buf;		/* item data, starts with report id byte, then remaining report bytes */
-		int Offset;		/* item offset in bits, typically 0..31 */
-		int Size;		/* item size in bits, typically 1..32 */
+		char *buf;			/* item data, starts with report id byte, then remaining report bytes */
+		uint8_t Offset;		/* item offset in bits, typically 0..31 */
+		uint8_t Size;		/* item size in bits, typically 1..32 */
 		long LogMin, LogMax;	/* logical minimum and maximum values */
 		long expectedValue;	/* the expected result of decoding the value in the buffer */
 	} testData[] = {
