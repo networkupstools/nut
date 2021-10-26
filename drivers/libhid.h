@@ -82,9 +82,9 @@ extern HIDDesc_t	*pDesc;	/* parsed Report Descriptor */
 /* report buffer structure: holds data about most recent report for
    each given report id */
 typedef struct reportbuf_s {
-       time_t	ts[256];			/* timestamp when report was retrieved */
-       int	len[256];			/* size of report data */
-       unsigned char	*data[256];		/* report data (allocated) */
+	time_t	ts[256];			/* timestamp when report was retrieved */
+	size_t	len[256];			/* size of report data */
+	unsigned char	*data[256];		/* report data (allocated) */
 } reportbuf_t;
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
