@@ -490,7 +490,8 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
-	int		buflen, r, i;
+	int		buflen, r;
+	size_t	i;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
