@@ -66,7 +66,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -83,7 +83,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -100,7 +100,8 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -134,13 +135,13 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebug_hex(4, "dump", tmp, (size_t)ret);
 	}
 
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -157,7 +158,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -174,7 +175,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -186,7 +188,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
@@ -293,7 +295,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int di, si, size = buf[0];
+				size_t di, si, size = (size_t)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 					if (di >= (buflen - 1))
 						break;
@@ -304,7 +306,9 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 						buf[di++] = buf[si];
 				}
 				buf[di] = 0;
-				ret = di;
+				/* with buf a char* array, practical "size" limit and
+				 * so "di" are small enough to cast to int */
+				ret = (int)di;
 			}
 
 			/* "UPS No Ack" has a special meaning */
