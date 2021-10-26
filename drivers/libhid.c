@@ -682,7 +682,10 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 		upsdebugx(1, "string_to_path: couldn't parse %s from %s", token, string);
 	}
 
-	path->Size = i;
+	if (i < 0 || i > (int)UINT8_MAX) {
+		fatalx(EXIT_FAILURE, "Error: string_to_path(): length exceeded");
+	}
+	path->Size = (uint8_t)i; /* by construct, i>=0; but anyway checked above to be sure */
 
 	upsdebugx(4, "string_to_path: depth = %d", path->Size);
 	return i;
