@@ -142,7 +142,7 @@ typedef struct {
 typedef struct {
 	size_t		nitems;				/* number of items in descriptor */
 	HIDData_t	*item;				/* list of items			*/
-	int		replen[256];			/* list of report lengths, in byte */
+	size_t		replen[256];		/* list of report lengths, in byte */
 } HIDDesc_t;
 
 #ifdef __cplusplus
