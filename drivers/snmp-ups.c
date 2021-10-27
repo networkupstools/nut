@@ -1876,7 +1876,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	size_t template_count = 0;
 	size_t base_snmp_index = 0;
 	snmp_info_t cur_info_p;
-	char template_count_var[SU_BUFSIZE];
+	char template_count_var[SU_BUFSIZE * 2];
+	/* Needed *2 to fit a max size_t in snprintf() below,
+	 * even if that should never happen */
 	char tmp_buf[SU_INFOSIZE];
 
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
