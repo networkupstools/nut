@@ -46,6 +46,11 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=valgrind"|"NUT_BUILD_CAPS=valgrind=yes")
             [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=yes ;;
 
+        "NUT_BUILD_CAPS=cppcheck=no")
+            [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=no ;;
+        "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
+            [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
@@ -352,8 +357,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     # This flag is primarily linked with (lack of) docs generation enabled
-    # (or not) in some BUILD_TYPE scenarios or workers
-    DO_DISTCHECK=yes
+    # (or not) in some BUILD_TYPE scenarios or workers. Initial value may
+    # be set by caller, but codepaths below have the final word.
+    [ "${DO_DISTCHECK-}" = no ] || DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
@@ -437,6 +443,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             else
                 CONFIG_OPTS+=("--with-all=yes")
             fi
+            ;;
+        "default-tgt:cppcheck")
+            if [ "${CANBUILD_CPPCHECK_TESTS-}" = no ] ; then
+                echo "WARNING: Build agent says it has a broken cppcheck, but we requested a BUILD_TYPE='$BUILD_TYPE'" >&2
+                exit 1
+            fi
+            CONFIG_OPTS+=("--enable-cppcheck=yes")
+            CONFIG_OPTS+=("--with-doc=skip")
             ;;
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
@@ -548,8 +562,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # for all other scenarios proceeds.below.
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
-            # e.g. distcheck-light, distcheck-valgrind, maybe others later,
-            # as defined in Makefile.am:
+            # e.g. distcheck-light, distcheck-valgrind, cppcheck, maybe
+            # others later, as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
 

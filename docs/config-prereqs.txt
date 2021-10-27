@@ -59,6 +59,7 @@ Debian 10
     git python curl \
     make autoconf automake libltdl-dev libtool-bin libtool \
     valgrind \
+    cppcheck \
     pkg-config \
     gcc g++ clang \
     asciidoc source-highlight python3-pygments dblatex aspell \
@@ -122,6 +123,7 @@ Note that `PATH` for builds on BSD should include `local`:
     git python curl \
     gmake autoconf automake autotools libltdl libtool \
     valgrind \
+    cppcheck \
     pkgconf \
     gcc clang \
     asciidoc source-highlight textproc/py-pygments dblatex en-aspell aspell \
@@ -244,6 +246,8 @@ build works for that however.
 It also lacks out-of-the-box Tex suite and `dblatex` in particular, which
 `asciidoc` needs to build PDF documents. It may be possible to add these
 from third-party repositories (e.g. SFE) and/or build from sources.
+
+No pre-packaged `cppcheck` was found, either.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).
