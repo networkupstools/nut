@@ -17,6 +17,15 @@ $(NUT_SCANNER_DEPS):
 $(top_builddir)/common/libcommon.la:
 	@cd $(@D) && $(MAKE) -s $(@F)
 
+# do not hard depend on '../include/nut_version.h', since it blocks
+# 'dist', and is only required for actual build, in which case
+# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# be built before anything else
+$(top_srcdir)/common/common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+
+$(top_builddir)/include/nut_version.h:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL
  bin_PROGRAMS = nut-scanner
