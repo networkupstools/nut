@@ -190,6 +190,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # Another part of the solution is to just order different doc types after
 # each other, if several are enabled, this way avoiding a conflict on any
 # temporary file names that could be based on the source being parsed.
+# Notably, this allows for successful builds with shorter random delays.
 
 if WITH_HTML_SINGLE
 if WITH_HTML_CHUNKED
@@ -221,7 +222,7 @@ endif WITH_HTML_CHUNKED
 .txt.html:
 	@case "$(MAKEFLAGS)$(MFLAGS)" in \
 	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 19 + 5 + $$$$ % 5` ; \
+	    RNDSLEEP=`expr $$$$ % 9 + 1 + $$$$ % 5` ; \
 	    echo "  DOC-HTML Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
 	    sleep $$RNDSLEEP ; N=10; \
 	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
@@ -245,7 +246,7 @@ endif WITH_HTML_CHUNKED
 .txt.chunked:
 	@case "$(MAKEFLAGS)$(MFLAGS)" in \
 	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 12 + 2 + $$$$ % 7` ; \
+	    RNDSLEEP=`expr $$$$ % 12 + 2 + $$$$ % 3` ; \
 	    echo "  DOC-HTML-CHUNKED Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
 	    sleep $$RNDSLEEP ; N=10; \
 	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
@@ -269,7 +270,7 @@ endif WITH_HTML_CHUNKED
 .txt.pdf:
 	@case "$(MAKEFLAGS)$(MFLAGS)" in \
 	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 13 + 11 + $$$$ % 9` ; \
+	    RNDSLEEP=`expr $$$$ % 4 + 4 + $$$$ % 9` ; \
 	    echo "  DOC-PDF  Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
 	    sleep $$RNDSLEEP ; N=10; \
 	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
