@@ -807,15 +807,60 @@ endif
 
 if HAVE_ASCIIDOC
 
+### Note: rules below benefit from parallel-build collision avoidance
+### similar to that made in docs/Makefile.am for "heavier" docs formats.
+### Man page and HTML files created here *are* also prone to collisions,
+### but very rarely (too quick and small to hit the problematic window).
+# TODO: add a less invasive definition via "flock" if detected by configure?
+COLLISION_AVOIDANCE_BEGIN = ( \
+    case "$(MAKEFLAGS)$(MFLAGS)" in \
+         *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+            test -n "$$N1" || N1=31 ; \
+            test -n "$$N2" || N2=1 ; \
+            test -n "$$N3" || N3=14 ; \
+            RNDSLEEP=`expr $$$$ % $$N1 + $$N2 + $$$$ % $$N3` ; \
+            echo "$${LOGPREFIX}Delaying at least $${RNDSLEEP} sec before $@ (parallel-make a2x collision avoidance)"; \
+            sleep $$RNDSLEEP ; N=10; \
+            while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
+                do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
+            if [ -s "$(builddir)/docbook-xsl.css" ]; then \
+                echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
+            fi ; \
+            touch "$(builddir)/docbook-xsl.css" || true ;; \
+    esac; \
+    if test -s "$(builddir)/docbook-xsl.css" \
+    && test -r "$(builddir)/docbook-xsl.css" \
+    && ! test -w "$(builddir)/docbook-xsl.css" \
+    ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi ; \
+    chmod -R u+w . || true ; \
+)
+
+COLLISION_AVOIDANCE_END = ( \
+    case "$(MAKEFLAGS)$(MFLAGS)" in \
+         *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+            echo "$${LOGPREFIX}DONE with  $@" ;; \
+    esac ; \
+    rm -f "$(builddir)/docbook-xsl.css" || true ; \
+)
+
+COLLISION_AVOIDANCE_BEGIN_MAN  = ( LOGPREFIX='  DOC-MAN  '; N1=19; N2=1; N3=12; $(COLLISION_AVOIDANCE_BEGIN) ; )
+COLLISION_AVOIDANCE_BEGIN_HTML = ( LOGPREFIX='  DOC-HTML '; N1=7; N2=2; N3=6; $(COLLISION_AVOIDANCE_BEGIN) ; )
+
+COLLISION_AVOIDANCE_END_MAN  = ( LOGPREFIX='  DOC-MAN  '; $(COLLISION_AVOIDANCE_END) ; )
+COLLISION_AVOIDANCE_END_HTML = ( LOGPREFIX='  DOC-HTML '; $(COLLISION_AVOIDANCE_END) ; )
+
 .txt.html:
+	@$(COLLISION_AVOIDANCE_BEGIN_HTML)
 	@echo "  DOC-HTML Generating $@"; \
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		--attribute nutversion="@PACKAGE_VERSION@" \
 		-o $@ $<
+	@$(COLLISION_AVOIDANCE_END_HTML)
 
-### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
+### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect
+### the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts="--nonet" \
@@ -825,20 +870,28 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--destination-dir=.
 
 .txt.1:
+	@$(COLLISION_AVOIDANCE_BEGIN_MAN)
 	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	 $(A2X) $(A2X_MANPAGE_OPTS) $<
+	@$(COLLISION_AVOIDANCE_END_MAN)
 
 .txt.3:
+	@$(COLLISION_AVOIDANCE_BEGIN_MAN)
 	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	 $(A2X) $(A2X_MANPAGE_OPTS) $<
+	@$(COLLISION_AVOIDANCE_END_MAN)
 
 .txt.5:
+	@$(COLLISION_AVOIDANCE_BEGIN_MAN)
 	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	 $(A2X) $(A2X_MANPAGE_OPTS) $<
+	@$(COLLISION_AVOIDANCE_END_MAN)
 
 .txt.8:
+	@$(COLLISION_AVOIDANCE_BEGIN_MAN)
 	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	 $(A2X) $(A2X_MANPAGE_OPTS) $<
+	@$(COLLISION_AVOIDANCE_END_MAN)
 
 else !HAVE_ASCIIDOC
 
@@ -892,6 +945,7 @@ endif !HAVE_ASCIIDOC
 clean-local:
 	rm -f *.pdf *.html *-spellchecked
 	rm -f *.1 *.3 *.5 *.8
+	rm -f docbook-xsl.css
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
