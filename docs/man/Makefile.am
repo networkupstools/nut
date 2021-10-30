@@ -820,7 +820,8 @@ COLLISION_AVOIDANCE_BEGIN = ( \
             test -n "$$N3" || N3=14 ; \
             RNDSLEEP=`expr $$$$ % $$N1 + $$N2 + $$$$ % $$N3` ; \
             echo "$${LOGPREFIX}Delaying at least $${RNDSLEEP} sec before $@ (parallel-make a2x collision avoidance)"; \
-            sleep $$RNDSLEEP ; N=10; \
+            sleep $$RNDSLEEP ; \
+            test -n "$$N" || N=10; \
             while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
                 do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
             if [ -s "$(builddir)/docbook-xsl.css" ]; then \
@@ -843,8 +844,8 @@ COLLISION_AVOIDANCE_END = ( \
     rm -f "$(builddir)/docbook-xsl.css" || true ; \
 )
 
-COLLISION_AVOIDANCE_BEGIN_MAN  = ( LOGPREFIX='  DOC-MAN  '; N1=9; N2=1; N3=4; $(COLLISION_AVOIDANCE_BEGIN) ; )
-COLLISION_AVOIDANCE_BEGIN_HTML = ( LOGPREFIX='  DOC-HTML '; N1=7; N2=2; N3=6; $(COLLISION_AVOIDANCE_BEGIN) ; )
+COLLISION_AVOIDANCE_BEGIN_MAN  = ( LOGPREFIX='  DOC-MAN  '; N1=9; N2=1; N3=4; N=60; $(COLLISION_AVOIDANCE_BEGIN) ; )
+COLLISION_AVOIDANCE_BEGIN_HTML = ( LOGPREFIX='  DOC-HTML '; N1=7; N2=2; N3=6; N=60; $(COLLISION_AVOIDANCE_BEGIN) ; )
 
 COLLISION_AVOIDANCE_END_MAN  = ( LOGPREFIX='  DOC-MAN  '; $(COLLISION_AVOIDANCE_END) ; )
 COLLISION_AVOIDANCE_END_HTML = ( LOGPREFIX='  DOC-HTML '; $(COLLISION_AVOIDANCE_END) ; )

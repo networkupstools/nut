@@ -228,7 +228,8 @@ COLLISION_AVOIDANCE_BEGIN = ( \
             test -n "$$N3" || N3=14 ; \
             RNDSLEEP=`expr $$$$ % $$N1 + $$N2 + $$$$ % $$N3` ; \
             echo "$${LOGPREFIX}Delaying at least $${RNDSLEEP} sec before $@ (parallel-make a2x collision avoidance)"; \
-            sleep $$RNDSLEEP ; N=10; \
+            sleep $$RNDSLEEP ; \
+            test -n "$$N" || N=10; \
             while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
                 do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
             if [ -s "$(builddir)/docbook-xsl.css" ]; then \
