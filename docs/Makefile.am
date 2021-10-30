@@ -170,6 +170,24 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# There are a few best-effort scripting approaches to this below, but still
+# with a chance to race and collide in parallel a2x runs. The trick here is
+# to take a random number (starting with $$ as PID of current make thread is
+# at least a portable approach - not all shells tested served $RANDOM values),
+# sleep for a random initial delay in each thread based on a guess at amount
+# of competing files and typical parallelism of 4 or so, and then block for
+# as long as a "docbook-xsl.css" placed and used by a2x exists (checking each
+# random interval, individual but possibly no unique per thread).
+# When one thread is done processing a document file, it removes this css and
+# another thread may jump in, whichever checks first.
+# While this does not eliminate collisions in theory, they happen to be much
+# less frequent in practice now (e.g. with `make distcheck -j N`), at a cost
+# of potentially longer lags in the docs-build phase.
+# NOTE: It seems (empirically) that simple "DOC-HTML" builds in the manpage
+# subdirectory are not impacted by a2x collisions, so the proposed avoidance
+# logic is not deployed in this case. Larger documents like "user-manual.html"
+# below are susceptible and "protected" this way, however.
+
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
@@ -183,24 +201,63 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # not toxic.
 *.html: common.xsl xhtml.xsl
 .txt.html:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    RNDSLEEP=`expr $$$$ % 19 + 5 + $$$$ % 5` ; \
+	    echo "  DOC-HTML Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
+	    sleep $$RNDSLEEP ; N=10; \
+	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
+	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
+	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
+	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
+	    fi ; \
+	    touch "$(builddir)/docbook-xsl.css" || true ;; \
+	 esac
+	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-HTML Generating $@"; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
+	@rm -f "$(builddir)/docbook-xsl.css"
 
 *.chunked: common.xsl chunked.xsl
 .txt.chunked:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    RNDSLEEP=`expr $$$$ % 12 + 2 + $$$$ % 7` ; \
+	    echo "  DOC-HTML-CHUNKED Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
+	    sleep $$RNDSLEEP ; N=10; \
+	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
+	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
+	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
+	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
+	    fi ; \
+	    touch "$(builddir)/docbook-xsl.css" || true ;; \
+	 esac
+	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-HTML-CHUNKED Generating $@"; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+	@rm -f "$(builddir)/docbook-xsl.css"
 
 *.pdf: docinfo.xml
 .txt.pdf:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    RNDSLEEP=`expr $$$$ % 13 + 11 + $$$$ % 9` ; \
+	    echo "  DOC-PDF  Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
+	    sleep $$RNDSLEEP ; N=10; \
+	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
+	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
+	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
+	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
+	    fi ; \
+	    touch "$(builddir)/docbook-xsl.css" || true ;; \
+	 esac
+	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-PDF  Generating $@"; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+	@rm -f "$(builddir)/docbook-xsl.css"
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
