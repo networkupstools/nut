@@ -221,7 +221,10 @@ $(ASCIIDOC_PDF): $(ASCIIDOC_HTML_CHUNKED)
 endif WITH_PDFS
 endif WITH_HTML_CHUNKED
 
-COLLISION_AVOIDANCE_BEGIN = ( \
+# Below we have several implementations of COLLISION_AVOIDANCE to be fast
+# where we know we can, and err on the safer side in other cases.
+# TODO: add a less invasive definition via "flock" if detected by configure?
+SLOW_COLLISION_AVOIDANCE_BEGIN = ( \
     case "$(MAKEFLAGS)$(MFLAGS)" in \
          *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
             test -n "$$N1" || N1=31 ; \
@@ -245,7 +248,7 @@ COLLISION_AVOIDANCE_BEGIN = ( \
     chmod -R u+w . || true ; \
 )
 
-COLLISION_AVOIDANCE_END = ( \
+SLOW_COLLISION_AVOIDANCE_END = ( \
     case "$(MAKEFLAGS)$(MFLAGS)" in \
          *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
             echo "$${LOGPREFIX}DONE with  $@" ;; \
@@ -253,6 +256,56 @@ COLLISION_AVOIDANCE_END = ( \
     rm -f "$(builddir)/docbook-xsl.css" || true ; \
 )
 
+# Alternative approach: use unique subdir to build each doc file,
+# should be without lags and friendly to parallel runs.
+# Note the curly braces - unlike "SLOW" implem, this is not in a subshell!
+SUBDIR_COLLISION_AVOIDANCE_BEGIN = { \
+    chmod -R u+w . || true ; \
+    rm -f "$(builddir)/$(@F)" \
+    && rm -rf "$(builddir)/tmp/$(@F).dir" \
+    && mkdir -p "$(builddir)/tmp/$(@F).dir" \
+    && ln $< *.xsl "$(builddir)/tmp/$(@F).dir/" \
+    && cd "$(builddir)/tmp/$(@F).dir" \
+    || exit ; \
+}
+
+SUBDIR_COLLISION_AVOIDANCE_END = { \
+    cp -pf "$(@F)" ../../ \
+    && cd ../../ \
+    && rm -rf "./tmp/$(@F).dir" \
+    || exit ; \
+}
+
+# Dist targets have shifted locations, so there
+# we are better safe and slow than sorry
+MIXED_COLLISION_AVOIDANCE_BEGIN = { \
+    case "$<" in \
+    */*) $(SLOW_COLLISION_AVOIDANCE_BEGIN) ;; \
+    *)   if grep "include::" "$<" >/dev/null ; then \
+            $(SLOW_COLLISION_AVOIDANCE_BEGIN) ; \
+         else \
+            $(SUBDIR_COLLISION_AVOIDANCE_BEGIN) ; \
+         fi;; \
+    esac ; \
+}
+
+MIXED_COLLISION_AVOIDANCE_END = { \
+    case "$<" in \
+    */*) $(SLOW_COLLISION_AVOIDANCE_END) ;; \
+    *)   if grep "include::" "$<" >/dev/null ; then \
+            $(SLOW_COLLISION_AVOIDANCE_END) ; \
+         else \
+            $(SUBDIR_COLLISION_AVOIDANCE_END) ; \
+         fi;; \
+    esac ; \
+}
+
+# Pick implem
+###COLLISION_AVOIDANCE_IMPLEM = SLOW
+###COLLISION_AVOIDANCE_IMPLEM = SUBDIR
+COLLISION_AVOIDANCE_IMPLEM = MIXED
+COLLISION_AVOIDANCE_BEGIN = $($(COLLISION_AVOIDANCE_IMPLEM)_COLLISION_AVOIDANCE_BEGIN)
+COLLISION_AVOIDANCE_END = $($(COLLISION_AVOIDANCE_IMPLEM)_COLLISION_AVOIDANCE_END)
 
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
@@ -267,24 +320,30 @@ COLLISION_AVOIDANCE_END = ( \
 # not toxic.
 *.html: common.xsl xhtml.xsl
 .txt.html:
-	@LOGPREFIX='  DOC-HTML '; N1=9; N2=1; N3=5; $(COLLISION_AVOIDANCE_BEGIN)
-	@echo "  DOC-HTML Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
-	@LOGPREFIX='  DOC-HTML '; $(COLLISION_AVOIDANCE_END)
+	@LOGPREFIX='  DOC-HTML '; N1=9; N2=1; N3=5; \
+	 $(COLLISION_AVOIDANCE_BEGIN) ; \
+	 echo "  DOC-HTML Generating $@"; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format \
+	    --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || exit ; \
+	 $(COLLISION_AVOIDANCE_END)
 
 *.chunked: common.xsl chunked.xsl
 .txt.chunked:
-	@LOGPREFIX='  DOC-HTML-CHUNKED '; N1=12; N2=2; N3=3; $(COLLISION_AVOIDANCE_BEGIN)
-	@echo "  DOC-HTML-CHUNKED Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
-	@LOGPREFIX='  DOC-HTML-CHUNKED '; $(COLLISION_AVOIDANCE_END)
+	@LOGPREFIX='  DOC-HTML-CHUNKED '; N1=12; N2=2; N3=3; \
+	 $(COLLISION_AVOIDANCE_BEGIN) ; \
+	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format \
+	    --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || exit ; \
+	 $(COLLISION_AVOIDANCE_END)
 
 *.pdf: docinfo.xml
 .txt.pdf:
-	@LOGPREFIX='  DOC-PDF  '; N1=4; N2=4; N3=9; $(COLLISION_AVOIDANCE_BEGIN)
-	@echo "  DOC-PDF  Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
-	@LOGPREFIX='  DOC-PDF  '; $(COLLISION_AVOIDANCE_END)
+	@LOGPREFIX='  DOC-PDF  '; N1=4; N2=4; N3=9; \
+	 $(COLLISION_AVOIDANCE_BEGIN) ; \
+	 echo "  DOC-PDF  Generating $@"; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format \
+	    --format=pdf -a docinfo1 $< || exit ; \
+	 $(COLLISION_AVOIDANCE_END)
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
