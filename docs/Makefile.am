@@ -234,7 +234,11 @@ endif WITH_HTML_CHUNKED
 	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-HTML Generating $@"; \
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    echo "  DOC-HTML DONE with  $@" ;; \
+	 esac
 	@rm -f "$(builddir)/docbook-xsl.css"
 
 *.chunked: common.xsl chunked.xsl
@@ -254,7 +258,11 @@ endif WITH_HTML_CHUNKED
 	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-HTML-CHUNKED Generating $@"; \
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    echo "  DOC-HTML-CHUNKED DONE with  $@" ;; \
+	 esac
 	@rm -f "$(builddir)/docbook-xsl.css"
 
 *.pdf: docinfo.xml
@@ -274,7 +282,11 @@ endif WITH_HTML_CHUNKED
 	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
 	@chmod -R u+w .
 	@echo "  DOC-PDF  Generating $@"; \
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+	@case "$(MAKEFLAGS)$(MFLAGS)" in \
+	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+	    echo "  DOC-PDF  DONE with  $@" ;; \
+	 esac
 	@rm -f "$(builddir)/docbook-xsl.css"
 
 if HAVE_ASPELL
