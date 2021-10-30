@@ -6,8 +6,14 @@ EXTRA_DIST =
 # was never triggered in fact, not until pushed through command line like this:
 AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libparseconf.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
+LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LIBS)
 endif
@@ -45,7 +51,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
+upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
@@ -56,7 +62,7 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-libupsclient_la_LIBADD = ../common/libcommonclient.la
+libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif

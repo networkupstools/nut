@@ -17,6 +17,10 @@ nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 getvaluetest_SOURCES = getvaluetest.c $(top_srcdir)/drivers/hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
@@ -42,6 +46,11 @@ cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CP
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+
+# Make sure out-of-dir C++ dependencies exist (especially when dev-building
+# only some parts of NUT):
+$(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball

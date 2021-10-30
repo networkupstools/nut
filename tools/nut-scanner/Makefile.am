@@ -13,6 +13,10 @@ BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 $(NUT_SCANNER_DEPS):
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL
  bin_PROGRAMS = nut-scanner
@@ -38,7 +42,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = ../../common/libcommon.la libnutscan.la
+nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
