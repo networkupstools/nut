@@ -220,6 +220,38 @@ $(ASCIIDOC_PDF): $(ASCIIDOC_HTML_CHUNKED)
 endif WITH_PDFS
 endif WITH_HTML_CHUNKED
 
+COLLISION_AVOIDANCE_BEGIN = ( \
+    case "$(MAKEFLAGS)$(MFLAGS)" in \
+         *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+            test -n "$$N1" || N1=31 ; \
+            test -n "$$N2" || N2=1 ; \
+            test -n "$$N3" || N3=14 ; \
+            RNDSLEEP=`expr $$$$ % $$N1 + $$N2 + $$$$ % $$N3` ; \
+            echo "$${LOGPREFIX}Delaying at least $${RNDSLEEP} sec before $@ (parallel-make a2x collision avoidance)"; \
+            sleep $$RNDSLEEP ; N=10; \
+            while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
+                do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
+            if [ -s "$(builddir)/docbook-xsl.css" ]; then \
+                echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
+            fi ; \
+            touch "$(builddir)/docbook-xsl.css" || true ;; \
+    esac; \
+    if test -s "$(builddir)/docbook-xsl.css" \
+    && test -r "$(builddir)/docbook-xsl.css" \
+    && ! test -w "$(builddir)/docbook-xsl.css" \
+    ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi ; \
+    chmod -R u+w . || true ; \
+)
+
+COLLISION_AVOIDANCE_END = ( \
+    case "$(MAKEFLAGS)$(MFLAGS)" in \
+         *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
+            echo "$${LOGPREFIX}DONE with  $@" ;; \
+    esac ; \
+    rm -f "$(builddir)/docbook-xsl.css" || true ; \
+)
+
+
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
@@ -233,75 +265,24 @@ endif WITH_HTML_CHUNKED
 # not toxic.
 *.html: common.xsl xhtml.xsl
 .txt.html:
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 9 + 1 + $$$$ % 5` ; \
-	    echo "  DOC-HTML Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
-	    sleep $$RNDSLEEP ; N=10; \
-	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
-	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
-	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
-	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
-	    fi ; \
-	    touch "$(builddir)/docbook-xsl.css" || true ;; \
-	 esac
-	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
-	@chmod -R u+w .
+	@LOGPREFIX='  DOC-HTML '; N1=9; N2=1; N3=5; $(COLLISION_AVOIDANCE_BEGIN)
 	@echo "  DOC-HTML Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    echo "  DOC-HTML DONE with  $@" ;; \
-	 esac
-	@rm -f "$(builddir)/docbook-xsl.css"
+	@LOGPREFIX='  DOC-HTML '; $(COLLISION_AVOIDANCE_END)
 
 *.chunked: common.xsl chunked.xsl
 .txt.chunked:
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 12 + 2 + $$$$ % 3` ; \
-	    echo "  DOC-HTML-CHUNKED Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
-	    sleep $$RNDSLEEP ; N=10; \
-	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
-	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
-	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
-	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
-	    fi ; \
-	    touch "$(builddir)/docbook-xsl.css" || true ;; \
-	 esac
-	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
-	@chmod -R u+w .
+	@LOGPREFIX='  DOC-HTML-CHUNKED '; N1=12; N2=2; N3=3; $(COLLISION_AVOIDANCE_BEGIN)
 	@echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    echo "  DOC-HTML-CHUNKED DONE with  $@" ;; \
-	 esac
-	@rm -f "$(builddir)/docbook-xsl.css"
+	@LOGPREFIX='  DOC-HTML-CHUNKED '; $(COLLISION_AVOIDANCE_END)
 
 *.pdf: docinfo.xml
 .txt.pdf:
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    RNDSLEEP=`expr $$$$ % 4 + 4 + $$$$ % 9` ; \
-	    echo "  DOC-PDF  Delaying at least $$RNDSLEEP sec before $@ (parallel-make a2x collision avoidance)"; \
-	    sleep $$RNDSLEEP ; N=10; \
-	    while test -e "$(builddir)/docbook-xsl.css" && test "$$N" -gt 0 ; \
-	        do sleep $$RNDSLEEP ; N="`expr $$N - 1`"; done; \
-	    if [ -s "$(builddir)/docbook-xsl.css" ]; then \
-	        echo "WARNING: docbook-xsl.css from an earlier a2x already exists when building $@" >&2 ; \
-	    fi ; \
-	    touch "$(builddir)/docbook-xsl.css" || true ;; \
-	 esac
-	@if test -s "$(builddir)/docbook-xsl.css" && test -r "$(builddir)/docbook-xsl.css" && ! test -w "$(builddir)/docbook-xsl.css" ; then chmod u+w "$(builddir)/docbook-xsl.css" ; fi
-	@chmod -R u+w .
+	@LOGPREFIX='  DOC-PDF  '; N1=4; N2=4; N3=9; $(COLLISION_AVOIDANCE_BEGIN)
 	@echo "  DOC-PDF  Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
-	@case "$(MAKEFLAGS)$(MFLAGS)" in \
-	 *-j{0,1,2,3,4,5,6,7,8,9}*|*-j" "|*--job*) \
-	    echo "  DOC-PDF  DONE with  $@" ;; \
-	 esac
-	@rm -f "$(builddir)/docbook-xsl.css"
+	@LOGPREFIX='  DOC-PDF  '; $(COLLISION_AVOIDANCE_END)
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
