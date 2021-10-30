@@ -26,9 +26,9 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			../../drivers/serial.c \
-			../../drivers/bcmxcp_ser.c \
-			../../common/common.c ../../common/str.c
+			$(top_srcdir)/drivers/serial.c \
+			$(top_srcdir)/drivers/bcmxcp_ser.c \
+			$(top_srcdir)/common/common.c $(top_srcdir)/common/str.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 #
 # Below we set API versions of public libraries
