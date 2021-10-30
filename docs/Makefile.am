@@ -187,6 +187,24 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # subdirectory are not impacted by a2x collisions, so the proposed avoidance
 # logic is not deployed in this case. Larger documents like "user-manual.html"
 # below are susceptible and "protected" this way, however.
+# Another part of the solution is to just order different doc types after
+# each other, if several are enabled, this way avoiding a conflict on any
+# temporary file names that could be based on the source being parsed.
+
+if WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+$(ASCIIDOC_HTML_CHUNKED): $(ASCIIDOC_HTML_SINGLE)
+endif WITH_HTML_CHUNKED
+if WITH_PDFS
+$(ASCIIDOC_PDF): $(ASCIIDOC_HTML_SINGLE)
+endif WITH_PDFS
+endif WITH_HTML_SINGLE
+
+if WITH_HTML_CHUNKED
+if WITH_PDFS
+$(ASCIIDOC_PDF): $(ASCIIDOC_HTML_CHUNKED)
+endif WITH_PDFS
+endif WITH_HTML_CHUNKED
 
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;

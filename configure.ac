@@ -1092,6 +1092,44 @@ AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 
+dnl Similar conditionals for other docs types, mostly needed in their
+dnl docs/Makefile.am to avoid collisions when parsing same file(s) to
+dnl different destination formats, except these types do not worry about
+dnl DOC_INSTALL_* values:
+WITH_PDFS=no
+SKIP_PDFS=no
+if echo "${DOC_BUILD_LIST}" | grep -w "pdf" >/dev/null ; then
+	WITH_PDFS=yes
+fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "pdf" >/dev/null ; then
+	SKIP_PDFS=yes
+fi
+AM_CONDITIONAL(WITH_PDFS, test "${WITH_PDFS}" = "yes")
+AM_CONDITIONAL(SKIP_PDFS, test "${SKIP_PDFS}" = "yes")
+
+WITH_HTML_SINGLE=no
+SKIP_HTML_SINGLE=no
+if echo "${DOC_BUILD_LIST}" | grep -w "html-single" >/dev/null ; then
+	WITH_HTML_SINGLE=yes
+fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "html-single" >/dev/null ; then
+	SKIP_HTML_SINGLE=yes
+fi
+AM_CONDITIONAL(WITH_HTML_SINGLE, test "${WITH_HTML_SINGLE}" = "yes")
+AM_CONDITIONAL(SKIP_HTML_SINGLE, test "${SKIP_HTML_SINGLE}" = "yes")
+
+WITH_HTML_CHUNKED=no
+SKIP_HTML_CHUNKED=no
+if echo "${DOC_BUILD_LIST}" | grep -w "html-chunked" >/dev/null ; then
+	WITH_HTML_CHUNKED=yes
+fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "html-chunked" >/dev/null ; then
+	SKIP_HTML_CHUNKED=yes
+fi
+AM_CONDITIONAL(WITH_HTML_CHUNKED, test "${WITH_HTML_CHUNKED}" = "yes")
+AM_CONDITIONAL(SKIP_HTML_CHUNKED, test "${SKIP_HTML_CHUNKED}" = "yes")
+
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
