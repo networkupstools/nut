@@ -183,6 +183,11 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# TODO: Explore builds of each document in a dedicated uniquely named subdir
+# (e.g. docname.tmp or mktemp based on that) -- those a2x build threads should
+# not collide with each other and would be more responsive if okay. Preferably
+# limit to detected parallel-build cases?.. maybe? Is that detection reliable?
+
 # There are a few best-effort scripting approaches to this below, but still
 # with a chance to race and collide in parallel a2x runs. The trick here is
 # to take a random number (starting with $$ as PID of current make thread is
@@ -196,10 +201,6 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # While this does not eliminate collisions in theory, they happen to be much
 # less frequent in practice now (e.g. with `make distcheck -j N`), at a cost
 # of potentially longer lags in the docs-build phase.
-# NOTE: It seems (empirically) that simple "DOC-HTML" builds in the manpage
-# subdirectory are not impacted by a2x collisions, so the proposed avoidance
-# logic is not deployed in this case. Larger documents like "user-manual.html"
-# below are susceptible and "protected" this way, however.
 # Another part of the solution is to just order different doc types after
 # each other, if several are enabled, this way avoiding a conflict on any
 # temporary file names that could be based on the source being parsed.
