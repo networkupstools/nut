@@ -831,7 +831,7 @@ DOCBUILD_END = { \
 }
 
 .txt.html:
-	@A2X_OUTDIR="tmp/man-html.$(@F)" ; \
+	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 \
@@ -851,28 +851,28 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:
-	@A2X_OUTDIR="tmp/man1.$(@F)" ; \
+	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.3:
-	@A2X_OUTDIR="tmp/man3.$(@F)" ; \
+	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.5:
-	@A2X_OUTDIR="tmp/man5.$(@F)" ; \
+	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.8:
-	@A2X_OUTDIR="tmp/man8.$(@F)" ; \
+	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
