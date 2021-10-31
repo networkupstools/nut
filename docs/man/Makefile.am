@@ -845,7 +845,7 @@ DOCBUILD_END = { \
 
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F)" ; \
-	 echo "  DOC-HTML Generating $@"; \
+	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
