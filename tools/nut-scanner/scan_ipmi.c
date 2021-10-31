@@ -318,7 +318,11 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 		return 0;
 	}
 
-	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, ipmi_id) < 0)
+	if (ipmi_id < 0 || (unsigned int)ipmi_id > UINT8_MAX) {
+		fprintf(stderr, "is_ipmi_device_supported: ipmi_id=%d is out of range!\n", ipmi_id);
+		return 0;
+	}
+	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, (uint8_t)ipmi_id) < 0)
 	{
 #ifdef HAVE_FREEIPMI_11X_12X
 		nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
@@ -494,12 +498,28 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 #endif /* 0 */
 
 		/* Fall back to IPMI 1.5 */
+		if (ipmi_sec->authentication_type < 0
+		    || (unsigned int)ipmi_sec->authentication_type > UINT8_MAX
+		) {
+			fprintf(stderr,
+				"nutscan_scan_ipmi_device: authentication_type=%d is out of range!\n",
+				ipmi_sec->authentication_type);
+			return 0;
+		}
+		if (ipmi_sec->privilege_level < 0
+		    || (unsigned int)ipmi_sec->privilege_level > UINT8_MAX
+		) {
+			fprintf(stderr,
+				"nutscan_scan_ipmi_device: privilege_level=%d is out of range!\n",
+				ipmi_sec->privilege_level);
+			return 0;
+		}
 		if ((ret = (*nut_ipmi_ctx_open_outofband) (ipmi_ctx,
 						IPaddr,
 						ipmi_sec->username,
 						ipmi_sec->password,
-						ipmi_sec->authentication_type,
-						ipmi_sec->privilege_level,
+						(uint8_t)ipmi_sec->authentication_type,
+						(uint8_t)ipmi_sec->privilege_level,
 						IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
 						IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT,
 						ipmi_sec->workaround_flags,

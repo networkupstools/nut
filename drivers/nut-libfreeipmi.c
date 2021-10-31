@@ -49,6 +49,7 @@
 #include <ipmi_monitoring_bitmasks.h>
 #endif
 #include "nut-ipmi.h"
+#include "nut_stdint.h"
 #include "dstate.h"
 
 /* FreeIPMI defines */
@@ -136,6 +137,16 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 
 	upsdebugx(1, "nut-libfreeipmi: nutipmi_open()...");
 
+	/* FIXME? Check arg types for ipmi_fru_open_device_id() in configure?
+	 * At this time it is uint8_t for libfreeipmi implementation of IPMI.
+	 */
+	if (ipmi_id > (int)UINT8_MAX) {
+		libfreeipmi_cleanup();
+		fatal_with_errno(EXIT_FAILURE,
+			"nut_ipmi_open: ipmi_id %d is too large for libfreeipmi",
+			ipmi_id);
+	}
+
 	/* Initialize the FreeIPMI library. */
 	if (!(ipmi_ctx = ipmi_ctx_create ()))
 	{
@@ -182,7 +193,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 	}
 
 	/* Now open the requested (local) PSU */
-	if (ipmi_fru_open_device_id (fru_ctx, ipmi_id) < 0)
+	if (ipmi_fru_open_device_id (fru_ctx, (uint8_t)ipmi_id) < 0)
 	{
 		libfreeipmi_cleanup();
 		fatalx(EXIT_FAILURE, "ipmi_fru_open_device_id: %s\n",
@@ -214,12 +225,20 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 
 		if (area_length)
 		{
+
+			if (area_length > (int)UINT8_MAX) {
+				libfreeipmi_cleanup();
+				fatal_with_errno(EXIT_FAILURE,
+					"nut_ipmi_open: got area_length %d is too large for libfreeipmi",
+					area_length);
+			}
+
 			switch (area_type)
 			{
 				/* get generic board information */
 				case IPMI_FRU_AREA_TYPE_BOARD_INFO_AREA:
 
-					if(libfreeipmi_get_board_info (areabuf, area_length,
+					if(libfreeipmi_get_board_info (areabuf, (uint8_t)area_length,
 						ipmi_dev) < 0)
 					{
 						upsdebugx(1, "Can't retrieve board information");
@@ -228,7 +247,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 				/* get specific PSU information */
 				case IPMI_FRU_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION:
 
-					if(libfreeipmi_get_psu_info (areabuf, area_length, ipmi_dev) < 0)
+					if(libfreeipmi_get_psu_info (areabuf, (uint8_t)area_length, ipmi_dev) < 0)
 					{
 						upsdebugx(1, "Can't retrieve PSU information");
 					}
@@ -349,7 +368,7 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 	int high_end_input_voltage_range_1;
 	unsigned int low_end_input_frequency_range;
 	unsigned int high_end_input_frequency_range;
-	unsigned int voltage_1;
+	unsigned int voltage_1; /* code for conversion into a float */
 
 	/* FIXME: check for the interest and capability to use these data */
 	unsigned int peak_va;
@@ -401,16 +420,36 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 			ipmi_fru_ctx_errormsg (fru_ctx));
 	}
 
-	ipmi_dev->overall_capacity = overall_capacity;
+	if (overall_capacity > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: overall_capacity exceeds expected range: %u",
+			overall_capacity);
+	}
+	ipmi_dev->overall_capacity = (int)overall_capacity;
 
 	/* Voltages are in mV! */
 	ipmi_dev->input_minvoltage = low_end_input_voltage_range_1 / 1000;
 	ipmi_dev->input_maxvoltage = high_end_input_voltage_range_1 / 1000;
 
-	ipmi_dev->input_minfreq = low_end_input_frequency_range;
-	ipmi_dev->input_maxfreq = high_end_input_frequency_range;
+	if (low_end_input_frequency_range > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: low_end_input_frequency_range exceeds expected range: %u",
+			low_end_input_frequency_range);
+	}
+	if (high_end_input_frequency_range > (int)INT_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: high_end_input_frequency_range exceeds expected range: %u",
+			high_end_input_frequency_range);
+	}
+	ipmi_dev->input_minfreq = (int)low_end_input_frequency_range;
+	ipmi_dev->input_maxfreq = (int)high_end_input_frequency_range;
 
-	ipmi_dev->voltage = libfreeipmi_get_voltage(voltage_1);
+	if (voltage_1 > (int)UINT8_MAX)
+	{
+		fatalx(EXIT_FAILURE, "ipmi_fru_multirecord_power_supply_information: voltage_1 code exceeds expected range: %u",
+			voltage_1);
+	}
+	ipmi_dev->voltage = libfreeipmi_get_voltage((uint8_t)voltage_1);
 
 	upsdebugx(1, "libfreeipmi_get_psu_info() retrieved successfully");
 
@@ -463,7 +502,6 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 			ipmi_fru_ctx_errormsg (fru_ctx));
 	}
 
-
 	if (IPMI_FRU_LANGUAGE_CODE_VALID (language_code)) {
 		upsdebugx (5, "FRU Board Language: %s", ipmi_fru_language_codes[language_code]);
 	}
@@ -475,7 +513,16 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 	 * 'struct tm', thus passing 'struct tm' between functions could
 	 * have issues.  So we need to memset */
 	memset (&mfg_date_time_tm, '\0', sizeof (struct tm));
-	timetmp = mfg_date_time;
+
+	/* Without a standard TIME_MAX, signedness may suffer;
+	 * but we can at least check the number should fit */
+	if (sizeof(mfg_date_time) < sizeof(timetmp))
+	{
+		libfreeipmi_cleanup();
+		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process");
+	}
+
+	timetmp = (time_t)mfg_date_time;
 	localtime_r (&timetmp, &mfg_date_time_tm);
 	memset (mfg_date_time_buf, '\0', IPMI_FRU_STR_BUFLEN + 1);
 	strftime (mfg_date_time_buf, IPMI_FRU_STR_BUFLEN, "%D - %T", &mfg_date_time_tm);
@@ -598,7 +645,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 		}
 		if (ipmi_sdr_parse_record_id_and_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				NULL,
 				&record_type) < 0)
 		{
@@ -616,7 +663,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_fru_device_locator_parameters (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				NULL,
 				&logical_fru_device_device_slave_address,
 				NULL,
@@ -639,7 +686,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 			if (ipmi_sdr_parse_fru_entity_id_and_instance (SDR_PARSE_CTX,
 					sdr_record,
-					sdr_record_len,
+					(unsigned int)sdr_record_len,
 					&entity_id,
 					&entity_instance) < 0)
 			{
@@ -685,7 +732,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_record_id_and_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				&record_id,
 				&record_type) < 0)
 		{
@@ -704,7 +751,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 		if (ipmi_sdr_parse_entity_id_instance_type (SDR_PARSE_CTX,
 				sdr_record,
-				sdr_record_len,
+				(unsigned int)sdr_record_len,
 				&tmp_entity_id,
 				&tmp_entity_instance,
 				NULL) < 0)
@@ -739,7 +786,11 @@ cleanup:
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 
-	return ipmi_dev->sensors_count;
+	if (ipmi_dev->sensors_count > INT_MAX) {
+		upsdebugx(1, "%s: Found %i sensors which is too many",
+			__func__, ipmi_dev->sensors_count);
+	}
+	return (int)ipmi_dev->sensors_count;
 }
 
 
