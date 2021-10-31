@@ -168,7 +168,9 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
-# As of version 8.6.9 it lies, and the argument is required for our distcheck.
+# As of version 8.6.9 it lies, and the argument is required for our distcheck
+# (and does affect PDF builds, as found during work on collision-avoidance -
+# true with at least asciidoc/a2x versions 9.0.0rc2).
 # For more details see issues https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
