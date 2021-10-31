@@ -194,8 +194,11 @@ LIBNUTCLIENT_MISC_DEPS= \
 	nutclient_device_master.3 \
 	nutclient_device_forced_shutdown.3
 
+# Here and below, we touch the files for pages that are components of
+# some other, to order them in time and avoid buiding loops. These are
+# not intended to be empty touch-files! ;)
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 LIBNUTCLIENT_TCP_DEPS= \
 	nutclient_tcp_create_client.3 \
@@ -206,13 +209,13 @@ LIBNUTCLIENT_TCP_DEPS= \
 	nutclient_tcp_set_timeout.3
 
 $(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 LIBNUTCLIENT_GENERAL_DEPS= \
 	nutclient_destroy.3
 
 $(LIBNUTCLIENT_GENERAL_DEPS): libnutclient_general.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 LIBNUTCLIENT_VARIABLES_DEPS= \
 	nutclient_get_device_rw_variables.3 \
@@ -224,7 +227,7 @@ LIBNUTCLIENT_VARIABLES_DEPS= \
 	nutclient_set_device_variable_values.3
 
 $(LIBNUTCLIENT_VARIABLES_DEPS): libnutclient_variables.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 LIBNUTCLIENT_COMMANDS_DEPS= \
 	nutclient_execute_device_command.3 \
@@ -233,7 +236,7 @@ LIBNUTCLIENT_COMMANDS_DEPS= \
 	nutclient_has_device_command.3
 
 $(LIBNUTCLIENT_COMMANDS_DEPS): libnutclient_commands.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 LIBNUTCLIENT_DEVICES_DEPS= \
 	nutclient_get_device_description.3 \
@@ -241,7 +244,7 @@ LIBNUTCLIENT_DEVICES_DEPS= \
 	nutclient_has_device.3
 
 $(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 MAN3_DEV_PAGES = \
 	upsclient.3 \
@@ -295,10 +298,10 @@ MAN3_DEV_PAGES = \
 	nutscan_init.3
 
 upscli_readline_timeout.3: upscli_readline.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 upscli_sendline_timeout.3: upscli_sendline.3
-	touch $@
+	@if test -s "$@" ; then touch $@; fi
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
