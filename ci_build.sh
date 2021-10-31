@@ -749,7 +749,7 @@ bindings)
     echo ""
     ./autogen.sh
     #./configure
-    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto
+    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
     $MAKE all && $MAKE check
     ;;
 *)

@@ -1,9 +1,15 @@
 # Network UPS Tools: drivers
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/clients/libupsclient.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
+LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
@@ -155,7 +161,7 @@ riello_ser_LDADD = $(LDADD) -lm
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
-dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la
+dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
