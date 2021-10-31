@@ -13,6 +13,19 @@ BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 $(NUT_SCANNER_DEPS):
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
+# do not hard depend on '../include/nut_version.h', since it blocks
+# 'dist', and is only required for actual build, in which case
+# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# be built before anything else
+$(top_srcdir)/common/common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+
+$(top_builddir)/include/nut_version.h:
+	@cd $(@D) && $(MAKE) -s $(@F)
+
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL
  bin_PROGRAMS = nut-scanner
@@ -22,9 +35,9 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			../../drivers/serial.c \
-			../../drivers/bcmxcp_ser.c \
-			../../common/common.c ../../common/str.c
+			$(top_srcdir)/drivers/serial.c \
+			$(top_srcdir)/drivers/bcmxcp_ser.c \
+			$(top_srcdir)/common/common.c $(top_srcdir)/common/str.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 #
 # Below we set API versions of public libraries
@@ -38,7 +51,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = ../../common/libcommon.la libnutscan.la
+nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
