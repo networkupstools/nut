@@ -124,9 +124,8 @@ MAN8_CGI_PAGES = \
 endif
 
 if WITH_CGI
- man5_MANS += $(MAN5_CGI_PAGES)
-
- man8_MANS += $(MAN8_CGI_PAGES)
+man5_MANS += $(MAN5_CGI_PAGES)
+man8_MANS += $(MAN8_CGI_PAGES)
 endif
 
 HTML_CGI_MANS = \
@@ -306,10 +305,10 @@ MAN1_DEV_PAGES = \
 endif
 
 if WITH_DEV
- man3_MANS = $(MAN3_DEV_PAGES)
+man3_MANS = $(MAN3_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
- man1_MANS = $(MAN1_DEV_PAGES)
+man1_MANS = $(MAN1_DEV_PAGES)
 endif
 # WITH_DEV
 endif
@@ -364,7 +363,7 @@ HTML_DEV_MANS = \
 
 # (--with-drivers=...)
 if SOME_DRIVERS
- man8_MANS += $(DRIVER_MAN_LIST)
+man8_MANS += $(DRIVER_MAN_LIST)
 
 else
 
@@ -457,7 +456,7 @@ MAN_SERIAL_PAGES = \
 endif
 
 if WITH_SERIAL
-  man8_MANS +=  $(MAN_SERIAL_PAGES)
+man8_MANS +=  $(MAN_SERIAL_PAGES)
 endif
 
 HTML_SERIAL_MANS = \
@@ -509,7 +508,7 @@ MAN_SNMP_PAGES = snmp-ups.8
 endif
 
 if WITH_SNMP
-  man8_MANS += $(MAN_SNMP_PAGES)
+man8_MANS += $(MAN_SNMP_PAGES)
 endif
 
 HTML_SNMP_MANS = snmp-ups.html
@@ -537,7 +536,7 @@ MAN_USB_LIBUSB_PAGES = \
 endif
 
 if WITH_USB
- man8_MANS += $(MAN_USB_LIBUSB_PAGES)
+man8_MANS += $(MAN_USB_LIBUSB_PAGES)
 endif
 
 HTML_USB_LIBUSB_MANS = \
@@ -559,10 +558,10 @@ MAN_SERIAL_USB_PAGES = \
 endif
 
 if WITH_SERIAL
- man8_MANS += $(MAN_SERIAL_USB_PAGES)
+man8_MANS += $(MAN_SERIAL_USB_PAGES)
 else
 if WITH_USB
- man8_MANS += $(MAN_SERIAL_USB_PAGES)
+man8_MANS += $(MAN_SERIAL_USB_PAGES)
 endif
 endif
 
@@ -576,7 +575,7 @@ MAN_NETXML_PAGES = netxml-ups.8
 endif
 
 if WITH_NEON
-   man8_MANS += $(MAN_NETXML_PAGES)
+man8_MANS += $(MAN_NETXML_PAGES)
 endif
 
 HTML_NETXML_MANS = netxml-ups.html
@@ -588,7 +587,7 @@ MAN_POWERMAN_PAGES = powerman-pdu.8
 endif
 
 if WITH_LIBPOWERMAN
-   man8_MANS += $(MAN_POWERMAN_PAGES)
+man8_MANS += $(MAN_POWERMAN_PAGES)
 endif
 
 HTML_POWERMAN_MANS = powerman-pdu.html
@@ -600,7 +599,7 @@ MAN_IPMIPSU_PAGES = nut-ipmipsu.8
 endif
 
 if WITH_IPMI
-   man8_MANS += $(MAN_IPMIPSU_PAGES)
+man8_MANS += $(MAN_IPMIPSU_PAGES)
 endif
 
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
@@ -611,24 +610,24 @@ MAN_MACOSX_PAGES = macosx-ups.8
 endif
 
 if WITH_MACOSX
-   man8_MANS += $(MAN_MACOSX_PAGES)
+man8_MANS += $(MAN_MACOSX_PAGES)
 endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
-		   generic_modbus.txt
+	generic_modbus.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
-		   generic_modbus.8
+	generic_modbus.8
 endif
 
 if WITH_MODBUS
-   man8_MANS += $(MAN_MODBUS_PAGES)
+man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
-		   generic_modbus.html
+	generic_modbus.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -636,7 +635,7 @@ MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
 endif
 
 if WITH_LINUX_I2C
-   man8_MANS += $(MAN_LINUX_I2C_PAGES)
+man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
 HTML_LINUX_I2C_MANS = asem.html pijuice.html
