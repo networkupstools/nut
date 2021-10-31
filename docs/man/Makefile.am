@@ -813,8 +813,21 @@ if HAVE_ASCIIDOC
 # See more details in the main NUT docs/Makefile.am
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        RANDOMSLEEP="`expr $$$$ % 5 + 1`" ; \
+        if test -d "./$${A2X_OUTDIR}" ; then sleep $${RANDOMSLEEP} ; fi; \
+        if test -s "./$${A2X_OUTDIR}/.lock" ; then \
+            OLDPID="`head -1 "./$${A2X_OUTDIR}/.lock"`" && test -n "$${OLDPID}" && test "$${OLDPID}" -gt 0 || OLDPID="" ; \
+            if test -n "$${OLDPID}" && test -d "/proc/$${OLDPID}" ; then \
+                echo "  DOC-BLOCKED    Someone else (PID $${OLDPID}) is generating $@, waiting..." >&2 ; \
+                while test -d "/proc/$${OLDPID}" ; do \
+                    sleep $${RANDOMSLEEP} ; \
+                done ; \
+                echo "  DOC-UNBLOCKED  Proceeding to generate $@" >&2 ; \
+            fi ; \
+        fi ; \
         rm -rf "./$${A2X_OUTDIR}" "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        echo "$$$$" > "./$${A2X_OUTDIR}/.lock" || exit ; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
