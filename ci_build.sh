@@ -59,6 +59,14 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+[ -n "${CI_REQUIRE_GOOD_GITIGNORE-}" ] || CI_REQUIRE_GOOD_GITIGNORE="true"
+case "$CI_REQUIRE_GOOD_GITIGNORE" in
+    [Nn][Oo]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee])
+        CI_REQUIRE_GOOD_GITIGNORE="false" ;;
+    [Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
+        CI_REQUIRE_GOOD_GITIGNORE="true" ;;
+esac
+
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
@@ -618,7 +626,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
-            if git status -s | egrep '\.dmf$' ; then
+            if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
                 exit 1
             fi
@@ -745,7 +753,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
     git status -s || true
     echo "==="
-    if [ -n "`git status -s`" ]; then
+    if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
         echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
         git diff || true
         echo "==="
