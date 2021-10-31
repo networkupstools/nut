@@ -810,7 +810,8 @@ if HAVE_ASCIIDOC
 # See more details in the main NUT docs/Makefile.am
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
-        rm -rf "./$${A2X_OUTDIR}" "$@" || true ; \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \

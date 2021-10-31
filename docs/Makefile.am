@@ -187,7 +187,8 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
-        rm -rf "./$${A2X_OUTDIR}" "$@" || true ; \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
