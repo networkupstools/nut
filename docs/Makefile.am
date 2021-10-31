@@ -215,7 +215,7 @@ DOCBUILD_END = { \
 # not toxic.
 *.html: common.xsl xhtml.xsl
 .txt.html:
-	@A2X_OUTDIR="tmp/html-single.$(@F)" ; \
+	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
@@ -223,7 +223,7 @@ DOCBUILD_END = { \
 
 *.chunked: common.xsl chunked.xsl
 .txt.chunked:
-	@A2X_OUTDIR="tmp/html-chunked.$(@F)" ; \
+	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
@@ -232,7 +232,7 @@ DOCBUILD_END = { \
 # Note: non-HTML a2x modes may ignore the destination directory
 *.pdf: docinfo.xml
 .txt.pdf:
-	@A2X_OUTDIR="tmp/pdf.$(@F)" ; \
+	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
