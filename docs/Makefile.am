@@ -185,6 +185,8 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# Note we only remove the original target (if present), if it is a directory -
+# e.g. created by "html-chunked" targets.
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
@@ -200,6 +202,8 @@ DOCBUILD_BEGIN = { \
 
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+        test -d "$@" && rm -rf "$@" || true ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" . || exit ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \

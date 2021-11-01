@@ -823,6 +823,8 @@ DOCBUILD_BEGIN = { \
 
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" . || exit ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \
