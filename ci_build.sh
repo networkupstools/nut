@@ -2,6 +2,11 @@
 
 ################################################################################
 # This file is based on a template used by zproject, but isn't auto-generated. #
+# Its primary use is to automate a number of BUILD_TYPE scenarios for the NUT  #
+# CI farm, but for the same reason it can also be useful to reduce typing for  #
+# reproducible build attempts with NUT development and refactoring workflows.  #
+# Note that it is driven by enviroment variables rather than CLI arguments --  #
+# this approach better suits the practicalities of CI build farm technologies. #
 ################################################################################
 
 set -e
