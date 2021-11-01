@@ -658,7 +658,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" "$BUILD_TGT"
+            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
