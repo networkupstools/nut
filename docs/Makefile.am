@@ -79,9 +79,19 @@ SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
+# This list is defined by configure script choices and options:
 check-local: @DOC_CHECK_LIST@
 
+# This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
+
+# This target can be called by developers to go around the configure
+# script choices at their risk (e.g. missing tools are possible):
+docs: pdf html-single html-chunked man
+
+all-docs: docs
+
+check-docs: check-pdf check-html-single check-html-chunked check-man
 
 pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
@@ -122,6 +132,9 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # once as a SUBDIRS child makefile, and once via DOC_CHECK_LIST expansion
 check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
+
+man:
+	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 clean-local:
 	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
@@ -349,4 +362,4 @@ spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
 
-.PHONY: html html-single pdf
+.PHONY: html html-chunked html-single pdf man
