@@ -844,7 +844,9 @@ bindings)
     ./autogen.sh
     #./configure
     ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
-    $MAKE all && $MAKE check
+    #$MAKE all && \
+    $MAKE $PARMAKE_FLAGS all && \
+    $MAKE check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
