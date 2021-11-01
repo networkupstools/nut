@@ -806,13 +806,44 @@ endif
 
 if HAVE_ASCIIDOC
 
+# Working around a2x not friendly to parallelized runs.
+# See more details in the main NUT docs/Makefile.am
+DOCBUILD_BEGIN = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+    else A2X_OUTDIR='.' ; fi; \
+    if test -s "${builddir}/docbook-xsl.css" \
+    && test -r "${builddir}/docbook-xsl.css" \
+    && ! test -w "${builddir}/docbook-xsl.css" \
+    ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
+    chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+}
+
+# Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
+# may generate miltiple files in one go... so we move "*" and hope
+# for no required hidden files (or would have to `find` them all).
+DOCBUILD_END = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
+        rm -rf "./$${A2X_OUTDIR}" ; \
+    fi ; \
+}
+
 .txt.html:
-	@echo "  DOC-HTML Generating $@"; \
-	$(ASCIIDOC) --backend=xhtml11 \
+	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
+	 echo "  DOC-MAN-HTML Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		--attribute nutversion="@PACKAGE_VERSION@" \
-		-o $@ $<
+		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
@@ -821,23 +852,35 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
-	--destination-dir=.
+	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.3:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.5:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.8:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 else !HAVE_ASCIIDOC
 
@@ -891,6 +934,7 @@ endif !HAVE_ASCIIDOC
 clean-local:
 	rm -f *.pdf *.html *-spellchecked
 	rm -f *.1 *.3 *.5 *.8
+	rm -rf tmp
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
