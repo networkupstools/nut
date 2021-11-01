@@ -102,12 +102,16 @@ esac
 # some non-trivial LA, so we set the default limit per CPU relatively high.
 [ x"$PARMAKE_LA_LIMIT" = x ] && PARMAKE_LA_LIMIT="`expr $NCPUS '*' 8`".0
 
-PARMAKE_FLAGS="-j $NPARMAKES"
-if "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
-    PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
-    echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
-else
-    echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
+# After all the tunable options above, this is the one which takes effect
+# for actual builds with parallel phases. Specify a whitespace to neuter.
+if [ -z "$PARMAKE_FLAGS" ]; then
+    PARMAKE_FLAGS="-j $NPARMAKES"
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
+        PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
+    else
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
+    fi
 fi
 
 # CI builds on Jenkins
