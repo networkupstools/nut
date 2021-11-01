@@ -200,11 +200,16 @@ DOCBUILD_BEGIN = { \
     chmod -R u+w "./$${A2X_OUTDIR}" || true; \
 }
 
+# When moving "*" hope a2x did not make any "hidden" files
+# like ".*" that would be required for resulting documents.
+# Leave the "images/" dir there, though.
+# Otherwise, we would have to `find` them all.
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mv -f "./$${A2X_OUTDIR}/$(@F)" . || exit ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \
 }

@@ -821,11 +821,15 @@ DOCBUILD_BEGIN = { \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
 }
 
+# Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
+# may generate miltiple files in one go... so we move "*" and hope
+# for no required hidden files (or would have to `find` them all).
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mv -f "./$${A2X_OUTDIR}/$(@F)" . || exit ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \
 }
