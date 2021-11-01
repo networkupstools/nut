@@ -75,6 +75,38 @@ esac
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
+# Set up the parallel make with reasonable limits, using several ways to
+# gather and calculate this information. Note that "psrinfo" count is not
+# an honest approach (there may be limits of current CPU set etc.) but is
+# a better upper bound than nothing...
+[ -n "$NCPUS" ] || { \
+    NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`" || \
+    NCPUS="`/usr/bin/getconf NPROCESSORS_ONLN`" || \
+    NCPUS="`cat /proc/cpuinfo | grep -wc processor`" || \
+    { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
+    || NCPUS=1; } 2>/dev/null
+[ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
+
+[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
+[ x"$NPARMAKES" != x -a "$NPARMAKES" -ge 1 ] || NPARMAKES=2
+[ x"$MAXPARMAKES" != x ] && [ "$MAXPARMAKES" -ge 1 ] && \
+    [ "$NPARMAKES" -gt "$MAXPARMAKES" ] && \
+    echo "INFO: Detected or requested NPARMAKES=$NPARMAKES," \
+        "however a limit of MAXPARMAKES=$MAXPARMAKES was configured" && \
+    NPARMAKES="$MAXPARMAKES"
+
+# GNU make allows to limit spawning of jobs by load average of the host,
+# where LA is (roughly) the average amount over the last {timeframe} of
+# queued processes that are ready to compute but must wait for CPU.
+# The rough estimate for VM builders however seems that they always have
+# some non-trivial LA, so we set the default limit per CPU relatively high.
+[ x"$PARMAKE_LA_LIMIT" = x ] && PARMAKE_LA_LIMIT="`expr $NCPUS '*' 8`".0
+
+PARMAKE_FLAGS="-j $NPARMAKES"
+if "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
+    PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
+fi
+
 # CI builds on Jenkins
 [ -z "$NODE_LABELS" ] || \
 for L in $NODE_LABELS ; do
@@ -201,7 +233,7 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k -j 8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
@@ -751,7 +783,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k -j 8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k $PARMAKE_FLAGS all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
       $CI_TIME $MAKE VERBOSE=1 all )
 
