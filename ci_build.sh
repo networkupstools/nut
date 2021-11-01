@@ -105,6 +105,9 @@ esac
 PARMAKE_FLAGS="-j $NPARMAKES"
 if "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
     PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
+    echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
+else
+    echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
 fi
 
 # CI builds on Jenkins
