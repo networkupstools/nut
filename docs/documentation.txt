@@ -59,7 +59,8 @@ ifndef::website[]
 endif::website[]
 script from the main NUT codebase, and reported on the NUT mailing list or
 via link:https://github.com/networkupstools/nut/issues[NUT issues on GitHub]
-or as a pull request against link:https://github.com/networkupstools/nut-ddl
+or as a pull request against the
+link:https://github.com/networkupstools/nut-ddl[NUT Devices Dumps Library]
 following the naming and other rules described in the DDL documentation page.
 
 Offsite Links

@@ -329,7 +329,8 @@ NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
 it would follow similar semantics.
 
 Some further details about the NUT CI farm workers are available in
-link:config-prereqs.txt and link:ci-farm-lxc-setup.txt documents.
+link:config-prereqs.txt[config-prereqs.txt] and
+link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
 
 Travis CI
 ^^^^^^^^^
