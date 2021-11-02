@@ -52,7 +52,7 @@ for device not previously documented as supported by it, are welcome to report
 new data for the Devices Dumps Library (DDL) mentioned above. Best of all such
 "data dump" reports can be prepared by the
 ifdef::website[]
-link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-ddl-dump.sh[tools/nut-ddl-dump.sh]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-ddl-dump.sh[`tools/nut-ddl-dump.sh`]
 endif::website[]
 ifndef::website[]
 `./tools/nut-ddl-dump.sh`
