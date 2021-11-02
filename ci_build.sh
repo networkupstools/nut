@@ -75,6 +75,45 @@ esac
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
+# Set up the parallel make with reasonable limits, using several ways to
+# gather and calculate this information. Note that "psrinfo" count is not
+# an honest approach (there may be limits of current CPU set etc.) but is
+# a better upper bound than nothing...
+[ -n "$NCPUS" ] || { \
+    NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`" || \
+    NCPUS="`/usr/bin/getconf NPROCESSORS_ONLN`" || \
+    NCPUS="`cat /proc/cpuinfo | grep -wc processor`" || \
+    { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
+    || NCPUS=1; } 2>/dev/null
+[ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
+
+[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
+[ x"$NPARMAKES" != x -a "$NPARMAKES" -ge 1 ] || NPARMAKES=2
+[ x"$MAXPARMAKES" != x ] && [ "$MAXPARMAKES" -ge 1 ] && \
+    [ "$NPARMAKES" -gt "$MAXPARMAKES" ] && \
+    echo "INFO: Detected or requested NPARMAKES=$NPARMAKES," \
+        "however a limit of MAXPARMAKES=$MAXPARMAKES was configured" && \
+    NPARMAKES="$MAXPARMAKES"
+
+# GNU make allows to limit spawning of jobs by load average of the host,
+# where LA is (roughly) the average amount over the last {timeframe} of
+# queued processes that are ready to compute but must wait for CPU.
+# The rough estimate for VM builders however seems that they always have
+# some non-trivial LA, so we set the default limit per CPU relatively high.
+[ x"$PARMAKE_LA_LIMIT" = x ] && PARMAKE_LA_LIMIT="`expr $NCPUS '*' 8`".0
+
+# After all the tunable options above, this is the one which takes effect
+# for actual builds with parallel phases. Specify a whitespace to neuter.
+if [ -z "$PARMAKE_FLAGS" ]; then
+    PARMAKE_FLAGS="-j $NPARMAKES"
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
+        PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
+    else
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
+    fi
+fi
+
 # CI builds on Jenkins
 [ -z "$NODE_LABELS" ] || \
 for L in $NODE_LABELS ; do
@@ -201,7 +240,7 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k -j 8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
@@ -626,7 +665,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" "$BUILD_TGT"
+            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
@@ -646,8 +685,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: use the root Makefile's spellcheck recipe which goes into
             # sub-Makefiles known to check corresponding directory's doc files.
+            # Note: no PARMAKE_FLAGS here - better have this output readably
+            # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k spellcheck >/dev/null 2>&1 \
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
@@ -664,6 +705,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ### Still, there remains value in also checking the script syntax
             ### by the very version of the shell interpreter that would run
             ### these scripts in production usage of the resulting packages.
+            ### Note: no PARMAKE_FLAGS here - better have this output readably
+            ### ordered in case of issues.
             ( $CI_TIME $MAKE VERBOSE=1 shellcheck check-scripts-syntax )
             exit $?
             ;;
@@ -751,7 +794,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k -j 8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k $PARMAKE_FLAGS all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
       $CI_TIME $MAKE VERBOSE=1 all )
 
@@ -779,7 +822,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
         echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
         git status -s || true
@@ -805,7 +848,9 @@ bindings)
     ./autogen.sh
     #./configure
     ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
-    $MAKE all && $MAKE check
+    #$MAKE all && \
+    $MAKE $PARMAKE_FLAGS all && \
+    $MAKE check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh

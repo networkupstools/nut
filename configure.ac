@@ -1887,7 +1887,11 @@ dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
-		[AC_MSG_RESULT([yes])],
+		[AS_IF([( ${VALGRIND} /bin/sh -c true >/dev/null 2>/dev/null )],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])
+			 VALGRIND="none"
+			])],
 		[AC_MSG_RESULT([no])
 		 VALGRIND="none"
 		])
