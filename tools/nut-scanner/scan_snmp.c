@@ -59,6 +59,7 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 extern size_t max_threads, curr_threads;
+extern pthread_mutex_t threadcount_mutex;
 #endif
 #include "nutscan-snmp.h"
 
@@ -749,13 +750,54 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-		/* FIXME: With many enough targets to scan, this can crash
+		/* NOTE: With many enough targets to scan, this can crash
 		 * by spawning too many children; add a limit and loop to
 		 * "reap" some already done with their work. And probably
 		 * account them in thread_array[] as something to not wait
 		 * for below in pthread_join()...
 		 */
+
+		if (curr_threads >= max_threads) {
+			upsdebugx(0, "%s: already running %zu scanning threads "
+				"(launched overall: %d), "
+				"waiting until some would finish",
+				__func__, curr_threads, thread_count);
+			while (curr_threads >= max_threads) {
+				for (i = 0; i < thread_count ; i++) {
+					pthread_mutex_lock(&threadcount_mutex);
+					int ret = pthread_tryjoin_np(thread_array[i], NULL);
+					switch (ret) {
+						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+							upsdebugx(0, "%s: Was thread #%i joined earlier?", __func__, i);
+							break;
+						case 0:         // thread exited
+							if (curr_threads > 0) {
+								curr_threads --;
+								upsdebugx(0, "%s: Joined a finished thread #%i", __func__, i);
+							} else {
+								upsdebugx(0, "%s: Accounting of thread count "
+									"says we are already at 0", __func__);
+							}
+							break;
+						case EBUSY:     // actively running
+							break;
+						case EDEADLK:   // Errors with thread interactions... bail out?
+						case EINVAL:    // Errors with thread interactions... bail out?
+						default:        // new pthreads abilities?
+							break;
+					}
+					pthread_mutex_unlock(&threadcount_mutex);
+				}
+				usleep (10000); // microSec's, so 0.01s here
+			}
+			upsdebugx(0, "%s: proceeding with scan", __func__);
+		}
+
 		if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+			pthread_mutex_lock(&threadcount_mutex);
+			curr_threads++;
+			pthread_mutex_unlock(&threadcount_mutex);
+
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
 				thread_count*sizeof(pthread_t));
@@ -775,9 +817,24 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	}
 
 #ifdef HAVE_PTHREAD
+	upsdebugx(0, "%s: all planned scans launched, waiting for threads to complete", __func__);
 	for (i = 0; i < thread_count ; i++) {
-		pthread_join(thread_array[i], NULL);
+		int ret = pthread_join(thread_array[i], NULL);
+		if (ret != 0) {
+			upsdebugx(0, "%s: clean-up pthread_join() returned code %i",
+				__func__, ret);
+		}
+		pthread_mutex_lock(&threadcount_mutex);
+		if (curr_threads > 0) {
+			curr_threads --;
+			upsdebugx(0, "%s: Joined a finished thread", __func__);
+		} else {
+			upsdebugx(0, "%s: Accounting of thread count "
+			"says we are already at 0", __func__);
+		}
+		pthread_mutex_unlock(&threadcount_mutex);
 	}
+	upsdebugx(0, "%s: all threads freed", __func__);
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
 #endif
