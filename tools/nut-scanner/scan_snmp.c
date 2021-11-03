@@ -841,34 +841,36 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	}
 
 #ifdef HAVE_PTHREAD
-	upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
-	for (i = 0; i < thread_count; i++) {
-		int ret;
+	if (thread_array != NULL) {
+		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
+		for (i = 0; i < thread_count; i++) {
+			int ret;
 
-		if (!thread_array[i].active) continue;
+			if (!thread_array[i].active) continue;
 
-		ret = pthread_join(thread_array[i].thread, NULL);
-		if (ret != 0) {
-			upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
-				__func__, ret);
-		}
-		thread_array[i].active = FALSE;
+			ret = pthread_join(thread_array[i].thread, NULL);
+			if (ret != 0) {
+				upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
+					__func__, ret);
+			}
+			thread_array[i].active = FALSE;
 # ifdef HAVE_PTHREAD_TRYJOIN
-		pthread_mutex_lock(&threadcount_mutex);
-		if (curr_threads > 0) {
-			curr_threads --;
-			upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
-				__func__, i);
-		} else {
-			upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
-			"says we are already at 0", __func__);
-		}
-		pthread_mutex_unlock(&threadcount_mutex);
+			pthread_mutex_lock(&threadcount_mutex);
+			if (curr_threads > 0) {
+				curr_threads --;
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+					__func__, i);
+			} else {
+				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
+					"says we are already at 0", __func__);
+			}
+			pthread_mutex_unlock(&threadcount_mutex);
 # endif // HAVE_PTHREAD_TRYJOIN
+		}
+		free(thread_array);
+		upsdebugx(2, "%s: all threads freed", __func__);
 	}
-	upsdebugx(2, "%s: all threads freed", __func__);
 	pthread_mutex_destroy(&dev_mutex);
-	free(thread_array);
 #endif
 	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;
