@@ -288,6 +288,16 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	upsdebugx(5, "%s: parsed mask value %d",
 		__func__, mask_val);
 
+	/* NOTE: Sanity-wise, some larger number also makes sense
+	 * as the maximum subnet size we would scan. But at least,
+	 * this helps avoid scanning the whole Internet just due
+	 * to string-parsing errors.
+	 */
+	if (mask_val < 1) {
+		fatalx(EXIT_FAILURE, "Bad netmask: %s", mask);
+	}
+
+	/* Note: this freeing invalidates "mask" and "saveptr" pointer targets */
 	free(cidr_tok);
 
 	/* Detecting IPv4 vs IPv6 */
