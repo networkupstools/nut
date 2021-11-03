@@ -307,8 +307,14 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
+dnl Note: pthread_tryjoin_np() should be available since glibc 2.3.3, according
+dnl to https://man7.org/linux/man-pages/man3/pthread_tryjoin_np.3.html
 AC_SEARCH_LIBS([pthread_create], [pthread],
-       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])
+        AC_SEARCH_LIBS([pthread_tryjoin_np], [pthread],
+               [AC_DEFINE(HAVE_PTHREAD_TRYJOIN, 1, [Define to enable pthread_tryjoin support code])],
+               [])
+       ],
        [])
 
 dnl ----------------------------------------------------------------------

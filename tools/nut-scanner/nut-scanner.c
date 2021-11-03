@@ -32,12 +32,15 @@
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
+
 #ifdef HAVE_PTHREAD
-#include <pthread.h>
-#include "nut_stdint.h"
+# include <pthread.h>
+# ifdef HAVE_PTHREAD_TRYJOIN
+#  include "nut_stdint.h"
 pthread_mutex_t threadcount_mutex;
 size_t max_threads = 64;
 size_t curr_threads = 0;
+# endif
 #endif
 
 #include "nut-scan.h"
@@ -222,7 +225,7 @@ static void show_usage()
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
 
-#ifdef HAVE_PTHREAD
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
 #else
 	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
@@ -411,7 +414,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'j': {
 				int val = atoi(optarg);
-#ifdef HAVE_PTHREAD
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
 					max_threads = (size_t)val;
 				} else {
@@ -502,7 +505,7 @@ display_help:
 		}
 	}
 
-#ifdef HAVE_PTHREAD
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 	pthread_mutex_init(&threadcount_mutex, NULL);
 #endif
 
@@ -724,7 +727,7 @@ display_help:
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
-#ifdef HAVE_PTHREAD
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 	pthread_mutex_destroy(&threadcount_mutex);
 #endif
 

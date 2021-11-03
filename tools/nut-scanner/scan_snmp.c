@@ -56,11 +56,15 @@
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+
 #ifdef HAVE_PTHREAD
-#include <pthread.h>
+# include <pthread.h>
+# ifdef HAVE_PTHREAD_TRYJOIN)
 extern size_t max_threads, curr_threads;
 extern pthread_mutex_t threadcount_mutex;
+# endif
 #endif
+
 #include "nutscan-snmp.h"
 
 /* Address API change */
@@ -750,6 +754,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
+# ifdef HAVE_PTHREAD_TRYJOIN
 		/* NOTE: With many enough targets to scan, this can crash
 		 * by spawning too many children; add a limit and loop to
 		 * "reap" some already done with their work. And probably
@@ -792,11 +797,14 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			}
 			upsdebugx(0, "%s: proceeding with scan", __func__);
 		}
+# endif // HAVE_PTHREAD_TRYJOIN
 
 		if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+# ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
 			curr_threads++;
 			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
 
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
@@ -821,9 +829,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	for (i = 0; i < thread_count ; i++) {
 		int ret = pthread_join(thread_array[i], NULL);
 		if (ret != 0) {
-			upsdebugx(0, "%s: clean-up pthread_join() returned code %i",
+			upsdebugx(0, "WARNING: %s: clean-up pthread_join() returned code %i",
 				__func__, ret);
 		}
+# ifdef HAVE_PTHREAD_TRYJOIN
 		pthread_mutex_lock(&threadcount_mutex);
 		if (curr_threads > 0) {
 			curr_threads --;
@@ -833,6 +842,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			"says we are already at 0", __func__);
 		}
 		pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
 	}
 	upsdebugx(0, "%s: all threads freed", __func__);
 	pthread_mutex_destroy(&dev_mutex);
