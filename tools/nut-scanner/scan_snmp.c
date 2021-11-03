@@ -803,7 +803,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
 			curr_threads++;
-			pthread_mutex_unlock(&threadcount_mutex);
 # endif // HAVE_PTHREAD_TRYJOIN
 
 			thread_count++;
@@ -817,6 +816,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 				thread_array = new_thread_array;
 			}
 			thread_array[thread_count-1] = thread;
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
 		}
 #else
 		try_SysOID((void *)tmp_sec);
