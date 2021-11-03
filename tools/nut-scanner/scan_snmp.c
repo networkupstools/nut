@@ -800,7 +800,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					}
 					pthread_mutex_unlock(&threadcount_mutex);
 				}
-				usleep (10000); // microSec's, so 0.01s here
+
+				if (curr_threads >= max_threads) {
+					usleep (10000); // microSec's, so 0.01s here
+				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
