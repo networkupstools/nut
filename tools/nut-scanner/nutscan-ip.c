@@ -281,11 +281,11 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		free(cidr_tok);
 		return 0;
 	}
-	upsdebugx(0, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
+	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
 		__func__, cidr, first_ip, mask);
 
 	mask_val = atoi(mask);
-	upsdebugx(0, "%s: parsed mask value %d",
+	upsdebugx(5, "%s: parsed mask value %d",
 		__func__, mask_val);
 
 	free(cidr_tok);
