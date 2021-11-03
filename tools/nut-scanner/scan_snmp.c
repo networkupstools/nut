@@ -770,6 +770,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			while (curr_threads >= max_threads) {
 				for (i = 0; i < thread_count ; i++) {
 					pthread_mutex_lock(&threadcount_mutex);
+					upsdebugx(0, "%s: Trying to join thread #%i...", __func__, i);
 					int ret = pthread_tryjoin_np(thread_array[i], NULL);
 					switch (ret) {
 						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
@@ -789,6 +790,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 						case EDEADLK:   // Errors with thread interactions... bail out?
 						case EINVAL:    // Errors with thread interactions... bail out?
 						default:        // new pthreads abilities?
+							upsdebugx(0, "%s: thread #%i reported code %i",
+								__func__, i, ret);
 							break;
 					}
 					pthread_mutex_unlock(&threadcount_mutex);
@@ -809,7 +812,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			pthread_t *new_thread_array = realloc(thread_array,
 				thread_count*sizeof(pthread_t));
 			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 				break;
 			}
 			else {
@@ -832,16 +835,17 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	for (i = 0; i < thread_count ; i++) {
 		int ret = pthread_join(thread_array[i], NULL);
 		if (ret != 0) {
-			upsdebugx(0, "WARNING: %s: clean-up pthread_join() returned code %i",
+			upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
 				__func__, ret);
 		}
 # ifdef HAVE_PTHREAD_TRYJOIN
 		pthread_mutex_lock(&threadcount_mutex);
 		if (curr_threads > 0) {
 			curr_threads --;
-			upsdebugx(0, "%s: Joined a finished thread", __func__);
+			upsdebugx(0, "%s: Clean-up: Joined a finished thread #%i",
+				__func__, i);
 		} else {
-			upsdebugx(0, "%s: Accounting of thread count "
+			upsdebugx(0, "%s: Clean-up: Accounting of thread count "
 			"says we are already at 0", __func__);
 		}
 		pthread_mutex_unlock(&threadcount_mutex);
