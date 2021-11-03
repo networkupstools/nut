@@ -38,7 +38,18 @@
 # ifdef HAVE_PTHREAD_TRYJOIN
 #  include "nut_stdint.h"
 pthread_mutex_t threadcount_mutex;
-size_t max_threads = 64;
+/* We have 3 networked scan types: nut, snmp, xml,
+ * and users typically give their /24 subnet as "-m" arg.
+ * With some systems having a 1024 default (u)limit to
+ * file descriptors, this should fit if those are involved.
+ * On some systems tested, a large amount of not-joined
+ * pthreads did cause various crashes; also RAM is limited.
+ * Note that each scan may be time consuming to query an
+ * IP address and wait for (no) reply, so while these threads
+ * are usually not resource-intensive (nor computationally),
+ * they spend much wallclock time each so parallelism helps.
+ */
+size_t max_threads = 1024;
 size_t curr_threads = 0;
 # endif
 #endif
