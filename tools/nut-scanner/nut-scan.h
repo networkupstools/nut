@@ -3,6 +3,7 @@
  *    2011 - EATON
  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
+ *    2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

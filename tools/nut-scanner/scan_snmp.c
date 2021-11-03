@@ -1,5 +1,6 @@
 /*
- *  Copyright (C) 2011-2017 Eaton
+ *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <FredericBohe@Eaton.com>
     \author Arnaud Quette <ArnaudQuette@Eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include "common.h"
@@ -817,7 +819,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 			thread_count++;
 			nutscan_thread_t *new_thread_array = realloc(thread_array,
-				thread_count*sizeof(nutscan_thread_t));
+				thread_count * sizeof(nutscan_thread_t));
 			if (new_thread_array == NULL) {
 				upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 				break;
@@ -825,8 +827,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			else {
 				thread_array = new_thread_array;
 			}
-			thread_array[thread_count-1].thread = thread;
-			thread_array[thread_count-1].active = TRUE;
+			thread_array[thread_count - 1].thread = thread;
+			thread_array[thread_count - 1].active = TRUE;
 
 # ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_unlock(&threadcount_mutex);
@@ -840,7 +842,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 #ifdef HAVE_PTHREAD
 	upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
-	for (i = 0; i < thread_count ; i++) {
+	for (i = 0; i < thread_count; i++) {
 		int ret;
 
 		if (!thread_array[i].active) continue;
