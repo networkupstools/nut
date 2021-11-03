@@ -35,6 +35,7 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #include "nut_stdint.h"
+pthread_mutex_t threadcount_mutex;
 size_t max_threads = 64;
 size_t curr_threads = 0;
 #endif
@@ -501,6 +502,10 @@ display_help:
 		}
 	}
 
+#ifdef HAVE_PTHREAD
+	pthread_mutex_init(&threadcount_mutex, NULL);
+#endif
+
 	if (cidr) {
 		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
@@ -718,6 +723,10 @@ display_help:
 	display_func(dev[TYPE_EATON_SERIAL]);
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
+
+#ifdef HAVE_PTHREAD
+	pthread_mutex_destroy(&threadcount_mutex);
+#endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free();
