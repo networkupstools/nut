@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'm':
 				cidr = strdup(optarg);
+				upsdebugx(5, "Got CIDR net/mask: %s", cidr);
 				break;
 			case 'D':
 				/* nothing to do, here */
@@ -475,7 +476,9 @@ display_help:
 	}
 
 	if (cidr) {
+		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 	}
 
 	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
