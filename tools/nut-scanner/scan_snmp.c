@@ -722,7 +722,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	int thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex, NULL);
-#endif
+#endif // HAVE_PTHREAD
 
 	if (!nutscan_avail_snmp) {
 		return NULL;
@@ -834,9 +834,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			pthread_mutex_unlock(&threadcount_mutex);
 # endif // HAVE_PTHREAD_TRYJOIN
 		}
-#else
+#else // not HAVE_PTHREAD
 		try_SysOID((void *)tmp_sec);
-#endif
+#endif // if HAVE_PTHREAD
 		ip_str = nutscan_ip_iter_inc(&ip);
 	}
 
@@ -871,7 +871,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		upsdebugx(2, "%s: all threads freed", __func__);
 	}
 	pthread_mutex_destroy(&dev_mutex);
-#endif
+#endif // HAVE_PTHREAD
 	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;
 	return result;
