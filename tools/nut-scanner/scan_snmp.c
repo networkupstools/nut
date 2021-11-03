@@ -748,6 +748,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
+		/* FIXME: With many enough targets to scan, this can crash
+		 * by spawning too many children; add a limit and loop to
+		 * "reap" some already done with their work. And probably
+		 * account them in thread_array[] as something to not wait
+		 * for below in pthread_join()...
+		 */
 		if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
 			thread_count++;
 			pthread_t *new_thread_array = realloc(thread_array,
