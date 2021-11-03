@@ -267,10 +267,10 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok, "/", &saveptr));
-	free(cidr_tok);
 	if (first_ip == NULL) {
 		upsdebugx(0, "WARNING: %s failed to parse first_ip from cidr=%s",
 			__func__, cidr);
+		free(cidr_tok);
 		return 0;
 	}
 	mask = strtok_r(NULL, "/", &saveptr);
@@ -278,6 +278,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		upsdebugx(0, "WARNING: %s failed to parse mask from cidr=%s (first_ip=%s)",
 			__func__, cidr, first_ip);
 		free (first_ip);
+		free(cidr_tok);
 		return 0;
 	}
 	upsdebugx(0, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
@@ -286,6 +287,8 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	mask_val = atoi(mask);
 	upsdebugx(0, "%s: parsed mask value %d",
 		__func__, mask_val);
+
+	free(cidr_tok);
 
 	/* Detecting IPv4 vs IPv6 */
 	memset(&hints, 0, sizeof(struct addrinfo));
