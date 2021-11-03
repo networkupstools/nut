@@ -61,6 +61,13 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 
+/* use explicit booleans */
+#ifndef FALSE
+typedef enum ebool { FALSE = 0, TRUE } bool_t;
+#else
+typedef int bool_t;
+#endif
+
 /* return 0 on error; visible externally */
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
