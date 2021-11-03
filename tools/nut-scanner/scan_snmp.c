@@ -58,6 +58,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
+extern size_t max_threads, curr_threads;
 #endif
 #include "nutscan-snmp.h"
 
