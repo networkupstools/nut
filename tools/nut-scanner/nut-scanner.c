@@ -34,13 +34,16 @@
 #include <string.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
+#include "nut_stdint.h"
+size_t max_threads = 64;
+size_t curr_threads = 0;
 #endif
 
 #include "nut-scan.h"
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:j:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -61,6 +64,7 @@ static const struct option longopts[] = {
 	{ "authType", required_argument, NULL, 'd' },
 	{ "cipher_suite_id", required_argument, NULL, 'L' },
 	{ "port", required_argument, NULL, 'p' },
+	{ "jobs", required_argument, NULL, 'j' },
 	{ "complete_scan", no_argument, NULL, 'C' },
 	{ "usb_scan", no_argument, NULL, 'U' },
 	{ "snmp_scan", no_argument, NULL, 'S' },
@@ -216,6 +220,12 @@ static void show_usage()
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+
+#ifdef HAVE_PTHREAD
+	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
+#else
+	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -397,6 +407,22 @@ int main(int argc, char *argv[])
 				break;
 			case 'p':
 				port = strdup(optarg);
+				break;
+			case 'j': {
+				int val = atoi(optarg);
+#ifdef HAVE_PTHREAD
+				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
+					max_threads = (size_t)val;
+				} else {
+					fprintf(stderr,
+						"WARNING: Max jobs count %s (%d) is out of range, using default %zu\n",
+						optarg, val, max_threads);
+				}
+#else
+				fprintf(stderr,
+					"WARNING: Max jobs count option is not supported in this build, ignored\n");
+#endif
+				}
 				break;
 			case 'C':
 				allow_all = 1;
