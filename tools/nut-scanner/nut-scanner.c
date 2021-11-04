@@ -51,6 +51,16 @@ pthread_mutex_t threadcount_mutex;
  */
 size_t max_threads = 1024;
 size_t curr_threads = 0;
+
+#  include <sys/resource.h> /* for getrlimit() and struct rlimit */
+#  include <errno.h>
+
+/* 3 is reserved for known overhead (for NetXML at least)
+ * following practical investigation summarized at
+ *   https://github.com/networkupstools/nut/pull/1158
+ * and probably means the usual stdin/stdout/stderr triplet
+ */
+#  define RESERVE_FD_COUNT 3
 # endif
 #endif
 
@@ -261,6 +271,32 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	struct rlimit nofile_limit;
+
+	/* Limit the max scanning thread count by the amount of allowed open
+	 * file descriptors (which caller can change with `ulimit -n NUM`),
+	 * following practical investigation summarized at
+	 *   https://github.com/networkupstools/nut/pull/1158
+	 * Resource-Limit code inspired by example from:
+	 *   https://stackoverflow.com/questions/4076848/how-to-do-the-equivalent-of-ulimit-n-400-from-within-c/4077000#4077000
+	 */
+
+	/* Get max number of files. */
+	if (getrlimit(RLIMIT_NOFILE, &nofile_limit) != 0) {
+		/* Report error, keep hardcoded default */
+		fprintf(stderr, "getrlimit() failed with errno=%d, keeping default job limits\n", errno);
+		nofile_limit.rlim_cur = 0;
+		nofile_limit.rlim_max = 0;
+	} else {
+		if (max_threads > nofile_limit.rlim_cur) {
+			max_threads = nofile_limit.rlim_cur;
+			if (max_threads > (RESERVE_FD_COUNT + 1)) {
+				max_threads -= RESERVE_FD_COUNT;
+			}
+		}
+	}
+#endif // HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
@@ -424,10 +460,33 @@ int main(int argc, char *argv[])
 				port = strdup(optarg);
 				break;
 			case 'j': {
-				int val = atoi(optarg);
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+				int val = atoi(optarg);
 				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
-					max_threads = (size_t)val;
+					if (nofile_limit.rlim_cur > 0
+					&& (uintmax_t)nofile_limit.rlim_cur < (uintmax_t)SIZE_MAX
+					&&  val > nofile_limit.rlim_cur
+					) {
+						upsdebugx(1, "Detected soft limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_cur);
+						upsdebugx(1, "Detected hard limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_max);
+
+						max_threads = (size_t)nofile_limit.rlim_cur;
+						if (max_threads > (RESERVE_FD_COUNT + 1)) {
+							max_threads -= RESERVE_FD_COUNT;
+						}
+
+						fprintf(stderr,
+							"WARNING: Requested max jobs count %s (%d) "
+							"exceeds current file descriptor count limit "
+							"(minus reservation), constraining to %zu\n",
+							optarg, val, max_threads);
+					} else {
+						max_threads = (size_t)val;
+					}
 				} else {
 					fprintf(stderr,
 						"WARNING: Max jobs count %s (%d) is out of range, "
