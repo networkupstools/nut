@@ -45,7 +45,7 @@
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 # ifdef HAVE_PTHREAD_TRYJOIN
-extern size_t max_threads, curr_threads;
+extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
 extern pthread_mutex_t threadcount_mutex;
 # endif
 typedef struct nutscan_thread {

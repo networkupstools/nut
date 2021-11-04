@@ -288,12 +288,16 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		 * At worst we would overflow the limit a bit due to
 		 * other protocol scanners...
 		 */
-		if (curr_threads >= max_threads) {
+		if (curr_threads >= max_threads
+		||  curr_threads >= max_threads_oldnut
+		) {
 			upsdebugx(2, "%s: already running %zu scanning threads "
 				"(launched overall: %d), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
-			while (curr_threads >= max_threads) {
+			while (curr_threads >= max_threads
+			    || curr_threads >= max_threads_oldnut
+			) {
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 
@@ -331,7 +335,9 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					pthread_mutex_unlock(&threadcount_mutex);
 				}
 
-				if (curr_threads >= max_threads) {
+				if (curr_threads >= max_threads
+				|| curr_threads >= max_threads_oldnut
+				) {
 					usleep (10000); // microSec's, so 0.01s here
 				}
 			}
