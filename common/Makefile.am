@@ -12,7 +12,7 @@ libparseconf_la_SOURCES = parseconf.c
 common.c: $(top_builddir)/include/nut_version.h
 
 $(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 libcommon_la_SOURCES = common.c state.c str.c upsconf.c
 libcommonclient_la_SOURCES = common.c state.c str.c

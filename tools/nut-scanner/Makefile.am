@@ -15,7 +15,7 @@ $(NUT_SCANNER_DEPS):
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -24,7 +24,7 @@ $(top_builddir)/common/libcommon.la:
 $(top_srcdir)/common/common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
 
 $(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL
