@@ -300,8 +300,12 @@ int main(int argc, char *argv[])
 		nofile_limit.rlim_cur = 0;
 		nofile_limit.rlim_max = 0;
 	} else {
-		if (max_threads > nofile_limit.rlim_cur) {
-			max_threads = nofile_limit.rlim_cur;
+		if (nofile_limit.rlim_cur > 0
+		&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
+		&&  (uintmax_t)max_threads > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
+		&&  (uintmax_t)(nofile_limit.rlim_cur) < (uintmax_t)SIZE_MAX
+		) {
+			max_threads = (size_t)nofile_limit.rlim_cur;
 			if (max_threads > (RESERVE_FD_COUNT + 1)) {
 				max_threads -= RESERVE_FD_COUNT;
 			}
@@ -476,8 +480,9 @@ int main(int argc, char *argv[])
 				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
 # ifdef HAVE_SYS_RESOURCE_H
 					if (nofile_limit.rlim_cur > 0
+					&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
 					&& (uintmax_t)nofile_limit.rlim_cur < (uintmax_t)SIZE_MAX
-					&&  val > nofile_limit.rlim_cur
+					&& (uintmax_t)val > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
 					) {
 						upsdebugx(1, "Detected soft limit for "
 							"file descriptor count is %ju",
