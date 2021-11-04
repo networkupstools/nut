@@ -476,8 +476,15 @@ int main(int argc, char *argv[])
 				break;
 			case 'T': {
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-				int val = atoi(optarg);
-				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
+				char* endptr;
+				long val = strtol(optarg, &endptr, 10);
+				/* With endptr we check that no chars were left in optarg
+				 * (that is, pointed-to char -- if reported -- is '\0')
+				 */
+				if ((!endptr || !*endptr)
+				&& val > 0
+				&& (uintmax_t)val < (uintmax_t)SIZE_MAX
+				) {
 # ifdef HAVE_SYS_RESOURCE_H
 					if (nofile_limit.rlim_cur > 0
 					&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
@@ -497,22 +504,26 @@ int main(int argc, char *argv[])
 						}
 
 						fprintf(stderr,
-							"WARNING: Requested max jobs count %s (%d) "
-							"exceeds current file descriptor count limit "
-							"(minus reservation), constraining to %zu\n",
+							"WARNING: Requested max scanning "
+							"thread count %s (%ld) exceeds the "
+							"current file descriptor count limit "
+							"(minus reservation), constraining "
+							"to %zu\n",
 							optarg, val, max_threads);
 					} else
 # endif /* HAVE_SYS_RESOURCE_H */
 						max_threads = (size_t)val;
 				} else {
 					fprintf(stderr,
-						"WARNING: Max jobs count %s (%d) is out of range, "
+						"WARNING: Requested max scanning "
+						"thread count %s (%ld) is out of range, "
 						"using default %zu\n",
 						optarg, val, max_threads);
 				}
 #else
 				fprintf(stderr,
-					"WARNING: Max jobs count option is not supported in this build, ignored\n");
+					"WARNING: Max scanning thread count option "
+					"is not supported in this build, ignored\n");
 #endif
 				}
 				break;
