@@ -430,7 +430,8 @@ int main(int argc, char *argv[])
 					max_threads = (size_t)val;
 				} else {
 					fprintf(stderr,
-						"WARNING: Max jobs count %s (%d) is out of range, using default %zu\n",
+						"WARNING: Max jobs count %s (%d) is out of range, "
+						"using default %zu\n",
 						optarg, val, max_threads);
 				}
 #else
