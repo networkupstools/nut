@@ -37,7 +37,7 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			$(top_srcdir)/drivers/serial.c \
 			$(top_srcdir)/drivers/bcmxcp_ser.c
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS) $(top_builddir)/common/libcommon.la
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -50,7 +50,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la
+nut_scanner_LDADD = libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
