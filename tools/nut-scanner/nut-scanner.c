@@ -638,7 +638,7 @@ display_help:
 		upsdebugx(1, "NUT bus (avahi) SCAN: not requested, SKIPPED");
 	}
 
-	if (allow_ipmi  && nutscan_avail_ipmi) {
+	if (allow_ipmi && nutscan_avail_ipmi) {
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
