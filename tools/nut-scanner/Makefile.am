@@ -21,7 +21,7 @@ $(top_builddir)/common/libcommon.la:
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
-$(top_srcdir)/common/common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+nut-scanner.c: $(top_builddir)/include/nut_version.h
 
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
@@ -36,8 +36,7 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			$(top_srcdir)/drivers/serial.c \
-			$(top_srcdir)/drivers/bcmxcp_ser.c \
-			$(top_srcdir)/common/common.c $(top_srcdir)/common/str.c
+			$(top_srcdir)/drivers/bcmxcp_ser.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 #
 # Below we set API versions of public libraries
