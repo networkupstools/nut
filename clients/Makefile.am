@@ -10,7 +10,7 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libparseconf.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.a
 LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
