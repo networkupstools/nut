@@ -11,7 +11,7 @@ BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
 $(NUT_SCANNER_DEPS):
-	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
+	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la:
