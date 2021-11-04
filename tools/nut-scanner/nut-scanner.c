@@ -79,11 +79,12 @@ size_t max_threads_netsnmp = 0; // 10240;
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:j:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
 	{ "timeout", required_argument, NULL, 't' },
+	{ "thread", required_argument, NULL, 'T' },
 	{ "start_ip", required_argument, NULL, 's' },
 	{ "end_ip", required_argument, NULL, 'e' },
 	{ "eaton_serial", required_argument, NULL, 'E' },
@@ -100,7 +101,6 @@ static const struct option longopts[] = {
 	{ "authType", required_argument, NULL, 'd' },
 	{ "cipher_suite_id", required_argument, NULL, 'L' },
 	{ "port", required_argument, NULL, 'p' },
-	{ "jobs", required_argument, NULL, 'j' },
 	{ "complete_scan", no_argument, NULL, 'C' },
 	{ "usb_scan", no_argument, NULL, 'U' },
 	{ "snmp_scan", no_argument, NULL, 'S' },
@@ -215,6 +215,12 @@ static void show_usage()
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
+#else
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+#endif
+
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
@@ -256,12 +262,6 @@ static void show_usage()
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
-
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
-#else
-	printf("  -j, --jobs: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
-#endif
 }
 
 int main(int argc, char *argv[])
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
 			case 'p':
 				port = strdup(optarg);
 				break;
-			case 'j': {
+			case 'T': {
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 				int val = atoi(optarg);
 				if (val > 0 && (uintmax_t)val < (uintmax_t)SIZE_MAX) {
