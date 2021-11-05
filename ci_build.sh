@@ -220,6 +220,19 @@ configure_nut() {
         CONFIGURE_SCRIPT=./configure.bat
     fi
 
+    if [ ! -s "$CONFIGURE_SCRIPT" ]; then
+        # Note: modern auto(re)conf requires pkg-config to generate the configure
+        # script, so to stage the situation of building without one (as if on an
+        # older system) we have to remove it when we already have the script.
+        # This matches the use-case of distro-building from release tarballs that
+        # include all needed pre-generated files to rely less on OS facilities.
+        if [ "$CI_OS_NAME" = "windows" ] ; then
+            $CI_TIME ./autogen.sh || true
+        else
+            $CI_TIME ./autogen.sh ### 2>/dev/null
+        fi || exit
+    fi
+
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
     echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
