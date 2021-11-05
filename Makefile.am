@@ -70,8 +70,20 @@ DISTCLEANFILES_AUTOTOOLS += Makefile.in
 
 DISTCLEANFILES += $(DISTCLEANFILES_AUTOTOOLS)
 
+# Do not let $SUBDIRS/Makefile rules delete their local .deps because
+# this breaks our ability to clean up (e.g. some common/.../*.Plo files
+# are included by generated Makefiles from other subdirectories, so they
+# should be available during their clean-up). Just in case, we make sure
+# here that their sub-distcleans complete first.
 distclean-local:
+	@for DIR in $(SUBDIRS) ; do \
+		if test -f "$${DIR}/Makefile" ; then \
+			echo "  DISTCLEAN  in $${DIR}" >&2 ; \
+			( cd "$${DIR}" && $(MAKE) -s distclean ) || exit ; \
+		fi ; \
+	 done
 	rm -rf .inst tmp autom4te.cache
+	find $(builddir) -type d -name '.deps' -exec rm -rf '{}' \;
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)

@@ -330,5 +330,8 @@ libdummy_serial_la_LDFLAGS = -no-undefined -static
 
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
 DISTCLEANFILES = Makefile.in
-clean-local:
-	rm -rf $(builddir)/.deps
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

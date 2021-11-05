@@ -85,5 +85,7 @@ endif
 CLEANFILES = $(BUILT_SOURCES) *-spellchecked
 DISTCLEANFILES = Makefile.in
 
-clean-local:
-	rm -rf $(builddir)/.deps
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps
