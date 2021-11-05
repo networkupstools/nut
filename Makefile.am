@@ -83,7 +83,7 @@ distclean-local:
 		fi ; \
 	 done
 	rm -rf .inst tmp autom4te.cache
-	find $(builddir) -type d -name '.deps' -exec rm -rf '{}' \;
+	find "$(builddir)" -type d -name '.deps' | while read DIR ; do rm -rf "$${DIR}" ; done
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
