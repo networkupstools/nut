@@ -29,19 +29,19 @@ LINKED_SOURCE_FILES =
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES += serial.c
 serial.c: $(top_srcdir)/drivers/serial.c
-	ln -s $< $@
+	ln -s -f "$<" "$@"
 
 LINKED_SOURCE_FILES += bcmxcp_ser.c
 bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	ln -s $< $@
+	ln -s -f "$<" "$@"
 
 LINKED_SOURCE_FILES += common.c
 common.c: $(top_srcdir)/common/common.c
-	ln -s $< $@
+	ln -s -f "$<" "$@"
 
 LINKED_SOURCE_FILES += str.c
 str.c: $(top_srcdir)/common/str.c
-	ln -s $< $@
+	ln -s -f "$<" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 
