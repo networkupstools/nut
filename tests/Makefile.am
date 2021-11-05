@@ -21,8 +21,7 @@ LINKED_SOURCE_FILES = ./hidparser.c
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 ./hidparser.c: $(top_srcdir)/drivers/hidparser.c
-	rm -f "$@"
-	ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
 
 getvaluetest_SOURCES = getvaluetest.c ./hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
