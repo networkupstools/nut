@@ -82,7 +82,8 @@ else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) *-spellchecked
+DISTCLEANFILES = Makefile.in
 
 clean-local:
-	rm -f *-spellchecked
+	rm -rf $(builddir)/.deps

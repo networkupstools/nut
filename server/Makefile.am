@@ -33,3 +33,7 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  upstype.h user-data.h user.h
 
 sockdebug_SOURCES = sockdebug.c
+
+DISTCLEANFILES = Makefile.in
+clean-local:
+	rm -rf $(builddir)/.deps

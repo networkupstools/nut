@@ -94,3 +94,7 @@ libnutclientstub_la_LIBADD = libnutclient.la
 else
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif
+
+DISTCLEANFILES = Makefile.in
+clean-local:
+	rm -rf $(builddir)/.deps

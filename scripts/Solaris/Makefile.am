@@ -84,3 +84,5 @@ check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	    echo "  SVCCFG-VALIDATE  $$F"; \
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
+
+DISTCLEANFILES = Makefile.in

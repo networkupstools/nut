@@ -20,3 +20,7 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+DISTCLEANFILES = Makefile.in
+clean-local:
+	rm -rf $(builddir)/.deps

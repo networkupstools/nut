@@ -27,12 +27,14 @@ CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
+TESTS_CXX11 = cppunittest
+
 if HAVE_CXX11
 if HAVE_CPPUNIT
 # Note: per configure script this "SHOULD" also assume
 # that we HAVE_CXX11 - but better have it explicit
 
-TESTS += cppunittest
+TESTS += $(TESTS_CXX11)
 
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
@@ -65,3 +67,8 @@ else !HAVE_CXX11
 EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CXX11
+
+CLEANFILES = $(TESTS) $(TESTS_CXX11) *.trs *.log
+DISTCLEANFILES = Makefile.in
+clean-local:
+	rm -rf $(builddir)/.deps

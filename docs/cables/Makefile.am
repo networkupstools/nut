@@ -1,2 +1,2 @@
-clean-local:
-	rm -f *-spellchecked
+CLEANFILES = *-spellchecked
+DISTCLEANFILES = Makefile.in

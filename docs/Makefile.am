@@ -1,4 +1,4 @@
-DISTCLEANFILES =
+DISTCLEANFILES = Makefile.in
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
@@ -136,8 +136,10 @@ check-man:
 man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
+CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
+
+# Dirs to clean
 clean-local:
-	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
 	rm -rf *.chunked *.bak tmp
 
 ### TODO: automatic dependency generation

@@ -32,6 +32,10 @@ GENERATED_USB_OS_FILES += ../scripts/devd/nut-usb.conf.in
 # UPower output file
 GENERATED_USB_OS_FILES += ../scripts/upower/95-upower-hid.rules
 
+CLEANFILES = $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
+# We do not clean away these files, some are even tracked in Git:
+#CLEANFILES += $(GENERATED_USB_OS_FILES)
+
 all: nut-scanner-deps $(GENERATED_USB_OS_FILES)
 
 # This target is called from the making of nut-scanner to ensure its bits
@@ -104,5 +108,7 @@ dist-hook:
 	fi
 
 	@$(distdir)/driver-list-format.sh;
+
+DISTCLEANFILES = Makefile.in
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps
