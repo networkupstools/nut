@@ -17,8 +17,9 @@ nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
+
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
-	ln -s $< $@
+	ln -s -f "$<" "$@"
 
 getvaluetest_SOURCES = getvaluetest.c hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
