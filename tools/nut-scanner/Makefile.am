@@ -31,23 +31,19 @@ LINKED_SOURCE_FILES =
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 LINKED_SOURCE_FILES += ./serial.c
 ./serial.c: $(top_srcdir)/drivers/serial.c
-	rm -f "$@"
-	ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
 LINKED_SOURCE_FILES += ./bcmxcp_ser.c
 ./bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	rm -f "$@"
-	ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
 
 LINKED_SOURCE_FILES += ./common.c
 ./common.c: $(top_srcdir)/common/common.c
-	rm -f "$@"
-	ln -s -f "$(top_srcdir)/common/common.c" "$@"
+	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
 
 LINKED_SOURCE_FILES += ./str.c
 ./str.c: $(top_srcdir)/common/str.c
-	rm -f "$@"
-	ln -s -f "$(top_srcdir)/common/str.c" "$@"
+	test -s "$@" || ln -s -f "$(top_srcdir)/common/str.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 
