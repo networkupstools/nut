@@ -27,21 +27,23 @@ common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
 LINKED_SOURCE_FILES =
 
 # Separate the .deps of other dirs from this one
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 LINKED_SOURCE_FILES += serial.c
 serial.c: $(top_srcdir)/drivers/serial.c
-	ln -s -f "$<" "$@"
+	ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
 LINKED_SOURCE_FILES += bcmxcp_ser.c
 bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	ln -s -f "$<" "$@"
+	ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
 
 LINKED_SOURCE_FILES += common.c
 common.c: $(top_srcdir)/common/common.c
-	ln -s -f "$<" "$@"
+	ln -s -f "$(top_srcdir)/common/common.c" "$@"
 
 LINKED_SOURCE_FILES += str.c
 str.c: $(top_srcdir)/common/str.c
-	ln -s -f "$<" "$@"
+	ln -s -f "$(top_srcdir)/common/str.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 
