@@ -46,6 +46,7 @@ LINKED_SOURCE_FILES += ./str.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/common/str.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
+BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) -s $(@F)
