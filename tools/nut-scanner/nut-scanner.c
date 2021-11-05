@@ -234,9 +234,13 @@ static void show_usage()
 		printf("\nSNMP v3 specific options:\n");
 		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv, authNoPriv, authPriv)\n");
 		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5, SHA, SHA256, SHA384 or SHA512) used for authenticated SNMPv3 messages (default=MD5)\n");
 		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES, AES, AES192 or AES256) used for encrypted SNMPv3 messages (default=DES)\n");
+#else
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+#endif
 		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
 	}
 

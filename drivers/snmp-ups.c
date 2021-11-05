@@ -622,6 +622,18 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
 		}
+		else if (strcmp(authProtocol, "SHA256") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC192SHA256AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC192SHA256AuthProtocol)/sizeof(oid);
+		}
+		else if (strcmp(authProtocol, "SHA384") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC256SHA384AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC256SHA384AuthProtocol)/sizeof(oid);
+		}
+		else if (strcmp(authProtocol, "SHA512") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC384SHA512AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC384SHA512AuthProtocol)/sizeof(oid);
+		}
 		else
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
 
@@ -648,6 +660,16 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+		else if (strcmp(privProtocol, "AES192") == 0) {
+			g_snmp_sess.securityPrivProto = usmAES192PrivProtocol;
+			g_snmp_sess.securityPrivProtoLen = (sizeof(usmAES192PrivProtocol)/sizeof(oid));
+		}
+		else if (strcmp(privProtocol, "AES256") == 0) {
+			g_snmp_sess.securityPrivProto = usmAES256PrivProtocol;
+			g_snmp_sess.securityPrivProtoLen = (sizeof(usmAES256PrivProtocol)/sizeof(oid));
+		}
+#endif
 		else
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
