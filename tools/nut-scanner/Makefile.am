@@ -7,6 +7,7 @@ NUT_SCANNER_DEPS_C =
 NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 BUILT_SOURCES = $(NUT_SCANNER_DEPS)
+CLEANFILES = $(BUILT_SOURCES)
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
@@ -21,7 +22,28 @@ $(top_builddir)/common/libcommon.la:
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
-$(top_srcdir)/common/common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+
+LINKED_SOURCE_FILES =
+
+# Separate the .deps of other dirs from this one
+LINKED_SOURCE_FILES += serial.c
+serial.c: $(top_srcdir)/drivers/serial.c
+	ln -s $< $@
+
+LINKED_SOURCE_FILES += bcmxcp_ser.c
+bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+	ln -s $< $@
+
+LINKED_SOURCE_FILES += common.c
+common.c: $(top_srcdir)/common/common.c
+	ln -s $< $@
+
+LINKED_SOURCE_FILES += str.c
+str.c: $(top_srcdir)/common/str.c
+	ln -s $< $@
+
+CLEANFILES += $(LINKED_SOURCE_FILES)
 
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) -s $(@F)
@@ -35,9 +57,7 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			$(top_srcdir)/drivers/serial.c \
-			$(top_srcdir)/drivers/bcmxcp_ser.c \
-			$(top_srcdir)/common/common.c $(top_srcdir)/common/str.c
+			$(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 #
 # Below we set API versions of public libraries
@@ -82,7 +102,7 @@ else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
-CLEANFILES = $(BUILT_SOURCES) *-spellchecked
+CLEANFILES += *-spellchecked
 DISTCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
