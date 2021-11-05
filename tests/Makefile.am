@@ -5,6 +5,7 @@ all: $(TESTS)
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
 TESTS = nutlogtest getvaluetest
+CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_srcdir)/include
@@ -14,7 +15,12 @@ check_PROGRAMS = $(TESTS)
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
-getvaluetest_SOURCES = getvaluetest.c $(top_srcdir)/drivers/hidparser.c
+# Separate the .deps of other dirs from this one
+LINKED_SOURCE_FILES = hidparser.c
+hidparser.c: $(top_srcdir)/drivers/hidparser.c
+	ln -s $< $@
+
+getvaluetest_SOURCES = getvaluetest.c hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
@@ -68,7 +74,8 @@ EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CXX11
 
-CLEANFILES = $(TESTS) $(TESTS_CXX11) *.trs *.log
+CLEANFILES += $(LINKED_SOURCE_FILES)
+CLEANFILES += $(TESTS) $(TESTS_CXX11)
 DISTCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
