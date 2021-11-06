@@ -714,6 +714,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "CCache stats after build:"
                 ccache -s
             fi
+
+            optional_realclean_check || exit
+
             echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
             ;;
@@ -813,6 +816,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
+
+                optional_realclean_check || {
+                    RES=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[realclean]"
+                }
             done
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
@@ -870,10 +878,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             echo "==="
             exit 1
         fi
-
-        optional_realclean_check || exit
         )
     fi
+
+    optional_realclean_check || exit
 
     if [ "$HAVE_CCACHE" = yes ]; then
         echo "CCache stats after build:"
