@@ -60,7 +60,7 @@ DISTCLEANFILES = ChangeLog
 # Files below are re-created by running `configure` script and may be
 # wiped by a `make distclean`:
 DISTCLEANFILES += Makefile.in
-DISTCLEANFILES += config.guess config.log config.sub configure~
+DISTCLEANFILES += config.log configure~
 #???# configure.ac~
 DISTCLEANFILES += include/config.h.in include/config.h.in~
 
@@ -69,7 +69,7 @@ DISTCLEANFILES += include/config.h.in include/config.h.in~
 # by a mere `make distclean`; most of these are copied by autotools
 # from their installation on the system which generates `configure`:
 REALCLEANFILES = INSTALL
-REALCLEANFILES += aclocal.m4
+REALCLEANFILES += aclocal.m4 config.guess config.sub
 REALCLEANFILES += configure
 REALCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
 REALCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
