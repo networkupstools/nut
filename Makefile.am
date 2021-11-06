@@ -250,20 +250,20 @@ setver:
 	@echo "Edit configure.ac to set version number."
 
 # Clean the dist tarball and packages
-DISTCLEANFILES_DISTBALL = nut-*.tar.gz
+MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
 # HP-UX:
-DISTCLEANFILES_PACKAGES = NUT_HPUX_package@PACKAGE_VERSION@.depot
+MAINTAINERCLEANFILES_PACKAGES = NUT_HPUX_package@PACKAGE_VERSION@.depot
 # AIX as below, and RedHat-compatible (cover binary and source packages):
-DISTCLEANFILES_PACKAGES += nut*rpm
+MAINTAINERCLEANFILES_PACKAGES += nut*rpm
 # Debian-compatible (cover binary and source packages):
-DISTCLEANFILES_PACKAGES += nut*deb
+MAINTAINERCLEANFILES_PACKAGES += nut*deb
 # Solaris SVR4 package archives:
-DISTCLEANFILES_PACKAGES += NUT_solaris_*_package@PACKAGE_VERSION@.local.gz
+MAINTAINERCLEANFILES_PACKAGES += NUT_solaris_*_package@PACKAGE_VERSION@.local.gz
 # Newer Solaris IPS (aka "pkg(5)" format archives)
-DISTCLEANFILES_PACKAGES += *.p5p
+MAINTAINERCLEANFILES_PACKAGES += *.p5p
 
-DISTCLEANFILES += $(DISTCLEANFILES_DISTBALL)
-DISTCLEANFILES += $(DISTCLEANFILES_PACKAGES)
+MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
+MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
 package:
 	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
