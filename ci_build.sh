@@ -265,16 +265,16 @@ build_to_only_catch_errors() {
     return 0
 }
 
-optional_realclean_check() {
-    if [ "${DO_REALCHECK_CLEAN-}" = "no" ] ; then
-        echo "Skipping realclean check because recipe/developer said so"
+optional_maintainer_clean_check() {
+    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
+        echo "Skipping maintainer-clean check because recipe/developer said so"
     else
-        [ -z "$CI_TIME" ] || echo "`date`: Starting realclean check of currently tested project..."
+        [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
-        # Note: currently Makefile.am has just a dummy "realcleancheck" rule
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS realclean || return
+        # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
-        echo "=== Are GitIgnores good after '$MAKE realclean'? (should have no output below)"
+        echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
         git status --ignored -s || true
         echo "==="
 
@@ -715,7 +715,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 ccache -s
             fi
 
-            optional_realclean_check || exit
+            optional_maintainer_clean_check || exit
 
             echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
@@ -817,9 +817,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
-                optional_realclean_check || {
+                optional_maintainer_clean_check || {
                     RES=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[realclean]"
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                 }
             done
             # TODO: Similar loops for other variations like TESTING,
@@ -881,7 +881,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         )
     fi
 
-    optional_realclean_check || exit
+    optional_maintainer_clean_check || exit
 
     if [ "$HAVE_CCACHE" = yes ]; then
         echo "CCache stats after build:"
