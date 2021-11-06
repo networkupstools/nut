@@ -42,6 +42,7 @@ common/.dirstamp
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
+.dirstamp
 
 # Python precompiled files
 __pycache__/
