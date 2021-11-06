@@ -23,7 +23,8 @@ LINKED_SOURCE_FILES = $(builddir)/hidparser.c
 $(builddir)/hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
 
-getvaluetest_SOURCES = getvaluetest.c $(builddir)/hidparser.c
+getvaluetest_SOURCES = getvaluetest.c
+nodist_getvaluetest_SOURCES = $(builddir)/hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
