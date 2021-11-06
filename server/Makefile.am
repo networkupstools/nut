@@ -3,7 +3,7 @@
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,

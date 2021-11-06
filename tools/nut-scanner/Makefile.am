@@ -12,11 +12,11 @@ CLEANFILES = $(BUILT_SOURCES)
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
 $(NUT_SCANNER_DEPS):
-	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
+	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -49,7 +49,7 @@ CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
 $(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL

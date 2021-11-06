@@ -29,7 +29,7 @@ getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
@@ -62,7 +62,7 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building
 # only some parts of NUT):
 $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball

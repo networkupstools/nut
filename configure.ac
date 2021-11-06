@@ -174,6 +174,25 @@ AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
 
+AC_CHECK_HEADER([sys/resource.h],
+    [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/resource.h>
+],
+[struct rlimit limit;
+getrlimit(RLIMIT_NOFILE, &limit);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
+            [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -307,8 +326,14 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
+dnl Note: pthread_tryjoin_np() should be available since glibc 2.3.3, according
+dnl to https://man7.org/linux/man-pages/man3/pthread_tryjoin_np.3.html
 AC_SEARCH_LIBS([pthread_create], [pthread],
-       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])
+        AC_SEARCH_LIBS([pthread_tryjoin_np], [pthread],
+               [AC_DEFINE(HAVE_PTHREAD_TRYJOIN, 1, [Define to enable pthread_tryjoin support code])],
+               [])
+       ],
        [])
 
 dnl ----------------------------------------------------------------------
