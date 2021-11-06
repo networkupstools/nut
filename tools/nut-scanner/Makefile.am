@@ -29,20 +29,20 @@ LINKED_SOURCE_FILES =
 # Separate the .deps of other dirs from this one
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += ./serial.c
-./serial.c: $(top_srcdir)/drivers/serial.c
+LINKED_SOURCE_FILES += $(builddir)/serial.c
+$(builddir)/serial.c: $(top_srcdir)/drivers/serial.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
-LINKED_SOURCE_FILES += ./bcmxcp_ser.c
-./bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+LINKED_SOURCE_FILES += $(builddir)/bcmxcp_ser.c
+$(builddir)/bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
 
-LINKED_SOURCE_FILES += ./common.c
-./common.c: $(top_srcdir)/common/common.c
+LINKED_SOURCE_FILES += $(builddir)/common.c
+$(builddir)/common.c: $(top_srcdir)/common/common.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
 
-LINKED_SOURCE_FILES += ./str.c
-./str.c: $(top_srcdir)/common/str.c
+LINKED_SOURCE_FILES += $(builddir)/str.c
+$(builddir)/str.c: $(top_srcdir)/common/str.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/common/str.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
