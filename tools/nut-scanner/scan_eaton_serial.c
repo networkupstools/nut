@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2012 - EATON
+ *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,9 +20,11 @@
 /*! \file scan_eaton_serial.c
     \brief detect Eaton serial XCP, SHUT and Q1 devices
     \author Arnaud Quette <ArnaudQuette@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include "common.h"
+#include "nut-scan.h"
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
@@ -41,16 +44,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "nut-scan.h"
 #include "serial.h"
 #include "bcmxcp_io.h"
 #include "bcmxcp_ser.h"
 #include "bcmxcp.h"
 #include "nutscan-serial.h"
-
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
 
 /* SHUT header */
 #define SHUT_SYNC 0x16
@@ -401,11 +399,11 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int i;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
-	pthread_t * thread_array = NULL;
+	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex, NULL);
-#endif
+#endif // HAVE_PTHREAD
 
 	/* 1) Get ports_list */
 	serial_ports_list = nutscan_get_serial_ports_list(ports_range);
@@ -432,33 +430,133 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	current_port_nb = 0;
 	while (serial_ports_list[current_port_nb] != NULL) {
 		current_port_name = serial_ports_list[current_port_nb];
+
 #ifdef HAVE_PTHREAD
+# ifdef HAVE_PTHREAD_TRYJOIN
+		/* NOTE: With many enough targets to scan, this can crash
+		 * by spawning too many children; add a limit and loop to
+		 * "reap" some already done with their work. And probably
+		 * account them in thread_array[] as something to not wait
+		 * for below in pthread_join()...
+		 */
+
+		/* TOTHINK: Should there be a threadcount_mutex when
+		 * we just read the value in if() and while() below?
+		 * At worst we would overflow the limit a bit due to
+		 * other protocol scanners...
+		 */
+		if (curr_threads >= max_threads) {
+			upsdebugx(2, "%s: already running %zu scanning threads "
+				"(launched overall: %d), "
+				"waiting until some would finish",
+				__func__, curr_threads, thread_count);
+			while (curr_threads >= max_threads) {
+				for (i = 0; i < thread_count ; i++) {
+					int ret;
+
+					if (!thread_array[i].active) continue;
+
+					pthread_mutex_lock(&threadcount_mutex);
+					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
+					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
+					switch (ret) {
+						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+							break;
+						case 0:         // thread exited
+							if (curr_threads > 0) {
+								curr_threads --;
+								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+							} else {
+								/* threadcount_mutex fault? */
+								upsdebugx(0, "WARNING: %s: Accounting of thread count "
+									"says we are already at 0", __func__);
+							}
+							thread_array[i].active = FALSE;
+							break;
+						case EBUSY:     // actively running
+							upsdebugx(6, "%s: thread #%i still busy (%i)",
+								__func__, i, ret);
+							break;
+						case EDEADLK:   // Errors with thread interactions... bail out?
+						case EINVAL:    // Errors with thread interactions... bail out?
+						default:        // new pthreads abilities?
+							upsdebugx(5, "%s: thread #%i reported code %i",
+								__func__, i, ret);
+							break;
+					}
+					pthread_mutex_unlock(&threadcount_mutex);
+				}
+
+				if (curr_threads >= max_threads) {
+					usleep (10000); // microSec's, so 0.01s here
+				}
+			}
+			upsdebugx(2, "%s: proceeding with scan", __func__);
+		}
+# endif // HAVE_PTHREAD_TRYJOIN
+
 		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_lock(&threadcount_mutex);
+			curr_threads++;
+# endif // HAVE_PTHREAD_TRYJOIN
+
 			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
+			nutscan_thread_t *new_thread_array = realloc(thread_array,
+				thread_count * sizeof(nutscan_thread_t));
 			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 				break;
 			}
 			else {
 				thread_array = new_thread_array;
 			}
-			thread_array[thread_count-1] = thread;
+			thread_array[thread_count - 1].thread = thread;
+			thread_array[thread_count - 1].active = TRUE;
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
 		}
-#else
+#else // not HAVE_PTHREAD
 		nutscan_scan_eaton_serial_device(current_port_name);
-#endif
+#endif // if HAVE_PTHREAD
 		current_port_nb++;
 	}
 
 #ifdef HAVE_PTHREAD
-	for (i = 0; i < thread_count ; i++) {
-		pthread_join(thread_array[i], NULL);
+	if (thread_array != NULL) {
+		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
+		for (i = 0; i < thread_count; i++) {
+			int ret;
+
+			if (!thread_array[i].active) continue;
+
+			ret = pthread_join(thread_array[i].thread, NULL);
+			if (ret != 0) {
+				upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
+					__func__, ret);
+			}
+			thread_array[i].active = FALSE;
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_lock(&threadcount_mutex);
+			if (curr_threads > 0) {
+				curr_threads --;
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+					__func__, i);
+			} else {
+				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
+					"says we are already at 0", __func__);
+			}
+			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
+		}
+		free(thread_array);
+		upsdebugx(2, "%s: all threads freed", __func__);
 	}
 	pthread_mutex_destroy(&dev_mutex);
-	free(thread_array);
-#endif
+#endif // HAVE_PTHREAD
 
 	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)

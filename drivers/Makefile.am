@@ -54,7 +54,9 @@ MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus
 LINUX_I2C_DRIVERLIST = asem pijuice
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
+EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -325,3 +327,11 @@ libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+
+CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
+MAINTAINERCLEANFILES = Makefile.in
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

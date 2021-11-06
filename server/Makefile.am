@@ -33,3 +33,10 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  upstype.h user-data.h user.h
 
 sockdebug_SOURCES = sockdebug.c
+
+MAINTAINERCLEANFILES = Makefile.in
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

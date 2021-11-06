@@ -790,7 +790,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
-CLEANFILES = *.xml *.html
+CLEANFILES = *-spellchecked
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
@@ -805,6 +805,8 @@ SRC_PREBUILT_CLAUSE=
 endif
 
 if HAVE_ASCIIDOC
+
+CLEANFILES += *.1 *.3 *.5 *.8 *.xml *.html *.pdf
 
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
@@ -931,11 +933,6 @@ else !HAVE_ASCIIDOC
 
 endif !HAVE_ASCIIDOC
 
-clean-local:
-	rm -f *.pdf *.html *-spellchecked
-	rm -f *.1 *.3 *.5 *.8
-	rm -rf tmp
-
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
@@ -948,3 +945,8 @@ clean-local:
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
+
+MAINTAINERCLEANFILES = Makefile.in
+
+clean-local:
+	rm -rf tmp
