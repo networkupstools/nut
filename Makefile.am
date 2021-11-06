@@ -175,6 +175,9 @@ ChangeLog: tools/gitlog2changelog.py dummy-stamp
 nut_version.h include/nut_version.h:
 	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h
 
+tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
+	cd $(@D) && $(MAKE) -s $(@F)
+
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
 dist-sig:
