@@ -51,6 +51,9 @@ memcheck distcheck-valgrind:
 distcleancheck:
 	@:
 
+# Quick alias for root dir recipe:
+realclean: maintainer-clean
+
 # Files made by our targets:
 CLEANFILES = *-spellchecked cppcheck*.xml
 DISTCLEANFILES = ChangeLog
