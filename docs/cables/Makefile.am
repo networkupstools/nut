@@ -1,2 +1,2 @@
 CLEANFILES = *-spellchecked
-REALCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in

@@ -95,7 +95,7 @@ else
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif
 
-REALCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

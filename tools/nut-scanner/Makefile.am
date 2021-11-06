@@ -106,7 +106,7 @@ else
 endif
 
 CLEANFILES += *-spellchecked
-REALCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

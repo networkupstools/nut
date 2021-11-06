@@ -37,5 +37,5 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_DIR="$(srcdir)" $@
 
 
-REALCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in
 CLEANFILES = *.pdf *.html *-spellchecked

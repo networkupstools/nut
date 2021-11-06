@@ -1,4 +1,4 @@
-REALCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)

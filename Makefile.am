@@ -69,12 +69,12 @@ DISTCLEANFILES += include/config.h.in~
 # from their installation, or made by `automake` etc. on the system
 # which generates `configure`; rebuilding NUT after deleting these
 # requires `autogen.sh` script to be re-run (and tools available):
-REALCLEANFILES = INSTALL
-REALCLEANFILES += aclocal.m4 config.guess config.sub
-REALCLEANFILES += configure
-REALCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
-REALCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
-REALCLEANFILES += Makefile.in include/config.h.in
+MAINTAINERCLEANFILES = INSTALL
+MAINTAINERCLEANFILES += aclocal.m4 config.guess config.sub
+MAINTAINERCLEANFILES += configure
+MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
+MAINTAINERCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
+MAINTAINERCLEANFILES += Makefile.in include/config.h.in
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
@@ -158,7 +158,7 @@ endif !HAVE_CPPCHECK
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
-MAINTAINERCLEAN_FILES = ChangeLog
+MAINTAINERCLEAN_FILES += ChangeLog
 
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
