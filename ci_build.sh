@@ -265,6 +265,29 @@ build_to_only_catch_errors() {
     return 0
 }
 
+optional_realclean_check() {
+    if [ "${DO_REALCHECK_CLEAN-}" = "no" ] ; then
+        echo "Skipping realclean check because recipe/developer said so"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting realclean check of currently tested project..."
+
+        # Note: currently Makefile.am has just a dummy "realcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS realclean || return
+
+        echo "=== Are GitIgnores good after '$MAKE realclean'? (should have no output below)"
+        git status --ignored -s || true
+        echo "==="
+
+        if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+            git diff || true
+            echo "==="
+            return 1
+        fi
+    fi
+    return 0
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
@@ -848,25 +871,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             exit 1
         fi
 
-        if [ "$DO_DISTCHECK_CLEAN" == "no" ] ; then
-            echo "Skipping distclean check (doc generation is disabled, it would fail)"
-        else
-            [ -z "$CI_TIME" ] || echo "`date`: Starting distclean check of currently tested project..."
-
-            # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean
-
-            echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
-            git status --ignored -s || true
-            echo "==="
-
-            if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-                echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-                git diff || true
-                echo "==="
-                exit 1
-            fi
-        fi
+        optional_realclean_check || exit
         )
     fi
 
