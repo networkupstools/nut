@@ -158,7 +158,7 @@ endif !HAVE_CPPCHECK
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
-MAINTAINERCLEAN_FILES += ChangeLog
+MAINTAINERCLEANFILES += ChangeLog
 
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
