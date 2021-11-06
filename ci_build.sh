@@ -220,6 +220,19 @@ configure_nut() {
         CONFIGURE_SCRIPT=./configure.bat
     fi
 
+    if [ ! -s "$CONFIGURE_SCRIPT" ]; then
+        # Note: modern auto(re)conf requires pkg-config to generate the configure
+        # script, so to stage the situation of building without one (as if on an
+        # older system) we have to remove it when we already have the script.
+        # This matches the use-case of distro-building from release tarballs that
+        # include all needed pre-generated files to rely less on OS facilities.
+        if [ "$CI_OS_NAME" = "windows" ] ; then
+            $CI_TIME ./autogen.sh || true
+        else
+            $CI_TIME ./autogen.sh ### 2>/dev/null
+        fi || exit
+    fi
+
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
     echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
@@ -249,6 +262,29 @@ build_to_only_catch_errors() {
     && echo "`date`: SUCCESS" \
     || return $?
 
+    return 0
+}
+
+optional_maintainer_clean_check() {
+    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
+        echo "Skipping maintainer-clean check because recipe/developer said so"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
+
+        # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+
+        echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
+        git status --ignored -s || true
+        echo "==="
+
+        if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+            git diff || true
+            echo "==="
+            return 1
+        fi
+    fi
     return 0
 }
 
@@ -642,7 +678,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] ; then
+    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
@@ -678,6 +714,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "CCache stats after build:"
                 ccache -s
             fi
+
+            optional_maintainer_clean_check || exit
+
             echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
             ;;
@@ -777,6 +816,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
+
+                optional_maintainer_clean_check || {
+                    RES=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                }
             done
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
@@ -827,8 +871,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
+
+        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+            git diff || true
+            echo "==="
+            exit 1
+        fi
         )
     fi
+
+    optional_maintainer_clean_check || exit
 
     if [ "$HAVE_CCACHE" = yes ]; then
         echo "CCache stats after build:"
