@@ -110,5 +110,7 @@ dist-hook:
 	@$(distdir)/driver-list-format.sh;
 
 DISTCLEANFILES = Makefile.in
+DISTCLEANFILES += gitlog2changelog.py
+DISTCLEANFILES += nut-snmpinfo.py
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps
