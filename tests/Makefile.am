@@ -80,7 +80,7 @@ endif !HAVE_CXX11
 BUILT_SOURCES = $(LINKED_SOURCE_FILES)
 CLEANFILES += $(LINKED_SOURCE_FILES)
 CLEANFILES += $(TESTS) $(TESTS_CXX11)
-DISTCLEANFILES = Makefile.in
+REALCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

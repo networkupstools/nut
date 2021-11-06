@@ -9,4 +9,4 @@ endif
 endif
 
 CLEANFILES = *-spellchecked
-DISTCLEANFILES = Makefile.in
+REALCLEANFILES = Makefile.in

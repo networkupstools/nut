@@ -27,4 +27,4 @@ EXTRA_DIST = README \
 
 SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris upsdrvsvcctl
 
-DISTCLEANFILES = Makefile.in
+REALCLEANFILES = Makefile.in

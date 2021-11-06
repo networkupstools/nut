@@ -946,7 +946,7 @@ endif !HAVE_ASCIIDOC
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
 
-DISTCLEANFILES = Makefile.in
+REALCLEANFILES = Makefile.in
 
 clean-local:
 	rm -rf tmp

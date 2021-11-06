@@ -329,7 +329,7 @@ libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
 
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
-DISTCLEANFILES = Makefile.in
+REALCLEANFILES = Makefile.in
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

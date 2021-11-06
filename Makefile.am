@@ -59,20 +59,22 @@ DISTCLEANFILES = ChangeLog
 # or by autogen.sh are cleaned by the Makefile.am in their directories.
 # Files below are re-created by running `configure` script and may be
 # wiped by a `make distclean`:
-DISTCLEANFILES += Makefile.in
 DISTCLEANFILES += config.log configure~
 #???# configure.ac~
-DISTCLEANFILES += include/config.h.in include/config.h.in~
+DISTCLEANFILES += include/config.h.in~
 
 # Files made by autotools and common rituals of the configure script,
 # these are needed to run the configure script itself so are not wiped
 # by a mere `make distclean`; most of these are copied by autotools
-# from their installation on the system which generates `configure`:
+# from their installation, or made by `automake` etc. on the system
+# which generates `configure`; rebuilding NUT after deleting these
+# requires `autogen.sh` script to be re-run (and tools available):
 REALCLEANFILES = INSTALL
 REALCLEANFILES += aclocal.m4 config.guess config.sub
 REALCLEANFILES += configure
 REALCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
 REALCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
+REALCLEANFILES += Makefile.in include/config.h.in
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
