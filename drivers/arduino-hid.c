@@ -39,16 +39,16 @@
 
 /* USB IDs device table */
 static usb_device_id_t arduino_usb_device_table[] = {
-        /* Arduino Leonardo, Leonardo ETH and Pro Micro*/
-        { USB_DEVICE(ARDUINO_VENDORID, 0x0036), NULL },
-        { USB_DEVICE(ARDUINO_VENDORID, 0x8036), NULL },
-        { USB_DEVICE(ARDUINO_VENDORID2, 0x0036), NULL },
-        { USB_DEVICE(ARDUINO_VENDORID2, 0x8036), NULL },
-        { USB_DEVICE(ARDUINO_VENDORID2, 0x0040), NULL },
-        { USB_DEVICE(ARDUINO_VENDORID2, 0x8040), NULL },
+	/* Arduino Leonardo, Leonardo ETH and Pro Micro*/
+	{ USB_DEVICE(ARDUINO_VENDORID, 0x0036), NULL },
+	{ USB_DEVICE(ARDUINO_VENDORID, 0x8036), NULL },
+	{ USB_DEVICE(ARDUINO_VENDORID2, 0x0036), NULL },
+	{ USB_DEVICE(ARDUINO_VENDORID2, 0x8036), NULL },
+	{ USB_DEVICE(ARDUINO_VENDORID2, 0x0040), NULL },
+	{ USB_DEVICE(ARDUINO_VENDORID2, 0x8040), NULL },
 
-        /* Terminating entry */
-        { -1, -1, NULL }
+	/* Terminating entry */
+	{ -1, -1, NULL }
 };
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
@@ -75,21 +75,21 @@ static usage_tables_t arduino_utab[] = {
 
 static hid_info_t arduino_hid2nut[] = {
 
-        /* USB HID PDC defaults */
-        { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
-        { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
-        { "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-        { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-        { "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	/* USB HID PDC defaults */
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 
-        /* USB HID PDC defaults */
-        { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
-        { "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
-        { "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
-        { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+	/* USB HID PDC defaults */
+	{ "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
+	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+	{ "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 
-        /* end of structure. */
-        { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 static const char *arduino_format_model(HIDDevice_t *hd) {
@@ -110,28 +110,27 @@ static int arduino_claim(HIDDevice_t *hd)
 {
 	int status = is_usb_device_supported(arduino_usb_device_table, hd);
 
-	switch (status)
-	{
-	case POSSIBLY_SUPPORTED:
-                /* by default, reject, unless the productid option is given */
-                if (getval("productid")) {
-                    usb->hid_ep_in=4;
-                    usb->hid_ep_out=5;
-                    usb->hid_rep_index = 2;
-                    return 1;
-                }
-                possibly_supported("Arduino", hd);
-                return 0;
+	switch (status) {
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				usb->hid_ep_in=4;
+				usb->hid_ep_out=5;
+				usb->hid_rep_index = 2;
+				return 1;
+			}
+			possibly_supported("Arduino", hd);
+			return 0;
 
-	case SUPPORTED:
-                usb->hid_ep_in=4;
-                usb->hid_ep_out=5;
-                usb->hid_rep_index = 2;
-                return 1;
+		case SUPPORTED:
+			usb->hid_ep_in=4;
+			usb->hid_ep_out=5;
+			usb->hid_rep_index = 2;
+			return 1;
 
-	case NOT_SUPPORTED:
-	default:
-		return 0;
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 
