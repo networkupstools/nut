@@ -3,7 +3,7 @@
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
-$(top_builddir)/clients/libupsclient.la:
+$(top_builddir)/clients/libupsclient.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.la
@@ -332,6 +332,8 @@ libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+
+dummy:
 
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
 MAINTAINERCLEANFILES = Makefile.in
