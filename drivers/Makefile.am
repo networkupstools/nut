@@ -1,9 +1,15 @@
 # Network UPS Tools: drivers
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/clients/libupsclient.la:
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
+LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
@@ -49,7 +55,9 @@ MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus
 LINUX_I2C_DRIVERLIST = asem pijuice
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
+EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -157,7 +165,7 @@ ve_direct_SOURCES = ve-direct.c
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
-dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la
+dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
@@ -210,13 +218,24 @@ mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 mge_shut_LDADD = $(LDADD) -lm
 
 # SNMP
-snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
+# Please keep the MIB table below sorted roughly alphabetically (incidentally
+# by vendor too) to ease maintenance and codebase fork resynchronisations
+snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
+ apc-mib.c apc-pdu-mib.c \
+ baytech-mib.c bestpower-mib.c \
+ compaq-mib.c cyberpower-mib.c \
+ delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c \
  eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
- ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
- bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
- eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
- apc-pdu-mib.c emerson-avocent-pdu-mib.c hpe-pdu-mib.c
+ eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
+ emerson-avocent-pdu-mib.c \
+ hpe-pdu-mib.c huawei-mib.c \
+ ietf-mib.c \
+ mge-mib.c \
+ netvision-mib.c \
+ powerware-mib.c \
+ raritan-pdu-mib.c raritan-px2-mib.c \
+ xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
@@ -310,3 +329,11 @@ libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+
+CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
+MAINTAINERCLEANFILES = Makefile.in
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

@@ -29,12 +29,18 @@
 
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
-  public:
-    virtual void startTest(CppUnit::Test *test) {
-      //fprintf(stderr, "starting test %s\n", test->getName().c_str());
-      std::cerr << "starting test " << test->getName() << std::endl;
-    }
+    public:
+        virtual void startTest(CppUnit::Test *test);
 };
+
+// Implement out of class declaration to avoid
+//   error: 'MyCustomProgressTestListener' has no out-of-line virtual method
+//   definitions; its vtable will be emitted in every translation unit
+//   [-Werror,-Wweak-vtables]
+void MyCustomProgressTestListener::startTest(CppUnit::Test *test) {
+    //fprintf(stderr, "starting test %s\n", test->getName().c_str());
+    std::cerr << "starting test " << test->getName() << std::endl;
+}
 
 int main(int argc, char* argv[])
 {
