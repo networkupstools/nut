@@ -150,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.16"
+#define DRIVER_VERSION		"1.17"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1623,6 +1623,7 @@ static void disable_competition(snmp_info_t *entry)
 void set_delays(void)
 {
 	int ondelay, offdelay;
+	char su_scratch_buf[255];
 
 	if (getval(SU_VAR_ONDELAY))
 		ondelay = atoi(getval(SU_VAR_ONDELAY));
