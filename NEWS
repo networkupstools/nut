@@ -82,6 +82,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - pijuice: added new i2c bus driver for PiJuice HAT, a battery UPS module
    for the Raspberry Pi systems [PR #730]
 
+ - huawei-ups2000: added new driver for USB (Linux 5.12+ so far) and Serial
+   RS-232 Modbus device support of Huawei UPS2000/2000A (1kVA-3kVA) series,
+   and possibly some related FSP UPS models. [PR #954]
+
  - generic_modbus: added new driver for TCP and Serial Modbus device support.
    The driver has been tested against PULS UPS (model UB40.241) via
    MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP), and configuration
