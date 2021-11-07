@@ -224,7 +224,7 @@ sub gen_usb_files
 	print $outputUPower "\n".'LABEL="up_hid_end"'."\n";
 
 	# Device scanner footer
-	print $outputDevScanner "\t/* Terminating entry */\n\t{ -1, -1, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
+	print $outputDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs

@@ -3,13 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.11
+# Version: 0.12
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
 # 2015 - 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
+# 2011 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -322,7 +323,8 @@ if [ -z "$NUMWALKFILE" ]; then
 	STRWALKFILE=$DFL_STRWALKFILE
 
 	# check if Net SNMP is available
-	if [ -z "`which snmpget`" -o -z "`which snmpwalk`" ]; then
+	if [ -z "`command -v snmpget`" -o -z "`command -v snmpwalk`" ] && \
+	   [ -z "`which snmpget`" -o -z "`which snmpwalk`" ]; then
 		echo "Net SNMP not found! snmpget and snmpwalk commands are required." >&2
 		exit 1
 	fi
