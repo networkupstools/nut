@@ -38,6 +38,7 @@ namespace nut {
 class NutClientTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE( NutClientTest );
+		CPPUNIT_TEST( test_strarr_alloc );
 		CPPUNIT_TEST( test_stringset_to_strarr );
 		CPPUNIT_TEST( test_stringvector_to_strarr );
 
@@ -57,6 +58,7 @@ public:
 	void setUp();
 	void tearDown();
 
+	void test_strarr_alloc();
 	void test_stringset_to_strarr();
 	void test_stringvector_to_strarr();
 
@@ -97,6 +99,31 @@ void NutClientTest::setUp()
 
 void NutClientTest::tearDown()
 {
+}
+
+void NutClientTest::test_strarr_alloc()
+{
+	bool noException = true;
+
+	strarr arr = nullptr;
+
+	try {
+		arr = strarr_alloc(5);
+	}
+	catch(nut::NutException& ex)
+	{
+		NUT_UNUSED_VARIABLE(ex);
+		noException = false;
+	}
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed strarr_alloc(...): throw exception",
+		noException);
+
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed strarr_alloc(...): result is null",
+		arr != nullptr);
+
+	strarr_free(arr);
 }
 
 void NutClientTest::test_stringset_to_strarr()
