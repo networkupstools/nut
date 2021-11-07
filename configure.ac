@@ -174,6 +174,25 @@ AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
 
+AC_CHECK_HEADER([sys/resource.h],
+    [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/resource.h>
+],
+[struct rlimit limit;
+getrlimit(RLIMIT_NOFILE, &limit);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
+            [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -307,8 +326,14 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
+dnl Note: pthread_tryjoin_np() should be available since glibc 2.3.3, according
+dnl to https://man7.org/linux/man-pages/man3/pthread_tryjoin_np.3.html
 AC_SEARCH_LIBS([pthread_create], [pthread],
-       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])
+        AC_SEARCH_LIBS([pthread_tryjoin_np], [pthread],
+               [AC_DEFINE(HAVE_PTHREAD_TRYJOIN, 1, [Define to enable pthread_tryjoin support code])],
+               [])
+       ],
        [])
 
 dnl ----------------------------------------------------------------------
@@ -366,7 +391,6 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
-nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
@@ -831,7 +855,32 @@ NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 
 
 dnl ----------------------------------------------------------------------
+dnl checks related to --enable-cppcheck
 
+dnl Currently this is experimental; maybe change default to auto in the future
+dnl At that point, see also defaults in ci_build.sh then (to avoid the workload
+dnl unless desired).
+NUT_ARG_ENABLE([cppcheck], [Run a cppcheck on the codebase among checks], [no])
+NUT_CHECK_CPPCHECK
+
+case "${nut_enable_cppcheck}" in
+	yes) if test "${nut_have_cppcheck}" = "no" ; then
+	        AC_MSG_ERROR([Requested to --enable-cppcheck but did not find a good one])
+	     fi
+	     WITH_CPPCHECK=yes
+	     ;;
+	no)  WITH_CPPCHECK=no ;;
+	auto) if test "${nut_have_cppcheck}" = "yes" ; then
+	        WITH_CPPCHECK=no
+	    else
+	        WITH_CPPCHECK=no
+	    fi
+	    ;;
+esac
+
+AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
@@ -1857,19 +1906,26 @@ dnl    * ARM (armv7)
 dnl    * MIPS (mips32 and above; mips64 and above)
 dnl    * PowerPC (most; ppc405 and above)
 dnl    * System z (64bit only - s390x; z990 and above)
+dnl Even if the tool does basically start, on some QEMU systems it crashes
+dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
+dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
-		[AC_MSG_RESULT([yes])],
+		[AS_IF([( ${VALGRIND} /bin/sh -c true >/dev/null 2>/dev/null )],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])
+			 VALGRIND="none"
+			])],
 		[AC_MSG_RESULT([no])
 		 VALGRIND="none"
 		])
 ])
-with_valgrind="auto"
 AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
 [
+	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
 	case "${withval}" in
 	yes)
 		if test "x$VALGRIND" = "xnone"; then

@@ -211,6 +211,14 @@ for their build, e.g.:
 	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
 		./ci_build.sh
 
+Finally, for refactoring effort geared particularly for fighting the
+warnings which exist in current codebase, the script contains some
+presets (which would evolve along with codebase quality improvements)
+as `BUILD_TYPE=fightwarn-gcc`, `BUILD_TYPE=fightwarn-clang` or plain
+`BUILD_TYPE=fightwarn`:
+
+	BUILD_TYPE=fightwarn-clang ./ci_build.sh
+
 As a rule of thumb, new contributions must not emit any warnings when
 built in GNU99 mode with a `minimal` "difficulty" level of warnings.
 Technically they must survive the part of test matrix across the several
@@ -321,7 +329,8 @@ NOTE: While NUT recipes do not currently recognize a separate `CXXCPP`,
 it would follow similar semantics.
 
 Some further details about the NUT CI farm workers are available in
-link:config-prereqs.txt and link:ci-farm-lxc-setup.txt documents.
+link:config-prereqs.txt[config-prereqs.txt] and
+link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
 
 Travis CI
 ^^^^^^^^^

@@ -1,8 +1,9 @@
-personal_ws-1.1 en 2792 utf-8
+personal_ws-1.1 en 2807 utf-8
 AAS
 ACFAIL
 ACFREQ
 ACK
+ACM
 ACPI
 ACPresent
 ACrms
@@ -154,6 +155,7 @@ CAs
 CBLimit
 CCC
 CCCC
+CDC
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -280,6 +282,7 @@ EEPROM
 EG
 EL
 ELCD
+EMI
 ENDFOR
 ENV
 EOF
@@ -316,6 +319,7 @@ EqlzTm
 Erikson
 Eriksson
 Evgeny
+Exar
 FEMEA
 FFF
 FH
@@ -493,6 +497,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+KTTS
 Kain
 Kaminski
 Kanji
@@ -614,6 +619,7 @@ Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
+MaxLinear
 McKinnon
 Megaline
 MemClientStub
@@ -1006,6 +1012,7 @@ SOLA
 SOLA's
 SOV
 SPARC
+SPC
 SPECs
 SPLY
 SPS
@@ -1273,6 +1280,7 @@ YZ
 Ygor
 Yoyodyne
 Yukai
+Yifeng
 Yunto
 ZFS
 ZProject
@@ -1289,6 +1297,7 @@ acampsiOut
 acampsiout
 accessmode
 acl
+acm
 acpi
 acquisited
 acvoltsin
@@ -1467,6 +1476,7 @@ cbl
 cblimit
 ccache
 cd
+cdc
 cerr
 certfile
 certname
@@ -1551,6 +1561,7 @@ cout
 coverity
 cp
 cpp
+cppcheck
 cppunit
 cpqpower
 cpsups
@@ -1889,6 +1900,7 @@ ippon
 ipv
 isbmex
 iso
+isolator
 ivtscd
 jNUT
 jNut
@@ -2591,8 +2603,10 @@ tripplitesu
 troff
 tsd
 tty
+ttyACM
 ttyS
 ttySx
+ttyU
 ttyUPS
 ttyUSB
 ttya
@@ -2636,6 +2650,7 @@ unpowered
 unshutup
 updateinfo
 upexia
+upower
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage

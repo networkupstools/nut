@@ -267,17 +267,38 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok, "/", &saveptr));
-	free(cidr_tok);
 	if (first_ip == NULL) {
+		upsdebugx(0, "WARNING: %s failed to parse first_ip from cidr=%s",
+			__func__, cidr);
+		free(cidr_tok);
 		return 0;
 	}
 	mask = strtok_r(NULL, "/", &saveptr);
 	if (mask == NULL) {
+		upsdebugx(0, "WARNING: %s failed to parse mask from cidr=%s (first_ip=%s)",
+			__func__, cidr, first_ip);
 		free (first_ip);
+		free(cidr_tok);
 		return 0;
 	}
+	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
+		__func__, cidr, first_ip, mask);
 
 	mask_val = atoi(mask);
+	upsdebugx(5, "%s: parsed mask value %d",
+		__func__, mask_val);
+
+	/* NOTE: Sanity-wise, some larger number also makes sense
+	 * as the maximum subnet size we would scan. But at least,
+	 * this helps avoid scanning the whole Internet just due
+	 * to string-parsing errors.
+	 */
+	if (mask_val < 1) {
+		fatalx(EXIT_FAILURE, "Bad netmask: %s", mask);
+	}
+
+	/* Note: this freeing invalidates "mask" and "saveptr" pointer targets */
+	free(cidr_tok);
 
 	/* Detecting IPv4 vs IPv6 */
 	memset(&hints, 0, sizeof(struct addrinfo));

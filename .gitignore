@@ -39,8 +39,10 @@ Makefile.in
 /test-driver
 common/.dirstamp
 *-spellchecked
+/cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
+.dirstamp
 
 # Python precompiled files
 __pycache__/

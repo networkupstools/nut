@@ -124,9 +124,8 @@ MAN8_CGI_PAGES = \
 endif
 
 if WITH_CGI
- man5_MANS += $(MAN5_CGI_PAGES)
-
- man8_MANS += $(MAN8_CGI_PAGES)
+man5_MANS += $(MAN5_CGI_PAGES)
+man8_MANS += $(MAN8_CGI_PAGES)
 endif
 
 HTML_CGI_MANS = \
@@ -306,10 +305,10 @@ MAN1_DEV_PAGES = \
 endif
 
 if WITH_DEV
- man3_MANS = $(MAN3_DEV_PAGES)
+man3_MANS = $(MAN3_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
- man1_MANS = $(MAN1_DEV_PAGES)
+man1_MANS = $(MAN1_DEV_PAGES)
 endif
 # WITH_DEV
 endif
@@ -364,7 +363,7 @@ HTML_DEV_MANS = \
 
 # (--with-drivers=...)
 if SOME_DRIVERS
- man8_MANS += $(DRIVER_MAN_LIST)
+man8_MANS += $(DRIVER_MAN_LIST)
 
 else
 
@@ -457,7 +456,7 @@ MAN_SERIAL_PAGES = \
 endif
 
 if WITH_SERIAL
-  man8_MANS +=  $(MAN_SERIAL_PAGES)
+man8_MANS +=  $(MAN_SERIAL_PAGES)
 endif
 
 HTML_SERIAL_MANS = \
@@ -509,7 +508,7 @@ MAN_SNMP_PAGES = snmp-ups.8
 endif
 
 if WITH_SNMP
-  man8_MANS += $(MAN_SNMP_PAGES)
+man8_MANS += $(MAN_SNMP_PAGES)
 endif
 
 HTML_SNMP_MANS = snmp-ups.html
@@ -537,7 +536,7 @@ MAN_USB_LIBUSB_PAGES = \
 endif
 
 if WITH_USB
- man8_MANS += $(MAN_USB_LIBUSB_PAGES)
+man8_MANS += $(MAN_USB_LIBUSB_PAGES)
 endif
 
 HTML_USB_LIBUSB_MANS = \
@@ -559,10 +558,10 @@ MAN_SERIAL_USB_PAGES = \
 endif
 
 if WITH_SERIAL
- man8_MANS += $(MAN_SERIAL_USB_PAGES)
+man8_MANS += $(MAN_SERIAL_USB_PAGES)
 else
 if WITH_USB
- man8_MANS += $(MAN_SERIAL_USB_PAGES)
+man8_MANS += $(MAN_SERIAL_USB_PAGES)
 endif
 endif
 
@@ -576,7 +575,7 @@ MAN_NETXML_PAGES = netxml-ups.8
 endif
 
 if WITH_NEON
-   man8_MANS += $(MAN_NETXML_PAGES)
+man8_MANS += $(MAN_NETXML_PAGES)
 endif
 
 HTML_NETXML_MANS = netxml-ups.html
@@ -588,7 +587,7 @@ MAN_POWERMAN_PAGES = powerman-pdu.8
 endif
 
 if WITH_LIBPOWERMAN
-   man8_MANS += $(MAN_POWERMAN_PAGES)
+man8_MANS += $(MAN_POWERMAN_PAGES)
 endif
 
 HTML_POWERMAN_MANS = powerman-pdu.html
@@ -600,7 +599,7 @@ MAN_IPMIPSU_PAGES = nut-ipmipsu.8
 endif
 
 if WITH_IPMI
-   man8_MANS += $(MAN_IPMIPSU_PAGES)
+man8_MANS += $(MAN_IPMIPSU_PAGES)
 endif
 
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
@@ -611,24 +610,27 @@ MAN_MACOSX_PAGES = macosx-ups.8
 endif
 
 if WITH_MACOSX
-   man8_MANS += $(MAN_MACOSX_PAGES)
+man8_MANS += $(MAN_MACOSX_PAGES)
 endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
-		   generic_modbus.txt
+	generic_modbus.txt \
+	huawei-ups2000.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
-		   generic_modbus.8
+	generic_modbus.8 \
+	huawei-ups2000.8
 endif
 
 if WITH_MODBUS
-   man8_MANS += $(MAN_MODBUS_PAGES)
+man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
-		   generic_modbus.html
+	generic_modbus.html \
+	huawei-ups2000.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -636,7 +638,7 @@ MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
 endif
 
 if WITH_LINUX_I2C
-   man8_MANS += $(MAN_LINUX_I2C_PAGES)
+man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
 HTML_LINUX_I2C_MANS = asem.html pijuice.html
@@ -791,7 +793,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
-CLEANFILES = *.xml *.html
+CLEANFILES = *-spellchecked
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
@@ -807,13 +809,46 @@ endif
 
 if HAVE_ASCIIDOC
 
+CLEANFILES += *.1 *.3 *.5 *.8 *.xml *.html *.pdf
+
+# Working around a2x not friendly to parallelized runs.
+# See more details in the main NUT docs/Makefile.am
+DOCBUILD_BEGIN = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+    else A2X_OUTDIR='.' ; fi; \
+    if test -s "${builddir}/docbook-xsl.css" \
+    && test -r "${builddir}/docbook-xsl.css" \
+    && ! test -w "${builddir}/docbook-xsl.css" \
+    ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
+    chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+}
+
+# Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
+# may generate miltiple files in one go... so we move "*" and hope
+# for no required hidden files (or would have to `find` them all).
+DOCBUILD_END = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
+        rm -rf "./$${A2X_OUTDIR}" ; \
+    fi ; \
+}
+
 .txt.html:
-	@echo "  DOC-HTML Generating $@"; \
-	$(ASCIIDOC) --backend=xhtml11 \
+	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
+	 echo "  DOC-MAN-HTML Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		--attribute nutversion="@PACKAGE_VERSION@" \
-		-o $@ $<
+		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
@@ -822,23 +857,35 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
-	--destination-dir=.
+	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.3:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.5:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.8:
-	@echo "  DOC-MAN  Generating $@"; \
-	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
+	 echo "  DOC-MAN  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 else !HAVE_ASCIIDOC
 
@@ -889,10 +936,6 @@ else !HAVE_ASCIIDOC
 
 endif !HAVE_ASCIIDOC
 
-clean-local:
-	rm -f *.pdf *.html *-spellchecked
-	rm -f *.1 *.3 *.5 *.8
-
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
@@ -905,3 +948,8 @@ clean-local:
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
+
+MAINTAINERCLEANFILES = Makefile.in
+
+clean-local:
+	rm -rf tmp
