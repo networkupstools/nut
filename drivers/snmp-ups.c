@@ -1466,13 +1466,15 @@ bool_t load_mib2nut(const char *mib)
 {
 	int	i;
 	mib2nut_info_t *m2n = NULL;
+	/* Below we have many checks for "auto"; avoid redundant string walks: */
+	bool_t mibIsAuto = (0 == strcmp(mib, "auto"));
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
 	/* First, try to match against sysOID, if no MIB was provided.
 	 * This should speed up init stage
 	 * (Note: sysOID points the device main MIB entry point) */
-	if (!strcmp(mib, "auto"))
+	if (mibIsAuto)
 	{
 		upsdebugx(1, "trying the new match_sysoid() method");
 		/* Retry at most 3 times, to maximise chances */
@@ -1487,7 +1489,8 @@ bool_t load_mib2nut(const char *mib)
 	{
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
-			if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
+				/* "mib" is neither "auto" nor the name in mapping table */
 				continue;
 			}
 			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
@@ -1523,7 +1526,7 @@ bool_t load_mib2nut(const char *mib)
 	}
 
 	/* Did we find something or is it really an unknown mib */
-	if (strcmp(mib, "auto") != 0) {
+	if (!mibIsAuto) {
 		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
 	} else {
 		fatalx(EXIT_FAILURE, "No supported device detected");
