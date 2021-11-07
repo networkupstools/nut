@@ -51,9 +51,6 @@ check-local: $(check_PROGRAMS)
 	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
 endif
 
-# TODO: This relies on orderly build from the top directory, otherwise we see:
-#   gmake: *** No rule to make target '../clients/libnutclient.la', needed by 'cppunittest'.
-#   gmake: *** No rule to make target '../clients/libnutclientstub.la', needed by 'cppunittest'.
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
