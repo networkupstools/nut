@@ -376,7 +376,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 	addvar(VAR_VALUE, SU_VAR_ONDELAY,
-		"Set start  delay time after shutdown");
+		"Set start delay time after shutdown");
 	addvar(VAR_VALUE, SU_VAR_OFFDELAY,
 		"Set delay time before shutdown ");
 }
@@ -1626,14 +1626,12 @@ static void disable_competition(snmp_info_t *entry)
 	}
 }
 
-/* set shutdown and start delay */
+/* set shutdown and/or start delays */
 void set_delays(void)
 {
-
 	int ondelay, offdelay;
 	char delayval[6]; 
 
-	
 	if (getval(SU_VAR_ONDELAY))
 		ondelay = atoi(getval(SU_VAR_ONDELAY));
 	else
@@ -1644,16 +1642,15 @@ void set_delays(void)
 	else
 		offdelay = -1;
 
-
 	if (ondelay >= 0) {
 		sprintf(delayval, "%d", ondelay);
 		su_setvar("ups.delay.start", delayval);
 	}
+
 	if (offdelay >= 0) {
 		sprintf(delayval, "%d", offdelay);
 		su_setvar("ups.delay.shutdown",    delayval);
 	}
-
 }
 
 /***********************************************************************
