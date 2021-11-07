@@ -22,7 +22,7 @@ $(top_builddir)/common/libcommon.la:
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
-common.c nut-scanner.c: $(top_builddir)/include/nut_version.h
+nut-scanner.c: $(top_builddir)/include/nut_version.h
 
 LINKED_SOURCE_FILES =
 
@@ -36,14 +36,6 @@ $(builddir)/serial.c: $(top_srcdir)/drivers/serial.c
 LINKED_SOURCE_FILES += $(builddir)/bcmxcp_ser.c
 $(builddir)/bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
-
-LINKED_SOURCE_FILES += $(builddir)/common.c
-$(builddir)/common.c: $(top_srcdir)/common/common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
-
-LINKED_SOURCE_FILES += $(builddir)/str.c
-$(builddir)/str.c: $(top_srcdir)/common/str.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/common/str.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
@@ -62,6 +54,7 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
 nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -69,12 +62,22 @@ libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0 -export-symbols-regex ^nutscan_
+libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+# libnutscan exported symbols regex
+# WARNING: Since the library includes parts of libcommon (as much as needed
+# e.g. for logging or string manipulations), we export a few symbols from
+# those too. This may cause issues for (third-party) code development that
+# would use both libnutscan and libcommon or similar libs. Here we did have
+# a problem with nut-scanner using two copies of common.c and conflicting
+# copies of "nut_debug_level" making fun of our debug-logging attempts.
+# One solution to tackle if needed for those cases would be to make some
+# dynamic/shared libnutcommon (etc.)
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la
+nut_scanner_LDADD = libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
