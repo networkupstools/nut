@@ -28,7 +28,7 @@ nodist_getvaluetest_SOURCES = $(builddir)/hidparser.c
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/common/libcommon.la:
+$(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 ### Optional tests which can not be built everywhere
@@ -58,7 +58,8 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building
 # only some parts of NUT):
-$(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la:
+$(top_builddir)/clients/libnutclient.la \
+$(top_builddir)/clients/libnutclientstub.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
@@ -74,6 +75,8 @@ else !HAVE_CXX11
 EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CXX11
+
+dummy:
 
 BUILT_SOURCES = $(LINKED_SOURCE_FILES)
 CLEANFILES += $(LINKED_SOURCE_FILES)
