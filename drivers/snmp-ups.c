@@ -1630,7 +1630,6 @@ static void disable_competition(snmp_info_t *entry)
 void set_delays(void)
 {
 	int ondelay, offdelay;
-	char delayval[6]; 
 
 	if (getval(SU_VAR_ONDELAY))
 		ondelay = atoi(getval(SU_VAR_ONDELAY));
@@ -1643,13 +1642,13 @@ void set_delays(void)
 		offdelay = -1;
 
 	if (ondelay >= 0) {
-		sprintf(delayval, "%d", ondelay);
-		su_setvar("ups.delay.start", delayval);
+		sprintf(su_scratch_buf, "%d", ondelay);
+		su_setvar("ups.delay.start", su_scratch_buf);
 	}
 
 	if (offdelay >= 0) {
-		sprintf(delayval, "%d", offdelay);
-		su_setvar("ups.delay.shutdown",    delayval);
+		sprintf(su_scratch_buf, "%d", offdelay);
+		su_setvar("ups.delay.shutdown", su_scratch_buf);
 	}
 }
 
