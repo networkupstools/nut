@@ -32,19 +32,59 @@
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
+
 #ifdef HAVE_PTHREAD
-#include <pthread.h>
+# include <pthread.h>
+# ifdef HAVE_PTHREAD_TRYJOIN
+#  include "nut_stdint.h"
+pthread_mutex_t threadcount_mutex;
+/* We have 3 networked scan types: nut, snmp, xml,
+ * and users typically give their /24 subnet as "-m" arg.
+ * With some systems having a 1024 default (u)limit to
+ * file descriptors, this should fit if those are involved.
+ * On some systems tested, a large amount of not-joined
+ * pthreads did cause various crashes; also RAM is limited.
+ * Note that each scan may be time consuming to query an
+ * IP address and wait for (no) reply, so while these threads
+ * are usually not resource-intensive (nor computationally),
+ * they spend much wallclock time each so parallelism helps.
+ */
+size_t max_threads = 1024;
+size_t curr_threads = 0;
+
+size_t max_threads_netxml = 1021; /* experimental finding, see PR#1158 */
+size_t max_threads_oldnut = 1021;
+size_t max_threads_netsnmp = 0; // 10240;
+	/* per reports in PR#1158, some versions of net-snmp could be limited
+	 * to 1024 threads in the past; this was not found in practice.
+	 * Still, some practical limit can be useful (configurable?)
+	 * Here 0 means to not apply any special limit (beside max_threads).
+	 */
+
+#  ifdef HAVE_SYS_RESOURCE_H
+#   include <sys/resource.h> /* for getrlimit() and struct rlimit */
+#   include <errno.h>
+
+/* 3 is reserved for known overhead (for NetXML at least)
+ * following practical investigation summarized at
+ *   https://github.com/networkupstools/nut/pull/1158
+ * and probably means the usual stdin/stdout/stderr triplet
+ */
+#   define RESERVE_FD_COUNT 3
+#  endif
+# endif
 #endif
 
 #include "nut-scan.h"
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
 	{ "timeout", required_argument, NULL, 't' },
+	{ "thread", required_argument, NULL, 'T' },
 	{ "start_ip", required_argument, NULL, 's' },
 	{ "end_ip", required_argument, NULL, 'e' },
 	{ "eaton_serial", required_argument, NULL, 'E' },
@@ -156,24 +196,30 @@ static void show_usage()
 	puts("nut-scanner : utility for detection of available power devices.\n");
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
-	if( nutscan_avail_usb ) {
+	if (nutscan_avail_usb) {
 		printf("  -U, --usb_scan: Scan USB devices.\n");
 	}
-	if( nutscan_avail_snmp ) {
+	if (nutscan_avail_snmp) {
 		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
 	}
-	if( nutscan_avail_xml_http ) {
+	if (nutscan_avail_xml_http) {
 		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
 	}
 	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
-	if( nutscan_avail_avahi ) {
+	if (nutscan_avail_avahi) {
 		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
 	}
-	if( nutscan_avail_ipmi ) {
+	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 	}
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
+
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
+#else
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+#endif
 
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
@@ -181,12 +227,12 @@ static void show_usage()
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 
-	if( nutscan_avail_snmp ) {
+	if (nutscan_avail_snmp) {
 		printf("\nSNMP v1 specific options:\n");
 		printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
 
 		printf("\nSNMP v3 specific options:\n");
-		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
+		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv, authNoPriv, authPriv)\n");
 		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
 		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
 		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
@@ -194,7 +240,7 @@ static void show_usage()
 		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
 	}
 
-	if( nutscan_avail_ipmi ) {
+	if (nutscan_avail_ipmi) {
 		printf("\nIPMI over LAN specific options:\n");
 		printf("  -b, --username <username>: Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default)\n");
 		/* Specify  the  username  to  use  when authenticating with the remote host.  If not specified, a null (i.e. anonymous) username is assumed. The user must have
@@ -236,6 +282,36 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN) && (defined HAVE_SYS_RESOURCE_H)
+	struct rlimit nofile_limit;
+
+	/* Limit the max scanning thread count by the amount of allowed open
+	 * file descriptors (which caller can change with `ulimit -n NUM`),
+	 * following practical investigation summarized at
+	 *   https://github.com/networkupstools/nut/pull/1158
+	 * Resource-Limit code inspired by example from:
+	 *   https://stackoverflow.com/questions/4076848/how-to-do-the-equivalent-of-ulimit-n-400-from-within-c/4077000#4077000
+	 */
+
+	/* Get max number of files. */
+	if (getrlimit(RLIMIT_NOFILE, &nofile_limit) != 0) {
+		/* Report error, keep hardcoded default */
+		fprintf(stderr, "getrlimit() failed with errno=%d, keeping default job limits\n", errno);
+		nofile_limit.rlim_cur = 0;
+		nofile_limit.rlim_max = 0;
+	} else {
+		if (nofile_limit.rlim_cur > 0
+		&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
+		&&  (uintmax_t)max_threads > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
+		&&  (uintmax_t)(nofile_limit.rlim_cur) < (uintmax_t)SIZE_MAX
+		) {
+			max_threads = (size_t)nofile_limit.rlim_cur;
+			if (max_threads > (RESERVE_FD_COUNT + 1)) {
+				max_threads -= RESERVE_FD_COUNT;
+			}
+		}
+	}
+#endif // HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SYS_RESOURCE_H
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
@@ -256,9 +332,10 @@ int main(int argc, char *argv[])
 	/* Parse command line options -- First loop: only get debug level */
 	/* Suppress error messages, for now -- leave them to the second loop. */
 	opterr = 0;
-	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 		if (opt_ret == 'D')
 			nut_debug_level++;
+	}
 
 	nutscan_init();
 
@@ -271,13 +348,15 @@ int main(int argc, char *argv[])
 	optind = 1;
 	/* Note: the getopts print an error message about unknown arguments
 	 * or arguments which need a second token and that is missing now */
-	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
+	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 
 		switch(opt_ret) {
 			case 't':
 				timeout = atol(optarg)*1000*1000; /*in usec*/
-				if( timeout == 0 ) {
-					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_NETWORK_TIMEOUT);
+				if (timeout == 0) {
+					fprintf(stderr,
+						"Illegal timeout value, using default %ds\n",
+						DEFAULT_NETWORK_TIMEOUT);
 					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 				}
 				break;
@@ -297,72 +376,73 @@ int main(int argc, char *argv[])
 				break;
 			case 'm':
 				cidr = strdup(optarg);
+				upsdebugx(5, "Got CIDR net/mask: %s", cidr);
 				break;
 			case 'D':
 				/* nothing to do, here */
 				break;
 			case 'c':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.community = strdup(optarg);
 				break;
 			case 'l':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.secLevel = strdup(optarg);
 				break;
 			case 'u':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.secName = strdup(optarg);
 				break;
 			case 'W':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.authPassword = strdup(optarg);
 				break;
 			case 'X':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.privPassword = strdup(optarg);
 				break;
 			case 'w':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.authProtocol = strdup(optarg);
 				break;
 			case 'x':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				snmp_sec.privProtocol = strdup(optarg);
 				break;
 			case 'S':
-				if(!nutscan_avail_snmp) {
+				if (!nutscan_avail_snmp) {
 					goto display_help;
 				}
 				allow_snmp = 1;
 				break;
 			case 'b':
-				if(!nutscan_avail_ipmi) {
+				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				ipmi_sec.username = strdup(optarg);
 				break;
 			case 'B':
-				if(!nutscan_avail_ipmi) {
+				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				ipmi_sec.password = strdup(optarg);
 				break;
 			case 'd':
-				if(!nutscan_avail_ipmi) {
+				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				if (!strcmp(optarg, "NONE")) {
@@ -378,11 +458,13 @@ int main(int argc, char *argv[])
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {
-					fprintf(stderr,"Unknown authentication type (%s). Defaulting to MD5\n", optarg);
+					fprintf(stderr,
+						"Unknown authentication type (%s). Defaulting to MD5\n",
+						optarg);
 				}
 				break;
 			case 'L':
-				if(!nutscan_avail_ipmi) {
+				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				ipmi_sec.cipher_suite_id = atoi(optarg);
@@ -392,17 +474,70 @@ int main(int argc, char *argv[])
 			case 'p':
 				port = strdup(optarg);
 				break;
+			case 'T': {
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+				char* endptr;
+				long val = strtol(optarg, &endptr, 10);
+				/* With endptr we check that no chars were left in optarg
+				 * (that is, pointed-to char -- if reported -- is '\0')
+				 */
+				if ((!endptr || !*endptr)
+				&& val > 0
+				&& (uintmax_t)val < (uintmax_t)SIZE_MAX
+				) {
+# ifdef HAVE_SYS_RESOURCE_H
+					if (nofile_limit.rlim_cur > 0
+					&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
+					&& (uintmax_t)nofile_limit.rlim_cur < (uintmax_t)SIZE_MAX
+					&& (uintmax_t)val > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
+					) {
+						upsdebugx(1, "Detected soft limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_cur);
+						upsdebugx(1, "Detected hard limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_max);
+
+						max_threads = (size_t)nofile_limit.rlim_cur;
+						if (max_threads > (RESERVE_FD_COUNT + 1)) {
+							max_threads -= RESERVE_FD_COUNT;
+						}
+
+						fprintf(stderr,
+							"WARNING: Requested max scanning "
+							"thread count %s (%ld) exceeds the "
+							"current file descriptor count limit "
+							"(minus reservation), constraining "
+							"to %zu\n",
+							optarg, val, max_threads);
+					} else
+# endif /* HAVE_SYS_RESOURCE_H */
+						max_threads = (size_t)val;
+				} else {
+					fprintf(stderr,
+						"WARNING: Requested max scanning "
+						"thread count %s (%ld) is out of range, "
+						"using default %zu\n",
+						optarg, val, max_threads);
+				}
+#else
+				fprintf(stderr,
+					"WARNING: Max scanning thread count option "
+					"is not supported in this build, ignored\n");
+#endif
+				}
+				break;
 			case 'C':
 				allow_all = 1;
 				break;
 			case 'U':
-				if(!nutscan_avail_usb) {
+				if (!nutscan_avail_usb) {
 					goto display_help;
 				}
 				allow_usb = 1;
 				break;
 			case 'M':
-				if(!nutscan_avail_xml_http) {
+				if (!nutscan_avail_xml_http) {
 					goto display_help;
 				}
 				allow_xml = 1;
@@ -411,13 +546,13 @@ int main(int argc, char *argv[])
 				allow_oldnut = 1;
 				break;
 			case 'A':
-				if(!nutscan_avail_avahi) {
+				if (!nutscan_avail_avahi) {
 					goto display_help;
 				}
 				allow_avahi = 1;
 				break;
 			case 'I':
-				if(!nutscan_avail_ipmi) {
+				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				allow_ipmi = 1;
@@ -436,19 +571,19 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case 'a':
 				printf("OLDNUT\n");
-				if(nutscan_avail_usb) {
+				if (nutscan_avail_usb) {
 					printf("USB\n");
 				}
-				if(nutscan_avail_snmp) {
+				if (nutscan_avail_snmp) {
 					printf("SNMP\n");
 				}
-				if(nutscan_avail_xml_http) {
+				if (nutscan_avail_xml_http) {
 					printf("XML\n");
 				}
-				if(nutscan_avail_avahi) {
+				if (nutscan_avail_avahi) {
 					printf("AVAHI\n");
 				}
-				if(nutscan_avail_ipmi) {
+				if (nutscan_avail_ipmi) {
 					printf("IPMI\n");
 				}
 				printf("EATON_SERIAL\n");
@@ -462,23 +597,30 @@ int main(int argc, char *argv[])
 display_help:
 				show_usage();
 				if ((opt_ret != 'h') || (ret_code != EXIT_SUCCESS))
-					fprintf(stderr,"\n\n"
+					fprintf(stderr, "\n\n"
 						"WARNING: Some error has occurred while processing 'nut-scanner' command-line\n"
 						"arguments, see more details above the usage help text.\n\n");
 				return ret_code;
 		}
 	}
 
-	if( cidr ) {
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	pthread_mutex_init(&threadcount_mutex, NULL);
+#endif
+
+	if (cidr) {
+		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 	}
 
-	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
-		!allow_avahi && !allow_ipmi && !allow_eaton_serial) {
+	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
+		!allow_avahi && !allow_ipmi && !allow_eaton_serial
+	) {
 		allow_all = 1;
 	}
 
-	if( allow_all ) {
+	if (allow_all) {
 		allow_usb = 1;
 		allow_snmp = 1;
 		allow_xml = 1;
@@ -491,202 +633,206 @@ display_help:
 /* TODO/discuss : Should the #else...#endif code below for lack of pthreads
  * during build also serve as a fallback for pthread failure at runtime?
  */
-	if( allow_usb && nutscan_avail_usb ) {
-		upsdebugx(quiet,"Scanning USB bus.");
+	if (allow_usb && nutscan_avail_usb) {
+		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
-		if(pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, NULL)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
-		upsdebugx(1,"USB SCAN: no pthread support, starting nutscan_scan_usb...");
+		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
 		dev[TYPE_USB] = nutscan_scan_usb();
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1,"USB SCAN: not requested, SKIPPED");
+		upsdebugx(1, "USB SCAN: not requested, SKIPPED");
 	}
 
-	if( allow_snmp && nutscan_avail_snmp ) {
-		if( start_ip == NULL ) {
-			upsdebugx(quiet,"No start IP, skipping SNMP");
+	if (allow_snmp && nutscan_avail_snmp) {
+		if (start_ip == NULL) {
+			upsdebugx(quiet, "No start IP, skipping SNMP");
 			nutscan_avail_snmp = 0;
 		}
 		else {
-			upsdebugx(quiet,"Scanning SNMP bus.");
+			upsdebugx(quiet, "Scanning SNMP bus.");
 #ifdef HAVE_PTHREAD
-			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
-			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
-				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+			upsdebugx(1, "SNMP SCAN: starting pthread_create with run_snmp...");
+			if (pthread_create(&thread[TYPE_SNMP], NULL, run_snmp, &snmp_sec)) {
+				upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_snmp = 0;
 			}
 #else
-			upsdebugx(1,"SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
-			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&snmp_sec);
+			upsdebugx(1, "SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
+			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
-		upsdebugx(1,"SNMP SCAN: not requested, SKIPPED");
+		upsdebugx(1, "SNMP SCAN: not requested, SKIPPED");
 	}
 
-	if( allow_xml && nutscan_avail_xml_http) {
-		upsdebugx(quiet,"Scanning XML/HTTP bus.");
+	if (allow_xml && nutscan_avail_xml_http) {
+		upsdebugx(quiet, "Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
-		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+		upsdebugx(1, "XML/HTTP SCAN: starting pthread_create with run_xml...");
+		if (pthread_create(&thread[TYPE_XML], NULL, run_xml, &xml_sec)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_xml_http = 0;
 		}
 #else
-		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
+		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
+		upsdebugx(1, "XML/HTTP SCAN: not requested, SKIPPED");
 	}
 
-	if( allow_oldnut && nutscan_avail_nut) {
-		if( start_ip == NULL ) {
-			upsdebugx(quiet,"No start IP, skipping NUT bus (old connect method)");
+	if (allow_oldnut && nutscan_avail_nut) {
+		if (start_ip == NULL) {
+			upsdebugx(quiet, "No start IP, skipping NUT bus (old connect method)");
 			nutscan_avail_nut = 0;
 		}
 		else {
-			upsdebugx(quiet,"Scanning NUT bus (old connect method).");
+			upsdebugx(quiet, "Scanning NUT bus (old connect method).");
 #ifdef HAVE_PTHREAD
-			upsdebugx(1,"NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
-			if(pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL)) {
-				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+			upsdebugx(1, "NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
+			if (pthread_create(&thread[TYPE_NUT], NULL, run_nut_old, NULL)) {
+				upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_nut = 0;
 			}
 #else
-			upsdebugx(1,"NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
-			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
+			upsdebugx(1, "NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
+			dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
-		upsdebugx(1,"NUT bus (old) SCAN: not requested, SKIPPED");
+		upsdebugx(1, "NUT bus (old) SCAN: not requested, SKIPPED");
 	}
 
-	if( allow_avahi && nutscan_avail_avahi) {
-		upsdebugx(quiet,"Scanning NUT bus (avahi method).");
+	if (allow_avahi && nutscan_avail_avahi) {
+		upsdebugx(quiet, "Scanning NUT bus (avahi method).");
 #ifdef HAVE_PTHREAD
-		upsdebugx(1,"NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
-		if(pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+		upsdebugx(1, "NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
+		if (pthread_create(&thread[TYPE_AVAHI], NULL, run_avahi, NULL)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_avahi = 0;
 		}
 #else
-		upsdebugx(1,"NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
+		upsdebugx(1, "NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
 		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1,"NUT bus (avahi) SCAN: not requested, SKIPPED");
+		upsdebugx(1, "NUT bus (avahi) SCAN: not requested, SKIPPED");
 	}
 
-	if( allow_ipmi  && nutscan_avail_ipmi) {
-		upsdebugx(quiet,"Scanning IPMI bus.");
+	if (allow_ipmi && nutscan_avail_ipmi) {
+		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
-		upsdebugx(1,"IPMI SCAN: starting pthread_create with run_ipmi...");
-		if(pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,&ipmi_sec)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
+		if (pthread_create(&thread[TYPE_IPMI], NULL, run_ipmi, &ipmi_sec)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_ipmi = 0;
 		}
 #else
-		upsdebugx(1,"IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
-		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,&ipmi_sec);
+		upsdebugx(1, "IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
+		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1,"IPMI SCAN: not requested, SKIPPED");
+		upsdebugx(1, "IPMI SCAN: not requested, SKIPPED");
 	}
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
-		upsdebugx(quiet,"Scanning serial bus for Eaton devices.");
+		upsdebugx(quiet, "Scanning serial bus for Eaton devices.");
 #ifdef HAVE_PTHREAD
-		upsdebugx(1,"SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
+		upsdebugx(1, "SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
 		pthread_create(&thread[TYPE_EATON_SERIAL], NULL, run_eaton_serial, serial_ports);
 		/* FIXME: check return code */
-		/* upsdebugx(1,"pthread_create returned an error; disabling this scan mode"); */
+		/* upsdebugx(1, "pthread_create returned an error; disabling this scan mode"); */
 		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
-		upsdebugx(1,"SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
+		upsdebugx(1, "SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
 		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1,"SERIAL SCAN: not requested, SKIPPED");
+		upsdebugx(1, "SERIAL SCAN: not requested, SKIPPED");
 	}
 
 #ifdef HAVE_PTHREAD
-	if( allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
-		upsdebugx(1,"USB SCAN: join back the pthread");
+	if (allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
+		upsdebugx(1, "USB SCAN: join back the pthread");
 		pthread_join(thread[TYPE_USB], NULL);
 	}
-	if( allow_snmp && nutscan_avail_snmp && thread[TYPE_SNMP]) {
-		upsdebugx(1,"SNMP SCAN: join back the pthread");
+	if (allow_snmp && nutscan_avail_snmp && thread[TYPE_SNMP]) {
+		upsdebugx(1, "SNMP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_SNMP], NULL);
 	}
-	if( allow_xml && nutscan_avail_xml_http && thread[TYPE_XML]) {
-		upsdebugx(1,"XML/HTTP SCAN: join back the pthread");
+	if (allow_xml && nutscan_avail_xml_http && thread[TYPE_XML]) {
+		upsdebugx(1, "XML/HTTP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_XML], NULL);
 	}
-	if( allow_oldnut && nutscan_avail_nut && thread[TYPE_NUT]) {
-		upsdebugx(1,"NUT bus (old) SCAN: join back the pthread");
+	if (allow_oldnut && nutscan_avail_nut && thread[TYPE_NUT]) {
+		upsdebugx(1, "NUT bus (old) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_NUT], NULL);
 	}
-	if( allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
-		upsdebugx(1,"NUT bus (avahi) SCAN: join back the pthread");
+	if (allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
+		upsdebugx(1, "NUT bus (avahi) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_AVAHI], NULL);
 	}
-	if( allow_ipmi && nutscan_avail_ipmi && thread[TYPE_IPMI]) {
-		upsdebugx(1,"IPMI SCAN: join back the pthread");
+	if (allow_ipmi && nutscan_avail_ipmi && thread[TYPE_IPMI]) {
+		upsdebugx(1, "IPMI SCAN: join back the pthread");
 		pthread_join(thread[TYPE_IPMI], NULL);
 	}
 	if (allow_eaton_serial && thread[TYPE_EATON_SERIAL]) {
-		upsdebugx(1,"SERIAL SCAN: join back the pthread");
+		upsdebugx(1, "SERIAL SCAN: join back the pthread");
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
 
-	upsdebugx(1,"SCANS DONE: display results");
+	upsdebugx(1, "SCANS DONE: display results");
 
-	upsdebugx(1,"SCANS DONE: display results: USB");
+	upsdebugx(1, "SCANS DONE: display results: USB");
 	display_func(dev[TYPE_USB]);
-	upsdebugx(1,"SCANS DONE: free resources: USB");
+	upsdebugx(1, "SCANS DONE: free resources: USB");
 	nutscan_free_device(dev[TYPE_USB]);
 
-	upsdebugx(1,"SCANS DONE: display results: SNMP");
+	upsdebugx(1, "SCANS DONE: display results: SNMP");
 	display_func(dev[TYPE_SNMP]);
-	upsdebugx(1,"SCANS DONE: free resources: SNMP");
+	upsdebugx(1, "SCANS DONE: free resources: SNMP");
 	nutscan_free_device(dev[TYPE_SNMP]);
 
-	upsdebugx(1,"SCANS DONE: display results: XML/HTTP");
+	upsdebugx(1, "SCANS DONE: display results: XML/HTTP");
 	display_func(dev[TYPE_XML]);
-	upsdebugx(1,"SCANS DONE: free resources: XML/HTTP");
+	upsdebugx(1, "SCANS DONE: free resources: XML/HTTP");
 	nutscan_free_device(dev[TYPE_XML]);
 
-	upsdebugx(1,"SCANS DONE: display results: NUT bus (old)");
+	upsdebugx(1, "SCANS DONE: display results: NUT bus (old)");
 	display_func(dev[TYPE_NUT]);
-	upsdebugx(1,"SCANS DONE: free resources: NUT bus (old)");
+	upsdebugx(1, "SCANS DONE: free resources: NUT bus (old)");
 	nutscan_free_device(dev[TYPE_NUT]);
 
-	upsdebugx(1,"SCANS DONE: display results: NUT bus (avahi)");
+	upsdebugx(1, "SCANS DONE: display results: NUT bus (avahi)");
 	display_func(dev[TYPE_AVAHI]);
-	upsdebugx(1,"SCANS DONE: free resources: NUT bus (avahi)");
+	upsdebugx(1, "SCANS DONE: free resources: NUT bus (avahi)");
 	nutscan_free_device(dev[TYPE_AVAHI]);
 
-	upsdebugx(1,"SCANS DONE: display results: IPMI");
+	upsdebugx(1, "SCANS DONE: display results: IPMI");
 	display_func(dev[TYPE_IPMI]);
-	upsdebugx(1,"SCANS DONE: free resources: IPMI");
+	upsdebugx(1, "SCANS DONE: free resources: IPMI");
 	nutscan_free_device(dev[TYPE_IPMI]);
 
-	upsdebugx(1,"SCANS DONE: display results: SERIAL");
+	upsdebugx(1, "SCANS DONE: display results: SERIAL");
 	display_func(dev[TYPE_EATON_SERIAL]);
-	upsdebugx(1,"SCANS DONE: free resources: SERIAL");
+	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
-	upsdebugx(1,"SCANS DONE: free common scanner resources");
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	pthread_mutex_destroy(&threadcount_mutex);
+#endif
+
+	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free();
 
-	upsdebugx(1,"SCANS DONE: EXIT_SUCCESS");
+	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;
 }

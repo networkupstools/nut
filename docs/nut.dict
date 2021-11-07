@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2611 utf-8
+personal_ws-1.1 en 2771 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -13,10 +13,13 @@ ADDRINFO
 ADK
 ADKK
 AEC
+AEF
 AEG
 AES
+AFE
 AGM
 AIX
+ALTROOT
 AMETEK
 APC's
 API
@@ -37,8 +40,10 @@ AVR
 AVRLCD
 AWG
 Ablerex
+AcceptEnv
 ActivePower
 AdMiN
+Affero
 Agrain
 AlarmStatus
 AlarmsHelp
@@ -108,6 +113,7 @@ BadPW
 Bads
 Baggesen
 Bakos
+Balker
 Bartek
 BattTstFail
 BatteryA
@@ -125,6 +131,7 @@ BigServers
 BlaXwan
 BlackOut
 BladeUPS
+BlueOcean
 Bo
 Bohe
 Borns
@@ -155,6 +162,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLANGVER
 CLI
 CLOCAL
 CMDDESC
@@ -164,6 +172,7 @@ COMLI
 COMMBAD
 COMMFAULT
 COMMOK
+CONFILE
 CONTEXTs
 CPAN
 CPM
@@ -180,6 +189,7 @@ CUDA
 CVE
 CXR
 CXX
+CXXCPP
 CXXFLAGS
 Casar
 CentOS
@@ -194,6 +204,7 @@ Chu
 Cichowski
 Claesson
 CodingStyle
+Collver
 Colombier
 Comfo
 ConITm
@@ -224,6 +235,7 @@ DELINFO
 DELRANGE
 DES
 DESTDIR
+DF
 DHEA
 DISCHRG
 DMF
@@ -272,6 +284,7 @@ EMI
 ENDFOR
 ENV
 EOF
+EOLed
 EPERM
 EPO
 EPS
@@ -319,6 +332,7 @@ FREHn
 FRELn
 FRU
 FTS
+FTTx
 FTUPS
 FV
 Faber
@@ -331,9 +345,11 @@ Feldman
 Ferrups
 Fideltronic
 Fideltronik
+Filipozzi
 Fiskars
 FlossMetrics
 Forza
+FossHost
 Frama
 FreeBSD
 FreeDesktop
@@ -342,6 +358,7 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GCCVER
 GES
 GETADDRINFO
 GKrellM
@@ -353,6 +370,7 @@ GUIs
 GWD
 GXE
 GXT
+Gabeler
 Gabor
 Gammons
 Gandi
@@ -367,6 +385,7 @@ Gilles
 GitHub
 GitHub's
 Gnd
+Gnomovision
 Goebl
 Golang
 Gomes
@@ -445,12 +464,14 @@ IZ
 Infosec
 Innova
 Integrators
+IntelCC
 InvCDly
 InvCPol
 InvMin
 Invensys
 InverterV
 Invter
+IoT
 Ioannou
 JAWAN
 JBus
@@ -464,6 +485,7 @@ Jasuny
 JavaScript
 Javadoc
 Javascript
+Jenkinsfile
 Joon
 Jumpered
 KNutClient
@@ -491,6 +513,7 @@ Korte
 Kralewski
 Kroll
 Krpec
+Kubernetes
 Kx
 LASTXFER
 LBT
@@ -519,6 +542,7 @@ LOADPCT
 LOCKFN
 LOTRANS
 LUA
+LVM
 LVT
 LYONN
 Lacerda
@@ -540,6 +564,7 @@ LowRntm
 LowRuntime
 Loyer
 Ltr
+Luca
 Lucent
 Lygre
 Lynge
@@ -561,11 +586,13 @@ MMM
 MMMMMMMMMMMMMMM
 MNU
 MONITORed
+MOXA
 MPSU
 MQ
 MSI
 MacKenzie's
 MacOS
+Maccelari
 Magalhaes
 MagalhÃ
 Magalhães
@@ -592,6 +619,7 @@ Metheringham
 Michal
 Michalkiewicz
 MicroDowell
+MicroFerrups
 Microline
 Micropower
 Microsol
@@ -612,9 +640,9 @@ Morioka
 Morozov
 Moskovitch
 Moxa
-MOXA
 Mozilla
 Msg
+MultiLink
 Multiplug
 MyCompany
 MyPasSw
@@ -693,6 +721,8 @@ OMNIVS
 OMNIVSINT
 ONF
 ONV
+OOM
+OSF
 OSs
 OUTPUTV
 OUTVOLT
@@ -758,6 +788,9 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR'ed
+PROGS
+PRs
 PSA
 PSD
 PSFn
@@ -884,6 +917,7 @@ RRR
 RSA
 RSM
 RST
+RTU
 RTXL
 RUPS
 RWD
@@ -899,8 +933,10 @@ RefNom
 Regados
 Reinholdtsen
 Remi
+Remoting
 Rene
 René
+Repotec's
 Repoteck
 Richthof
 Rickard
@@ -910,6 +946,7 @@ RntmK
 Rocketfish
 Rodrigues
 Rodríguez
+Rozman
 Rucelf
 RxD
 RxHs
@@ -985,14 +1022,19 @@ SXI
 SXL
 SafeNet
 Salvia
+Santinoli
+Savia
 Sawatzky
+Schmier
 Schoch
 Schonefeld
 Schroder
 Sekury
 Selinger
+SendEnv
 Senoidal
 Sep
+Sequentializing
 Serv
 Shara
 Shaul
@@ -1033,9 +1075,13 @@ Stanislav
 StatePath
 Stefano
 Stimits
+SuSE
 Suatoni
+Sublicensing
+SunOS
 SuperPower
 Sweex
+Sycon
 Symmetra
 Symmetras
 Synology
@@ -1056,6 +1102,7 @@ TIOCM
 TIOCMBIC
 TIOCMBIS
 TLS
+TLSv
 TODO
 TRACKINGDELAY
 TREELINK
@@ -1071,6 +1118,7 @@ TapSwDly
 TapSwPh
 TcpClient
 Technic
+Technorama
 Tecnoware
 Tefft
 TeleCom
@@ -1095,9 +1143,11 @@ Tru
 Tx
 TxD
 TxHS
+UB
 UBD
 UBR
 UDP
+UI
 UID
 UIDA
 UINT
@@ -1122,13 +1172,16 @@ UPSonic
 UPSs
 UPStation
 UPower
+URI
 USBDEVFS
+USERADDed
 USV
 USVs
 UTC
 UTalk
 UUU
 UX
+Ubuntu
 Ulf
 Uncomment
 Unices
@@ -1145,8 +1198,10 @@ VERFW
 VFI
 VIB
 VMIN
+VMM
 VMware
 VNC
+VPATH
 VSN
 VTIME
 VV
@@ -1159,6 +1214,7 @@ VendorID
 Viewpower
 Viewsonic
 Viktor
+VirCIO
 Vout
 Václav
 WALKMODE
@@ -1166,6 +1222,7 @@ WARNFATAL
 WARNOPT
 WELI
 WHAD
+WIPO
 WMNut
 WS
 WSE
@@ -1186,6 +1243,7 @@ XCP
 XLA
 XOFF
 XON
+XOPEN
 XP
 XPPC
 XSL
@@ -1206,18 +1264,24 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yoyodyne
 Yukai
 Yifeng
 Yunto
+ZFS
+ZProject
 ZZZZZZZZ
 Zaika
 Zampieri
 Zawadzki
+ZeroMQ
 abcd
+abuild
 acVoltsIn
 acVoltsout
 acampsiOut
 acampsiout
+accessmode
 acl
 acm
 acpi
@@ -1251,10 +1315,13 @@ alarmtest
 alertset
 alioth
 alist
+alldrv
 alloc
 allowfrom
 altinterface
 altpidpath
+altroot
+altroots
 amd
 anded
 aod
@@ -1273,6 +1340,7 @@ arg
 argc
 args
 argv
+armel
 armhf
 asapm
 ascii
@@ -1316,6 +1384,7 @@ avPHK
 avahi
 avr
 awd
+awk
 bAlternateSetting
 backend
 backgrounding
@@ -1345,6 +1414,7 @@ beepertone
 belkin
 belkinunv
 bestfcom
+bestferrups
 bestfort
 bestfortress
 bestuferrups
@@ -1354,9 +1424,11 @@ bigone
 bigserver
 bigups
 bindir
+binfmt
 binutils
 bitmapped
 bitness
+bitnesses
 bitwise
 bn
 boolean
@@ -1364,6 +1436,7 @@ boostvoolts
 bootable
 bp
 br
+bsd
 bsv
 bt
 bti
@@ -1376,6 +1449,7 @@ buflen
 bugfix
 bugfixes
 buildbots
+bullseye
 busybox
 bv
 bypassvolts
@@ -1409,6 +1483,7 @@ cflag
 cflags
 cgi
 cgipath
+cgroup
 chargedvbattery
 chargermode
 chargetime
@@ -1465,11 +1540,13 @@ constatus
 contdisplay
 contrib
 contstatus
+copyrightable
 coreutils
 cout
 coverity
 cp
 cpp
+cppcheck
 cppunit
 cpqpower
 cpsups
@@ -1509,11 +1586,13 @@ ddl
 de
 deUNV
 debian
+debootstrap
 debouncing
 deci
 decrement
 decrypt
 dedb
+dedup
 defun
 dep
 dephasing
@@ -1527,11 +1606,13 @@ devd
 devel
 devscan
 dfl
+dhcp
 dialout
 dipsw
 dir
 disp
 distcheck
+distclean
 distro
 distros
 dl
@@ -1539,10 +1620,12 @@ dll
 dlopen
 dmesg
 dnl
+dnsmasq
 docbook
 dockapp
 docs
 dod
+domxml
 dpkg
 dq
 driverexec
@@ -1560,11 +1643,14 @@ dstate
 dt
 dtds
 dtr
+du
 dumbterm
 dummycons
 dummypass
 dummyups
+dumpxml
 dv
+dynamatrix
 ePDU
 ePDUs
 eaton
@@ -1574,6 +1660,7 @@ eco
 edb
 edl
 ei
+el
 emacs
 endchar
 enddate
@@ -1584,6 +1671,8 @@ energizerups
 energysave
 english
 enum
+envvar
+envvars
 ep
 epdu
 epodebounce
@@ -1599,7 +1688,9 @@ esac
 esupssmart
 et
 etapro
+eth
 ev
+eval
 everups
 everyone's
 everything's
@@ -1641,6 +1732,7 @@ forcessl
 formatconfig
 formatparam
 fp
+freebsd
 freeipmi
 freqsensitivity
 frob
@@ -1667,6 +1759,8 @@ getDevice
 getTrackingResult
 getValue
 getVariable
+getconf
+getent
 getenv
 getopt
 getvar
@@ -1682,6 +1776,7 @@ goto
 gotos
 gpg
 graphviz
+groupadd
 groupname
 guardpend
 guardpstart
@@ -1704,8 +1799,10 @@ hidparser
 hidups
 highbattery
 highfrequency
+hoster
 hostname
 hostnames
+hostsfile
 hotplug
 hotplugging
 href
@@ -1756,6 +1853,7 @@ initinfo
 initscripts
 initups
 inline
+installcheck
 instcmd
 instcmds
 intercharacter
@@ -1792,6 +1890,8 @@ jNUT
 jNut
 jNutWebAPI
 jdk
+jenkins
+jessie
 journalctl
 jpg
 jpgraph
@@ -1801,6 +1901,7 @@ kadets
 kaminski
 kde
 keyclick
+keygen
 keyout
 killall
 killpower
@@ -1814,6 +1915,7 @@ lan
 langid
 lasaine
 ld
+le
 len
 lf
 libaugeas
@@ -1846,15 +1948,19 @@ libtool
 libupsclient
 libusb
 libusbugen
+libvirt
 libwrap
 libxslt
 libxxx
+licensor
+licensors
 liebert
 liebertgxt
 linesensitivity
 linevoltage
 linkdoc
 linux
+lipo
 listdef
 littleguy
 lk
@@ -1879,12 +1985,15 @@ lowbattery
 lowfrequency
 lowruntime
 lowvoltsout
+lposix
 lr
 lsusb
 lu
 lua
 lv
 lvo
+lxc
+lxcbr
 lxml
 lxyz
 mA
@@ -1913,6 +2022,7 @@ maxva
 maxvalue
 maxvi
 maxvo
+mc
 md
 mdadm
 mecer
@@ -1945,6 +2055,7 @@ minva
 minvalue
 minvi
 minvo
+mips
 mis
 misconfigured
 mkdir
@@ -2013,6 +2124,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nodtk
 noflag
 nohang
 noimp
@@ -2023,6 +2135,7 @@ nomacvoltsout
 nombattvolt
 nomdcvolts
 nomfrequency
+noncommercially
 noout
 norating
 noro
@@ -2080,20 +2193,26 @@ openSUSE
 openjdk
 openlog
 opensolaris
+openssh
 openssl
 optiups
 oq
+os
 ostream
 otherprotocols
+outliers
 pF
 paramkeywords
 parsable
 parseconf
 passname
+passphrase
+passthrough
 passwd
 passwordlevel
 pathname
 pathnames
+pbzip
 pc
 pconf
 pcs
@@ -2112,6 +2231,7 @@ phoenixtec
 picocom
 pid
 pidpath
+pigz
 pijuice
 pinout
 pinouts
@@ -2149,9 +2269,11 @@ powerpanel
 powerup
 powervalue
 powerware
+ppc
 pprint
 ppro
 pre
+prepend
 prepended
 preprocess
 preprocessing
@@ -2171,11 +2293,13 @@ prtconf
 psu
 pw
 pwl
+pwmib
 pwro
 px
 pxgx
 py
 pydoc
+pygments
 pynut
 qa
 qemu
@@ -2205,11 +2329,13 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+redistributors
 reentrancy
 refactoring
 referencenominal
 regex
 regtype
+relicensing
 reposurgeon
 repotec
 req
@@ -2219,6 +2345,7 @@ ret
 retrydelay
 revdate
 revnumber
+rf
 rfc
 rh
 richcomm
@@ -2233,6 +2360,8 @@ rn
 ro
 roadmap
 rootca
+rootfs
+rootfs'es
 rq
 rqt
 rsync
@@ -2287,6 +2416,7 @@ setq
 setuid
 setvar
 setvar's
+sfr
 sgml
 sgs
 shutdownArguments
@@ -2312,6 +2442,7 @@ sm
 smartups
 sms
 sn
+snailmail
 snmp
 snmpagent
 snmpv
@@ -2332,8 +2463,11 @@ splitaddr
 splitname
 sr
 src
+srcdir
+srv
 srw
 ss
+sshd
 ssl
 stan
 startIP
@@ -2371,6 +2505,8 @@ subdriver
 subdriver's
 subdrivers
 subdrv
+sublicense
+sublicenses
 submodule
 submodules
 subtree
@@ -2426,6 +2562,7 @@ termios
 testime
 testtime
 testuser
+textproc
 th
 timehead
 timeline
@@ -2462,11 +2599,12 @@ tx
 txt
 typedef
 uA
-UB
 uD
 uM
 ua
+ubuntu
 uc
+ucb
 udev
 udevadm
 ufw
@@ -2474,6 +2612,7 @@ ugen
 ukUNV
 ul
 un
+uname
 uncomment
 unconfigured
 undefine
@@ -2548,6 +2687,7 @@ usbups
 usbus
 usd
 usec
+useradd
 userid
 usermap
 username
@@ -2559,6 +2699,7 @@ utalk
 utf
 uu
 uucp
+vCPU
 va
 valgrind
 validationSequence
@@ -2580,6 +2721,7 @@ victron
 victronups
 vid
 vin
+virsh
 virtualization
 vo
 vod
@@ -2587,6 +2729,7 @@ voltronic
 von
 wDescriptorLength
 wakeup
+wchar
 webserver
 wf
 wget
@@ -2610,6 +2753,7 @@ xa
 xaabbcc
 xcalloc
 xd
+xe
 xferdelay
 xff
 xfff

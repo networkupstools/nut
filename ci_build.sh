@@ -2,9 +2,49 @@
 
 ################################################################################
 # This file is based on a template used by zproject, but isn't auto-generated. #
+# Its primary use is to automate a number of BUILD_TYPE scenarios for the NUT  #
+# CI farm, but for the same reason it can also be useful to reduce typing for  #
+# reproducible build attempts with NUT development and refactoring workflows.  #
+# Note that it is driven by enviroment variables rather than CLI arguments --  #
+# this approach better suits the practicalities of CI build farm technologies. #
 ################################################################################
 
 set -e
+
+# Quick hijack for interactive development like this:
+#   BUILD_TYPE=fightwarn-clang ./ci_build.sh
+case "$BUILD_TYPE" in
+    fightwarn) ;; # for default compiler
+    fightwarn-gcc)
+        CC="gcc"
+        CXX="g++"
+        CPP="cpp"
+        BUILD_TYPE=fightwarn
+        ;;
+    fightwarn-clang)
+        CC="clang"
+        CXX="clang++"
+        CPP="clang-cpp"
+        BUILD_TYPE=fightwarn
+        ;;
+esac
+
+if [ "$BUILD_TYPE" = fightwarn ]; then
+    # For CFLAGS/CXXFLAGS keep caller or compiler defaults
+    # (including C/C++ revision)
+    BUILD_TYPE=default-all-errors
+    BUILD_WARNFATAL=yes
+
+    # Current fightwarn goal is to have no warnings at preset level below:
+    #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
+    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+
+    # Eventually this constraint would be removed to check all present
+    # SSL implementations since their ifdef-driven codebases differ and
+    # emit varied warnings. But so far would be nice to get the majority
+    # of shared codebase clean first:
+    [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+fi
 
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
@@ -24,8 +64,55 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+[ -n "${CI_REQUIRE_GOOD_GITIGNORE-}" ] || CI_REQUIRE_GOOD_GITIGNORE="true"
+case "$CI_REQUIRE_GOOD_GITIGNORE" in
+    [Nn][Oo]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee])
+        CI_REQUIRE_GOOD_GITIGNORE="false" ;;
+    [Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
+        CI_REQUIRE_GOOD_GITIGNORE="true" ;;
+esac
+
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
+
+# Set up the parallel make with reasonable limits, using several ways to
+# gather and calculate this information. Note that "psrinfo" count is not
+# an honest approach (there may be limits of current CPU set etc.) but is
+# a better upper bound than nothing...
+[ -n "$NCPUS" ] || { \
+    NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`" || \
+    NCPUS="`/usr/bin/getconf NPROCESSORS_ONLN`" || \
+    NCPUS="`cat /proc/cpuinfo | grep -wc processor`" || \
+    { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
+    || NCPUS=1; } 2>/dev/null
+[ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
+
+[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
+[ x"$NPARMAKES" != x -a "$NPARMAKES" -ge 1 ] || NPARMAKES=2
+[ x"$MAXPARMAKES" != x ] && [ "$MAXPARMAKES" -ge 1 ] && \
+    [ "$NPARMAKES" -gt "$MAXPARMAKES" ] && \
+    echo "INFO: Detected or requested NPARMAKES=$NPARMAKES," \
+        "however a limit of MAXPARMAKES=$MAXPARMAKES was configured" && \
+    NPARMAKES="$MAXPARMAKES"
+
+# GNU make allows to limit spawning of jobs by load average of the host,
+# where LA is (roughly) the average amount over the last {timeframe} of
+# queued processes that are ready to compute but must wait for CPU.
+# The rough estimate for VM builders however seems that they always have
+# some non-trivial LA, so we set the default limit per CPU relatively high.
+[ x"$PARMAKE_LA_LIMIT" = x ] && PARMAKE_LA_LIMIT="`expr $NCPUS '*' 8`".0
+
+# After all the tunable options above, this is the one which takes effect
+# for actual builds with parallel phases. Specify a whitespace to neuter.
+if [ -z "$PARMAKE_FLAGS" ]; then
+    PARMAKE_FLAGS="-j $NPARMAKES"
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
+        PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
+    else
+        echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
+    fi
+fi
 
 # CI builds on Jenkins
 [ -z "$NODE_LABELS" ] || \
@@ -39,18 +126,33 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-clang ;;
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
+
+        # Some (QEMU) builders have issues running valgrind as a tool
+        "NUT_BUILD_CAPS=valgrind=no")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=no ;;
+        "NUT_BUILD_CAPS=valgrind"|"NUT_BUILD_CAPS=valgrind=yes")
+            [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=yes ;;
+
+        "NUT_BUILD_CAPS=cppcheck=no")
+            [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=no ;;
+        "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
+            [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=yes ;;
+
         "NUT_BUILD_CAPS=docs:all=no")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=no ;;
         "NUT_BUILD_CAPS=docs:all"|"NUT_BUILD_CAPS=docs:all=yes")
             [ -n "$CANBUILD_DOCS_ALL" ] || CANBUILD_DOCS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=drivers:all=no")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=no ;;
         "NUT_BUILD_CAPS=drivers:all"|"NUT_BUILD_CAPS=drivers:all=yes")
             [ -n "$CANBUILD_DRIVERS_ALL" ] || CANBUILD_DRIVERS_ALL=yes ;;
+
         "NUT_BUILD_CAPS=cgi=no")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
@@ -61,7 +163,11 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    case "$OS_FAMILY-$OS_DISTRO" in
+    for CI_OS_HINT in "$OS_FAMILY-$OS_DISTRO" "`uname -o`" "`uname -s -r -v`" "`uname -a`" ; do
+        [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
+    done
+
+    case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *debian*|*linux*)
@@ -78,9 +184,18 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="bsd" ;;
         *illumos*)
             CI_OS_NAME="illumos" ;;
+        *solaris*)
+            CI_OS_NAME="solaris" ;;
+        *sunos*)
+            CI_OS_NAME="sunos" ;;
         "-") ;;
-        *)  echo "WARNING: Could not recognize CI_OS_NAME from '$OS_FAMILY'-'$OS_DISTRO', update './ci_build.sh' if needed" >&2 ;;
+        *)  echo "WARNING: Could not recognize CI_OS_NAME from CI_OS_HINT='$CI_OS_HINT', update './ci_build.sh' if needed" >&2
+            if [ "$OS_FAMILY-$OS_DISTRO" != "-" ]; then
+                echo "WARNING: I was told that OS_FAMILY='$OS_FAMILY' and OS_DISTRO='$OS_DISTRO'" >&2
+            fi
+            ;;
     esac
+    [ -z "$CI_OS_NAME" ] || echo "INFO: Detected CI_OS_NAME='$CI_OS_NAME'" >&2
 fi
 
 # CI builds on Travis
@@ -105,6 +220,19 @@ configure_nut() {
         CONFIGURE_SCRIPT=./configure.bat
     fi
 
+    if [ ! -s "$CONFIGURE_SCRIPT" ]; then
+        # Note: modern auto(re)conf requires pkg-config to generate the configure
+        # script, so to stage the situation of building without one (as if on an
+        # older system) we have to remove it when we already have the script.
+        # This matches the use-case of distro-building from release tarballs that
+        # include all needed pre-generated files to rely less on OS facilities.
+        if [ "$CI_OS_NAME" = "windows" ] ; then
+            $CI_TIME ./autogen.sh || true
+        else
+            $CI_TIME ./autogen.sh ### 2>/dev/null
+        fi || exit
+    fi
+
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
     echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
@@ -125,7 +253,7 @@ configure_nut() {
 
 build_to_only_catch_errors() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
 
@@ -137,7 +265,37 @@ build_to_only_catch_errors() {
     return 0
 }
 
+optional_maintainer_clean_check() {
+    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
+        echo "Skipping maintainer-clean check because recipe/developer said so"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
+
+        # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+
+        echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
+        git status --ignored -s || true
+        echo "==="
+
+        if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+            git diff || true
+            echo "==="
+            return 1
+        fi
+    fi
+    return 0
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
+
+echo "Build host settings:"
+set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE)=' || true
+uname -a
+echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
+if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
+
 case "$BUILD_TYPE" in
 default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
@@ -173,7 +331,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if which ccache && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
@@ -269,16 +427,48 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
-    if [ -n "$PKG_CONFIG_PATH" ] ; then
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}")
-    else
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+
+    DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
+    SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
+    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+        *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
+            case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
+                *-m64*)
+                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                    ;;
+                *)
+                    case "$ARCH$BITS" in
+                        *64*)
+                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                            ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+    if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
+        if [ -n "$PKG_CONFIG_PATH" ] ; then
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
+        else
+            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
+        fi
     fi
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}")
+    else
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
+    fi
+
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+
+    if [ -n "${PYTHON-}" ]; then
+        # WARNING: Watch out for whitespaces, not handled here!
+        CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
 
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
@@ -291,9 +481,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
+    if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
+        echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
+        CONFIG_OPTS+=("--with-valgrind=no")
+    fi
+
     # This flag is primarily linked with (lack of) docs generation enabled
-    # (or not) in some BUILD_TYPE scenarios or workers
-    DO_DISTCHECK=yes
+    # (or not) in some BUILD_TYPE scenarios or workers. Initial value may
+    # be set by caller, but codepaths below have the final word.
+    [ "${DO_DISTCHECK-}" = no ] || DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
@@ -378,6 +574,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 CONFIG_OPTS+=("--with-all=yes")
             fi
             ;;
+        "default-tgt:cppcheck")
+            if [ "${CANBUILD_CPPCHECK_TESTS-}" = no ] ; then
+                echo "WARNING: Build agent says it has a broken cppcheck, but we requested a BUILD_TYPE='$BUILD_TYPE'" >&2
+                exit 1
+            fi
+            CONFIG_OPTS+=("--enable-cppcheck=yes")
+            CONFIG_OPTS+=("--with-doc=skip")
+            ;;
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
@@ -449,10 +653,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
+    # Numerous per-compiler variants defined in configure.ac, including
+    # aliases "minimal", "medium", "hard", "all"
     if [ -n "${BUILD_WARNOPT-}" ]; then
         CONFIG_OPTS+=("--enable-warnings=${BUILD_WARNOPT}")
     fi
 
+    # Parse from strings that could be populated by a CI Boolean checkbox:
+    case "${BUILD_WARNFATAL-}" in
+        [Tt][Rr][Uu][Ee]) BUILD_WARNFATAL=yes;;
+        [Ff][Aa][Ll][Ss][Ee]) BUILD_WARNFATAL=no;;
+    esac
     if [ -n "${BUILD_WARNFATAL-}" ]; then
         CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
     fi
@@ -467,7 +678,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] ; then
+    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
@@ -481,8 +692,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # for all other scenarios proceeds.below.
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
-            # e.g. distcheck-light, distcheck-valgrind, maybe others later,
-            # as defined in Makefile.am:
+            # e.g. distcheck-light, distcheck-valgrind, cppcheck, maybe
+            # others later, as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
 
@@ -490,12 +701,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" "$BUILD_TGT"
+            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
-            if git status -s | egrep '\.dmf$' ; then
+            if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
                 exit 1
             fi
@@ -503,6 +714,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "CCache stats after build:"
                 ccache -s
             fi
+
+            optional_maintainer_clean_check || exit
+
             echo "=== Exiting after the custom-build target '$MAKE $BUILD_TGT' succeeded OK"
             exit 0
             ;;
@@ -510,8 +724,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: use the root Makefile's spellcheck recipe which goes into
             # sub-Makefiles known to check corresponding directory's doc files.
-            ( $CI_TIME $MAKE VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
-            exit 0
+            # Note: no PARMAKE_FLAGS here - better have this output readably
+            # ordered in case of issues (in sequential replay below).
+            ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
+              && echo "`date`: SUCCEEDED the spellcheck" >&2
+            ) || \
+            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
+              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            exit $?
             ;;
         "default-shellcheck")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to check shell script syntax validity of the currently tested project..."
@@ -523,6 +744,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ### Still, there remains value in also checking the script syntax
             ### by the very version of the shell interpreter that would run
             ### these scripts in production usage of the resulting packages.
+            ### Note: no PARMAKE_FLAGS here - better have this output readably
+            ### ordered in case of issues.
             ( $CI_TIME $MAKE VERBOSE=1 shellcheck check-scripts-syntax )
             exit $?
             ;;
@@ -593,6 +816,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
+
+                optional_maintainer_clean_check || {
+                    RES=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                }
             done
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
@@ -610,14 +838,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     esac
 
     ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k -j8 all; ) || \
+      $CI_TIME $MAKE VERBOSE=1 -k $PARMAKE_FLAGS all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
       $CI_TIME $MAKE VERBOSE=1 all )
 
     echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
     git status -s || true
     echo "==="
-    if [ -n "`git status -s`" ]; then
+    if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
         echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
         git diff || true
         echo "==="
@@ -638,13 +866,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" distcheck
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
         echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
+
+        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
+            git diff || true
+            echo "==="
+            exit 1
+        fi
         )
     fi
+
+    optional_maintainer_clean_check || exit
 
     if [ "$HAVE_CCACHE" = yes ]; then
         echo "CCache stats after build:"
@@ -655,10 +892,18 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 "")
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual"
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
+    if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
+        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
+        sleep 5
+    fi
+    echo ""
     ./autogen.sh
-    ./configure
-    $MAKE all && $MAKE check
+    #./configure
+    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    #$MAKE all && \
+    $MAKE $PARMAKE_FLAGS all && \
+    $MAKE check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh

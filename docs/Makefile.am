@@ -1,4 +1,4 @@
-DISTCLEANFILES =
+MAINTAINERCLEANFILES = Makefile.in
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
@@ -21,7 +21,8 @@ IMAGE_FILES = images/asciidoc.png \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
-USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt config-prereqs.txt	\
+USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
+ config-prereqs.txt ci-farm-lxc-setup.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -73,14 +74,24 @@ ASCIIDOC_PDF = user-manual.pdf \
 	cables.pdf \
 	FAQ.pdf
 
-SUBDIRS = man
-SUFFIXES = .txt .html .pdf
+SUBDIRS = man cables
+SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
+# This list is defined by configure script choices and options:
 check-local: @DOC_CHECK_LIST@
 
+# This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
+
+# This target can be called by developers to go around the configure
+# script choices at their risk (e.g. missing tools are possible):
+docs: pdf html-single html-chunked man
+
+all-docs: docs
+
+check-docs: check-pdf check-html-single check-html-chunked check-man
 
 pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
@@ -122,9 +133,14 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
+man:
+	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
+
+CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
+
+# Dirs to clean
 clean-local:
-	rm -f *.pdf *.html docbook-xsl.css
-	rm -rf *.chunked *.bak
+	rm -rf *.chunked *.bak tmp
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
@@ -152,9 +168,11 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute=badges \
     --attribute=external_title \
     --attribute tree_version=@TREE_VERSION@ \
-    -a toc -a numbered --destination-dir=.
+    -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
-# As of version 8.6.9 it lies, and the argument is required for our distcheck.
+# As of version 8.6.9 it lies, and the argument is required for our distcheck
+# (and does affect PDF builds, as found during work on collision-avoidance -
+# true with at least asciidoc/a2x versions 9.0.0rc2).
 # For more details see issues https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
@@ -168,28 +186,84 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # (or cause them to produce undefined results if some bad timing happens).
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
-.txt.html: common.xsl xhtml.xsl
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
-.txt.chunked: common.xsl chunked.xsl
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+# Note we only remove the original target (if present), if it is a directory -
+# e.g. created by "html-chunked" targets.
+DOCBUILD_BEGIN = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+    else A2X_OUTDIR='.' ; fi; \
+    if test -s "${builddir}/docbook-xsl.css" \
+    && test -r "${builddir}/docbook-xsl.css" \
+    && ! test -w "${builddir}/docbook-xsl.css" \
+    ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
+    chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+}
 
-.txt.pdf: docinfo.xml
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+# When moving "*" hope a2x did not make any "hidden" files
+# like ".*" that would be required for resulting documents.
+# Leave the "images/" dir there, though.
+# Otherwise, we would have to `find` them all.
+DOCBUILD_END = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
+        rm -rf "./$${A2X_OUTDIR}" ; \
+    fi ; \
+}
+
+# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
+# prerequisites like done below, and GNU Make of some versions complains;
+# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
+# says the prerequisites were ignored while a suffix rule was created;
+# eventually the POSIX stance would be taken to define a rule for a weird
+# verbatim target file name with prerequisites:
+# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
+# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
+# as done below may be pointless in the end (with regard to a portable way
+# to trigger builds by a changed dependency), but at least predictable and
+# not toxic.
+*.html: common.xsl xhtml.xsl
+.txt.html:
+	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	 echo "  DOC-HTML Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
+
+*.chunked: common.xsl chunked.xsl
+.txt.chunked:
+	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
+
+# Note: non-HTML a2x modes may ignore the destination directory
+*.pdf: docinfo.xml
+.txt.pdf:
+	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
+	 echo "  DOC-PDF  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
+# NOTE: ../ChangeLog is nowadays generated from commit messages, so
+# its spelling (or errors in that) are not fixable and thus irrelevant.
+# Similarly for the ../INSTALL file that is prepared by autoconf and not
+# tracked as a source file by NUT Git repository.
 SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
-	../tools/nut-scanner/README
+	../tools/nut-scanner/README \
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
 SPELLCHECK_DIR = $(srcdir)
@@ -213,6 +287,32 @@ ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
+
+# WARNING: The percent wildcard is a GNU extension; otherwise we need
+# a ".txt.txt-spellchecked" type of rule and files like "README" all
+# renamed to *.txt, or lots of rules for files without the extensions
+# Other Makefiles have a relatively simple life, dealing with just a
+# few texts and name/extension patterns in their directories.
+#?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+# NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
+# at a time, with an outer Makefile caller ensuring the looping:
+$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 rm -f "$@" || true ; \
+	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
+		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+		     test -z "$$OUT" ; } \
+		|| { RES=$$? ; \
+		     echo "FAILED : Aspell reported errors here:" >&2 \
+		     && echo "----- vvv" >&2 \
+		     && echo "$$OUT" >&2 \
+		     && echo "----- ^^^" >&2 ; \
+		     exit $$RES; } ; \
+	 touch "$@"
+
 spellcheck: 
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
@@ -224,16 +324,15 @@ spellcheck:
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
-		echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $(SPELLCHECK_DIR)/$$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
-			  test -z "$$OUT" ; } || \
-			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
-			  FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; } ; \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
+		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_DIR="$(SPELLCHECK_DIR)" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
-		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
+		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`): $$FAILED" ; \
 		echo "=====================================================================" ; \
 		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
@@ -271,7 +370,7 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 
-DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
@@ -280,7 +379,7 @@ spellcheck-interactive:
 			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
-		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
+		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
 	$(MAKE) spellcheck-sortdict
@@ -291,10 +390,13 @@ spellcheck-interactive:
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
+# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+*/*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
 
-.PHONY: html html-single pdf
+.PHONY: html html-chunked html-single pdf man

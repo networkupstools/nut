@@ -42,14 +42,14 @@ public:
 	/**
 	 * Construct a nut MemClientStub object.
 	 */
-	MemClientStub() {};
-	~MemClientStub() {};
+	MemClientStub() {}
+	~MemClientStub() {}
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) {
 		NUT_UNUSED_VARIABLE(user);
 		NUT_UNUSED_VARIABLE(passwd);
-	};
-	virtual void logout() {};
+	}
+	virtual void logout() {}
 
 	virtual Device getDevice(const std::string& name);
 	virtual std::set<std::string> getDeviceNames();

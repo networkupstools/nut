@@ -56,7 +56,7 @@ typedef struct {
 
 /* return 1 + the position of the leftmost "1" bit of an int, or 0 if
    none. */
-static inline unsigned int hibit(unsigned int x)
+static inline unsigned int hibit(unsigned long x)
 {
 	unsigned int	res = 0;
 
@@ -419,14 +419,22 @@ HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset
 /*
  * GetValue
  * Extract data from a report stored in Buf.
- * Use Value, Offset, Size and LogMax of pData.
- * Return response in Value.
+ * Use Offset, Size, LogMin, and LogMax of pData.
+ * Return response in *pValue.
  * -------------------------------------------------------------------------- */
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 {
+	/* Note:  https://github.com/networkupstools/nut/issues/1023
+	   This conversion code can easily be sensitive to 32- vs 64- bit
+	   compilation environments.  Consider the possibility of overflow
+	   in 32-bit representations when computing with extreme values,
+	   for example LogMax-LogMin+1.
+	   Test carefully in both environments if changing any declarations.
+	*/
+
 	int	Weight, Bit;
-	long	value = 0, rawvalue;
-	long	range, mask, signbit, b, m;
+	unsigned long mask, signbit, magMax, magMin;
+	long	value = 0, range;
 
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
@@ -436,6 +444,17 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		if(State) {
 			value += (1 << Weight);
 		}
+	}
+
+	range = pData->LogMax - pData->LogMin + 1;
+	if (range <= 0) {
+		/* makes no sense, give up */
+		*pValue = value;
+		/* Discussion: https://github.com/networkupstools/nut/pull/1138 */
+		upslogx(LOG_ERR, "ERROR in %s: LogMin is greater than LogMax, "
+			"possibly vendor HID is incorrect on device side; "
+			"skipping evaluation of these constraints", __func__);
+		return;
 	}
 
 	/* translate Value into a signed/unsigned value in the range
@@ -460,20 +479,17 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	"throwing away higher-order bits" exacly means, so we try to do
 	something sensible. -PS */
 
-	rawvalue = value; /* remember this for later */
+	/* determine representation without sign bit */
+	magMax = pData->LogMax >= 0 ? pData->LogMax : -(pData->LogMax + 1);
+	magMin = pData->LogMin >= 0 ? pData->LogMin : -(pData->LogMin + 1);
 
-	/* figure out how many bits are significant */
-	range = pData->LogMax - pData->LogMin + 1;
-	if (range <= 0) {
-		/* makes no sense, give up */
-		*pValue = value;
-		return;
-	}
-	b = hibit(range-1);
+	/* calculate where the sign bit will be if needed */
+	signbit = 1L << hibit(magMax > magMin ? magMax : magMin);
 
-	/* throw away insignificant bits; the result is >= 0 */
-	mask = (1 << b) - 1;
-	signbit = 1 << (b - 1);
+	/* but only include sign bit in mask if negative numbers are involved */
+	mask = (signbit - 1) | ((pData->LogMin < 0) ? signbit : 0);
+
+	/* throw away excess high order bits (which may contain garbage) */
 	value = value & mask;
 
 	/* sign-extend it, if appropriate */
@@ -481,28 +497,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		value |= ~mask;
 	}
 
-	/* if the resulting value is in the desired range, stop */
-	if (value >= pData->LogMin && value <= pData->LogMax) {
-		*pValue = value;
-		return;
-	}
-
-	/* else, try to reach interval by adjusting high-order bits */
-	m = (value - pData->LogMin) & mask;
-	value = pData->LogMin + m;
-	if (value <= pData->LogMax) {
-		*pValue = value;
-		return;
-	}
-
-	/* if everything else failed, sign-extend the original raw value,
-	and simply round it to the closest point in the interval. */
-	value = rawvalue;
-	mask = (1 << pData->Size) - 1;
-	signbit = 1 << (pData->Size - 1);
-	if (pData->LogMin < 0 && (value & signbit) != 0) {
-		value |= ~mask;
-	}
+	/* clamp returned value to range [LogMin..LogMax] */
 	if (value < pData->LogMin) {
 		value = pData->LogMin;
 	} else if (value > pData->LogMax) {

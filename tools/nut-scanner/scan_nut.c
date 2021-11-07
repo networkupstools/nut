@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,21 +20,19 @@
 /*! \file scan_nut.c
     \brief detect remote NUT services
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include "common.h"
 #include "upsclient.h"
 #include "nut-scan.h"
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
 #include <ltdl.h>
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
-static int (*nut_upscli_splitaddr)(const char *buf,char **hostname, int *port);
+static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
 static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
 					int flags,struct timeval * timeout);
 static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
@@ -47,6 +46,13 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 
+/* use explicit booleans */
+#ifndef FALSE
+typedef enum ebool { FALSE = 0, TRUE } bool_t;
+#else
+typedef int bool_t;
+#endif
+
 struct scan_nut_arg {
 	char * hostname;
 	long timeout;
@@ -56,9 +62,9 @@ struct scan_nut_arg {
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
-	if( dl_handle != NULL ) {
+	if (dl_handle != NULL) {
 			/* if previous init failed */
-			if( dl_handle == (void *)1 ) {
+			if (dl_handle == (void *)1) {
 					return 0;
 			}
 			/* init has already been done */
@@ -70,7 +76,7 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		return 0;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 			fprintf(stderr, "Error initializing lt_init\n");
 			return 0;
 	}
@@ -85,31 +91,31 @@ int nutscan_load_upsclient_library(const char *libname_path)
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 													"upscli_splitaddr");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
 						"upscli_tryconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
 						"upscli_list_start");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
 						"upscli_list_next");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
 						"upscli_disconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -149,14 +155,14 @@ static void * list_nut_devices(void * arg)
 		return NULL;
 	}
 
-	if ((*nut_upscli_tryconnect)(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
+	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
 		free(ups);
 		return NULL;
 	}
 
-	if((*nut_upscli_list_start)(ups, numq, query) < 0) {
+	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
 		(*nut_upscli_disconnect)(ups);
 		free(target_hostname);
 		free(nut_arg);
@@ -164,7 +170,7 @@ static void * list_nut_devices(void * arg)
 		return NULL;
 	}
 
-	while ((*nut_upscli_list_next)(ups,numq, query, &numa, &answer) == 1) {
+	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
 			(*nut_upscli_disconnect)(ups);
@@ -182,20 +188,21 @@ static void * list_nut_devices(void * arg)
 		dev->type = TYPE_NUT;
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
 		dev->port = malloc(buf_size);
-		if( dev->port ) {
-			snprintf(dev->port,buf_size,"%s@%s",answer[1],
+
+		if (dev->port) {
+			snprintf(dev->port, buf_size, "%s@%s", answer[1],
 					hostname);
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
 #endif
-			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+			dev_ret = nutscan_add_device_to_device(dev_ret, dev);
 #ifdef HAVE_PTHREAD
 			pthread_mutex_unlock(&dev_mutex);
 #endif
-
 		}
+
 	}
 
 	(*nut_upscli_disconnect)(ups);
@@ -205,7 +212,7 @@ static void * list_nut_devices(void * arg)
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port,long usec_timeout)
+nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, long usec_timeout)
 {
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -217,23 +224,23 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
-	pthread_t * thread_array = NULL;
+	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
 
-	pthread_mutex_init(&dev_mutex,NULL);
-#endif
+	pthread_mutex_init(&dev_mutex, NULL);
+#endif // HAVE_PTHREAD
 
-	if( !nutscan_avail_nut ) {
+	if (!nutscan_avail_nut) {
 		return NULL;
 	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
-	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
+	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-		if( oldact.sa_handler == SIG_DFL ) {
+		if (oldact.sa_handler == SIG_DFL) {
 			change_action_handler = 1;
 			signal(SIGPIPE, SIG_IGN);
 		}
@@ -242,16 +249,16 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 	}
 
-	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
+	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
 
-	while( ip_str != NULL )
+	while (ip_str != NULL)
 	{
-		if( port ) {
-			if( ip.type == IPv4 ) {
-				snprintf(buf,sizeof(buf),"%s:%s",ip_str,port);
+		if (port) {
+			if (ip.type == IPv4) {
+				snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
 			}
 			else {
-				snprintf(buf,sizeof(buf),"[%s]:%s",ip_str,port);
+				snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
 			}
 
 			ip_dest = strdup(buf);
@@ -260,7 +267,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			ip_dest = strdup(ip_str);
 		}
 
-		if((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL ) {
+		if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
 			free(ip_dest);
 			break;
 		}
@@ -268,35 +275,140 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		nut_arg->timeout = usec_timeout;
 		nut_arg->hostname = ip_dest;
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread,NULL,list_nut_devices,(void*)nut_arg)==0){
+# ifdef HAVE_PTHREAD_TRYJOIN
+		/* NOTE: With many enough targets to scan, this can crash
+		 * by spawning too many children; add a limit and loop to
+		 * "reap" some already done with their work. And probably
+		 * account them in thread_array[] as something to not wait
+		 * for below in pthread_join()...
+		 */
+
+		/* TOTHINK: Should there be a threadcount_mutex when
+		 * we just read the value in if() and while() below?
+		 * At worst we would overflow the limit a bit due to
+		 * other protocol scanners...
+		 */
+		if (curr_threads >= max_threads
+		||  curr_threads >= max_threads_oldnut
+		) {
+			upsdebugx(2, "%s: already running %zu scanning threads "
+				"(launched overall: %d), "
+				"waiting until some would finish",
+				__func__, curr_threads, thread_count);
+			while (curr_threads >= max_threads
+			    || curr_threads >= max_threads_oldnut
+			) {
+				for (i = 0; i < thread_count ; i++) {
+					int ret;
+
+					if (!thread_array[i].active) continue;
+
+					pthread_mutex_lock(&threadcount_mutex);
+					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
+					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
+					switch (ret) {
+						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+							break;
+						case 0:         // thread exited
+							if (curr_threads > 0) {
+								curr_threads --;
+								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+							} else {
+								/* threadcount_mutex fault? */
+								upsdebugx(0, "WARNING: %s: Accounting of thread count "
+									"says we are already at 0", __func__);
+							}
+							thread_array[i].active = FALSE;
+							break;
+						case EBUSY:     // actively running
+							upsdebugx(6, "%s: thread #%i still busy (%i)",
+								__func__, i, ret);
+							break;
+						case EDEADLK:   // Errors with thread interactions... bail out?
+						case EINVAL:    // Errors with thread interactions... bail out?
+						default:        // new pthreads abilities?
+							upsdebugx(5, "%s: thread #%i reported code %i",
+								__func__, i, ret);
+							break;
+					}
+					pthread_mutex_unlock(&threadcount_mutex);
+				}
+
+				if (curr_threads >= max_threads
+				|| curr_threads >= max_threads_oldnut
+				) {
+					usleep (10000); // microSec's, so 0.01s here
+				}
+			}
+			upsdebugx(2, "%s: proceeding with scan", __func__);
+		}
+# endif // HAVE_PTHREAD_TRYJOIN
+
+		if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_lock(&threadcount_mutex);
+			curr_threads++;
+# endif // HAVE_PTHREAD_TRYJOIN
+
 			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-						thread_count*sizeof(pthread_t));
+			nutscan_thread_t *new_thread_array = realloc(thread_array,
+				thread_count * sizeof(nutscan_thread_t));
 			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 				break;
 			}
 			else {
 				thread_array = new_thread_array;
 			}
-			thread_array[thread_count-1] = thread;
+			thread_array[thread_count - 1].thread = thread;
+			thread_array[thread_count - 1].active = TRUE;
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
 		}
-#else
+#else // not HAVE_PTHREAD
 		list_nut_devices(nut_arg);
-#endif
+#endif // if HAVE_PTHREAD
 		free(ip_str);
 		ip_str = nutscan_ip_iter_inc(&ip);
 	}
 
 #ifdef HAVE_PTHREAD
-	for ( i=0; i < thread_count ; i++) {
-		pthread_join(thread_array[i],NULL);
+	if (thread_array != NULL) {
+		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
+	for (i = 0; i < thread_count; i++) {
+			int ret;
+
+			if (!thread_array[i].active) continue;
+
+			ret = pthread_join(thread_array[i].thread, NULL);
+			if (ret != 0) {
+				upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
+					__func__, ret);
+			}
+			thread_array[i].active = FALSE;
+# ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_lock(&threadcount_mutex);
+			if (curr_threads > 0) {
+				curr_threads --;
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+					__func__, i);
+			} else {
+				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
+					"says we are already at 0", __func__);
+			}
+			pthread_mutex_unlock(&threadcount_mutex);
+# endif // HAVE_PTHREAD_TRYJOIN
+		}
+		free(thread_array);
+		upsdebugx(2, "%s: all threads freed", __func__);
 	}
 	pthread_mutex_destroy(&dev_mutex);
-	free(thread_array);
-#endif
+#endif // HAVE_PTHREAD
 
-	if(change_action_handler) {
+	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"

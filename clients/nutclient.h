@@ -436,7 +436,7 @@ public:
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
 	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
 
- 	virtual void deviceLogin(const std::string& dev);
+	virtual void deviceLogin(const std::string& dev);
 	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */

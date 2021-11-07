@@ -7,3 +7,6 @@ else
  bin_SCRIPTS = libupsclient-config
 endif
 endif
+
+CLEANFILES = *-spellchecked
+MAINTAINERCLEANFILES = Makefile.in

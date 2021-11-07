@@ -4,11 +4,14 @@
  *
  *  Copyright (C)
  *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
+ *   2015-2021  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *   2016-2021  Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
-  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
+ *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
- *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *  Sponsored by Eaton <http://www.eaton.com>
+ *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -107,8 +110,17 @@ typedef int bool_t;
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
-	const char *(*fun)(void *snmp_value); /* optional SNMP to NUT mapping function */
-	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
+/*
+ * Currently there are a few cases using a "fun_vp2s" type of lookup
+ * function, while the "nuf_s2l" type was added for completeness but
+ * is not really handled and does not have real consumers in the
+ * existing NUT codebase (static mib2nut tables in *-mib.c files).
+ * Related to su_find_infoval() (long* => string), su_find_valinfo()
+ * (string => long) and su_find_strval() (char* => string) routines
+ * defined below.
+ */
+	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
+	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -271,13 +283,25 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
+/* Practical logic around lookup functions, see fun_vp2s and nuf_s2l
+ * fields in struct info_lkp_t */
 const char *su_find_infoval(info_lkp_t *oid2info, void *value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 const char *su_find_strval(info_lkp_t *oid2info, void *value);
 
-/* Common conversion structs (functions) */
+/*****************************************************
+ * Common conversion structs and functions provided by snmp-ups-helpers.c
+ * so they can be used and so "shared" by different subdrivers
+ *****************************************************/
+
 const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
+/* Name the mapping location in that array for consumers to reference */
+#define FUNMAP_USDATE_TO_ISODATE 0
+
+/*****************************************************
+ * End of Subdrivers shared helpers functions
+ *****************************************************/
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
@@ -309,6 +333,5 @@ typedef struct {
 	long output_phases;
 	long bypass_phases;
 } daisychain_info_t;
-
 
 #endif /* SNMP_UPS_H */
