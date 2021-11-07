@@ -155,6 +155,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - snmp-ups:
    * APC ePDU MIB support
    * add `input.phase.shift` variable
+   * add configurable write-able `ondelay` (`ups.delay.start`) and `offdelay`
+     (`ups.delay.shutdown`) as timeticks support [PR #276]
    * outlet groups
    * fix the rounding / truncation of some values
    * add outlet.N.name for Eaton ePDU
