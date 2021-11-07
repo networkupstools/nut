@@ -215,8 +215,21 @@ static void sec_poll ( int pollflag ) {
 
 			if (sqv(q,f) > 0) {
 				if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+					/* NOTE: We intentionally limit the amount
+					 * of characters picked from "r" buffer
+					 * into respectively sized "*.value"
+					 */
 					snprintf(sec_varlist[sqv(q,f)].value,
 						sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 					sec_setinfo(sqv(q,f), r);
 				}
 
