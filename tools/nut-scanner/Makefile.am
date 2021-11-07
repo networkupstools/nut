@@ -11,11 +11,11 @@ CLEANFILES = $(BUILT_SOURCES)
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
-$(NUT_SCANNER_DEPS):
+$(NUT_SCANNER_DEPS): dummy
 	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/common/libcommon.la:
+$(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
@@ -107,6 +107,8 @@ if WITH_DEV
 else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
+
+dummy:
 
 CLEANFILES += *-spellchecked
 MAINTAINERCLEANFILES = Makefile.in
