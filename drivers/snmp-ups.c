@@ -150,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.16"
+#define DRIVER_VERSION		"1.17"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -291,6 +291,9 @@ void upsdrv_shutdown(void)
 
 	upsdebugx(1, "%s...", __func__);
 
+	/* set shutdown and autostart delay */
+	set_delays();
+	
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -351,6 +354,10 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+	addvar(VAR_VALUE, SU_VAR_ONDELAY,
+		"Set start delay time after shutdown");
+	addvar(VAR_VALUE, SU_VAR_OFFDELAY,
+		"Set delay time before shutdown ");
 }
 
 void upsdrv_initups(void)
@@ -488,6 +495,9 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	/* set shutdown and autostart delay */
+	set_delays();
 }
 
 void upsdrv_cleanup(void)
@@ -1625,6 +1635,33 @@ static void disable_competition(snmp_info_t *entry)
 					__func__, p->info_type, p->OID);
 			p->flags &= ~SU_FLAG_OK;
 		}
+	}
+}
+
+/* set shutdown and/or start delays */
+void set_delays(void)
+{
+	int ondelay, offdelay;
+	char su_scratch_buf[255];
+
+	if (getval(SU_VAR_ONDELAY))
+		ondelay = atoi(getval(SU_VAR_ONDELAY));
+	else
+		ondelay = -1;
+
+	if (getval(SU_VAR_OFFDELAY))
+		offdelay = atoi(getval(SU_VAR_OFFDELAY));
+	else
+		offdelay = -1;
+
+	if (ondelay >= 0) {
+		sprintf(su_scratch_buf, "%d", ondelay);
+		su_setvar("ups.delay.start", su_scratch_buf);
+	}
+
+	if (offdelay >= 0) {
+		sprintf(su_scratch_buf, "%d", offdelay);
+		su_setvar("ups.delay.shutdown", su_scratch_buf);
 	}
 }
 

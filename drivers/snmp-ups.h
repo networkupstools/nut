@@ -218,6 +218,9 @@ typedef struct {
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
 
+#define SU_VAR_ONDELAY		"ondelay"
+#define SU_VAR_OFFDELAY		"offdelay"
+
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
 #define SU_LARGEBUF		256
@@ -306,6 +309,8 @@ extern info_lkp_t su_convert_to_iso_date_info[];
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
 void su_shutdown_ups(void);
+
+void set_delays(void);
 
 void read_mibconf(char *mib);
 
