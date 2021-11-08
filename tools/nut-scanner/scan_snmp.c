@@ -105,8 +105,10 @@ static oid *nut_usmAESPrivProtocol;
 static oid *nut_usmHMACMD5AuthProtocol;
 static oid *nut_usmHMACSHA1AuthProtocol;
 static oid *nut_usmDESPrivProtocol;
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
 static oid *nut_usmAES192PrivProtocol;
 static oid *nut_usmAES256PrivProtocol;
+#endif
 static oid *nut_usmHMAC192SHA256AuthProtocol;
 static oid *nut_usmHMAC256SHA384AuthProtocol;
 static oid *nut_usmHMAC384SHA512AuthProtocol;
@@ -251,6 +253,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+
 #if NETSNMP_DRAFT_BLUMENTHAL_AES_04
 	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
 						"usmAES192PrivProtocol");
@@ -263,7 +266,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
-#endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 
 	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMAC192SHA256AuthProtocol");
@@ -617,7 +620,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					sizeof(usmAES256PrivProtocol)/
 					sizeof(oid);
 			}
-#endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 			else {
 				if (strcmp(sec->privProtocol, "DES") != 0) {
 					fprintf(stderr,
