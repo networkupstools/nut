@@ -98,6 +98,21 @@ oid * pProto = usmAESPrivProtocol;
 		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
 		])
 
+	AC_MSG_CHECKING([for defined usmDESPrivProtocol])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+oid * pProto = usmDESPrivProtocol;
+],
+[]
+		)],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 1, [Variable or macro by this name is resolvable])
+		],
+		[AC_MSG_RESULT([no])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
+		])
+
 	AC_MSG_CHECKING([for defined usmHMAC256SHA384AuthProtocol])
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
@@ -141,6 +156,36 @@ oid * pProto = usmHMAC192SHA256AuthProtocol;
 		],
 		[AC_MSG_RESULT([no])
 		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+		])
+
+	AC_MSG_CHECKING([for defined usmHMACMD5AuthProtocol])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+oid * pProto = usmHMACMD5AuthProtocol;
+],
+[]
+		)],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 1, [Variable or macro by this name is resolvable])
+		],
+		[AC_MSG_RESULT([no])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+		])
+
+	AC_MSG_CHECKING([for defined usmHMACSHA1AuthProtocol])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+oid * pProto = usmHMACSHA1AuthProtocol;
+],
+[]
+		)],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 1, [Variable or macro by this name is resolvable])
+		],
+		[AC_MSG_RESULT([no])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 0, [Variable or macro by this name is not resolvable])
 		])
 
 	fi
