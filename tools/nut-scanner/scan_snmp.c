@@ -900,6 +900,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
+				upsdebugx (2, "%s: Running too many scanning threads, "
+					"waiting until older ones would finish",
+					__func__);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {
