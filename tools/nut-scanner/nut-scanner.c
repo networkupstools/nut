@@ -586,10 +586,6 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
-/* TOTHINK: Should semaphores to limit thread count
- * and the more naive but portable methods be an
- * if-else proposition? At least when initializing?
- */
 # ifdef HAVE_SEMAPHORE
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
@@ -597,13 +593,7 @@ display_help:
 	sem_t *current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
 	sem_init(current_sem, 0, max_threads);
-/* # else */
 # endif
-
-#  ifdef HAVE_PTHREAD_TRYJOIN
-	pthread_mutex_init(&threadcount_mutex, NULL);
-#  endif
-/* # endif */
 #endif /* HAVE_PTHREAD */
 
 	if (cidr) {
@@ -825,12 +815,8 @@ display_help:
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
 #ifdef HAVE_PTHREAD
-/* TOTHINK: See comments near mutex/semaphore init code above */
 # ifdef HAVE_SEMAPHORE
-# endif
-
-# ifdef HAVE_PTHREAD_TRYJOIN
-	pthread_mutex_destroy(&threadcount_mutex);
+	sem_destroy(nutscan_semaphore());
 # endif
 #endif
 

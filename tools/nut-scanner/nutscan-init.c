@@ -88,10 +88,19 @@ size_t max_threads_netsnmp = 0; // 10240;
 void nutscan_init(void)
 {
 #ifdef HAVE_PTHREAD
+/* TOTHINK: Should semaphores to limit thread count
+ * and the more naive but portable methods be an
+ * if-else proposition? At least when initializing?
+ */
 # ifdef HAVE_SEMAPHORE
 	sem_init(&semaphore, 0, max_threads);
 # endif
-#endif
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+	pthread_mutex_init(&threadcount_mutex, NULL);
+# endif
+#endif /* HAVE_PTHREAD */
+
 	char *libname = NULL;
 #ifdef WITH_USB
 	libname = get_libname("libusb-0.1.so");
@@ -162,4 +171,16 @@ void nutscan_free(void)
 	if (nutscan_avail_nut) {
 		lt_dlexit();
 	}
+
+#ifdef HAVE_PTHREAD
+/* TOTHINK: See comments near mutex/semaphore init code above */
+# ifdef HAVE_SEMAPHORE
+	sem_destroy(nutscan_semaphore());
+# endif
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+	pthread_mutex_destroy(&threadcount_mutex);
+# endif
+#endif
+
 }
