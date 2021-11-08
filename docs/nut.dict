@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2807 utf-8
+personal_ws-1.1 en 2810 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -334,6 +334,7 @@ FREEADDRINFO
 FREHn
 FRELn
 FRU
+FSP
 FTS
 FTTx
 FTUPS
@@ -1350,6 +1351,7 @@ apctest
 apcupsd
 aphel
 ar
+arduino
 arg
 argc
 args
@@ -2589,6 +2591,7 @@ th
 timehead
 timeline
 timername
+timeticks
 tiocm
 tios
 tmp
