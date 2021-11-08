@@ -1469,7 +1469,17 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * model name by concatenation of iProduct and iModel
 		 */
 		char	buf[SMALLBUF];
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+		/* NOTE: We intentionally limit the amount of bytes reported */
 		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 		return strdup(buf);
 	}
 
