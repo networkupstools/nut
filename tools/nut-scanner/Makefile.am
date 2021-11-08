@@ -72,7 +72,7 @@ libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c

@@ -193,6 +193,28 @@ getrlimit(RLIMIT_NOFILE, &limit);
     )]
 )
 
+AC_CHECK_HEADER([semaphore.h],
+    [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
+        [Define to 1 if you have <sys/semaphore.h>.])
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+],
+[sem_t semaphore;
+sem_init(&semaphore, 0, 4);
+sem_destroy(&semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SEMAPHORE], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)

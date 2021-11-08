@@ -35,32 +35,11 @@
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
-# ifdef HAVE_PTHREAD_TRYJOIN
+# ifdef HAVE_SEMAPHORE
+#  include <semaphore.h>
+# endif
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 #  include "nut_stdint.h"
-pthread_mutex_t threadcount_mutex;
-/* We have 3 networked scan types: nut, snmp, xml,
- * and users typically give their /24 subnet as "-m" arg.
- * With some systems having a 1024 default (u)limit to
- * file descriptors, this should fit if those are involved.
- * On some systems tested, a large amount of not-joined
- * pthreads did cause various crashes; also RAM is limited.
- * Note that each scan may be time consuming to query an
- * IP address and wait for (no) reply, so while these threads
- * are usually not resource-intensive (nor computationally),
- * they spend much wallclock time each so parallelism helps.
- */
-size_t max_threads = 1024;
-size_t curr_threads = 0;
-
-size_t max_threads_netxml = 1021; /* experimental finding, see PR#1158 */
-size_t max_threads_oldnut = 1021;
-size_t max_threads_netsnmp = 0; // 10240;
-	/* per reports in PR#1158, some versions of net-snmp could be limited
-	 * to 1024 threads in the past; this was not found in practice.
-	 * Still, some practical limit can be useful (configurable?)
-	 * Here 0 means to not apply any special limit (beside max_threads).
-	 */
-
 #  ifdef HAVE_SYS_RESOURCE_H
 #   include <sys/resource.h> /* for getrlimit() and struct rlimit */
 #   include <errno.h>
@@ -71,11 +50,13 @@ size_t max_threads_netsnmp = 0; // 10240;
  * and probably means the usual stdin/stdout/stderr triplet
  */
 #   define RESERVE_FD_COUNT 3
-#  endif
-# endif
-#endif
+#  endif /* HAVE_SYS_RESOURCE_H */
+# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
 
 #include "nut-scan.h"
+
+#define DEFAULT_TIMEOUT 5
 
 #define ERR_BAD_OPTION	(-1)
 
@@ -286,7 +267,7 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN) && (defined HAVE_SYS_RESOURCE_H)
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 
 	/* Limit the max scanning thread count by the amount of allowed open
@@ -315,7 +296,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-#endif // HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SYS_RESOURCE_H
+#endif /* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE ) && HAVE_SYS_RESOURCE_H */
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
@@ -479,7 +460,7 @@ int main(int argc, char *argv[])
 				port = strdup(optarg);
 				break;
 			case 'T': {
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
 				char* endptr;
 				long val = strtol(optarg, &endptr, 10);
 				/* With endptr we check that no chars were left in optarg
@@ -528,7 +509,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr,
 					"WARNING: Max scanning thread count option "
 					"is not supported in this build, ignored\n");
-#endif
+#endif /* HAVE_PTHREAD && ways to limit the thread count */
 				}
 				break;
 			case 'C':
@@ -608,9 +589,16 @@ display_help:
 		}
 	}
 
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-	pthread_mutex_init(&threadcount_mutex, NULL);
-#endif
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
+	   We need to destroy it before re-init. We currently can't change "sem value"
+	   on lib (need to be thread safe). */
+	sem_t *current_sem = nutscan_semaphore();
+	sem_destroy(current_sem);
+	sem_init(current_sem, 0, max_threads);
+# endif
+#endif /* HAVE_PTHREAD */
 
 	if (cidr) {
 		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
@@ -830,8 +818,10 @@ display_help:
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-	pthread_mutex_destroy(&threadcount_mutex);
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_destroy(nutscan_semaphore());
+# endif
 #endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");

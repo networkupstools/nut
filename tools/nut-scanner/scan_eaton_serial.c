@@ -391,6 +391,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
+	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	struct sigaction oldact;
 	int change_action_handler = 0;
 	char *current_port_name = NULL;
@@ -398,12 +399,15 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int  current_port_nb;
 	int i;
 #ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_t * semaphore = nutscan_semaphore();
+# endif
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex, NULL);
-#endif // HAVE_PTHREAD
+#endif /* HAVE_PTHREAD */
 
 	/* 1) Get ports_list */
 	serial_ports_list = nutscan_get_serial_ports_list(ports_range);
@@ -429,15 +433,33 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	/* port(s) iterator */
 	current_port_nb = 0;
 	while (serial_ports_list[current_port_nb] != NULL) {
-		current_port_name = serial_ports_list[current_port_nb];
-
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_PTHREAD_TRYJOIN
 		/* NOTE: With many enough targets to scan, this can crash
 		 * by spawning too many children; add a limit and loop to
 		 * "reap" some already done with their work. And probably
 		 * account them in thread_array[] as something to not wait
 		 * for below in pthread_join()...
+		 */
+
+# ifdef HAVE_SEMAPHORE
+		/* Just wait for someone to free a semaphored slot,
+		 * if none are available, and then/otherwise grab one
+		 */
+		if (thread_array == NULL) {
+			/* Starting point, or after a wait to complete
+			 * all earlier runners */
+			sem_wait(semaphore);
+			pass = TRUE;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
+		}
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
+		/* A somewhat naive and brute-force solution for
+		 * systems without a semaphore.h. This may suffer
+		 * some off-by-one errors, using a few more threads
+		 * than intended (if we race a bit at the wrong time,
+		 * probably up to one per enabled scanner routine).
 		 */
 
 		/* TOTHINK: Should there be a threadcount_mutex when
@@ -494,36 +516,81 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
-# endif // HAVE_PTHREAD_TRYJOIN
+		/* NOTE: No change to default "pass" in this ifdef:
+		 * if we got to this line, we have a slot to use */
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif  /* HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
 
-		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+		if (pass) {
+			current_port_name = serial_ports_list[current_port_nb];
+
+#ifdef HAVE_PTHREAD
+			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
 # ifdef HAVE_PTHREAD_TRYJOIN
-			pthread_mutex_lock(&threadcount_mutex);
-			curr_threads++;
-# endif // HAVE_PTHREAD_TRYJOIN
+				pthread_mutex_lock(&threadcount_mutex);
+				curr_threads++;
+# endif /* HAVE_PTHREAD_TRYJOIN */
 
-			thread_count++;
-			nutscan_thread_t *new_thread_array = realloc(thread_array,
-				thread_count * sizeof(nutscan_thread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread array", __func__);
-				break;
-			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count - 1].thread = thread;
-			thread_array[thread_count - 1].active = TRUE;
+				thread_count++;
+				nutscan_thread_t *new_thread_array = realloc(thread_array,
+					thread_count * sizeof(nutscan_thread_t));
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count - 1].thread = thread;
+				thread_array[thread_count - 1].active = TRUE;
 
 # ifdef HAVE_PTHREAD_TRYJOIN
-			pthread_mutex_unlock(&threadcount_mutex);
-# endif // HAVE_PTHREAD_TRYJOIN
-		}
-#else // not HAVE_PTHREAD
-		nutscan_scan_eaton_serial_device(current_port_name);
-#endif // if HAVE_PTHREAD
-		current_port_nb++;
-	}
+				pthread_mutex_unlock(&threadcount_mutex);
+# endif /* HAVE_PTHREAD_TRYJOIN */
+			}
+#else   /* if not HAVE_PTHREAD */
+			nutscan_scan_eaton_serial_device(current_port_name);
+#endif  /* if HAVE_PTHREAD */
+			current_port_nb++;
+		} else { /* if not pass -- all slots busy */
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+			/* Wait for all current scans to complete */
+			if (thread_array != NULL) {
+				upsdebugx (2, "%s: Running too many scanning threads, "
+					"waiting until older ones would finish",
+					__func__);
+				for (i = 0; i < thread_count ; i++) {
+					int ret;
+					if (!thread_array[i].active) {
+						/* Probably should not get here,
+						 * but handle it just in case */
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+							__func__, i);
+						sem_post(semaphore);
+						continue;
+					}
+					thread_array[i].active = FALSE;
+					ret = pthread_join(thread_array[i].thread, NULL);
+					if (ret != 0) {
+						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
+							__func__, ret);
+					}
+					sem_post(semaphore);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
+			}
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
+			/* TODO: Move the wait-loop for TRYJOIN here? */
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif  /* HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
+		} /* if: could we "pass" or not? */
+	} /* while */
 
 #ifdef HAVE_PTHREAD
 	if (thread_array != NULL) {
@@ -539,7 +606,10 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					__func__, ret);
 			}
 			thread_array[i].active = FALSE;
-# ifdef HAVE_PTHREAD_TRYJOIN
+# ifdef HAVE_SEMAPHORE
+			sem_post(semaphore);
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
@@ -550,13 +620,14 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					"says we are already at 0", __func__);
 			}
 			pthread_mutex_unlock(&threadcount_mutex);
-# endif // HAVE_PTHREAD_TRYJOIN
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif /* HAVE_SEMAPHORE */
 		}
 		free(thread_array);
 		upsdebugx(2, "%s: all threads freed", __func__);
 	}
 	pthread_mutex_destroy(&dev_mutex);
-#endif // HAVE_PTHREAD
+#endif /* HAVE_PTHREAD */
 
 	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
