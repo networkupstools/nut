@@ -356,7 +356,7 @@ static int masterguard_output_voltages(item_t *item, char *value, const size_t v
 			upsdebugx(1, "output voltages: allocating #%d failed", n);
 			return -1;
 		}
-		strncpy(masterguard_e_outvolts[n - 1].value, w, SMALLBUF);
+		strncpy(masterguard_e_outvolts[n - 1].value, w, SMALLBUF - 1);
 		masterguard_e_outvolts[n - 1].preprocess = NULL;
 	}
 	/* need to do this seperately in case the loop is run zero times */
