@@ -101,10 +101,35 @@ static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
 
 /* Variables (not methods) exported by libnet-snmp: */
 static int *nut_snmp_errno;
-static oid *nut_usmAESPrivProtocol;
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+static oid *nut_usmAESPrivProtocol; /* might be usmAES128PrivProtocol on some systems */
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 static oid *nut_usmHMACMD5AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 static oid *nut_usmHMACSHA1AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 static oid *nut_usmDESPrivProtocol;
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+static oid *nut_usmAES192PrivProtocol;
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+static oid *nut_usmAES256PrivProtocol;
+# endif
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+static oid *nut_usmHMAC192SHA256AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+static oid *nut_usmHMAC256SHA384AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+static oid *nut_usmHMAC384SHA512AuthProtocol;
+#endif
 
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
@@ -223,29 +248,79 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
 							USMAESPRIVPROTOCOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 	*(void **) (&nut_usmHMACMD5AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACMD5AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 	*(void **) (&nut_usmHMACSHA1AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACSHA1AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 	*(void **) (&nut_usmDESPrivProtocol) = lt_dlsym(dl_handle,
 						"usmDESPrivProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol */
+
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
+						"usmAES192PrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+# endif /* NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol */
+
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+	*(void **) (&nut_usmAES256PrivProtocol) = lt_dlsym(dl_handle,
+						"usmAES256PrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+# endif /* NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol */
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC192SHA256AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+	*(void **) (&nut_usmHMAC256SHA384AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC256SHA384AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+	*(void **) (&nut_usmHMAC384SHA512AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC384SHA512AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
 	return 1;
 err:
@@ -494,26 +569,60 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* Process authentication protocol and key */
 		snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		/* default to MD5 */
 		snmp_sess->securityAuthProto = nut_usmHMACMD5AuthProtocol;
 		snmp_sess->securityAuthProtoLen =
 			sizeof(usmHMACMD5AuthProtocol)/
 			sizeof(oid);
+#endif
 
 		if (sec->authProtocol) {
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 			if (strcmp(sec->authProtocol, "SHA") == 0) {
 				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
 					sizeof(usmHMACSHA1AuthProtocol)/
 					sizeof(oid);
 			}
-			else {
-				if (strcmp(sec->authProtocol, "MD5") != 0) {
-					fprintf(stderr,
-						"Bad SNMPv3 authProtocol: %s",
-						sec->authProtocol);
-					return 0;
-				}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA256") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC192SHA256AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC192SHA256AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA384") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC256SHA384AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC256SHA384AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA512") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC384SHA512AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC384SHA512AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+			if (strcmp(sec->authProtocol, "MD5") != 0) {
+#else
+			{
+#endif
+				fprintf(stderr,
+					"Bad SNMPv3 authProtocol: %s\n",
+					sec->authProtocol);
+				return 0;
 			}
 		}
 
@@ -538,25 +647,52 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			return 1;
 		}
 
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		/* default to DES */
 		snmp_sess->securityPrivProto = nut_usmDESPrivProtocol;
 		snmp_sess->securityPrivProtoLen =
 			sizeof(usmDESPrivProtocol)/sizeof(oid);
+#endif
 
 		if (sec->privProtocol) {
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 			if (strcmp(sec->privProtocol, "AES") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
 					sizeof(oid);
 			}
-			else {
-				if (strcmp(sec->privProtocol, "DES") != 0) {
-					fprintf(stderr,
-						"Bad SNMPv3 privProtocol: %s\n",
-						sec->privProtocol);
-					return 0;
-				}
+			else
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+			if (strcmp(sec->privProtocol, "AES192") == 0) {
+				snmp_sess->securityPrivProto = nut_usmAES192PrivProtocol;
+				snmp_sess->securityPrivProtoLen =
+					sizeof(usmAES192PrivProtocol)/
+					sizeof(oid);
+			}
+			else
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+			if (strcmp(sec->privProtocol, "AES256") == 0) {
+				snmp_sess->securityPrivProto = nut_usmAES256PrivProtocol;
+				snmp_sess->securityPrivProtoLen =
+					sizeof(usmAES256PrivProtocol)/
+					sizeof(oid);
+			}
+			else
+# endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+			if (strcmp(sec->privProtocol, "DES") != 0) {
+#else
+			{
+#endif
+				fprintf(stderr,
+					"Bad SNMPv3 privProtocol: %s\n",
+					sec->privProtocol);
+				return 0;
 			}
 		}
 

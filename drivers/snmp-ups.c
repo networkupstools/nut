@@ -614,20 +614,46 @@ void nut_snmp_init(const char *type, const char *hostname)
 		g_snmp_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
 		authProtocol = testvar(SU_VAR_AUTHPROT) ? getval(SU_VAR_AUTHPROT) : "MD5";
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		if (strcmp(authProtocol, "MD5") == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACMD5AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
 		}
-		else if (strcmp(authProtocol, "SHA") == 0) {
+		else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+		if (strcmp(authProtocol, "SHA") == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
 		}
 		else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+		if (strcmp(authProtocol, "SHA256") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC192SHA256AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC192SHA256AuthProtocol)/sizeof(oid);
+		}
+		else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+		if (strcmp(authProtocol, "SHA384") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC256SHA384AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC256SHA384AuthProtocol)/sizeof(oid);
+		}
+		else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+		if (strcmp(authProtocol, "SHA512") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMAC384SHA512AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMAC384SHA512AuthProtocol)/sizeof(oid);
+		}
+		else
+#endif
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
 
 		/* set the authentication key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
-		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
+		if (g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
 				(const unsigned char *) authPassword, strlen(authPassword),
@@ -640,20 +666,41 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
 
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		if (strcmp(privProtocol, "DES") == 0) {
 			g_snmp_sess.securityPrivProto = usmDESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen =  sizeof(usmDESPrivProtocol)/sizeof(oid);
 		}
-		else if (strcmp(privProtocol, "AES") == 0) {
+		else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+		if (strcmp(privProtocol, "AES") == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
 		else
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+		if (strcmp(privProtocol, "AES192") == 0) {
+			g_snmp_sess.securityPrivProto = usmAES192PrivProtocol;
+			g_snmp_sess.securityPrivProtoLen = (sizeof(usmAES192PrivProtocol)/sizeof(oid));
+		}
+		else
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+		if (strcmp(privProtocol, "AES256") == 0) {
+			g_snmp_sess.securityPrivProto = usmAES256PrivProtocol;
+			g_snmp_sess.securityPrivProtoLen = (sizeof(usmAES256PrivProtocol)/sizeof(oid));
+		}
+		else
+# endif
+#endif
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
 		/* set the privacy key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
-		if(g_snmp_sess.securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) {
+		if (g_snmp_sess.securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) {
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
