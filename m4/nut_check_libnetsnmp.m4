@@ -98,6 +98,21 @@ oid * pProto = usmAESPrivProtocol;
 		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
 		])
 
+	AC_MSG_CHECKING([for defined usmAES128PrivProtocol])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+oid * pProto = usmAES128PrivProtocol;
+],
+[]
+		)],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 1, [Variable or macro by this name is resolvable])
+		],
+		[AC_MSG_RESULT([no])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 0, [Variable or macro by this name is not resolvable])
+		])
+
 	AC_MSG_CHECKING([for defined usmDESPrivProtocol])
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
