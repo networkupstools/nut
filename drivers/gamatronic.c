@@ -30,6 +30,7 @@
 #include "main.h"
 #include "serial.h"
 #include "gamatronic.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
 #define DRIVER_VERSION	"0.02"
@@ -225,8 +226,18 @@ static void sec_poll ( int pollflag ) {
 					 * of characters picked from "r" buffer
 					 * into respectively sized "*.value"
 					 */
-					snprintf(sec_varlist[sqv(q,f)].value,
+					int len = snprintf(sec_varlist[sqv(q,f)].value,
 						sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
+
+					if (len < 0) {
+						upsdebugx(1, "%s: got an error while extracting value", __func__);
+					}
+
+					if ((intmax_t)len > (intmax_t)sizeof(sec_varlist[sqv(q,f)].value)
+					||  (intmax_t)strnlen(r, sizeof(retbuf)) > (intmax_t)sizeof(sec_varlist[sqv(q,f)].value)
+					) {
+						upsdebugx(1, "%s: value was truncated", __func__);
+					}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
