@@ -472,7 +472,12 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					__func__, ret);
 			}
 			thread_array[i].active = FALSE;
-# ifdef HAVE_PTHREAD_TRYJOIN
+# ifdef HAVE_SEMAPHORE
+			sem_post(semaphore);
+			if (max_threads_scantype > 0)
+				sem_post(semaphore_scantype);
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
@@ -483,7 +488,8 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					"says we are already at 0", __func__);
 			}
 			pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif /* HAVE_SEMAPHORE */
 		}
 		free(thread_array);
 		upsdebugx(2, "%s: all threads freed", __func__);
