@@ -1697,6 +1697,12 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
 )
 AC_MSG_RESULT(${have_cppunit})
 
+dnl On some systems, CppUnit inexplicably fails with trivial assertions
+dnl so it should not be enabled with those environments, corrupting the
+dnl test results with misleading errors.
+dnl Tracked in https://github.com/networkupstools/nut/issues/1126
+dnl One such situation was e.g. "clang++ + arm64(QEMU) + -m64" while
+dnl this was not seen with other compilers or bitness on same system.
 AS_IF([test "${have_cppunit}" = "yes"],
     [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
      dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
@@ -1723,7 +1729,8 @@ void ExampleTest::testOne()
   int i = 1;
   float f = 1.0;
   int cast = static_cast<int>(f);
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int (assert_eq)", i, cast );
+  CPPUNIT_ASSERT_MESSAGE("Casted float is not the expected int (assert)", (i == cast) );
 }
 '
 
