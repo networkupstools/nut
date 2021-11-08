@@ -1476,7 +1476,21 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 		/* NOTE: We intentionally limit the amount of bytes reported */
-		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+		int len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+
+		if (len < 0) {
+			upsdebugx(1, "%s: got an error while extracting iProduct+iModel value", __func__);
+		}
+
+		/* NOTE: SMALLBUF here comes from mge_format_model()
+		 * buffer definitions below
+		 */
+		if ((intmax_t)len > (intmax_t)sizeof(buf)
+		|| (intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1)
+		    > (intmax_t)sizeof(buf)
+		) {
+			upsdebugx(1, "%s: extracted iProduct+iModel value was truncated", __func__);
+		}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
