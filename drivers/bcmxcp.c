@@ -1183,7 +1183,7 @@ void init_config(void)
 		dstate_setinfo("output.voltage.nominal", "%u", voltage);
 
 	/* Nominal Output Frequency */
-	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
+	frequency = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
 	if (frequency != 0)
 		dstate_setinfo("output.frequency.nominal", "%u", frequency);
 
@@ -1191,6 +1191,16 @@ void init_config(void)
 	tmp = (uint16_t) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
 	if (tmp != 0)
 		dstate_setinfo("battery.packs", "%u", tmp);
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* NOTE: We intentionally limit the amount of characters picked from
+	 * "answer" into "sValue" and "sPartNumber" buffers (16 byte + NUL).
+	 */
 
 	/* UPS serial number */
 	snprintf(sValue, sizeof(sValue), "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
@@ -1201,6 +1211,9 @@ void init_config(void)
 	snprintf(sPartNumber, sizeof(sPartNumber), "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
 	if (sPartNumber[0] != '\0')
 		dstate_setinfo("device.part", "%s", sPartNumber);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 }
 
 void init_limit(void)
