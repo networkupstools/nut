@@ -12,7 +12,7 @@ libparseconf_la_SOURCES = parseconf.c
 common.c: $(top_builddir)/include/nut_version.h
 
 $(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) -s $(@F)
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 libcommon_la_SOURCES = common.c state.c str.c upsconf.c
 libcommonclient_la_SOURCES = common.c state.c str.c
@@ -20,3 +20,10 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+MAINTAINERCLEANFILES = Makefile.in
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

@@ -1,5 +1,10 @@
-/*
- *  Copyright (C) 2011 - EATON
+/* arduino-hid.h - subdriver to monitor Arduino USB/HID devices with NUT
+ *
+ *  Copyright (C)
+ *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
+ *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2021 Alex Bratchik <alexbratchik@yandex.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,36 +21,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*! \file nutscan-init.h
-    \brief initialisation data
-    \author Frederic Bohe <fredericbohe@eaton.com>
-*/
+#ifndef ARDUINO_HID_H
+#define ARDUINO_HID_H
 
-#ifndef SCAN_INIT
-#define SCAN_INIT
+#include "usbhid-ups.h"
 
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-extern "C" {
-/* *INDENT-ON* */
-#endif
+extern subdriver_t arduino_subdriver;
 
-extern int nutscan_avail_avahi;
-extern int nutscan_avail_ipmi;
-extern int nutscan_avail_nut;
-extern int nutscan_avail_snmp;
-extern int nutscan_avail_usb;
-extern int nutscan_avail_xml_http;
-
-void nutscan_init(void);
-void nutscan_free(void);
-
-#define DEFAULT_THREAD  512
-
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-}
-/* *INDENT-ON* */
-#endif
-
-#endif
+#endif /* ARDUINO_HID_H */

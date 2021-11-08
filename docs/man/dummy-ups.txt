@@ -69,7 +69,7 @@ Note that the Network UPS project provides a
 link:https://networkupstools.org/ddl/index.html[DDL (Devices Dumps Library)]
 with files which can be used for modelling real devices.
 Entries for the DDL library are best prepared with the
-link:https://github.com/networkupstools/nut/blob/master/tools/nut-ddl-dump.sh[`nut-ddl-dump.sh`]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-ddl-dump.sh[`tools/nut-ddl-dump.sh`]
 script from NUT sources instead of plain `upsc`, to provide some additional
 data points from other NUT clients as well.
 

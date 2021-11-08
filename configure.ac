@@ -174,6 +174,47 @@ AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
 
+AC_CHECK_HEADER([sys/resource.h],
+    [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/resource.h>
+],
+[struct rlimit limit;
+getrlimit(RLIMIT_NOFILE, &limit);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
+            [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
+AC_CHECK_HEADER([semaphore.h],
+    [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
+        [Define to 1 if you have <sys/semaphore.h>.])
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+],
+[sem_t semaphore;
+sem_init(&semaphore, 0, 4);
+sem_destroy(&semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SEMAPHORE], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -307,8 +348,14 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
+dnl Note: pthread_tryjoin_np() should be available since glibc 2.3.3, according
+dnl to https://man7.org/linux/man-pages/man3/pthread_tryjoin_np.3.html
 AC_SEARCH_LIBS([pthread_create], [pthread],
-       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])
+        AC_SEARCH_LIBS([pthread_tryjoin_np], [pthread],
+               [AC_DEFINE(HAVE_PTHREAD_TRYJOIN, 1, [Define to enable pthread_tryjoin support code])],
+               [])
+       ],
        [])
 
 dnl ----------------------------------------------------------------------
@@ -1672,6 +1719,12 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
 )
 AC_MSG_RESULT(${have_cppunit})
 
+dnl On some systems, CppUnit inexplicably fails with trivial assertions
+dnl so it should not be enabled with those environments, corrupting the
+dnl test results with misleading errors.
+dnl Tracked in https://github.com/networkupstools/nut/issues/1126
+dnl One such situation was e.g. "clang++ + arm64(QEMU) + -m64" while
+dnl this was not seen with other compilers or bitness on same system.
 AS_IF([test "${have_cppunit}" = "yes"],
     [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
      dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
@@ -1698,7 +1751,8 @@ void ExampleTest::testOne()
   int i = 1;
   float f = 1.0;
   int cast = static_cast<int>(f);
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int (assert_eq)", i, cast );
+  CPPUNIT_ASSERT_MESSAGE("Casted float is not the expected int (assert)", (i == cast) );
 }
 '
 

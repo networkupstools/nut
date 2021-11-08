@@ -20,3 +20,4 @@ EXTRA_DIST = README \
 			 module/PyNUT.py.in \
 			 module/test_nutclient.py.in
 
+MAINTAINERCLEANFILES = Makefile.in

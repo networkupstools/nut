@@ -32,19 +32,40 @@
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
+
 #ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
+# include <pthread.h>
+# ifdef HAVE_SEMAPHORE
+#  include <semaphore.h>
+# endif
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+#  include "nut_stdint.h"
+#  ifdef HAVE_SYS_RESOURCE_H
+#   include <sys/resource.h> /* for getrlimit() and struct rlimit */
+#   include <errno.h>
+
+/* 3 is reserved for known overhead (for NetXML at least)
+ * following practical investigation summarized at
+ *   https://github.com/networkupstools/nut/pull/1158
+ * and probably means the usual stdin/stdout/stderr triplet
+ */
+#   define RESERVE_FD_COUNT 3
+#  endif /* HAVE_SYS_RESOURCE_H */
+# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
 
 #include "nut-scan.h"
 
+#define DEFAULT_TIMEOUT 5
+
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
 	{ "timeout", required_argument, NULL, 't' },
+	{ "thread", required_argument, NULL, 'T' },
 	{ "start_ip", required_argument, NULL, 's' },
 	{ "end_ip", required_argument, NULL, 'e' },
 	{ "eaton_serial", required_argument, NULL, 'E' },
@@ -175,6 +196,12 @@ static void show_usage()
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
+#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
+#else
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+#endif
+
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
@@ -188,9 +215,13 @@ static void show_usage()
 		printf("\nSNMP v3 specific options:\n");
 		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv, authNoPriv, authPriv)\n");
 		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5, SHA, SHA256, SHA384 or SHA512) used for authenticated SNMPv3 messages (default=MD5)\n");
 		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES, AES, AES192 or AES256) used for encrypted SNMPv3 messages (default=DES)\n");
+#else
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+#endif
 		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
 	}
 
@@ -236,6 +267,36 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
+	struct rlimit nofile_limit;
+
+	/* Limit the max scanning thread count by the amount of allowed open
+	 * file descriptors (which caller can change with `ulimit -n NUM`),
+	 * following practical investigation summarized at
+	 *   https://github.com/networkupstools/nut/pull/1158
+	 * Resource-Limit code inspired by example from:
+	 *   https://stackoverflow.com/questions/4076848/how-to-do-the-equivalent-of-ulimit-n-400-from-within-c/4077000#4077000
+	 */
+
+	/* Get max number of files. */
+	if (getrlimit(RLIMIT_NOFILE, &nofile_limit) != 0) {
+		/* Report error, keep hardcoded default */
+		fprintf(stderr, "getrlimit() failed with errno=%d, keeping default job limits\n", errno);
+		nofile_limit.rlim_cur = 0;
+		nofile_limit.rlim_max = 0;
+	} else {
+		if (nofile_limit.rlim_cur > 0
+		&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
+		&&  (uintmax_t)max_threads > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
+		&&  (uintmax_t)(nofile_limit.rlim_cur) < (uintmax_t)SIZE_MAX
+		) {
+			max_threads = (size_t)nofile_limit.rlim_cur;
+			if (max_threads > (RESERVE_FD_COUNT + 1)) {
+				max_threads -= RESERVE_FD_COUNT;
+			}
+		}
+	}
+#endif /* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE ) && HAVE_SYS_RESOURCE_H */
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
@@ -300,6 +361,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'm':
 				cidr = strdup(optarg);
+				upsdebugx(5, "Got CIDR net/mask: %s", cidr);
 				break;
 			case 'D':
 				/* nothing to do, here */
@@ -397,6 +459,59 @@ int main(int argc, char *argv[])
 			case 'p':
 				port = strdup(optarg);
 				break;
+			case 'T': {
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
+				char* endptr;
+				long val = strtol(optarg, &endptr, 10);
+				/* With endptr we check that no chars were left in optarg
+				 * (that is, pointed-to char -- if reported -- is '\0')
+				 */
+				if ((!endptr || !*endptr)
+				&& val > 0
+				&& (uintmax_t)val < (uintmax_t)SIZE_MAX
+				) {
+# ifdef HAVE_SYS_RESOURCE_H
+					if (nofile_limit.rlim_cur > 0
+					&&  nofile_limit.rlim_cur > RESERVE_FD_COUNT
+					&& (uintmax_t)nofile_limit.rlim_cur < (uintmax_t)SIZE_MAX
+					&& (uintmax_t)val > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
+					) {
+						upsdebugx(1, "Detected soft limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_cur);
+						upsdebugx(1, "Detected hard limit for "
+							"file descriptor count is %ju",
+							(uintmax_t)nofile_limit.rlim_max);
+
+						max_threads = (size_t)nofile_limit.rlim_cur;
+						if (max_threads > (RESERVE_FD_COUNT + 1)) {
+							max_threads -= RESERVE_FD_COUNT;
+						}
+
+						fprintf(stderr,
+							"WARNING: Requested max scanning "
+							"thread count %s (%ld) exceeds the "
+							"current file descriptor count limit "
+							"(minus reservation), constraining "
+							"to %zu\n",
+							optarg, val, max_threads);
+					} else
+# endif /* HAVE_SYS_RESOURCE_H */
+						max_threads = (size_t)val;
+				} else {
+					fprintf(stderr,
+						"WARNING: Requested max scanning "
+						"thread count %s (%ld) is out of range, "
+						"using default %zu\n",
+						optarg, val, max_threads);
+				}
+#else
+				fprintf(stderr,
+					"WARNING: Max scanning thread count option "
+					"is not supported in this build, ignored\n");
+#endif /* HAVE_PTHREAD && ways to limit the thread count */
+				}
+				break;
 			case 'C':
 				allow_all = 1;
 				break;
@@ -474,8 +589,21 @@ display_help:
 		}
 	}
 
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
+	   We need to destroy it before re-init. We currently can't change "sem value"
+	   on lib (need to be thread safe). */
+	sem_t *current_sem = nutscan_semaphore();
+	sem_destroy(current_sem);
+	sem_init(current_sem, 0, max_threads);
+# endif
+#endif /* HAVE_PTHREAD */
+
 	if (cidr) {
+		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 	}
 
 	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
@@ -589,7 +717,7 @@ display_help:
 		upsdebugx(1, "NUT bus (avahi) SCAN: not requested, SKIPPED");
 	}
 
-	if (allow_ipmi  && nutscan_avail_ipmi) {
+	if (allow_ipmi && nutscan_avail_ipmi) {
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
@@ -689,6 +817,12 @@ display_help:
 	display_func(dev[TYPE_EATON_SERIAL]);
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
+
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_destroy(nutscan_semaphore());
+# endif
+#endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free();
