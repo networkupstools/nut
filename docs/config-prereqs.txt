@@ -48,12 +48,19 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 * Parallel builds should be okay in current development version (is a bug
   to log, if not), but may be failure-prone in 2.7.4 and earlier releases
 
-Debian 10
-~~~~~~~~~
+Debian 10/11
+~~~~~~~~~~~~
+
+Being a popular baseline among Linux distributions, Debian is an important
+build target. Related common operating systems include Ubuntu and customized
+distros for Raspberry Pi, as well as many others. The package list below
+should largely apply to those as well, however note that some well-known
+package names tend to differ. A few of those are noted below.
 
 ----
 :; apt-get update
 
+# NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     ccache time \
     git python curl \
@@ -65,6 +72,8 @@ Debian 10
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
+# NOTE: Some Debian-like distributions, e.g. Ubuntu, ship
+# a "libssl-dev" instead of "openssl-dev" by name
 :; apt-get install \
     libcppunit-dev \
     openssl-dev libnss3-dev \
