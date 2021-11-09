@@ -869,7 +869,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
+# endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 
