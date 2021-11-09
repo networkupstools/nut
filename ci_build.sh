@@ -898,9 +898,12 @@ bindings)
         sleep 5
     fi
     echo ""
+    if [ -s Makefile ]; then
+        ${MAKE} realclean -k || true
+    fi
     ./autogen.sh
     #./configure
-    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    ./configure --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check
