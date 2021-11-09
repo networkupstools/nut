@@ -291,3 +291,21 @@ package:
 		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
 	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
 	esac
+
+print-MAINTAINERCLEANFILES print-REALCLEANFILES:
+	@echo $(MAINTAINERCLEANFILES)
+
+print-DISTCLEANFILES:
+	@echo $(DISTCLEANFILES)
+
+# TODO: Recursive mode to consider patterns defined in sub-dir makefiles
+git-realclean-check:
+	@if test -e .git && (command -v git); then \
+		git status --ignored || while read F ; do \
+			for P in $(MAINTAINERCLEANFILES) ; do \
+				case "$$F" in \
+				*/$$P) exit 1 ;; \
+				esac ; \
+			done; \
+		done ; \
+	 fi
