@@ -21,9 +21,12 @@ all features enabled; chapters below concern just with building it.
 General call to Test the ability to configure and build
 -------------------------------------------------------
 
+Check out from git, generate files and configure to tailor to your build
+environment, and build some tests:
+
 ----
-:; mkdir -p nut ; cd nut
-:; git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
 :; ./autogen.sh && \
     ./configure --with-doc=all --with-all --with-cgi && \
     make all && make check && make spellcheck
@@ -31,6 +34,17 @@ General call to Test the ability to configure and build
 
 NOTE: You can toggle some build options to check different dependency
 variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
+
+NOTE: For reproducible runs of various pre-sets of configuration during
+development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
+(and other) environment variable settings that it supports. A minimal run
+with it is just:
++
+----
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; ./ci_build.sh
+----
 
 NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 
