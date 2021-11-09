@@ -7,6 +7,16 @@ This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
 
+NUT codebase generally should not depend on particular operating system or
+kernel technology and version, and with the operating systems listed below
+one can benefit from use of containers (jails, zones) to build and test
+against numerous OS distributions on one physical or virtual machine,
+e.g. to cover non-regression with older tool kits while taking advantage
+of new releases.
+
+* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
+  up the multi-arch Linux LXC container farm for NUT CI]
+
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
 both, at a disk space cost.
