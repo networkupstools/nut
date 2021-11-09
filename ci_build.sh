@@ -266,6 +266,11 @@ build_to_only_catch_errors() {
 }
 
 optional_maintainer_clean_check() {
+    if [ ! -e .git ]; then
+        echo "Skipping maintainer-clean check because there is no .git" >&2
+        return 0
+    fi
+
     if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping maintainer-clean check because recipe/developer said so"
     else
