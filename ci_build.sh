@@ -293,6 +293,34 @@ optional_maintainer_clean_check() {
     return 0
 }
 
+optional_dist_clean_check() {
+    if [ ! -e .git ]; then
+        echo "Skipping distclean check because there is no .git" >&2
+        return 0
+    fi
+
+    if [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
+        echo "Skipping distclean check because recipe/developer said so"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
+
+        # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+
+        echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
+        git status -s || true
+        echo "==="
+
+        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+            git diff || true
+            echo "==="
+            return 1
+        fi
+    fi
+    return 0
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
@@ -822,9 +850,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
-                optional_maintainer_clean_check || {
+### Avoid having to re-autogen in a loop:
+#                optional_maintainer_clean_check || {
+#                    RES=$?
+#                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+#                }
+
+                optional_dist_clean_check || {
                     RES=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                 }
             done
             # TODO: Similar loops for other variations like TESTING,
@@ -833,6 +867,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ -n "$SUCCEEDED" ]; then
                 echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
+
+            optional_maintainer_clean_check || {
+                RES=$?
+                FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+            }
+
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
