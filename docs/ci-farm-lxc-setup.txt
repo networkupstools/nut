@@ -199,6 +199,15 @@ Shepherd the herd
    done
 ------
 
+* Make sure at least one console device exists (end of file, under the
+  network interface definition tags), e.g.:
++
+------
+    <console type='pty'>
+      <target type='lxc' port='0'/>
+    </console>
+------
+
 * Populate with `abuild` account, as well as with the `bash` shell and
   `sudo` ability, reporting of assigned IP addresses on the console,
   and SSH server access complete with envvar passing from CI clients
