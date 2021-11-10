@@ -350,10 +350,168 @@ void upsdrv_makevartable(void)
 		"Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_PRIVPASSWD,
 		"Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
-	addvar(VAR_VALUE, SU_VAR_AUTHPROT,
-		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
-	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
-		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+
+	/* Construct addvar() for SU_VAR_AUTHPROT: */
+	{ int comma = 0;
+	char tmp_buf[SU_LARGEBUF];
+	char *p = tmp_buf;
+	char *pn; /* proto name to add */
+	size_t remain = sizeof(tmp_buf) - 1;
+	int ret;
+	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+
+	tmp_buf[0] = '\0';
+
+	ret = snprintf(p, remain, "%s",
+		"Set the authentication protocol (");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+	pn = "MD5";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+	pn = "SHA";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+	pn = "SHA256";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+	pn = "SHA384";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+	pn = "SHA512";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+
+	pn = "none supported";
+	ret = snprintf(p, remain, "%s", (comma++ ? "" : pn) );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+
+	ret = snprintf(p, remain, "%s",
+		") used for authenticated SNMPv3 messages (default=MD5 if available)");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+	addvar(VAR_VALUE, SU_VAR_AUTHPROT, tmp_buf);
+	} /* Construct addvar() for AUTHPROTO */
+
+	/* Construct addvar() for SU_VAR_PRIVPROT: */
+	{ int comma = 0;
+	char tmp_buf[SU_LARGEBUF];
+	char *p = tmp_buf;
+	char *pn; /* proto name to add */
+	size_t remain = sizeof(tmp_buf) - 1;
+	int ret;
+	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+
+	tmp_buf[0] = '\0';
+
+	ret = snprintf(p, remain, "%s",
+		"Set the privacy protocol (");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+	pn = "DES";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+	pn = "AES";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+	pn = "AES192";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+	pn = "AES256";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+# endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+
+	pn = "none supported";
+	ret = snprintf(p, remain, "%s", (comma++ ? "" : pn) );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+
+	ret = snprintf(p, remain, "%s",
+		") used for encrypted SNMPv3 messages (default=DES if available)");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+	addvar(VAR_VALUE, SU_VAR_PRIVPROT, tmp_buf);
+	} /* Construct addvar() for PRIVPROTO */
+
 	addvar(VAR_VALUE, SU_VAR_ONDELAY,
 		"Set start delay time after shutdown");
 	addvar(VAR_VALUE, SU_VAR_OFFDELAY,
