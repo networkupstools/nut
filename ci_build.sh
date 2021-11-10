@@ -275,6 +275,11 @@ optional_maintainer_clean_check() {
         return 0
     fi
 
+    if [ ! -e Makefile ]; then
+        echo "WARNING: Skipping maintainer-clean check because there is no Makefile (did we clean in a loop earlier?)" >&2
+        return 0
+    fi
+
     if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping maintainer-clean check because recipe/developer said so"
     else
@@ -300,6 +305,11 @@ optional_maintainer_clean_check() {
 optional_dist_clean_check() {
     if [ ! -e .git ]; then
         echo "Skipping distclean check because there is no .git" >&2
+        return 0
+    fi
+
+    if [ ! -e Makefile ]; then
+        echo "WARNING: Skipping distclean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
 
