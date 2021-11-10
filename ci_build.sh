@@ -723,6 +723,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
+    if [ -s Makefile ]; then
+        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
+    fi
     if [ "$CI_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
@@ -842,8 +845,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             #echo "=== Will loop now with $BUILDSTODO build variants..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                $MAKE distclean -k || true
+                # NOTE: Do not repeat a distclean before the loop,
+                # we have cleaned above before autogen, and here it
+                # would just re-evaluate `configure` to update the
+                # Makefile to remove it and other generated data.
+                #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                #$MAKE distclean -k || true
 
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
@@ -878,6 +885,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 BUILDSTODO="`expr $BUILDSTODO - 1`"
+                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
@@ -895,6 +903,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                         }
                     fi
+                else
+                    $MAKE distclean -k || true
                 fi
             done
             # TODO: Similar loops for other variations like TESTING,
