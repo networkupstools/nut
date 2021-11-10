@@ -13,6 +13,16 @@ if test -z "${nut_have_libnss_seen}"; then
 	LIBS_ORIG="${LIBS}"
 	REQUIRES_ORIG="${REQUIRES}"
 
+	SAVED_GCC="$GCC"
+	SAVED_CC="$CC"
+	if ( test "${GCC}" = "yes" )
+	then
+		case "$CFLAGS$LDFLAGS" in
+			*-m32*) CC="$CC -m32" ;;
+			*-m64*) CC="$CC -m64" ;;
+		esac
+	fi
+
 	AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
 	NSS_VERSION="`pkg-config --silence-errors --modversion nss 2>/dev/null`"
 	if test "$?" = "0" -a -n "${NSS_VERSION}"; then
@@ -59,10 +69,14 @@ if test -z "${nut_have_libnss_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if NSS is usable: we need both the runtime and headers
+	dnl NOTE that caller may have to specify PKG_CONFIG_PATH including
+	dnl their bitness variant if it is not prioritized in their default
+	dnl setting built in by OS distribution; the .../pkgconfig/nss.pc
+	dnl tends to specify the libdir which is CPU Arch dependent.
 	AC_CHECK_FUNCS(NSS_Init, [nut_have_libnss=yes], [nut_have_libnss=no])
 	dnl libc6 also provides an nss.h file, so also check for ssl.h
 	AC_CHECK_HEADERS([nss.h ssl.h], [], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
-	
+
 	if test "${nut_have_libnss}" = "yes"; then
 		nut_with_ssl="yes"
 		nut_ssl_lib="(Mozilla NSS)"
@@ -77,5 +91,7 @@ if test -z "${nut_have_libnss_seen}"; then
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
 	REQUIRES="${REQUIRES_ORIG}"
+	GCC="$SAVED_GCC"
+	CC="$SAVED_CC"
 fi
 ])

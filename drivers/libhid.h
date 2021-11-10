@@ -26,8 +26,8 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef _LIBHID_H
-#define _LIBHID_H
+#ifndef NUT_LIBHID_H_SEEN
+#define NUT_LIBHID_H_SEEN
 
 #include "config.h"
 
@@ -89,6 +89,7 @@ typedef struct reportbuf_s {
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
+extern int max_report_size;
 extern int interrupt_only;
 extern unsigned int interrupt_size;
 
@@ -148,4 +149,4 @@ const char *HIDDataType(const HIDData_t *hiddata);
 void free_report_buffer(reportbuf_t *rbuf);
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc);
 
-#endif /* _LIBHID_H */
+#endif /* NUT_LIBHID_H_SEEN */

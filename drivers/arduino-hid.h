@@ -1,8 +1,10 @@
-/* eaton_ats16-mib.h - subdriver to monitor Eaton ATS16 SNMP devices with NUT
+/* arduino-hid.h - subdriver to monitor Arduino USB/HID devices with NUT
  *
  *  Copyright (C)
- *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
- *    2016-2017 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
+ *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2021 Alex Bratchik <alexbratchik@yandex.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,13 +21,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef EATON_ATS16_MIB_H
-#define EATON_ATS16_MIB_H
+#ifndef ARDUINO_HID_H
+#define ARDUINO_HID_H
 
-#include "main.h"
-#include "snmp-ups.h"
+#include "usbhid-ups.h"
 
-extern mib2nut_info_t eaton_ats16;
-extern mib2nut_info_t eaton_ats16_g2;
+extern subdriver_t arduino_subdriver;
 
-#endif /* EATON_ATS16_MIB_H */
+#endif /* ARDUINO_HID_H */

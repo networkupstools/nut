@@ -137,9 +137,9 @@ static int get_belkin_reply(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);
@@ -184,14 +184,14 @@ static int do_broken_rat(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
 	/* firmware 001 only sends 50 bytes instead of the proper 53 */
 	if (cnt == 53) {
 		cnt = 50;
 	}
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);
@@ -262,14 +262,14 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 10);
 		res = atoi(st);
 		get_belkin_field(temp, st, sizeof(st), 2);
-		
+
 		if (*st == '1' || res < LOW_BAT) {
 			status_set("LB");	/* low battery */
 		}
 
 		get_belkin_field(temp, st, sizeof(st), 10);
 		dstate_setinfo("battery.charge", "%.0f", strtod(st, NULL));
-		
+
 		get_belkin_field(temp, st, sizeof(st), 9);
 		dstate_setinfo("battery.temperature", "%.0f", strtod(st, NULL));
 
@@ -302,7 +302,7 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 7);
 		dstate_setinfo("ups.load", "%.0f", strtod(st, NULL));
 	}
-	
+
 	send_belkin_command(STATUS, TEST_RESULT, "");
 	res = get_belkin_reply(temp);
 	if (res > 0) {
@@ -453,7 +453,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -487,7 +487,7 @@ void upsdrv_initinfo(void)
 
 	res = init_communication();
 	if (res < 0) {
-		fatalx(EXIT_FAILURE, 
+		fatalx(EXIT_FAILURE,
 			"Unable to detect an Belkin Smart protocol UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 			);

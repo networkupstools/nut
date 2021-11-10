@@ -16,6 +16,8 @@ Wants=nut-server.service
 PartOf=nut.target
 
 [Service]
+EnvironmentFile=-@CONFPATH@/nut.conf
+SyslogIdentifier=%N
 ExecStart=@SBINDIR@/upsmon
 PIDFile=@PIDPATH@/upsmon.pid
 Type=forking

@@ -34,9 +34,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h> 
+#include <sys/un.h>
 
-static int parse_args(upstype_t *ups, int numargs, char **arg)
+static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 {
 	if (numargs < 1)
 		return 0;
@@ -202,7 +202,7 @@ int sstate_connect(upstype_t *ups)
 			return -1;
 
 		ups->last_connfail = now;
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", 
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 			ups->name, ups->fn);
 
 		return -1;
@@ -296,7 +296,7 @@ void sstate_readline(upstype_t *ups)
 		case 1:
 			/* set the 'last heard' time to now for later staleness checks */
 			if (parse_args(ups, ups->sock_ctx.numargs, ups->sock_ctx.arglist)) {
-			        time(&ups->last_heard);
+				time(&ups->last_heard);
 			}
 			continue;
 
@@ -319,12 +319,12 @@ const char *sstate_getinfo(const upstype_t *ups, const char *var)
 int sstate_getflags(const upstype_t *ups, const char *var)
 {
 	return state_getflags(ups->inforoot, var);
-}	
+}
 
 int sstate_getaux(const upstype_t *ups, const char *var)
 {
 	return state_getaux(ups->inforoot, var);
-}	
+}
 
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {
@@ -341,7 +341,7 @@ const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 	return ups->cmdlist;
 }
 
-int sstate_dead(upstype_t *ups, int maxage)
+int sstate_dead(upstype_t *ups, int arg_maxage)
 {
 	time_t	now;
 	double	elapsed;
@@ -363,12 +363,12 @@ int sstate_dead(upstype_t *ups, int maxage)
 	elapsed = difftime(now, ups->last_heard);
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */
-	if ((elapsed > (maxage / 3)) && (difftime(now, ups->last_ping) > (maxage / 3)))
+	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > maxage) {
+	if (elapsed > arg_maxage) {
 		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-					ups->name, elapsed, maxage);
+					ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */
 	}
 

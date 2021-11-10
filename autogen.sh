@@ -3,19 +3,40 @@
 # Autoreconf wrapper script to ensure that the source tree is
 # in a buildable state
 
+if [ -n "${PYTHON-}" ] ; then
+	# May be a name/path of binary, or one with args - check both
+	(command -v "$PYTHON") \
+	|| $PYTHON -c "import re,glob,codecs" \
+	|| {
+		echo "----------------------------------------------------------------------"
+		echo "WARNING: Caller-specified PYTHON='$PYTHON' is not available."
+		echo "----------------------------------------------------------------------"
+		# Do not die just here, we may not need the interpreter
+	}
+else
+	PYTHON=""
+	for P in python python3 python2 ; do
+		if (command -v "$P" >/dev/null) && $P -c "import re,glob,codecs" ; then
+			PYTHON="$P"
+			break
+		fi
+	done
+fi
+
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
-	if python -c "import re,glob,codecs"; then
-		echo "Regenerating Augeas ups.conf lens..."
-		cd scripts/augeas && {
-			./gen-nutupsconf-aug.py || exit 1
-			cd ../..
-		}
+	if [ -n "${PYTHON-}" ] && $PYTHON -c "import re,glob,codecs"; then
+		echo "Regenerating Augeas ups.conf lens with '$PYTHON'..."
+		(   # That script is templated; assume @PYTHON@ is the only
+		    # road-bump there
+		    cd scripts/augeas \
+		    && $PYTHON ./gen-nutupsconf-aug.py.in
+		) || exit 1
 	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Python is not available."
-		echo "Unable to regenerate Augeas ups.conf lens."
+		echo "Unable to regenerate Augeas lens for ups.conf parsing."
 		echo "----------------------------------------------------------------------"
 		exit 1
 	fi
@@ -30,7 +51,7 @@ then
 			./nut-usbinfo.pl || exit 1
 			cd ..
 		}
-	else 
+	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
 		echo "Unable to regenerate USB helper files."
@@ -39,6 +60,24 @@ then
 	fi
 fi
 
+if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
+	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
+fi
+
 # now we can safely call autoreconf
+if ( command -v dos2unix ) 2>/dev/null >/dev/null \
+&& ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
+	echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
+	echo "this may cause issues for m4 parsing with autotools below."
+	if [ -e .git ] ; then
+		echo "You may want to enforce that Git uses 'lf' line endings and re-checkout:"
+		echo "    :; git config core.autocrlf false && git config core.eol lf"
+	fi
+	echo ""
+fi >&2
+
 echo "Calling autoreconf..."
-autoreconf -i
+autoreconf -iv && {
+	sh -n configure 2>/dev/null >/dev/null \
+	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+}

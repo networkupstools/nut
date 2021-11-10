@@ -45,7 +45,7 @@ if test -z "${nut_have_neon_seen}"; then
 	], [CFLAGS="`pkg-config --silence-errors --cflags neon 2>/dev/null`"
 		if test "$?" != 0 ; then
 			nut_defaulted_neon_cflags=yes
-			CFLAGS="-I/usr/include/neon"
+			CFLAGS="-I/usr/include/neon -I/usr/local/include/neon"
 		fi])
 	AC_MSG_RESULT([${CFLAGS}])
 

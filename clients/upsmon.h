@@ -17,19 +17,23 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_UPSMON_H_SEEN
+#define NUT_UPSMON_H_SEEN 1
+
 /* flags for ups->status */
 
-#define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
-#define ST_ONBATT      (1 << 1)       /* UPS is on battery (OB)               */
-#define ST_LOWBATT     (1 << 2)       /* UPS has a low battery (LB)           */
-#define ST_FSD         (1 << 3)       /* master has set forced shutdown flag  */
-#define ST_MASTER      (1 << 4)       /* we are the master on this UPS        */
-#define ST_LOGIN       (1 << 5)       /* we are logged into this UPS          */
-#define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK           */
-#define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)    */
+#define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                      */
+#define ST_ONBATT      (1 << 1)       /* UPS is on battery (OB)                   */
+#define ST_LOWBATT     (1 << 2)       /* UPS has a low battery (LB)               */
+#define ST_FSD         (1 << 3)       /* primary has set forced shutdown flag     */
+#define ST_PRIMARY     (1 << 4)       /* we are the primary (manager) of this UPS */
+#define ST_MASTER      ST_PRIMARY     /* legacy alias                             */
+#define ST_LOGIN       (1 << 5)       /* we are logged into this UPS              */
+#define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK               */
+#define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
 
 /* required contents of flag file */
-#define SDMAGIC "upsmon-shutdown-file"  
+#define SDMAGIC "upsmon-shutdown-file"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -47,7 +51,7 @@ typedef struct {
 	char	*hostname;		/* just hostname		*/
 	int	port;			/* just the port		*/
 
-	int	pv;			/* power value from conf	*/
+	unsigned int	pv;			/* power value from conf	*/
 	char	*un;			/* username (optional for now)	*/
 	char	*pw;  			/* password from conf		*/
 	int	status;			/* status (see flags above)	*/
@@ -66,17 +70,17 @@ typedef struct {
 
 /* notify identifiers */
 
-#define NOTIFY_ONLINE	0	/* UPS went on-line			*/
-#define NOTIFY_ONBATT	1	/* UPS went on battery			*/
-#define NOTIFY_LOWBATT	2	/* UPS went to low battery		*/
-#define NOTIFY_FSD	3	/* Master upsmon set FSD flag		*/
-#define NOTIFY_COMMOK	4	/* Communication established		*/
-#define NOTIFY_COMMBAD	5	/* Communication lost			*/
-#define NOTIFY_SHUTDOWN	6	/* System shutdown in progress		*/
-#define NOTIFY_REPLBATT	7	/* UPS battery needs to be replaced	*/
-#define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in awhile	*/
-#define NOTIFY_NOPARENT	9	/* privileged parent process died	*/
-#define NOTIFY_CAL		10	/* UPS is performing calibration   */
+#define NOTIFY_ONLINE	0	/* UPS went on-line                     */
+#define NOTIFY_ONBATT	1	/* UPS went on battery                  */
+#define NOTIFY_LOWBATT	2	/* UPS went to low battery              */
+#define NOTIFY_FSD		3	/* Primary upsmon set FSD flag          */
+#define NOTIFY_COMMOK	4	/* Communication established	            */
+#define NOTIFY_COMMBAD	5	/* Communication lost                   */
+#define NOTIFY_SHUTDOWN	6	/* System shutdown in progress          */
+#define NOTIFY_REPLBATT	7	/* UPS battery needs to be replaced     */
+#define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in a while	*/
+#define NOTIFY_NOPARENT	9	/* privileged parent process died       */
+#define NOTIFY_CAL		10	/* UPS is performing calibration        */
 
 /* notify flag values */
 
@@ -88,7 +92,10 @@ typedef struct {
 /* flags are set to NOTIFY_SYSLOG | NOTIFY_WALL at program init	*/
 /* the user can override with NOTIFYFLAGS in the upsmon.conf	*/
 
-struct {
+/* This is only used in upsmon.c, but might it also have external consumers?..
+ * To move or not to move?..
+ */
+static struct {
 	int	type;
 	const	char	*name;
 	char	*msg;		/* NULL until overridden */
@@ -125,3 +132,5 @@ struct {
 }
 /* *INDENT-ON* */
 #endif
+
+#endif	/* NUT_UPSMON_H_SEEN */

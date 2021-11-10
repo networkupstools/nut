@@ -12,3 +12,4 @@
 nut.dict.sorted
 /*.bak
 /*.bak-*
+/tmp/

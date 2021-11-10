@@ -19,8 +19,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef UPSTYPE_H_SEEN
-#define UPSTYPE_H_SEEN 1
+#ifndef NUT_UPSTYPE_H_SEEN
+#define NUT_UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
 
@@ -51,7 +51,7 @@ typedef struct upstype_s {
 	int	fsd;		/* forced shutdown in effect? */
 
 	int	retain;
-	
+
 	struct upstype_s	*next;
 
 } upstype_t;
@@ -64,4 +64,4 @@ extern upstype_t	*firstups;
 /* *INDENT-ON* */
 #endif
 
-#endif	/* UPSTYPE_H_SEEN */
+#endif	/* NUT_UPSTYPE_H_SEEN */
