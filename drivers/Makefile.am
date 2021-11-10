@@ -252,6 +252,9 @@ nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c
 endif
+# FIXME: Hacky hot-fix for build agents of varying OS generations:
+# Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
+nut_ipmipsu_CFLAGS = -Wnoerror=pointer-sign
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
 # Mac OS X metadriver
