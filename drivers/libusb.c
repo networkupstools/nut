@@ -563,16 +563,16 @@ static void libusb_close(usb_dev_handle *udev)
 }
 
 usb_communication_subdriver_t usb_subdriver = {
-        USB_DRIVER_NAME,
-        USB_DRIVER_VERSION,
-        libusb_open,
-        libusb_close,
-        libusb_get_report,
-        libusb_set_report,
-        libusb_get_string,
-        libusb_get_interrupt,
-        LIBUSB_DEFAULT_INTERFACE,
-        LIBUSB_DEFAULT_DESC_INDEX,
-        LIBUSB_DEFAULT_HID_EP_IN,
-        LIBUSB_DEFAULT_HID_EP_OUT
+	USB_DRIVER_NAME,
+	USB_DRIVER_VERSION,
+	libusb_open,
+	libusb_close,
+	libusb_get_report,
+	libusb_set_report,
+	libusb_get_string,
+	libusb_get_interrupt,
+	LIBUSB_DEFAULT_INTERFACE,
+	LIBUSB_DEFAULT_DESC_INDEX,
+	LIBUSB_DEFAULT_HID_EP_IN,
+	LIBUSB_DEFAULT_HID_EP_OUT
 };
