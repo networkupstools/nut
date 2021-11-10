@@ -131,7 +131,8 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		MESSAGE_VALUE, INDEX_VALUE, (usb_ctrl_char)query, QUERY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "timeout");
+		upsdebugx(3, "send: %s",
+			ret ? nut_usb_strerror(ret) : "timeout");
 		return ret;
 	}
 
@@ -143,7 +144,8 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, (usb_ctrl_char)reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+		upsdebugx(3, "read: %s",
+			ret ? nut_usb_strerror(ret) : "timeout");
 		return ret;
 	}
 
@@ -348,8 +350,10 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
-				dev->descriptor.idProduct, bus->dirname, dev->filename);
+			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)",
+				dev->descriptor.idVendor,
+				dev->descriptor.idProduct,
+				bus->dirname, dev->filename);
 
 			/* supported vendors are now checked by the supplied matcher */
 

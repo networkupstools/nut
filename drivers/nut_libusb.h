@@ -49,7 +49,7 @@ typedef usb_dev_handle libusb_device_handle;
 #define LIBUSB_DEFAULT_HID_EP_IN        1
 #define LIBUSB_DEFAULT_HID_EP_OUT       1
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * usb_communication_subdriver_s: structure to describe the communication routines
@@ -58,7 +58,7 @@ extern upsdrv_info_t comm_upsdrv_info;
 typedef struct usb_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;				/* version of this subdriver		*/
-	int (*open)(libusb_device_handle **sdevp, /* try to open the next available     */
+	int (*open)(libusb_device_handle **sdevp,	/* try to open the next available	*/
 		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
 		USBDeviceMatcher_t *matcher,
 		int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen));
@@ -83,11 +83,10 @@ typedef struct usb_communication_subdriver_s {
 	 * case, bcdDevice == 0x0202)
 	 */
 	int hid_desc_index;
-	int hid_ep_in;        /* Input interrupt endpoint. Default is 1	*/
-	int hid_ep_out;       /* Output interrupt endpoint. Default is 1	*/
+	int hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
+	int hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
 } usb_communication_subdriver_t;
 
 extern usb_communication_subdriver_t	usb_subdriver;
 
 #endif /* NUT_LIBUSB_H_SEEN */
-

@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.33"
+#define USB_DRIVER_VERSION	"0.34"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -294,7 +294,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 				if (usb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index) < 0) {
 					upsdebugx(2, "failed to detach kernel driver from USB device: %s",
-					usb_strerror());
+						usb_strerror());
 				} else {
 					upsdebugx(2, "detached kernel driver from USB device...");
 				}
@@ -373,7 +373,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* for now, we always assume configuration 0, interface 0,
 			   altsetting 0, as above. */
 			iface = &dev->config[0].interface[usb_subdriver.hid_rep_index].altsetting[0];
-			for (i = 0; i < iface->extralen; i += iface->extra[i]) {
+			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
 				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
 					iface->extra[i], iface->extra[i+1]);
 				if (i+9 <= iface->extralen && iface->extra[i] >= 9 && iface->extra[i+1] == 0x21) {
@@ -606,16 +606,16 @@ static void libusb_close(usb_dev_handle *udev)
 }
 
 usb_communication_subdriver_t usb_subdriver = {
-        USB_DRIVER_NAME,
-        USB_DRIVER_VERSION,
-        libusb_open,
-        libusb_close,
-        libusb_get_report,
-        libusb_set_report,
-        libusb_get_string,
-        libusb_get_interrupt,
-        LIBUSB_DEFAULT_INTERFACE,
-        LIBUSB_DEFAULT_DESC_INDEX,
-        LIBUSB_DEFAULT_HID_EP_IN,
-        LIBUSB_DEFAULT_HID_EP_OUT
+	USB_DRIVER_NAME,
+	USB_DRIVER_VERSION,
+	libusb_open,
+	libusb_close,
+	libusb_get_report,
+	libusb_set_report,
+	libusb_get_string,
+	libusb_get_interrupt,
+	LIBUSB_DEFAULT_INTERFACE,
+	LIBUSB_DEFAULT_DESC_INDEX,
+	LIBUSB_DEFAULT_HID_EP_IN,
+	LIBUSB_DEFAULT_HID_EP_OUT
 };
