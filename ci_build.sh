@@ -266,7 +266,10 @@ build_to_only_catch_errors() {
 }
 
 can_clean_check() {
-    [ -s Makefile ] && [ -e .git ] || return
+    if [ -s Makefile ] && [ -e .git ] ; then
+        return 0
+    fi
+    return 1
 }
 
 optional_maintainer_clean_check() {
