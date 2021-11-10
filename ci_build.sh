@@ -852,6 +852,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
                 #$MAKE distclean -k || true
 
+                echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
