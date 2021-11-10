@@ -7,6 +7,16 @@ This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
 
+NUT codebase generally should not depend on particular operating system or
+kernel technology and version, and with the operating systems listed below
+one can benefit from use of containers (jails, zones) to build and test
+against numerous OS distributions on one physical or virtual machine,
+e.g. to cover non-regression with older tool kits while taking advantage
+of new releases.
+
+* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
+  up the multi-arch Linux LXC container farm for NUT CI]
+
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
 both, at a disk space cost.
@@ -22,9 +32,12 @@ all features enabled; chapters below concern just with building it.
 General call to Test the ability to configure and build
 -------------------------------------------------------
 
+Check out from git, generate files and configure to tailor to your build
+environment, and build some tests:
+
 ----
-:; mkdir -p nut ; cd nut
-:; git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
 :; ./autogen.sh && \
     ./configure --with-doc=all --with-all --with-cgi && \
     make all && make check && make spellcheck
@@ -32,6 +45,17 @@ General call to Test the ability to configure and build
 
 NOTE: You can toggle some build options to check different dependency
 variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
+
+NOTE: For reproducible runs of various pre-sets of configuration during
+development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
+(and other) environment variable settings that it supports. A minimal run
+with it is just:
++
+----
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; ./ci_build.sh
+----
 
 NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 
@@ -49,22 +73,32 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 * Parallel builds should be okay in current development version (is a bug
   to log, if not), but may be failure-prone in 2.7.4 and earlier releases
 
-Debian 10
-~~~~~~~~~
+Debian 10/11
+~~~~~~~~~~~~
+
+Being a popular baseline among Linux distributions, Debian is an important
+build target. Related common operating systems include Ubuntu and customized
+distros for Raspberry Pi, as well as many others. The package list below
+should largely apply to those as well, however note that some well-known
+package names tend to differ. A few of those are noted below.
 
 ----
 :; apt-get update
 
+# NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     ccache time \
     git python curl \
     make autoconf automake libltdl-dev libtool-bin libtool \
     valgrind \
+    cppcheck \
     pkg-config \
     gcc g++ clang \
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
+# NOTE: Some Debian-like distributions, e.g. Ubuntu, ship
+# a "libssl-dev" instead of "openssl-dev" by name
 :; apt-get install \
     libcppunit-dev \
     openssl-dev libnss3-dev \
@@ -126,6 +160,7 @@ Note that `PATH` for builds on BSD should include `local`:
     git python curl \
     gmake autoconf automake autotools libltdl libtool \
     valgrind \
+    cppcheck \
     pkgconf \
     gcc clang \
     asciidoc source-highlight textproc/py-pygments dblatex en-aspell aspell \
@@ -251,6 +286,8 @@ build works for that however.
 It also lacks out-of-the-box Tex suite and `dblatex` in particular, which
 `asciidoc` needs to build PDF documents. It may be possible to add these
 from third-party repositories (e.g. SFE) and/or build from sources.
+
+No pre-packaged `cppcheck` was found, either.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 (or 11+).

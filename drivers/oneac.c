@@ -368,7 +368,19 @@ void upsdrv_initinfo(void)
 
 		/*UPS Model (full string)*/
 		memset(buffer2, '\0', 32);
-		strncpy(buffer2, buffer+5, 10);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+		strncpy(buffer2, buffer + 5, 10);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 		for (i = 9; i >= 0 && buffer2[i] == ' '; --i)
 		{
 			buffer2[i] = '\0';
@@ -416,7 +428,19 @@ void upsdrv_initinfo(void)
 			buffer2[3]='\0';
 			i = atoi(buffer2);		/* Minimum voltage */
 
-			strncpy(buffer2, buffer+4, 3);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+			strncpy(buffer2, buffer + 4, 3);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 			j = atoi(buffer2);		/* Maximum voltage */
 
 			strncpy(buffer2, buffer+8, 2);
