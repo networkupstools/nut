@@ -900,10 +900,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
 
-            if [ -n "$SUCCEEDED" ]; then
-                echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
-            fi
-
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
@@ -912,6 +908,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} [final_maintainer_clean]"
                 }
+            fi
+
+            if [ -n "$SUCCEEDED" ]; then
+                echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
 
             if [ "$RES" != 0 ]; then
