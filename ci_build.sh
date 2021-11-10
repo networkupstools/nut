@@ -265,6 +265,10 @@ build_to_only_catch_errors() {
     return 0
 }
 
+can_clean_check() {
+    [ -s Makefile ] && [ -e .git ] || return
+}
+
 optional_maintainer_clean_check() {
     if [ ! -e .git ]; then
         echo "Skipping maintainer-clean check because there is no .git" >&2
@@ -850,6 +854,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
+                if can_clean_check ; then
 ### Avoid having to re-autogen in a loop:
 #                optional_maintainer_clean_check || {
 #                    RES=$?
@@ -860,6 +865,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                 }
+                fi
             done
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
@@ -868,10 +874,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
 
-            optional_maintainer_clean_check || {
-                RES=$?
-                FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
-            }
+            if can_clean_check ; then
+                echo "=== One final try for optional_maintainer_clean_check:"
+                optional_maintainer_clean_check && {
+                    SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                } || {
+                    RES=$?
+                    FAILED="${FAILED} [final_maintainer_clean]"
+                }
+            fi
 
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
