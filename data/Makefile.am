@@ -16,5 +16,5 @@ cmdvartab-spellchecked: cmdvartab Makefile.am $(top_srcdir)/docs/Makefile.am $(a
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="cmdvartab" SPELLCHECK_DIR="$(srcdir)" $@
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 CLEANFILES = *.pdf *.html *-spellchecked

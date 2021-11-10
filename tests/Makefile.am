@@ -81,7 +81,7 @@ dummy:
 BUILT_SOURCES = $(LINKED_SOURCE_FILES)
 CLEANFILES += $(LINKED_SOURCE_FILES)
 CLEANFILES += $(TESTS) $(TESTS_CXX11)
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
