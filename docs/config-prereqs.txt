@@ -125,6 +125,14 @@ Alternatives that can depend on your system's other packaging choices:
 :; apt-get install libneon27-gnutls-dev
 ----
 
+Over time, Debian and Ubuntu had different packages and libraries providing
+the actual methods for I2C; if your system lacks the `libi2c` (and so fails
+to `./configure --with-all`), try adding the following packages:
++
+----
+:; apt-get install build-essential git-core libi2c-dev i2c-tools lm-sensors
+----
+
 For cross-builds (note that not everything supports multilib approach,
 limiting standard package installations to one or another implementation;
 in that case local containers each with one ARCH may be a better choice,
