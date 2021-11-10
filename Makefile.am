@@ -77,7 +77,7 @@ MAINTAINERCLEANFILES += aclocal.m4 config.guess config.sub
 MAINTAINERCLEANFILES += configure
 MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
 MAINTAINERCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
-MAINTAINERCLEANFILES += Makefile.in include/config.h.in
+MAINTAINERCLEANFILES += Makefile.in .dirstamp include/config.h.in
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
@@ -291,3 +291,21 @@ package:
 		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
 	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
 	esac
+
+print-MAINTAINERCLEANFILES print-REALCLEANFILES:
+	@echo $(MAINTAINERCLEANFILES)
+
+print-DISTCLEANFILES:
+	@echo $(DISTCLEANFILES)
+
+# TODO: Recursive mode to consider patterns defined in sub-dir makefiles
+git-realclean-check:
+	@if test -e .git && (command -v git); then \
+		git status --ignored || while read F ; do \
+			for P in $(MAINTAINERCLEANFILES) ; do \
+				case "$$F" in \
+				*/$$P) exit 1 ;; \
+				esac ; \
+			done; \
+		done ; \
+	 fi

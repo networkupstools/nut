@@ -720,8 +720,10 @@ if test "${nut_with_linux_i2c}" != no; then
             )
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [nut_with_linux_i2c="yes"],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
+                [], dnl # nut_with_linux_i2c="yes"
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -736,8 +738,12 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c], [],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
+                [i2c],
+                [nut_with_linux_i2c="yes"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])
+                ])
             ;;
         * )
             nut_with_linux_i2c="no"

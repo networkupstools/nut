@@ -29,12 +29,12 @@ LINKED_SOURCE_FILES =
 # Separate the .deps of other dirs from this one
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += $(builddir)/serial.c
-$(builddir)/serial.c: $(top_srcdir)/drivers/serial.c
+LINKED_SOURCE_FILES += serial.c
+serial.c: $(top_srcdir)/drivers/serial.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
-LINKED_SOURCE_FILES += $(builddir)/bcmxcp_ser.c
-$(builddir)/bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+LINKED_SOURCE_FILES += bcmxcp_ser.c
+bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
@@ -111,7 +111,7 @@ endif
 dummy:
 
 CLEANFILES += *-spellchecked
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

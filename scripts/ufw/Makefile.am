@@ -1,2 +1,2 @@
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 CLEANFILES = *-spellchecked
