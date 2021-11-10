@@ -550,4 +550,3 @@ void nutusb_comm_good(void)
 	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
-

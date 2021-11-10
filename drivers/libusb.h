@@ -34,7 +34,8 @@
 #include "main.h"	/* for subdrv_info_t */
 #include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
 
-#include <usb.h>	/* libusb header file */
+/* libusb header file */
+#include <usb.h>
 
 #define LIBUSB_DEFAULT_INTERFACE        0
 #define LIBUSB_DEFAULT_DESC_INDEX       0
@@ -63,11 +64,17 @@ typedef struct usb_communication_subdriver_s {
 	int StringIdx, char *buf, size_t buflen);
 	int (*get_interrupt)(usb_dev_handle *sdev,
 	unsigned char *buf, int bufsize, int timeout);
-	/* Used for Powervar UPS or similar cases to make sure we use the right interface in the Composite device */
+
+	/* Used for Powervar UPS or similar cases to make sure
+	 * we use the right interface in the Composite device
+	 */
 	int hid_rep_index;
-	/* All devices use HID descriptor at index 0. However, some UPS like newer
-	 * Eaton units have a light HID descriptor at index 0, and the full
-	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
+	/* All devices use HID descriptor at index 0.
+	 * However, some UPS like newer Eaton units have
+	 * a light HID descriptor at index 0, and
+	 * the full version is at index 1 (in which
+	 * case, bcdDevice == 0x0202)
+	 */
 	int hid_desc_index;
 	int hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
 	int hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
