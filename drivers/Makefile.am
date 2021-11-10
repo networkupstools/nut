@@ -254,7 +254,7 @@ if WITH_FREEIPMI
 endif
 # FIXME: Hacky hot-fix for build agents of varying OS generations:
 # Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
-nut_ipmipsu_CFLAGS = -Wno-pointer-sign
+nut_ipmipsu_CFLAGS = $(AM_CFLAGS) -Wno-pointer-sign
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
 # Mac OS X metadriver
