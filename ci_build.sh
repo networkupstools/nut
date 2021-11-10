@@ -795,6 +795,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             RES=0
             FAILED=""
             SUCCEEDED=""
+            BUILDSTODO=0
 
             # Technically, let caller provide this setting explicitly
             if [ -z "$NUT_SSL_VARIANTS" ] ; then
@@ -818,8 +819,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 fi
             fi
 
+            # Count our expected build variants, so the last one gets the
+            # "maintainer-clean" check and not a mere "distclean" check
+            # NOTE: When/if we loop other dependency variations, include
+            # them in this count!
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                echo "=== Clean the sandbox..."
+                BUILDSTODO="`expr $BUILDSTODO + 1`"
+            done
+
+            #echo "=== Will loop now with $BUILDSTODO build variants..."
+            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
+                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
                 $MAKE distclean -k || true
 
                 case "$NUT_SSL_VARIANT" in
@@ -854,17 +864,24 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
+                BUILDSTODO="`expr $BUILDSTODO - 1`"
                 if can_clean_check ; then
-### Avoid having to re-autogen in a loop:
-#                optional_maintainer_clean_check || {
-#                    RES=$?
-#                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
-#                }
-
-                optional_dist_clean_check || {
-                    RES=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
-                }
+                    if [ $BUILDSTODO -gt 0 ]; then
+                        ### Avoid having to re-autogen in a loop:
+                        optional_dist_clean_check && {
+                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                        } || {
+                            RES=$?
+                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                        }
+                    else
+                        optional_maintainer_clean_check && {
+                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                        } || {
+                            RES=$?
+                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                        }
+                    fi
                 fi
             done
             # TODO: Similar loops for other variations like TESTING,
