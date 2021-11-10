@@ -134,7 +134,9 @@ static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
 
+#if defined(QX_USB) && !defined(TESTING)
 static int	hunnox_step = 0;
+#endif	/* QX_USB && !TESTING */
 
 #if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
