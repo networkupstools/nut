@@ -166,7 +166,7 @@ typedef struct {
 #define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
 #define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
 #define SU_STATUS_RB		(3 << 8)	/* indicates replace battery status element */
-#define SU_STATUS_NUM_ELEM	4
+#define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
 #define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
