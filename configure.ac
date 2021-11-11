@@ -193,6 +193,28 @@ getrlimit(RLIMIT_NOFILE, &limit);
     )]
 )
 
+AC_CHECK_HEADER([semaphore.h],
+    [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
+        [Define to 1 if you have <sys/semaphore.h>.])
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+],
+[sem_t semaphore;
+sem_init(&semaphore, 0, 4);
+sem_destroy(&semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SEMAPHORE], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -698,8 +720,10 @@ if test "${nut_with_linux_i2c}" != no; then
             )
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [nut_with_linux_i2c="yes"],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
+                [], dnl # nut_with_linux_i2c="yes"
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -714,8 +738,12 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c], [],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
+                [i2c],
+                [nut_with_linux_i2c="yes"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])
+                ])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1697,6 +1725,12 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
 )
 AC_MSG_RESULT(${have_cppunit})
 
+dnl On some systems, CppUnit inexplicably fails with trivial assertions
+dnl so it should not be enabled with those environments, corrupting the
+dnl test results with misleading errors.
+dnl Tracked in https://github.com/networkupstools/nut/issues/1126
+dnl One such situation was e.g. "clang++ + arm64(QEMU) + -m64" while
+dnl this was not seen with other compilers or bitness on same system.
 AS_IF([test "${have_cppunit}" = "yes"],
     [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
      dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
@@ -1723,7 +1757,8 @@ void ExampleTest::testOne()
   int i = 1;
   float f = 1.0;
   int cast = static_cast<int>(f);
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int (assert_eq)", i, cast );
+  CPPUNIT_ASSERT_MESSAGE("Casted float is not the expected int (assert)", (i == cast) );
 }
 '
 

@@ -3,7 +3,7 @@
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
-$(top_builddir)/clients/libupsclient.la:
+$(top_builddir)/clients/libupsclient.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.la
@@ -184,7 +184,7 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
+USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
@@ -301,7 +301,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # tracking (which is automatic), but to ensure these files are
 # distributed by "make dist".
 
-dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
+dist_noinst_HEADERS = apc-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
@@ -333,8 +333,10 @@ libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
 
+dummy:
+
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

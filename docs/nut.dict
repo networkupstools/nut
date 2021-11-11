@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2810 utf-8
+personal_ws-1.1 en 2812 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1962,6 +1962,7 @@ libpowerman
 libre
 libs
 libsnmp
+libssl
 libtool
 libupsclient
 libusb
@@ -2312,6 +2313,7 @@ productid
 prog
 prtconf
 psu
+pty
 pw
 pwl
 pwmib

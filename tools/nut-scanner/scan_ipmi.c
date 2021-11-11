@@ -446,7 +446,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 															ipmi_sec->username,
 															ipmi_sec->password,
 															ipmi_sec->K_g_BMC_key,
-???															(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
+/*???*/														(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
 															ipmi_sec->privilege_level,
 															ipmi_sec->cipher_suite_id,
 															IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,

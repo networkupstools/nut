@@ -109,7 +109,7 @@ dist-hook:
 
 	@$(distdir)/driver-list-format.sh;
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # Can be recreated by `make` or `configure`,
 # impacted by choice of PYTHON version:

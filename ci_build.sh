@@ -265,7 +265,24 @@ build_to_only_catch_errors() {
     return 0
 }
 
+can_clean_check() {
+    if [ -s Makefile ] && [ -e .git ] ; then
+        return 0
+    fi
+    return 1
+}
+
 optional_maintainer_clean_check() {
+    if [ ! -e .git ]; then
+        echo "Skipping maintainer-clean check because there is no .git" >&2
+        return 0
+    fi
+
+    if [ ! -e Makefile ]; then
+        echo "WARNING: Skipping maintainer-clean check because there is no Makefile (did we clean in a loop earlier?)" >&2
+        return 0
+    fi
+
     if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping maintainer-clean check because recipe/developer said so"
     else
@@ -279,6 +296,39 @@ optional_maintainer_clean_check() {
         echo "==="
 
         if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+            git diff || true
+            echo "==="
+            return 1
+        fi
+    fi
+    return 0
+}
+
+optional_dist_clean_check() {
+    if [ ! -e .git ]; then
+        echo "Skipping distclean check because there is no .git" >&2
+        return 0
+    fi
+
+    if [ ! -e Makefile ]; then
+        echo "WARNING: Skipping distclean check because there is no Makefile (did we clean in a loop earlier?)" >&2
+        return 0
+    fi
+
+    if [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
+        echo "Skipping distclean check because recipe/developer said so"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
+
+        # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+
+        echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
+        git status -s || true
+        echo "==="
+
+        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
             echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
             git diff || true
             echo "==="
@@ -673,6 +723,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
+    if [ -s Makefile ]; then
+        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
+    fi
     if [ "$CI_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
@@ -758,6 +811,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             RES=0
             FAILED=""
             SUCCEEDED=""
+            BUILDSTODO=0
 
             # Technically, let caller provide this setting explicitly
             if [ -z "$NUT_SSL_VARIANTS" ] ; then
@@ -781,10 +835,24 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 fi
             fi
 
+            # Count our expected build variants, so the last one gets the
+            # "maintainer-clean" check and not a mere "distclean" check
+            # NOTE: When/if we loop other dependency variations, include
+            # them in this count!
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                echo "=== Clean the sandbox..."
-                $MAKE distclean -k || true
+                BUILDSTODO="`expr $BUILDSTODO + 1`"
+            done
 
+            #echo "=== Will loop now with $BUILDSTODO build variants..."
+            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
+                # NOTE: Do not repeat a distclean before the loop,
+                # we have cleaned above before autogen, and here it
+                # would just re-evaluate `configure` to update the
+                # Makefile to remove it and other generated data.
+                #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                #$MAKE distclean -k || true
+
+                echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -811,23 +879,54 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 build_to_only_catch_errors && {
-                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}"
+                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
-                optional_maintainer_clean_check || {
-                    RES=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
-                }
+                # Note: when `expr` calculates a zero value below, it returns
+                # an "erroneous" `1` as exit code. Why oh why?..
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                if can_clean_check ; then
+                    if [ $BUILDSTODO -gt 0 ]; then
+                        ### Avoid having to re-autogen in a loop:
+                        optional_dist_clean_check && {
+                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                        } || {
+                            RES=$?
+                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                        }
+                    else
+                        optional_maintainer_clean_check && {
+                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                        } || {
+                            RES=$?
+                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                        }
+                    fi
+                else
+                    $MAKE distclean -k || true
+                fi
             done
             # TODO: Similar loops for other variations like TESTING,
             # MGE SHUT vs other serial protocols, libusb version...
 
+            if can_clean_check ; then
+                echo "=== One final try for optional_maintainer_clean_check:"
+                optional_maintainer_clean_check && {
+                    SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                } || {
+                    RES=$?
+                    FAILED="${FAILED} [final_maintainer_clean]"
+                }
+            fi
+
             if [ -n "$SUCCEEDED" ]; then
                 echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
+
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
@@ -898,9 +997,12 @@ bindings)
         sleep 5
     fi
     echo ""
+    if [ -s Makefile ]; then
+        ${MAKE} realclean -k || true
+    fi
     ./autogen.sh
     #./configure
-    ./configure --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    ./configure --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check

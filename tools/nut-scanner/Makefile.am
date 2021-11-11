@@ -11,11 +11,11 @@ CLEANFILES = $(BUILT_SOURCES)
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
-$(NUT_SCANNER_DEPS):
+$(NUT_SCANNER_DEPS): dummy
 	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/common/libcommon.la:
+$(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
@@ -29,12 +29,12 @@ LINKED_SOURCE_FILES =
 # Separate the .deps of other dirs from this one
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += $(builddir)/serial.c
-$(builddir)/serial.c: $(top_srcdir)/drivers/serial.c
+LINKED_SOURCE_FILES += serial.c
+serial.c: $(top_srcdir)/drivers/serial.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
-LINKED_SOURCE_FILES += $(builddir)/bcmxcp_ser.c
-$(builddir)/bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+LINKED_SOURCE_FILES += bcmxcp_ser.c
+bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
@@ -72,7 +72,7 @@ libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
@@ -108,8 +108,10 @@ else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
+dummy:
+
 CLEANFILES += *-spellchecked
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

@@ -21,7 +21,7 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
