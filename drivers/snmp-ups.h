@@ -179,40 +179,40 @@ typedef struct {
  * Ie, this can be guessed from info->type! */
 
 /* "flags" value 0, or bits 8..9, or "8 and 9" */
-#define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
-#define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
-#define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
-#define SU_STATUS_RB		(3 << 8)	/* indicates replace battery status element */
+#define SU_STATUS_PWR		(0UL << 8)	/* indicates power status element */
+#define SU_STATUS_BATT		(1UL << 8)	/* indicates battery status element */
+#define SU_STATUS_CAL		(2UL << 8)	/* indicates calibration status element */
+#define SU_STATUS_RB		(3UL << 8)	/* indicates replace battery status element */
 #define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
-#define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
+#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 8) & 7UL)
 
 /* "flags" bit 10 */
-#define SU_OUTLET_GROUP		(1 << 10)	/* outlet group template definition */
+#define SU_OUTLET_GROUP		(1UL << 10)	/* outlet group template definition */
 
 /* Phase specific data */
 /* "flags" bits 12..17 */
-#define SU_PHASES		(0x3F << 12)
-#define SU_INPHASES		(0x3 << 12)
-#define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
-#define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
-#define SU_OUTPHASES	(0x3 << 14)
-#define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
-#define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
-#define SU_BYPPHASES	(0x3 << 16)
-#define SU_BYPASS_1		(1 << 16)	/* only if 1 bypass phase */
-#define SU_BYPASS_3		(1 << 17)	/* only if 3 bypass phases */
+#define SU_PHASES		(0x0000003F << 12)
+#define SU_INPHASES		(0x00000003 << 12)
+#define SU_INPUT_1		(1UL << 12)	/* only if 1 input phase */
+#define SU_INPUT_3		(1UL << 13)	/* only if 3 input phases */
+#define SU_OUTPHASES	(0x00000003 << 14)
+#define SU_OUTPUT_1		(1UL << 14)	/* only if 1 output phase */
+#define SU_OUTPUT_3		(1UL << 15)	/* only if 3 output phases */
+#define SU_BYPPHASES	(0x00000003 << 16)
+#define SU_BYPASS_1		(1UL << 16)	/* only if 1 bypass phase */
+#define SU_BYPASS_3		(1UL << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
 /* hints for su_ups_set, applicable only to rw vars */
 /* "flags" value 0, or bits 18..19, or "18 and 19" */
-#define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
-/* Free slot                (1 << 18) */
-#define SU_TYPE_TIME		(2 << 18)	/* cast to int */
-#define SU_TYPE_CMD			(3 << 18)	/* instant command */
+#define SU_TYPE_INT			(0UL << 18)	/* cast to int when setting value */
+/* Free slot                (1UL << 18) */
+#define SU_TYPE_TIME		(2UL << 18)	/* cast to int */
+#define SU_TYPE_CMD			(3UL << 18)	/* instant command */
 /* The following helper macro is used like:
  *   if (SU_TYPE(su_info_p) == SU_TYPE_CMD) { ... }
  */
-#define SU_TYPE(t)			((t)->flags & (7 << 18))
+#define SU_TYPE(t)			((t)->flags & (7UL << 18))
 
 /* Daisychain template definition */
 /* the following 2 flags specify the position of the daisychain device index
@@ -220,14 +220,14 @@ typedef struct {
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
 /* "flags" bits 19..20, and 20 again */
-#define SU_TYPE_DAISY_1		(1 << 19)	/* Daisychain index is the 1st specifier */
-#define SU_TYPE_DAISY_2		(2 << 19)	/* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY(t)	((t)->flags & (7 << 19))
-#define SU_DAISY			(2 << 19)	/* Daisychain template definition */
+#define SU_TYPE_DAISY_1		(1UL << 19)	/* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2UL << 19)	/* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY(t)	((t)->flags & (7UL << 19))
+#define SU_DAISY			(2UL << 19)	/* Daisychain template definition */
 
 /* "flags" bits 20..21 */
-#define SU_FLAG_ZEROINVALID	(1 << 20)	/* Invalid if "0" value */
-#define SU_FLAG_NAINVALID	(1 << 21)	/* Invalid if "N/A" value */
+#define SU_FLAG_ZEROINVALID	(1UL << 20)	/* Invalid if "0" value */
+#define SU_FLAG_NAINVALID	(1UL << 21)	/* Invalid if "N/A" value */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
