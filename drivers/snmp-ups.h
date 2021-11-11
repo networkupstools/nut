@@ -130,19 +130,33 @@ typedef struct {
 */
 typedef struct {
 	char         *info_type;  /* INFO_ or CMD_ element */
-	int           info_flags; /* flags to set in addinfo */
-	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
+	int           info_flags; /* flags to set in addinfo: see ST_FLAG_*
+	                           * defined in include/extstate.h */
+	double        info_len;   /* length of strings if ST_FLAG_STRING,
+	                           * multiplier otherwise. */
 	char         *OID;        /* SNMP OID or NULL */
 	char         *dfl;        /* default value */
-	unsigned long flags;      /* snmp-ups internal flags */
+	unsigned long flags;      /* snmp-ups internal flags: see SU_* bit-shifts
+	                           * defined below (SU_FLAG*, SU_TYPE*, SU_STATUS*
+	                           * and others for outlets, phases, daisy-chains,
+	                           * etc.)
+	                           * NOTE that some *-mib.c mappings can specify
+	                           * a zero in this field... better fix that in
+	                           * favor of explicit values with a meaning!
+	                           * NOTE: With C99+ a "long" is guaranteed to be
+	                           * at least 4 bytes; consider "unsigned long long"
+	                           * when/if we get more than 32 flag values.
+	                           */
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#define SU_FLAG_OK			(1UL << 0)	/* show element to upsd - internal to snmp driver */
+#define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
+										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
 #define SU_FLAG_ABSENT		(1UL << 2)	/* data is absent in the device,
 										 * use default value. */
-#define SU_FLAG_STALE		(1UL << 3)	/* data stale, don't try too often - internal to snmp driver */
+#define SU_FLAG_STALE		(1UL << 3)	/* data stale, don't try too often -
+										 * internal to snmp driver */
 #define SU_FLAG_NEGINVALID	(1UL << 4)	/* Invalid if negative value */
 #define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
