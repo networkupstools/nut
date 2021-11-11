@@ -3394,7 +3394,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	/* special treatment for element without oid but with default value */
 	if (su_info_p->OID == NULL && su_info_p->dfl != NULL) {
 		status = TRUE;
-		strncpy(buf, su_info_p->dfl, sizeof(buf));
+		strncpy(buf, su_info_p->dfl, sizeof(buf) - 1);
 	}
 	else if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
