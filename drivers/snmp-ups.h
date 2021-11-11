@@ -169,7 +169,7 @@ typedef struct {
 #define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
-#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
+#define SU_OUTLET_GROUP		(1 << 10)	/* outlet group template definition */
 
 /* Phase specific data */
 #define SU_PHASES		(0x3F << 12)
@@ -197,12 +197,12 @@ typedef struct {
  * in the formatting string. This is useful when considering daisychain with
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
-#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
-#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY_1		(1 << 19)	/* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2 << 19)	/* Daisychain index is the 2nd specifier */
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
-#define SU_DAISY			(2 << 19) /* Daisychain template definition */
-#define SU_FLAG_ZEROINVALID    (1 << 20)       /* Invalid if "0" value */
-#define SU_FLAG_NAINVALID      (1 << 21)       /* Invalid if "N/A" value */
+#define SU_DAISY			(2 << 19)	/* Daisychain template definition */
+#define SU_FLAG_ZEROINVALID	(1 << 20)	/* Invalid if "0" value */
+#define SU_FLAG_NAINVALID	(1 << 21)	/* Invalid if "N/A" value */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
