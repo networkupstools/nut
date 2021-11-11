@@ -15,7 +15,11 @@ $(NUT_SCANNER_DEPS): dummy
 	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
-$(top_builddir)/common/libcommon.la: dummy
+$(top_builddir)/include/nut_version.h \
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/common/libnutdmfsnmp.la \
+$(top_builddir)/drivers/libserial-nutscan.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
@@ -40,8 +44,11 @@ bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
-$(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+# We optionally append values to this below
+bin_PROGRAMS =
+lib_LTLIBRARIES =
+include_HEADERS =
+dist_noinst_HEADERS =
 
 CFLAGS_LUA  = $(LUA_INCLUDE)
 LDFLAGS_LUA = $(LUA_LIB)
@@ -53,25 +60,18 @@ else
  LDFLAGS_DMF_LUA =
 endif
 
-# We optionally append values to this below
-bin_PROGRAMS =
-lib_LTLIBRARIES =
-
-# Included dependencies
-$(top_builddir)/include/nut_version.h $(top_builddir)/common/libcommon.la \
-$(top_builddir)/common/libparseconf.la $(top_builddir)/common/libnutdmfsnmp.la \
-$(top_builddir)/drivers/libserial-nutscan.la:
-	cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
-
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
 # Note: this does not require WITH_DMFMIB specifically, just the abilities
+ nut-scanner-reindex-dmfsnmp.c: $(top_builddir)/include/nut_version.h $(top_srcdir)/include/dmfsnmp.h
+
  bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
- nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c \
-    $(top_srcdir)/include/dmfsnmp.h $(top_builddir)/include/nut_version.h
- nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
-    $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
+ nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c
+ nut_scanner_reindex_dmfsnmp_LDADD = \
+	$(top_builddir)/common/libnutdmfsnmp.la \
+    $(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libparseconf.la \
     $(LIBNETSNMP_LIBS)
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
@@ -98,13 +98,13 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-libnutscan_la_LIBADD = $(NETLIBS)
 #nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
+libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+#libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -199,10 +199,10 @@ if WITH_IPMI
 endif
 
 # C is not a header, but there is no dist_noinst_SOURCES
-dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
+dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
 else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
 endif
