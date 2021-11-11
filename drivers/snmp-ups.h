@@ -203,13 +203,15 @@ typedef struct {
 #define SU_BYPASS_3		(1 << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
-
 /* hints for su_ups_set, applicable only to rw vars */
 /* "flags" value 0, or bits 18..19, or "18 and 19" */
 #define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
 /* Free slot                (1 << 18) */
 #define SU_TYPE_TIME		(2 << 18)	/* cast to int */
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
+/* The following helper macro is used like:
+ *   if (SU_TYPE(su_info_p) == SU_TYPE_CMD) { ... }
+ */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
 
 /* Daisychain template definition */
