@@ -150,6 +150,7 @@ typedef struct {
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
+/* "flags" bits 0..8 (and 9 reserved for DMF) */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
 										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
@@ -171,11 +172,13 @@ typedef struct {
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
+/* Reserved slot (1UL << 9) -- to import from DMF branch codebase */
 
 /* status string components
  * FIXME: these should be removed, since there is no added value.
  * Ie, this can be guessed from info->type! */
 
+/* "flags" value 0, or bits 8..9, or "8 and 9" */
 #define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
 #define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
 #define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
@@ -183,9 +186,11 @@ typedef struct {
 #define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
+/* "flags" bit 10 */
 #define SU_OUTLET_GROUP		(1 << 10)	/* outlet group template definition */
 
 /* Phase specific data */
+/* "flags" bits 12..17 */
 #define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
 #define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
@@ -199,6 +204,7 @@ typedef struct {
 /* FIXME: use input.phases and output.phases to replace this */
 
 /* hints for su_ups_set, applicable only to rw vars */
+/* "flags" value 0, or bits 18..19, or "18 and 19" */
 #define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
 /* Free slot                (1 << 18) */
 #define SU_TYPE_TIME		(2 << 18)	/* cast to int */
@@ -213,10 +219,13 @@ typedef struct {
  * in the formatting string. This is useful when considering daisychain with
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
+/* "flags" bits 19..20, and 20 again */
 #define SU_TYPE_DAISY_1		(1 << 19)	/* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(2 << 19)	/* Daisychain index is the 2nd specifier */
 #define SU_TYPE_DAISY(t)	((t)->flags & (7 << 19))
 #define SU_DAISY			(2 << 19)	/* Daisychain template definition */
+
+/* "flags" bits 20..21 */
 #define SU_FLAG_ZEROINVALID	(1 << 20)	/* Invalid if "0" value */
 #define SU_FLAG_NAINVALID	(1 << 21)	/* Invalid if "N/A" value */
 
