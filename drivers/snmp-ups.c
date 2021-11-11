@@ -3506,7 +3506,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	/* special treatment for element without oid but with default value */
 	if (su_info_p->OID == NULL && su_info_p->dfl != NULL) {
 		status = TRUE;
-		strncpy(buf, su_info_p->dfl, sizeof(buf));
+		strncpy(buf, su_info_p->dfl, sizeof(buf) - 1);
 	}
 	else if (su_info_p->info_flags & ST_FLAG_STRING) {
 		upsdebugx(2, "%s: requesting nut_snmp_get_str(), "
