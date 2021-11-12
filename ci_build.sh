@@ -292,6 +292,10 @@ optional_maintainer_clean_check() {
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
         echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
+        if [ ! -e .git ]; then
+            echo "WARNING: Skipping maintainer-clean check because there is no `pwd`/.git anymore" >&2
+            return 0
+        fi
         git status --ignored -s || true
         echo "==="
 
@@ -325,6 +329,10 @@ optional_dist_clean_check() {
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
         echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
+        if [ ! -e .git ]; then
+            echo "WARNING: Skipping distclean check because there is no `pwd`/.git anymore" >&2
+            return 0
+        fi
         git status -s || true
         echo "==="
 
