@@ -296,7 +296,7 @@ optional_maintainer_clean_check() {
             echo "WARNING: Skipping maintainer-clean check because there is no `pwd`/.git anymore" >&2
             return 0
         fi
-        git status --ignored -s || true
+        git status --ignored -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
         if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
@@ -333,7 +333,7 @@ optional_dist_clean_check() {
             echo "WARNING: Skipping distclean check because there is no `pwd`/.git anymore" >&2
             return 0
         fi
-        git status -s || true
+        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
         if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
@@ -765,7 +765,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
-            git status -s || true
+            git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
             echo "==="
             if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
@@ -950,7 +950,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
       $CI_TIME $MAKE VERBOSE=1 all )
 
     echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
-    git status -s || true
+    git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
     if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
         echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
@@ -976,7 +976,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
         echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
-        git status -s || true
+        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
         if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
