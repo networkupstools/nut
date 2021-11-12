@@ -1,8 +1,8 @@
 dnl Check for LIBNETSNMP compiler flags. On success, set
 dnl nut_have_libnetsnmp="yes" and set LIBNETSNMP_CFLAGS and
 dnl LIBNETSNMP_LIBS. On failure, set nut_have_libnetsnmp="no".
-dnl This macro can be run multiple times, but will do the checking only
-dnl once.
+dnl This macro can be run multiple times, but will do the
+dnl checking only once.
 
 AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 [
@@ -13,6 +13,11 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	dnl We prefer to get info from pkg-config (for suitable arch/bitness as
+	dnl specified in args for that mechanism), unless (legacy) a particular
+	dnl --with-net-snmp-config=... was requested. If there is no pkg-config
+	dnl info, we fall back to detecting and running a NET_SNMP_CONFIG as well.
+
 	dnl By default seek in PATH, but which variant (if several are provided)?
 	AC_CHECK_SIZEOF([void *])
 	AS_CASE(["${ac_cv_sizeof_void_p}"],
@@ -22,6 +27,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AS_IF([test -n "${NET_SNMP_CONFIG}" && test -n "`command -v "${NET_SNMP_CONFIG}"`"],
 		[], [NET_SNMP_CONFIG=net-snmp-config])
 
+	prefer_NET_SNMP_CONFIG=false
 	AC_ARG_WITH(net-snmp-config,
 		AS_HELP_STRING([@<:@--with-net-snmp-config=/path/to/net-snmp-config@:>@],
 			[path to program that reports Net-SNMP configuration]),
@@ -33,17 +39,34 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			;;
 		*)
 			NET_SNMP_CONFIG="${withval}"
+			prefer_NET_SNMP_CONFIG=true
 			;;
 		esac
 	])
 
-	dnl See which version of the Net-SNMP library (if any) is installed
-	AC_MSG_CHECKING(for Net-SNMP version via ${NET_SNMP_CONFIG})
-	SNMP_VERSION=`${NET_SNMP_CONFIG} --version 2>/dev/null`
-	if test "$?" != "0" -o -z "${SNMP_VERSION}"; then
-		SNMP_VERSION="none"
+	if ! "${prefer_NET_SNMP_CONFIG}" ; then
+		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
+		dnl TODO? Loop over possible/historic pkg names, like
+		dnl netsnmp, net-snmp, ucd-snmp, libsnmp, snmp...
+		SNMP_VERSION="`pkg-config --silence-errors --modversion netsnmp 2>/dev/null`"
+		if test "$?" = "0" -a -n "${SNMP_VERSION}" ; then
+			AC_MSG_RESULT(${SNMP_VERSION} found)
+		else
+			AC_MSG_RESULT(none found)
+			prefer_NET_SNMP_CONFIG=true
+		fi
 	fi
-	AC_MSG_RESULT(${SNMP_VERSION} found)
+
+	if "${prefer_NET_SNMP_CONFIG}" ; then
+		dnl See which version of the Net-SNMP library (if any) is installed
+		AC_MSG_CHECKING(for Net-SNMP version via ${NET_SNMP_CONFIG})
+		SNMP_VERSION="`${NET_SNMP_CONFIG} --version 2>/dev/null`"
+		if test "$?" != "0" -o -z "${SNMP_VERSION}"; then
+			SNMP_VERSION="none"
+			prefer_NET_SNMP_CONFIG=false
+		fi
+		AC_MSG_RESULT(${SNMP_VERSION} found)
+	fi
 
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	AC_ARG_WITH(snmp-includes,
@@ -57,7 +80,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"])
+	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+		[CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"],
+		[CFLAGS="`pkg-config --silence-errors --cflags netsnmp 2>/dev/null`"]
+	)])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
@@ -72,7 +98,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"])
+	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
+		[LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"],
+		[LIBS="`pkg-config --silence-errors --libs netsnmp 2>/dev/null`"]
+	)])
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl Check if the Net-SNMP library is usable
