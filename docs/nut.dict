@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2813 utf-8
+personal_ws-1.1 en 2814 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -2126,6 +2126,7 @@ nearlowbattery
 netcat
 netclient
 netserver
+netsnmp
 netvision
 networkupstools
 netxml

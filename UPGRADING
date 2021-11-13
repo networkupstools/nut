@@ -54,6 +54,17 @@ Changes from 2.7.4 to 2.7.5
   a factor of 10, consider the `do_convert_deci` flag. See
   docs/man/netxml-ups.txt for details.
 
+- snmp-ups: detection of Net-SNMP has been updated to use `pkg-config` by
+  default (if present), rather than `net-snmp-config(-32|-64)` script(s) as
+  the only option available previously. The scripts tend to specify a lot
+  of options (sometimes platform-specific) in suggested `CFLAGS` and `LIBS`
+  compared to the packaged `pkg-config` information which also works and is
+  more portable. If this change bites your distribution, please bring it up
+  in https://github.com/networkupstools/nut/issues or better yet, post a PR.
+  Also note that `./configure --with-netsnmp-config(=yes)` should set up the
+  preference of the detected script over `pkg-config` information, if both
+  are available, and `--with-netsnmp-config=/path/name` would as well.
+
 - usbhid-ups: numeric data conversion from wire protocol to CPU representation
   in GetValue() was completely reworked, aiming to be correct on all CPU types.
   That said, regressions are possible and feedback is welcome.
