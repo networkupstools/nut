@@ -298,6 +298,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-compare"],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_compare],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wtautological-compare"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_compare=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_compare=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_compare" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-compare"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-compare" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_compare_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wtautological-compare"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_compare_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_compare_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_compare_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-compare" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wsign-compare"],
     [ax_cv__pragma__gcc__diags_ignored_sign_compare],
     [AC_COMPILE_IFELSE(
