@@ -8,6 +8,7 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 [
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -44,11 +45,11 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		esac
 	])
 
-	if ! "${prefer_NET_SNMP_CONFIG}" ; then
+	if test x"$have_PKG_CONFIG" = xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
 		AC_MSG_CHECKING(for Net-SNMP version via pkg-config)
 		dnl TODO? Loop over possible/historic pkg names, like
 		dnl netsnmp, net-snmp, ucd-snmp, libsnmp, snmp...
-		SNMP_VERSION="`pkg-config --silence-errors --modversion netsnmp 2>/dev/null`"
+		SNMP_VERSION="`$PKG_CONFIG --silence-errors --modversion netsnmp 2>/dev/null`"
 		if test "$?" = "0" -a -n "${SNMP_VERSION}" ; then
 			AC_MSG_RESULT(${SNMP_VERSION} found)
 		else
@@ -68,6 +69,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_RESULT(${SNMP_VERSION} found)
 	fi
 
+	if test x"$have_PKG_CONFIG" != xyes && ! "${prefer_NET_SNMP_CONFIG}" ; then
+		AC_MSG_WARN([did not find either net-snmp-config or pkg-config for net-snmp])
+	fi
+
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	AC_ARG_WITH(snmp-includes,
 		AS_HELP_STRING([@<:@--with-snmp-includes=CFLAGS@:>@], [include flags for the Net-SNMP library]),
@@ -82,8 +87,11 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		esac
 	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
 		[CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"],
-		[CFLAGS="`pkg-config --silence-errors --cflags netsnmp 2>/dev/null`"]
-	)])
+		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"]
+			)]
+		)]
+	)
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
@@ -100,8 +108,11 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		esac
 	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
 		[LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"],
-		[LIBS="`pkg-config --silence-errors --libs netsnmp 2>/dev/null`"]
-	)])
+		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[LIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"],
+			[LIBS="-lnetsnmp"])]
+		)]
+	)
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl Check if the Net-SNMP library is usable
