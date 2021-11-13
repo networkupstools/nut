@@ -296,10 +296,10 @@ optional_maintainer_clean_check() {
             echo "WARNING: Skipping maintainer-clean check because there is no `pwd`/.git anymore" >&2
             return 0
         fi
-        git status --ignored -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
+        git status --ignored -s | egrep -v '^.. \.ci.*\.log.*' || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
-        if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+        if [ -n "`git status --ignored -s | egrep -v '^.. \.ci.*\.log.*'`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
             echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
             git diff || true
             echo "==="
