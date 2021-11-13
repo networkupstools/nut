@@ -715,13 +715,13 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 
-	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
-		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+	if ((strncmp(version, "v1", 3) == 0) || (strncmp(version, "v2c", 3) == 0)) {
+		g_snmp_sess.version = (strncmp(version, "v1", 3) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 		g_snmp_sess.community = (unsigned char *)xstrdup(community);
 		g_snmp_sess.community_len = strlen(community);
 	}
-	else if (strcmp(version, "v3") == 0) {
+	else if (strncmp(version, "v3", 3) == 0) {
 		/* SNMP v3 related init */
 		g_snmp_sess.version = SNMP_VERSION_3;
 
