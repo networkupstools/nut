@@ -241,8 +241,10 @@ static int usb_device_close(usb_dev_handle *handle)
 	}
 
 	/* usb_release_interface() sometimes blocks and goes
-	into uninterruptible sleep.  So don't do it. */
+	 * into uninterruptible sleep.  So don't do it.
+	 */
 	/* usb_release_interface(handle, 0); */
+
 	return usb_close(handle);
 }
 
@@ -271,8 +273,10 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i, ret;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
-				dev->descriptor.idProduct, bus->dirname, dev->filename);
+			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)",
+				dev->descriptor.idVendor,
+				dev->descriptor.idProduct,
+				bus->dirname, dev->filename);
 
 			/* supported vendors are now checked by the supplied matcher */
 

@@ -320,7 +320,7 @@ void upsdrv_initinfo(void)
 			}
 		}
 
-		if ( firmware && strcmp(firmware, ""))
+		if (firmware && firmware[0] != '\0')
 			dstate_setinfo("ups.firmware", "%s", firmware);
 		else
 			dstate_setinfo("ups.firmware", "unknown");
