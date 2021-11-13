@@ -492,12 +492,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
                 *-m64*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                    ;;
+                *-m32*)
+                    SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                     ;;
                 *)
                     case "$ARCH$BITS" in
                         *64*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                            ;;
+                        *32*)
+                            SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                             ;;
                     esac
                     ;;
