@@ -182,6 +182,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * tracing information
    * limiting parallelism (thread count) [PRs #1158, #1164]
 
+ - nut-ipmipsu: improve FreeIPMI support to build cleanly against older and
+   newer FreeIPMI versions [PR #1179]
+
  - the powerpanel driver now also supports CyberPower OR1500LCDRTXL2U with
    serial cable [PR #538]
 
