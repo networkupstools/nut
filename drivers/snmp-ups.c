@@ -258,6 +258,17 @@ void upsdrv_initinfo(void)
 	 * outlet (and groups) commands are processed later, during initial walk */
 	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
+		if (su_info_p->flags == 0UL) {
+			upsdebugx(0,
+				"SNMP UPS driver: %s: MIB2NUT mapping '%s' (OID '%s') did not define flags bits. "
+				"Please report as a bug to the NUT maintainers.",
+				__func__,
+				(su_info_p->info_type ? su_info_p->info_type : "<null>"),
+				(su_info_p->OID ? su_info_p->OID : "<null>")
+				);
+			/* FIXME? Bail out of driver here? Ignore the entry? */
+		}
+
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 			&& !(su_info_p->flags & SU_OUTLET)
