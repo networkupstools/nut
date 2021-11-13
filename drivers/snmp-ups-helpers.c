@@ -31,6 +31,7 @@
 #include "nut_float.h"
 #include "nut_stdint.h"
 #include "snmp-ups.h"
+#include "timehead.h" /* time.h => strptime() */
 
 /***********************************************************************
  * Subdrivers shared helpers functions
