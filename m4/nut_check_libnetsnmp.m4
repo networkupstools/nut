@@ -112,155 +112,155 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
 		LIBNETSNMP_LIBS="${LIBS}"
 
-	AC_MSG_CHECKING([for defined usmAESPrivProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmAESPrivProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAESPrivProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmAES128PrivProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmAES128PrivProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAES128PrivProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmDESPrivProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmDESPrivProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmDESPrivProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmHMAC256SHA384AuthProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmHMAC256SHA384AuthProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC256SHA384AuthProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmHMAC384SHA512AuthProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmHMAC384SHA512AuthProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC384SHA512AuthProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmHMAC192SHA256AuthProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmHMAC192SHA256AuthProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC192SHA256AuthProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmAES192PrivProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmAES192PrivProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAES192PrivProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmAES256PrivProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmAES256PrivProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAES256PrivProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmHMACMD5AuthProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmHMACMD5AuthProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMACMD5AuthProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
-	AC_MSG_CHECKING([for defined usmHMACSHA1AuthProtocol])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+		AC_MSG_CHECKING([for defined usmHMACSHA1AuthProtocol])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMACSHA1AuthProtocol;
 ],
 []
-		)],
-		[AC_MSG_RESULT([yes])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 1, [Variable or macro by this name is resolvable])
-		],
-		[AC_MSG_RESULT([no])
-		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 0, [Variable or macro by this name is not resolvable])
-		])
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 0, [Variable or macro by this name is not resolvable])
+			])
 
 	fi
 
