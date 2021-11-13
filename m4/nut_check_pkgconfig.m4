@@ -44,9 +44,9 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 		)]
 	)
 
+	have_PKG_CONFIG_MACROS=no
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_NOTICE([checking for autoconf macro support of pkg-config (${PKG_CONFIG})])
-		 have_PKG_CONFIG=no
 		 dummy_RES=0
 		 ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
 		 ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
@@ -57,15 +57,18 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 			 dnl allows to avoid shell syntax errors in generated configure script
 			 dnl by defining a dummy macro in-place.
 			 ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
-			 PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
+			 PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG_MACROS=yes])
 			]
 		)]
 	)
 
 	AS_IF([test x"$have_PKG_CONFIG" = xno],
-		[AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])
+		[AC_MSG_WARN([pkg-config program is needed to look for further dependencies (will be skipped)])
 		 PKG_CONFIG="false"
-		]
+		],
+		[AS_IF([test x"$have_PKG_CONFIG_MACROS" = xno],
+			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])]
+		)]
 	)
 
   ]) dnl if nut_have_pkg_config_seen
