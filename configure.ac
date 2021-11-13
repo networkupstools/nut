@@ -1566,7 +1566,12 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[AS_IF([test "${withval}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdsystemunitdir=""
+			])
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1594,7 +1599,12 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[AS_IF([test "${systemdshutdowndir}" = yes],
+				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdshutdowndir=""
+			])
 		;;
 	no)
 		systemdshutdowndir=""
@@ -1618,7 +1628,12 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdtmpfilesdir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdtmpfilesdir=""
+			])
 		;;
 	no)
 		systemdtmpfilesdir=""
