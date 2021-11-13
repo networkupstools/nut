@@ -283,7 +283,7 @@ optional_maintainer_clean_check() {
         return 0
     fi
 
-    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] || [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping maintainer-clean check because recipe/developer said so"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
@@ -320,7 +320,7 @@ optional_dist_clean_check() {
         return 0
     fi
 
-    if [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] || [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping distclean check because recipe/developer said so"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
