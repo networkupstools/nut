@@ -318,7 +318,7 @@ dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
 	     and <time.h>.  This macro is deemed obsolete by autotools.])
