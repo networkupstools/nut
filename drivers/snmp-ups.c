@@ -1451,7 +1451,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 	{
-		if (strcmp(info_value, "")) {
+		if (info_value[0] != '\0') {
 			status_set(info_value);
 		}
 	}
