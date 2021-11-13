@@ -34,6 +34,20 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     )]
   )
 
+  AC_CACHE_CHECK([for pragma clang diagnostic push and pop (outside functions)],
+    [ax_cv__pragma__clang__diags_push_pop_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[
+#ifdef __clang__
+#endif
+#pragma clang diagnostic push
+#pragma clang diagnostic pop
+        ]], [])],
+      [ax_cv__pragma__clang__diags_push_pop_besidefunc=yes],
+      [ax_cv__pragma__clang__diags_push_pop_besidefunc=no]
+    )]
+  )
+
   dnl # Currently our code uses these pragmas as close to lines that cause
   dnl # questions from linters as possible. GCC before 4.5 did not allow
   dnl # for diag pragmas inside function bodies, but also did not complain
@@ -56,6 +70,21 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     )]
   )
 
+  AC_CACHE_CHECK([for pragma clang diagnostic push and pop (inside functions)],
+    [ax_cv__pragma__clang__diags_push_pop_insidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#ifdef __clang__
+#endif
+#pragma clang diagnostic push
+#pragma clang diagnostic pop
+}
+        ]], [])],
+      [ax_cv__pragma__clang__diags_push_pop_insidefunc=yes],
+      [ax_cv__pragma__clang__diags_push_pop_insidefunc=no]
+    )]
+  )
+
   AS_IF([test "$ax_cv__pragma__gcc__diags_push_pop_insidefunc" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic push and pop inside function bodies])
   ])
@@ -66,6 +95,18 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
 
   AS_IF([test "$ax_cv__pragma__gcc__diags_push_pop_besidefunc" = "yes" && test "$ax_cv__pragma__gcc__diags_push_pop_insidefunc" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP], 1, [define if your compiler has #pragma GCC diagnostic push and pop])
+  ])
+
+  AS_IF([test "$ax_cv__pragma__clang__diags_push_pop_insidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP_INSIDEFUNC], 1, [define if your compiler has #pragma clang diagnostic push and pop inside function bodies])
+  ])
+
+  AS_IF([test "$ax_cv__pragma__clang__diags_push_pop_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP_BESIDEFUNC], 1, [define if your compiler has #pragma clang diagnostic push and pop outside function bodies])
+  ])
+
+  AS_IF([test "$ax_cv__pragma__clang__diags_push_pop_besidefunc" = "yes" && test "$ax_cv__pragma__clang__diags_push_pop_insidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP], 1, [define if your compiler has #pragma clang diagnostic push and pop])
   ])
 
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-nonliteral"],
