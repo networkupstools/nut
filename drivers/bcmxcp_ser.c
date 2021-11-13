@@ -322,12 +322,21 @@ static void pw_comm_setup(const char *port)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		switch(sizeof(speed_t)) {
 			case 8:	assert (br < INT64_MAX); break;
 			case 4:	assert (br < INT32_MAX); break;
 			case 2:	assert (br < INT16_MAX); break;
 			default:	assert (br < INT_MAX);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif

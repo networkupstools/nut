@@ -472,7 +472,9 @@ static void try_all_oid(void * arg, const char * mib_found)
 
 	while (snmp_device_table[index].mib != NULL) {
 
-		if (snmp_device_table[index].oid == NULL || strcmp(snmp_device_table[index].oid, "") == 0) {
+		if (snmp_device_table[index].oid == NULL
+		||  snmp_device_table[index].oid[0] == '\0'
+		) {
 			index++;
 			continue;
 		}
@@ -812,7 +814,7 @@ static void * try_SysOID(void * arg)
 					/* add mib if no complementary oid is present */
 					/* FIXME: No desc defined when add device */
 					if (snmp_device_table[index].oid == NULL
-						|| strcmp(snmp_device_table[index].oid, "") == 0
+					||  snmp_device_table[index].oid[0] == '\0'
 					) {
 						scan_snmp_add_device(sec, NULL, snmp_device_table[index].mib);
 						mib_found = snmp_device_table[index].sysoid;
