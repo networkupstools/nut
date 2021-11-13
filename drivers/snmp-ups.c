@@ -715,6 +715,17 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 
+/* Older CLANG (e.g. clang-3.4) sees short strings in str{n}cmp()
+ * arguments as arrays and claims out-of-bounds accesses
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Warray-bounds"
+#endif
 	if ((strncmp(version, "v1", 3) == 0) || (strncmp(version, "v2c", 3) == 0)) {
 		g_snmp_sess.version = (strncmp(version, "v1", 3) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
@@ -722,6 +733,12 @@ void nut_snmp_init(const char *type, const char *hostname)
 		g_snmp_sess.community_len = strlen(community);
 	}
 	else if (strncmp(version, "v3", 3) == 0) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic pop
+#endif
 		/* SNMP v3 related init */
 		g_snmp_sess.version = SNMP_VERSION_3;
 
