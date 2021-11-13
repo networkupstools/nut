@@ -34,9 +34,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			[path to program that reports Net-SNMP configuration]),
 	[
 		case "${withval}" in
-		"") ;;
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
+		""|yes) prefer_NET_SNMP_CONFIG=true ;;
+		no)
+			dnl AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
+			prefer_NET_SNMP_CONFIG=false
 			;;
 		*)
 			NET_SNMP_CONFIG="${withval}"
