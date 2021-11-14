@@ -34,6 +34,8 @@ In addition to the `--with-snmp` option above, this one allows to provide
 a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
 This may be needed on build systems which support multiple architectures,
 or in cases where your distribution names this program differently.
+With a default value of `yes` it would mean preference of this program,
+compared to information from `pkg-config`, if both are available.
 
 	--with-neon
 

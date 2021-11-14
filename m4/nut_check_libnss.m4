@@ -3,10 +3,11 @@ dnl nut_have_libnss="yes" and nut_ssl_lib="Mozilla NSS", and define WITH_SSL,
 dnl WITH_NSS, LIBSSL_CFLAGS and LIBSSL_LIBS. On failure, set nut_have_libnss="no".
 dnl This macro can be run multiple times, but will do the checking only once. 
 
-AC_DEFUN([NUT_CHECK_LIBNSS], 
+AC_DEFUN([NUT_CHECK_LIBNSS],
 [
 if test -z "${nut_have_libnss_seen}"; then
 	nut_have_libnss_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -23,19 +24,29 @@ if test -z "${nut_have_libnss_seen}"; then
 		esac
 	fi
 
-	AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
-	NSS_VERSION="`pkg-config --silence-errors --modversion nss 2>/dev/null`"
-	if test "$?" = "0" -a -n "${NSS_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags nss 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs nss 2>/dev/null`"
-		REQUIRES="nss"
-	else
-		NSS_VERSION="none"
-		CFLAGS=""
-		LIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
-		REQUIRES="nss"
-	fi
-	AC_MSG_RESULT(${NSS_VERSION} found)
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
+		 NSS_VERSION="`$PKG_CONFIG --silence-errors --modversion nss 2>/dev/null`"
+		 if test "$?" != "0" -o -z "${NSS_VERSION}"; then
+		    NSS_VERSION="none"
+		 fi
+		 AC_MSG_RESULT(${NSS_VERSION} found)
+		],
+		[NSS_VERSION="none"
+		 AC_MSG_NOTICE([can not check libnss settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"$NSS_VERSION" != xnone],
+		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags nss 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs nss 2>/dev/null`"
+		 REQUIRES="nss"
+		],
+		[CFLAGS=""
+		 LIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
+		 REQUIRES="nss"
+		]
+	)
 
 	dnl allow overriding NSS settings if the user knows best
 	AC_MSG_CHECKING(for Mozilla NSS cflags)

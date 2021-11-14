@@ -53,7 +53,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
 nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+libnutscan_la_LIBADD = $(NETLIBS)
+if WITH_LIBLTDL
+libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
+endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 #
 # Below we set API versions of public libraries
@@ -63,6 +66,7 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 #
 # libnutscan version information
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
 # e.g. for logging or string manipulations), we export a few symbols from
@@ -73,7 +77,8 @@ libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
 libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
-libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
+			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include

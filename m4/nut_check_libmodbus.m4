@@ -11,18 +11,29 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	NUT_CHECK_PKGCONFIG
 
-	AC_MSG_CHECKING(for libmodbus version via pkg-config)
-	LIBMODBUS_VERSION="`pkg-config --silence-errors --modversion libmodbus 2>/dev/null`"
-	if test "$?" = "0" -a -n "${LIBMODBUS_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags libmodbus 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs libmodbus 2>/dev/null`"
-	else
-		LIBMODBUS_VERSION="none"
-		CFLAGS="-I/usr/include/modbus"
-		LIBS="-lmodbus"
-	fi
-	AC_MSG_RESULT(${LIBMODBUS_VERSION} found)
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AC_MSG_CHECKING(for libmodbus version via pkg-config)
+		 LIBMODBUS_VERSION="`$PKG_CONFIG --silence-errors --modversion libmodbus 2>/dev/null`"
+		 if test "$?" != "0" -o -z "${LIBMODBUS_VERSION}"; then
+		    LIBMODBUS_VERSION="none"
+		 fi
+		 AC_MSG_RESULT(${LIBMODBUS_VERSION} found)
+		],
+		[LIBMODBUS_VERSION="none"
+		 AC_MSG_NOTICE([can not check libmodbus settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"$LIBMODBUS_VERSION" != xnone],
+		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libmodbus 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs libmodbus 2>/dev/null`"
+		],
+		[CFLAGS="-I/usr/include/modbus"
+		 LIBS="-lmodbus"
+		]
+	)
 
 	AC_MSG_CHECKING(for libmodbus cflags)
 	AC_ARG_WITH(modbus-includes,

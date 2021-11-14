@@ -7,41 +7,56 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
 [
 if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	nut_usb_lib=""
 
-	AC_MSG_CHECKING(for libusb version via pkg-config)
-	LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb-1.0 2>/dev/null`"
-	if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags libusb-1.0 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs libusb-1.0 2>/dev/null`"
-		AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb.])
-		nut_usb_lib="(libusb-1.0)"
-	else
-		LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`"
-		if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
-			CFLAGS="`pkg-config --silence-errors --cflags libusb 2>/dev/null`"
-			LIBS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
+	dnl TOTHINK: What if there are more than 0.1 and 1.0 to juggle?
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AC_MSG_CHECKING(for libusb version via pkg-config)
+		 LIBUSB_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb-1.0 2>/dev/null`" || LIBUSB_VERSION=""
+		 AS_IF([test -z "${LIBUSB_VERSION}"],
+			[LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`" && nut_usb_lib="(libusb-0.1)" || LIBUSB_VERSION="none"
+			], [nut_usb_lib="(libusb-1.0)"]
+		 )
+		 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		],
+		[LIBUSB_VERSION="none"
+		 AC_MSG_NOTICE([can not check libusb settings via pkg-config])
+		]
+	)
+
+	AS_CASE([${nut_usb_lib}],
+		["(libusb-1.0)"], [
+			CFLAGS="`pkg-config --silence-errors --cflags libusb-1.0 2>/dev/null`"
+			LIBS="`pkg-config --silence-errors --libs libusb-1.0 2>/dev/null`"
+			AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb.])
+			],
+		["(libusb-0.1)"], [
+			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
+			LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
 			AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
+			],
+		[dnl default, for other versions or "none"
+		 AC_MSG_CHECKING([via libusb-config (if present)])
+		 LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
+		 if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
+			CFLAGS="`libusb-config --cflags 2>/dev/null`"
+			LIBS="`libusb-config --libs 2>/dev/null`"
+			dnl TODO: This assumes 0.1; check for 1.0+ somehow?
+			AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
 			nut_usb_lib="(libusb-0.1)"
-		else
-			AC_MSG_CHECKING(via libusb-config)
-			LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
-			if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
-				CFLAGS="`libusb-config --cflags 2>/dev/null`"
-				LIBS="`libusb-config --libs 2>/dev/null`"
-				AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
-				nut_usb_lib="(libusb-0.1)"
-			else
-				LIBUSB_VERSION="none"
-				CFLAGS=""
-				LIBS="-lusb"
-			fi
-		fi
-	fi
-	AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		 else
+			LIBUSB_VERSION="none"
+			CFLAGS=""
+			LIBS="-lusb"
+		 fi
+		 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		]
+	)
 
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes,
@@ -75,7 +90,7 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl check if libusb is usable
 	if test -n "${LIBUSB_VERSION}"; then
-		pkg-config --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
+		test -n "$PKG_CONFIG" && $PKG_CONFIG --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
 		if test "$?" = "0"; then
 			dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
 			AC_CHECK_HEADERS(libusb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
@@ -86,6 +101,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
 			AC_CHECK_FUNCS(libusb_detach_kernel_driver)
 		else
+			dnl libusb 0.1, or missing pkg-config :
 			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
 			dnl Check for libusb "force driver unbind" availability
