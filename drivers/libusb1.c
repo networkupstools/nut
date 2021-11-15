@@ -176,7 +176,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 	for (devnum = 0; devnum < devcount; devnum++) {
 		/* int		if_claimed = 0; */
-		int		i;
 		libusb_device	*device = devlist[devnum];
 
 		libusb_get_device_descriptor(device, &dev_desc);
