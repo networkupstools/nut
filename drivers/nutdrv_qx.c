@@ -116,8 +116,9 @@ upsdrv_info_t	upsdrv_info = {
 #endif	/* QX_USB */
 };
 
+#ifdef QX_USB
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+# ifdef WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  /* defines */
  #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
@@ -152,12 +153,13 @@ upsdrv_info_t	upsdrv_info = {
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
-#else /* for libusb 0.1 */
+# else /* for libusb 0.1 */
  /* Structures */
  typedef char* usb_ctrl_char;
  /* Functions */
  #define nut_usb_strerror(a) usb_strerror()
-#endif
+# endif
+#endif /* QX_USB */
 
 /* == Data walk modes == */
 typedef enum {
