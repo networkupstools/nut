@@ -856,6 +856,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 BUILDSTODO="`expr $BUILDSTODO + 1`"
             done
+            BUILDSTODO_INITIAL="$BUILDSTODO"
 
             #echo "=== Will loop now with $BUILDSTODO build variants..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
@@ -889,9 +890,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 esac || {
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
                     continue
                 }
 
+                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
@@ -944,6 +948,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
+            fi
+
+            echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
+            if [ "$BUILDSTODO" -gt 0 ]; then
+                echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
             fi
 
             exit $RES
