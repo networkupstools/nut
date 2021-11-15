@@ -360,6 +360,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			/* open the device */
 			*handlep = handle = usb_open(dev);
 #endif /* WITH_LIBUSB_1_0 */
+
 			if (!handle) {
 				upsdebugx(4, "Failed to open USB device, skipping: %s", nut_usb_strerror(ret));
 				continue;

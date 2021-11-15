@@ -371,7 +371,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif /* WITH_LIBUSB_1_0 */
 
 			if (!handle) {
-				upsdebugx(4, "Failed to open USB device, skipping: %s", usb_strerror());
+				upsdebugx(4, "Failed to open USB device, skipping: %s", nut_usb_strerror(ret));
 				continue;
 			}
 

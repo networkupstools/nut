@@ -1104,7 +1104,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
@@ -1290,7 +1290,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
 			0x0d, 0, 0, (usb_ctrl_char)cmd, strlen(cmd), 1000)) <= 0
 	) {
-		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
 		*buf = '\0';
 		return ret;
 	}
@@ -1319,7 +1319,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 				USB_ENDPOINT_IN | 1,
 				(usb_ctrl_char)p, buf + buflen - p, 1000)) <= 0
 		) {
-			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
 			*buf = '\0';
 			return ret;
 		}
@@ -1374,7 +1374,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 			ret = usb_get_string(udev, command[i].index, langid_fix, (usb_ctrl_char)buf, 102);
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+				upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
 				return ret;
 			}
 
