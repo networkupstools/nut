@@ -31,7 +31,7 @@ pw_baud_rate_t pw_baud_rates[] = {
 };
 
 /* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
+unsigned char BCMXCP_AUTHCMD[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
 static void send_command(unsigned char *command, size_t command_length)
 {
@@ -356,7 +356,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, mybaud);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {
@@ -382,7 +382,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, pw_baud_rates[i].rate);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {
