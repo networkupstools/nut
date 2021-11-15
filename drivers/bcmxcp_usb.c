@@ -40,7 +40,7 @@ upsdrv_info_t comm_upsdrv_info = {
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
 
-USBDevice_t curDevice;
+static USBDevice_t curDevice;
 
 #ifdef WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
@@ -454,7 +454,6 @@ static usb_dev_handle *open_powerware_usb(void)
 #else /* not WITH_LIBUSB_1_0 */
 	struct usb_bus *busses = usb_get_busses();
 	struct usb_bus *bus;
-	USBDevice_t curDevice;
 
 	for (bus = busses; bus; bus = bus->next)
 	{
