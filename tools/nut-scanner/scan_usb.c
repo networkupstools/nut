@@ -320,6 +320,7 @@ nutscan_device_t * nutscan_scan_usb()
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
 							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+						}
 					}
 				}
 
