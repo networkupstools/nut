@@ -123,7 +123,9 @@ upsdrv_info_t	upsdrv_info = {
  #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
  #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
  #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
+ #define USB_TYPE_VENDOR LIBUSB_REQUEST_TYPE_VENDOR
  #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
+ #define USB_RECIP_ENDPOINT LIBUSB_RECIPIENT_ENDPOINT
  /* Structures */
  #define usb_dev_handle libusb_device_handle
  typedef unsigned char* usb_ctrl_char;
