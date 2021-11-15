@@ -185,6 +185,10 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl additional USB-related checks
 
 		dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
+		dnl Should we check for `uname -o == illumos` to avoid legacy here?
+		dnl Or better yet, perform some active capability tests for need of
+		dnl workarounds or not? e.g. OpenIndiana should include a capable
+		dnl version of libusb-1.0.23+ tailored with NUT tests in mind...
 		dnl HPUX, since v11, needs an explicit activation of pthreads
 		case "${target_os}" in
 			solaris2.1* )
