@@ -914,6 +914,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
             fi
 
+            BUILDSTODO_INITIAL="$BUILDSTODO"
             echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations"
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 # NOTE: Do not repeat a distclean before the loop,
@@ -1087,6 +1088,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
+            fi
+
+            echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
+            if [ "$BUILDSTODO" -gt 0 ]; then
+                echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
             fi
 
             exit $RES
