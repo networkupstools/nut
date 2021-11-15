@@ -856,6 +856,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 BUILDSTODO="`expr $BUILDSTODO + 1`"
             done
+            BUILDSTODO_INITIAL="$BUILDSTODO"
 
             #echo "=== Will loop now with $BUILDSTODO build variants..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
@@ -947,6 +948,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
+            fi
+
+            echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
+            if [ "$BUILDSTODO" -gt 0 ]; then
+                echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
             fi
 
             exit $RES
