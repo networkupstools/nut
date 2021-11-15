@@ -85,4 +85,4 @@ check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

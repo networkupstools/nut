@@ -232,7 +232,9 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_oldnut;
+# endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 

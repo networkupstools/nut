@@ -229,6 +229,7 @@
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD205"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD301"	""	"snmp-ups"
 
 "Cyclades"	"pdu"	"1"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"

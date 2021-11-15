@@ -31,27 +31,7 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
-have_PKG_CONFIG=yes
-AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
-AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
-    [have_PKG_CONFIG=no],
-    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     have_PKG_CONFIG=no
-     dummy_RES=0
-     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
-     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
-     AS_IF([test "${dummy_RES}" = 0],
-        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         dnl The m4 macro below may be not defined if pkg-config package is not
-         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
-         dnl allows to avoid shell syntax errors in generated configure script
-         dnl by defining a dummy macro in-place.
-         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
-        ])
-])
-AS_IF([test x"$have_PKG_CONFIG" = xno],
-    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+NUT_CHECK_PKGCONFIG
 
 
 dnl Various version related processing
@@ -338,7 +318,7 @@ dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
 	     and <time.h>.  This macro is deemed obsolete by autotools.])
@@ -720,8 +700,10 @@ if test "${nut_with_linux_i2c}" != no; then
             )
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [nut_with_linux_i2c="yes"],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
+                [], dnl # nut_with_linux_i2c="yes"
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -736,8 +718,12 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c], [],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
+                [i2c],
+                [nut_with_linux_i2c="yes"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])
+                ])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1580,7 +1566,12 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[AS_IF([test "${withval}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdsystemunitdir=""
+			])
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1608,7 +1599,12 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[AS_IF([test "${systemdshutdowndir}" = yes],
+				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdshutdowndir=""
+			])
 		;;
 	no)
 		systemdshutdowndir=""
@@ -1632,7 +1628,12 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdtmpfilesdir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdtmpfilesdir=""
+			])
 		;;
 	no)
 		systemdtmpfilesdir=""

@@ -215,13 +215,85 @@ static void show_usage()
 		printf("\nSNMP v3 specific options:\n");
 		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv, authNoPriv, authPriv)\n");
 		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5, SHA, SHA256, SHA384 or SHA512) used for authenticated SNMPv3 messages (default=MD5)\n");
-		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
-		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES, AES, AES192 or AES256) used for encrypted SNMPv3 messages (default=DES)\n");
-#else
-		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+
+		/* Construct help for AUTHPROTO */
+		{ int comma = 0;
+		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (");
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"MD5"
+			);
 #endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"SHA"
+			);
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"SHA256"
+			);
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"SHA384"
+			);
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"SHA512"
+			);
+#endif
+		printf("%s%s",
+			(comma ? "" : "none supported"),
+			") used for authenticated SNMPv3 messages (default=MD5 if available)\n"
+			);
+		} /* Construct help for AUTHPROTO */
+
+		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+
+		/* Construct help for PRIVPROTO */
+		{ int comma = 0;
+		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (");
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"DES"
+			);
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"AES"
+			);
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"AES192"
+			);
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+		printf("%s%s",
+			(comma++ ? ", " : ""),
+			"AES256"
+			);
+# endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+		printf("%s%s",
+			(comma ? "" : "none supported"),
+			") used for encrypted SNMPv3 messages (default=DES if available)\n"
+			);
+		} /* Construct help for PRIVPROTO */
+
 		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
 	}
 

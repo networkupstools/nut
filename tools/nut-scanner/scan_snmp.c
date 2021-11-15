@@ -472,7 +472,9 @@ static void try_all_oid(void * arg, const char * mib_found)
 
 	while (snmp_device_table[index].mib != NULL) {
 
-		if (snmp_device_table[index].oid == NULL || strcmp(snmp_device_table[index].oid, "") == 0) {
+		if (snmp_device_table[index].oid == NULL
+		||  snmp_device_table[index].oid[0] == '\0'
+		) {
 			index++;
 			continue;
 		}
@@ -812,7 +814,7 @@ static void * try_SysOID(void * arg)
 					/* add mib if no complementary oid is present */
 					/* FIXME: No desc defined when add device */
 					if (snmp_device_table[index].oid == NULL
-						|| strcmp(snmp_device_table[index].oid, "") == 0
+					||  snmp_device_table[index].oid[0] == '\0'
 					) {
 						scan_snmp_add_device(sec, NULL, snmp_device_table[index].mib);
 						mib_found = snmp_device_table[index].sysoid;
@@ -869,7 +871,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
+# endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 
