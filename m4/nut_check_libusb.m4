@@ -92,6 +92,10 @@ if test -z "${nut_have_libusb_seen}"; then
 	], [])
 	AC_MSG_RESULT([${LIBUSB_VERSION} ${nut_usb_lib}])
 
+	AS_IF([test x"${LIBUSB_1_0_VERSION}" != xnone && test x"${nut_usb_lib}" != x"(libusb-1.0)" ],
+		[AC_MSG_NOTICE([libusb-1.0 support was detected, but another was chosen ${nut_usb_lib}])]
+	)
+
 	AS_CASE([${nut_usb_lib}],
 		["(libusb-1.0)"], [
 			CFLAGS="`pkg-config --silence-errors --cflags libusb-1.0 2>/dev/null`"
