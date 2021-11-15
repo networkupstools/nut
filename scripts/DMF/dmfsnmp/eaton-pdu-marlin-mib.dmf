@@ -271,7 +271,7 @@
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.address" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.parent.serial" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.5.%i" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.firmware" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i" string="yes" type_daisy="3"/>
-		<snmp_info ambient="yes" default="" lookup="eaton_sensor_temperature_unit_info" multiplier="1.0" name="ambient.%i.temperature.unit" oid=".1.3.6.1.4.1.534.6.8.1.2.5.0" string="yes" type_daisy="3"/>
+		<snmp_info ambient="yes" default="" lookup="eaton_sensor_temperature_unit_info" multiplier="1.0" name="ambient.%i.temperature.unit" oid=".1.3.6.1.4.1.534.6.8.1.2.5.0" type_daisy="3"/>
 		<snmp_info ambient="yes" default="" multiplier="0.1" name="ambient.%i.temperature" oid=".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1" type_daisy="3"/>
 		<snmp_info ambient="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="ambient.%i.temperature.status" oid=".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1" string="yes" type_daisy="3"/>
 		<snmp_info ambient="yes" lookup="marlin_threshold_temperature_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1" string="yes" type_daisy="3"/>
@@ -377,6 +377,6 @@
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.on.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.cycle.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.58"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.59"/>
 </nut>
 
