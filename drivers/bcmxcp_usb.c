@@ -491,6 +491,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	int            dev_claimed = 0;
 	usb_dev_handle *dev_h = NULL;
 	int            retry, errout = 0;
+	int            ret = 0;
 
 	upsdebugx(1, "entering nutusb_open()");
 
