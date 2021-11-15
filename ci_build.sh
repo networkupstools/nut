@@ -937,6 +937,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 esac || {
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
                     continue
                 }
 
@@ -1016,6 +1018,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 esac || {
                     RES=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
                     continue
                 }
 
