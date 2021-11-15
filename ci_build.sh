@@ -1022,8 +1022,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ( CONFIG_OPTS+=("--without-all")
                           CONFIG_OPTS+=("--without-ssl")
                           CONFIG_OPTS+=("--with-serial=auto")
-                          CONFIG_OPTS+=("--with-usb")
-                          CONFIG_OPTS+=("--with-libusb-version=${NUT_USB_VARIANT}")
+                          CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
                           configure_nut
                         )
                         ;;
