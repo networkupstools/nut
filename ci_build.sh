@@ -940,6 +940,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
+                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
