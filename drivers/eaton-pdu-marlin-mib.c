@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.68"
+#define EATON_MARLIN_MIB_VERSION	"0.69"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -833,7 +833,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureUnit.1
 	 * MUST be before the temperature data reading! */
-	{ "ambient.%i.temperature.unit", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &eaton_sensor_temperature_unit_info[0] },
+	{ "ambient.%i.temperature.unit", 0, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &eaton_sensor_temperature_unit_info[0] },
 	/* temperatureValue.n.1 */
 	{ "ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
 #if WITH_SNMP_LKP_FUN

@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.102"
+#define PW_MIB_VERSION "0.103"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -613,7 +613,7 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE, NULL },
 	/* temperatureUnit.1
 	 * MUST be before the temperature data reading! */
-	{ "ambient.%i.temperature.unit", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &pw_sensor_temperature_unit_info[0] },
+	{ "ambient.%i.temperature.unit", 0, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &pw_sensor_temperature_unit_info[0] },
 	/* temperatureValue.n.1 */
 	{ "ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE,
 #if WITH_SNMP_LKP_FUN
