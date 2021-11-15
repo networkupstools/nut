@@ -1013,6 +1013,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ( CONFIG_OPTS+=("--without-all")
                           CONFIG_OPTS+=("--without-ssl")
                           CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--without-usb")
                           configure_nut
                         )
                         ;;
