@@ -219,6 +219,11 @@ Change the facility used when writing to the log file.  Read the man
 page for openlog to get some idea of what's available on your system.
 Default is LOG_DAEMON.
 
+	--with-libusb-version=(auto|0.1|1.0)
+
+If several libusb implementations are installed, `configure` script
+picks the best one by default (`auto`). This option allows to specify
+the version to use, or fail if it was not found.
 
 Installation directories
 ------------------------
