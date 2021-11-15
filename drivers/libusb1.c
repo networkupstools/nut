@@ -611,7 +611,7 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev,
 	/* ret = libusb_interrupt_transfer(udev, 0x81, buf, bufsize, &bufsize, timeout); */
 	/* libusb0: ret = usb_interrupt_read(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, timeout); */
 	/* Interrupt EP is LIBUSB_ENDPOINT_IN with offset defined in hid_ep_in, which is 0 by default, unless overridden in subdriver. */
-	ret = libusb_interrupt_transfer(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, &bufsize, timeout);
+	ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (unsigned char *)buf, bufsize, &bufsize, timeout);
 
 	/* Clear stall condition */
 	if (ret == LIBUSB_ERROR_PIPE) {
