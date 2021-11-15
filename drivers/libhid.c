@@ -273,7 +273,9 @@ static struct {
 void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 {
 	int	i;
-#ifndef SHUT_MODE
+#ifdef SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+#else
 	/* extract the VendorId for further testing */
 	int vendorID = hd->VendorID;
 	int productID = hd->ProductID;
