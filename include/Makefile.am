@@ -5,6 +5,7 @@ dist_noinst_HEADERS = attribute.h common.h extstate.h parseconf.h proto.h	\
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
 CLEANFILES = nut_version.h
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # magic to include Git version information in NUT version string
 # (for builds not made from the tagged commit in a Git workspace)
@@ -33,7 +34,7 @@ nut_version.h: FORCE
 FORCE:
 
 # counter part of BUILT_SOURCES: since nut_version is not a direct
-# deps of a local target, we must clean it by ourself before the
+# deps of a local target, we must clean it by ourselves before the
 # distribution
 dist-hook:
 	rm -f $(distdir)/nut_version.h

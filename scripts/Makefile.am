@@ -31,3 +31,5 @@ if WITH_NEON
   SUBDIRS += DMF
 endif
 endif
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

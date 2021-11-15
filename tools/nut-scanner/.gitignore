@@ -2,3 +2,5 @@
 /nutscan-snmp.c
 /nutscan-usb.h
 /nut-scanner-reindex-dmfsnmp
+/serial.c
+/bcmxcp_ser.c

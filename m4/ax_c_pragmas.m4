@@ -122,6 +122,60 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-security" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-truncation"],
+    [ax_cv__pragma__gcc__diags_ignored_format_truncation],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_truncation=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_truncation=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_truncation" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-truncation"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-truncation" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_format_truncation_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wformat-truncation"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_format_truncation_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_format_truncation_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_truncation_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wformat-truncation" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstringop-truncation"],
+    [ax_cv__pragma__gcc__diags_ignored_stringop_truncation],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_stringop_truncation=yes],
+      [ax_cv__pragma__gcc__diags_ignored_stringop_truncation=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_stringop_truncation" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wstringop-truncation"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstringop-truncation" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_stringop_truncation_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wstringop-truncation"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_stringop_truncation_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_stringop_truncation_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_stringop_truncation_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wstringop-truncation" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtype-limits"],
     [ax_cv__pragma__gcc__diags_ignored_type_limits],
     [AC_COMPILE_IFELSE(
@@ -540,6 +594,9 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_security" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_format_nonliteral" = "yes" ],[
         AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wformat-nonliteral" or "-Wformat-security" and for push-pop support])
     ])
+    AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_truncation" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_stringop_truncation" = "yes" ],[
+        AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wformat-truncation" or "-Werror=stringop-truncation" and for push-pop support])
+    ])
     AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code_break" = "yes" ],[
         AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wunreachable-code(-break)" and for push-pop support])
     ])
@@ -551,6 +608,9 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   AS_IF([test "$ax_cv__pragma__gcc__diags_push_pop_besidefunc" = "yes"],[
     AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_security" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_format_nonliteral" = "yes" ],[
         AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL_BESIDEFUNC], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wformat-nonliteral" or "-Wformat-security" and for push-pop support (outside function bodies)])
+    ])
+    AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_format_truncation" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_stringop_truncation" = "yes" ],[
+        AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION_BESIDEFUNC], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wformat-truncation" or "-Werror=stringop-truncation" and for push-pop support (outside function bodies)])
     ])
     AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code" = "yes" || test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code_break" = "yes" ],[
         AC_DEFINE([HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BESIDEFUNC], 1, [define if your compiler has pragmas for GCC diagnostic ignored "-Wunreachable-code(-break)" and for push-pop support (outside function bodies)])

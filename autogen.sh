@@ -72,7 +72,8 @@ if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
 fi
 
 # now we can safely call autoreconf
-if ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
+if ( command -v dos2unix ) 2>/dev/null >/dev/null \
+&& ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
 	echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
 	echo "this may cause issues for m4 parsing with autotools below."
 	if [ -e .git ] ; then

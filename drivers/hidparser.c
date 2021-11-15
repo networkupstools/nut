@@ -434,7 +434,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 
 	int	Weight, Bit;
 	unsigned long mask, signbit, magMax, magMin;
-	long	value = 0;
+	long	value = 0, range;
 
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
@@ -444,6 +444,17 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		if(State) {
 			value += (1 << Weight);
 		}
+	}
+
+	range = pData->LogMax - pData->LogMin + 1;
+	if (range <= 0) {
+		/* makes no sense, give up */
+		*pValue = value;
+		/* Discussion: https://github.com/networkupstools/nut/pull/1138 */
+		upslogx(LOG_ERR, "ERROR in %s: LogMin is greater than LogMax, "
+			"possibly vendor HID is incorrect on device side; "
+			"skipping evaluation of these constraints", __func__);
+		return;
 	}
 
 	/* translate Value into a signed/unsigned value in the range

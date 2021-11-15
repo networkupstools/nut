@@ -45,6 +45,7 @@ static usb_device_id_t powervar_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
+static usb_communication_subdriver_t *usb = &usb_subdriver;
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -116,12 +117,14 @@ static int powervar_claim(HIDDevice_t *hd)
 	case POSSIBLY_SUPPORTED:
 		/* by default, reject, unless the productid option is given */
 		if (getval("productid")) {
+                        usb->hid_rep_index = 1;
 			return 1;
 		}
 		possibly_supported("Powervar", hd);
 		return 0;
 
 	case SUPPORTED:
+                usb->hid_rep_index = 1;
 		return 1;
 
 	case NOT_SUPPORTED:

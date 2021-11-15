@@ -1,8 +1,9 @@
-personal_ws-1.1 en 2810 utf-8
+personal_ws-1.1 en 2827 utf-8
 AAS
 ACFAIL
 ACFREQ
 ACK
+ACM
 ACPI
 ACPresent
 ACrms
@@ -152,6 +153,7 @@ CAs
 CBLimit
 CCC
 CCCC
+CDC
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -279,6 +281,7 @@ EEPROM
 EG
 EL
 ELCD
+EMI
 EMPDT
 ENDFOR
 ENV
@@ -315,6 +318,7 @@ EqlzTm
 Erikson
 Eriksson
 Evgeny
+Exar
 FEMEA
 FFF
 FH
@@ -490,6 +494,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+KTTS
 Kain
 Kaminski
 Kanji
@@ -612,6 +617,7 @@ Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
+MaxLinear
 McKinnon
 Megaline
 Metheringham
@@ -1000,6 +1006,7 @@ SOFF
 SOLA
 SOLA's
 SOV
+SPC
 SPECs
 SPLY
 SPS
@@ -1268,6 +1275,7 @@ YZ
 Ygor
 Yoyodyne
 Yukai
+Yifeng
 Yunto
 ZFS
 ZProject
@@ -1284,6 +1292,7 @@ acampsiOut
 acampsiout
 accessmode
 acl
+acm
 acpi
 acquisited
 acvoltsin
@@ -1463,6 +1472,7 @@ cbl
 cblimit
 ccache
 cd
+cdc
 cef
 cerr
 certfile
@@ -1548,6 +1558,7 @@ cout
 coverity
 cp
 cpp
+cppcheck
 cppunit
 cpqpower
 cpsups
@@ -1897,6 +1908,7 @@ ippon
 ipv
 isbmex
 iso
+isolator
 ivtscd
 jNUT
 jNut
@@ -1957,6 +1969,7 @@ libpowerman
 libre
 libs
 libsnmp
+libssl
 libtool
 libupsclient
 libusb
@@ -2309,6 +2322,7 @@ productid
 prog
 prtconf
 psu
+pty
 pw
 pwl
 pwmib
@@ -2603,8 +2617,10 @@ tripplitesu
 troff
 tsd
 tty
+ttyACM
 ttyS
 ttySx
+ttyU
 ttyUPS
 ttyUSB
 ttya
@@ -2648,6 +2664,7 @@ unpowered
 unshutup
 updateinfo
 upexia
+upower
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage

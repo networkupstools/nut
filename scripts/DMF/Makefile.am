@@ -616,3 +616,5 @@ dmf-fun-test:
 run-dmf-fun-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
