@@ -194,12 +194,12 @@ if test -z "${nut_have_libusb_seen}"; then
 			solaris2.1* )
 				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
 				AC_SEARCH_LIBS(nanosleep, rt)
-				LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
+				LIBS="-R/usr/sfw/lib ${LIBS}"
 				dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
 				dnl and need to call libusb close upon reconnection
 				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
 				SUN_LIBUSB=1
-				AC_MSG_RESULT([${LIBUSB_LIBS}])
+				AC_MSG_RESULT([${LIBS}])
 				;;
 			hpux11*)
 				CFLAGS="${CFLAGS} -lpthread"
