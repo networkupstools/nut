@@ -900,9 +900,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ; then
                 BUILDSTODO="`expr $BUILDSTODO_SSL + $BUILDSTODO_USB`"
             else
-                BUILDSTODO=0
-                if [ "${BUILDSTODO_SSL}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_SSL}" ; fi
-                if [ "${BUILDSTODO_USB}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_USB}" ; fi
+                ###BUILDSTODO=0
+                ###if [ "${BUILDSTODO_SSL}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_SSL}" ; fi
+                ###if [ "${BUILDSTODO_USB}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_USB}" ; fi
+
+                # Use same logic as in actual loops below
+                # It may be imperfect (WRT avoiding extra builds) -- and
+                # that may be addressed separately, but counts should fit
+                BUILDSTODO="${BUILDSTODO_SSL}"
+
+                [ "$NUT_USB_VARIANTS" = "auto" ] || \
+                [ "${BUILDSTODO_USB}" -le 1 ] || \
+                    BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
             fi
 
             echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL and ${BUILDSTODO_USB} USB variations"
