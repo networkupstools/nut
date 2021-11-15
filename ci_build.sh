@@ -910,7 +910,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 BUILDSTODO="${BUILDSTODO_SSL}"
 
                 [ "$NUT_USB_VARIANTS" = "auto" ] || \
-                [ "${BUILDSTODO_USB}" -le 1 ] || \
+                { [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
                     BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
             fi
 
@@ -988,10 +988,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Effectively, whatever up to one version of LibUSB support
             # was detected (or not), was tested above among SSL builds.
             # Here we drill deeper for envs that have more than one LibUSB,
-            # and only probe the serial and/or USB options while disabling
-            # other drivers.
+            # or when caller explicitly requested to only test without it,
+            # and then we only attempt the serial and/or USB options while
+            # disabling other drivers for faster turnaround.
             [ "$NUT_USB_VARIANTS" = "auto" ] || \
-            [ "${BUILDSTODO_USB}" -le 1 ] || \
+            { [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
                 echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
