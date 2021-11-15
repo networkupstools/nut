@@ -506,7 +506,12 @@ if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
    AC_MSG_ERROR([USB drivers requested, but libusb not found.])
 fi
 
-if test "${nut_with_usb}" != "no"; then
+if test "${nut_with_usb}" = "no"; then
+   if test -n "${nut_usb_lib}" && test "${nut_usb_lib}" != none ; then
+    AC_MSG_NOTICE([libusb was detected ${nut_usb_lib}, but a build without USB drivers was requested])
+   fi
+   nut_usb_lib=""
+else
    nut_with_usb="${nut_have_libusb}"
 fi
 
