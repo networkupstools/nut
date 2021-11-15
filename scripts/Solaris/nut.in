@@ -3,29 +3,31 @@
 #init.d script to start nut services
 
 NUT_DIR="@prefix@"
-CONFIG=$NUT_DIR/etc/nut.conf
+NUT_SBIN_DIR="${NUT_DIR}/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
+CONFIG="@CONFPATH@/nut.conf"
 
-if [ -f $CONFIG ] ; then
-        . $CONFIG
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
 fi
 
 ups_stop () {
 	pkill -n upsmon
 	pkill -n upsd
-	${NUT_DIR}/sbin/upsdrvctl stop > /dev/null 2>&1
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsdrvctl" stop > /dev/null 2>&1
 }
 
 ups_start () {
 	if [ "$MODE" = "none" ];then
-		echo No mode set
+		echo "No NUT mode set, not starting anything" >&2
 		exit 1
 	fi
 
-	if [ ! "$MODE" = "netclient" ];then
-		$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
-		$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+	if [ "$MODE" != "netclient" ] ; then
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsdrvctl" start #> /dev/null 2>&1
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsd" #> /dev/null 2>&1
 	fi
-	$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsmon" #> /dev/null 2>&1
 }
 
 case $1 in
@@ -46,10 +48,11 @@ case $1 in
 	ups_start
 	;;
 'poweroff')
-	$NUT_DIR/sbin/upsmon -K  >/dev/null 2>&1
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsmon" -K  >/dev/null 2>&1
 	if [ $? = 0 ]; then
-        	echo "Shutting down the UPS ..."
-		#$NUT_DIR/sbin/upsdrvctl shutdown
+		echo "Shutting down the UPS(es) ..."
+		echo "WARNING: UPS shutdown is currently disabled, please uncomment it in the init-script if desired" >&2
+		#${NUT_SBIN_DIR}/upsdrvctl shutdown
 	fi
 	;;
 *)
@@ -57,7 +60,7 @@ case $1 in
 	echo "Usage: '$0' {start | stop | restart }"
 	echo ""
 	exit 64
-	;; 
+	;;
 
 esac
 exit $?

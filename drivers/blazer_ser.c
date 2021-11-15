@@ -1,6 +1,11 @@
 /*
  * blazer_ser.c: support for Megatec/Q1 serial protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
@@ -124,7 +129,7 @@ void upsdrv_initups(void)
 		{ "reverse",	0, 1 },
 		{ "both",	1, 1 },
 		{ "none",	0, 0 },
-		{ NULL }
+		{ NULL, 0, 0 }
 	};
 
 	int	i;

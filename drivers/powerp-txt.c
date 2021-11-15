@@ -1,6 +1,6 @@
 /*
  * powerp-txt.c - Model specific routines for CyberPower text
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -33,6 +33,8 @@
 
 #include "powerp-txt.h"
 
+#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.5"
+
 typedef struct {
 	float          i_volt;
 	float          o_volt;
@@ -64,7 +66,7 @@ static struct {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
 	{ "battery.charge.low", "P8\r", "C4:%02d\r" },
-	{ NULL }
+	{ NULL, NULL, NULL }
 };
 
 static struct {
@@ -79,7 +81,7 @@ static struct {
 	{ "beeper.on", NULL },
 	{ "beeper.off", NULL },
 	{ "shutdown.stop", "C\r" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
 static int powpan_command(const char *command)
@@ -148,11 +150,11 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) { 
+		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -175,7 +177,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] unknown", __func__, cmdname);
+		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -183,7 +185,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -203,7 +205,19 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			dstate_setinfo(varname, "%s", val);
@@ -372,6 +386,7 @@ static int powpan_status(status_t *status)
 	/*
 	 * WRITE D\r
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
+	 *      #I118.0O118.0L029B100F060.0R0218S..\r
 	 *      01234567890123456789012345678901234
 	 *      0         1         2         3
 	 */
@@ -416,8 +431,21 @@ static int powpan_status(status_t *status)
 		status->has_b_volt = 0;
 		status->has_o_freq = 0;
 		status->has_runtime = 0;
+	} else {
+
+		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dF%fR%dS%2c\r",
+			&status->i_volt, &status->o_volt, &status->o_load,
+			&status->b_chrg, &status->i_freq, &status->runtime,
+			status->flags);
+
+		if (ret >= 7) {
+			status->has_b_volt = 0;
+			status->has_o_freq = 0;
+			status->has_runtime = 1;
+		}
+
 	}
-	else {
+	if (ret < 7) {
 		ret = ser_get_buf_len(upsfd, powpan_answer+35, 23, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret < 0) {
@@ -425,13 +453,13 @@ static int powpan_status(status_t *status)
 			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
 			return -1;
 		}
-		
+
 		if (ret == 0) {
 			upsdebugx(3, "read: timeout");
 			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
 			return -1;
 		}
-		
+
 		upsdebug_hex(3, "read", powpan_answer, ret);
 
 		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
@@ -500,7 +528,7 @@ static int powpan_updateinfo(void)
 		} else if (status.o_volt < 1.05 * status.i_volt) {
 			/* ignore */
 		} else if (status.o_volt < 1.5 * status.i_volt) {
-			status_set("BOOST"); 
+			status_set("BOOST");
 		} else {
 			upsdebugx(2, "%s: output voltage too high", __func__);
 		}
@@ -536,7 +564,7 @@ static int powpan_initups(void)
 
 		/*
 		 * WRITE P4\r
-		 * READ #BC1200     ,1.600,000000000000,CYBER POWER    
+		 * READ #BC1200     ,1.600,000000000000,CYBER POWER
 		 *      01234567890123456789012345678901234567890123456
 		 *      0         1         2         3         4
 		 */
@@ -545,7 +573,7 @@ static int powpan_initups(void)
 		if (ret < 1) {
 			continue;
 		}
-		
+
 		if (ret < 46) {
 			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
 			continue;
@@ -589,6 +617,7 @@ static int powpan_initups(void)
 
 subdriver_t powpan_text = {
 	"text",
+	POWERPANEL_TEXT_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,

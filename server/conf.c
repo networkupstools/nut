@@ -23,9 +23,10 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include <ctype.h>
 
-	ups_t	*upstable = NULL;
-	int	num_ups = 0;
+static ups_t	*upstable = NULL;
+int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -110,10 +111,26 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 	/* always set this on reload */
 	temp->retain = 1;
-}		
+}
+
+/* returns 1 if "arg" was usable as a boolean value, 0 if not
+ * saves converted meaning of "arg" into referenced "result"
+ */
+static int parse_boolean(char *arg, int *result)
+{
+	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
+		*result = 1;
+		return 1;
+	}
+	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no")) || (!strcasecmp(arg, "0"))) {
+		*result = 0;
+		return 1;
+	}
+	return 0;
+}
 
 /* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
@@ -121,14 +138,51 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		maxage = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			maxage = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXAGE has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
+	/* TRACKINGDELAY <seconds> */
+	if (!strcmp(arg[0], "TRACKINGDELAY")) {
+		if (isdigit(arg[1][0])) {
+			tracking_delay = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "TRACKINGDELAY has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
+	/* ALLOW_NO_DEVICE <seconds> */
+	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
+		if (isdigit(arg[1][0])) {
+			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
+			return 1;
+		}
+		if (parse_boolean(arg[1], &allow_no_device))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
 	}
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		maxconn = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			maxconn = atol(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXCONN has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 
 	/* STATEPATH <dir> */
@@ -162,12 +216,29 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		certrequest = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			certrequest = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */
-	
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* DISABLE_WEAK_SSL <bool> */
+	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
+		if (parse_boolean(arg[1], &disable_weak_ssl))
+			return 1;
+
+		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
+		return 0;
+	}
+#endif /* WITH_OPENSSL | WITH_NSS */
+
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
@@ -198,7 +269,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
-	
+
 #ifdef WITH_NSS
 	/* CERTIDENT <name> <passwd> */
 	if (!strcmp(arg[0], "CERTIDENT")) {
@@ -255,11 +326,11 @@ void load_upsdconf(int reloading)
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
-			snprintf(errmsg, sizeof(errmsg), 
+			snprintf(errmsg, sizeof(errmsg),
 				"upsd.conf: invalid directive");
 
 			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
+				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
@@ -267,7 +338,7 @@ void load_upsdconf(int reloading)
 
 	}
 
-	pconf_finish(&ctx);		
+	pconf_finish(&ctx);
 }
 
 /* callback during parsing of ups.conf */
@@ -331,7 +402,7 @@ void upsconf_add(int reloading)
 
 		/* don't accept an entry that's missing items */
 		if ((!tmp->driver) || (!tmp->port)) {
-			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n", 
+			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n",
 				tmp->upsname);
 		} else {
 			snprintf(statefn, sizeof(statefn), "%s-%s",
@@ -404,7 +475,7 @@ static void delete_ups(upstype_t *target)
 
 	/* shouldn't happen */
 	upslogx(LOG_ERR, "delete_ups: UPS not found");
-}			
+}
 
 /* see if we can open a file */
 static int check_file(const char *fn)

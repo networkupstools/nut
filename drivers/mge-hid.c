@@ -36,9 +36,9 @@
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
-#include <math.h>
+#include "nut_float.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.43"
+#define MGE_HID_VERSION		"MGE HID 1.44"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -121,7 +121,7 @@ typedef enum {
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
- * This is then overriden for offline, through mge_model_names */
+ * This is then overridden for offline, through mge_model_names */
 static models_type_t	mge_type = MGE_DEFAULT;
 
 /* Countries definition, for region specific settings and features */
@@ -195,8 +195,8 @@ static const char *eaton_abm_enabled_fun(double value)
 }
 
 static info_lkp_t eaton_abm_enabled_info[] = {
-	{ 0, "dummy", eaton_abm_enabled_fun },
-	{ 0, NULL, NULL }
+	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Note 1: This point will need more clarification! */
@@ -213,8 +213,8 @@ static const char *eaton_abm_enabled_legacy_fun(double value)
 }
 
 static info_lkp_t eaton_abm_enabled_legacy_info[] = {
-	{ 0, "dummy", eaton_abm_enabled_legacy_fun },
-	{ 0, NULL, NULL }
+	{ 0, "dummy", eaton_abm_enabled_legacy_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 #endif /* if 0 */
 
@@ -260,8 +260,8 @@ static const char *eaton_abm_status_fun(double value)
 }
 
 static info_lkp_t eaton_abm_status_info[] = {
-	{ 1, "dummy", eaton_abm_status_fun },
-	{ 0, NULL, NULL }
+	{ 1, "dummy", eaton_abm_status_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
@@ -294,8 +294,8 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 }
 
 static info_lkp_t eaton_abm_chrg_dischrg_info[] = {
-	{ 1, "dummy", eaton_abm_chrg_dischrg_fun },
-	{ 0, NULL, NULL }
+	{ 1, "dummy", eaton_abm_chrg_dischrg_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* ABM also implies that standard CHRG/DISCHRG are processed according
@@ -308,7 +308,7 @@ static const char *eaton_abm_check_dischrg_fun(double value)
 {
 	if (advanced_battery_monitoring == ABM_DISABLED)
 	{
-		if (value == 1) {
+		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
 		}
 		else {
@@ -326,15 +326,15 @@ static const char *eaton_abm_check_dischrg_fun(double value)
 }
 
 static info_lkp_t eaton_discharging_info[] = {
-	{ 1, "dummy", eaton_abm_check_dischrg_fun },
-	{ 0, NULL, NULL }
+	{ 1, "dummy", eaton_abm_check_dischrg_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *eaton_abm_check_chrg_fun(double value)
 {
 	if (advanced_battery_monitoring == ABM_DISABLED)
 	{
-		if (value == 1) {
+		if (d_equal(value, 1)) {
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 		}
 		else {
@@ -352,8 +352,8 @@ static const char *eaton_abm_check_chrg_fun(double value)
 }
 
 static info_lkp_t eaton_charging_info[] = {
-	{ 1, "dummy", eaton_abm_check_chrg_fun },
-	{ 0, NULL, NULL }
+	{ 1, "dummy", eaton_abm_check_chrg_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
@@ -362,8 +362,9 @@ static info_lkp_t eaton_charging_info[] = {
 static const char *mge_date_conversion_fun(double value)
 {
 	time_t	sec = value;
+	struct tm	tmbuf;
 
-	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%Y/%m/%d", localtime(&sec)) == 10) {
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%Y/%m/%d", localtime_r(&sec, &tmbuf)) == 10) {
 		return mge_scratch_buf;
 	}
 
@@ -374,8 +375,9 @@ static const char *mge_date_conversion_fun(double value)
 static const char *mge_time_conversion_fun(double value)
 {
 	time_t sec = value;
+	struct tm	tmbuf;
 
-	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime(&sec)) == 8) {
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime_r(&sec, &tmbuf)) == 8) {
 		return mge_scratch_buf;
 	}
 
@@ -417,19 +419,23 @@ static double mge_time_conversion_nuf(const char *value)
 }
 
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf }
+	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf }
+	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 #else
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, NULL }
+	{ 0, NULL, mge_date_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, NULL }
+	{ 0, NULL, mge_time_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 #endif /* HAVE_STRPTIME */
 
@@ -459,7 +465,8 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
-	{ 0, NULL, mge_battery_voltage_nominal_fun }
+	{ 0, NULL, mge_battery_voltage_nominal_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
@@ -483,7 +490,8 @@ static const char *mge_battery_voltage_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage[] = {
-	{ 0, NULL, mge_battery_voltage_fun }
+	{ 0, NULL, mge_battery_voltage_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_powerfactor_conversion_fun(double value)
@@ -493,7 +501,8 @@ static const char *mge_powerfactor_conversion_fun(double value)
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
-	{ 0, NULL, mge_powerfactor_conversion_fun }
+	{ 0, NULL, mge_powerfactor_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_battery_capacity_fun(double value)
@@ -503,65 +512,66 @@ static const char *mge_battery_capacity_fun(double value)
 }
 
 static info_lkp_t mge_battery_capacity[] = {
-	{ 0, NULL, mge_battery_capacity_fun }
+	{ 0, NULL, mge_battery_capacity_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t eaton_enable_disable_info[] = {
-	{ 0, "disabled", NULL },
-	{ 1, "enabled", NULL },
-	{ 0, NULL, NULL }
+static info_lkp_t eaton_enable_disable_info[] = {
+	{ 0, "disabled", NULL, NULL },
+	{ 1, "enabled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_upstype_conversion[] = {
-	{ 1, "offline / line interactive", NULL },
-	{ 2, "online", NULL },
-	{ 3, "online - unitary/parallel", NULL },
-	{ 4, "online - parallel with hot standy", NULL },
-	{ 5, "online - hot standby redundancy", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "offline / line interactive", NULL, NULL },
+	{ 2, "online", NULL, NULL },
+	{ 3, "online - unitary/parallel", NULL, NULL },
+	{ 4, "online - parallel with hot standy", NULL, NULL },
+	{ 5, "online - hot standby redundancy", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_sensitivity_info[] = {
-	{ 0, "normal", NULL },
-	{ 1, "high", NULL },
-	{ 2, "low", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "normal", NULL, NULL },
+	{ 1, "high", NULL, NULL },
+	{ 2, "low", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_emergency_stop[] = {
-	{ 1, "Emergency stop!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Emergency stop!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_wiring_fault[] = {
-	{ 1, "Wiring fault!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Wiring fault!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_config_failure[] = {
-	{ 1, "Fatal EEPROM fault!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Fatal EEPROM fault!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_inverter_volthi[] = {
-	{ 1, "Inverter AC voltage too high!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Inverter AC voltage too high!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_inverter_voltlo[] = {
-	{ 1, "Inverter AC voltage too low!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Inverter AC voltage too low!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_short_circuit[] = {
-	{ 1, "Output short circuit!", NULL },
-	{ 0, NULL, NULL }
+	{ 1, "Output short circuit!", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t mge_onbatt_info[] = {
-	{ 1, "!online", NULL },
-	{ 0, "online", NULL },
-	{ 0, NULL, NULL }
+static info_lkp_t mge_onbatt_info[] = {
+	{ 1, "!online", NULL, NULL },
+	{ 0, "online", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* allow limiting to ups.model = Protection Station, Ellipse Eco
@@ -576,6 +586,7 @@ static const char *eaton_check_pegasus_fun(double value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		return NULL;
 	default:
 		return NULL;
 	}
@@ -585,10 +596,10 @@ static const char *eaton_check_pegasus_fun(double value)
 }
 
 static info_lkp_t pegasus_threshold_info[] = {
-	{ 10, "10", eaton_check_pegasus_fun },
-	{ 25, "25", eaton_check_pegasus_fun },
-	{ 60, "60", eaton_check_pegasus_fun },
-	{ 0, NULL, NULL }
+	{ 10, "10", eaton_check_pegasus_fun, NULL },
+	{ 25, "25", eaton_check_pegasus_fun, NULL },
+	{ 60, "60", eaton_check_pegasus_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* allow limiting standard yes/no info (here, to enable ECO mode) to
@@ -604,11 +615,12 @@ static const char *pegasus_yes_no_info_fun(double value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		return NULL;
 	default:
 		return NULL;
 	}
 
-	return (value == 0) ? "no" : "yes";
+	return (d_equal(value, 0)) ? "no" : "yes";
 }
 
 /* Conversion back of yes/no info */
@@ -622,6 +634,7 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		return 0;
 	default:
 		return 0;
 	}
@@ -632,10 +645,10 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		return 0;
 }
 
-info_lkp_t pegasus_yes_no_info[] = {
+static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
-	{ 0, NULL, NULL }
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Determine country using UPS.PowerSummary.Country.
@@ -650,14 +663,15 @@ static const char *eaton_check_country_fun(double value)
 }
 
 static info_lkp_t eaton_check_country_info[] = {
-	{ 0, "dummy", eaton_check_country_fun },
-	{ 0, NULL, NULL }
+	{ 0, "dummy", eaton_check_country_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* When UPS.PowerConverter.Output.ActivePower is not present,
  * compute a realpower approximation using available data */
 static const char *eaton_compute_realpower_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
 	const char *str_ups_load = dstate_getinfo("ups.load");
 	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
 	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
@@ -683,8 +697,8 @@ static const char *eaton_compute_realpower_fun(double value)
 }
 
 static info_lkp_t eaton_compute_realpower_info[] = {
-	{ 0, "dummy", eaton_compute_realpower_fun },
-	{ 0, NULL, NULL }
+	{ 0, "dummy", eaton_compute_realpower_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Limit nominal output voltage according to HV or LV models */
@@ -731,6 +745,7 @@ static const char *nominal_output_voltage_fun(double value)
 		case 240:
 			if ((mge_type & 0xFF00) >= MGE_DEFAULT)
 				break;
+			return NULL;
 		default:
 			return NULL;
 		}
@@ -774,19 +789,35 @@ static info_lkp_t nominal_output_voltage_info[] = {
 	/* line-interactive, starting with Evolution, support both HV values */
 	/* HV models */
 	/* 208V */
-	{ 200, "200", nominal_output_voltage_fun },
-	{ 208, "208", nominal_output_voltage_fun },
+	{ 200, "200", nominal_output_voltage_fun, NULL },
+	{ 208, "208", nominal_output_voltage_fun, NULL },
 	/* HV models */
 	/* 230V */
-	{ 220, "220", nominal_output_voltage_fun },
-	{ 230, "230", nominal_output_voltage_fun },
-	{ 240, "240", nominal_output_voltage_fun },
+	{ 220, "220", nominal_output_voltage_fun, NULL },
+	{ 230, "230", nominal_output_voltage_fun, NULL },
+	{ 240, "240", nominal_output_voltage_fun, NULL },
 	/* LV models */
-	{ 100, "100", nominal_output_voltage_fun },
-	{ 110, "110", nominal_output_voltage_fun },
-	{ 120, "120", nominal_output_voltage_fun },
-	{ 127, "127", nominal_output_voltage_fun },
-	{ 0, NULL, NULL }
+	{ 100, "100", nominal_output_voltage_fun, NULL },
+	{ 110, "110", nominal_output_voltage_fun, NULL },
+	{ 120, "120", nominal_output_voltage_fun, NULL },
+	{ 127, "127", nominal_output_voltage_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Limit reporting "online / !online" to when "!off" */
+static const char *eaton_converter_online_fun(double value)
+{
+	int ups_status = ups_status_get();
+
+	if (!(ups_status & STATUS(OFF)))
+		return (d_equal(value, 0)) ? "!online" : "online";
+	else
+		return NULL;
+}
+
+static info_lkp_t eaton_converter_online_info[] = {
+	{ 0, "dummy", eaton_converter_online_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -1050,7 +1081,7 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5P", "850", EATON_5P, "5P 850" },
 	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
 	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
-	
+
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
@@ -1116,7 +1147,7 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* end of structure. */
-	{ NULL }
+	{ NULL, NULL, 0, NULL }
 };
 
 
@@ -1210,7 +1241,6 @@ static hid_info_t mge_hid2nut[] =
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
@@ -1232,6 +1262,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
+	/* NOTE: UPS.PowerConverter.Input.[1].PresentStatus.Used" must only be considered when not "OFF",
+	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
@@ -1394,7 +1427,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
-	{ NULL }
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 /*
@@ -1436,7 +1469,31 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * model name by concatenation of iProduct and iModel
 		 */
 		char	buf[SMALLBUF];
-		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+		/* NOTE: We intentionally limit the amount of bytes reported */
+		int len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+
+		if (len < 0) {
+			upsdebugx(1, "%s: got an error while extracting iProduct+iModel value", __func__);
+		}
+
+		/* NOTE: SMALLBUF here comes from mge_format_model()
+		 * buffer definitions below
+		 */
+		if ((intmax_t)len > (intmax_t)sizeof(buf)
+		|| (intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1)
+		    > (intmax_t)sizeof(buf)
+		) {
+			upsdebugx(1, "%s: extracted iProduct+iModel value was truncated", __func__);
+		}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 		return strdup(buf);
 	}
 
@@ -1521,7 +1578,8 @@ static int mge_claim(HIDDevice_t *hd) {
 		return 0;
 	}
 #else
-			return 1;
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
 #endif
 }
 

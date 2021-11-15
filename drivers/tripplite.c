@@ -65,13 +65,17 @@
  * :C     -- fetches result of a self-test
  * :K1    -- turns on power receptacles
  * :K0    -- turns off power receptacles
+ * :K3    -- turns on bank 1 receptacle(s)
+ * :K2    -- turns off bank 1 receptacle(s)
+ * :K5    -- turns on bank 2 receptacle(s)
+ * :K4    -- turns off bank 2 receptacle(s)
  * :G     -- unconfirmed: shuts down UPS until power returns
  * :Q1    -- enable "Remote Reboot"
  * :Q0    -- disable "Remote Reboot"
  * :W     -- returns 'W' data
  * :L     -- returns 'L' data
  * :V     -- returns 'V' data (firmware revision)
- * :X     -- returns 'X' data (firmware revision)
+ * :X     -- returns 'X' data (firmware checksum)
  * :D     -- returns general status data
  * :B     -- returns battery voltage (hexadecimal decivolts)
  * :I     -- returns minimum input voltage (hexadecimal hertz)
@@ -112,7 +116,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.91"
+#define DRIVER_VERSION	"0.92"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -241,6 +245,22 @@ static int instcmd(const char *cmdname, const char *extra)
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
+	if (!strcasecmp(cmdname, "outlet.1.load.off")) {
+		send_cmd(":K2\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.1.load.on")) {
+		send_cmd(":K3\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.2.load.off")) {
+		send_cmd(":K4\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.2.load.on")) {
+		send_cmd(":K5\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
@@ -258,7 +278,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -286,7 +306,7 @@ void upsdrv_initinfo(void)
 {
 	const char *model;
 	char w_value[16], l_value[16], v_value[16], x_value[16];
-	int  va;
+	int  va, gen, plugs;
 	long w, l;
 
 	get_letter_cmd(":W\r", w_value, sizeof w_value);
@@ -299,17 +319,20 @@ void upsdrv_initinfo(void)
 	w = hex2d(w_value, 2);
 	l = hex2d(l_value, 2);
 
-	model = "Smart %d";
+	model = "Smart";
 	if (w & 0x40)
-		model = "Unison %d";
+		model = "Unison";
 
 	va = ((w & 0x3f) * 32 + (l >> 3)) * 5;  /* New formula */
 	if (!(w & 0x80))
 		va = l / 2;   /* Old formula */
 
-	dstate_setinfo("ups.model", model, va);
-	dstate_setinfo("ups.firmware", "%c%c",
-			'A'+v_value[0]-'0', 'A'+v_value[1]-'0');
+	gen = 1 + (!(x_value[0] & 0x07) * !(x_value[1] & 0x07));
+	plugs = x_value[0] - !!(x_value[1] >> 3) * 8;
+
+	dstate_setinfo("ups.model", "%s %d", model, va);
+	dstate_setinfo("ups.firmware", "%c%c (Gen %d)",
+			'A'+v_value[0]-'0', 'A'+v_value[1]-'0', gen);
 
 	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
@@ -328,6 +351,15 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.reboot.graceful");
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
+
+	if (plugs > 1) {
+		dstate_addcmd("outlet.1.load.off");
+		dstate_addcmd("outlet.1.load.on");
+		if (plugs > 2) {
+			dstate_addcmd("outlet.2.load.off");
+			dstate_addcmd("outlet.2.load.on");
+		}
+	}
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -381,7 +413,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	send_cmd(":B\r", buf, sizeof buf);
-	bv = (float)hex2d(buf, 2) / 10.0;
+	bv = (float)(hex2d(buf, 2)) / 10.0;
 	if (bv > 50.0 || bv < 0.0) {
 		++numfails;
 		if (numfails > MAXTRIES) {

@@ -9,6 +9,8 @@
 .deps/
 .libs/
 .inst/
+/tmp/
+/_install_pkgprotodir/
 Makefile
 Makefile.in
 ## Parent directory only
@@ -19,7 +21,14 @@ Makefile.in
 /config.log
 /config.status
 /config.sub
+/config.h
+/config.cache
 /configure
+/conf_nut_report_feature
+/conf??????/
+/dir.??????/
+/dir?.???????/
+/configure-test*/
 /cscope.*
 /depcomp
 /INSTALL
@@ -28,13 +37,29 @@ Makefile.in
 /ltmain.sh
 /missing
 /test-driver
-common/.dirstamp
+*-spellchecked
+/cppcheck*.xml
+/.ci*.log
+/.ci*.log.*
+.dirstamp
+
+# Python precompiled files
+__pycache__/
+*.pyc
 
 # Dist
 /nut-*.*.*/
 /nut-*.tar.gz
+/nut*.rpm
+/NUT*.local.gz
+/NUT*.p5i
+/NUT*.depot
 
 # Official dist
 /nut-*.tar.gz.md5
 /nut-*.tar.gz.sha256
 /nut-*.tar.gz.sig
+
+# Debuggers and IDEs
+.gdb_history
+/nbproject

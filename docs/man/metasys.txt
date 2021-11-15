@@ -1,7 +1,7 @@
 METASYS(8)
 ==========
 
-NAME  
+NAME
 ----
 
 metasys - Driver for Meta System UPS equipment
@@ -10,7 +10,7 @@ NOTE
 ----
 
 This man page only documents the hardware-specific features of the
-metasys driver.  For information about the core driver, see  
+metasys driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -41,7 +41,7 @@ This driver supports no extra arguments from linkman:ups.conf[5].
 
 BUGS
 ----
-This driver has been tested on Meta System HF Millennium 820 and 
+This driver has been tested on Meta System HF Millennium 820 and
 ally HF 1000 only.
 
 Any information about the use of the driver with the other listed

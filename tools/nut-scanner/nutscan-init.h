@@ -40,6 +40,8 @@ extern int nutscan_avail_xml_http;
 void nutscan_init(void);
 void nutscan_free(void);
 
+#define DEFAULT_THREAD  512
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

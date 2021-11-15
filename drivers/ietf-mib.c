@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.51"
+#define IETF_MIB_VERSION	"1.52"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -46,67 +46,67 @@
 /* #define DEBUG */
 
 static info_lkp_t ietf_battery_info[] = {
-	{ 1, ""   /* unknown */ },
-	{ 2, ""   /* batteryNormal */},
-	{ 3, "LB" /* batteryLow */ },
-	{ 4, "LB" /* batteryDepleted */ },
-	{ 0, NULL }
+	{ 1, ""   /* unknown */, NULL, NULL },
+	{ 2, ""   /* batteryNormal */, NULL, NULL },
+	{ 3, "LB" /* batteryLow */, NULL, NULL },
+	{ 4, "LB" /* batteryDepleted */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_power_source_info[] = {
-	{ 1, "" /* other */ },
-	{ 2, "OFF" /* none */ },
-	{ 3, "OL" /* normal */ },
-	{ 4, "OL BYPASS" /* bypass */ },
-	{ 5, "OB" /* battery */ },
-	{ 6, "OL BOOST" /* booster */ },
-	{ 7, "OL TRIM" /* reducer */ },
-	{ 0, NULL }
+	{ 1, "" /* other */, NULL, NULL },
+	{ 2, "OFF" /* none */, NULL, NULL },
+	{ 3, "OL" /* normal */, NULL, NULL },
+	{ 4, "OL BYPASS" /* bypass */, NULL, NULL },
+	{ 5, "OB" /* battery */, NULL, NULL },
+	{ 6, "OL BOOST" /* booster */, NULL, NULL },
+	{ 7, "OL TRIM" /* reducer */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_overload_info[] = {
-	{ 1, "OVER" },	/* output overload */
-	{ 0, NULL }
+	{ 1, "OVER", NULL, NULL },	/* output overload */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_test_active_info[] = {
-	{ 1, "" },	/* upsTestNoTestsInitiated */
-	{ 2, "" },	/* upsTestAbortTestInProgress */
-	{ 3, "TEST" },	/* upsTestGeneralSystemsTest */
-	{ 4, "TEST" },	/* upsTestQuickBatteryTest */
-	{ 5, "CAL" },	/* upsTestDeepBatteryCalibration */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },	/* upsTestNoTestsInitiated */
+	{ 2, "", NULL, NULL },	/* upsTestAbortTestInProgress */
+	{ 3, "TEST", NULL, NULL },	/* upsTestGeneralSystemsTest */
+	{ 4, "TEST", NULL, NULL },	/* upsTestQuickBatteryTest */
+	{ 5, "CAL", NULL, NULL },	/* upsTestDeepBatteryCalibration */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 #ifdef DEBUG
 static info_lkp_t ietf_shutdown_type_info[] = {
-	{ 1, "output" },
-	{ 2, "system" },
-	{ 0, NULL }
+	{ 1, "output", NULL, NULL },
+	{ 2, "system", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 #endif
 
 static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
-	{ 1, "disabled" },
-	{ 2, "enabled" },
-	{ 3, "muted" },
-	{ 0, NULL }
+	{ 1, "disabled", NULL, NULL },
+	{ 2, "enabled", NULL, NULL },
+	{ 3, "muted", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
@@ -135,7 +135,7 @@ static snmp_info_t ietf_mib[] = {
 #ifdef DEBUG
 	{ "debug.upsInputLineBads", 0, 1.0, IETF_OID_UPS_MIB "3.1.0", "", 0, NULL }, /* upsInputLineBads */
 #endif
-	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", 0, NULL, NULL }, /* upsInputNumLines */
+	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", 0, NULL }, /* upsInputNumLines */
 #ifdef DEBUG
 	{ "debug.upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_1, NULL }, /* upsInputLineIndex */
 	{ "debug.[1].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_3, NULL },
@@ -162,7 +162,7 @@ static snmp_info_t ietf_mib[] = {
 	/* Output Group */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "4.1.0", "", SU_STATUS_PWR, ietf_power_source_info }, /* upsOutputSource */
 	{ "output.frequency", 0, 0.1, IETF_OID_UPS_MIB "4.2.0", "", 0, NULL }, /* upsOutputFrequency */
-	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", 0, NULL, NULL }, /* upsOutputNumLines */
+	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", 0, NULL }, /* upsOutputNumLines */
 #ifdef DEBUG
 	{ "debug.upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_1, NULL }, /* upsOutputLineIndex */
 	{ "debug.[1].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_3, NULL },
@@ -187,7 +187,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.L3.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.3", "", SU_OUTPUT_3, NULL },
 
 	/* Bypass Group */
-	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", 0, NULL, NULL }, /* upsBypassNumLines */
+	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", 0, NULL }, /* upsBypassNumLines */
 	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3, NULL }, /* upsBypassFrequency */
 #ifdef DEBUG
 	{ "debug.upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_1, NULL }, /* upsBypassLineIndex */
@@ -241,10 +241,10 @@ static snmp_info_t ietf_mib[] = {
 
 	/* Test Group */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.1.0", "", 0, ietf_test_active_info }, /* upsTestId */
-	{ "test.battery.stop", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.2", SU_TYPE_CMD, NULL }, /* upsTestAbortTestInProgress */
-	{ "test.battery.start", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.3", SU_TYPE_CMD, NULL }, /* upsTestGeneralSystemsTest */
-	{ "test.battery.start.quick", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.4", SU_TYPE_CMD, NULL }, /* upsTestQuickBatteryTest */
-	{ "test.battery.start.deep", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.5", SU_TYPE_CMD, NULL }, /* upsTestDeepBatteryCalibration */
+	{ "test.battery.stop", 0, 1, IETF_OID_UPS_MIB "7.1.0", "0", SU_TYPE_CMD, NULL }, /* upsTestAbortTestInProgress */
+	{ "test.battery.start", 0, 1, IETF_OID_UPS_MIB "7.1.0", "0", SU_TYPE_CMD, NULL }, /* upsTestGeneralSystemsTest */
+	{ "test.battery.start.quick", 0, 1, IETF_OID_UPS_MIB "7.1.0", "0", SU_TYPE_CMD, NULL }, /* upsTestQuickBatteryTest */
+	{ "test.battery.start.deep", 0, 1, IETF_OID_UPS_MIB "7.1.0", "0", SU_TYPE_CMD, NULL }, /* upsTestDeepBatteryCalibration */
 #ifdef DEBUG
 	{ "debug.upsTestSpinLock", 0, 1.0, IETF_OID_UPS_MIB "7.2.0", "", 0, NULL }, /* upsTestSpinLock */
 #endif
@@ -260,9 +260,9 @@ static snmp_info_t ietf_mib[] = {
 	{ "debug.upsShutdownType", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.1.0", "", 0, ietf_shutdown_type_info }, /* upsShutdownType */
 #endif
 	{ "ups.timer.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.2.0", "", 0, NULL }, /* upsShutdownAfterDelay*/
-	{ "load.off", 0, 0, IETF_OID_UPS_MIB "8.2.0", "", SU_TYPE_CMD, NULL },
+	{ "load.off", 0, 1, IETF_OID_UPS_MIB "8.2.0", "0", SU_TYPE_CMD, NULL },
 	{ "ups.timer.start", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.3.0", "", 0, NULL }, /* upsStartupAfterDelay */
-	{ "load.on", 0, 0, IETF_OID_UPS_MIB "8.3.0", "", SU_TYPE_CMD, NULL },
+	{ "load.on", 0, 1, IETF_OID_UPS_MIB "8.3.0", "0", SU_TYPE_CMD, NULL },
 	{ "ups.timer.reboot", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.4.0", "", 0, NULL }, /* upsRebootWithDuration */
 	{ "ups.start.auto", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.5.0", "", 0, ietf_yes_no_info }, /* upsAutoRestart */
 
@@ -275,9 +275,9 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", 0, NULL }, /* upsConfigOutputPower */
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL }, /* upsConfigLowBattTime */
 	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info }, /* upsConfigAudibleStatus */
-	{ "beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
-	{ "beeper.enable", 0, 2, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
-	{ "beeper.mute", 0, 3, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "1", SU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "2", SU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 1, IETF_OID_UPS_MIB "9.8.0", "3", SU_TYPE_CMD, NULL },
 	{ "input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", 0, NULL }, /* upsConfigLowVoltageTransferPoint */
 	{ "input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", 0, NULL }, /* upsConfigHighVoltageTransferPoint */
 
@@ -285,8 +285,12 @@ static snmp_info_t ietf_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
-
 /* FIXME: Rename the structure here (or even relocate to new file)
  * and in snmp-ups.c when the real TrippLite mappings get defined. */
-mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };
+/* FIXME: Duplicate the line below to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
+/*mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID, NULL };*/
+mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID, NULL };
+
+/* FIXME: Duplicate the line below to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
+/*mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID, NULL };*/
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID, NULL };

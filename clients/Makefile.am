@@ -1,7 +1,19 @@
 # Network UPS Tools: clients
+EXTRA_DIST =
+
+# nutclient.cpp for some legacy reason (maybe initial detached development?)
+# optionally includes "common.h" with the NUT build setup - and this option
+# was never triggered in fact, not until pushed through command line like this:
+AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
+
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libparseconf.la: dummy
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
+LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LIBS)
 endif
@@ -20,9 +32,13 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-lib_LTLIBRARIES = libupsclient.la libnutclient.la
+lib_LTLIBRARIES = libupsclient.la
+if HAVE_CXX11
+  lib_LTLIBRARIES += libnutclient.la
+  lib_LTLIBRARIES += libnutclientstub.la
+endif
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
+ include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h nutclientmem.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
@@ -35,7 +51,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
+upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
@@ -46,15 +62,44 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-libupsclient_la_LIBADD = ../common/libcommonclient.la
+libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
 
-# libupsclient version information
+# Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-libupsclient_la_LDFLAGS = -version-info 4:0:0
+# Note that changes here may have to be reflected in packaging (the shared
+# object .so names would differ)
 
+# libupsclient version information
+libupsclient_la_LDFLAGS = -version-info 5:0:0 -export-symbols-regex ^upscli_
+
+if HAVE_CXX11
+# libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 0:0:0
+libnutclient_la_LDFLAGS = -version-info 1:0:0
+# Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
+# which is defined for in-tree CXX builds above:
+libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
+else
+EXTRA_DIST += nutclient.h nutclient.cpp
+endif
 
+if HAVE_CXX11
+# libnutclientstub version information and build
+libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
+libnutclientstub_la_LDFLAGS = -version-info 1:0:0
+libnutclientstub_la_LIBADD = libnutclient.la
+else
+EXTRA_DIST += nutclientmem.h nutclientmem.cpp
+endif
+
+dummy:
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

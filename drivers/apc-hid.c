@@ -37,11 +37,11 @@
 #define APC_VENDORID 0x051d
 
 /* Tweaks */
-char * tweak_max_report[] = {
+static char * tweak_max_report[] = {
 	/* Back-UPS ES 700 does NOT overflow. */
 	/* Back-UPS ES 725 does NOT overflow. */
 	/* Back-UPS ES 525 overflows on ReportID 0x0c
-		 (UPS.PowerSummary.RemainingCapacity).*/
+	   (UPS.PowerSummary.RemainingCapacity). */
 	"Back-UPS ES 525",
 	/* Back-UPS CS 650 overflows on ReportID 0x46 */
 	"Back-UPS CS",
@@ -50,7 +50,10 @@ char * tweak_max_report[] = {
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
 static void *disable_interrupt_pipe(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (use_interrupt_pipe == TRUE) {
+		/* FIXME? Suggest data from "device" to help the setup below? */
 		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
 		use_interrupt_pipe= FALSE;
 	}
@@ -124,53 +127,53 @@ static const char *apc_date_conversion_fun(double value)
 	return buf;
 }
 
-info_lkp_t apc_date_conversion[] = {
-	{ 0, NULL, apc_date_conversion_fun }
+static info_lkp_t apc_date_conversion[] = {
+	{ 0, NULL, apc_date_conversion_fun, NULL }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500 */
 static info_lkp_t apcstatusflag_info[] = {
-	{ 8, "!off", NULL },  /* Normal operation */
-	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
-	{ 0, "off", NULL },
-	{ 0, NULL, NULL }
+	{ 8, "!off", NULL, NULL },	/* Normal operation */
+	{ 16, "!off", NULL, NULL },	/* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 0, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Reason of the last battery transfer (from apcupsd) */
 static info_lkp_t apc_linefailcause_vrange_info[] = {
-	{ 1, "vrange", NULL },	/* Low line voltage */
-	{ 2, "vrange", NULL },	/* High line voltage */
-	{ 4, "vrange", NULL },	/* notch, spike, or blackout */
-	{ 8, "vrange", NULL },	/* Notch or blackout */
-	{ 9, "vrange", NULL },	/* Spike or blackout */
-	{ 0, "!vrange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 1, "vrange", NULL, NULL },	/* Low line voltage */
+	{ 2, "vrange", NULL, NULL },	/* High line voltage */
+	{ 4, "vrange", NULL, NULL },	/* notch, spike, or blackout */
+	{ 8, "vrange", NULL, NULL },	/* Notch or blackout */
+	{ 9, "vrange", NULL, NULL },	/* Spike or blackout */
+	{ 0, "!vrange", NULL, NULL },	/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t apc_linefailcause_frange_info[] = {
-	{ 7, "frange", NULL },		/* Input frequency out of range */
-	{ 0, "!frange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 7, "frange", NULL, NULL },		/* Input frequency out of range */
+	{ 0, "!frange", NULL, NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 #if 0
 /* these input.transfer.reason can't be mapped at the moment... */
-	{ 3, "ripple", NULL },		/* Ripple */
-	{ 5, "self test", NULL },	/* Self Test or Discharge Calibration commanded
-								 * Test usage, front button, or 2 week self test */
-	{ 6, "forced", NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
-	{ 10, "forced", NULL },		/* Graceful shutdown by accessories */
-	{ 11, "self test", NULL },	/* Test usage invoked */
-	{ 12, "self test", NULL },	/* Front button initiated self test */
-	{ 13, "self test", NULL },	/* 2 week self test */
-	{ 0, NULL, NULL }
+	{ 3, "ripple", NULL, NULL },		/* Ripple */
+	{ 5, "self test", NULL, NULL },	/* Self Test or Discharge Calibration commanded
+	                                 * Test usage, front button, or 2 week self test */
+	{ 6, "forced", NULL, NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
+	{ 10, "forced", NULL, NULL },		/* Graceful shutdown by accessories */
+	{ 11, "self test", NULL, NULL },	/* Test usage invoked */
+	{ 12, "self test", NULL, NULL },	/* Front button initiated self test */
+	{ 13, "self test", NULL, NULL },	/* 2 week self test */
+	{ 0, NULL, NULL, NULL }
 #endif
 
 static info_lkp_t apc_sensitivity_info[] = {
-	{ 0, "low", NULL },
-	{ 1, "medium", NULL },
-	{ 2, "high", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "low", NULL, NULL },
+	{ 1, "medium", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -382,7 +385,7 @@ static hid_info_t apc_hid2nut[] = {
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
-  
+
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", 0, NULL },
@@ -395,7 +398,7 @@ static hid_info_t apc_hid2nut[] = {
 /*
   { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe2.Temperature", NULL, "%.1f", 0, kelvin_celsius_conversion },
   { "ambient.humidity", 0, 0, "UPS.APCEnvironment.APCProbe2.Humidity", NULL, "%.1f", 0, NULL },
- */
+*/
 
   /* instant commands. */
   /* test.* split into subset while waiting for extradata support
@@ -429,7 +432,7 @@ static hid_info_t apc_hid2nut[] = {
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   /* used by APC BackUPS CS */
   { "shutdown.return", 0, 0, "UPS.Output.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
-  
+
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },

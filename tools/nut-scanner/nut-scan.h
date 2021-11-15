@@ -3,6 +3,7 @@
  *    2011 - EATON
  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
+ *    2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +31,9 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
+#include "config.h"
+#include <sys/types.h>
+
 #include <nutscan-init.h>
 #include <nutscan-device.h>
 #include <nutscan-ip.h>
@@ -37,6 +41,27 @@
 #ifdef WITH_IPMI
 #include <freeipmi/freeipmi.h>
 #endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+
+# ifdef HAVE_SEMAPHORE
+#  include <semaphore.h>
+# endif
+
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
+# endif
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+extern pthread_mutex_t threadcount_mutex;
+# endif
+
+typedef struct nutscan_thread {
+	pthread_t	thread;
+	int		active;	/* true if the thread was created, false if joined (to not join twice) */
+} nutscan_thread_t;
+#endif /* HAVE_PTHREAD */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -97,7 +122,7 @@ typedef struct nutscan_xml {
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec);
 
-nutscan_device_t * nutscan_scan_usb();
+nutscan_device_t * nutscan_scan_usb(void);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout < 0 then the common usec_timeout arg overrides it */
@@ -107,9 +132,16 @@ nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, c
 
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 
-nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
+nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+extern sem_t semaphore;
+sem_t * nutscan_semaphore();
+# endif
+#endif
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
