@@ -914,7 +914,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
             fi
 
-            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL and ${BUILDSTODO_USB} USB variations"
+            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations"
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 # NOTE: Do not repeat a distclean before the loop,
                 # we have cleaned above before autogen, and here it
