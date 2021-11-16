@@ -96,16 +96,18 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
 				return 1;
 			} else {
-				upsdebugx(2, "idVendor=%04x and idProduct=%04x, but provided vendor '%s' does not match device: '%s'.",
+				upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+					"but provided vendor '%s' does not match device: '%s'.",
 					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
 				return 0;
 			}
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, but device vendor string '%s' does not match expected string '%s'. "
-				"Have you tried the nutdrv_qx driver?",
-				device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
+		upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+			"but device vendor string '%s' does not match expected string '%s'. "
+			"Have you tried the nutdrv_qx driver?",
+			device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
 		return 0;
 
 	case POSSIBLY_SUPPORTED:
@@ -230,8 +232,10 @@ static int usb_device_close(usb_dev_handle *handle)
 	}
 
 	/* usb_release_interface() sometimes blocks and goes
-	into uninterruptible sleep.  So don't do it. */
+	 * into uninterruptible sleep.  So don't do it.
+	 */
 	/* usb_release_interface(handle, 0); */
+
 	return usb_close(handle);
 }
 
@@ -260,8 +264,10 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i, ret;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
-				dev->descriptor.idProduct, bus->dirname, dev->filename);
+			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)",
+				dev->descriptor.idVendor,
+				dev->descriptor.idProduct,
+				bus->dirname, dev->filename);
 
 			/* supported vendors are now checked by the supplied matcher */
 
@@ -367,7 +373,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif
 			}
 
-			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
+			fatalx(EXIT_FAILURE,
+				"USB device [%04x:%04x] matches, but driver callback failed: %s",
 				device->VendorID, device->ProductID, usb_strerror());
 
 		next_device:
@@ -499,12 +506,19 @@ void upsdrv_shutdown(void)
 	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
-	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);
+	upslogx(LOG_DEBUG,
+		"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
+		__func__);
 
-	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
+	ret = usb_interrupt_write(udev,
+		SHUTDOWN_ENDPOINT, (char *)shutdown_packet,
+		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upslogx(LOG_NOTICE, "%s: first usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
+		upslogx(LOG_NOTICE,
+			"%s: first usb_interrupt_write() failed: %s",
+			__func__,
+			ret ? usb_strerror() : "timeout");
 	}
 
 	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
@@ -513,7 +527,10 @@ void upsdrv_shutdown(void)
 	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upslogx(LOG_ERR, "%s: second usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
+		upslogx(LOG_ERR,
+			"%s: second usb_interrupt_write() failed: %s",
+			__func__,
+			ret ? usb_strerror() : "timeout");
 	}
 
 }

@@ -43,6 +43,7 @@
 	/* explore stub goes first, others alphabetically */
 	#include "explore-hid.h"
 	#include "apc-hid.h"
+	#include "arduino-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
@@ -63,6 +64,7 @@ static subdriver_t *subdriver_list[] = {
 	&mge_subdriver,
 #ifndef SHUT_MODE
 	&apc_subdriver,
+	&arduino_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
@@ -816,7 +818,7 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-                if(!found_data && !interrupt_only) {
+		if(!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
 		if(!found_data) {

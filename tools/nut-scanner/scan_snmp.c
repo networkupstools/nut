@@ -1,5 +1,6 @@
 /*
- *  Copyright (C) 2011-2017 Eaton
+ *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <FredericBohe@Eaton.com>
     \author Arnaud Quette <ArnaudQuette@Eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include "common.h"
@@ -56,9 +58,6 @@
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
 #include "nutscan-snmp.h"
 
 /* Address API change */
@@ -69,6 +68,13 @@
 #endif
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
+
+/* use explicit booleans */
+#ifndef FALSE
+typedef enum ebool { FALSE = 0, TRUE } bool_t;
+#else
+typedef int bool_t;
+#endif
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -102,10 +108,35 @@ static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
 
 /* Variables (not methods) exported by libnet-snmp: */
 static int *nut_snmp_errno;
-static oid *nut_usmAESPrivProtocol;
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+static oid *nut_usmAESPrivProtocol; /* might be usmAES128PrivProtocol on some systems */
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 static oid *nut_usmHMACMD5AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 static oid *nut_usmHMACSHA1AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 static oid *nut_usmDESPrivProtocol;
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+static oid *nut_usmAES192PrivProtocol;
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+static oid *nut_usmAES256PrivProtocol;
+# endif
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+static oid *nut_usmHMAC192SHA256AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+static oid *nut_usmHMAC256SHA384AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+static oid *nut_usmHMAC384SHA512AuthProtocol;
+#endif
 
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
@@ -224,29 +255,79 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
 							USMAESPRIVPROTOCOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 	*(void **) (&nut_usmHMACMD5AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACMD5AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 	*(void **) (&nut_usmHMACSHA1AuthProtocol) = lt_dlsym(dl_handle,
 						"usmHMACSHA1AuthProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol */
 
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 	*(void **) (&nut_usmDESPrivProtocol) = lt_dlsym(dl_handle,
 						"usmDESPrivProtocol");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
 	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol */
+
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
+						"usmAES192PrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+# endif /* NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol */
+
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+	*(void **) (&nut_usmAES256PrivProtocol) = lt_dlsym(dl_handle,
+						"usmAES256PrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+# endif /* NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol */
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC192SHA256AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+	*(void **) (&nut_usmHMAC256SHA384AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC256SHA384AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol */
+
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+	*(void **) (&nut_usmHMAC384SHA512AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMAC384SHA512AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		goto err;
+	}
+#endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
 	return 1;
 err:
@@ -391,7 +472,9 @@ static void try_all_oid(void * arg, const char * mib_found)
 
 	while (snmp_device_table[index].mib != NULL) {
 
-		if (snmp_device_table[index].oid == NULL || strcmp(snmp_device_table[index].oid, "") == 0) {
+		if (snmp_device_table[index].oid == NULL
+		||  snmp_device_table[index].oid[0] == '\0'
+		) {
 			index++;
 			continue;
 		}
@@ -495,26 +578,60 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* Process authentication protocol and key */
 		snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		/* default to MD5 */
 		snmp_sess->securityAuthProto = nut_usmHMACMD5AuthProtocol;
 		snmp_sess->securityAuthProtoLen =
 			sizeof(usmHMACMD5AuthProtocol)/
 			sizeof(oid);
+#endif
 
 		if (sec->authProtocol) {
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 			if (strcmp(sec->authProtocol, "SHA") == 0) {
 				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
 					sizeof(usmHMACSHA1AuthProtocol)/
 					sizeof(oid);
 			}
-			else {
-				if (strcmp(sec->authProtocol, "MD5") != 0) {
-					fprintf(stderr,
-						"Bad SNMPv3 authProtocol: %s",
-						sec->authProtocol);
-					return 0;
-				}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA256") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC192SHA256AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC192SHA256AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA384") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC256SHA384AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC256SHA384AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+			if (strcmp(sec->authProtocol, "SHA512") == 0) {
+				snmp_sess->securityAuthProto = nut_usmHMAC384SHA512AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMAC384SHA512AuthProtocol)/
+					sizeof(oid);
+			}
+			else
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+			if (strcmp(sec->authProtocol, "MD5") != 0) {
+#else
+			{
+#endif
+				fprintf(stderr,
+					"Bad SNMPv3 authProtocol: %s\n",
+					sec->authProtocol);
+				return 0;
 			}
 		}
 
@@ -539,25 +656,52 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			return 1;
 		}
 
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		/* default to DES */
 		snmp_sess->securityPrivProto = nut_usmDESPrivProtocol;
 		snmp_sess->securityPrivProtoLen =
 			sizeof(usmDESPrivProtocol)/sizeof(oid);
+#endif
 
 		if (sec->privProtocol) {
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 			if (strcmp(sec->privProtocol, "AES") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
 					sizeof(oid);
 			}
-			else {
-				if (strcmp(sec->privProtocol, "DES") != 0) {
-					fprintf(stderr,
-						"Bad SNMPv3 privProtocol: %s\n",
-						sec->privProtocol);
-					return 0;
-				}
+			else
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+			if (strcmp(sec->privProtocol, "AES192") == 0) {
+				snmp_sess->securityPrivProto = nut_usmAES192PrivProtocol;
+				snmp_sess->securityPrivProtoLen =
+					sizeof(usmAES192PrivProtocol)/
+					sizeof(oid);
+			}
+			else
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+			if (strcmp(sec->privProtocol, "AES256") == 0) {
+				snmp_sess->securityPrivProto = nut_usmAES256PrivProtocol;
+				snmp_sess->securityPrivProtoLen =
+					sizeof(usmAES256PrivProtocol)/
+					sizeof(oid);
+			}
+			else
+# endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+			if (strcmp(sec->privProtocol, "DES") != 0) {
+#else
+			{
+#endif
+				fprintf(stderr,
+					"Bad SNMPv3 privProtocol: %s\n",
+					sec->privProtocol);
+				return 0;
 			}
 		}
 
@@ -670,7 +814,7 @@ static void * try_SysOID(void * arg)
 					/* add mib if no complementary oid is present */
 					/* FIXME: No desc defined when add device */
 					if (snmp_device_table[index].oid == NULL
-						|| strcmp(snmp_device_table[index].oid, "") == 0
+					||  snmp_device_table[index].oid[0] == '\0'
 					) {
 						scan_snmp_add_device(sec, NULL, snmp_device_table[index].mib);
 						mib_found = snmp_device_table[index].sysoid;
@@ -713,17 +857,32 @@ try_SysOID_free:
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      long usec_timeout, nutscan_snmp_t * sec)
 {
+	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	int i;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_t * semaphore = nutscan_semaphore();
+	sem_t   semaphore_scantype_inst;
+	sem_t * semaphore_scantype = &semaphore_scantype_inst;
+# endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
-	pthread_t * thread_array = NULL;
+	nutscan_thread_t * thread_array = NULL;
 	int thread_count = 0;
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+	size_t  max_threads_scantype = max_threads_netsnmp;
+# endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
-#endif
+
+# ifdef HAVE_SEMAPHORE
+	if (max_threads_scantype > 0)
+		sem_init(semaphore_scantype, 0, max_threads_scantype);
+# endif /* HAVE_SEMAPHORE */
+
+#endif /* HAVE_PTHREAD */
 
 	if (!nutscan_avail_snmp) {
 		return NULL;
@@ -743,42 +902,233 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
 	while (ip_str != NULL) {
-		tmp_sec = malloc(sizeof(nutscan_snmp_t));
-		memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
-		tmp_sec->peername = ip_str;
-
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
-				thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
-				break;
-			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
+		/* NOTE: With many enough targets to scan, this can crash
+		 * by spawning too many children; add a limit and loop to
+		 * "reap" some already done with their work. And probably
+		 * account them in thread_array[] as something to not wait
+		 * for below in pthread_join()...
+		 */
+
+# ifdef HAVE_SEMAPHORE
+		/* Just wait for someone to free a semaphored slot,
+		 * if none are available, and then/otherwise grab one
+		 */
+		if (thread_array == NULL) {
+			/* Starting point, or after a wait to complete
+			 * all earlier runners */
+			if (max_threads_scantype > 0)
+				sem_wait(semaphore_scantype);
+			sem_wait(semaphore);
+			pass = TRUE;
+		} else {
+			pass = ((max_threads_scantype == 0 || sem_trywait(semaphore_scantype) == 0) &&
+			        sem_trywait(semaphore) == 0);
 		}
-#else
-		try_SysOID((void *)tmp_sec);
-#endif
-		ip_str = nutscan_ip_iter_inc(&ip);
-	}
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
+		/* A somewhat naive and brute-force solution for
+		 * systems without a semaphore.h. This may suffer
+		 * some off-by-one errors, using a few more threads
+		 * than intended (if we race a bit at the wrong time,
+		 * probably up to one per enabled scanner routine).
+		 */
+
+		/* TOTHINK: Should there be a threadcount_mutex when
+		 * we just read the value in if() and while() below?
+		 * At worst we would overflow the limit a bit due to
+		 * other protocol scanners...
+		 */
+		if (curr_threads >= max_threads
+		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
+		) {
+			upsdebugx(2, "%s: already running %zu scanning threads "
+				"(launched overall: %d), "
+				"waiting until some would finish",
+				__func__, curr_threads, thread_count);
+			while (curr_threads >= max_threads
+			   || (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
+			) {
+				for (i = 0; i < thread_count ; i++) {
+					int ret;
+
+					if (!thread_array[i].active) continue;
+
+					pthread_mutex_lock(&threadcount_mutex);
+					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
+					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
+					switch (ret) {
+						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+							break;
+						case 0:         // thread exited
+							if (curr_threads > 0) {
+								curr_threads --;
+								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+							} else {
+								/* threadcount_mutex fault? */
+								upsdebugx(0, "WARNING: %s: Accounting of thread count "
+									"says we are already at 0", __func__);
+							}
+							thread_array[i].active = FALSE;
+							break;
+						case EBUSY:     // actively running
+							upsdebugx(6, "%s: thread #%i still busy (%i)",
+								__func__, i, ret);
+							break;
+						case EDEADLK:   // Errors with thread interactions... bail out?
+						case EINVAL:    // Errors with thread interactions... bail out?
+						default:        // new pthreads abilities?
+							upsdebugx(5, "%s: thread #%i reported code %i",
+								__func__, i, ret);
+							break;
+					}
+					pthread_mutex_unlock(&threadcount_mutex);
+				}
+
+				if (curr_threads >= max_threads
+				|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
+				) {
+					usleep (10000); // microSec's, so 0.01s here
+				}
+			}
+			upsdebugx(2, "%s: proceeding with scan", __func__);
+		}
+		/* NOTE: No change to default "pass" in this ifdef:
+		 * if we got to this line, we have a slot to use */
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif  /* HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
+
+		if (pass) {
+			tmp_sec = malloc(sizeof(nutscan_snmp_t));
+			memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
+			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-	for (i = 0; i < thread_count ; i++) {
-		pthread_join(thread_array[i], NULL);
+			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+# ifdef HAVE_PTHREAD_TRYJOIN
+				pthread_mutex_lock(&threadcount_mutex);
+				curr_threads++;
+# endif /* HAVE_PTHREAD_TRYJOIN */
+
+				thread_count++;
+				nutscan_thread_t *new_thread_array = realloc(thread_array,
+					thread_count * sizeof(nutscan_thread_t));
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count - 1].thread = thread;
+				thread_array[thread_count - 1].active = TRUE;
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+				pthread_mutex_unlock(&threadcount_mutex);
+# endif /* HAVE_PTHREAD_TRYJOIN */
+			}
+#else   /* not HAVE_PTHREAD */
+			try_SysOID((void *)tmp_sec);
+#endif  /* if HAVE_PTHREAD */
+/*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
+			ip_str = nutscan_ip_iter_inc(&ip);
+/*			free(tmp_sec); */
+		} else { /* if not pass -- all slots busy */
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+			/* Wait for all current scans to complete */
+			if (thread_array != NULL) {
+				upsdebugx (2, "%s: Running too many scanning threads, "
+					"waiting until older ones would finish",
+					__func__);
+				for (i = 0; i < thread_count ; i++) {
+					int ret;
+					if (!thread_array[i].active) {
+						/* Probably should not get here,
+						 * but handle it just in case */
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+							__func__, i);
+						sem_post(semaphore);
+						if (max_threads_scantype > 0)
+							sem_post(semaphore_scantype);
+						continue;
+					}
+					thread_array[i].active = FALSE;
+					ret = pthread_join(thread_array[i].thread, NULL);
+					if (ret != 0) {
+						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
+							__func__, ret);
+					}
+					sem_post(semaphore);
+					if (max_threads_scantype > 0)
+						sem_post(semaphore_scantype);
+				}
+				thread_count = 0;
+				free(thread_array);
+				thread_array = NULL;
+			}
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
+		/* TODO: Move the wait-loop for TRYJOIN here? */
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif  /* HAVE_SEMAPHORE */
+#endif   /* HAVE_PTHREAD */
+		} /* if: could we "pass" or not? */
+	} /* while */
+
+#ifdef HAVE_PTHREAD
+	if (thread_array != NULL) {
+		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
+		for (i = 0; i < thread_count; i++) {
+			int ret;
+
+			if (!thread_array[i].active) continue;
+
+			ret = pthread_join(thread_array[i].thread, NULL);
+			if (ret != 0) {
+				upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
+					__func__, ret);
+			}
+			thread_array[i].active = FALSE;
+# ifdef HAVE_SEMAPHORE
+			sem_post(semaphore);
+			if (max_threads_scantype > 0)
+				sem_post(semaphore_scantype);
+# else
+#  ifdef HAVE_PTHREAD_TRYJOIN
+			pthread_mutex_lock(&threadcount_mutex);
+			if (curr_threads > 0) {
+				curr_threads --;
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+					__func__, i);
+			} else {
+				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
+					"says we are already at 0", __func__);
+			}
+			pthread_mutex_unlock(&threadcount_mutex);
+#  endif /* HAVE_PTHREAD_TRYJOIN */
+# endif /* HAVE_SEMAPHORE */
+		}
+		free(thread_array);
+		upsdebugx(2, "%s: all threads freed", __func__);
 	}
 	pthread_mutex_destroy(&dev_mutex);
-	free(thread_array);
-#endif
+
+# ifdef HAVE_SEMAPHORE
+	if (max_threads_scantype > 0)
+		sem_destroy(semaphore_scantype);
+# endif /* HAVE_SEMAPHORE */
+#endif /* HAVE_PTHREAD */
+
 	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;
 	return result;
 }
+
 #else /* WITH_SNMP */
+
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      long usec_timeout, nutscan_snmp_t * sec)
 {
@@ -788,4 +1138,5 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	NUT_UNUSED_VARIABLE(sec);
 	return NULL;
 }
+
 #endif /* WITH_SNMP */

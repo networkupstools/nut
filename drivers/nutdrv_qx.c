@@ -134,7 +134,9 @@ static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
 
+#if defined(QX_USB) && !defined(TESTING)
 static int	hunnox_step = 0;
+#endif	/* QX_USB && !TESTING */
 
 #if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
@@ -604,10 +606,13 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, &tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0, &tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)",
+				ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
 
@@ -624,7 +629,9 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
 
-		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
 		if (ret <= 0) {
 			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
@@ -652,10 +659,14 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, &tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x2, 0, &tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
+			upsdebugx(3, "send: %s (%d)",
+				(ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out",
+				ret);
 			return ret;
 		}
 
@@ -666,14 +677,21 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	/* Read all 64 bytes of the reply in one large chunk */
 	ret = usb_interrupt_read(udev, 0x81, tmp, sizeof(tmp), 1000);
 
-	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+	/* Any errors here mean that we are unable to read a reply
+	 * (which will happen after successfully writing a command
+	 * to the UPS) */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
+		upsdebugx(3, "read: %s (%d)",
+			(ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out",
+			ret);
 		return ret;
 	}
 
-	/* As Ippon will always return 64 bytes in response, we have to calculate and return length of actual response data here.
-	 * Empty response will look like 0x00 0x0D, otherwise it will be data string terminated by 0x0D. */
+	/* As Ippon will always return 64 bytes in response,
+	 * we have to calculate and return length of actual
+	 * response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise
+	 * it will be data string terminated by 0x0D. */
 
 	for (i = 0, len = 0; i < (size_t)ret; i++) {
 
@@ -803,7 +821,8 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+				upsdebugx(3, "read: %s (%d)",
+					ret ? usb_strerror() : "timeout", ret);
 				return ret;
 			}
 
@@ -1262,7 +1281,10 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
 
-	if ((ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT, 0x0d, 0, 0, (char *)cmd, strlen(cmd), 1000)) <= 0) {
+	if ((ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
+			0x0d, 0, 0, (char *)cmd, strlen(cmd), 1000)) <= 0
+	) {
 		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 		*buf = '\0';
 		return ret;
@@ -1288,7 +1310,10 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	for (p = buf; p < buf + buflen; p += ret) {
-		if ((ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, p, buf + buflen - p, 1000)) <= 0) {
+		if ((ret = usb_interrupt_read(udev,
+				USB_ENDPOINT_IN | 1,
+				p, buf + buflen - p, 1000)) <= 0
+		) {
 			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			*buf = '\0';
 			return ret;

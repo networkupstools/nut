@@ -8,25 +8,36 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
 [
 if test -z "${nut_have_libfreeipmi_seen}"; then
 	nut_have_libfreeipmi_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
-	AC_MSG_CHECKING(for FreeIPMI version via pkg-config)
-	dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
-	dnl but NUT should only require 0.8.5 (for nut-scanner) and 1.0.1 (for
-	dnl nut-ipmipsu) (comment from upstream Al Chu)
-	FREEIPMI_VERSION="`pkg-config --silence-errors --modversion libfreeipmi 2>/dev/null`"
-	if test "$?" = "0" -a -n "${FREEIPMI_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
-	else
-		FREEIPMI_VERSION="none"
-		CFLAGS=""
-		LIBS="-lfreeipmi -lipmimonitoring"
-	fi
-	AC_MSG_RESULT(${FREEIPMI_VERSION} found)
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
+		 dnl but NUT should only require 0.8.5 (for nut-scanner) and 1.0.1 (for
+		 dnl nut-ipmipsu) (comment from upstream Al Chu)
+		 AC_MSG_CHECKING(for FreeIPMI version via pkg-config)
+		 FREEIPMI_VERSION="`$PKG_CONFIG --silence-errors --modversion libfreeipmi 2>/dev/null`"
+		 if test "$?" != "0" -o -z "${FREEIPMI_VERSION}"; then
+		    FREEIPMI_VERSION="none"
+		 fi
+		 AC_MSG_RESULT(${FREEIPMI_VERSION} found)
+		],
+		[FREEIPMI_VERSION="none"
+		 AC_MSG_NOTICE([can not check FreeIPMI settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"$FREEIPMI_VERSION" != xnone],
+		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
+		],
+		[CFLAGS=""
+		 LIBS="-lfreeipmi -lipmimonitoring"
+		]
+	)
 
 	dnl allow overriding FreeIPMI settings if the user knows best
 	AC_MSG_CHECKING(for FreeIPMI cflags)

@@ -31,27 +31,7 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
-have_PKG_CONFIG=yes
-AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
-AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
-    [have_PKG_CONFIG=no],
-    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     have_PKG_CONFIG=no
-     dummy_RES=0
-     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
-     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
-     AS_IF([test "${dummy_RES}" = 0],
-        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         dnl The m4 macro below may be not defined if pkg-config package is not
-         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
-         dnl allows to avoid shell syntax errors in generated configure script
-         dnl by defining a dummy macro in-place.
-         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
-        ])
-])
-AS_IF([test x"$have_PKG_CONFIG" = xno],
-    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+NUT_CHECK_PKGCONFIG
 
 
 dnl Various version related processing
@@ -173,6 +153,47 @@ AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
+
+AC_CHECK_HEADER([sys/resource.h],
+    [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <sys/resource.h>
+],
+[struct rlimit limit;
+getrlimit(RLIMIT_NOFILE, &limit);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
+            [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
+
+AC_CHECK_HEADER([semaphore.h],
+    [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
+        [Define to 1 if you have <sys/semaphore.h>.])
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+],
+[sem_t semaphore;
+sem_init(&semaphore, 0, 4);
+sem_destroy(&semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+    )],
+        [AC_DEFINE([HAVE_SEMAPHORE], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+    )]
+)
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
@@ -297,7 +318,7 @@ dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
 	     and <time.h>.  This macro is deemed obsolete by autotools.])
@@ -307,8 +328,14 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
+dnl Note: pthread_tryjoin_np() should be available since glibc 2.3.3, according
+dnl to https://man7.org/linux/man-pages/man3/pthread_tryjoin_np.3.html
 AC_SEARCH_LIBS([pthread_create], [pthread],
-       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])
+        AC_SEARCH_LIBS([pthread_tryjoin_np], [pthread],
+               [AC_DEFINE(HAVE_PTHREAD_TRYJOIN, 1, [Define to enable pthread_tryjoin support code])],
+               [])
+       ],
        [])
 
 dnl ----------------------------------------------------------------------
@@ -673,8 +700,10 @@ if test "${nut_with_linux_i2c}" != no; then
             )
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [nut_with_linux_i2c="yes"],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
+                [], dnl # nut_with_linux_i2c="yes"
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -689,8 +718,12 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c], [],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
+                [i2c],
+                [nut_with_linux_i2c="yes"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])
+                ])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1533,7 +1566,12 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[AS_IF([test "${withval}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdsystemunitdir=""
+			])
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1561,7 +1599,12 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[AS_IF([test "${systemdshutdowndir}" = yes],
+				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdshutdowndir=""
+			])
 		;;
 	no)
 		systemdshutdowndir=""
@@ -1585,7 +1628,12 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdtmpfilesdir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdtmpfilesdir=""
+			])
 		;;
 	no)
 		systemdtmpfilesdir=""
@@ -1672,6 +1720,12 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
 )
 AC_MSG_RESULT(${have_cppunit})
 
+dnl On some systems, CppUnit inexplicably fails with trivial assertions
+dnl so it should not be enabled with those environments, corrupting the
+dnl test results with misleading errors.
+dnl Tracked in https://github.com/networkupstools/nut/issues/1126
+dnl One such situation was e.g. "clang++ + arm64(QEMU) + -m64" while
+dnl this was not seen with other compilers or bitness on same system.
 AS_IF([test "${have_cppunit}" = "yes"],
     [AC_MSG_CHECKING([if current toolkit can build and run cppunit tests (e.g. no ABI issues, related segfaults, etc.)])
      dnl Code below is largely a stripped variant of our tests/example.cpp and cpputest.cpp
@@ -1698,7 +1752,8 @@ void ExampleTest::testOne()
   int i = 1;
   float f = 1.0;
   int cast = static_cast<int>(f);
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int", i, cast );
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Casted float is not the expected int (assert_eq)", i, cast );
+  CPPUNIT_ASSERT_MESSAGE("Casted float is not the expected int (assert)", (i == cast) );
 }
 '
 
@@ -1887,7 +1942,11 @@ dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
-		[AC_MSG_RESULT([yes])],
+		[AS_IF([( ${VALGRIND} /bin/sh -c true >/dev/null 2>/dev/null )],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])
+			 VALGRIND="none"
+			])],
 		[AC_MSG_RESULT([no])
 		 VALGRIND="none"
 		])

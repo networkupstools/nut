@@ -190,7 +190,19 @@ static void do_cmd(char **argv, const int argc)
 		return;
 	}
 
-	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 */
+	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */
