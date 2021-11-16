@@ -5,6 +5,8 @@
 # It should only be readable by the user that upsd becomes.  See the FAQ.
 #
 # Each entry below provides usage and default value.
+#
+# For more information, refer to upsd.conf manual page.
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -20,6 +22,29 @@
 # for notifications from upsd about staleness.
 
 # =======================================================================
+# TRACKINGDELAY <seconds>
+# TRACKINGDELAY 3600
+#
+# This defaults to 1 hour. When instant commands and variables setting status
+# tracking is enabled, status execution information are kept during this
+# amount of time, and then cleaned up.
+
+# =======================================================================
+# ALLOW_NO_DEVICE <Boolean>
+# ALLOW_NO_DEVICE true
+#
+# Normally upsd requires that at least one device section is defined in ups.conf
+# when the daemon starts, to serve its data.  For automatically managed services
+# it may be preferred to have upsd always running, and reload the configuration
+# when power devices become defined.
+#
+# Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+# refuse to start with zero device sections found in ups.conf.
+#
+# Boolean values 'false', 'no', 'off' and '0' mean that the server should refuse
+# to start if zero device sections were found in ups.conf. This is the default.
+
+# =======================================================================
 # STATEPATH <path>
 # STATEPATH /var/run/nut
 #
@@ -27,15 +52,17 @@
 # than the default that was compiled into the program.
 
 # =======================================================================
-# LISTEN <address> [<port>]
+# LISTEN <IP address or name> [<port>]
 # LISTEN 127.0.0.1 3493
 # LISTEN ::1 3493
+# LISTEN myhostname 83493
+# LISTEN myhostname.mydomain
 #
 # This defaults to the localhost listening addresses and port 3493.
 # In case of IP v4 or v6 disabled kernel, only the available one will be used.
 #
-# You may specify each interface you want upsd to listen on for connections,
-# optionally with a port number.
+# You may specify each interface IP address or name that you want upsd to
+# listen on for connections, optionally with a port number.
 #
 # You may need this if you have multiple interfaces on your machine and
 # you don't want upsd to listen to all interfaces (for instance on a
@@ -107,3 +134,14 @@
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
+# =======================================================================
+# DISABLE_WEAK_SSL <Boolean>
+# DISABLE_WEAK_SSL true
+#
+# Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+#
+# With relatively recent versions of OpenSSL or NSS it will be restricted
+# to TLSv1.2 or better.
+#
+# Unless you have really ancient clients, you probably want to enable this.
+# Currently disabled by default to ensure compatibility with existing setups.

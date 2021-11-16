@@ -26,6 +26,28 @@ to make upsd wait longer.
 +
 Most users should leave this at the default value.
 
+"TRACKINGDELAY 'seconds'"::
+
+When instant commands and variables setting status tracking is enabled, status
+execution information are kept during this amount of time, and then cleaned up.
+This defaults to 3600 (1 hour).
+
+"ALLOW_NO_DEVICE 'Boolean'"::
+
+Normally upsd requires that at least one device section is defined in ups.conf
+when the daemon starts, to serve its data.  For automatically managed services
+it may be preferred to have upsd always running, and reload the configuration
+when power devices become defined.
++
+Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+refuse to start with zero device sections found in ups.conf.
++
+Boolean values 'false', 'no', 'off' and '0' mean that the server should refuse
+to start if zero device sections were found in ups.conf. This is the default,
+unless the calling environment sets a same-named variable to enforce a value
+for the current run. One way this can happen is somebody un-commenting it in
+the 'nut.conf' file used by init-scripts and service unit method scripts.
+
 "STATEPATH 'path'"::
 
 Tell upsd to look for the driver state sockets in 'path' rather
@@ -33,22 +55,26 @@ than the default that was compiled into the program.
 
 "LISTEN 'interface' 'port'"::
 
-Bind a listening port to the interface specified by its Internet
-address.  This may be useful on hosts with multiple interfaces.
-You should not rely exclusively on this for security, as it can be
-subverted on many systems.
+Bind a listening port to the interface specified by its Internet address or
+name.  This may be useful on hosts with multiple interfaces.
+You should not rely exclusively on this for security, as it can be subverted
+on many systems.
 +
-Listen on TCP port 'port' instead of the default value which was
-compiled into the code.  This overrides any value you may have set
-with 'configure --with-port'.  If you don't change it with configure
-or this value, upsd will listen on port 3493 for this interface.
+Optionally listen on TCP port 'port' instead of the default value which was
+compiled into the code.  This overrides any value you may have set with
+'configure --with-port'.  If you don't change it with configure or this value,
+upsd will listen on port 3493 for this interface.
 +
 Multiple LISTEN addresses may be specified.  The default is to bind to
 127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
 compiled in).
++
+To listen on all available interfaces, you may also use '0.0.0.0' for IPv4 and
+and '::' for IPv6.
 
 	LISTEN 127.0.0.1
 	LISTEN 192.168.50.1
+	LISTEN myhostname.mydomain
 	LISTEN ::1
 	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 +
@@ -78,7 +104,7 @@ When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
 Certificates are stored in a dedicated database (data split in 3 files).
 Specify the path of the database directory.
-    
+
 "CERTIDENT 'certificate name' 'database password'"::
 
 When compiled with SSL support with NSS backend, you can specify the

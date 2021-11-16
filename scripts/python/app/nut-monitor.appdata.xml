@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2014 Arnaud Quette <arnaud.quette@free.fr> -->
-<application>
- <id type="desktop">nut-monitor.desktop</id>
+<component type="desktop-application">
+ <id>nut-monitor.desktop</id>
  <metadata_license>CC0-1.0</metadata_license>
  <project_license>GPL-3.0+</project_license>
  <name>NUT Monitor</name>
@@ -32,11 +32,17 @@
   </p>
  </description>
  <screenshots>
-  <screenshot type="default" width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-1.png</screenshot>
-  <screenshot width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-2.png</screenshot>
-  <screenshot width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-3.png</screenshot>
+  <screenshot type="default" width="620" height="349">
+   <image>https://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-1.png</image>
+  </screenshot>
+  <screenshot width="620" height="349">
+   <image>https://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-2.png</image>
+  </screenshot>
+  <screenshot width="620" height="349">
+   <image>https://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-3.png</image>
+  </screenshot>
  </screenshots>
- <url type="homepage">http://www.lestat.st/en/informatique/projets/nut-monitor</url>
- <updatecontact>david@lestat.st</updatecontact>
+ <url type="homepage">https://www.lestat.st/en/informatique/projets/nut-monitor</url>
+ <update_contact>david@lestat.st</update_contact>
  <!-- project_group>GNOME</project_group -->
-</application>
+</component>

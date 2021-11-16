@@ -1,0 +1,81 @@
+PIJUICE(8)
+==========
+
+NAME
+----
+pijuice - driver for UPS in PiJuice HAT
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+*pijuice* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+NOTE: This manual page was hastily adapted from related `asem` driver
+manpage based on information from the original pull request, and so
+may not fully apply to PiJuice HAT, patches from experts are welcome.
+
+SUPPORTED HARDWARE
+------------------
+The *pijuice* driver supports the portable PiJuice HAT UPS for Raspberry Pi
+embedded PCs.
+
+EXTRA ARGUMENTS
+---------------
+
+The required parameter for this driver is the I2C bus name:
+
+*port*='dev-node'::
+On the PiJuice HAT, this should be `/dev/i2c-1`.
+
+INSTALLATION
+------------
+NOTE: This section was copied from `asem` driver manpage and may not fully
+apply to PiJuice HAT, patches are welcome.
+
+This driver is specific to the Linux I2C API, and requires the lm_sensors
+libi2c-dev or its equivalent to compile.
+
+Beware that the SystemIO memory used by the I2C controller is reserved by ACPI.
+If only a native I2C driver (e.g. i2c_i801, as of 3.5.X Linux kernels) is
+available, then you'll need to relax the ACPI resources check. For example, you
+can boot with the `acpi_enforce_resources=lax` option.
+
+//////////////////////////////////////////
+Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
+longer than what can be conveniently described in the driver error messages.
+
+DIAGNOSTICS
+-----------
+
+//////////////////////////////////////////
+
+KNOWN ISSUES AND BUGS
+---------------------
+NOTE: This section was copied from `asem` driver manpage and may not fully
+apply to PiJuice HAT, patches are welcome.
+
+The driver shutdown function is not implemented, so other arrangements must be
+made to turn off the UPS.
+
+AUTHORS
+-------
+Andrew Anderson <aander07@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+Initial pull requests adding this driver:
+
+* https://github.com/networkupstools/nut/pull/730
+* https://github.com/PiSupply/PiJuice/issues/124
+
+Product home page: https://uk.pi-supply.com/products/pijuice-standard
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

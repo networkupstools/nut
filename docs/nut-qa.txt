@@ -15,7 +15,7 @@ link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
 manual pages (troff). This single point of control fills many gaps,
 suppresses many redundancies, and optimizes documentation management in
 general.
- 
+
 - The NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
 compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
 icons, at the bottom of each page.
@@ -66,11 +66,20 @@ trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/n
 mailing list.
 ////////////////////////////////////////////////////////////////////////////////
 
-- link:http://buildbot.networkupstools.org/public/nut/[Buildbot] and
-link:https://travis-ci.org/networkupstools/nut/builds[Travis CI] to automate the
-compile/test cycle. Any build failure is caught early, and fixed quickly. Also
-we get to see if incoming pull requests (as well as Git branch HEADs) do not have
-code (or recipe) that is instantly faulty and can not build on even one platform.
+- link:http://buildbot.networkupstools.org/public/nut/[Buildbot]
+  and the new dedicated Jenkins incarnation of the NUT CI Farm with "legacy UI"
+  for link:https://ci.networkupstools.org/job/nut/job/nut/job/master/[main branch]
+  and link:https://ci.networkupstools.org/job/nut/job/nut/view/change-requests/[PRs],
+  also accessible at the slower but slicker-looking Blue Ocean user interface for
+  link:https://ci.networkupstools.org/blue/organizations/jenkins/nut%2Fnut/activity/[activity],
+  link:https://ci.networkupstools.org/blue/organizations/jenkins/nut%2Fnut/branches/[branches]
+  and link:https://ci.networkupstools.org/blue/organizations/jenkins/nut%2Fnut/pr/[PRs],
+  are all used to automate the compile/test cycle, using numerous platforms,
+  target distributions, C/C++ revisions, compiler toolkits and make program
+  implementations. Any build failure is caught early, and fixed quickly.
+  Also we get to see if incoming pull requests (as well as Git branch HEADs)
+  do not have code (or recipe) that is instantly faulty and can not build on
+  one of the platforms we track even with relaxed warnings.
 
 ////////////////////////////////////////////////////////////////////////////////
  reported through the
@@ -103,7 +112,7 @@ FIXME (POST):
      the installation, upgrade and removal testing processes.
 
 - a runtime testing suite, which automates the inter-layer communication testing
-(driver - upsd - upsmon / clients), that is part of Ubuntu.
+(driver -- upsd -- upsmon / clients), that is part of Ubuntu.
 link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
 is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
 It installs NUT, configures it with the dummy-ups driver, changes a few data and
@@ -111,7 +120,7 @@ checks that these are well propagated with upsc.
 
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
-- link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net) 
+- link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net)
 provides metrics on NUT source code base and activity.
 
 Runtime quality

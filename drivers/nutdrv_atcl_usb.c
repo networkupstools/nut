@@ -53,7 +53,6 @@ upsdrv_info_t upsdrv_info = {
 
 #define USB_VENDOR_STRING "ATCL FOR UPS"
 
-
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #ifdef WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
@@ -124,10 +123,12 @@ static unsigned int	comm_failures = 0;
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
 	char *requested_vendor;
+	NUT_UNUSED_VARIABLE(privdata);
+
 	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
-		if(!device->Vendor) { 
+		if(!device->Vendor) {
 			upsdebugx(1, "Couldn't retrieve USB string descriptor for vendor. Check permissions?");
 			requested_vendor = getval("vendor");
 			if(requested_vendor) {
@@ -135,7 +136,7 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					upsdebugx(3, "Matched device with NULL vendor string.");
 					return 1;
 				}
-			}	
+			}
 			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
 			return 0;
 		}
@@ -151,16 +152,18 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
 				return 1;
 			} else {
-				upsdebugx(2, "idVendor=%04x and idProduct=%04x, but provided vendor '%s' does not match device: '%s'.",
+				upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+					"but provided vendor '%s' does not match device: '%s'.",
 					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
 				return 0;
 			}
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, but device vendor string '%s' does not match expected string '%s'. "
-				"Have you tried the nutdrv_qx driver?",
-				device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
+		upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+			"but device vendor string '%s' does not match expected string '%s'. "
+			"Have you tried the nutdrv_qx driver?",
+			device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
 		return 0;
 
 	case POSSIBLY_SUPPORTED:
@@ -220,7 +223,19 @@ static void usb_comm_fail(const char *fmt, ...)
 	}
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why))) {
@@ -236,7 +251,7 @@ static void usb_comm_good(void)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "Communications with UPS re-established");	
+	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
 
@@ -250,6 +265,7 @@ static void usb_comm_good(void)
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(device);
 
 	if ((ret = usb_set_configuration(handle, 1)) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", nut_usb_strerror(ret));
@@ -275,14 +291,17 @@ static int usb_device_close(usb_dev_handle *handle)
 	}
 
 	/* usb_release_interface() sometimes blocks and goes
-	into uninterruptible sleep.  So don't do it. */
+	 * into uninterruptible sleep.  So don't do it.
+	 */
 	/* usb_release_interface(handle, 0); */
+
 #ifdef WITH_LIBUSB_1_0
-		libusb_close(handle);
-		libusb_exit(NULL);
+	libusb_close(handle);
+	libusb_exit(NULL);
 #else
-		ret = usb_close(handle);
+	ret = usb_close(handle);
 #endif
+
 	return ret;
 }
 
@@ -340,14 +359,17 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
-				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)",
+				dev->descriptor.idVendor,
+				dev->descriptor.idProduct,
+				bus->dirname, dev->filename);
+
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
 			*handlep = handle = usb_open(dev);
 #endif /* WITH_LIBUSB_1_0 */
+
 			if (!handle) {
 				upsdebugx(4, "Failed to open USB device, skipping: %s", nut_usb_strerror(ret));
 				continue;
@@ -419,7 +441,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
 
 			for (m = matcher; m; m = m->next) {
-				
+
 				switch (m->match_function(device, m->privdata))
 				{
 				case 0:
@@ -427,7 +449,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
@@ -441,7 +472,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				libusb_strerror((enum libusb_error)ret));
 		else
 			upsdebugx(2, "auto detached kernel driver from USB device");
-#endif
+#endif /* HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */
 
 			for (i = 0; i < 3; i++) {
 
@@ -465,11 +496,13 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
-#endif
+#endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
 			}
 
-			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
-				device->VendorID, device->ProductID, nut_usb_strerror(ret));
+			fatalx(EXIT_FAILURE,
+				"USB device [%04x:%04x] matches, but driver callback failed: %s",
+				device->VendorID, device->ProductID,
+				nut_usb_strerror(ret));
 
 		next_device:
 			usb_close(handle);
@@ -574,8 +607,12 @@ void upsdrv_updateinfo(void)
 		case 2:
 			upsdebugx(2, "reply[0] = 0x%02x -> LB", reply[0]);
 			status_set("LB");
+			goto fallthrough_LB_means_OB;
+			/* Note: the comment below existed for years, so wondering
+			 * if this device CAN set independently LB and OB? */
 			/* fall through */
 		case 1:
+		fallthrough_LB_means_OB:
 			upsdebugx(2, "reply[0] = 0x%02x -> OB", reply[0]);
 			status_set("OB");
 			break;
@@ -594,15 +631,23 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	/* Not "const" because this mismatches arg type of usb_interrupt_write() */
+	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
-	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);
+	upslogx(LOG_DEBUG,
+		"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
+		__func__);
 
-	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
+	ret = usb_interrupt_write(udev,
+		SHUTDOWN_ENDPOINT, (char *)shutdown_packet,
+		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upslogx(LOG_NOTICE, "%s: first usb_interrupt_write() failed: %s", __func__, ret ? nut_usb_strerror(ret) : "timeout");
+		upslogx(LOG_NOTICE,
+			"%s: first usb_interrupt_write() failed: %s",
+			__func__,
+			ret ? nut_usb_strerror(ret) : "timeout");
 	}
 
 	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
@@ -611,7 +656,10 @@ void upsdrv_shutdown(void)
 	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upslogx(LOG_ERR, "%s: second usb_interrupt_write() failed: %s", __func__, ret ? nut_usb_strerror(ret) : "timeout");
+		upslogx(LOG_ERR,
+			"%s: second usb_interrupt_write() failed: %s",
+			__func__,
+			ret ? nut_usb_strerror(ret) : "timeout");
 	}
 
 }

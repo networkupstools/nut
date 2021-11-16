@@ -45,22 +45,15 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
+static uint8_t gpser_error_control;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
-
-TRielloData DevData;
+static TRielloData DevData;
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #ifdef WITH_LIBUSB_1_0
@@ -119,7 +112,7 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
-void ussleep(long usec)
+static void ussleep(long usec)
 {
 
 	if (usec == 1)
@@ -155,10 +148,11 @@ static int cypress_setfeatures()
 	return ret;
 }
 
-int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
+static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
-	int i, err, size, errno;
+	int i, err, size;
+	/*int errno;*/
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -177,7 +171,7 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char *)USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -207,7 +201,7 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char *)USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -218,20 +212,21 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 	return (0);
 }
 
-int Get_USB_Packet(uint8_t *buffer)
+static int Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
-	int err, size, errno, ep;
+	int err, size, ep;
+	/*int errno;*/
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, inBuf, size, 1000);
+	err = usb_bulk_read(udev, ep, (char*) inBuf, size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
-	
+
 	if (err < 0){
 		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
 		return err;
@@ -301,6 +296,8 @@ static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint1
 
 static void *cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -319,6 +316,8 @@ static usb_device_id_t riello_usb_id[] = {
 
 static int device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -353,11 +352,16 @@ static USBDeviceMatcher_t device_matcher = {
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
 {
 	int ret = 0;
+	NUT_UNUSED_VARIABLE(device);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
 
-	/*if (usb_set_configuration(handle, 1) < 0) {
+/*
+	if (usb_set_configuration(handle, 1) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
 		return -1;
-	} */
+	}
+*/
 
 	if ((ret = usb_claim_interface(handle, 0)) < 0) {
 		upslogx(LOG_WARNING, "Can't claim USB interface: %s", nut_usb_strerror(ret));
@@ -374,7 +378,7 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
+static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int ret;
 
@@ -382,10 +386,10 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
-		if (ret < 0) 
+		if (ret < 0)
 			return ret;
-		
-		upsdrv_initinfo();	//reconekt usb cable 
+
+		upsdrv_initinfo();	//reconekt usb cable
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -400,29 +404,40 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	{
 	case ERROR_BUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+# ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# endif
 #endif
+
 	case ERROR_PIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
 #if ETIME && WITH_LIBUSB_0_1
+		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
+	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
-	case ERROR_NO_DEVICE: /* No such device */
-	case ERROR_ACCESS:    /* Permission denied */
-	case ERROR_IO:        /* I/O error */
+		goto fallthrough_case_reconnect;
+	case ERROR_NO_DEVICE:		/* No such device */
+	case ERROR_ACCESS:			/* Permission denied */
+	case ERROR_IO:				/* I/O error */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -ENXIO:		/* No such device or address */
 #endif
 	case ERROR_NOT_FOUND:		/* No such file or directory */
+	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
@@ -440,11 +455,11 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	default:
 		break;
 	}
-	
+
 	return ret;
 }
 
-int get_ups_nominal()
+static int get_ups_nominal()
 {
 
 	uint8_t length;
@@ -477,7 +492,7 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status()
+static int get_ups_status()
 {
 	uint8_t numread, length;
 	int recv;
@@ -516,7 +531,7 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended()
+static int get_ups_extended()
 {
 	uint8_t length;
 	int recv;
@@ -548,6 +563,7 @@ int get_ups_extended()
 	return 0;
 }
 
+/* Not static, exposed via header. Not used though, currently... */
 int get_ups_statuscode()
 {
 	uint8_t length;
@@ -580,7 +596,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-int riello_instcmd(const char *cmdname, const char *extra)
+static int riello_instcmd(const char *cmdname, const char *extra)
 {
 	uint8_t length;
 	int recv;
@@ -788,11 +804,11 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm()
+static int start_ups_comm()
 {
 	uint16_t length;
 	int recv;
@@ -843,11 +859,11 @@ void upsdrv_initups(void)
 		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret;
-	char	*regex_array[6];
+	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
 
@@ -857,6 +873,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -994,6 +1011,9 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;
@@ -1129,11 +1149,11 @@ void upsdrv_updateinfo(void)
 
 	/* Boost */
 	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");	
+		status_set("BOOST");
 
 	/* Replace battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");	
+		status_set("RB");
 
 	/* Charging battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 2))
@@ -1210,4 +1230,5 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 }

@@ -2,3 +2,11 @@
 /cppunittest.log
 /cppunittest.trs
 /test-suite.log
+/selftest-rw/*
+/nutlogtest
+/nutlogtest.log
+/nutlogtest.trs
+/getvaluetest
+/getvaluetest.log
+/getvaluetest.trs
+/hidparser.c

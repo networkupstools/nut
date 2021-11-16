@@ -85,6 +85,11 @@ Optional.  The status of the UPS will be refreshed after a maximum
 delay which is controlled by this setting.  This is normally 2 seconds.  This
 may be useful if the driver is creating too much of a load on your system or
 network.
++
+Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8] and
+linkman:nutdrv_qx[8]) also have an option called *pollfreq* which controls how
+frequently some of the less critical parameters are polled. Details are
+provided in the respective driver man pages.
 
 *synchronous*::
 
@@ -108,8 +113,8 @@ of the driver behavior.
 
 *user*::
 
-Optional.  If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Optional.  Overrides the compiled-in default unprivileged username. See the
+discussion of the `-u` option in linkman:nutupsdrv[8] for details.
 
 UPS FIELDS
 ----------
@@ -145,9 +150,9 @@ to clients that ask for a list of connected equipment.
 Optional.  When you specify this, the driver skips the port locking routines
 every time it starts.  This may allow other processes to seize the port if
 you start more than one accidentally.
-+  
++
 You should only use this if your system won't work without it.
-+  
++
 This may be needed on Mac OS X systems.
 
 *ignorelb*::

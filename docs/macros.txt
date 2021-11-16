@@ -44,11 +44,11 @@ directory.
 - NUT_CHECK_OS
 
 	Check for the exact system name and type.
-	This was only used in the past to determine the packaging rule to be used
-	through the OS_NAME variable, but may be useful for other purposes in the
-	future.
+	This was only used in the past to determine the packaging rule to be
+	used through the OS_NAME variable, but may be useful for other purposes
+	in the future.
 
-- NUT_REPORT_FEATURE(FEATURE, VALUE, VARIABLE, DESCRIPTION) 
+- NUT_REPORT_FEATURE(FEATURE, VALUE, VARIABLE, DESCRIPTION)
 
 	Schedule a line for the end-of-configuration feature summary.  The
 	FEATURE is a descriptive string such that the sentence "Checking
@@ -62,7 +62,7 @@ directory.
 - NUT_REPORT(FEATURE, VALUE)
 
 	Schedule a line for the end-of-configuration feature summary, without
-	printing anything to the terminal immediately. 
+	printing anything to the terminal immediately.
 
 - NUT_PRINT_FEATURE_REPORT
 

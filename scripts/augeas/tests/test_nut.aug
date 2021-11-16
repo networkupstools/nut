@@ -27,6 +27,8 @@ test NutUpsConf.ups_lns get ups_conf =
 
 let upsd_conf = "
 MAXAGE 30
+TRACKINGDELAY 600
+ALLOW_NO_DEVICE 1
 LISTEN 0.0.0.0 3493
 MAXCONN 1024
 "
@@ -34,6 +36,8 @@ MAXCONN 1024
 test NutUpsdConf.upsd_lns get upsd_conf = 
 	{ }
 	{ "MAXAGE"      = "30" }
+	{ "TRACKINGDELAY" = "600" }
+	{ "ALLOW_NO_DEVICE" = "1" }
 	{ "LISTEN"
 		{ "interface" = "0.0.0.0" }
 		{ "port"     = "3493"     } }
@@ -50,13 +54,13 @@ let upsd_users = "
 		instcmds = test.panel.start
 		instcmds = test.panel.stop
 
-	[monmaster]
+	[upswired]
 		password = blah
-		upsmon master
+		upsmon primary
 
-	[monslave]
+	[observer]
 		password = abcd
-		upsmon slave
+		upsmon secondary
 "
 
 test NutUpsdUsers.upsd_users_lns get upsd_users = 
@@ -73,16 +77,16 @@ test NutUpsdUsers.upsd_users_lns get upsd_users =
 		{ "instcmds" = "test.panel.start" }
 		{ "instcmds" = "test.panel.stop" }
 		{ }  }
-	{ "monmaster"
+	{ "upswired"
 		{ "password" = "blah" }
-		{ "upsmon" = "master" }
+		{ "upsmon" = "primary" }
 		{ }  }
-	{ "monslave"
+	{ "observer"
 		{ "password" = "abcd" }
-		{ "upsmon" = "slave" } }
+		{ "upsmon" = "secondary" } }
 
 let upsmon_conf = "
-MONITOR testups@localhost 1 monmaster blah master
+MONITOR testups@localhost 1 upswired blah primary
 
 MINSUPPLIES 1
 SHUTDOWNCMD /sbin/shutdown -h +0
@@ -103,9 +107,9 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 		{ "upsname"  = "testups"    }
 		{ "hostname" = "localhost" } }
 		{ "powervalue" = "1"                }
-		{ "username"   = "monmaster"          }
+		{ "username"   = "upswired"          }
 		{ "password"   = "blah"           }
-		{ "type"       = "master"           } }
+		{ "type"       = "primary"           } }
 	{ }
 	{ "MINSUPPLIES"   = "1"  }
 	{ "SHUTDOWNCMD"   = "/sbin/shutdown -h +0" }

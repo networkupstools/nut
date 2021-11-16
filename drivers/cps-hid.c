@@ -24,11 +24,12 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "nut_float.h"
 #include "usbhid-ups.h"
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.4"
+#define CPS_HID_VERSION      "CyberPower HID 0.5"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -49,6 +50,8 @@ static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	might_need_battery_scale = 1;
 	return NULL;
 }
@@ -84,7 +87,7 @@ static void cps_adjust_battery_scale(double batt_volt)
 	}
 
 	batt_volt_nom = strtod(batt_volt_nom_str, NULL);
-	if(batt_volt_nom == 0) {
+	if(d_equal(batt_volt_nom, 0)) {
 		upsdebugx(3, "%s: 'battery.voltage.nominal' is %s", __func__, batt_volt_nom_str);
 		return;
 	}
@@ -114,7 +117,7 @@ static const char *cps_battvolt_fun(double value)
 }
 
 static info_lkp_t cps_battvolt[] = {
-	{ 0, NULL, &cps_battvolt_fun }
+	{ 0, NULL, &cps_battvolt_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -130,7 +133,7 @@ static const char *cps_battcharge_fun(double value)
 }
 
 static info_lkp_t cps_battcharge[] = {
-	{ 0, NULL, &cps_battcharge_fun }
+	{ 0, NULL, &cps_battcharge_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -193,12 +196,14 @@ static hid_info_t cps_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info },
 
   /* Input page */
+  { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 
   /* Output page */
+  { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", 0, NULL },
 

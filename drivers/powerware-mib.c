@@ -4,7 +4,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2016 Arnaud Quette <ArnaudQuette@Eaton.com>
+ *       2015-2021 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.89"
+#define PW_MIB_VERSION "0.93"
 
 /* TODO: more sysOID and MIBs support:
- * 
+ *
  * Powerware UPS (Ingrasys X-SLOT and BD-SLOT): ".1.3.6.1.4.1.534.1"
  * Powerware PXGX cards: ".1.3.6.1.4.1.534.2.12"
  *		PXGX 2000 cards (UPS): Get xupsIdentModel (".1.3.6.1.4.1.534.1.1.2.0")
@@ -102,96 +102,96 @@
 #define DEFAULT_SHUTDOWNDELAY	0
 
 static info_lkp_t pw_alarm_ob[] = {
-	{ 1, "OB" },
-	{ 2, "" },
-	{ 0, NULL }
-} ;
+	{ 1, "OB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 static info_lkp_t pw_alarm_lb[] = {
-	{ 1, "LB" },
-	{ 2, "" },
-	{ 0, NULL }
-} ;
+	{ 1, "LB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 static info_lkp_t pw_pwr_info[] = {
-	{   1, ""		   /* other */ },
-	{   2, "OFF"       /* none */ },
-	{   3, "OL"        /* normal */ },
-	{   4, "BYPASS"    /* bypass */ },
-	{   5, "OB"        /* battery */ },
-	{   6, "OL BOOST"  /* booster */ },
-	{   7, "OL TRIM"   /* reducer */ },
-	{   8, "OL"        /* parallel capacity */ },
-	{   9, "OL"        /* parallel redundancy */ },
-	{  10, "OL"        /* high efficiency */ },
+	{   1, ""         /* other */, NULL, NULL },
+	{   2, "OFF"       /* none */, NULL, NULL },
+	{   3, "OL"        /* normal */, NULL, NULL },
+	{   4, "BYPASS"    /* bypass */, NULL, NULL },
+	{   5, "OB"        /* battery */, NULL, NULL },
+	{   6, "OL BOOST"  /* booster */, NULL, NULL },
+	{   7, "OL TRIM"   /* reducer */, NULL, NULL },
+	{   8, "OL"        /* parallel capacity */, NULL, NULL },
+	{   9, "OL"        /* parallel redundancy */, NULL, NULL },
+	{  10, "OL"        /* high efficiency */, NULL, NULL },
 	/* Extended status values */
-	{ 240, "OB"        /* battery (0xF0) */ },
-	{ 100, "BYPASS"    /* maintenanceBypass (0x64) */ },
-	{  96, "BYPASS"    /* Bypass (0x60) */ },
-	{  81, "OL"        /* high efficiency (0x51) */ },
-	{  80, "OL"        /* normal (0x50) */ },
-	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */ },
-	{  16, "OFF"       /* none (0x10) */ },
-	{ 0, NULL }
+	{ 240, "OB"        /* battery (0xF0) */, NULL, NULL },
+	{ 100, "BYPASS"    /* maintenanceBypass (0x64) */, NULL, NULL },
+	{  96, "BYPASS"    /* Bypass (0x60) */, NULL, NULL },
+	{  81, "OL"        /* high efficiency (0x51) */, NULL, NULL },
+	{  80, "OL"        /* normal (0x50) */, NULL, NULL },
+	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */, NULL, NULL },
+	{  16, "OFF"       /* none (0x10) */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t pw_mode_info[] = {
-	{   1, ""  },
-	{   2, ""  },
-	{   3, "normal" },
-	{   4, "" },
-	{   5, "" },
-	{   6, "" },
-	{   7, "" },
-	{   8, "parallel capacity" },
-	{   9, "parallel redundancy" },
-	{  10, "high efficiency" },
+	{   1, "", NULL, NULL },
+	{   2, "", NULL, NULL },
+	{   3, "normal", NULL, NULL },
+	{   4, "", NULL, NULL },
+	{   5, "", NULL, NULL },
+	{   6, "", NULL, NULL },
+	{   7, "", NULL, NULL },
+	{   8, "parallel capacity", NULL, NULL },
+	{   9, "parallel redundancy", NULL, NULL },
+	{  10, "high efficiency", NULL, NULL },
 	/* Extended status values */
-	{ 240, ""                /* battery (0xF0) */ },
-	{ 100, ""                /* maintenanceBypass (0x64) */ },
-	{  96, ""                /* Bypass (0x60) */ },
-	{  81, "high efficiency" /* high efficiency (0x51) */ },
-	{  80, "normal"          /* normal (0x50) */ },
-	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */ },
-	{  16, ""                /* none (0x10) */ },
-	{   0, NULL }
+	{ 240, ""                /* battery (0xF0) */, NULL, NULL },
+	{ 100, ""                /* maintenanceBypass (0x64) */, NULL, NULL },
+	{  96, ""                /* Bypass (0x60) */, NULL, NULL },
+	{  81, "high efficiency" /* high efficiency (0x51) */, NULL, NULL },
+	{  80, "normal"          /* normal (0x50) */, NULL, NULL },
+	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */, NULL, NULL },
+	{  16, ""                /* none (0x10) */, NULL, NULL },
+	{   0, NULL, NULL, NULL }
 };
 
 /* Legacy implementation */
 static info_lkp_t pw_battery_abm_status[] = {
-	{ 1, "CHRG" },
-	{ 2, "DISCHRG" },
-/*	{ 3, "Floating" }, */
-/*	{ 4, "Resting" }, */
-/*	{ 5, "Unknown" }, */
-	{ 0, NULL }
-} ;
+	{ 1, "CHRG", NULL, NULL },
+	{ 2, "DISCHRG", NULL, NULL },
+/*	{ 3, "Floating", NULL, NULL }, */
+/*	{ 4, "Resting", NULL, NULL }, */
+/*	{ 5, "Unknown", NULL, NULL }, */
+	{ 0, NULL, NULL, NULL }
+};
 
-static info_lkp_t eaton_abm_status_info[] = {
-	{ 1, "charging" },
-	{ 2, "discharging" },
-	{ 3, "floating" },
-	{ 4, "resting" },
-	{ 5, "unknown" },   /* Undefined - ABM is not activated */
-	{ 6, "disabled" },  /* ABM Charger Disabled */
-	{ 0, NULL }
+static info_lkp_t pw_abm_status_info[] = {
+	{ 1, "charging", NULL, NULL },
+	{ 2, "discharging", NULL, NULL },
+	{ 3, "floating", NULL, NULL },
+	{ 4, "resting", NULL, NULL },
+	{ 5, "unknown", NULL, NULL },   /* Undefined - ABM is not activated */
+	{ 6, "disabled", NULL, NULL },  /* ABM Charger Disabled */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t pw_batt_test_info[] = {
-	{ 1, "Unknown" },
-	{ 2, "Done and passed" },
-	{ 3, "Done and error" },
-	{ 4, "In progress" },
-	{ 5, "Not supported" },
-	{ 6, "Inhibited" },
-	{ 7, "Scheduled" },
-	{ 0, NULL }
+	{ 1, "Unknown", NULL, NULL },
+	{ 2, "Done and passed", NULL, NULL },
+	{ 3, "Done and error", NULL, NULL },
+	{ 4, "In progress", NULL, NULL },
+	{ 5, "Not supported", NULL, NULL },
+	{ 6, "Inhibited", NULL, NULL },
+	{ 7, "Scheduled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+static info_lkp_t pw_yes_no_info[] = {
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table */
@@ -204,10 +204,11 @@ static snmp_info_t pw_mib[] = {
 		SU_FLAG_STATIC, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MODEL_NAME, "",
 		SU_FLAG_STATIC, NULL },
+	/* FIXME: the 2 "firmware" entries below should be SU_FLAG_SEMI_STATIC */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_FIRMREV, "",
-		SU_FLAG_STATIC,   NULL },
+		0, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "",
-		SU_FLAG_STATIC, NULL },
+		0, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_IDENT, "",
 		SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, PW_OID_OUT_LOAD, "",
@@ -238,9 +239,9 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsTestBatteryStatus */
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.8.2.0", "", 0, &pw_batt_test_info[0] },
 	/* UPS-MIB::upsAutoRestart */
-	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &ietf_yes_no_info[0] },
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &pw_yes_no_info[0] },
 	/* XUPS-MIB::xupsBatteryAbmStatus.0 */
-	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &eaton_abm_status_info[0] },
+	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &pw_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
@@ -253,10 +254,10 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
-	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, NULL },
+	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, &su_convert_to_iso_date_info[FUNMAP_USDATE_TO_ISODATE] },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL, NULL },
+	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL },
 	/* XUPS-MIB::xupsOutputFrequency.0 */
 	{ "output.frequency", 0, 0.1, "1.3.6.1.4.1.534.1.4.2.0", "", 0, NULL },
 	/* XUPS-MIB::xupsConfigOutputFreq.0 */
@@ -303,7 +304,7 @@ static snmp_info_t pw_mib[] = {
 
 	/* Input page */
 	{ "input.phases", 0, 1.0, PW_OID_IN_LINES, "",
-		0, NULL, NULL },
+		0, NULL },
 	{ "input.frequency", 0, 0.1, PW_OID_IN_FREQUENCY, "",
 		0, NULL },
 	{ "input.voltage", 0, 1.0, PW_OID_IN_VOLTAGE ".0", "",
@@ -335,6 +336,7 @@ static snmp_info_t pw_mib[] = {
 
 	/* FIXME: this segfaults! do we assume the same number of bypass phases as input phases?
 	{ "input.bypass.phases", 0, 1.0, PW_OID_BY_LINES, "", 0, NULL }, */
+	{ "input.bypass.frequency", 0, 0.1, PW_OID_BY_FREQUENCY, "", 0, NULL },
 	{ "input.bypass.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
 	{ "input.bypass.L1-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",

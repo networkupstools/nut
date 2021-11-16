@@ -11,8 +11,19 @@
 # from your AT lines.
 
 case $1 in
+	onbattwarn)
+		# Send a notification mail
+		echo "The UPS has been on battery for awhile" \
+		| mail -s"UPS monitor" bofh@pager.example.com
+		# Create a flag-file on the filesystem, for your own processing
+		/usr/bin/touch /some/path/ups-on-battery
+		;;
+	ups-back-on-power)
+		# Delete the flag-file on the filesystem
+		/bin/rm -f /some/path/ups-on-battery
+		;;
 	upsgone)
-		logger -t upssched-cmd "The UPS has been gone for awhile"
+		logger -t upssched-cmd "The communication with UPS has been gone for awhile"
 		;;
 	*)
 		logger -t upssched-cmd "Unrecognized command: $1"

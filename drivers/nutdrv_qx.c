@@ -17,6 +17,8 @@
  *  blazer_usb.c - Copyright (C)
  *    2003-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
+ *  Masterguard additions
+ *    2020-2021 Edgar Fuß, Mathematisches Institut der Universität Bonn <ef@math.uni-bonn.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,11 +36,12 @@
  *
  */
 
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.31"
 
+#include "config.h"
 #include "main.h"
-
-#include <math.h>
+#include "attribute.h"
+#include "nut_float.h"
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
@@ -64,6 +67,7 @@
 /* == Subdrivers == */
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
+#include "nutdrv_qx_hunnox.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -73,8 +77,9 @@
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
+#include "nutdrv_qx_masterguard.h"
 
-/* Master list of available subdrivers */
+/* Reference list of available subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
 	&voltronic_qs_subdriver,
@@ -85,6 +90,8 @@ static subdriver_t	*subdriver_list[] = {
 	&mecer_subdriver,
 	&megatec_subdriver,
 	&zinto_subdriver,
+	&masterguard_subdriver,
+	&hunnox_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -99,7 +106,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Arnaud Quette <arnaud.quette@gmail.com>" \
 	"John Stamp <kinsayder@hotmail.com>" \
 	"Peter Selinger <selinger@users.sourceforge.net>" \
-	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>" \
+	"Edgar Fuß <ef@math.uni-bonn.de>",
 	DRV_BETA,
 #ifdef QX_USB
 	{ &comm_upsdrv_info, NULL }
@@ -108,14 +116,17 @@ upsdrv_info_t	upsdrv_info = {
 #endif	/* QX_USB */
 };
 
+#ifdef QX_USB
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+# ifdef WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  /* defines */
  #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
  #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
  #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
+ #define USB_TYPE_VENDOR LIBUSB_REQUEST_TYPE_VENDOR
  #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
+ #define USB_RECIP_ENDPOINT LIBUSB_RECIPIENT_ENDPOINT
  /* Structures */
  #define usb_dev_handle libusb_device_handle
  typedef unsigned char* usb_ctrl_char;
@@ -142,12 +153,13 @@ upsdrv_info_t	upsdrv_info = {
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
-#else /* for libusb 0.1 */
+# else /* for libusb 0.1 */
  /* Structures */
  typedef char* usb_ctrl_char;
  /* Functions */
  #define nut_usb_strerror(a) usb_strerror()
-#endif
+# endif
+#endif /* QX_USB */
 
 /* == Data walk modes == */
 typedef enum {
@@ -166,6 +178,10 @@ static int	ups_status = 0;
 static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
+
+#if defined(QX_USB) && !defined(TESTING)
+static int	hunnox_step = 0;
+#endif	/* QX_USB && !TESTING */
 
 #if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
@@ -259,7 +275,7 @@ static int	qx_battery(void)
 
 	batt.volt.act = batt.packs * strtod(val, NULL);
 
-	if (batt.chrg.act == -1 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+	if (d_equal(batt.chrg.act, -1) && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
 		batt.chrg.act = 100 * (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
 
@@ -322,7 +338,7 @@ static void	qx_initbattery(void)
 		}
 
 		/* If no values are available for both battery.voltage.{low,high} either from the UPS or provided by the user in ups.conf, try to guesstimate them, but announce it! */
-		if (batt.volt.nom != -1 && (batt.volt.low == -1 || batt.volt.high == -1)) {
+		if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
 
 			upslogx(LOG_INFO, "No values for battery high/low voltages");
 
@@ -344,7 +360,7 @@ static void	qx_initbattery(void)
 		} else {
 
 			/* qx_battery -> batt.volt.act */
-			if (!qx_battery() && batt.volt.nom != -1) {
+			if (!qx_battery() && (!d_equal(batt.volt.nom, -1))) {
 
 				const double	packs[] = { 120, 100, 80, 60, 48, 36, 30, 24, 18, 12, 8, 6, 4, 3, 2, 1, 0.5, -1 };
 				int		i;
@@ -409,7 +425,7 @@ static void	qx_initbattery(void)
 		}
 
 		val = dstate_getinfo("battery.charge");
-		if (!val && batt.volt.nom != -1) {
+		if (!val && (!d_equal(batt.volt.nom, -1))) {
 			batt.volt.low = batt.volt.nom;
 			batt.volt.high = 1.15 * batt.volt.nom;
 
@@ -625,10 +641,13 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -645,9 +664,12 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&buf[i], 8, 1000);
 
-		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -673,10 +695,14 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x2, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", (ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+			upsdebugx(3, "send: %s (%d)",
+				(ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				ret);
 			return ret;
 		}
 
@@ -687,14 +713,21 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	/* Read all 64 bytes of the reply in one large chunk */
 	ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)tmp, sizeof(tmp), 1000);
 
-	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+	/* Any errors here mean that we are unable to read a reply
+	 * (which will happen after successfully writing a command
+	 * to the UPS) */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", (ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+		upsdebugx(3, "read: %s (%d)",
+			(ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			ret);
 		return ret;
 	}
 
-	/* As Ippon will always return 64 bytes in response, we have to calculate and return length of actual response data here.
-	 * Empty response will look like 0x00 0x0D, otherwise it will be data string terminated by 0x0D. */
+	/* As Ippon will always return 64 bytes in response,
+	 * we have to calculate and return length of actual
+	 * response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise
+	 * it will be data string terminated by 0x0D. */
 
 	for (i = 0, len = 0; i < (size_t)ret; i++) {
 
@@ -721,6 +754,53 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	return (int)len;
 }
 
+static int 	hunnox_protocol(int asking_for)
+{
+	char	buf[1030];
+
+	int langid_fix_local = 0x0409;
+
+	if (langid_fix != -1) {
+		langid_fix_local = langid_fix;
+	}
+
+	switch (hunnox_step) {
+		case 0:
+			upsdebugx(3, "asking for: %02X", 0x00);
+			usb_get_string(udev, 0x00, langid_fix_local, (usb_ctrl_char)buf, 1026);
+			usb_get_string(udev, 0x00, langid_fix_local, (usb_ctrl_char)buf, 1026);
+			usb_get_string(udev, 0x01, langid_fix_local, (usb_ctrl_char)buf, 1026);
+			usleep(10000);
+			break;
+		case 1:
+			if (asking_for != 0x0d) {
+				upsdebugx(3, "asking for: %02X", 0x0d);
+				usb_get_string(udev, 0x0d, langid_fix_local, (usb_ctrl_char)buf, 102);
+			}
+			break;
+		case 2:
+			if (asking_for != 0x03) {
+				upsdebugx(3, "asking for: %02X", 0x03);
+				usb_get_string(udev, 0x03, langid_fix_local, (usb_ctrl_char)buf, 102);
+			}
+			break;
+		case 3:
+			if (asking_for != 0x0c) {
+				upsdebugx(3, "asking for: %02X", 0x0c);
+				usb_get_string(udev, 0x0c, langid_fix_local, (usb_ctrl_char)buf, 102);
+			}
+			break;
+		default:
+			hunnox_step = 0;
+	}
+	hunnox_step++;
+	if (hunnox_step > 3) {
+		hunnox_step = 1;
+	}
+
+	return 0;
+}
+
 /* Krauler communication subdriver */
 static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 {
@@ -740,7 +820,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q\r", 0x07, '\r' },
 		{ "C\r", 0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
@@ -767,7 +847,8 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+				upsdebugx(3, "read: %s (%d)",
+					ret ? nut_usb_strerror(ret) : "timeout", ret);
 				return ret;
 			}
 
@@ -842,7 +923,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 		{ "I\r",	0x0c, },	/* Vendor infos */
 		{ "Q\r",	0x07, },	/* Beeper toggle */
 		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
-		{ NULL }
+		{ NULL, 0 }
 	};
 	int	i, ret, index = 0;
 
@@ -904,9 +985,160 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	ret = usb_get_string_simple(udev, index, (usb_ctrl_char)buf, buflen);
 
 	if (ret <= 0) {
+		upsdebugx(3, "read: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout", ret);
+		return ret;
+	}
+
+	upsdebug_hex(5, "read", buf, ret);
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
+	if (
+		strcspn(buf, "\r") == 10 &&
+		!strncasecmp(buf, "UPS No Ack", 10)
+	) {
+		/* ..because of that, always return 0 (with buf empty, as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
+		memset(buf, 0, buflen);
+		return 0;
+	}
+
+	return ret;
+}
+
+/* Hunnox communication subdriver, based on Fabula code above so repeats
+ * much of it currently. Possible future optimization is to refactor shared
+ * code into new routines to be called from both (or more) methods.*/
+static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
+{
+	/* The hunnox_patch was an argument in initial implementation of PR #638
+	 * which added "hunnox" support; keeping it fixed here helps to visibly
+	 * track the modifications compared to original fabula_command() e.g. to
+	 * facilitate refactoring commented above, in the future.
+	 */
+/*	char hunnox_patch = 1; */
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* Fabula string index for this command */
+	} commands[] = {
+		{ "Q1\r",	0x03, },	/* Status */
+		{ "F\r",	0x0d, },	/* Ratings */
+		{ "I\r",	0x0c, },	/* Vendor infos */
+		{ "Q\r",	0x07, },	/* Beeper toggle */
+		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
+		{ NULL, 0 }
+	};
+	int	i, ret, index = 0;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	for (i = 0; commands[i].str; i++) {
+
+		if (strcmp(cmd, commands[i].str))
+			continue;
+
+		index = commands[i].index;
+		break;
+
+	}
+
+	if (!index) {
+
+		int	val2 = -1;
+		double	val1 = -1;
+
+		/* Shutdowns */
+		if (
+			sscanf(cmd, "S%lfR%d\r", &val1, &val2) == 2 ||
+			sscanf(cmd, "S%lf\r", &val1) == 1
+		) {
+
+			double	delay;
+
+			/* 0x(1+)0 -> shutdown.stayoff (SnR0000)
+			 * 0x(1+)8 -> shutdown.return (Sn[Rm], m != 0) [delay before restart is always 10 seconds]
+			 * +0x10 (16dec) = next megatec delay (min .5 = hex 0x1*; max 10 = hex 0xF*) -> n < 1 ? -> n += .1; n >= 1 ? -> n += 1 */
+
+			/* delay: [.5..10] (-> seconds: [30..600]) */
+			delay = val1 < .5 ? .5 : val1 > 10 ? 10 : val1;
+
+			if (delay < 1)
+				index = 16 + round((delay - .5) * 10) * 16;
+			else
+				index = 96 + (delay - 1) * 16;
+
+			/* shutdown.return (Sn[Rm], m != 0) */
+			if (val2)
+				index += 8;
+
+		/* Unknown commands */
+		} else {
+
+			/* Echo the unknown command back */
+			upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+
+		}
+
+	}
+
+	upsdebugx(4, "command index: 0x%02x", index);
+
+/*	if (hunnox_patch) { */
+		// Enable lock-step protocol for Hunnox
+		if (hunnox_protocol(index) != 0) {
+			return 0;
+		}
+
+		// Seems that if we inform a large buffer, the USB locks.
+		// This value was captured from the Windows "official" client.
+		// Note this should not be a problem programmatically: it just
+		// means that the caller reserved a longer buffer that we need
+		// in practice to write a response into.
+		if (buflen > 102) {
+			buflen = 102;
+		}
+/*	} */
+
+	/* Send command/Read reply */
+	if (langid_fix != -1) {
+		ret = usb_get_string(udev, index, langid_fix, (usb_ctrl_char)buf, buflen);
+	} else {
+		ret = usb_get_string_simple(udev, index, (usb_ctrl_char)buf, buflen);
+	}
+
+	if (ret <= 0) {
 		upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
+
+/*	if (hunnox_patch) { */
+		if (langid_fix != -1) {
+			/* Limit this check, at least for now */
+			/* Invalid receive size - message corrupted */
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				return 0;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+			 * FIXME: this code is at least shared with mge-shut/libshut
+			 * Create a common function? */
+			unsigned int	di, si, size = buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+			}
+
+			buf[di] = 0;
+			ret = di;
+		}
+/*	} */
 
 	upsdebug_hex(5, "read", buf, ret);
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
@@ -940,7 +1172,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 		{ "Q1",	47 },
 		{ "F",	22 },
 		{ "I",	39 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	/*
@@ -1016,7 +1248,8 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)tmp, 8, USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		upsdebugx(3, "send: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
@@ -1033,7 +1266,8 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -1048,45 +1282,240 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	return (int)strlen(buf);
 }
 
+/* Phoenixtec (Masterguard) communication subdriver */
+static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
+{
+	int ret;
+	char *p, *e = NULL;
+	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
+	char **lp;
+
+	if ((ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
+			0x0d, 0, 0, (usb_ctrl_char)cmd, strlen(cmd), 1000)) <= 0
+	) {
+		upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		*buf = '\0';
+		return ret;
+	}
+
+	for (lp = l; *lp != NULL; lp++) {
+		const char *q;
+		int b;
+
+		p = *lp; q = cmd; b = 1;
+		while (*p != '\0') {
+			if (*p++ != *q++) {
+				b = 0;
+				break;
+			}
+		}
+		if (b && *q >= 'A' && *q <= 'Z') b = 0; /* "M" not to match "MSO" */
+		if (b) {
+			upsdebugx(4, "command %s returns no answer", *lp);
+			*buf = '\0';
+			return 0;
+		}
+	}
+
+	for (p = buf; p < buf + buflen; p += ret) {
+		if ((ret = usb_interrupt_read(udev,
+				USB_ENDPOINT_IN | 1,
+				(usb_ctrl_char)p, buf + buflen - p, 1000)) <= 0
+		) {
+			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			*buf = '\0';
+			return ret;
+		}
+		if ((e = memchr(p, '\r', ret)) != NULL) break;
+	}
+	if (e != NULL && ++e < buf + buflen) {
+		*e = '\0';
+		return e - buf;
+	} else {
+		upsdebugx(3, "read: buflen %zu too small", buflen);
+		*buf = '\0';
+		return 0;
+	}
+}
+
+/* SNR communication subdriver */
+static int	snr_command(const char *cmd, char *buf, size_t buflen)
+{
+	/*ATTENTION: This subdriver uses short buffer with length 102 byte*/
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* String index for this command */
+		const char	prefix;	/* Character to replace the first byte in reply */
+	} command[] = {
+		{ "Q1\r", 0x03, '(' },
+		{ "F\r", 0x0d, '#' },
+		{ "I\r", 0x0c, '#' },
+		{ NULL, 0, '\0' }
+	};
+
+	int	i;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen < 102) {
+		upsdebugx(4, "size of buf less than 102 byte!");
+		return 0;
+	}
+
+	for (i = 0; command[i].str; i++) {
+
+		int	retry;
+
+		if (strcmp(cmd, command[i].str)) {
+			continue;
+		}
+
+		for (retry = 0; retry < 10; retry++) {
+
+			int	ret;
+
+			ret = usb_get_string(udev, command[i].index, langid_fix, (usb_ctrl_char)buf, 102);
+
+			if (ret <= 0) {
+				upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+				return ret;
+			}
+
+			/* This may serve in the future */
+			upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				continue;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+				* FIXME: this code is at least shared with mge-shut/libshut
+				* Create a common function? */
+			unsigned int	di, si, size = buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+
+			}
+
+			buf[di] = 0;
+			ret = di;
+
+			/* "UPS No Ack" has a special meaning */
+			if (
+				strcspn(buf, "\r") == 10 &&
+				!strncasecmp(buf, "UPS No Ack", 10)
+			) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+				continue;
+			}
+
+			/* Replace the first byte of what we received with the correct one */
+			buf[0] = command[i].prefix;
+
+			upsdebug_hex(5, "read", buf, ret);
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+			return ret;
+
+		}
+
+		return 0;
+
+	}
+
+	/* Echo the unknown command back */
+	upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+	return snprintf(buf, buflen, "%s", cmd);
+}
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
 
 static void	*sgs_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &sgs_command;
 	return NULL;
 }
 
 static void	*ippon_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
 static void	*krauler_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
 static void	*phoenix_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &phoenix_command;
 	return NULL;
 }
 
 static void	*fabula_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fabula_command;
+	return NULL;
+}
+
+static void	*phoenixtec_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &phoenixtec_command;
+	return NULL;
+}
+
+/* Note: the "hunnox_subdriver" name is taken by the subdriver_t structure */
+static void *fabula_hunnox_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &hunnox_command;
 	return NULL;
 }
 
 static void	*fuji_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fuji_command;
+	return NULL;
+}
+
+static void	*snr_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &snr_command;
 	return NULL;
 }
 
@@ -1104,6 +1533,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
 	{ USB_DEVICE(0x06da, 0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
@@ -1112,10 +1542,12 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes */
+	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
@@ -1155,6 +1587,8 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 
 static int	device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -1564,6 +1998,9 @@ int	setvar(const char *varname, const char *val)
 
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void	upsdrv_shutdown(void)
 {
 	int		retry;
 	item_t		*item;
@@ -1655,8 +2092,44 @@ void	upsdrv_shutdown(void)
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
+#ifdef QX_USB
+	#ifndef TESTING
+		static const struct {
+			const char	*name;
+			int		(*command)(const char *cmd, char *buf, size_t buflen);
+		} usbsubdriver[] = {
+			{ "cypress", &cypress_command },
+			{ "phoenixtec", &phoenixtec_command },
+			{ "phoenix", &phoenix_command },
+			{ "ippon", &ippon_command },
+			{ "krauler", &krauler_command },
+			{ "fabula", &fabula_command },
+			{ "hunnox", &hunnox_command },
+			{ "fuji", &fuji_command },
+			{ "sgs", &sgs_command },
+			{ "snr", &snr_command },
+			{ NULL, NULL }
+		};
+	#endif
+#endif
+
+
 void	upsdrv_help(void)
 {
+#ifdef QX_USB
+	#ifndef TESTING
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
+
+	for (i = 0; usbsubdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", usbsubdriver[i].name);
+	}
+	printf("\n\n");
+	#endif
+#endif
+
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
@@ -1692,6 +2165,7 @@ void	upsdrv_makevartable(void)
 	nut_usb_addvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
+	addvar(VAR_FLAG, "noscanlangid", "Don't autoscan valid range for langid");
 #endif	/* QX_USB */
 
 #ifdef QX_SERIAL
@@ -1892,7 +2366,7 @@ void	upsdrv_initups(void)
 			{ "reverse",	0, 1 },
 			{ "both",	1, 1 },
 			{ "none",	0, 0 },
-			{ NULL }
+			{ NULL, 0, 0 }
 		};
 
 		int		i;
@@ -1954,24 +2428,9 @@ void	upsdrv_initups(void)
 #ifdef QX_USB
 
 	#ifndef TESTING
-
-		const struct {
-			const char	*name;
-			int		(*command)(const char *cmd, char *buf, size_t buflen);
-		} usbsubdriver[] = {
-			{ "cypress", &cypress_command },
-			{ "phoenix", &phoenix_command },
-			{ "ippon", &ippon_command },
-			{ "krauler", &krauler_command },
-			{ "fabula", &fabula_command },
-			{ "fuji", &fuji_command },
-			{ "sgs", &sgs_command },
-			{ NULL }
-		};
-
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
-		char	*regex_array[6];
+		char	*regex_array[7];
 
 		char	*subdrv = getval("subdriver");
 
@@ -1981,13 +2440,16 @@ void	upsdrv_initups(void)
 		regex_array[3] = getval("product");
 		regex_array[4] = getval("serial");
 		regex_array[5] = getval("bus");
+		regex_array[6] = getval("device");
 
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
 			/* Skip "0x" prefix and set back to hexadecimal */
-			if (sscanf(getval("langid_fix") + 2, "%x", &langid_fix) != 1) {
+			unsigned int u_langid_fix;
+			if ( (sscanf(getval("langid_fix") + 2, "%x", &u_langid_fix) != 1) || (u_langid_fix > INT_MAX)) {
 				upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 			} else {
+				langid_fix = u_langid_fix;
 				upsdebugx(2, "Language ID workaround enabled (using '0x%x')", langid_fix);
 			}
 		}
@@ -2058,7 +2520,7 @@ void	upsdrv_initups(void)
 		dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 
 		/* Check for language ID workaround (#2) */
-		if (langid_fix != -1) {
+		if ((langid_fix != -1) && (!getval("noscanlangid"))) {
 			/* Future improvement:
 			 *   Asking for the zero'th index is special - it returns a string descriptor that contains all the language IDs supported by the device.
 			 *   Typically there aren't many - often only one.
@@ -2120,6 +2582,7 @@ void	upsdrv_cleanup(void)
 		free(usbdevice.Product);
 		free(usbdevice.Serial);
 		free(usbdevice.Bus);
+		free(usbdevice.Device);
 
 	#ifdef QX_SERIAL
 	}	/* is_usb */
@@ -2167,9 +2630,29 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
 		case -EPIPE:		/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
@@ -2177,16 +2660,20 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 				break;
 			}
 	#ifdef ETIME
+			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
+		fallthrough_case_ETIME:
 	#endif	/* ETIME */
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
+			goto fallthrough_case_reconnect;
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+		case -EIO:  		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
@@ -2542,9 +3029,19 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			break;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 		default:
-
 			fatalx(EXIT_FAILURE, "%s: unknown update mode!", __func__);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 
 		}
 
@@ -2628,7 +3125,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	}
 
 	/* Update battery guesstimation */
-	if (mode == QX_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
+	if (mode == QX_WALKMODE_FULL_UPDATE && (d_equal(batt.runt.act, -1) || d_equal(batt.chrg.act, -1))) {
 
 		if (getval("runtimecal")) {
 
@@ -2654,10 +3151,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			}
 
-			if (batt.chrg.act == -1)
+			if (d_equal(batt.chrg.act, -1))
 				dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
 
-			if (batt.runt.act == -1 && !qx_load())
+			if (d_equal(batt.runt.act, -1) && !qx_load())
 				dstate_setinfo("battery.runtime", "%.0f", batt.runt.est / load.eff);
 
 			battery_lastpoll = battery_now;
@@ -2790,20 +3287,29 @@ static int	qx_process_answer(item_t *item, const int len)
 /* See header file for details. */
 int	qx_process(item_t *item, const char *command)
 {
-	char	buf[sizeof(item->answer) - 1] = "",
-		cmd[command ? (strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) : (item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF)];
+	char	buf[sizeof(item->answer) - 1] = "", *cmd;
 	int	len;
+	size_t cmdlen = command ?
+		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
+		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
+	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+
+	if ( !(cmd = xmalloc(cmdsz)) ) {
+		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
+		return -1;
+	}
 
 	/* Prepare the command to be used */
-	memset(cmd, 0, sizeof(cmd));
-	snprintf(cmd, sizeof(cmd), "%s", command ? command : item->command);
+	memset(cmd, 0, cmdsz);
+	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
 
 	/* Preprocess the command */
 	if (
 		item->preprocess_command != NULL &&
-		item->preprocess_command(item, cmd, sizeof(cmd)) == -1
+		item->preprocess_command(item, cmd, cmdsz) == -1
 	) {
 		upsdebugx(4, "%s: failed to preprocess command [%s]", __func__, item->info_type);
+		free (cmd);
 		return -1;
 	}
 
@@ -2820,9 +3326,12 @@ int	qx_process(item_t *item, const char *command)
 			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
 			/* Clear answer, preventing it from being reused by next items with same command */
 			memset(item->answer, 0, sizeof(item->answer));
+			free (cmd);
 			return -1;
 		}
 	}
+
+	free (cmd);
 
 	/* Process the answer to get the value */
 	return qx_process_answer(item, len);
@@ -2871,7 +3380,19 @@ int	ups_infoval_set(item_t *item)
 				return -1;
 			}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf(value, sizeof(value), item->dfl, strtod(value, NULL));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 
 	}
