@@ -1568,7 +1568,7 @@ static void parse_status(utype_t *ups, char *status)
 	upsdebugx(2, "%s: [%s]", __func__, status);
 
 	/* empty response is the same as a dead ups */
-	if (!strcmp(status, "")) {
+	if (status == NULL || status[0] == '\0') {
 		ups_is_gone(ups);
 		return;
 	}

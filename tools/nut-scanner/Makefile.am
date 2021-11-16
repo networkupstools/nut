@@ -44,6 +44,9 @@ bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
+$(top_builddir)/include/nut_version.h:
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
 # We optionally append values to this below
 bin_PROGRAMS =
 lib_LTLIBRARIES =

@@ -288,7 +288,7 @@ optional_maintainer_clean_check() {
         return 0
     fi
 
-    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] || [ "${DO_MAINTAINER_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping maintainer-clean check because recipe/developer said so"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
@@ -297,10 +297,14 @@ optional_maintainer_clean_check() {
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
         echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
-        git status --ignored -s || true
+        if [ ! -e .git ]; then
+            echo "WARNING: Skipping maintainer-clean check because there is no `pwd`/.git anymore" >&2
+            return 0
+        fi
+        git status --ignored -s | egrep -v '^.. \.ci.*\.log.*' || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
-        if [ -n "`git status --ignored -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+        if [ -n "`git status --ignored -s | egrep -v '^.. \.ci.*\.log.*'`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
             echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
             git diff || true
             echo "==="
@@ -321,7 +325,7 @@ optional_dist_clean_check() {
         return 0
     fi
 
-    if [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] || [ "${DO_DIST_CLEAN_CHECK-}" = "no" ] ; then
         echo "Skipping distclean check because recipe/developer said so"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
@@ -330,7 +334,11 @@ optional_dist_clean_check() {
         $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
         echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
-        git status -s || true
+        if [ ! -e .git ]; then
+            echo "WARNING: Skipping distclean check because there is no `pwd`/.git anymore" >&2
+            return 0
+        fi
+        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
         if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
@@ -489,12 +497,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
                 *-m64*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                    ;;
+                *-m32*)
+                    SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                     ;;
                 *)
                     case "$ARCH$BITS" in
                         *64*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/amd64/pkgconfig"
+                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                            ;;
+                        *32*)
+                            SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                             ;;
                     esac
                     ;;
@@ -768,7 +782,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
-            git status -s || true
+            git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
             echo "==="
             if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
@@ -854,6 +868,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 BUILDSTODO="`expr $BUILDSTODO + 1`"
             done
+            BUILDSTODO_INITIAL="$BUILDSTODO"
 
             #echo "=== Will loop now with $BUILDSTODO build variants..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
@@ -887,9 +902,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 esac || {
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
                     continue
                 }
 
+                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
@@ -944,6 +962,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "FAILED build(s) with:${FAILED}" >&2
             fi
 
+            echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
+            if [ "$BUILDSTODO" -gt 0 ]; then
+                echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
+            fi
+
             exit $RES
             ;;
     esac
@@ -956,11 +979,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
     if git status -s | egrep '\.dmf$' ; then
         echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated, even if generated (not all builders can do so)!" >&2
-### Bail out will happen below
+### Bail out will (optionally) happen below
 #        git diff -- '*.dmf'
 #        exit 1
     fi
-    git status -s | egrep -v '\.dmf$' || true
+    git status -s | egrep -v '\.dmf$' || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
     if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
         echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
@@ -997,7 +1020,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             fi
         fi
 
-        git status -s || true
+        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
         echo "==="
 
         if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
