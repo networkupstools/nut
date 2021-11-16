@@ -464,7 +464,8 @@ $(top_builddir)/common/libnutdmfsnmp.la :
 
 noinst_PROGRAMS += dmf-test
 
-dmf_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_test_SOURCES = $(DMFTEST_SRC)
+nodist_dmf_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libnutdmfsnmp.la
@@ -519,7 +520,8 @@ if WITH_LUA
 noinst_PROGRAMS += dmf-lua-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
-dmf_lua_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_lua_test_SOURCES = $(DMFTEST_SRC)
+nodist_dmf_lua_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_lua_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libnutdmfsnmp.la
@@ -531,7 +533,8 @@ dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 noinst_PROGRAMS += dmf-fun-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
-dmf_fun_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_fun_test_SOURCES = $(DMFTEST_SRC)
+nodist_dmf_fun_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libnutdmfsnmp.la
@@ -618,3 +621,6 @@ run-dmf-fun-test:
 endif
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+BUILT_SOURCES = $(DMFTEST_SRC_ADD)
+CLEANFILES += $(DMFTEST_SRC_ADD)
