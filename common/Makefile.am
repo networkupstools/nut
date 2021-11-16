@@ -48,6 +48,11 @@ if WITH_DMF
 # other libraries we build (typically consumed with libcommonstr.la)
   libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS)
 
+if WITH_LIBXML2
+  libnutdmfsnmp_la_LIBADD += $(LIBXML2_LIBS)
+  libnutdmfsnmp_la_CFLAGS += $(LIBXML2_CFLAGS)
+endif
+
 if WITH_LIBLTDL
 # NOTE: the C macro WITH_LIBLTDL=1 will probably be defined by config.h
 # and unlike the DMF macros, we do not care much about this case.

@@ -479,6 +479,11 @@ dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 #        -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner \
 #        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
+
+if WITH_LIBXML2
+  dmf_test_LDADD  += $(LIBXML2_LIBS)
+  dmf_test_CFLAGS += $(LIBXML2_CFLAGS)
+endif
 endif
 
 # This seems to cause issues regardless of "if", so
@@ -534,6 +539,11 @@ dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
+if WITH_LIBXML2
+  dmf_lua_test_LDADD  += $(LIBXML2_LIBS)
+  dmf_lua_test_CFLAGS += $(LIBXML2_CFLAGS)
+endif
+
 noinst_PROGRAMS += dmf-fun-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
@@ -546,6 +556,11 @@ dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
+
+if WITH_LIBXML2
+  dmf_fun_test_LDADD  += $(LIBXML2_LIBS)
+  dmf_fun_test_CFLAGS += $(LIBXML2_CFLAGS)
+endif
 
 testdata-lua/.validated: $(abs_builddir)/testdata-lua/.validated
 testdata-fun/.validated: $(abs_builddir)/testdata-fun/.validated
