@@ -1241,7 +1241,11 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs)
 {
-	if(!userdata)return ERR;
+	NUT_UNUSED_VARIABLE(parent);
+	NUT_UNUSED_VARIABLE(nspace);
+
+	if(!userdata)
+		return ERR;
 
 	char *auxname = get_param_by_name("name",attrs);
 	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
@@ -1310,7 +1314,11 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 int
 mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
-	if(!userdata)return ERR;
+	NUT_UNUSED_VARIABLE(state);
+	NUT_UNUSED_VARIABLE(nspace);
+
+	if(!userdata)
+		return ERR;
 
 	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
 	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
@@ -1377,6 +1385,8 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 int
 mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
+	NUT_UNUSED_VARIABLE(state);
+
 	if(!userdata)
 		return ERR;
 
