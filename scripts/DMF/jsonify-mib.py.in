@@ -18,6 +18,7 @@ import sys
 import subprocess
 import os
 import traceback
+import re
 
 from pycparser import c_parser, c_ast, parse_file
 
@@ -28,6 +29,7 @@ manipulation.
 """
 __author__ = """
 Michal Vyskocil <michal.vyskocil@gmail.com>
+Jim Klimov <jimklimov+nut@gmail.com>
 """
 
 # TODO:
@@ -49,7 +51,13 @@ def f2f(node):
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":
-        return (int (node.left.value) << int (node.right.value), )
+        try:
+            return (int (node.left.value) << int (node.right.value), )
+        except ValueError:
+            # ValueError: invalid literal for int() with base 10: '1UL'
+            lv = re.sub('[UL]*$', '', node.left.value)
+            rv = re.sub('[UL]*$', '', node.right.value)
+            return (int(lv) << int(rv), )
     elif isinstance (node, c_ast.Constant):
         return (int (node.value), )
     else:
