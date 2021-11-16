@@ -31,14 +31,14 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-
 /* NUT SNMP common functions */
-#include "main.h"
+#include "main.h"	/* includes "config.h" which must be the first header */
 #include "nut_float.h"
 #include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
+
+#include <ctype.h> /* for isprint() */
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
@@ -331,7 +331,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 		"Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
-		"Set SNMP version (default=v1, allowed v2c)");
+		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
@@ -726,13 +726,13 @@ void nut_snmp_init(const char *type, const char *hostname)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Warray-bounds"
 #endif
-	if ((strncmp(version, "v1", 3) == 0) || (strncmp(version, "v2c", 3) == 0)) {
-		g_snmp_sess.version = (strncmp(version, "v1", 3) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+	if ((strncmp(version, "v1", 2) == 0) || (strncmp(version, "v2c", 3) == 0)) {
+		g_snmp_sess.version = (strncmp(version, "v1", 2) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 		g_snmp_sess.community = (unsigned char *)xstrdup(community);
 		g_snmp_sess.community_len = strlen(community);
 	}
-	else if (strncmp(version, "v3", 3) == 0) {
+	else if (strncmp(version, "v3", 2) == 0) {
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
