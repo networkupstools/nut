@@ -355,7 +355,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
 dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
@@ -365,6 +365,7 @@ dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
+		if test -z "${with_libxml2}"; then with_libxml2="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
@@ -555,12 +556,6 @@ fi
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
-
-if test "${nut_have_neon}" = "yes" ; then
-    myCFLAGS="$CFLAGS `xml2-config --cflags`" || myCFLAGS="$CFLAGS -I/usr/include/libxml2"
-    CFLAGS="$myCFLAGS"
-    AC_CHECK_HEADERS(libxml/encoding.h libxml/parser.h, [], [], [AC_INCLUDES_DEFAULT])
-fi
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
@@ -2097,6 +2092,7 @@ NUT_ARG_WITH([lua], [enable LUA-5.1+ scripting generic support], [auto])
 NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1+ scripting], [auto])
 NUT_ARG_WITH([snmp_dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
 NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1+ scripting], [auto])
+NUT_ARG_WITH([libxml2], [use libxml2 for DMF XML handling], [auto])
 
 dnl If a higher-level toggle explicitly disables an option, abort the attempt to enable it at lower level
 if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
@@ -2170,6 +2166,26 @@ fi
 if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
 fi
+
+dnl (Legacy) Should we limit so to require libneon for using
+dnl libxml2 effectively? Or only for DMF as checked below?
+NUT_CHECK_LIBXML2
+if test "${nut_have_neon}" = "yes" \
+&& test "${nut_with_dmf}" = "yes" \
+; then
+	if test "${nut_with_libxml2}" = "yes" -a "${nut_have_libxml2}" != "yes"; then
+		AC_MSG_ERROR([libxml2 libraries not found, required for DMF XML handling])
+	fi
+
+	if test "${nut_with_libxml2}" != "no"; then
+		nut_with_libxml2="${nut_have_libxml2}"
+	fi
+
+	NUT_REPORT_FEATURE([use libxml2 for XML parsing], [${nut_with_libxml2}], [],
+					[WITH_LIBXML2], [Define to enable LibXML2 support])
+	AM_CONDITIONAL([HAVE_LIBXML2], [test "${nut_have_libxml2}" = "yes"])
+fi
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
