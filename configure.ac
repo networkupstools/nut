@@ -2180,11 +2180,11 @@ if test "${nut_have_neon}" = "yes" \
 	if test "${nut_with_libxml2}" != "no"; then
 		nut_with_libxml2="${nut_have_libxml2}"
 	fi
-
-	NUT_REPORT_FEATURE([use libxml2 for XML parsing], [${nut_with_libxml2}], [],
-					[WITH_LIBXML2], [Define to enable LibXML2 support])
-	AM_CONDITIONAL([HAVE_LIBXML2], [test "${nut_have_libxml2}" = "yes"])
 fi
+
+NUT_REPORT_FEATURE([use libxml2 for XML parsing], [${nut_with_libxml2}], [],
+				[WITH_LIBXML2], [Define to enable LibXML2 support])
+AM_CONDITIONAL([HAVE_LIBXML2], [test "${nut_have_libxml2}" = "yes"])
 
 
 dnl ----------------------------------------------------------------------
