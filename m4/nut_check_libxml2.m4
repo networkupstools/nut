@@ -13,6 +13,7 @@ if test -z "${nut_have_libxml2_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	XML2_CONFIG="none"
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the xml2 library (if any) is installed
 		 dnl FIXME : Support detection of cflags/ldflags below by legacy
@@ -29,6 +30,32 @@ if test -z "${nut_have_libxml2_seen}"; then
 		]
 	)
 
+	AS_IF([test x"$XML2_VERSION" != xnone],
+		[dnl pkg-config is present, and package data is too
+		 CFLAGS="`$PKG_CONFIG --silence-errors --cflags xml2 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs xml2 2>/dev/null`"
+		],
+		[AC_PATH_PROGS([XML2_CONFIG], [xml2-config], [none])
+		 AS_IF([test x"$XML2_CONFIG" != xnone],
+			[AC_MSG_CHECKING([for libxml2 version via ${XML2_CONFIG}])
+			 XML2_VERSION="`$XML2_CONFIG --version 2>/dev/null`" \
+				|| test -n "${XML2_VERSION}" \
+				|| XML2_VERSION="none"
+			 AC_MSG_RESULT(${XML2_VERSION} found)
+
+			 AS_IF([test x"$XML2_VERSION" != xnone],
+				[CFLAGS="`$XML2_CONFIG --cflags`"
+				 LIBS="`$XML2_CONFIG --libs`"
+				],
+				[CFLAGS="-I/usr/include/xml2 -I/usr/local/include/xml2"
+				 LIBS="-L/usr/lib -L/usr/local/lib -lxml2"
+				]
+			 )
+
+			]
+		)]
+	)
+
 	AC_MSG_CHECKING(for libxml2 cflags)
 	AC_ARG_WITH(libxml2-includes,
 		AS_HELP_STRING([@<:@--with-libxml2-includes=CFLAGS@:>@], [include flags for the libxml2 library]),
@@ -41,12 +68,7 @@ if test -z "${nut_have_libxml2_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags xml2 2>/dev/null`" || CFLAGS="-I/usr/include/xml2 -I/usr/local/include/xml2"],
-			[CFLAGS="`xml2-config --cflags`" || CFLAGS="-I/usr/include/xml2 -I/usr/local/include/xml2"]
-		)]
-	)
+	], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libxml2 ldflags)
@@ -61,12 +83,7 @@ if test -z "${nut_have_libxml2_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [
-		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs xml2 2>/dev/null`" || LIBS="-lxml2"],
-			[LIBS="`xml2-config --libs`" || LIBS="-lxml2"]
-		)]
-	)
+	], [])
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if libxml2 is usable
