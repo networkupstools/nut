@@ -31,7 +31,7 @@ pw_baud_rate_t pw_baud_rates[] = {
 };
 
 /* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
+unsigned char BCMXCP_AUTHCMD[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
 static void send_command(unsigned char *command, size_t command_length)
 {
@@ -322,12 +322,21 @@ static void pw_comm_setup(const char *port)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		switch(sizeof(speed_t)) {
 			case 8:	assert (br < INT64_MAX); break;
 			case 4:	assert (br < INT32_MAX); break;
 			case 2:	assert (br < INT16_MAX); break;
 			default:	assert (br < INT_MAX);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
@@ -347,7 +356,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, mybaud);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {
@@ -373,7 +382,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, pw_baud_rates[i].rate);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {

@@ -272,7 +272,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
-		else if (tail < 0) {
+		else /* if (tail < 0) */ {
 			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %d", tail);
 			return -1;
 		}
@@ -550,4 +550,3 @@ void nutusb_comm_good(void)
 	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
-

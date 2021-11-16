@@ -56,7 +56,7 @@
 
 /* BCMXCP header defines these externs now: */
 /*
-extern unsigned char AUT[4];
+extern unsigned char BCMXCP_AUTHCMD[4];
 extern struct pw_baud_rate {
 	int rate;
 	int name;
@@ -232,7 +232,7 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 				break;
 
 			usleep(90000);
-			send_write_command(AUT, 4);
+			send_write_command(BCMXCP_AUTHCMD, 4);
 			usleep(500000);
 
 			/* Discovery with Baud Hunting (XCP protocol spec. §4.1.2)

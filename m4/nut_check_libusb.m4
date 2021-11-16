@@ -7,29 +7,42 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
 [
 if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
-	AC_MSG_CHECKING(for libusb version via pkg-config)
-	LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`"
-	if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags libusb 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
-	else
-		AC_MSG_CHECKING(via libusb-config)
-		LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
-		if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AC_MSG_CHECKING(for libusb version via pkg-config)
+		 LIBUSB_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb 2>/dev/null`"
+		 if test "$?" != "0" -o -z "${LIBUSB_VERSION}"; then
+		    LIBUSB_VERSION="none"
+		 fi
+		 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		],
+		[LIBUSB_VERSION="none"
+		 AC_MSG_NOTICE([can not check libusb settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"${LIBUSB_VERSION}" != xnone],
+		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
+		],
+		[AC_MSG_CHECKING([via libusb-config (if present)])
+		 LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
+		 if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
 			CFLAGS="`libusb-config --cflags 2>/dev/null`"
 			LIBS="`libusb-config --libs 2>/dev/null`"
-		else
+		 else
 			LIBUSB_VERSION="none"
 			CFLAGS=""
 			LIBS="-lusb"
-		fi
-	fi
-	AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		 fi
+		 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		]
+	)
 
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes,

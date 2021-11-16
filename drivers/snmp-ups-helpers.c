@@ -25,11 +25,18 @@
  */
 
 /* NUT SNMP common functions */
+/*
+#include "config.h"
+#include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
+*/
+
 #include "common.h"
 #include "snmp-ups.h"
+#include "timehead.h" /* time.h => strptime() */
 
 #include <ctype.h> /* for isprint() */
-#include <time.h>  /* for strptime() */
 
 /* Shunt the debugging calls when building self-test DMF driver code */
 /* FIXME: Go the next mile to pull common.o etc? We would rather not... */
