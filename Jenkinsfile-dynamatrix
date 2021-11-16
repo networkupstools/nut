@@ -152,6 +152,10 @@ import org.nut.dynamatrix.*;
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
     }
 
+    if ( env?.BRANCH_NAME ==~ /^FTY.*$/ || env?.CHANGE_TARGET ==~ /^FTY.*$/ ) {
+        dynacfgPipeline.failFast = true
+    }
+
     if ( !( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) ) {
         // else: For main branches we want all builds,
         // to keep reference for warnings-ng up to date
