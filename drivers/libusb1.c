@@ -142,8 +142,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
-	ssize_t	devcount = 0,
-		devnum;
+	ssize_t	devcount = 0;
+	size_t	devnum;
 	struct libusb_device_descriptor dev_desc;
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
@@ -174,12 +174,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 
-	for (devnum = 0; devnum < devcount; devnum++) {
+	/* devcount may be < 0, loop will get skipped;
+	 * its SSIZE_MAX < SIZE_MAX for devnum */
+	for (devnum = 0; (ssize_t)devnum < devcount; devnum++) {
 		/* int		if_claimed = 0; */
 		libusb_device	*device = devlist[devnum];
 
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %lu of %lu (%04X/%04X)",
+		upsdebugx(2, "Checking device %zu of %zu (%04X/%04X)",
 			devnum + 1, devcount,
 			dev_desc.idVendor, dev_desc.idProduct);
 
