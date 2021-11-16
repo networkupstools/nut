@@ -1003,7 +1003,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	}
 
 	if(arg[1])
+	{
 		multiplier = atof(arg[1]);
+	}
 
 /*
 	if(arg[5])
