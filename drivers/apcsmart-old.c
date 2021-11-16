@@ -270,7 +270,7 @@ static int query_ups(const char *var, int first)
 		return 0;
 
 	/* empty the input buffer (while allowing the alert handler to run) */
-	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, 
+	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
 		POLL_IGNORE, POLL_ALERT, alert_handler, 0, 0);
 
 	ret = ser_send_char(upsfd, vt->cmd);
@@ -280,7 +280,7 @@ static int query_ups(const char *var, int first)
 		return 0;
 	}
 
-	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, 
+	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
 		POLL_IGNORE, POLL_ALERT, alert_handler, SER_WAIT_SEC,
 		SER_WAIT_USEC);
 
@@ -327,7 +327,7 @@ static void do_capabilities(void)
 	}
 
 	/* note different IGN set since ^Z returns things like # */
-	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
+	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 		MINIGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
@@ -347,7 +347,7 @@ static void do_capabilities(void)
 	if (temp[0] != '#') {
 		upsdebugx(1, "Unrecognized capability start char %c", temp[0]);
 		upsdebugx(1, "Please report this error [%s]", temp);
-		upslogx(LOG_ERR, "ERROR: unknown capability start char %c!", 
+		upslogx(LOG_ERR, "ERROR: unknown capability start char %c!",
 			temp[0]);
 
 		return;
@@ -375,7 +375,7 @@ static void do_capabilities(void)
 			if (quirk_capability_overflow)
 				return;
 
-			fatalx(EXIT_FAILURE, 
+			fatalx(EXIT_FAILURE,
 				"Capability string has overflowed\n"
 				"Please report this error\n"
 				"ERROR: capability overflow!"
@@ -393,7 +393,7 @@ static void do_capabilities(void)
 
 		/* mark this as writable */
 		if (valid) {
-			upsdebugx(1, "Supported capability: %02x (%c) - %s", 
+			upsdebugx(1, "Supported capability: %02x (%c) - %s",
 				cmd, loc, vt->name);
 
 			dstate_setflags(vt->name, ST_FLAG_RW);
@@ -492,7 +492,7 @@ static void protocol_verify(unsigned char cmd)
 
 			/* handle special data for our two strings */
 			if (apc_vartab[i].flags & APC_STRING) {
-				dstate_setflags(apc_vartab[i].name, 
+				dstate_setflags(apc_vartab[i].name,
 					ST_FLAG_RW | ST_FLAG_STRING);
 				dstate_setaux(apc_vartab[i].name, APC_STRLEN);
 
@@ -525,7 +525,7 @@ static void protocol_verify(unsigned char cmd)
 		return;
 
 	if (isprint(cmd))
-		upsdebugx(1, "protocol_verify: 0x%02x [%c] unrecognized", 
+		upsdebugx(1, "protocol_verify: 0x%02x [%c] unrecognized",
 			cmd, cmd);
 	else
 		upsdebugx(1, "protocol_verify: 0x%02x unrecognized", cmd);
@@ -547,7 +547,7 @@ static int firmware_table_lookup(void)
 		return 0;
 	}
 
-	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS, 
+	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS,
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
         /*
@@ -601,7 +601,7 @@ static int firmware_table_lookup(void)
 	}
 
 	upsdebugx(2, "Not found in table - trying normal method");
-	return 0;			
+	return 0;
 }
 
 static void getbaseinfo(void)
@@ -630,7 +630,7 @@ static void getbaseinfo(void)
 		return;
 	}
 
-	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 
+	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS,
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
@@ -710,7 +710,7 @@ static int do_cal(int start)
 		ret = read_buf(temp, sizeof(temp));
 
 		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-			upslogx(LOG_WARNING, "Stop calibration failed: %s", 
+			upslogx(LOG_WARNING, "Stop calibration failed: %s",
 				temp);
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
@@ -759,7 +759,7 @@ static int smartmode(void)
 			return 0;
 		}
 
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
+		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret > 0)
@@ -778,7 +778,7 @@ static int smartmode(void)
 		}
 
 		/* eat the response (might be NA, might be something else) */
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
+		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 	}
 
@@ -807,6 +807,8 @@ static int sdok(void)
 /* soft hibernate: S - working only when OB, otherwise ignored */
 static int sdcmd_S(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 
 	upsdebugx(1, "Issuing soft hibernate");
@@ -876,6 +878,8 @@ static int sdcmd_ATn(int cnt)
 /* shutdown: K - delayed poweroff */
 static int sdcmd_K(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing delayed poweroff");
 
@@ -889,6 +893,8 @@ static int sdcmd_K(int dummy)
 /* shutdown: Z - immediate poweroff */
 static int sdcmd_Z(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing immediate poweroff");
 
@@ -919,7 +925,7 @@ static int (*sdlist[])(int) = {
 
 static void upsdrv_shutdown_simple(int status)
 {
-	unsigned int sdtype = 0;
+	long sdtype = 0;
 	char *strval;
 
 	if ((strval = getval("sdtype"))) {
@@ -1183,7 +1189,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 				vt->name);
 
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
-		}			
+		}
 	}
 
 	upslogx(LOG_ERR, "setvar: gave up after 6 tries for %s",
@@ -1374,13 +1380,14 @@ static int instcmd(const char *cmdname, const char *extra)
 			ct = &apc_cmdtab[i];
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmdname);
+		upslogx(LOG_WARNING, "instcmd: unknown command [%s] [%s]",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	if ((ct->flags & APC_PRESENT) == 0) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] is not supported",
-			cmdname);
+		upslogx(LOG_WARNING, "instcmd: command [%s] [%s] is not supported",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -1395,7 +1402,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/* nothing special here */
 	return do_cmd(ct);
-}	
+}
 
 /* install pointers to functions for msg handlers called from msgparse */
 static void setuphandlers(void)
@@ -1439,7 +1446,7 @@ void upsdrv_initinfo(void)
 	const char *pmod, *pser;
 
 	if (!smartmode()) {
-		fatalx(EXIT_FAILURE, 
+		fatalx(EXIT_FAILURE,
 			"Unable to detect an APC Smart protocol UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 			);

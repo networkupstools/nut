@@ -1,6 +1,8 @@
 /* upsrw - simple client for read/write variable access (formerly upsct2)
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1999  Russell Kroll <rkroll@exploits.org>
+     2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,11 +27,14 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "extstate.h"
 
-static char		*upsname = NULL, *hostname = NULL;
+static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+static int			tracking_enabled = 0;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -40,7 +45,7 @@ static void usage(const char *prog)
 {
 	printf("Network UPS Tools %s %s\n\n", prog, UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
-	printf("       %s [-s <variable>] [-u <username>] [-p <password>] <ups>\n\n", prog);
+	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups>\n\n", prog);
 	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
 	printf("  -h            display this help text\n");
@@ -48,6 +53,9 @@ static void usage(const char *prog)
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
+	printf("  -w            wait for the completion of setting by the driver\n");
+	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
@@ -65,9 +73,21 @@ static void clean_exit(void)
 	free(ups);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_set(const char *varname, const char *newval)
 {
+	int		cmd_complete = 0;
 	char	buf[SMALLBUF], enc[SMALLBUF];
+	char	tracking_id[UUID4_LEN];
+	time_t	start, now;
 
 	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n", upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
 
@@ -79,17 +99,91 @@ static void do_set(const char *varname, const char *newval)
 		fatalx(EXIT_FAILURE, "Set variable failed: %s", upscli_strerror(ups));
 	}
 
-	/* FUTURE: status cookies will tie in here */
+	/* verify answer */
 	if (strncmp(buf, "OK", 2) != 0) {
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	/* check for status tracking id */
+	if (
+		!tracking_enabled ||
+		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
+		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
+	) {
+		/* reply as usual */
+		fprintf(stderr, "%s\n", buf);
+		return;
+	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 */
+	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
+	time(&start);
+
+	/* send status tracking request, looping if status is PENDING */
+	while (!cmd_complete) {
+
+		/* check for timeout */
+		time(&now);
+		if (difftime(now, start) >= timeout)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+
+		snprintf(buf, sizeof(buf), "GET TRACKING %s\n", tracking_id);
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
+			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* and get status tracking reply */
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
+
+		if (strncmp(buf, "PENDING", 7))
+			cmd_complete = 1;
+		else
+			/* wait a second before retrying */
+			sleep(1);
+	}
+
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static void do_setvar(const char *varname, char *uin, const char *pass)
 {
-	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
+	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], *ptr;
 	struct passwd	*pw;
 
 	if (uin) {
@@ -176,6 +270,25 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	/* old variable names are no longer supported */
 	if (!strchr(varname, '.')) {
 		fatalx(EXIT_FAILURE, "Error: old variable names are not supported");
+	}
+
+	/* enable status tracking ID */
+	if (tracking_enabled) {
+
+		snprintf(temp, sizeof(temp), "SET TRACKING ON\n");
+
+		if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
+			fatalx(EXIT_FAILURE, "Can't enable set variable status tracking: %s", upscli_strerror(ups));
+		}
+
+		if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
+			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed: %s", upscli_strerror(ups));
+		}
+
+		/* Verify the result */
+		if (strncmp(temp, "OK", 2) != 0) {
+			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed. upsd answered: %s", temp);
+		}
 	}
 
 	do_set(varname, newval);
@@ -369,7 +482,7 @@ static void do_type(const char *varname)
 	ret = upscli_get(ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
-		printf("Unknown type\n");	
+		printf("Unknown type\n");
 		return;
 	}
 
@@ -519,7 +632,7 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:u:V")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
@@ -528,8 +641,15 @@ int main(int argc, char **argv)
 		case 'p':
 			password = optarg;
 			break;
+		case 't':
+			if (!str_to_uint(optarg, &timeout, 10))
+				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
+			break;
 		case 'u':
 			username = optarg;
+			break;
+		case 'w':
+			tracking_enabled = 1;
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);

@@ -109,7 +109,7 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	if (desc)
 		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);
 	else
-		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n", 
+		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n",
 			upsname, cmd);
 }
 
@@ -150,7 +150,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	}
 
 	if (node->flags & ST_FLAG_STRING) {
-		sendback(client, "%s STRING:%d\n", buf, node->aux);
+		sendback(client, "%s STRING:%ld\n", buf, node->aux);
 		return;
 	}
 
@@ -158,20 +158,20 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	 * numeric value */
 
 	sendback(client, "%s NUMBER\n", buf);
-}		
+}
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	if (!strcasecmp(var, "server.info")) {
 		sendback(client, "VAR %s server.info "
 			"\"Network UPS Tools upsd %s - "
-			"http://www.networkupstools.org/\"\n", 
+			"http://www.networkupstools.org/\"\n",
 			upsname, UPS_VERSION);
 		return;
 	}
 
 	if (!strcasecmp(var, "server.version")) {
-		sendback(client, "VAR %s server.version \"%s\"\n", 
+		sendback(client, "VAR %s server.version \"%s\"\n",
 			upsname, UPS_VERSION);
 		return;
 	}
@@ -214,8 +214,27 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 		sendback(client, "VAR %s %s \"%s\"\n", upsname, var, val);
 }
 
-void net_get(nut_ctype_t *client, int numarg, const char **arg)
+void net_get(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	if (numarg < 1) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	/* GET TRACKING [ID] */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		if (numarg < 2) {
+			sendback(client, "%s\n", (client->tracking) ? "ON" : "OFF");
+		}
+		else {
+			if (client->tracking)
+				sendback(client, "%s\n", tracking_get(arg[1]));
+			else
+				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
+		}
+		return;
+	}
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

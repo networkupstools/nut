@@ -117,12 +117,20 @@ opened before the chroot call, so you do not need to create them inside
 the jail.  In fact, it is somewhat safer if you do not.
 
 *-u* 'username'::
-If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Override the unprivileged username that the driver may use after startup.  If
+started as root, after opening configuration files (and optionally calling
+chroot(2), as described in the previous option), the driver will look up
+'username' in the `passwd` database, then change to the user and group
+identities associated with 'username'. (If started with a nonzero UID or
+effective UID, the driver will silently ignore this option.)
 +
-If you do not specify this value and start it as root, the driver will
-switch to the default value that was compiled into the code.  This is
-typically 'nobody', and is far from ideal.
+When compiling NUT from source, the default username is typically `nobody`, and
+this may cause permission errors when the driver opens the UPS device node. You
+can use this option to temporarily override the defaults. For testing purposes,
+you can set this option to `root` to bypass permission errors, especially with
+USB-based drivers. However, you will want to remove this option later in order
+to avoid permission conflicts between the driver and the unprivileged copy of
+linkman:upsd[8].
 
 *-x* 'var'='val'::
 Define a variable called 'var' with the value of 'var' in the

@@ -28,6 +28,7 @@
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
+#include "attribute.h"
 
 typedef struct {
 	char	*upsname;
@@ -150,13 +151,14 @@ static void stop_driver(const ups_t *ups)
 	ret = stat(pidfn, &fs);
 
 	if ((ret != 0) && (ups->port != NULL)) {
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
 	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 		exec_error++;
 		return;
 	}
@@ -177,6 +179,8 @@ static void stop_driver(const ups_t *ups)
 
 static void waitpid_timeout(const int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* do nothing */
 	return;
 }
@@ -328,6 +332,9 @@ static void start_driver(const ups_t *ups)
 }
 
 static void help(const char *progname)
+	__attribute__((noreturn));
+
+static void help(const char *progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
@@ -428,7 +435,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		while (ups) {
 			if (ups->sdorder == i)
 				command(ups);
-			
+
 			ups = ups->next;
 		}
 	}
@@ -488,7 +495,6 @@ int main(int argc, char **argv)
 			case 'h':
 			default:
 				help(prog);
-				break;
 		}
 	}
 

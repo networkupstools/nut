@@ -54,7 +54,7 @@ The *upscli_init()* function returns 1 on success, or -1 if an error occurs.
 SEE ALSO
 --------
 linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
-linkman:upscli_disconnect[3], linkman:upscli_fd[3], 
-linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
-linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
+linkman:upscli_ssl[3], linkman:upscli_strerror[3],
 linkman:upscli_upserror[3]

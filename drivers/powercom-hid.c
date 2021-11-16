@@ -126,9 +126,9 @@ static info_lkp_t powercom_stayoff_info[] = {
 };
 
 static info_lkp_t powercom_beeper_info[] = {
-	{ 1, "enabled", NULL },
-	{ 2, "disabled", NULL },	/* muted? */
-	{ 0, NULL, NULL }
+	{ 1, "enabled", NULL, NULL },
+	{ 2, "disabled", NULL, NULL },	/* muted? */
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *powercom_voltage_conversion_fun(double value)
@@ -139,7 +139,7 @@ static const char *powercom_voltage_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_voltage_conversion[] = {
-	{ 0, NULL, powercom_voltage_conversion_fun }
+	{ 0, NULL, powercom_voltage_conversion_fun, NULL }
 };
 
 static const char *powercom_upsfail_conversion_fun(double value)
@@ -152,7 +152,7 @@ static const char *powercom_upsfail_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_upsfail_conversion[] = {
-	{ 0, NULL, powercom_upsfail_conversion_fun }
+	{ 0, NULL, powercom_upsfail_conversion_fun, NULL }
 };
 
 static const char *powercom_replacebatt_conversion_fun(double value)
@@ -165,7 +165,7 @@ static const char *powercom_replacebatt_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_replacebatt_conversion[] = {
-	{ 0, NULL, powercom_replacebatt_conversion_fun }
+	{ 0, NULL, powercom_replacebatt_conversion_fun, NULL }
 };
 
 static const char *powercom_test_conversion_fun(double value)
@@ -178,7 +178,7 @@ static const char *powercom_test_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_test_conversion[] = {
-	{ 0, NULL, powercom_test_conversion_fun }
+	{ 0, NULL, powercom_test_conversion_fun, NULL }
 };
 
 static const char *powercom_shutdownimm_conversion_fun(double value)
@@ -191,7 +191,7 @@ static const char *powercom_shutdownimm_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_shutdownimm_conversion[] = {
-	{ 0, NULL, powercom_shutdownimm_conversion_fun }
+	{ 0, NULL, powercom_shutdownimm_conversion_fun, NULL }
 };
 
 static const char *powercom_online_conversion_fun(double value)
@@ -204,7 +204,7 @@ static const char *powercom_online_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_online_conversion[] = {
-	{ 0, NULL, powercom_online_conversion_fun }
+	{ 0, NULL, powercom_online_conversion_fun, NULL }
 };
 
 static const char *powercom_lowbatt_conversion_fun(double value)
@@ -217,7 +217,7 @@ static const char *powercom_lowbatt_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_lowbatt_conversion[] = {
-	{ 0, NULL, powercom_lowbatt_conversion_fun }
+	{ 0, NULL, powercom_lowbatt_conversion_fun, NULL }
 };
 
 static const char *powercom_trim_conversion_fun(double value)
@@ -230,7 +230,7 @@ static const char *powercom_trim_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_trim_conversion[] = {
-	{ 0, NULL, powercom_trim_conversion_fun }
+	{ 0, NULL, powercom_trim_conversion_fun, NULL }
 };
 
 static const char *powercom_boost_conversion_fun(double value)
@@ -243,7 +243,7 @@ static const char *powercom_boost_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_boost_conversion[] = {
-	{ 0, NULL, powercom_boost_conversion_fun }
+	{ 0, NULL, powercom_boost_conversion_fun, NULL }
 };
 
 static const char *powercom_overload_conversion_fun(double value)
@@ -256,7 +256,7 @@ static const char *powercom_overload_conversion_fun(double value)
 }
 
 static info_lkp_t powercom_overload_conversion[] = {
-	{ 0, NULL, powercom_overload_conversion_fun }
+	{ 0, NULL, powercom_overload_conversion_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -422,6 +422,7 @@ static hid_info_t powercom_hid2nut[] = {
 /*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, is always 255 */
 	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
 	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", 0, NULL },	
 	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
 /*	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL }, */
 	{ "input.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomFrequency", NULL, "%.0f", 0, NULL },

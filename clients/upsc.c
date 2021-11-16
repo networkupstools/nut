@@ -1,4 +1,4 @@
-/* upsc - simple "client" to test communications 
+/* upsc - simple "client" to test communications
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -137,7 +137,7 @@ static void list_upses(int verbose)
 	numq = 1;
 
 	ret = upscli_list_start(ups, numq, query);
-	
+
 	if (ret < 0) {
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
@@ -218,7 +218,9 @@ int main(int argc, char **argv)
 		{
 		case 'L':
 			verbose = 1;
+			goto fallthrough_case_l;
 		case 'l':
+		fallthrough_case_l:
 			varlist = 1;
 			break;
 		case 'c':
@@ -227,6 +229,9 @@ int main(int argc, char **argv)
 
 		case 'V':
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 		case 'h':
 		default:

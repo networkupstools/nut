@@ -12,6 +12,7 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
 [
 if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -22,47 +23,62 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl check for both libusb 1.0 and libusb 0.1/libusb-compat, if not asked otherwise
 	libusb1_VERSION="none"
-	if test "${nut_usb_lib}" != "(libusb-0.1)"; then
-		AC_MSG_CHECKING(for libusb 1.0 version via pkg-config)
-		libusb1_VERSION="`pkg-config --silence-errors --modversion libusb-1.0 2>/dev/null`"
-		if test "$?" = "0" -a -n "${libusb1_VERSION}"; then
-			libusb1_CFLAGS="`pkg-config --silence-errors --cflags libusb-1.0 2>/dev/null`"
-			libusb1_LIBS="`pkg-config --silence-errors --libs libusb-1.0 2>/dev/null`"
-			nut_have_libusb=yes
-		else
-			libusb1_VERSION="none"
-		fi
-		AC_MSG_RESULT(${libusb1_VERSION} found)
-	fi
-
 	libusb0_VERSION="none"
-	if test "${nut_usb_lib}" != "(libusb-1.0)"; then
-		AC_MSG_CHECKING(for libusb 0.1 version via pkg-config)
-		libusb0_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`"
-		if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
-			libusb0_CFLAGS="`pkg-config --silence-errors --cflags libusb 2>/dev/null`"
-			libusb0_LIBS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
-			nut_have_libusb=yes
-		else
-			libusb0_VERSION="`pkg-config --silence-errors --modversion libusb-0.1 2>/dev/null`"
-			if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
-				libusb0_CFLAGS="`pkg-config --silence-errors --cflags libusb-0.1 2>/dev/null`"
-				libusb0_LIBS="`pkg-config --silence-errors --libs libusb-0.1 2>/dev/null`"
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AS_IF([test "${nut_usb_lib}" != "(libusb-0.1)"],
+			[AC_MSG_CHECKING([for libusb 1.0 version via pkg-config])
+			 libusb1_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb-1.0 2>/dev/null`"
+			 if test "$?" = "0" -a -n "${libusb1_VERSION}"; then
+				libusb1_CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
+				libusb1_LIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
 				nut_have_libusb=yes
-			else
-				AC_MSG_CHECKING(via libusb-config)
-				libusb0_VERSION="`libusb-config --version 2>/dev/null`"
+			 else
+				libusb1_VERSION="none"
+			 fi
+			 AC_MSG_RESULT([${libusb1_VERSION} found])
+			]
+		 )
+
+		 AS_IF([test "${nut_usb_lib}" != "(libusb-1.0)"],
+			[
+			 AC_MSG_CHECKING([for libusb 0.1 version via pkg-config])
+			 libusb0_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb 2>/dev/null`"
+			 if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
+				libusb0_CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
+				libusb0_LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
+				nut_have_libusb=yes
+			 else
+				libusb0_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb-0.1 2>/dev/null`"
 				if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
-					libusb0_CFLAGS="`libusb-config --cflags 2>/dev/null`"
-					libusb0_LIBS="`libusb-config --libs 2>/dev/null`"
+					libusb0_CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-0.1 2>/dev/null`"
+					libusb0_LIBS="`$PKG_CONFIG --silence-errors --libs libusb-0.1 2>/dev/null`"
 					nut_have_libusb=yes
 				else
 					libusb0_VERSION="none"
 				fi
+			 fi
+			 AC_MSG_RESULT([${libusb0_VERSION} found])
+			])
+		],
+		[libusb0_VERSION="none"
+		 libusb1_VERSION="none"
+		 AC_MSG_NOTICE([can not check libusb settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"$libusb0_VERSION" = xnone && x"$libusb1_VERSION" = xnone],
+		[AC_MSG_CHECKING([via libusb-config (if available)])
+			libusb0_VERSION="`libusb-config --version 2>/dev/null`"
+			if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
+				libusb0_CFLAGS="`libusb-config --cflags 2>/dev/null`"
+				libusb0_LIBS="`libusb-config --libs 2>/dev/null`"
+				nut_have_libusb=yes
+			else
+				libusb0_VERSION="none"
 			fi
-		fi
-		AC_MSG_RESULT(${libusb0_VERSION} found)
-	fi
+		 AC_MSG_RESULT(${libusb0_VERSION} found)
+		]
+	)
 
 	dnl check optional user-provided values for cflags/ldflags and publish what we end up using
 	AC_MSG_CHECKING(for libusb cflags)
@@ -123,7 +139,8 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl if both are available: so, first check libusb 1.0, if available
 		if test "${nut_usb_lib}" != "(libusb-0.1)"; then
 			nut_usb_lib="(none)"
-			pkg-config --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
+			test -n "$PKG_CONFIG" \
+				&& $PKG_CONFIG --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
 			if test "$?" = "0"; then
 				LIBS="${libusb1_LIBS}"
 				CFLAGS="${libusb1_CFLAGS}"
@@ -161,6 +178,33 @@ if test -z "${nut_have_libusb_seen}"; then
 				nut_usb_lib="(libusb-0.1)"
 			fi
 		fi
+	fi
+
+	if test "${nut_have_libusb}" = "yes"; then
+		dnl ----------------------------------------------------------------------
+		dnl additional USB-related checks
+
+		dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
+		dnl Should we check for `uname -o == illumos` to avoid legacy here?
+		dnl Or better yet, perform some active capability tests for need of
+		dnl workarounds or not? e.g. OpenIndiana should include a capable
+		dnl version of libusb-1.0.23+ tailored with NUT tests in mind...
+		dnl HPUX, since v11, needs an explicit activation of pthreads
+		case "${target_os}" in
+			solaris2.1* )
+				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
+				AC_SEARCH_LIBS(nanosleep, rt)
+				LIBS="-R/usr/sfw/lib ${LIBS}"
+				dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
+				dnl and need to call libusb close upon reconnection
+				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
+				SUN_LIBUSB=1
+				AC_MSG_RESULT([${LIBS}])
+				;;
+			hpux11*)
+				CFLAGS="${CFLAGS} -lpthread"
+				;;
+		esac
 	fi
 
 	if test "${nut_have_libusb}" = "yes"; then

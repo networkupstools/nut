@@ -8,22 +8,36 @@ AC_DEFUN([NUT_CHECK_LIBOPENSSL],
 [
 if test -z "${nut_have_libopenssl_seen}"; then
 	nut_have_libopenssl_seen=yes
+	NUT_CHECK_PKGCONFIG
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	REQUIRES_ORIG="${REQUIRES}"
 
-	AC_MSG_CHECKING(for OpenSSL version via pkg-config)
-	OPENSSL_VERSION="`pkg-config --silence-errors --modversion openssl 2>/dev/null`"
-	if test "$?" = "0" -a -n "${OPENSSL_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags openssl 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs openssl 2>/dev/null`"
-	else
-		OPENSSL_VERSION="none"
-		CFLAGS=""
-		LIBS="-lssl -lcrypto"
-	fi
-	AC_MSG_RESULT(${OPENSSL_VERSION} found)
+	AS_IF([test x"$have_PKG_CONFIG" = xyes],
+		[AC_MSG_CHECKING(for OpenSSL version via pkg-config)
+		 OPENSSL_VERSION="`$PKG_CONFIG --silence-errors --modversion openssl 2>/dev/null`"
+		 if test "$?" != "0" -o -z "${OPENSSL_VERSION}"; then
+		    OPENSSL_VERSION="none"
+		 fi
+		 AC_MSG_RESULT(${OPENSSL_VERSION} found)
+		],
+		[OPENSSL_VERSION="none"
+		 AC_MSG_NOTICE([can not check OpenSSL settings via pkg-config])
+		]
+	)
+
+	AS_IF([test x"$OPENSSL_VERSION" != xnone],
+		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags openssl 2>/dev/null`"
+		 LIBS="`$PKG_CONFIG --silence-errors --libs openssl 2>/dev/null`"
+		 REQUIRES="openssl"
+		],
+		[CFLAGS=""
+		 LIBS="-lssl -lcrypto"
+		 REQUIRES="openssl"
+		]
+	)
 
 	dnl allow overriding OpenSSL settings if the user knows best
 	AC_MSG_CHECKING(for OpenSSL cflags)
@@ -58,7 +72,7 @@ if test -z "${nut_have_libopenssl_seen}"; then
 
 	dnl check if openssl is usable
 	AC_CHECK_HEADERS(openssl/ssl.h, [nut_have_openssl=yes], [nut_have_openssl=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(SSL_library_init, [], [nut_have_openssl=no])
+	AC_CHECK_FUNCS(SSL_CTX_new, [], [nut_have_openssl=no])
 
 	if test "${nut_have_openssl}" = "yes"; then
 		nut_with_ssl="yes"
@@ -67,10 +81,12 @@ if test -z "${nut_have_libopenssl_seen}"; then
 		AC_DEFINE(WITH_OPENSSL, 1, [Define to enable SSL support using OpenSSL])
 		LIBSSL_CFLAGS="${CFLAGS}"
 		LIBSSL_LIBS="${LIBS}"
+		LIBSSL_REQUIRES="${REQUIRES}"
 	fi
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
+	REQUIRES="${REQUIRES_ORIG}"
 fi
 ])

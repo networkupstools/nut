@@ -3,8 +3,9 @@ Configure options
 =================
 endif::website[]
 
-There are a few options that can be given to configure to tweak compiles. 
-See also "./configure --help" for a current and complete listing.
+There are a few options reviewed below that can be given to `configure`
+script to tweak your compilations. See also `./configure --help` for a
+current and complete listing for the current version of the codebase.
 
 Driver selection
 ----------------
@@ -33,6 +34,8 @@ In addition to the `--with-snmp` option above, this one allows to provide
 a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
 This may be needed on build systems which support multiple architectures,
 or in cases where your distribution names this program differently.
+With a default value of `yes` it would mean preference of this program,
+compared to information from `pkg-config`, if both are available.
 
 	--with-neon
 
@@ -129,7 +132,7 @@ Example valid formats of this flag:
 
 	--with-dev (default: no)
 
-Build and install the upsclient and nutclient library and header files. 
+Build and install the upsclient and nutclient library and header files.
 
 	--with-all (no default)
 
@@ -158,7 +161,7 @@ Enable IPv6 support.
 
 Build and install Avahi support, to publish NUT server availability
 using mDNS protocol.  This requires Avahi development files for the
-Core and Client parts. 
+Core and Client parts.
 
 	--with-libltdl (default: auto-detect)
 
@@ -173,7 +176,7 @@ Other configuration options
 Change the TCP port used by the network code.  Default is 3493.
 
 Ancient versions of upsd used port 3305.  NUT 2.0 and up use a
-substantially different network protocol and are not able to  
+substantially different network protocol and are not able to
 communicate with anything older than the 1.4 series.
 
 If you have to monitor a mixed environment, use the last 1.4 version,
@@ -206,7 +209,7 @@ hack for NFS access.  You should create at least one separate user
 for this software.
 
 If you use one of the --with-user and --with-group options, then
-you have to use the other one too. 
+you have to use the other one too.
 
 See the INSTALL.nut document and the FAQ for more on this topic.
 
@@ -255,7 +258,7 @@ to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
 Change the data directory, i.e., where architecture independent
 read-only data is installed.  By default this is <prefix>/share,
 i.e., /usr/local/ups/share.  At the moment, this directory only
-holds two files - the optional cmdvartab and driver.list.
+holds two files -- the optional cmdvartab and driver.list.
 
 	--mandir=PATH
 
@@ -286,8 +289,8 @@ at run time.
 The CGI programs will be installed to this path.  By default, they
 install to "<exec_prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
 
-If you set the prefix to something like /usr, you should set the 
-cgipath to something else, because /usr/cgi-bin is pretty ugly and 
+If you set the prefix to something like /usr, you should set the
+cgipath to something else, because /usr/cgi-bin is pretty ugly and
 non-standard.
 
 The CGI programs are not built or installed by default.  Use
@@ -307,7 +310,7 @@ effect if `--with-dev` is selected, and causes a pkg-config file to
 be installed in the named location. The default is
 <exec_prefix>/pkgconfig.
 
-Use --without-pkgconfig-dir to disable this feature altogether. 
+Use --without-pkgconfig-dir to disable this feature altogether.
 
 	--with-hotplug-dir=PATH
 
@@ -317,7 +320,7 @@ otherwise. Note that this installation directory is not a
 subdirectory of <prefix> by default. When installing NUT as a
 non-root user, you may have to override this option.
 
-Use --without-hotplug-dir to disable this feature altogether. 
+Use --without-hotplug-dir to disable this feature altogether.
 
 	--with-udev-dir=PATH
 
@@ -328,7 +331,7 @@ installation directory is not a subdirectory of <prefix> by
 default. When installing NUT as a non-root user, you may have to
 override this option.
 
-Use --without-udev-dir to disable this feature altogether. 
+Use --without-udev-dir to disable this feature altogether.
 
 	--with-systemdsystemunitdir=PATH
 
@@ -339,6 +342,27 @@ a little noise to configure script output.
 Use --with-systemdsystemunitdir to detect the settings using pkg-config.
 
 Use --with-systemdsystemunitdir=no to disable this feature altogether.
+
+	--with-systemdshutdowndir=PATH
+
+Where to install Linux systemd unit definitions for shutdown handling.
+Useless and harmless on other OSes, including Linux distributions
+without systemd, just adding a little noise to configure script output.
+
+Use --with-systemdshutdowndir to detect the settings using pkg-config.
+
+Use --with-systemdshutdowndir=no to disable this feature altogether.
+
+	--with-systemdtmpfilesdir=PATH
+
+Where to install Linux systemd configuration for tmpfiles handling (the
+automatically created locations for PID, state and similar run-time files).
+Useless and harmless on other OSes, including Linux distributions
+without systemd, just adding a little noise to configure script output.
+
+Use --with-systemdtmpfilesdir to detect the settings using pkg-config.
+
+Use --with-systemdtmpfilesdir=no to disable this feature altogether.
 
 	--with-augeas-lenses-dir=PATH
 
@@ -388,8 +412,8 @@ If your copy of gd isn't linking properly, use this to give the
 proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
 
 NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
-or higher installed properly.  The gdlib-config script will be 
-detected and used by default in that situation.
+or higher installed properly.  The gdlib-config script or pkgconfig
+manifest will be detected and used by default in that situation.
 
 	--with-gdlib-config
 
