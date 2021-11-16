@@ -33,14 +33,14 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-
 /* NUT SNMP common functions */
-#include "main.h"
+#include "main.h"	/* includes "config.h" which must be the first header */
 #include "nut_float.h"
 #include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
+
+#include <ctype.h> /* for isprint() */
 
 #if WITH_DMFMIB
 # include "dmfsnmp.h"
