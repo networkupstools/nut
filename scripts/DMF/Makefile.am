@@ -68,6 +68,10 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 LEGACY_MIBFILES_LIST = legacy-mibfiles-list.mk
 include $(LEGACY_MIBFILES_LIST)
 
+# Dist archives should include this generated file, since they run
+# configure script right away (no autogen.sh expected):
+EXTRA_DIST += legacy-mibfiles-list.mk.in
+
 # Support development experiments for lookup with functions
 testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
