@@ -331,7 +331,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 		"Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
-		"Set SNMP version (default=v1, allowed v2c)");
+		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
