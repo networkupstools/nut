@@ -145,14 +145,19 @@ DMFTEST_SRC = dmf-test.c
 DMFTEST_SRC_ADD = dmfcore.c dmfsnmp.c alist.c
 EXTRA_DIST += $(DMFTEST_SRC)
 
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+LINKED_SOURCE_FILES = dmfsnmp.c
 dmfsnmp.c : $(top_srcdir)/common/dmfsnmp.c
-	@ln -fs $< $@
+	@test -s "$@" || ln -s -f "$(top_srcdir)/common/dmfsnmp.c" "$@"
 
+LINKED_SOURCE_FILES += dmfcore.c
 dmfcore.c : $(top_srcdir)/common/dmfcore.c
-	@ln -fs $< $@
+	@test -s "$@" || ln -s -f "$(top_srcdir)/common/dmfcore.c" "$@"
 
+LINKED_SOURCE_FILES += alist.c
 alist.c : $(top_srcdir)/common/alist.c
-	@ln -fs $< $@
+	@test -s "$@" || ln -s -f "$(top_srcdir)/common/alist.c" "$@"
 
 
 CLEANFILES += $(noinst_PROGRAMS) $(DMFSNMP_RES_SUBDIR)/*.o \
@@ -644,5 +649,5 @@ endif
 
 MAINTAINERCLEANFILES += Makefile.in .dirstamp
 
-BUILT_SOURCES = $(DMFTEST_SRC_ADD)
-CLEANFILES += $(DMFTEST_SRC_ADD)
+BUILT_SOURCES = $(LINKED_SOURCE_FILES)
+CLEANFILES += $(LINKED_SOURCE_FILES)
