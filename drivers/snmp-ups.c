@@ -2011,6 +2011,7 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
 #else
+	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
 #endif // WITH_SNMP_LKP_FUN
 	return NULL;
