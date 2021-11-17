@@ -25,11 +25,17 @@
  */
 
 /* NUT SNMP common functions */
-#include "common.h"
+#include "common.h"	/* includes "config.h" which must be the first header */
+/*
+#include "config.h"
+#include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
+*/
 #include "snmp-ups.h"
+#include "timehead.h" /* time.h => strptime() */
 
 #include <ctype.h> /* for isprint() */
-#include <time.h>  /* for strptime() */
 
 /* Shunt the debugging calls when building self-test DMF driver code */
 /* FIXME: Go the next mile to pull common.o etc? We would rather not... */
@@ -77,7 +83,7 @@ info_lkp_t su_convert_to_iso_date_info[] = {
 	/* array index = FUNMAP_USDATE_TO_ISODATE: */
 	{ 1, "dummy"
 #if WITH_SNMP_LKP_FUN
-		, su_usdate_to_isodate_info_fun, NULL
+		, su_usdate_to_isodate_info_fun, NULL, NULL, NULL
 #endif
 	},
 	{ 0, NULL

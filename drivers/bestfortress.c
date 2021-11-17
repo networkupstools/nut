@@ -204,6 +204,13 @@ static int upssend(const char *fmt,...) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
 
+		/* Note: LGTM.com analysis warns that here
+		 * "Comparison is always true because d_usec >= 2"
+		 * since we initialize with UPSDELAY above.
+		 * Do not remove this check just in case that
+		 * initialization changes, or run-time value
+		 * becomes modified, in later iterations.
+		 */
 		if (d_usec > 0)
 			usleep((useconds_t)d_usec);
 

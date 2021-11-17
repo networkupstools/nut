@@ -17,11 +17,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "common.h"	/* includes "config.h" which must be the first header */
+
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
-#include "common.h"
 #include "alist.h"
 
 /*
@@ -102,7 +103,7 @@ alist_t *
 alist_get_element_by_name (alist_t *self, char *name)
 {
 	int i;
-	if (self)
+	if (self && name)
 		for (i = 0; i < self->size; i++)
 			if ( ((alist_t*)self->values[i])->name )
 				if (strcmp(((alist_t*)self->values[i])->name, name) == 0)

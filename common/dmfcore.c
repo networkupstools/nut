@@ -27,6 +27,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "common.h"	/* includes "config.h" which must be the first header */
+
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
@@ -59,7 +61,6 @@
 #define HAVE_LIBXML_ENCODING_FUNC 0
 #endif
 
-#include "common.h"
 #include "dmfcore.h"
 
 /*

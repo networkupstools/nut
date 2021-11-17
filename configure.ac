@@ -31,27 +31,7 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
-have_PKG_CONFIG=yes
-AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
-AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
-    [have_PKG_CONFIG=no],
-    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     have_PKG_CONFIG=no
-     dummy_RES=0
-     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
-     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
-     AS_IF([test "${dummy_RES}" = 0],
-        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         dnl The m4 macro below may be not defined if pkg-config package is not
-         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
-         dnl allows to avoid shell syntax errors in generated configure script
-         dnl by defining a dummy macro in-place.
-         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
-        ])
-])
-AS_IF([test x"$have_PKG_CONFIG" = xno],
-    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+NUT_CHECK_PKGCONFIG
 
 
 dnl Various version related processing
@@ -338,7 +318,7 @@ dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
 	     and <time.h>.  This macro is deemed obsolete by autotools.])
@@ -375,7 +355,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
 dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
@@ -385,6 +365,7 @@ dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
+		if test -z "${with_libxml2}"; then with_libxml2="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
@@ -575,12 +556,6 @@ fi
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
-
-if test "${nut_have_neon}" = "yes" ; then
-    myCFLAGS="$CFLAGS `xml2-config --cflags`" || myCFLAGS="$CFLAGS -I/usr/include/libxml2"
-    CFLAGS="$myCFLAGS"
-    AC_CHECK_HEADERS(libxml/encoding.h libxml/parser.h, [], [], [AC_INCLUDES_DEFAULT])
-fi
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
@@ -1619,7 +1594,12 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[AS_IF([test "${withval}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdsystemunitdir=""
+			])
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1647,7 +1627,12 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[AS_IF([test "${systemdshutdowndir}" = yes],
+				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdshutdowndir=""
+			])
 		;;
 	no)
 		systemdshutdowndir=""
@@ -1671,7 +1656,12 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdtmpfilesdir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdtmpfilesdir=""
+			])
 		;;
 	no)
 		systemdtmpfilesdir=""
@@ -2102,6 +2092,7 @@ NUT_ARG_WITH([lua], [enable LUA-5.1+ scripting generic support], [auto])
 NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1+ scripting], [auto])
 NUT_ARG_WITH([snmp_dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
 NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1+ scripting], [auto])
+NUT_ARG_WITH([libxml2], [use libxml2 for DMF XML handling], [auto])
 
 dnl If a higher-level toggle explicitly disables an option, abort the attempt to enable it at lower level
 if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
@@ -2175,6 +2166,26 @@ fi
 if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
 fi
+
+dnl (Legacy) Should we limit so to require libneon for using
+dnl libxml2 effectively? Or only for DMF as checked below?
+NUT_CHECK_LIBXML2
+if test "${nut_have_neon}" = "yes" \
+&& test "${nut_with_dmf}" = "yes" \
+; then
+	if test "${nut_with_libxml2}" = "yes" -a "${nut_have_libxml2}" != "yes"; then
+		AC_MSG_ERROR([libxml2 libraries not found, required for DMF XML handling])
+	fi
+
+	if test "${nut_with_libxml2}" != "no"; then
+		nut_with_libxml2="${nut_have_libxml2}"
+	fi
+fi
+
+NUT_REPORT_FEATURE([use libxml2 for XML parsing], [${nut_with_libxml2}], [],
+				[WITH_LIBXML2], [Define to enable LibXML2 support])
+AM_CONDITIONAL([HAVE_LIBXML2], [test "${nut_have_libxml2}" = "yes"])
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
@@ -2697,6 +2708,8 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LIBS)
+AC_SUBST(LIBXML2_CFLAGS)
+AC_SUBST(LIBXML2_LIBS)
 AC_SUBST(LIBAVAHI_CFLAGS)
 AC_SUBST(LIBAVAHI_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)

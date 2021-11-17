@@ -516,13 +516,13 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	 * Note that NM2 should only be hooked with EMP002, but if any EMP001 was to be
 	 * connected, the value may be off by a factor 10 (to be proven) */
 	/* ats2EnvRemoteTemp.0 = INTEGER: 0 degrees Centigrade */
-	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteTempLowerLimit.0 = INTEGER: 5 degrees Centigrade */
 	{ "ambient.temperature.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.5.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteTempUpperLimit.0 = INTEGER: 40 degrees Centigrade */
 	{ "ambient.temperature.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.6.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidity.0 = INTEGER: 0 percent */
-	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidityLowerLimit.0 = INTEGER: 5 percent */
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */

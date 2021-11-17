@@ -239,10 +239,11 @@ static int masterguard_ups_power(item_t *item, char *value, const size_t valuele
 }
 
 /* helper routine, not to be called from table */
-static int masterguard_output_current_fraction(item_t *item, char *value, const size_t valuelen, float fraction) {
+static int masterguard_output_current_fraction(item_t *item, char *value, const size_t valuelen, double fraction) {
 	NUT_UNUSED_VARIABLE(item);
 
-	snprintf(value, valuelen, "%.2f", fraction * masterguard_my_power / strtod(dstate_getinfo("output.voltage") , NULL) + 0.005);
+	snprintf(value, valuelen, "%.2f",
+		fraction * masterguard_my_power / strtod(dstate_getinfo("output.voltage") , NULL) + 0.005);
 	return 0;
 }
 

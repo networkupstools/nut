@@ -28,6 +28,8 @@
  *
  */
 
+#include "config.h"	/* must be the first header */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>

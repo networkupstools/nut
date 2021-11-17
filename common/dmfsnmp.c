@@ -24,11 +24,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "common.h"	/* includes "config.h" which must be the first header */
+
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
-#include "common.h"
 #include "dmfsnmp.h"
 #include "dmfcore.h"
 
@@ -1002,7 +1003,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	}
 
 	if(arg[1])
+	{
 		multiplier = atof(arg[1]);
+	}
 
 /*
 	if(arg[5])
@@ -1238,7 +1241,11 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs)
 {
-	if(!userdata)return ERR;
+	NUT_UNUSED_VARIABLE(parent);
+	NUT_UNUSED_VARIABLE(nspace);
+
+	if(!userdata)
+		return ERR;
 
 	char *auxname = get_param_by_name("name",attrs);
 	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
@@ -1307,7 +1314,11 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 int
 mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
-	if(!userdata)return ERR;
+	NUT_UNUSED_VARIABLE(state);
+	NUT_UNUSED_VARIABLE(nspace);
+
+	if(!userdata)
+		return ERR;
 
 	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
 	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
@@ -1374,6 +1385,8 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 int
 mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
+	NUT_UNUSED_VARIABLE(state);
+
 	if(!userdata)
 		return ERR;
 

@@ -100,11 +100,13 @@
 #define SysOID ".1.3.6.1.2.1.1.2.0"
 
 /* use explicit booleans */
+/* // defined in snmp-ups.h now
 #ifndef FALSE
 typedef enum ebool { FALSE = 0, TRUE } bool_t;
 #else
 typedef int bool_t;
 #endif
+*/
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -612,7 +614,9 @@ static void try_all_oid(void * arg, const char * mib_found)
 
 	while (snmp_device_table[index].mib != NULL) {
 
-		if (snmp_device_table[index].oid == NULL || strcmp(snmp_device_table[index].oid, "") == 0) {
+		if (snmp_device_table[index].oid == NULL
+		||  snmp_device_table[index].oid[0] == '\0'
+		) {
 			index++;
 			continue;
 		}
@@ -952,7 +956,7 @@ static void * try_SysOID(void * arg)
 					/* add mib if no complementary oid is present */
 					/* FIXME: No desc defined when add device */
 					if (snmp_device_table[index].oid == NULL
-						|| strcmp(snmp_device_table[index].oid, "") == 0
+					||  snmp_device_table[index].oid[0] == '\0'
 					) {
 						scan_snmp_add_device(sec, NULL, snmp_device_table[index].mib);
 						mib_found = snmp_device_table[index].sysoid;
