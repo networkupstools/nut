@@ -114,7 +114,9 @@ int main(int argc, char *argv[])
 				break;
 			case '?':
 				ret_code = ERR_BAD_OPTION;
+				goto fallthrough_help;
 			case 'h':
+			fallthrough_help:
 			default:
 #if DMFREINDEXER_MAKECHECK
 				puts("dmf-reindex : a private build for DMF 'make check' of the tool to reindex existing DMF files into the subset needed by nut-scanner.\n");
