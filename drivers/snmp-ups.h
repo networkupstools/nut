@@ -128,6 +128,9 @@ typedef struct {
    use sprintf with given format string.  If unit is not NONE, values
    are converted according to the multiplier table
 */
+typedef uint32_t snmp_info_flags_t; /* To extend when 32 bits become too congested */
+#define PRI_SU_FLAGS	PRIu32
+
 typedef struct {
 	char         *info_type;  /* INFO_ or CMD_ element */
 	int           info_flags; /* flags to set in addinfo: see ST_FLAG_*
@@ -136,7 +139,7 @@ typedef struct {
 	                           * multiplier otherwise. */
 	char         *OID;        /* SNMP OID or NULL */
 	char         *dfl;        /* default value */
-	unsigned long flags;      /* snmp-ups internal flags: see SU_* bit-shifts
+	snmp_info_flags_t flags;  /* snmp-ups internal flags: see SU_* bit-shifts
 	                           * defined below (SU_FLAG*, SU_TYPE*, SU_STATUS*
 	                           * and others for outlets, phases, daisy-chains,
 	                           * etc.)
