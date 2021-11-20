@@ -17,9 +17,9 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
-dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
+dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
-m4_version_prereq(2.60, [
+m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
