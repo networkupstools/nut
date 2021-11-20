@@ -94,6 +94,7 @@ fi >&2
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
 # scripts, and need you to explicitly say which version you want, e.g.
 #    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
+# If you get issues with AC_DISABLE_STATIC make sure you have libtool.
 echo "Calling autoreconf..."
 autoreconf -iv && {
 	sh -n configure 2>/dev/null >/dev/null \
