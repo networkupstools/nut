@@ -1801,8 +1801,16 @@ AC_ARG_WITH(augeas-lenses-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+			auglensdir=""
+		fi
 		;;
 	no)
 		auglensdir=""
@@ -1867,8 +1875,16 @@ AC_ARG_WITH(udev-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+			udevdir=""
+		fi
 		;;
 	no)
 		udevdir=""
@@ -1897,8 +1913,16 @@ AC_ARG_WITH(devd-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+			devddir=""
+		fi
 		;;
 	no)
 		devddir=""
@@ -2364,7 +2388,6 @@ AC_CONFIG_FILES([
  scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
- scripts/augeas/nutupsconf.aug
  scripts/augeas/nutupsdconf.aug
  scripts/augeas/nutupsdusers.aug
  scripts/augeas/nutupsmonconf.aug
@@ -2373,7 +2396,6 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
- scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -2396,7 +2418,6 @@ AC_CONFIG_FILES([
  scripts/Solaris/pkginfo
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
- scripts/udev/nut-usbups.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
@@ -2433,6 +2454,20 @@ m4_foreach_w([SCRIPTFILE], [
  dnl e.g. the brace below is empty and bracket gives verbatim varname
  dnl AC_MSG_NOTICE([Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
+])
+
+AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
+m4_foreach_w([SCRIPTFILE], [
+ scripts/augeas/nutupsconf.aug
+ scripts/udev/nut-usbups.rules
+ scripts/devd/nut-usb.conf
+], [
+	AC_MSG_CHECKING([whether to generate SCRIPTFILE])
+	AS_IF([test -s SCRIPTFILE.in && ! test -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
+		[AC_MSG_RESULT(yes)
+		 AC_CONFIG_FILES(SCRIPTFILE)],
+		[AC_MSG_RESULT(no)]
+	)
 ])
 
 AC_OUTPUT
