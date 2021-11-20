@@ -204,32 +204,38 @@ def mk_snmp (inp, root):
 
             ### process flags
             for name, flag, value in (
-                    ("flag_ok", SU_FLAG_OK, "yes"),
-                    ("static", SU_FLAG_STATIC, "yes"),
-                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),
-                    ("absent", SU_FLAG_ABSENT, "yes"),
-                    ("stale", SU_FLAG_STALE, "yes"),
-                    ("positive", SU_FLAG_NEGINVALID, "yes"),
-                    ("unique", SU_FLAG_UNIQUE, "yes"),
-                    ("power_status", SU_STATUS_PWR, "yes"),
-                    ("battery_status", SU_STATUS_BATT, "yes"),
-                    ("calibration", SU_STATUS_CAL, "yes"),
-                    ("replace_battery", SU_STATUS_RB, "yes"),
-                    ("command", SU_TYPE_CMD, "yes"),
-                    ("outlet_group", SU_OUTLET_GROUP, "yes"),
-                    ("outlet", SU_OUTLET, "yes"),
-                    ("ambient", SU_AMBIENT_TEMPLATE, "yes"),
-                    ("output_1_phase", SU_OUTPUT_1, "yes"),
-                    ("output_3_phase", SU_OUTPUT_3, "yes"),
-                    ("input_1_phase", SU_INPUT_1, "yes"),
-                    ("input_3_phase", SU_INPUT_3, "yes"),
-                    ("bypass_1_phase", SU_BYPASS_1, "yes"),
-                    ("bypass_3_phase", SU_BYPASS_3, "yes"),
-                    ("type_daisy", SU_TYPE_DAISY_1, "1"),
-                    ("type_daisy", SU_TYPE_DAISY_2, "2"),
-                    ("type_daisy", SU_TYPE_DAISY_MASTER_ONLY, "3"),
-                    ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),
-                    ("na_invalid", SU_FLAG_NAINVALID, "yes"),
+                    ("flag_ok", SU_FLAG_OK, "yes"),                 # (1 << 0)
+                    ("static", SU_FLAG_STATIC, "yes"),              # (1 << 1)
+                    ("absent", SU_FLAG_ABSENT, "yes"),              # (1 << 2)
+                    ("stale", SU_FLAG_STALE, "yes"),                # (1 << 3)
+                    ("positive", SU_FLAG_NEGINVALID, "yes"),        # (1 << 4)
+                    ("unique", SU_FLAG_UNIQUE, "yes"),              # (1 << 5)
+                    ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),   # (1 << 6)
+                    ("na_invalid", SU_FLAG_NAINVALID, "yes"),       # (1 << 7)
+                    ("command_offset", SU_CMD_OFFSET, "yes"),       # (1 << 8)
+                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),     # (1 << 9)
+                    ("outlet_group", SU_OUTLET_GROUP, "yes"),       # (1 << 10)
+                    ("outlet", SU_OUTLET, "yes"),                   # (1 << 11)
+                    ("input_1_phase", SU_INPUT_1, "yes"),           # (1 << 12)
+                    ("input_3_phase", SU_INPUT_3, "yes"),           # (1 << 13)
+                    ("output_1_phase", SU_OUTPUT_1, "yes"),         # (1 << 14)
+                    ("output_3_phase", SU_OUTPUT_3, "yes"),         # (1 << 15)
+                    ("bypass_1_phase", SU_BYPASS_1, "yes"),         # (1 << 16)
+                    ("bypass_3_phase", SU_BYPASS_3, "yes"),         # (1 << 17)
+                    ("int_val", SU_TYPE_INT, "yes"),                # (1 << 18) #/* cast to int when setting value */
+                    ("time_val", SU_TYPE_TIME, "yes"),              # (1 << 19)
+                    ("command", SU_TYPE_CMD, "yes"),                # (1 << 20)
+                    ("type_daisy", SU_TYPE_DAISY_1, "1"),           # (1 << 21)
+                    ("type_daisy", SU_TYPE_DAISY_2, "2"),           # (1 << 22)
+                                                    #???# SU_DAISY  # (1 << 23)
+                    ("type_daisy", SU_TYPE_DAISY_MASTER_ONLY, "3"), # (1 << 24)
+                                                    # NOT USED YET  # (1 << 25)
+                    ("ambient", SU_AMBIENT_TEMPLATE, "yes"),        # (1 << 26)
+                    # Should not be set by MIB2NUT mappings: SU_FLAG_FUNCTION # (1 << 27)
+                    ("power_status", SU_STATUS_PWR, "yes"),         # (1 << 28)
+                    ("battery_status", SU_STATUS_BATT, "yes"),      # (1 << 29)
+                    ("calibration", SU_STATUS_CAL, "yes"),          # (1 << 30)
+                    ("replace_battery", SU_STATUS_RB, "yes"),       # (1 << 31)
                     ):
                 if not flag in info ["flags"]:
                     continue
