@@ -151,7 +151,7 @@ NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
 (technically, needs at least JRE 8+).
 
 For DMF, additionally install `python-pycparser` (or in newer distributions,
-an explicitly versioned package, e.g. `python3-pycparser`).
+an explicitly versioned package, e.g. `python3-pycparser`), and `libxml2-dev`.
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
@@ -220,7 +220,9 @@ Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
 For DMF, additionally `pkg install py27-pycparser-2.20 py38-pycparser-2.20`
-(assuming you want to test both relevant generations of Python).
+(assuming you want to test both relevant generations of Python), and may need
+to `pkg install libxml2` (might be pulled as a dependency of e.g. `libneon`
+already).
 
 OpenIndiana 2021.04
 ~~~~~~~~~~~~~~~~~~~
@@ -302,7 +304,8 @@ NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
 
 For DMF, additionally install `library/python/pycparser` (or a versioned one
 matching your installed Python distribution, e.g. `library/python/pycparser-39`
-or `library/python/pycparser-27`).
+or `library/python/pycparser-27`), and `library/libxml2` (might be pulled as
+a dependency of e.g. `libneon` already).
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
