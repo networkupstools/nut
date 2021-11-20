@@ -129,42 +129,42 @@
 		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.232.165.7.1.2.1.5.%i" string="yes"/>
 		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="ups.type" static="yes" string="yes"/>
 		<snmp_info lookup="hpe_pdu_input_type_info" multiplier="1.0" name="input.phases" oid=".1.3.6.1.4.1.232.165.7.2.1.1.1.%i" static="yes"/>
-		<snmp_info multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.232.165.7.2.1.1.2.%i" power_status="yes"/>
+		<snmp_info multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.232.165.7.2.1.1.2.%i"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_frequency_status_info" multiplier="128.0" name="input.frequency.status" oid=".1.3.6.1.4.1.232.165.7.2.1.1.3.%i" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_frequency_alarm_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.232.165.7.2.1.1.3.%i" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.load" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.1" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L1.load" oid=".1.3.6.1.4.1.232.165.7.2.2.1.18.%i.1" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L1.load" oid=".1.3.6.1.4.1.232.165.7.2.2.1.18.%i.2" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L1.load" oid=".1.3.6.1.4.1.232.165.7.2.2.1.18.%i.3" positive="yes"/>
-		<snmp_info multiplier="0.001" name="input.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.1" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.1"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.voltage.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.1" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_voltage_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.low.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.5.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.6.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.7.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.8.%i.1" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L1.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.1" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L1.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.1"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L1.voltage.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.1" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_voltage_alarms_info" multiplier="128.0" name="L1.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.low.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.5.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.6.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.7.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.8.%i.1" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L2.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.2" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L2.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.2"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L2.voltage.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.2" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_voltage_alarms_info" multiplier="128.0" name="L2.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.2" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.low.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.5.%i.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.6.%i.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.7.%i.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.8.%i.2" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L3.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.3" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L3.voltage" oid=".1.3.6.1.4.1.232.165.7.2.2.1.3.%i.3"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L3.voltage.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.3" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_voltage_alarms_info" multiplier="128.0" name="L3.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.4.%i.3" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.low.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.5.%i.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.6.%i.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.7.%i.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.8.%i.3" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.1" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.1"/>
 		<snmp_info multiplier="0.001" name="input.current.nominal" oid=".1.3.6.1.4.1.232.165.7.2.2.1.10.%i.1" positive="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.current.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.1" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_current_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.1" string="yes"/>
@@ -172,7 +172,7 @@
 		<snmp_info multiplier="0.001" name="input.current.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.14.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.15.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.16.%i.1" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L1.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.1" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L1.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.1"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.nominal" oid=".1.3.6.1.4.1.232.165.7.2.2.1.10.%i.1" positive="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L1.current.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.1" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_current_alarms_info" multiplier="128.0" name="L1.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.1" string="yes"/>
@@ -180,7 +180,7 @@
 		<snmp_info multiplier="0.001" name="input.L1.current.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.14.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.15.%i.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.16.%i.1" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L2.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.2" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L2.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.2"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.nominal" oid=".1.3.6.1.4.1.232.165.7.2.2.1.10.%i.2" positive="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L2.current.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.2" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_current_alarms_info" multiplier="128.0" name="L2.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.2" string="yes"/>
@@ -188,7 +188,7 @@
 		<snmp_info multiplier="0.001" name="input.L2.current.low.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.14.%i.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.high.warning" oid=".1.3.6.1.4.1.232.165.7.2.2.1.15.%i.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.high.critical" oid=".1.3.6.1.4.1.232.165.7.2.2.1.16.%i.2" positive="yes" writable="yes"/>
-		<snmp_info multiplier="0.001" name="input.L3.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.3" power_status="yes"/>
+		<snmp_info multiplier="0.001" name="input.L3.current" oid=".1.3.6.1.4.1.232.165.7.2.2.1.11.%i.3"/>
 		<snmp_info multiplier="0.001" name="input.L3.current.nominal" oid=".1.3.6.1.4.1.232.165.7.2.2.1.10.%i.3" positive="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_status_info" multiplier="128.0" name="input.L3.current.status" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.3" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="hpe_pdu_threshold_current_alarms_info" multiplier="128.0" name="L2.alarm" oid=".1.3.6.1.4.1.232.165.7.2.2.1.12.%i.2" string="yes"/>
