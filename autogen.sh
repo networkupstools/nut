@@ -91,6 +91,9 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null \
 	echo ""
 fi >&2
 
+# Note: on some systems "autoreconf", "automake" et al are dispatcher
+# scripts, and need you to explicitly say which version you want, e.g.
+#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
 echo "Calling autoreconf..."
 autoreconf -iv && {
 	sh -n configure 2>/dev/null >/dev/null \
