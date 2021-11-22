@@ -2,8 +2,8 @@
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2009-2017	Arnaud Quette <ArnaudQuette@Eaton.com>
-	2017		Jim Klimov <EvgenyKlimov@Eaton.com>
+	2009-2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.30"
+#define MGE_XML_VERSION		"MGEXML/0.31"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -947,6 +947,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
 	{ "battery.runtime.low", ST_FLAG_RW, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
+	{ "battery.packs.external", 0, 0, "UPS.BatterySystem.Battery.Count", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
