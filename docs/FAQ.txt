@@ -648,6 +648,19 @@ server using the real (networked) driver for the UPS, while using the
 `dummy-ups` in "relay mode" as the driver connected to this dedicated
 server on each tested system.
 
+== How can I setup NUT as a proxy (setup a server to forward/relay client data)?
+
+This can easily be achieved by using the `dummy-ups` driver.
+The `port` field acts as the reference to the "other" UPS served
+by another NUT server.
+
+Example:
+
+	[proxy]
+		driver = dummy-ups
+		port = upsname@ip-or-hostname[:port]
+		desc = "UPS proxy for UPS upsname on server ip-or-hostname"
+
 == Why are there two copies of upsmon running?
 
 It's not really two complete copies if your OS forks efficiently.
