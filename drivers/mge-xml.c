@@ -35,7 +35,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.34"
+#define MGE_XML_VERSION		"MGEXML/0.35"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
