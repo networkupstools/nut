@@ -187,7 +187,7 @@ skel_LDADD = $(LDADD_DRIVERS)
 LIBUSB_IMPL = libusb.c
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -323,7 +323,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h b
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h \
- hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h
+ hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
