@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2773 utf-8
+personal_ws-1.1 en 2774 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1895,6 +1895,7 @@ jessie
 journalctl
 jpg
 jpgraph
+jre
 json
 kVA
 kadets

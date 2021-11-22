@@ -797,8 +797,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
               $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
-            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
-              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
+              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              # Make end of log useful:
+              echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+            )
             exit $?
             ;;
         "default-shellcheck")
