@@ -1113,6 +1113,11 @@ compile_flags(const char **attrs)
 			flags = flags | SU_FLAG_UNIQUE;
 
 	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_CMD_OFFSET, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_CMD_OFFSET;
+
+	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_PWR;
@@ -1131,6 +1136,16 @@ compile_flags(const char **attrs)
 	aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_RB;
+
+	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_TYPE_INT, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_TYPE_INT;
+
+	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_TYPE_TIME, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_TYPE_TIME;
 
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
