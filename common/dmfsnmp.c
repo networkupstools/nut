@@ -1200,11 +1200,11 @@ compile_flags(const char **attrs)
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(TYPE_DAISY, attrs);
 	if(aux_flags){
-		if(strcmp(aux_flags, "1") == 0)
+		if(strncmp(aux_flags, "1", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_1;
-		else if(strcmp(aux_flags, "2") == 0)
+		else if(strncmp(aux_flags, "2", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_2;
-		else if(strcmp(aux_flags, "3") == 0)
+		else if(strncmp(aux_flags, "3", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_MASTER_ONLY;
 	}
 	if(aux_flags)free(aux_flags);
