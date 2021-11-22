@@ -300,7 +300,7 @@ Serial port becomes unresponsive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some malformed commands are known to lock up the serial port (including
-USB, which a USB to serial device) Upon receiving them, UPS2000 stops
+USB, which is a USB-to-serial device). Upon receiving them, UPS2000 stops
 all serial communications. The result is a completely unresponsive UPS,
 regardless of what you do - restarting NUT, rebooting the computer -
 cannot restore connectivity, as if someone has unplugged the RS-232 cable.
@@ -328,7 +328,7 @@ requires a device-specific driver, which is only available on Linux
 
 On an unsupported system, the USB device can still be recognized as a
 USB ACM device, but in reality, communication is impossible. It can
-only be fixed by implementing a driver for your system nothing can
+only be fixed by implementing a driver for your system, nothing can
 be done within NUT.
 
 Finally, in the unlike scenario that you are using NUT on Microsoft
