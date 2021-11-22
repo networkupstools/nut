@@ -299,8 +299,8 @@ typedef struct {
 /* "flags" bits 21..23 */
 #define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY(t)	((t)->flags & (7UL << 21))	/* FIXME? Mask with 7 or 3 here? */
-#define SU_DAISY			(1UL << 23)	/* Daisychain template definition */
+#define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the 3 SU_TYPE_DAISY_* but not SU_DAISY */
+#define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2*/
 #define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24) /* Only valid for daisychain master (device.1) */
 
