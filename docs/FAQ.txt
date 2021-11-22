@@ -618,6 +618,36 @@ This means all packages have been built by a third party.  If you
 have an issue that's related to packaging, you will need to seek
 help with whoever built it for you.
 
+== My UPS is directly connected to an appliance with a limited version of NUT, how can I monitor the UPS from arbitrary clients?
+
+You can set up a separate general-purpose system as the NUT server for
+your "arbitrary clients", using `dummy-ups` in "relay mode" as the driver.
+This instance of `dummy-ups` would in turn be the NUT client allowed to
+interact with the appliance and that way with the UPS connected there.
+
+NOTE: The original question related to a NAS with NUT provided in its
+firmware OS, that only allowed one or few clients and not a whole
+rack's worth of client IP addresses.
+
+== My networked UPS can't handle being monitored by dozens of NUT clients
+
+Network management cards on many UPSes are rather puny appliances, often
+known to either limit the amount of clients who may connect, for security
+or performance reasons, or otherwise to crash or respond very slowly when
+overwhelmed.
+
+You may be better off reducing the amount of servers connected to the UPS
+with the `snmp-ups`, `netxml-ups` or similar type of driver, and set up
+other systems as clients of these NUT servers.
+
+Developers who are working on NUT, its drivers, or further projects and
+appliances based on NUT, and who need to monitor their UPS from multiple
+systems using the complete NUT stack on each system (e.g. during testing),
+can benefit from dedicating a separate general-purpose system as the NUT
+server using the real (networked) driver for the UPS, while using the
+`dummy-ups` in "relay mode" as the driver connected to this dedicated
+server on each tested system.
+
 == Why are there two copies of upsmon running?
 
 It's not really two complete copies if your OS forks efficiently.
