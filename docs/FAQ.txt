@@ -702,7 +702,10 @@ quote the exact package version.
 
 NOTE: check the release date on the version you have.  If it's more
 than about 6-12 months old, there's probably a newer stable tree
-version out there.
+version out there. As development happens actively, be sure to also
+check if a custom build from Git (usually using the `master` branch
+of NUT https://github.com/networkupstools/nut/ repository) has your
+issue fixed by some kind soul already.
 
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
@@ -738,7 +741,12 @@ NUT. Changing the way a fundamental component works, such as USB support,
 means a lot of testing to ensure that your fix does not break other drivers.
 
 Sometimes patches are put on hold due to a feature freeze.  If it
-doesn't show up once the new version opens up, send it again.
+doesn't show up once the new version opens up, please send it again.
+
+It may also be much more productive to submit changes as pull requests via
+https://github.com/networkupstools/nut/pulls so they are automatically
+processed by the NUT CI farm across numerous target platforms, and
+various inconsistencies can be diagnosed and fixed early.
 
 == I'm not much of a programmer.  How can I help?
 
@@ -803,6 +811,8 @@ for you.
 
 There is a small chance that the mailing list spam filter ate your message.
 Check the list archives to see if your message appears there.
+Also double-check that you have subscribed to the lists and completed
+all the confirmation rituals of its engine.
 
 Convincing the other subscribers that you've actually read down this
 far might be useful.  You might mention "queequeg" for better results.
@@ -821,6 +831,10 @@ In addition, the mailing lists are publicly archived, and therefore easily
 searchable. Chances are, you aren't the only person who will ever have that
 question.
 
+There are similar benefits to using the discussions on issue tracker at
+https://github.com/networkupstools/nut/issues and if suitable, in the
+currently open pull requests.
+
 == If you want mailing list replies to go to the list, why don't you add a Reply-To: header?
 
 We are not going to rehash all of the arguments for and against this in a
@@ -832,6 +846,10 @@ last person who posted, it is not too much trouble to hit "reply all".
 If you're not a programmer, you can still help others by making
 that protocol available.  You might host the document somewhere and
 send the URL to one of the mailing lists.
+
+Posting an issue with attachments on
+https://github.com/networkupstools/nut/issues
+can also be helpful.
 
 == How can you answer questions to situations that nobody's encountered yet?  Isn't this a frequently asked questions file?
 
