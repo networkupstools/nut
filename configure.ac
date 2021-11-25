@@ -2932,8 +2932,8 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
 )
 AC_MSG_RESULT(["${TOP_BUILDDIR}"])
 
-ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])]
-ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])]
+ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
+ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
