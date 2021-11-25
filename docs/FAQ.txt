@@ -684,6 +684,13 @@ Example with `clone` driver:
 		load.status = outlet.1.status
 		[...]
 
+This allows to group load attached to a separately manageable
+outlet (or group of outlets) on larger UPS and ePDUs, in order
+to power those devices on/off together. This may be also useful
+to delegate management of feeds to devices for purposes like
+hosting or supporting hardware for smaller teams sharing a rack
+in a larger company.
+
 == Why are there two copies of upsmon running?
 
 It's not really two complete copies if your OS forks efficiently.
