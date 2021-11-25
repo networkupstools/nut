@@ -654,12 +654,42 @@ This can easily be achieved by using the `dummy-ups` driver.
 The `port` field acts as the reference to the "other" UPS served
 by another NUT server.
 
-Example:
+Example with `dummy-ups` driver:
 
 	[proxy]
 		driver = dummy-ups
 		port = upsname@ip-or-hostname[:port]
 		desc = "UPS proxy for UPS upsname on server ip-or-hostname"
+
+Also note that there is a `clone` driver with similar purpose,
+which allows users to group clients to a particular outlet of
+a device with a "real" driver running locally, and deal with
+this output as if it was a normal UPS.
+
+Here the `port` field references the driver socket name that
+the "real" UPS driver is using. See its manual page for more
+details and caveats.
+
+Example with `clone` driver:
+
+	[realups]
+		driver = usbhid-ups
+		port = auto
+
+	[clone-outlet-1]
+		driver = clone
+		port = usbhid-ups-realups
+		load.on = outlet.1.load.on
+		load.off = outlet.1.load.off
+		load.status = outlet.1.status
+		[...]
+
+This allows to group load attached to a separately manageable
+outlet (or group of outlets) on larger UPS and ePDUs, in order
+to power those devices on/off together. This may be also useful
+to delegate management of feeds to devices for purposes like
+hosting or supporting hardware for smaller teams sharing a rack
+in a larger company.
 
 == Why are there two copies of upsmon running?
 
