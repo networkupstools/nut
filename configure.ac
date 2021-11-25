@@ -929,7 +929,7 @@ if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
 		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
-		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" || AC_MSG_ERROR([Can not detect 'srcdir']) ;;
 	esac
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
@@ -2331,10 +2331,14 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
     [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
         [TOP_BUILDDIR="${ac_pwd}"],
         [TOP_BUILDDIR="`dirname "$0"`"
-         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`"]
+         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
 AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+
+ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])]
+ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])]
+AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
