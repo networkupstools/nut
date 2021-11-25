@@ -159,6 +159,9 @@ Note that `PATH` for builds on BSD should include `local`:
 :; export PATH
 ----
 
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
+
 ----
 :; pkg install \
     git python curl \
@@ -202,6 +205,96 @@ by package).
 NOTE: For Jenkins agents, also need to `pkg install openjdk8` (or 11+) --
 and do note its further OS configuration suggestions for special filesystem
 mounts.
+
+Due to BSD specific paths *when not using* an implementation of `pkg-config`
+or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT m4
+scripts), better use this routine to test the config/build:
+----
+:; ./configure --with-doc=all --with-all --with-cgi \
+    --without-avahi --without-powerman --without-modbus \
+    ### CPPFLAGS="-I/usr/local/include -I/usr/include" LDFLAGS="-L/usr/local/lib -L/usr/lib"
+----
+
+Note the lack of `pkg-config` also precludes libcppunit tests, although they
+also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+OpenBSD 6.4
+~~~~~~~~~~~
+
+Note that `PATH` for builds on BSD should include `local`:
+
+----
+:; PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+:; export PATH
+----
+
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
+
+OpenBSD delivers many versions of numerous packages, you should specify
+your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
+
+During builds, you may have to tell system dispatcher scripts which version
+to use, e.g.: `export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10`
+
+To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+base installation. It is not required for "legacy" builds arranged by just
+`autogen.sh` and `configure` scripts.
+
+NOTE: The OpenBSD 6.4 `install64.iso` installation includes a set of packages
+that seems to exceed whatever is available on network mirrors; for example,
+the CD image included `clang` program while it is not available to `pkg_add`,
+at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
+mirror. The `gcc` version on CD image differed notably from that in the
+networked repository (4.2.x vs 4.9.x)
+
+----
+:; pkg_add \
+    git python curl \
+    gmake autoconf automake libltdl libtool \
+    valgrind \
+    cppcheck \
+    pkgconf \
+    gcc clang \
+    asciidoc source-highlight py-pygments dblatex aspell \
+    gd
+
+# Need to find proper package name and/or mirror for this:
+:; pkg_add clang
+
+:; pkg_add \
+    cppunit \
+    openssl nss \
+    augeas \
+    neon \
+    net-snmp \
+    freeipmi \
+    avahi
+
+# Select a LUA-5.1 (or possibly 5.2?) version
+:; pkg_add \
+    lua
+
+:; pkg_add \
+    bash dash busybox ksh93
+----
+
+Recommended:
+----
+:; pkg_add ccache
+:; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
+        for TOOL in cpp gcc g++ clang clang++ clang-cpp ; do \
+            ln -s ../../local/bin/ccache "$TOOL" ; \
+        done ; \
+   )
+----
+
+For compatibility with common setups on other operating systems, can add
+dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
+`gcc` installed by package) into `/usr/lib/ccache`.
+
+NOTE: For Jenkins agents, also need to `pkg_add jre` or `pkg_add jdk`
+(pick version 1.8 or 8, or 11+).
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT m4

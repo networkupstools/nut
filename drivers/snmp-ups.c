@@ -31,14 +31,14 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-
 /* NUT SNMP common functions */
-#include "main.h"
+#include "main.h"	/* includes "config.h" which must be the first header */
 #include "nut_float.h"
 #include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
+
+#include <ctype.h> /* for isprint() */
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
@@ -185,8 +185,8 @@ static int device_template_offset = -1;
 /* Forward functions declarations */
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
-int extract_template_number(unsigned long template_type, const char* varname);
-unsigned long get_template_type(const char* varname);
+int extract_template_number(snmp_info_flags_t template_type, const char* varname);
+snmp_info_flags_t get_template_type(const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -331,7 +331,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 		"Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
-		"Set SNMP version (default=v1, allowed v2c)");
+		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
@@ -715,13 +715,30 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 
-	if ((strncmp(version, "v1", 3) == 0) || (strncmp(version, "v2c", 3) == 0)) {
-		g_snmp_sess.version = (strncmp(version, "v1", 3) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+/* Older CLANG (e.g. clang-3.4) sees short strings in str{n}cmp()
+ * arguments as arrays and claims out-of-bounds accesses
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Warray-bounds"
+#endif
+	if ((strncmp(version, "v1", 2) == 0) || (strncmp(version, "v2c", 3) == 0)) {
+		g_snmp_sess.version = (strncmp(version, "v1", 2) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 		g_snmp_sess.community = (unsigned char *)xstrdup(community);
 		g_snmp_sess.community_len = strlen(community);
 	}
-	else if (strncmp(version, "v3", 3) == 0) {
+	else if (strncmp(version, "v3", 2) == 0) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic pop
+#endif
 		/* SNMP v3 related init */
 		g_snmp_sess.version = SNMP_VERSION_3;
 
@@ -1972,7 +1989,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 
 	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
-	unsigned long template_type = get_template_type(su_info_p->info_type);
+	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
 	if (!su_info_p->OID)
 		return base_index;
@@ -1990,6 +2007,11 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			break;
 		case SU_DAISY:
 			template_index_base = device_template_index_base;
+			break;
+		default:
+			/* we should never fall here! */
+			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
+				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
 
@@ -2317,7 +2339,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 /* Return the type of template, according to a variable name.
  * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
-unsigned long get_template_type(const char* varname)
+snmp_info_flags_t get_template_type(const char* varname)
 {
 	if (!strncmp(varname, "outlet.group", 12)) {
 		upsdebugx(4, "outlet.group template");
@@ -2339,7 +2361,7 @@ unsigned long get_template_type(const char* varname)
 
 /* Extract the id number of an instantiated template.
  * Example: return '1' for type = 'outlet.1.desc', -1 if unknown */
-int extract_template_number(unsigned long template_type, const char* varname)
+int extract_template_number(snmp_info_flags_t template_type, const char* varname)
 {
 	const char* item_number_ptr = NULL;
 	int item_number = -1;
@@ -2529,7 +2551,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 	char tmpOID[SU_INFOSIZE];
 	char tmpInfo[SU_INFOSIZE];
 	long tmpValue;
-	unsigned long phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
+	snmp_info_flags_t phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
 
 	/* Phase specific data */
 	if (!strncmp(type, "input", 5)) {
@@ -3104,7 +3126,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int cmd_offset = 0;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
-	unsigned long vartype = 0;
+	snmp_info_flags_t vartype = 0;
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;

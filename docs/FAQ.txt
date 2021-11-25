@@ -618,6 +618,49 @@ This means all packages have been built by a third party.  If you
 have an issue that's related to packaging, you will need to seek
 help with whoever built it for you.
 
+== My UPS is directly connected to an appliance with a limited version of NUT, how can I monitor the UPS from arbitrary clients?
+
+You can set up a separate general-purpose system as the NUT server for
+your "arbitrary clients", using `dummy-ups` in "relay mode" as the driver.
+This instance of `dummy-ups` would in turn be the NUT client allowed to
+interact with the appliance and that way with the UPS connected there.
+
+NOTE: The original question related to a NAS with NUT provided in its
+firmware OS, that only allowed one or few clients and not a whole
+rack's worth of client IP addresses.
+
+== My networked UPS can't handle being monitored by dozens of NUT clients
+
+Network management cards on many UPSes are rather puny appliances, often
+known to either limit the amount of clients who may connect, for security
+or performance reasons, or otherwise to crash or respond very slowly when
+overwhelmed.
+
+You may be better off reducing the amount of servers connected to the UPS
+with the `snmp-ups`, `netxml-ups` or similar type of driver, and set up
+other systems as clients of these NUT servers.
+
+Developers who are working on NUT, its drivers, or further projects and
+appliances based on NUT, and who need to monitor their UPS from multiple
+systems using the complete NUT stack on each system (e.g. during testing),
+can benefit from dedicating a separate general-purpose system as the NUT
+server using the real (networked) driver for the UPS, while using the
+`dummy-ups` in "relay mode" as the driver connected to this dedicated
+server on each tested system.
+
+== How can I setup NUT as a proxy (setup a server to forward/relay client data)?
+
+This can easily be achieved by using the `dummy-ups` driver.
+The `port` field acts as the reference to the "other" UPS served
+by another NUT server.
+
+Example:
+
+	[proxy]
+		driver = dummy-ups
+		port = upsname@ip-or-hostname[:port]
+		desc = "UPS proxy for UPS upsname on server ip-or-hostname"
+
 == Why are there two copies of upsmon running?
 
 It's not really two complete copies if your OS forks efficiently.
@@ -659,7 +702,10 @@ quote the exact package version.
 
 NOTE: check the release date on the version you have.  If it's more
 than about 6-12 months old, there's probably a newer stable tree
-version out there.
+version out there. As development happens actively, be sure to also
+check if a custom build from Git (usually using the `master` branch
+of NUT https://github.com/networkupstools/nut/ repository) has your
+issue fixed by some kind soul already.
 
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
@@ -695,7 +741,12 @@ NUT. Changing the way a fundamental component works, such as USB support,
 means a lot of testing to ensure that your fix does not break other drivers.
 
 Sometimes patches are put on hold due to a feature freeze.  If it
-doesn't show up once the new version opens up, send it again.
+doesn't show up once the new version opens up, please send it again.
+
+It may also be much more productive to submit changes as pull requests via
+https://github.com/networkupstools/nut/pulls so they are automatically
+processed by the NUT CI farm across numerous target platforms, and
+various inconsistencies can be diagnosed and fixed early.
 
 == I'm not much of a programmer.  How can I help?
 
@@ -760,6 +811,8 @@ for you.
 
 There is a small chance that the mailing list spam filter ate your message.
 Check the list archives to see if your message appears there.
+Also double-check that you have subscribed to the lists and completed
+all the confirmation rituals of its engine.
 
 Convincing the other subscribers that you've actually read down this
 far might be useful.  You might mention "queequeg" for better results.
@@ -778,6 +831,10 @@ In addition, the mailing lists are publicly archived, and therefore easily
 searchable. Chances are, you aren't the only person who will ever have that
 question.
 
+There are similar benefits to using the discussions on issue tracker at
+https://github.com/networkupstools/nut/issues and if suitable, in the
+currently open pull requests.
+
 == If you want mailing list replies to go to the list, why don't you add a Reply-To: header?
 
 We are not going to rehash all of the arguments for and against this in a
@@ -789,6 +846,10 @@ last person who posted, it is not too much trouble to hit "reply all".
 If you're not a programmer, you can still help others by making
 that protocol available.  You might host the document somewhere and
 send the URL to one of the mailing lists.
+
+Posting an issue with attachments on
+https://github.com/networkupstools/nut/issues
+can also be helpful.
 
 == How can you answer questions to situations that nobody's encountered yet?  Isn't this a frequently asked questions file?
 

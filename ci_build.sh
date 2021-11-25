@@ -797,8 +797,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
               $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
-            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
-              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
+              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              # Make end of log useful:
+              echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+            )
             exit $?
             ;;
         "default-shellcheck")
@@ -856,6 +860,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 BUILDSTODO="`expr $BUILDSTODO + 1`"
             done
+            BUILDSTODO_INITIAL="$BUILDSTODO"
 
             #echo "=== Will loop now with $BUILDSTODO build variants..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
@@ -889,9 +894,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 esac || {
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
                     continue
                 }
 
+                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
@@ -944,6 +952,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with:${FAILED}" >&2
+            fi
+
+            echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
+            if [ "$BUILDSTODO" -gt 0 ]; then
+                echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
             fi
 
             exit $RES

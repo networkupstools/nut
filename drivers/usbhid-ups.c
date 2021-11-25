@@ -52,6 +52,7 @@
 	#include "openups-hid.h"
 	#include "powercom-hid.h"
 	#include "powervar-hid.h"
+	#include "salicru-hid.h"
 	#include "tripplite-hid.h"
 #endif
 
@@ -72,6 +73,7 @@ static subdriver_t *subdriver_list[] = {
 	&openups_subdriver,
 	&powercom_subdriver,
 	&powervar_subdriver,
+	&salicru_subdriver,
 	&tripplite_subdriver,
 #endif
 	NULL
