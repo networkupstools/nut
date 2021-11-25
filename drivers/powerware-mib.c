@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.99"
+#define PW_MIB_VERSION "1.00"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -929,7 +929,7 @@ static snmp_info_t pw_mib[] = {
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_IDENT, "",
 		SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, PW_OID_OUT_LOAD, "",
-		SU_OUTPUT_1, NULL },
+		0, NULL },
 	/* FIXME: should be removed in favor of output.power */
 	{ "ups.power", 0, 1.0, PW_OID_OUT_POWER ".1", "",
 		0, NULL },
