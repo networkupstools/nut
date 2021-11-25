@@ -266,9 +266,9 @@ networked repository (4.2.x vs 4.9.x)
     cppunit \
     openssl nss \
     augeas \
+    libusb1 \
     neon \
     net-snmp \
-    freeipmi \
     avahi
 
 # Select a LUA-5.1 (or possibly 5.2?) version
@@ -277,6 +277,15 @@ networked repository (4.2.x vs 4.9.x)
 
 :; pkg_add \
     bash dash busybox ksh93
+----
+
+NOTE: With OpenBSD 6.4, building against freeipmi failed: its libtool
+recipes referenced `-largp` which did not get installed in the system.
+Maybe some more packages are needed explicitly?
++
+----
+:; pkg_add \
+    freeipmi
 ----
 
 Recommended:
