@@ -266,6 +266,7 @@ networked repository (4.2.x vs 4.9.x)
     cppunit \
     openssl nss \
     augeas \
+    libusb1 \
     neon \
     net-snmp \
     avahi
