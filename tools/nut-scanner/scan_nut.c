@@ -462,7 +462,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #ifdef HAVE_PTHREAD
 	if (thread_array != NULL) {
 		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
-	for (i = 0; i < thread_count; i++) {
+		for (i = 0; i < thread_count; i++) {
 			int ret;
 
 			if (!thread_array[i].active) continue;
