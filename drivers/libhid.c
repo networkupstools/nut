@@ -169,7 +169,9 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		upsdebugx(2, "%s: expected %d bytes, but got %zd instead", __func__, rbuf->len[id], r);
+		upsdebugx(2,
+			"%s: expected %zu bytes, but got %zu instead",
+			__func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
 	} else {
 		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
@@ -235,7 +237,9 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t bufl
 	memcpy(rbuf->data[id], buf, (buflen < rbuf->len[id]) ? buflen : rbuf->len[id]);
 
 	if (rbuf->len[id] != buflen) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
+		upsdebugx(2,
+			"%s: expected %zu bytes, but got %zu instead",
+			__func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 	} else {
 		upsdebug_hex(3, "Report[int]", rbuf->data[id], rbuf->len[id]);
@@ -291,7 +295,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
-	upsdebugx(1, "%i HID objects found", pDesc->nitems);
+	upsdebugx(1, "%zu HID objects found", pDesc->nitems);
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
