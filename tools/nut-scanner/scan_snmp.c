@@ -80,7 +80,7 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-static long g_usec_timeout ;
+static useconds_t g_usec_timeout ;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -101,7 +101,11 @@ static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
 			const oid *in_name2, size_t len2);
 static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
-static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
+/* NOTE: Older code had "u_int" as hashtype_len; are there different
+ * relevant versions of NetSNMP out there with different ABI's?
+ * Should we match in configure like for "getnameinfo()" arg types?
+ */
+static int (*nut_generate_Ku)(const oid * hashtype, size_t hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
@@ -746,7 +750,10 @@ static void * try_SysOID(void * arg)
 	}
 
 	snmp_sess.retries = 0;
-	snmp_sess.timeout = g_usec_timeout;
+	/* netsnmp timeout is accounted in uS, but typed as long
+	 * and not useconds_t (which is at most long per POSIX)
+	 */
+	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
@@ -855,10 +862,9 @@ try_SysOID_free:
 }
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
-	int i;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -870,7 +876,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
@@ -943,7 +949,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 		) {
 			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %d), "
+				"(launched overall: %zu), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads
@@ -959,12 +965,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
-							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
 						case 0:         // thread exited
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -973,13 +979,13 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 							thread_array[i].active = FALSE;
 							break;
 						case EBUSY:     // actively running
-							upsdebugx(6, "%s: thread #%i still busy (%i)",
+							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
 						case EDEADLK:   // Errors with thread interactions... bail out?
 						case EINVAL:    // Errors with thread interactions... bail out?
 						default:        // new pthreads abilities?
-							upsdebugx(5, "%s: thread #%i reported code %i",
+							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -1048,7 +1054,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						if (max_threads_scantype > 0)
@@ -1101,7 +1107,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
@@ -1130,7 +1136,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #else /* WITH_SNMP */
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(stop_ip);

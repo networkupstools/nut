@@ -247,7 +247,7 @@ static void belkin_nut_open_tty(void)
    byte, checksum). Return length of message, or -1 if not
    well-formed */
 static int belkin_nut_receive(unsigned char *buf, int bufsize) {
-	int r;
+	ssize_t r;
 	int n=0;
 	int len;
 
@@ -305,7 +305,7 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
    failure, else an allocated string. */
 static char *belkin_nut_read_str(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
-	int r;
+	ssize_t r;
 	size_t len;
 	char *str;
 
@@ -352,7 +352,8 @@ static char *belkin_nut_read_str(unsigned char reg) {
    failure. */
 static int belkin_nut_read_int(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
-	int len, r;
+	int len;
+	ssize_t r;
 
 	/* send the request */
 	buf[0] = 0x7e;
@@ -397,7 +398,7 @@ static int belkin_nut_read_int(unsigned char reg) {
    failure, else 0 */
 static int belkin_nut_write_int(unsigned char reg, int val) {
 	unsigned char buf[MAXMSGSIZE];
-	int r;
+	ssize_t r;
 
 	/* send the request */
 	buf[0] = 0x7e;
@@ -451,7 +452,7 @@ static int belkin_std_open_tty(const char *device) {
 	struct termios tios;
 	struct flock flock;
 	char buf[128];
-	int r;
+	ssize_t r;
 
 	/* open the device */
 	fd = open(device, O_RDWR | O_NONBLOCK);
@@ -524,7 +525,7 @@ static int belkin_std_open_tty(const char *device) {
 /* blocking read with 1-second timeout (use non-blocking i/o) */
 static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
 	int count = 0;
-	int r;
+	ssize_t r;
 	int tries = 0;
 
 	while (count < n) {
@@ -548,7 +549,7 @@ static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
 /* blocking write with 1-second timeout (use non-blocking i/o) */
 static int belkin_std_upswrite(int fd, unsigned char *buf, int n) {
 	int count = 0;
-	int r;
+	ssize_t r;
 	int tries = 0;
 
 	while (count < n) {

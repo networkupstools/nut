@@ -69,7 +69,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	/* see if the new value is allowed for this variable */
 
 	if (sstate_getflags(ups, var) & ST_FLAG_STRING) {
-		int	aux;
+		long	aux;
 
 		aux = sstate_getaux(ups, var);
 
@@ -82,6 +82,10 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 			return;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int) strlen(newval)) {
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
@@ -205,7 +209,11 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 			/* then only disable the general one if no other clients use it!
 			 * Note: don't call tracking_free() since we want info to
 			 * persist, and tracking_cleanup() takes care of cleaning */
-			tracking_disable();
+			if (tracking_disable()) {
+				upsdebugx(2, "%s: TRACKING disabled for one client, more remain.", __func__);
+			} else {
+				upsdebugx(2, "%s: TRACKING disabled for last client.", __func__);
+			}
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);

@@ -75,7 +75,7 @@ static char UpsFamily [3];
  *  the correct number of characters are returned.
  */
 
-static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
+static int OneacGetResponse (char* chBuff, const size_t BuffSize, int ExpectedCount)
 {
 	int Retries = 10;		/* x/2 seconds max with 500000 USEC */
 	int return_val;
@@ -165,7 +165,7 @@ static int SetOutputAllow(const char* lowval, const char* highval)
 }
 
 static void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
-															const int buff2size)
+															const size_t buff2size)
 {
 	int i = 0;
 	int j = 0;

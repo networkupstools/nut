@@ -207,7 +207,7 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 	snprintf(refined, sizeof(refined), "%s", "#");
 
 	/* e.g.: item->answer = "#\x6C\x01 \x35 \x6C\x01 \x35 \x03 \x51\x9A \x28\x02\x12\xD0 \xE6 \x1E \x09\r" */
-	upsdebug_hex(4, "read", item->answer, len);
+	upsdebug_hex(4, "read", item->answer, (size_t)len);
 
 	for (i = 1, token = 1; i < len; i++) {
 

@@ -61,19 +61,19 @@
 #define FMT_DAYS   "                      %d    %d    %d    %d    %d    %d    %d"
 
 /* Date, time and programming group */
-int const BASE_YEAR = 1998;
-int device_day, device_month, device_year;
-int device_hour, device_minute, device_second;
-int power_off_hour, power_off_minute;
-int power_on_hour, power_on_minute;
-unsigned char device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
+static int const BASE_YEAR = 1998;
+static int device_day, device_month, device_year;
+static int device_hour, device_minute, device_second;
+static int power_off_hour, power_off_minute;
+static int power_on_hour, power_on_minute;
+static unsigned char device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
 
-int isprogram = 0, progshut = 0, prgups = 0;
-int hourshut, minshut;
+static int isprogram = 0, progshut = 0, prgups = 0;
+static int hourshut, minshut;
 
-int host_year, host_month, host_day;
-int host_week;
-int host_hour, host_minute, host_second;
+static int host_year, host_month, host_day;
+static int host_week;
+static int host_hour, host_minute, host_second;
 
 /* buffers */
 unsigned char received_packet[PACKET_SIZE];
@@ -86,9 +86,9 @@ bool_t input_220v, output_220v;
 /* logical */
 bool_t detected = 0;
 bool_t line_unpowered, overheat;
-bool_t overload;
-bool_t recharging, critical_battery, inverter_working;
-bool_t packet_parsed = false;
+bool_t overload, critical_battery, inverter_working;
+static bool_t recharging;
+static bool_t packet_parsed = false;
 
 double input_voltage, input_current, input_frequency;
 double output_voltage, output_current, output_frequency;
@@ -96,7 +96,8 @@ double output_voltage, output_current, output_frequency;
 double input_low_limit, input_high_limit;
 
 int battery_extension;
-double battery_voltage, temperature, battery_charge;
+double battery_voltage, battery_charge;
+double temperature;
 
 double apparent_power, real_power, ups_load;
 int load_power_factor, nominal_power;

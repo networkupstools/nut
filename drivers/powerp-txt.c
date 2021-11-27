@@ -84,9 +84,9 @@ static struct {
 	{ NULL, NULL }
 };
 
-static int powpan_command(const char *command)
+static ssize_t powpan_command(const char *command)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -121,7 +121,7 @@ static int powpan_command(const char *command)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 	return ret;
 }
 
@@ -377,9 +377,9 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.reboot");
 }
 
-static int powpan_status(status_t *status)
+static ssize_t powpan_status(status_t *status)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -420,7 +420,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 	ret = sscanf(powpan_answer, "#I%fO%fL%dB%dT%dF%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -460,7 +460,7 @@ static int powpan_status(status_t *status)
 			return -1;
 		}
 
-		upsdebug_hex(3, "read", powpan_answer, ret);
+		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -547,9 +547,10 @@ static int powpan_updateinfo(void)
 	return (status.flags[0] & 0x40) ? 1 : 0;
 }
 
-static int powpan_initups(void)
+static ssize_t powpan_initups(void)
 {
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	upsdebugx(1, "Trying text protocol...");
 
@@ -575,7 +576,7 @@ static int powpan_initups(void)
 		}
 
 		if (ret < 46) {
-			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
+			upsdebugx(2, "Expected 46 bytes, but only got %zd", ret);
 			continue;
 		}
 
