@@ -53,57 +53,57 @@ static	int	inverted_bypass_bit = 0;
 
 static void model_set(const char *abbr, const char *rating)
 {
-	if (!strcmp(abbr, "FOR")) {
+	if (!strncmp(abbr, "FOR", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "FTC")) {
+	if (!strncmp(abbr, "FTC", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress Telecom %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "PRO")) {
+	if (!strncmp(abbr, "PRO", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strcmp(abbr, "PR2")) {
+	if (!strncmp(abbr, "PR2", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro II %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strcmp(abbr, "325")) {
+	if (!strncmp(abbr, "325", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 325 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "520")) {
+	if (!strncmp(abbr, "520", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 520 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "610")) {
+	if (!strncmp(abbr, "610", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "610 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "620")) {
+	if (!strncmp(abbr, "620", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 620 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "AX1")) {
+	if (!strncmp(abbr, "AX1", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Axxium Rackmount %s", rating);
 		return;

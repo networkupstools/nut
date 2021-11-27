@@ -150,7 +150,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+		if ((powpan_command(cmdtab[i].command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
@@ -181,7 +181,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+	if ((powpan_command(command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -219,7 +219,7 @@ static int powpan_setvar(const char *varname, const char *val)
 #pragma GCC diagnostic pop
 #endif
 
-		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+		if ((powpan_command(command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 			dstate_setinfo(varname, "%s", val);
 			return STAT_SET_HANDLED;
 		}
