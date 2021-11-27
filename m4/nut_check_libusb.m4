@@ -99,7 +99,18 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl check if libusb is usable
 	AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+	AC_CHECK_FUNCS(usb_init, [], [
+		dnl Some systems may just have libusb in their standard
+		dnl paths, but not the pkg-config or libusb-config data
+		AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS"],
+			[AC_MSG_CHECKING([if libusb is just present in path])
+			 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+			 unset ac_cv_func_usb_init || true
+			 AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+			 AC_MSG_RESULT([${nut_have_libusb}])
+			], [nut_have_libusb=no]
+		)]
+	)
 
 	if test "${nut_have_libusb}" = "yes"; then
 		dnl Check for libusb "force driver unbind" availability
