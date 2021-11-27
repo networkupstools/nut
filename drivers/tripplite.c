@@ -112,6 +112,7 @@
 #include "main.h"
 #include "serial.h"
 #include "tripplite.h"
+#include "nut_stdint.h"
 #include <math.h>
 #include <ctype.h>
 
@@ -152,14 +153,14 @@ static int hex2d(char *start, unsigned int len)
  * return: # of chars in buf, excluding terminating \0 */
 static int send_cmd(const char *str, char *buf, size_t len)
 {
-	unsigned char c;
+	char c;
 	int ret = 0;
-	size_t i = 0;
+	int i = 0;
 
 	ser_flush_io(upsfd);
 	ser_send(upsfd, "%s", str);
 
-	if (!len || !buf)
+	if (!len || !buf || len > INT_MAX)
 		return -1;
 
 	for (;;) {
@@ -177,7 +178,7 @@ static int send_cmd(const char *str, char *buf, size_t len)
 		if (c == IGNCHAR || c == ENDCHAR)
 			continue;
 		buf[i++] = c;
-	} while (c != ENDCHAR && i < len);
+	} while (c != ENDCHAR && i < (int)len);
 	buf[i] = '\0';
 	return i;
 }
@@ -285,18 +286,24 @@ static int instcmd(const char *cmdname, const char *extra)
 static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
-		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			offdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.start")) {
-		startdelay = atoi(val);
-		dstate_setinfo("ups.delay.start", "%d", startdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			startdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.start", "%u", startdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.reboot")) {
-		bootdelay = atoi(val);
-		dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			bootdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 		return STAT_SET_HANDLED;
 	}
 	return STAT_SET_UNKNOWN;
@@ -604,13 +611,23 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+	char *val;
 
-	if (getval("offdelay"))
-		offdelay = atoi(getval("offdelay"));
-	if (getval("startdelay"))
-		startdelay = atoi(getval("startdelay"));
-	if (getval("rebootdelay"))
-		bootdelay = atoi(getval("rebootdelay"));
+	if ((val = getval("offdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			offdelay = (unsigned int)ipv;
+	}
+	if ((val = getval("startdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			startdelay = (unsigned int)ipv;
+	}
+	if ((val = getval("rebootdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			bootdelay = (unsigned int)ipv;
+	}
 }
 
 void upsdrv_cleanup(void)

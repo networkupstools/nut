@@ -104,7 +104,7 @@ static const struct option longopts[] = {
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
+static useconds_t timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;
 	xml_sec.port_udp = 4679;
-	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
+	xml_sec.usec_timeout = 0; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
 	/* Parse command line options -- First loop: only get debug level */
@@ -409,8 +409,8 @@ int main(int argc, char *argv[])
 
 		switch(opt_ret) {
 			case 't':
-				timeout = atol(optarg)*1000*1000; /*in usec*/
-				if (timeout == 0) {
+				timeout = (useconds_t)atol(optarg) * 1000 * 1000; /*in usec*/
+				if (timeout <= 0) {
 					fprintf(stderr,
 						"Illegal timeout value, using default %ds\n",
 						DEFAULT_NETWORK_TIMEOUT);

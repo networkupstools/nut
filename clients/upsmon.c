@@ -449,8 +449,6 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
-	int	ret;
-
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
@@ -462,20 +460,25 @@ static void doshutdown(void)
 	/* in the pipe model, we let the parent do this for us */
 	if (use_pipe) {
 		char	ch;
+		ssize_t	wret;
 
 		ch = 1;
-		ret = write(pipefd[1], &ch, 1);
+		wret = write(pipefd[1], &ch, 1);
+
+		if (wret < 1)
+			upslogx(LOG_ERR, "Unable to call parent pipe for shutdown");
 	} else {
 		/* one process model = we do all the work here */
+		int	sret;
 
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
 
 		set_pdflag();
 
-		ret = system(shutdowncmd);
+		sret = system(shutdowncmd);
 
-		if (ret != 0)
+		if (sret != 0)
 			upslogx(LOG_ERR, "Unable to call shutdown command: %s",
 				shutdowncmd);
 	}
@@ -487,7 +490,7 @@ static void doshutdown(void)
 static void setfsd(utype_t *ups)
 {
 	char	buf[SMALLBUF];
-	int	ret;
+	ssize_t	ret;
 
 	/* this shouldn't happen */
 	if (!ups->upsname) {
@@ -544,7 +547,7 @@ static void clear_alarm(void)
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -595,7 +598,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %d args, need at least %d)",
+			"(got %zu args, need at least %zu)",
 			var, numa, numq);
 		return -1;
 	}
@@ -613,7 +616,7 @@ static void sync_secondaries(void)
 	utype_t	*ups;
 	char	temp[SMALLBUF];
 	time_t	start, now;
-	int	maxlogins, logins;
+	long	maxlogins, logins;
 
 	time(&start);
 
@@ -1777,7 +1780,8 @@ static void runparent(int fd)
 
 static void runparent(int fd)
 {
-	int	ret;
+	ssize_t	ret;
+	int	sret;
 	char	ch;
 
 	/* handling signals is the child's job */
@@ -1807,9 +1811,9 @@ static void runparent(int fd)
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
-	ret = system(shutdowncmd);
+	sret = system(shutdowncmd);
 
-	if (ret != 0)
+	if (sret != 0)
 		upslogx(LOG_ERR, "parent: Unable to call shutdown command: %s",
 			shutdowncmd);
 

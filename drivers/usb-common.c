@@ -25,8 +25,10 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *de
 	int retval = NOT_SUPPORTED;
 	usb_device_id_t *usbdev;
 
-	for (usbdev = usb_device_id_list; usbdev->vendorID != -1; usbdev++) {
-
+	for (usbdev = usb_device_id_list;
+	     (usbdev->vendorID != 0 || usbdev->productID != 0 || usbdev->fun != NULL);
+	     usbdev++
+	) {
 		if (usbdev->vendorID != device->VendorID) {
 			continue;
 		}

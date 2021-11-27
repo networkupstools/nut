@@ -31,7 +31,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <poll.h>
 #include <signal.h>
 
 #include "user.h"
@@ -66,7 +65,7 @@ int	tracking_delay = 3600;
 int allow_no_device = 0;
 
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-long	maxconn = 0;
+nfds_t	maxconn = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -553,7 +552,8 @@ static void client_connect(stype_t *server)
 static void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 
 #ifdef WITH_SSL
 	if (client->ssl) {
@@ -711,25 +711,25 @@ static void poll_reload(void)
 
 	ret = sysconf(_SC_OPEN_MAX);
 
-	if (ret < maxconn) {
+	if ((intmax_t)ret < (intmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"Your system limits the maximum number of connections to %ld\n"
-			"but you requested %ld. The server won't start until this\n"
-			"problem is resolved.\n", ret, maxconn);
+			"but you requested %jd. The server won't start until this\n"
+			"problem is resolved.\n", ret, (intmax_t)maxconn);
 	}
 
-	if (0 > maxconn) {
+	if (1 > maxconn) {
 		fatalx(EXIT_FAILURE,
-			"You requested %ld as maximum number of connections.\n"
-			"The server won't start until this problem is resolved.\n", maxconn);
+			"You requested %jd as maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
 	}
 
 	/* How many items can we stuff into the array? */
 	size_t maxalloc = SIZE_MAX / sizeof(void *);
-	if ((unsigned long long)maxalloc < (unsigned long long)maxconn) {
+	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
-			"You requested %ld as maximum number of connections, but we can only allocate %zu.\n"
-			"The server won't start until this problem is resolved.\n", maxconn, maxalloc);
+			"You requested %jd as maximum number of connections, but we can only allocate %zu.\n"
+			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn, maxalloc);
 	}
 
 	/* The checks above effectively limit that maxconn is in size_t range */
@@ -936,7 +936,7 @@ int nut_uuid_v4(char *uuid_str)
 		return 0;
 
 	for (i = 0; i < UUID4_BYTESIZE; i++)
-		nut_uuid[i] = (unsigned)rand() + (unsigned)rand();
+		nut_uuid[i] = (uint8_t)rand() + (uint8_t)rand();
 
 	/* set variant and version */
 	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
@@ -953,7 +953,8 @@ int nut_uuid_v4(char *uuid_str)
 /* service requests and check on new data */
 static void mainloop(void)
 {
-	int	i, ret, nfds = 0;
+	int	ret;
+	nfds_t	i, nfds = 0;
 
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
@@ -1038,7 +1039,7 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
+	upsdebugx(2, "%s: polling %jd filedescriptors", __func__, (intmax_t)nfds);
 
 	ret = poll(fds, nfds, 2000);
 
@@ -1317,8 +1318,9 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
-	/* default to system limit (may be overridden in upsd.conf */
-	maxconn = sysconf(_SC_OPEN_MAX);
+	/* default to system limit (may be overridden in upsd.conf) */
+	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */

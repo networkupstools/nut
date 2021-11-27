@@ -42,7 +42,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static int port=3551;
+static uint16_t port=3551;
 static struct sockaddr_in host;
 
 static void process(char *item,char *data)
@@ -158,8 +158,9 @@ static void process(char *item,char *data)
 
 static int getdata(void)
 {
-	int x, fd_flags;
-	short n;
+	ssize_t x;
+	int fd_flags;
+	uint16_t n;
 	char *item;
 	char *data;
 	struct pollfd p;
@@ -227,7 +228,7 @@ static int getdata(void)
 
 		if(poll(&p,1,15000)!=1)break;
 
-		if(read(p.fd,bfr,x)!=x)
+		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
@@ -302,9 +303,11 @@ void upsdrv_initups(void)
 		/* TODO: fix parsing since bare IPv6 addresses contain colons */
 		if((p=strchr(device_path,':')))
 		{
+			int i;
 			*p++=0;
-			port=atoi(p);
-			if(port<1||port>65535)port=0;
+			i=atoi(p);
+			if(i<1||i>65535)i=0;
+			port = (uint16_t)i;
 		}
 	}
 	else device_path="localhost";

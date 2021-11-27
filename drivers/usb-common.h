@@ -83,8 +83,8 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher);
 #define USB_DEVICE(vendorID, productID)	vendorID, productID
 
 typedef struct {
-	int	vendorID;
-	int	productID;
+	uint16_t	vendorID;
+	uint16_t	productID;
 	void	*(*fun)(USBDevice_t *);		/* handler for specific processing */
 } usb_device_id_t;
 

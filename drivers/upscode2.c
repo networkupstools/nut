@@ -99,7 +99,7 @@ typedef struct simple_s {
 	const char *code;
 	type_t type;
 	const char *desc;
-	int status;
+	uint32_t status;
 	float *aux;
 	struct simple_s *stats;
 } simple_t;
@@ -126,11 +126,13 @@ static char has_uppm_p[100];
 
 static int
 	input_timeout_sec = INP_TIMO_SEC,
-	output_pace_usec = OUT_PACE_USEC,
 	full_update_timer = FULL_UPDATE_TIMER,
 	use_crlf = 0,
 	use_pre_lf = 0,
 	buffer_empty = 0;
+
+static useconds_t
+	output_pace_usec = OUT_PACE_USEC;
 
 static uint32_t
 	status = UPSC_STAT_NOTINIT;
@@ -446,8 +448,8 @@ static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
 	const char *resp, const char *var, char *ret);
-static int upscsend(const char *cmd);
-static int upscrecv(char *buf);
+static ssize_t upscsend(const char *cmd);
+static ssize_t upscrecv(char *buf);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
 static void check_uppm(void);
 static float batt_charge_pct(void);
@@ -462,7 +464,7 @@ void upsdrv_help(void)
 void upsdrv_initups(void)
 {
 	struct termios tio;
-	int baud = B1200;
+	speed_t baud = B1200;
 	char *str;
 
 	if ((str = getval("baudrate")) != NULL) {
@@ -509,12 +511,13 @@ void upsdrv_initups(void)
 	upsdebugx(1, "input_timeout = %d Sec", input_timeout_sec);
 
 	if ((str = getval("output_pace")) != NULL) {
-		int temp = atoi(str);
+		/* Range should be at least up to 1000000; a C99+ long guarantees that */
+		long temp = atol(str);
 		if (temp <= 0)
 			fatalx(EXIT_FAILURE, "Bad output_pace parameter: %s", str);
-		output_pace_usec = temp;
+		output_pace_usec = (useconds_t)temp;
 	}
-	upsdebugx(1, "output_pace = %d uSec", output_pace_usec);
+	upsdebugx(1, "output_pace = %ju uSec", (uintmax_t)output_pace_usec);
 
 	if ((str = getval("full_update_timer")) != NULL) {
 		int temp = atoi(str);
@@ -1001,9 +1004,9 @@ static void upsc_setstatus(unsigned int upsc_status)
 
 /* Add \r to end of command and send to UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscsend(const char *cmd)
+static ssize_t upscsend(const char *cmd)
 {
-	int	res;
+	ssize_t	res;
 
 	res = ser_send_pace(upsfd, output_pace_usec, "%s%s%s",
 		use_pre_lf ? "\n" : "",
@@ -1024,9 +1027,9 @@ static int upscsend(const char *cmd)
 
 /* Return a string read from UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscrecv(char *buf)
+static ssize_t upscrecv(char *buf)
 {
-	int	res;
+	ssize_t	res;
 
 	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
 	   which means ser_get_buf() either returns one line terminated with
@@ -1047,7 +1050,7 @@ static int upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
 	}
 
 	return res;

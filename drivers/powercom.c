@@ -289,7 +289,7 @@ static void shutdown_halt(void)
 
 static void shutdown_halt(void)
 {
-	ser_send_char (upsfd, SHUTDOWN);
+	ser_send_char (upsfd, (unsigned char)SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -302,8 +302,8 @@ static void shutdown_ret(void)
 
 static void shutdown_ret(void)
 {
-	ser_send_char (upsfd, RESTART);
-	ser_send_char (upsfd, COUNTER);
+	ser_send_char (upsfd, (unsigned char)RESTART);
+	ser_send_char (upsfd, (unsigned char)COUNTER);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -356,7 +356,7 @@ static void no_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	tio.c_iflag &= ~ ((tcflag_t)IXON | (tcflag_t)IXOFF);
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
@@ -697,7 +697,8 @@ static float load_level(void)
 
 static float batt_level(void)
 {
-	int bat0,bat29,bat100,model;
+	int bat0,bat29,bat100;
+	unsigned int model;
 	float battval;
 
 	if ( !strncmp(types[type].name, "BNT", 3) ) {
@@ -844,7 +845,8 @@ void upsdrv_shutdown(void)
 /* initialize UPS */
 void upsdrv_initups(void)
 {
-	int tmp,model = 0;
+	int tmp;
+	unsigned int model = 0;
 	unsigned int i;
 	static char buf[20];
 
@@ -922,8 +924,10 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
+	/* NOTE: %hhu is not supported before C99; that would need reading
+	 * arguments into an uint as %u, checking range and casting */
 	if (getval("shutdownArguments")  &&
-	    sscanf(getval("shutdownArguments"), "{{%u,%u},%c}",
+	    sscanf(getval("shutdownArguments"), "{{%hhu,%hhu},%c}",
 	                &types[type].shutdown_arguments.delay[0],
 	                &types[type].shutdown_arguments.delay[1],
 	                &types[type].shutdown_arguments.minutesShouldBeUsed
@@ -1015,9 +1019,9 @@ void upsdrv_initups(void)
 		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
 		if (!strcmp(types[type].name, "OPTI")) {
-			snprintf(buf,sizeof(buf),"%s-%d",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%u",types[type].name, model);
 		} else {
-			snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%uAP",types[type].name, model);
 		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
