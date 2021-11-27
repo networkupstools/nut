@@ -244,31 +244,31 @@ void upsdrv_updateinfo(void)
 	if (start_is_datastale)
 	{
 		if (get_data("vDS?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_ups_serial=1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_ups_temperature =1;
 
 		if (get_data("vO0I?",temp)) return;
-		if (strcmp(temp+4,"NA"))
+		if (strncmp(temp+4, "NA", 2))
 			exist_output_current =1;
 
 		if (get_data("vBC?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_charge = 1;
 
 		if (get_data("vBI?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_charge = 1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_temperature = 1;
 
 		if (get_data("vBt?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_runtime = 1;
 
 		start_is_datastale = 0;

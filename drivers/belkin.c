@@ -513,7 +513,7 @@ void upsdrv_initinfo(void)
 	/* deal with stupid firmware that breaks RAT */
 	send_belkin_command(STATUS, RATING, "");
 
-	if (!strcmp(temp, "001")) {
+	if (!strncmp(temp, "001", 3)) {
 		res = do_broken_rat(temp);
 	} else {
 		res = get_belkin_reply(temp);

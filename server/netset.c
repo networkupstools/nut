@@ -181,7 +181,7 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	/* SET VAR UPS VARNAME VALUE */
-	if (!strcasecmp(arg[0], "VAR")) {
+	if (!strncasecmp(arg[0], "VAR", 3)) {
 		if (numarg < 4) {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
 			return;
@@ -199,11 +199,11 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* SET TRACKING VALUE */
 	if (!strcasecmp(arg[0], "TRACKING")) {
-		if (!strcasecmp(arg[1], "ON")) {
+		if (!strncasecmp(arg[1], "ON", 2)) {
 			/* general enablement along with for this client */
 			client->tracking = tracking_enable();
 		}
-		else if (!strcasecmp(arg[1], "OFF")) {
+		else if (!strncasecmp(arg[1], "OFF", 3)) {
 			/* disable status tracking for this client first */
 			client->tracking = 0;
 			/* then only disable the general one if no other clients use it!

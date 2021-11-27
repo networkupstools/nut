@@ -1594,19 +1594,19 @@ static void parse_status(utype_t *ups, char *status)
 
 		upsdebugx(3, "parsing: [%s]", statword);
 
-		if (!strcasecmp(statword, "OL"))
+		if (!strncasecmp(statword, "OL", 2))
 			ups_on_line(ups);
-		if (!strcasecmp(statword, "OB"))
+		if (!strncasecmp(statword, "OB", 2))
 			ups_on_batt(ups);
-		if (!strcasecmp(statword, "LB"))
+		if (!strncasecmp(statword, "LB", 2))
 			ups_low_batt(ups);
-		if (!strcasecmp(statword, "RB"))
+		if (!strncasecmp(statword, "RB", 2))
 			upsreplbatt(ups);
-		if (!strcasecmp(statword, "CAL"))
+		if (!strncasecmp(statword, "CAL", 3))
 			ups_cal(ups);
 
 		/* do it last to override any possible OL */
-		if (!strcasecmp(statword, "FSD"))
+		if (!strncasecmp(statword, "FSD", 3))
 			ups_fsd(ups);
 
 		update_crittimer(ups);

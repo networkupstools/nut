@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2795 utf-8
+personal_ws-1.1 en 2799 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -2494,11 +2494,14 @@ strarr
 strcasecmp
 strcat
 strchr
+strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
+strncasecmp
+strncmp
 struct
 structs
 sts

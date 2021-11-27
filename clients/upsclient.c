@@ -1423,8 +1423,8 @@ int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
 
 	/* see if this is the end */
 	if (ups->pc_ctx.numargs >= 2) {
-		if ((!strcmp(ups->pc_ctx.arglist[0], "END")) &&
-			(!strcmp(ups->pc_ctx.arglist[1], "LIST")))
+		if ((!strncmp(ups->pc_ctx.arglist[0], "END", 3)) &&
+			(!strncmp(ups->pc_ctx.arglist[1], "LIST", 4)))
 			return 0;
 	}
 

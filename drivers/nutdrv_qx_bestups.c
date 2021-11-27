@@ -431,11 +431,11 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 
 	/* Best Power devices */
 	if (
-		!strcmp(item->value, "AX1") ||
-		!strcmp(item->value, "FOR") ||
-		!strcmp(item->value, "FTC") ||
-		!strcmp(item->value, "PR2") ||
-		!strcmp(item->value, "PRO")
+		!strncmp(item->value, "AX1", 3) ||
+		!strncmp(item->value, "FOR", 3) ||
+		!strncmp(item->value, "FTC", 3) ||
+		!strncmp(item->value, "PR2", 3) ||
+		!strncmp(item->value, "PRO", 3)
 	) {
 		snprintf(value, valuelen, item->dfl, "Best Power");
 		return 0;
@@ -443,9 +443,9 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 
 	/* Sola Australia devices */
 	if (
-		!strcmp(item->value, "325") ||
-		!strcmp(item->value, "520") ||
-		!strcmp(item->value, "620")
+		!strncmp(item->value, "325", 3) ||
+		!strncmp(item->value, "520", 3) ||
+		!strncmp(item->value, "620", 3)
 	) {
 		snprintf(value, valuelen, item->dfl, "Sola Australia");
 		return 0;
@@ -478,35 +478,35 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 
 	/* Best Power devices */
 
-	if (!strcmp(item->value, "AX1")) {
+	if (!strncmp(item->value, "AX1", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Axxium Rackmount");
 
-	} else if (!strcmp(item->value, "FOR")) {
+	} else if (!strncmp(item->value, "FOR", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Fortress");
 
-	} else if (!strcmp(item->value, "FTC")) {
+	} else if (!strncmp(item->value, "FTC", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Fortress Telecom");
 
-	} else if (!strcmp(item->value, "PR2")) {
+	} else if (!strncmp(item->value, "PR2", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Patriot Pro II");
 		inverted_bbb_bit = 1;
 
-	} else if (!strcmp(item->value, "PRO")) {
+	} else if (!strncmp(item->value, "PRO", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Patriot Pro");
 		inverted_bbb_bit = 1;
 
 	/* Sola Australia devices */
 	} else if (
-		!strcmp(item->value, "320") ||
-		!strcmp(item->value, "325") ||
-		!strcmp(item->value, "520") ||
-		!strcmp(item->value, "525") ||
-		!strcmp(item->value, "620")
+		!strncmp(item->value, "320", 3) ||
+		!strncmp(item->value, "325", 3) ||
+		!strncmp(item->value, "520", 3) ||
+		!strncmp(item->value, "525", 3) ||
+		!strncmp(item->value, "620", 3)
 	) {
 
 		snprintf(value, valuelen, "Sola %s", item->value);
@@ -522,7 +522,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	/* Unskip qx2nut table's items according to the UPS model */
 
 	/* battery.runtime var is not available on the Patriot Pro/Sola 320 model series: leave it skipped in these cases, otherwise unskip it */
-	if (strcmp(item->value, "PRO") && strcmp(item->value, "320")) {
+	if (strncmp(item->value, "PRO", 3) && strncmp(item->value, "320", 3)) {
 
 		unskip = find_nut_info("battery.runtime", 0, 0);
 
@@ -535,7 +535,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* battery.packs var is available only on the Axxium/Sola 620 model series: unskip it in these cases */
-	if (!strcmp(item->value, "AX1") || !strcmp(item->value, "620")) {
+	if (!strncmp(item->value, "AX1", 3) || !strncmp(item->value, "620", 3)) {
 
 		unskip = find_nut_info("battery.packs", 0, QX_FLAG_SETVAR);
 
