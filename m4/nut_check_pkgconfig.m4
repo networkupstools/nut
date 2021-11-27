@@ -25,7 +25,23 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 		[dnl Some systems have older autotools without direct macro support for PKG_CONF*
 		have_PKG_CONFIG=yes
 		AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
-		AC_MSG_CHECKING([whether usable PKG_CONFIG is present in PATH])
+
+		AC_ARG_WITH(pkg-config,
+			AS_HELP_STRING([@<:@--with-pkg-config=/path/to/gdlib-config@:>@],
+				[path to program that reports development package configuration]),
+		[
+			case "${withval}" in
+			"") ;;
+			yes|no)
+				AC_MSG_ERROR(invalid option --with(out)-pkg-config - see docs/configure.txt)
+				;;
+			*)
+				dummy_PKG_CONFIG="${withval}"
+				;;
+			esac
+		])
+
+		AC_MSG_CHECKING([whether usable PKG_CONFIG is present in PATH or was set by caller])
 		AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
 			[AC_MSG_RESULT([no])
 			 PKG_CONFIG=false

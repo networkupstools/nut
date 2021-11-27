@@ -403,6 +403,14 @@ Default is /var/state/ups.
 Things the compiler might need to find
 --------------------------------------
 
+	--with-pkg-config
+
+This option allows to provide a custom program name (in `PATH`) or a
+complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
+possibly other build-time options in `*.pc` files, to use third-party
+libraries. On build systems which support multiple architectures you
+may also want to set `PKG_CONFIG_PATH` to match your current build.
+
 	--with-gd-includes="-I/foo/bar"
 
 If you installed gd in some place where your C preprocessor can't
