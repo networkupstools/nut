@@ -424,6 +424,15 @@ a complete pathname to `gdlib-config`. This may be needed on build
 systems which support multiple architectures, or in cases where your
 distribution names this program differently.
 
+	--with-libusb-config
+
+This option allows to provide a custom program name (in `PATH`) or
+a complete pathname to `libusb-config` (usually delivered only for
+libusb-0.1 version, but not for libusb-1.0). This may be needed on
+build systems which support multiple architectures or provide several
+versions of libusb, or in cases where your distribution names this
+program differently.
+
 	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"

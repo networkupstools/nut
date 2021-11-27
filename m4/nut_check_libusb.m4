@@ -12,7 +12,10 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
 
+	LIBUSB_CONFIG="none"
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for libusb version via pkg-config)
 		 LIBUSB_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb 2>/dev/null`"
@@ -30,17 +33,37 @@ if test -z "${nut_have_libusb_seen}"; then
 		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
 		 LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
 		],
-		[AC_MSG_CHECKING([via libusb-config (if present)])
-		 LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
-		 if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
-			CFLAGS="`libusb-config --cflags 2>/dev/null`"
-			LIBS="`libusb-config --libs 2>/dev/null`"
-		 else
-			LIBUSB_VERSION="none"
-			CFLAGS=""
-			LIBS="-lusb"
-		 fi
-		 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		[AC_PATH_PROGS([LIBUSB_CONFIG], [libusb-config], [none])
+		 AC_ARG_WITH(libusb-config,
+			AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
+				[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
+			[
+				case "${withval}" in
+				"") ;;
+				yes|no)
+					AC_MSG_ERROR(invalid option --with(out)-libusb-config - see docs/configure.txt)
+					;;
+				*)
+					LIBUSB_CONFIG="${withval}"
+					;;
+				esac
+			]
+		 )
+
+		 AS_IF([test x"$LIBUSB_CONFIG" != xnone],
+			[AC_MSG_CHECKING([for libusb version via ${LIBUSB_CONFIG}])
+			 LIBUSB_VERSION="`"${LIBUSB_CONFIG}" --version 2>/dev/null`"
+			 if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
+				CFLAGS="`"${LIBUSB_CONFIG}" --cflags 2>/dev/null`"
+				LIBS="`"${LIBUSB_CONFIG}" --libs 2>/dev/null`"
+			 else
+				LIBUSB_VERSION="none"
+				CFLAGS=""
+				LIBS="-lusb"
+			 fi
+			 AC_MSG_RESULT(${LIBUSB_VERSION} found)
+			]
+		 )
 		]
 	)
 
