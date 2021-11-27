@@ -1509,24 +1509,42 @@ static int ups2000_instcmd_load_on(const uint16_t reg)
 	status_init();
 	r = ups2000_update_status();
 	if (r != 0) {
+		/*
+		 * When the UPS status is updated, the code must set either OL, OB, OL ECO,
+		 * BYPASS, or OFF. These five options are mutually exclusive. If the register
+		 * value is invalid and set none of these flags, failure code 1 is returned.
+		 */
 		dstate_datastale();
 		return STAT_INSTCMD_FAILED;
 	}
 	status_commit();
 
-	/* is it off? */
 	status = dstate_getinfo("ups.status");
-	if (!strstr(status, "OFF")) {
+	if (strstr(status, "OFF")) {
+		/* no warning needed, continue at ups2000_write_register() below */
+	}
+	else if (strstr(status, "OL") || strstr(status, "OB")) {
 		/*
-		 * You cannot turn it on if it's not off. It's probably in
-		 * bypass mode. If so, use "bypass.stop".
+		 * "Turning it on" has no effect if it's already on. Log a warning
+		 * while still accepting and executing the command.
 		 */
-		if (strstr(status, "BYPASS"))
-			upslogx(LOG_ERR, "load.on failed: UPS is already on and in bypass mode. "
-				"To enter normal mode, use bypass.off");
-		else
-			upslogx(LOG_ERR, "load.on failed: reason unknown.");
-
+		upslogx(LOG_WARNING, "load.on: UPS is already on.");
+		upslogx(LOG_WARNING, "load.on: still executing command anyway.");
+	}
+	else if (strstr(status, "BYPASS")) {
+		/*
+		 * If it's in bypass mode, reject this command. The UPS would otherwise
+		 * enter normal mode, but "load.on" is not supposed to affect the
+		 * normal/bypass status. Also log an error and suggest "bypass.stop".
+		 */
+		upslogx(LOG_ERR, "load.on error: UPS is already on, and is in bypass mode. "
+				 "To enter normal mode, use bypass.stop");
+		return STAT_INSTCMD_FAILED;
+	}
+	else {
+		/* unreachable, see comments for r != 0 at the beginning */
+		upslogx(LOG_ERR, "load.on error: invalid ups.status (%s) detected. "
+				 "Please file a bug report!", status);
 		return STAT_INSTCMD_FAILED;
 	}
 
