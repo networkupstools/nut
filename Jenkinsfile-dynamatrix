@@ -978,7 +978,7 @@ set | sort -n """
     dynacfgPipeline.notifyHandler = {
         def summary = null
         try {
-            summary = dynamatrix.toStringStageCountDump()
+            summary = this.dynamatrix.toStringStageCountDump()
         } catch (Throwable t) {}
 
         if (summary == null || summary == "") {
