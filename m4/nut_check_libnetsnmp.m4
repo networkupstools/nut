@@ -22,12 +22,12 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	dnl By default seek in PATH, but which variant (if several are provided)?
 	AC_CHECK_SIZEOF([void *])
+	NET_SNMP_CONFIG="none"
 	AS_CASE(["${ac_cv_sizeof_void_p}"],
-		[4],[NET_SNMP_CONFIG=net-snmp-config-32],
-		[8],[NET_SNMP_CONFIG=net-snmp-config-64]
-		)
-	AS_IF([test -n "${NET_SNMP_CONFIG}" && test -n "`command -v "${NET_SNMP_CONFIG}"`"],
-		[], [NET_SNMP_CONFIG=net-snmp-config])
+		[4],[AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config-32 net-snmp-config], [none])],
+		[8],[AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config-64 net-snmp-config], [none])],
+		    [AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config], [none])]
+	)
 
 	prefer_NET_SNMP_CONFIG=false
 	AC_ARG_WITH(net-snmp-config,
@@ -58,6 +58,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			AC_MSG_RESULT(none found)
 			prefer_NET_SNMP_CONFIG=true
 		fi
+	fi
+
+	if test "$NET_SNMP_CONFIG" = none ; then
+		prefer_NET_SNMP_CONFIG=false
 	fi
 
 	if "${prefer_NET_SNMP_CONFIG}" ; then
