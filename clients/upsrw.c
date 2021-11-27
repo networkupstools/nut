@@ -523,7 +523,7 @@ static void do_type(const char *varname)
 		}
 
 		/* ignore this one */
-		if (!strcasecmp(answer[i], "RW")) {
+		if (!strncasecmp(answer[i], "RW", 2)) {
 			continue;
 		}
 

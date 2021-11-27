@@ -145,13 +145,15 @@ void	blazer_initups(item_t *qx2nut)
 			continue;
 
 		/* norating */
-		if (nr && !strcasecmp(item->command, "F\r")) {
+		if (nr && !strncasecmp(item->command, "F\r", strlen("F\r"))) {
 			upsdebugx(2, "%s: skipping %s", __func__, item->info_type);
 			item->qxflags |= QX_FLAG_SKIP;
 		}
 
 		/* novendor */
-		if (nv && (!strcasecmp(item->command, "I\r") || !strcasecmp(item->command, "FW?\r"))) {
+		if (nv && (!strncasecmp(item->command, "I\r", strlen("I\r"))
+		|| !strncasecmp(item->command, "FW?\r", strlen("FW?\r")))
+		) {
 			upsdebugx(2, "%s: skipping %s", __func__, item->info_type);
 			item->qxflags |= QX_FLAG_SKIP;
 		}

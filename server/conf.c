@@ -118,11 +118,11 @@ static void ups_update(const char *fn, const char *name, const char *desc)
  */
 static int parse_boolean(char *arg, int *result)
 {
-	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
+	if ( (!strcasecmp(arg, "true")) || (!strncasecmp(arg, "on", 2)) || (!strncasecmp(arg, "yes", 3)) || (!strncasecmp(arg, "1", 1))) {
 		*result = 1;
 		return 1;
 	}
-	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no")) || (!strcasecmp(arg, "0"))) {
+	if ( (!strcasecmp(arg, "false")) || (!strncasecmp(arg, "off", 3)) || (!strncasecmp(arg, "no", 2)) || (!strncasecmp(arg, "0", 1))) {
 		*result = 0;
 		return 1;
 	}
@@ -265,7 +265,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 0;
 
 	/* ACL <aclname> <ip block> */
-	if (!strcmp(arg[0], "ACL")) {
+	if (!strncmp(arg[0], "ACL", 3)) {
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}

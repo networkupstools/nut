@@ -304,10 +304,10 @@ static int main_arg(char *var, char *val)
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 
 		return 1;	/* handled */
 	}
@@ -343,10 +343,10 @@ static void do_global_args(const char *var, const char *val)
 	}
 
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 	}
 
 

@@ -422,7 +422,7 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 
 	for (i = 0; i < numflags; i++) {
 
-		if (!strcasecmp(flag[i], "RW")) {
+		if (!strncasecmp(flag[i], "RW", 2)) {
 			sttmp->flags |= ST_FLAG_RW;
 			continue;
 		}

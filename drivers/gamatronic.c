@@ -167,31 +167,31 @@ static void update_pseudovars( void )
 {
 	status_init();
 
-	if(strcmp(sec_varlist[9].value,"1")== 0) {
+	if(strncmp(sec_varlist[9].value, "1", 1)== 0) {
 		status_set("OFF");
 	}
-	if(strcmp(sec_varlist[76].value,"0")== 0) {
+	if(strncmp(sec_varlist[76].value, "0", 1)== 0) {
 		status_set("OL");
 	}
-	if(strcmp(sec_varlist[76].value,"1")== 0) {
+	if(strncmp(sec_varlist[76].value, "1", 1)== 0) {
 		status_set("OB");
 	}
-	if(strcmp(sec_varlist[76].value,"2")== 0) {
+	if(strncmp(sec_varlist[76].value, "2", 1)== 0) {
 		status_set("BYPASS");
 	}
-	if(strcmp(sec_varlist[76].value,"3")== 0) {
+	if(strncmp(sec_varlist[76].value, "3", 1)== 0) {
 		status_set("TRIM");
 	}
-	if(strcmp(sec_varlist[76].value,"4")== 0) {
+	if(strncmp(sec_varlist[76].value, "4", 1)== 0) {
 		status_set("BOOST");
 	}
-	if(strcmp(sec_varlist[10].value,"1")== 0) {
+	if(strncmp(sec_varlist[10].value, "1", 1)== 0) {
 		status_set("OVER");
 	}
-	if(strcmp(sec_varlist[22].value,"1")== 0) {
+	if(strncmp(sec_varlist[22].value, "1", 1)== 0) {
 		status_set("LB");
 	}
-	if(strcmp(sec_varlist[19].value,"2")== 0) {
+	if(strncmp(sec_varlist[19].value, "2", 1)== 0) {
 		status_set("RB");
 	}
 
@@ -245,7 +245,7 @@ static void sec_poll ( int pollflag ) {
 				}
 
 				/* If SEC VAR is alarm and it's on, add it to the alarm property */
-				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
+				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strncmp(r, "1", 1)== 0) {
 					alarm_set(sec_varlist[sqv(q,f)].name);
 				}
 			}
