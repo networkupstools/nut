@@ -156,6 +156,7 @@ AC_CHECK_HEADER([limits.h],
 
 AC_CHECK_HEADER([sys/resource.h],
     [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/resource.h>
 ],
@@ -164,19 +165,22 @@ getrlimit(RLIMIT_NOFILE, &limit);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
             [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
      AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
@@ -186,13 +190,15 @@ sem_destroy(&semaphore);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
@@ -478,6 +484,7 @@ AS_IF([test "${nut_with_serial}" != "no"],
     dnl Don't mind the stupid code below, it just probes the tokens and
     dnl sails around compiler warnings
     AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
@@ -499,21 +506,23 @@ getspeed(&baudrate);
         ],
         [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
          nut_have_serial_types=no
+        ]
+     )
+     AC_LANG_POP([C])
+
+     dnl Restore common set-or-discovered CFLAGS
+     CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+     AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_IF([test "${nut_have_serial_types}" = yes],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+         AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
         ])
-
-        dnl Restore common set-or-discovered CFLAGS
-        CFLAGS="${CFLAGS_SAVED_SERIAL}"
-
-        AC_MSG_CHECKING([whether we can build serial drivers])
-        AS_IF([test "${nut_have_serial_types}" = yes],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
-             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
-            ])
-        AS_IF([test "${nut_with_serial}" = "yes"],
-            [AC_MSG_RESULT([yes])],
-            [AC_MSG_RESULT([no])])
-    ])
+     AS_IF([test "${nut_with_serial}" = "yes"],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])])
+])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
