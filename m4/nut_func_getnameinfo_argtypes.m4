@@ -17,6 +17,7 @@ AC_DEFUN([NUT_FUNC_GETNAMEINFO_ARGTYPES], [
   AC_REQUIRE([NUT_CHECK_HEADER_WS2TCPIP])dnl
   AC_REQUIRE([NUT_TYPE_SOCKLEN_T])dnl
   AC_CHECK_HEADERS(sys/types.h sys/socket.h netdb.h)
+  AC_LANG_PUSH([C])
   AC_CACHE_CHECK([types of arguments for getnameinfo],
     [nut_cv_func_getnameinfo_args], [
     nut_cv_func_getnameinfo_args="unknown"
@@ -75,6 +76,7 @@ AC_DEFUN([NUT_FUNC_GETNAMEINFO_ARGTYPES], [
       done
     done
   ])
+  AC_LANG_POP([C])
   if test "$nut_cv_func_getnameinfo_args" = "unknown"; then
     AC_MSG_WARN([Cannot find proper types to use for getnameinfo args])
   else
