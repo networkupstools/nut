@@ -948,7 +948,16 @@ set | sort -n """
     ]
 
     dynacfgPipeline.notifyHandler = {
-        ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+        def summary = null
+        try {
+            summary = dynamatrix.toStringStageCountDump()
+        } catch (Throwable t) {}
+
+        if (summary == null || summary == "") {
+            ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+        } else {
+            ircNotify (notificationStrategy:'FAILURE_AND_FIXED', customMessage: summary)
+        }
     }
 
 @NonCPS
