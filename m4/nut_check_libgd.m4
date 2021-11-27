@@ -12,6 +12,9 @@ if test -z "${nut_have_libgd_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LDFLAGS=""
+	LIBS=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for gd version via pkg-config)
