@@ -16,10 +16,16 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING([for LLNC libpowerman version via pkg-config])
 		 POWERMAN_VERSION="`$PKG_CONFIG --silence-errors --modversion libpowerman 2>/dev/null`"
-		 if test "$?" != "0" -o -z "${POWERMAN_VERSION}"; then
+		 dnl Unlike other pkg-config enabled projects we use,
+		 dnl libpowerman (at least on Debian) delivers an empty
+		 dnl "Version:" tag in /usr/lib/pkgconfig/libpowerman.pc
+		 dnl (and it is the only file in that dir, others going
+		 dnl to /usr/lib/x86_64-linux-gnu/pkgconfig/ or similar
+		 dnl for other architectures). Empty is not an error here!
+		 if test "$?" != "0" ; then # -o -z "${POWERMAN_VERSION}"; then
 		    POWERMAN_VERSION="none"
 		 fi
-		 AC_MSG_RESULT([${POWERMAN_VERSION} found])
+		 AC_MSG_RESULT(['${POWERMAN_VERSION}' found])
 		],
 		[POWERMAN_VERSION="none"
 		 AC_MSG_NOTICE([can not check LLNC libpowerman settings via pkg-config])
