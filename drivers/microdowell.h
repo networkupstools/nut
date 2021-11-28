@@ -4,7 +4,7 @@
 #ifdef ENTERPRISE_PROTOCOL
 
 #include <ctype.h>
-
+#include "nut_stdint.h"
 
 #define STX_CHAR              '['
 #define ERR_COM_NO_CHARS      -999	// nessun carattere dalla porta seriale
@@ -236,7 +236,8 @@ typedef struct
 	//------------------------------------------------------------------------
 	unsigned long Counter ;	// contatore: viene incrementato ad ogni nuovo POLL
 	unsigned char CommStatus ;	// stato delle comunicazioni
-	unsigned char FramePointer ;	// puntatore al carattere di START dei dati ricevuti
+	//unsigned char FramePointer ;
+	size_t FramePointer ;	// puntatore al carattere di START dei dati ricevuti
 	//------------------------------------------------------------------------
 	char UpsModel[9] ;		// modello UPS (8 caratteri)
 	unsigned char ge_2kVA ;	// if more or equal to 2KVA
@@ -256,7 +257,7 @@ typedef struct
 
 	unsigned char BatteryNumber ;		// number of batteries in UPS
 	//------------------------------------------------------------------------
-	unsigned long StatusUPS ;	// flag di stato dell'UPS 4 byte): 1=TRUE
+	uint32_t StatusUPS ;	// flag di stato dell'UPS 4 byte): 1=TRUE
 									//		bit  0 => BATTERY_MODE
 									//		bit  1 => BATTERY_LOW
 									//		bit  2 => BATTERY_END
@@ -286,7 +287,7 @@ typedef struct
 									//		------
 									//		bit 24 to 31 => - NON DEFINITI -
 
-	unsigned short int  ShortStatus ;   // the LSB 2 bytes of the status
+	uint16_t  ShortStatus ;    // the LSB 2 bytes of the status
 	unsigned char OutConfig  ; // stato uscite UPS
 	float Vinput     ; // tensione di INPUT in 1/10 di Volt
 	float Voutput    ; // tensione di OUTPUT in 1/10 di Volt

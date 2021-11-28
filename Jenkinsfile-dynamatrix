@@ -362,7 +362,42 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-nodoc', 'default-tgt:distcheck-valgrind']
+                    'BUILD_TYPE': ['default-nodoc']
+                    // BUILD_TYPE=default-withdoc:man
+                    // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
+                    // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC'
+                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ]
+                    ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_WINDOWS
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'Valgrind+distchecked target builds with main and ~newest supported C/C++ revisions (must pass on all platforms)',
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         //branchRegexTarget: dynacfgPipeline.branchStableRegex,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                requiredNodelabels: ["(NUT_BUILD_CAPS=valgrind=yes||NUT_BUILD_CAPS=valgrind)"],
+                excludedNodelabels: ["NUT_BUILD_CAPS=valgrind=no"],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    'BUILD_TYPE': ['default-tgt:distcheck-valgrind']
                     // BUILD_TYPE=default-withdoc:man
                     // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
@@ -913,7 +948,16 @@ set | sort -n """
     ]
 
     dynacfgPipeline.notifyHandler = {
-        ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+        def summary = null
+        try {
+            summary = dynamatrix.toStringStageCountDump()
+        } catch (Throwable t) {}
+
+        if (summary == null || summary == "") {
+            ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+        } else {
+            ircNotify (notificationStrategy:'FAILURE_AND_FIXED', customMessage: summary)
+        }
     }
 
 @NonCPS

@@ -184,20 +184,21 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
+LIBUSB_IMPL = libusb.c
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
+ openups-hid.c powervar-hid.c delta_ups-hid.c salicru-hid.c
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
+tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
+blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
@@ -206,7 +207,7 @@ nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
-riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
+riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 # HID-over-serial
@@ -251,6 +252,9 @@ nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c
 endif
+# FIXME: Hacky hot-fix for build agents of varying OS generations:
+# Different versions of IPMI libs requested 'unsigned int *' or 'int *' args:
+#nut_ipmipsu_CFLAGS = $(AM_CFLAGS) -Wno-pointer-sign
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
 # Mac OS X metadriver
@@ -285,7 +289,7 @@ nutdrv_qx_LDADD += libdummy_serial.la $(SERLIBS)
 endif
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
-nutdrv_qx_SOURCES += libusb.c usb-common.c
+nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
@@ -319,7 +323,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h b
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h \
- hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h
+ hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
@@ -336,7 +340,7 @@ libdummy_serial_la_LDFLAGS = -no-undefined -static
 dummy:
 
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

@@ -31,14 +31,14 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-
 /* NUT SNMP common functions */
-#include "main.h"
+#include "main.h"	/* includes "config.h" which must be the first header */
 #include "nut_float.h"
 #include "nut_stdint.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
+
+#include <ctype.h> /* for isprint() */
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
@@ -185,8 +185,8 @@ static int device_template_offset = -1;
 /* Forward functions declarations */
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
-int extract_template_number(int template_type, const char* varname);
-int get_template_type(const char* varname);
+int extract_template_number(snmp_info_flags_t template_type, const char* varname);
+snmp_info_flags_t get_template_type(const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -331,7 +331,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 		"Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
-		"Set SNMP version (default=v1, allowed v2c)");
+		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
@@ -350,10 +350,168 @@ void upsdrv_makevartable(void)
 		"Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_PRIVPASSWD,
 		"Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
-	addvar(VAR_VALUE, SU_VAR_AUTHPROT,
-		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
-	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
-		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+
+	/* Construct addvar() for SU_VAR_AUTHPROT: */
+	{ int comma = 0;
+	char tmp_buf[SU_LARGEBUF];
+	char *p = tmp_buf;
+	char *pn; /* proto name to add */
+	size_t remain = sizeof(tmp_buf) - 1;
+	int ret;
+	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+
+	tmp_buf[0] = '\0';
+
+	ret = snprintf(p, remain, "%s",
+		"Set the authentication protocol (");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+	pn = "MD5";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+	pn = "SHA";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+	pn = "SHA256";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+	pn = "SHA384";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+	pn = "SHA512";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+
+	pn = "none supported";
+	ret = snprintf(p, remain, "%s", (comma++ ? "" : pn) );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+
+	ret = snprintf(p, remain, "%s",
+		") used for authenticated SNMPv3 messages (default=MD5 if available)");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+	addvar(VAR_VALUE, SU_VAR_AUTHPROT, tmp_buf);
+	} /* Construct addvar() for AUTHPROTO */
+
+	/* Construct addvar() for SU_VAR_PRIVPROT: */
+	{ int comma = 0;
+	char tmp_buf[SU_LARGEBUF];
+	char *p = tmp_buf;
+	char *pn; /* proto name to add */
+	size_t remain = sizeof(tmp_buf) - 1;
+	int ret;
+	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+
+	tmp_buf[0] = '\0';
+
+	ret = snprintf(p, remain, "%s",
+		"Set the privacy protocol (");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+	pn = "DES";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+	pn = "AES";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+#endif
+#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+	pn = "AES192";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+	pn = "AES256";
+	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+# endif
+#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+
+	pn = "none supported";
+	ret = snprintf(p, remain, "%s", (comma++ ? "" : pn) );
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar(%s)", pn);
+	}
+	p += ret;
+	remain -= ret;
+
+	ret = snprintf(p, remain, "%s",
+		") used for encrypted SNMPv3 messages (default=DES if available)");
+	if (ret < 0 || (uintmax_t)ret > (uintmax_t)remain) {
+		fatalx(EXIT_FAILURE, "Could not addvar()");
+	}
+	p += ret;
+	remain -= ret;
+
+	addvar(VAR_VALUE, SU_VAR_PRIVPROT, tmp_buf);
+	} /* Construct addvar() for PRIVPROTO */
+
 	addvar(VAR_VALUE, SU_VAR_ONDELAY,
 		"Set start delay time after shutdown");
 	addvar(VAR_VALUE, SU_VAR_OFFDELAY,
@@ -557,13 +715,30 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 
-	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
-		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+/* Older CLANG (e.g. clang-3.4) sees short strings in str{n}cmp()
+ * arguments as arrays and claims out-of-bounds accesses
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Warray-bounds"
+#endif
+	if ((strncmp(version, "v1", 2) == 0) || (strncmp(version, "v2c", 3) == 0)) {
+		g_snmp_sess.version = (strncmp(version, "v1", 2) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 		g_snmp_sess.community = (unsigned char *)xstrdup(community);
 		g_snmp_sess.community_len = strlen(community);
 	}
-	else if (strcmp(version, "v3") == 0) {
+	else if (strncmp(version, "v3", 2) == 0) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic pop
+#endif
 		/* SNMP v3 related init */
 		g_snmp_sess.version = SNMP_VERSION_3;
 
@@ -615,14 +790,14 @@ void nut_snmp_init(const char *type, const char *hostname)
 		authProtocol = testvar(SU_VAR_AUTHPROT) ? getval(SU_VAR_AUTHPROT) : "MD5";
 
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
-		if (strcmp(authProtocol, "MD5") == 0) {
+		if (strncmp(authProtocol, "MD5", 3) == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACMD5AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-		if (strcmp(authProtocol, "SHA") == 0) {
+		if (strncmp(authProtocol, "SHA", 3) == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
 		}
@@ -667,14 +842,14 @@ void nut_snmp_init(const char *type, const char *hostname)
 		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
 
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
-		if (strcmp(privProtocol, "DES") == 0) {
+		if (strncmp(privProtocol, "DES", 3) == 0) {
 			g_snmp_sess.securityPrivProto = usmDESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen =  sizeof(usmDESPrivProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-		if (strcmp(privProtocol, "AES") == 0) {
+		if (strncmp(privProtocol, "AES", 3) == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
@@ -923,12 +1098,22 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf[buf_len-1]='\0';
 		}
 		else {
-			len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+			int ret = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+			if (ret < 0)
+				upsdebugx(3, "Failed to retrieve ASN_GAUGE");
+			else
+				len = (size_t)ret;
 		}
 		break;
 	case ASN_TIMETICKS:
 		/* convert timeticks to seconds */
-		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
+		{
+			int ret = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
+			if (ret < 0)
+				upsdebugx(3, "Failed to retrieve ASN_TIMETICKS");
+			else
+				len = (size_t)ret;
+		}
 		break;
 	case ASN_OBJECT_ID:
 		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
@@ -1293,7 +1478,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL)
 	{
-		if (strcmp(info_value, "")) {
+		if (info_value[0] != '\0') {
 			status_set(info_value);
 		}
 	}
@@ -1804,7 +1989,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 
 	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
-	int template_type = get_template_type(su_info_p->info_type);
+	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
 	if (!su_info_p->OID)
 		return base_index;
@@ -1822,6 +2007,11 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			break;
 		case SU_DAISY:
 			template_index_base = device_template_index_base;
+			break;
+		default:
+			/* we should never fall here! */
+			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
+				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
 
@@ -1964,7 +2154,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	int template_count = 0;
 	int base_snmp_index = 0;
 	snmp_info_t cur_info_p;
-	char template_count_var[SU_BUFSIZE];
+	char template_count_var[SU_BUFSIZE * 2];
+	/* Needed *2 to fit a max size_t in snprintf() below,
+	 * even if that should never happen */
 	char tmp_buf[SU_INFOSIZE];
 
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
@@ -2147,7 +2339,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 /* Return the type of template, according to a variable name.
  * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
-int get_template_type(const char* varname)
+snmp_info_flags_t get_template_type(const char* varname)
 {
 	if (!strncmp(varname, "outlet.group", 12)) {
 		upsdebugx(4, "outlet.group template");
@@ -2169,7 +2361,7 @@ int get_template_type(const char* varname)
 
 /* Extract the id number of an instantiated template.
  * Example: return '1' for type = 'outlet.1.desc', -1 if unknown */
-int extract_template_number(int template_type, const char* varname)
+int extract_template_number(snmp_info_flags_t template_type, const char* varname)
 {
 	const char* item_number_ptr = NULL;
 	int item_number = -1;
@@ -2359,7 +2551,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 	char tmpOID[SU_INFOSIZE];
 	char tmpInfo[SU_INFOSIZE];
 	long tmpValue;
-	int phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
+	snmp_info_flags_t phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
 
 	/* Phase specific data */
 	if (!strncmp(type, "input", 5)) {
@@ -2934,7 +3126,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int cmd_offset = 0;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
-	int vartype = -1;
+	snmp_info_flags_t vartype = 0;
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
@@ -3254,7 +3446,7 @@ static int parse_mibconf_args(size_t numargs, char **arg)
 	/* special case for setting some OIDs value at driver startup */
 	if (!strcmp(arg[0], "init")) {
 		/* set value. */
-		if (!strcmp(arg[1], "str")) {
+		if (!strncmp(arg[1], "str", 3)) {
 			ret = nut_snmp_set_str(arg[3], arg[4]);
 		} else {
 			ret = nut_snmp_set_int(arg[3], strtol(arg[4], NULL, 0));

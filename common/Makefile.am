@@ -9,19 +9,34 @@ libparseconf_la_SOURCES = parseconf.c
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
-common.c: $(top_builddir)/include/nut_version.h
+# Surprisingly, for some "make" implementations this dependency means
+# that the "common.c" required for builds below will be seeked in the
+# current directory. So for out-of-tree builds like distcheck, we have
+# to symlink the "real" source to build area:
+common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
 
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-libcommon_la_SOURCES = common.c state.c str.c upsconf.c
-libcommonclient_la_SOURCES = common.c state.c str.c
+libcommon_la_SOURCES = state.c str.c upsconf.c
+libcommonclient_la_SOURCES = state.c str.c
+if BUILDING_IN_TREE
+libcommon_la_SOURCES += common.c
+libcommonclient_la_SOURCES += common.c
+else
+nodist_libcommon_la_SOURCES = common.c
+nodist_libcommonclient_la_SOURCES = common.c
+CLEANFILES = $(top_builddir)/common/common.c
+BUILT_SOURCES = common.c
+endif
+
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

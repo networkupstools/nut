@@ -62,7 +62,7 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
-static void ussleep(long usec)
+static void ussleep(useconds_t usec)
 {
 
 	if (usec == 1)
@@ -164,13 +164,14 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 static int Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
-	int err, size, ep;
+	int err, ep;
+	size_t size;
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, (char*) inBuf, size, 1000);
+	err = usb_bulk_read(udev, ep, (char*) inBuf, (int)size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
@@ -185,7 +186,10 @@ static int Get_USB_Packet(uint8_t *buffer)
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
-	return(size);
+	if (size > INT_MAX)
+		return -1;
+
+	return (int)size;
 }
 
 static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint16_t buflen)
@@ -257,8 +261,8 @@ static usb_device_id_t riello_usb_id[] = {
 	/* various models */
 	{ USB_DEVICE(RIELLO_VENDORID, 0x5500), &cypress_subdriver },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 
@@ -574,8 +578,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -625,8 +633,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -652,8 +664,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);

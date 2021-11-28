@@ -17,9 +17,9 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
-dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
+dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
-m4_version_prereq(2.60, [
+m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
@@ -31,27 +31,7 @@ dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
-have_PKG_CONFIG=yes
-AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
-AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
-    [have_PKG_CONFIG=no],
-    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
-     have_PKG_CONFIG=no
-     dummy_RES=0
-     ifdef([PKG_PROG_PKG_CONFIG], [], [dummy_RES=1])
-     ifdef([PKG_CHECK_MODULES], [], [dummy_RES=2])
-     AS_IF([test "${dummy_RES}" = 0],
-        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
-         dnl The m4 macro below may be not defined if pkg-config package is not
-         dnl installed. Use of ifdef (here and below for e.g. CPPUNIT check)
-         dnl allows to avoid shell syntax errors in generated configure script
-         dnl by defining a dummy macro in-place.
-         ifdef([PKG_CHECK_MODULES], [], [AC_DEFUN([PKG_CHECK_MODULES], [false])])
-         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config], [have_PKG_CONFIG=yes])
-        ])
-])
-AS_IF([test x"$have_PKG_CONFIG" = xno],
-    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+NUT_CHECK_PKGCONFIG
 
 
 dnl Various version related processing
@@ -176,6 +156,7 @@ AC_CHECK_HEADER([limits.h],
 
 AC_CHECK_HEADER([sys/resource.h],
     [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/resource.h>
 ],
@@ -184,19 +165,22 @@ getrlimit(RLIMIT_NOFILE, &limit);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
             [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
      AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
@@ -206,13 +190,15 @@ sem_destroy(&semaphore);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
@@ -338,7 +324,7 @@ dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
 	     and <time.h>.  This macro is deemed obsolete by autotools.])
@@ -498,6 +484,7 @@ AS_IF([test "${nut_with_serial}" != "no"],
     dnl Don't mind the stupid code below, it just probes the tokens and
     dnl sails around compiler warnings
     AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
@@ -519,21 +506,23 @@ getspeed(&baudrate);
         ],
         [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
          nut_have_serial_types=no
+        ]
+     )
+     AC_LANG_POP([C])
+
+     dnl Restore common set-or-discovered CFLAGS
+     CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+     AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_IF([test "${nut_have_serial_types}" = yes],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+         AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
         ])
-
-        dnl Restore common set-or-discovered CFLAGS
-        CFLAGS="${CFLAGS_SAVED_SERIAL}"
-
-        AC_MSG_CHECKING([whether we can build serial drivers])
-        AS_IF([test "${nut_have_serial_types}" = yes],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
-             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
-            ])
-        AS_IF([test "${nut_with_serial}" = "yes"],
-            [AC_MSG_RESULT([yes])],
-            [AC_MSG_RESULT([no])])
-    ])
+     AS_IF([test "${nut_with_serial}" = "yes"],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])])
+])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
@@ -720,8 +709,10 @@ if test "${nut_with_linux_i2c}" != no; then
             )
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [nut_with_linux_i2c="yes"],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])],
+                [], dnl # nut_with_linux_i2c="yes"
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -736,8 +727,12 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c], [],
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"], [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)], [nut_with_linux_i2c="no"])])
+                [i2c],
+                [nut_with_linux_i2c="yes"],
+                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
+                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
+                    [nut_with_linux_i2c="no"])
+                ])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -943,7 +938,7 @@ if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
 		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
-		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" || AC_MSG_ERROR([Can not detect 'srcdir']) ;;
 	esac
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
@@ -1580,7 +1575,12 @@ AC_ARG_WITH([systemdsystemunitdir],
 [
 	case "${withval}" in
 	yes|auto|"")
-		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[AS_IF([test "${withval}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdsystemunitdir=""
+			])
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -1608,7 +1608,12 @@ dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
-		systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[AS_IF([test "${systemdshutdowndir}" = yes],
+				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdshutdowndir=""
+			])
 		;;
 	no)
 		systemdshutdowndir=""
@@ -1632,7 +1637,12 @@ AC_ARG_WITH([systemdtmpfilesdir],
 	[systemdtmpfilesdir=${withval}])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
-		systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			 systemdtmpfilesdir=""
+			])
 		;;
 	no)
 		systemdtmpfilesdir=""
@@ -1800,8 +1810,16 @@ AC_ARG_WITH(augeas-lenses-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+			auglensdir=""
+		fi
 		;;
 	no)
 		auglensdir=""
@@ -1866,8 +1884,16 @@ AC_ARG_WITH(udev-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+			udevdir=""
+		fi
 		;;
 	no)
 		udevdir=""
@@ -1896,8 +1922,16 @@ AC_ARG_WITH(devd-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+			devddir=""
+		fi
 		;;
 	no)
 		devddir=""
@@ -2306,10 +2340,14 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
     [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
         [TOP_BUILDDIR="${ac_pwd}"],
         [TOP_BUILDDIR="`dirname "$0"`"
-         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`"]
+         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
 AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+
+ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
+ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
+AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
@@ -2363,7 +2401,6 @@ AC_CONFIG_FILES([
  scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
- scripts/augeas/nutupsconf.aug
  scripts/augeas/nutupsdconf.aug
  scripts/augeas/nutupsdusers.aug
  scripts/augeas/nutupsmonconf.aug
@@ -2372,7 +2409,6 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
- scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -2395,7 +2431,6 @@ AC_CONFIG_FILES([
  scripts/Solaris/pkginfo
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
- scripts/udev/nut-usbups.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
@@ -2432,6 +2467,20 @@ m4_foreach_w([SCRIPTFILE], [
  dnl e.g. the brace below is empty and bracket gives verbatim varname
  dnl AC_MSG_NOTICE([Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
+])
+
+AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
+m4_foreach_w([SCRIPTFILE], [
+ scripts/augeas/nutupsconf.aug
+ scripts/udev/nut-usbups.rules
+ scripts/devd/nut-usb.conf
+], [
+	AC_MSG_CHECKING([whether to generate SCRIPTFILE])
+	AS_IF([test -s SCRIPTFILE.in && ! test -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
+		[AC_MSG_RESULT(yes)
+		 AC_CONFIG_FILES(SCRIPTFILE)],
+		[AC_MSG_RESULT(no)]
+	)
 ])
 
 AC_OUTPUT

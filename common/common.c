@@ -1,6 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,6 +47,21 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #  undef BUILD_64
 # endif
 #endif
+
+// https://stackoverflow.com/a/12844426/4715872
+#include <sys/types.h>
+#include <limits.h>
+#include <stdlib.h>
+pid_t get_max_pid_t()
+{
+	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
+	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
+	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
+#if defined(LLONG_MAX)  // C99
+	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
+#endif
+	abort();
+}
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -249,7 +265,7 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	long	pid;
+	pid_t	pid = -1;
 	int	ret;
 
 	pidf = fopen(pidfn, "r");
@@ -264,10 +280,17 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	pid = strtol(buf, (char **)NULL, 10);
+	{ // scoping
+		intmax_t _pid = strtol(buf, (char **)NULL, 10); // assuming 10 digits for a long
+		if (_pid <= get_max_pid_t()) {
+			pid = (pid_t)_pid;
+		} else {
+			upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+		}
+	}
 
 	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %ld", pid);
+		upslogx(LOG_NOTICE, "Ignoring invalid pid number %" PRIdMAX, (intmax_t) pid);
 		fclose(pidf);
 		return -1;
 	}
@@ -797,7 +820,7 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -821,7 +844,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_s
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;

@@ -75,7 +75,7 @@ static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), get_voltage_multiplier},
 
 	/* Terminating entry */
-	{-1, -1, NULL}
+	{ 0, 0, NULL }
 };
 
 /* Thermistor table used for temperature lookups

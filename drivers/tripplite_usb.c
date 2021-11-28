@@ -159,7 +159,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001), NULL },
 	
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
@@ -539,14 +539,17 @@ static void usb_comm_fail(int res, const char *msg)
 
 	switch(res) {
 		case -EBUSY:
-			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			upslogx(LOG_WARNING,
+				"%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			break;
 #endif
 
 		default:
-			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
+			upslogx(LOG_WARNING,
+				"%s: Device detached? (error %d: %s)",
+				msg, res, usb_strerror());
 
 			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
 			hd = NULL;
@@ -923,7 +926,7 @@ static int setvar(const char *varname, const char *val)
 		index = atoi(index_str);
 		upslogx(LOG_DEBUG, "outlet.%d.switch = %s", index, val);
 
-		if(!strcasecmp(val, "on") || !strcmp(val, "1")) {
+		if(!strncasecmp(val, "on", 2) || !strncmp(val, "1", 1)) {
 			state = 1;
 		} else {
 			state = 0;

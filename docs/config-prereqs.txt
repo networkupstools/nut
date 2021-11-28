@@ -7,6 +7,16 @@ This chapter aims to list packages with the tools needed on a freshly minimally
 deployed worker to build as many targets of NUT recipes as possible, mainly
 the diverse driver and documentation types.
 
+NUT codebase generally should not depend on particular operating system or
+kernel technology and version, and with the operating systems listed below
+one can benefit from use of containers (jails, zones) to build and test
+against numerous OS distributions on one physical or virtual machine,
+e.g. to cover non-regression with older tool kits while taking advantage
+of new releases.
+
+* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
+  up the multi-arch Linux LXC container farm for NUT CI]
+
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
 both, at a disk space cost.
@@ -21,9 +31,12 @@ all features enabled; chapters below concern just with building it.
 General call to Test the ability to configure and build
 -------------------------------------------------------
 
+Check out from git, generate files and configure to tailor to your build
+environment, and build some tests:
+
 ----
-:; mkdir -p nut ; cd nut
-:; git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
 :; ./autogen.sh && \
     ./configure --with-doc=all --with-all --with-cgi && \
     make all && make check && make spellcheck
@@ -31,6 +44,17 @@ General call to Test the ability to configure and build
 
 NOTE: You can toggle some build options to check different dependency
 variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
+
+NOTE: For reproducible runs of various pre-sets of configuration during
+development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
+(and other) environment variable settings that it supports. A minimal run
+with it is just:
++
+----
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; ./ci_build.sh
+----
 
 NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 
@@ -48,12 +72,19 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
 * Parallel builds should be okay in current development version (is a bug
   to log, if not), but may be failure-prone in 2.7.4 and earlier releases
 
-Debian 10
-~~~~~~~~~
+Debian 10/11
+~~~~~~~~~~~~
+
+Being a popular baseline among Linux distributions, Debian is an important
+build target. Related common operating systems include Ubuntu and customized
+distros for Raspberry Pi, as well as many others. The package list below
+should largely apply to those as well, however note that some well-known
+package names tend to differ. A few of those are noted below.
 
 ----
 :; apt-get update
 
+# NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     ccache time \
     git python curl \
@@ -65,6 +96,8 @@ Debian 10
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
+# NOTE: Some Debian-like distributions, e.g. Ubuntu, ship
+# a "libssl-dev" instead of "openssl-dev" by name
 :; apt-get install \
     libcppunit-dev \
     openssl-dev libnss3-dev \
@@ -92,6 +125,14 @@ Alternatives that can depend on your system's other packaging choices:
 :; apt-get install libneon27-gnutls-dev
 ----
 
+Over time, Debian and Ubuntu had different packages and libraries providing
+the actual methods for I2C; if your system lacks the `libi2c` (and so fails
+to `./configure --with-all`), try adding the following packages:
++
+----
+:; apt-get install build-essential git-core libi2c-dev i2c-tools lm-sensors
+----
+
 For cross-builds (note that not everything supports multilib approach,
 limiting standard package installations to one or another implementation;
 in that case local containers each with one ARCH may be a better choice,
@@ -117,6 +158,9 @@ Note that `PATH` for builds on BSD should include `local`:
 :; PATH=/usr/local/libexec/ccache:/usr/local/bin:/usr/bin:$PATH
 :; export PATH
 ----
+
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
 
 ----
 :; pkg install \
@@ -161,6 +205,105 @@ by package).
 NOTE: For Jenkins agents, also need to `pkg install openjdk8` (or 11+) --
 and do note its further OS configuration suggestions for special filesystem
 mounts.
+
+Due to BSD specific paths *when not using* an implementation of `pkg-config`
+or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT m4
+scripts), better use this routine to test the config/build:
+----
+:; ./configure --with-doc=all --with-all --with-cgi \
+    --without-avahi --without-powerman --without-modbus \
+    ### CPPFLAGS="-I/usr/local/include -I/usr/include" LDFLAGS="-L/usr/local/lib -L/usr/lib"
+----
+
+Note the lack of `pkg-config` also precludes libcppunit tests, although they
+also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+OpenBSD 6.4
+~~~~~~~~~~~
+
+Note that `PATH` for builds on BSD should include `local`:
+
+----
+:; PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+:; export PATH
+----
+
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
+
+OpenBSD delivers many versions of numerous packages, you should specify
+your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
+
+During builds, you may have to tell system dispatcher scripts which version
+to use, e.g.: `export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10`
+
+To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+base installation. It is not required for "legacy" builds arranged by just
+`autogen.sh` and `configure` scripts.
+
+NOTE: The OpenBSD 6.4 `install64.iso` installation includes a set of packages
+that seems to exceed whatever is available on network mirrors; for example,
+the CD image included `clang` program while it is not available to `pkg_add`,
+at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
+mirror. The `gcc` version on CD image differed notably from that in the
+networked repository (4.2.x vs 4.9.x)
+
+----
+:; pkg_add \
+    git python curl \
+    gmake autoconf automake libltdl libtool \
+    valgrind \
+    cppcheck \
+    pkgconf \
+    gcc clang \
+    asciidoc source-highlight py-pygments dblatex aspell \
+    gd
+
+# Need to find proper package name and/or mirror for this:
+:; pkg_add clang
+
+:; pkg_add \
+    cppunit \
+    openssl nss \
+    augeas \
+    libusb1 \
+    neon \
+    net-snmp \
+    avahi
+
+# Select a LUA-5.1 (or possibly 5.2?) version
+:; pkg_add \
+    lua
+
+:; pkg_add \
+    bash dash busybox ksh93
+----
+
+NOTE: With OpenBSD 6.4, building against freeipmi failed: its libtool
+recipes referenced `-largp` which did not get installed in the system.
+Maybe some more packages are needed explicitly?
++
+----
+:; pkg_add \
+    freeipmi
+----
+
+Recommended:
+----
+:; pkg_add ccache
+:; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
+        for TOOL in cpp gcc g++ clang clang++ clang-cpp ; do \
+            ln -s ../../local/bin/ccache "$TOOL" ; \
+        done ; \
+   )
+----
+
+For compatibility with common setups on other operating systems, can add
+dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
+`gcc` installed by package) into `/usr/lib/ccache`.
+
+NOTE: For Jenkins agents, also need to `pkg_add jre` or `pkg_add jdk`
+(pick version 1.8 or 8, or 11+).
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT m4

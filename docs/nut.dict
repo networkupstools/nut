@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2771 utf-8
+personal_ws-1.1 en 2799 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -492,6 +492,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+KRTS
 KTTS
 Kain
 Kaminski
@@ -1174,6 +1175,7 @@ UPStation
 UPower
 URI
 USBDEVFS
+USBDevice
 USERADDed
 USV
 USVs
@@ -1408,6 +1410,7 @@ baudrate
 baytech
 baz
 bbh
+bcdDevice
 bcmxcp
 bd
 beepertone
@@ -1895,6 +1898,7 @@ jessie
 journalctl
 jpg
 jpgraph
+jre
 json
 kVA
 kadets
@@ -1913,6 +1917,7 @@ ktrace
 labcd
 lan
 langid
+largp
 lasaine
 ld
 le
@@ -1944,6 +1949,7 @@ libpowerman
 libre
 libs
 libsnmp
+libssl
 libtool
 libupsclient
 libusb
@@ -2291,6 +2297,7 @@ productid
 prog
 prtconf
 psu
+pty
 pw
 pwl
 pwmib
@@ -2468,6 +2475,7 @@ srv
 srw
 ss
 sshd
+ssize
 ssl
 stan
 startIP
@@ -2486,11 +2494,14 @@ strarr
 strcasecmp
 strcat
 strchr
+strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
+strncasecmp
+strncmp
 struct
 structs
 sts
@@ -2513,6 +2524,7 @@ subtree
 sudo
 suid
 superset
+suseconds
 sv
 svc
 svcadm
@@ -2609,6 +2621,7 @@ udev
 udevadm
 ufw
 ugen
+uint
 ukUNV
 ul
 un
@@ -2687,6 +2700,7 @@ usbups
 usbus
 usd
 usec
+useconds
 useradd
 userid
 usermap

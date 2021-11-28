@@ -124,7 +124,7 @@ static int parse_args(size_t numargs, char **arg)
 		}
 
 		if (!strcasecmp(arg[1], prefix.status)) {
-			outlet.status = strcasecmp(arg[2], "off");
+			outlet.status = strncasecmp(arg[2], "off", 3);
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {

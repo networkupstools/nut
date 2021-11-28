@@ -220,7 +220,7 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 			return 1;	/* good */
 		}
 
-		if (!strcasecmp(tmp->cmd, "all")) {
+		if (!strncasecmp(tmp->cmd, "all", 3)) {
 			return 1;	/* good */
 		}
 	}
@@ -442,7 +442,7 @@ static void user_parse_arg(size_t numargs, char **arg)
 	}
 
 	/* handle 'foo = bar' (split form) */
-	if (!strcmp(arg[1], "=")) {
+	if (!strncmp(arg[1], "=", 1)) {
 
 		/*   0 1   2      3       4  ... */
 		/* foo = bar <rest1> <rest2> ... */

@@ -24,13 +24,18 @@
  *
  */
 
-#include <ctype.h> /* for isprint() */
-
 /* NUT SNMP common functions */
+#include "common.h"	/* includes "config.h" which must be the first header */
+/*
+#include "config.h"
 #include "main.h"
 #include "nut_float.h"
 #include "nut_stdint.h"
+*/
 #include "snmp-ups.h"
+#include "timehead.h" /* time.h => strptime() */
+
+#include <ctype.h> /* for isprint() */
 
 /***********************************************************************
  * Subdrivers shared helpers functions

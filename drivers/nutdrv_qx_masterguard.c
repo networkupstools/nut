@@ -28,11 +28,11 @@
 #define MASTERGUARD_VERSION "Masterguard 0.01"
 
 /* series (for un-SKIP) */
-char masterguard_my_series = '?';
+static char masterguard_my_series = '?';
 /* slave address for commands that require it */
 static char masterguard_my_slaveaddr[3] = "??"; /* null-terminated for strtol() in claim() */
 /* next slaveaddr to use after the SS command (which needs the old one) has been run */
-int masterguard_next_slaveaddr;
+static int masterguard_next_slaveaddr;
 /* output current/power computation */
 static int masterguard_my_power = 0;
 /* battery voltage computation */
@@ -239,10 +239,11 @@ static int masterguard_ups_power(item_t *item, char *value, const size_t valuele
 }
 
 /* helper routine, not to be called from table */
-static int masterguard_output_current_fraction(item_t *item, char *value, const size_t valuelen, float fraction) {
+static int masterguard_output_current_fraction(item_t *item, char *value, const size_t valuelen, double fraction) {
 	NUT_UNUSED_VARIABLE(item);
 
-	snprintf(value, valuelen, "%.2f", fraction * masterguard_my_power / strtod(dstate_getinfo("output.voltage") , NULL) + 0.005);
+	snprintf(value, valuelen, "%.2f",
+		fraction * masterguard_my_power / strtod(dstate_getinfo("output.voltage") , NULL) + 0.005);
 	return 0;
 }
 
@@ -535,8 +536,8 @@ ill:	upsdebugx(2, "battery test: illegal duration %s", value);
 static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) {
 	char *p;
 	char t = 's';
-	long i;
-	double f;
+	long i = 0;
+	double f = 0.0;
 	char s[80];
 
 	if (value[0] == '\0') {
@@ -573,26 +574,35 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 				return -1;
 		}
 	} else if (strncmp(item->dfl, "thms", 4) == 0) {
-		int t, h, m, sec;
-		if (sscanf(item->value, "%d:%d:%d:%d", &t, &h, &m, &sec) == 4) {
-			if (t < 0 || t > 9999 || h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59) goto ill;
+		int tt, h, m, sec;
+		if (sscanf(item->value, "%d:%d:%d:%d", &tt, &h, &m, &sec) == 4) {
+			if (tt < 0 || tt > 9999 || h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59) goto ill;
 		} else {
 			long l;
-			char *p;
+			char *pl;
 
-			l = strtol(value, &p, 10);
-			if (*p != '\0') goto ill;
+			l = strtol(value, &pl, 10);
+			if (*pl != '\0') goto ill;
 			sec = l % 60; l /= 60;
 			m = l % 60; l /= 60;
 			h = l % 24; l /= 24;
 			if (l > 9999) goto ill;
-			t = l;
+			tt = (int)l;
 		}
-		snprintf(s, sizeof s, "%04d:%02d:%02d:%02d", t, h, m, sec);
+		snprintf(s, sizeof s, "%04d:%02d:%02d:%02d", tt, h, m, sec);
 	} else {
 		upsdebugx(2, "setvar: unknown dfl %s", item->dfl);
 		return -1;
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	switch (t) {
 		case 'd':
 			snprintf(value, valuelen, item->command, i);
@@ -604,6 +614,9 @@ static int masterguard_setvar(item_t *item, char *value, const size_t valuelen) 
 			snprintf(value, valuelen, item->command, s);
 			break;
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	return 0;
 ill:
 	upsdebugx(2, "setvar: illegal %s value %s", item->dfl, value);
@@ -898,17 +911,17 @@ how to report nominal hold time at half/full load?
 
 
 /* commands supported by A series */
-char *masterguard_commands_a[] = {
+static char *masterguard_commands_a[] = {
 	"Q", "Q1", "Q3", "T", "TL", "S", "C", "CT", "WH", "M", "N", "O", "DECO", "DRC", "SRC", "FLT", "FCLR", "G", "SS", "GS", "MSO", "PNV", "FOFF", "FON", "TUD", "GBS", "SSN", "GSN", NULL
 };
 
 /* commands supported by E series */
-char *masterguard_commands_e[] = {
+static char *masterguard_commands_e[] = {
 	"Q", "Q1", "Q3", "PSR", "T", "TL", "S", "C", "CT", "WH", "DRC", "SRC", "FLT", "FCLR", "SS", "GS", "MSO", "PNV", "FOFF", "FON", "TUD", "GBS", "SSN", "GSN", "BUS", "V", "INVDC", "BUSP", "BUSN", NULL
 };
 
 /* claim function. fetch some mandatory values, disable unsupported commands, set enum for supported output voltages */
-int masterguard_claim(void) {
+static int masterguard_claim(void) {
 	item_t *item;
 	/* mandatory values */
 	char *mandatory[] = {
@@ -983,7 +996,7 @@ int masterguard_claim(void) {
 
 	/* set SKIP flag for unimplemented commands */
 	for (item = masterguard_qx2nut; item->info_type != NULL; item++) {
-		int match;
+		int match = 0;
 		if (item->command == NULL || item->command[0] == '\0') continue;
 		for (sp = commands; sp != NULL; sp++) {
 			const char *p = *sp, *q = item->command;
@@ -1024,7 +1037,7 @@ int masterguard_claim(void) {
 }
 
 
-void masterguard_makevartable(void) {
+static void masterguard_makevartable(void) {
 	addvar(VAR_VALUE, "series", "Series (A/E)");
 	addvar(VAR_VALUE, "slave_address", "Slave address (UPS id) to match");
 	addvar(VAR_VALUE, "input_fault_voltage", "Input fault voltage (whatever that means)");
