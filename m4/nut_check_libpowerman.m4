@@ -73,7 +73,18 @@ if test -z "${nut_have_libpowerman_seen}"; then
 
 	dnl check if libpowerman is usable
 	AC_CHECK_HEADERS(libpowerman.h, [nut_have_libpowerman=yes], [nut_have_libpowerman=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(pm_connect, [], [nut_have_libpowerman=no])
+	AC_CHECK_FUNCS(pm_connect, [], [
+		dnl Some systems may just have libpowerman in their
+		dnl standard paths, but not the pkg-config data
+		AS_IF([test "${nut_have_libpowerman}" = "yes" && test "$POWERMAN_VERSION" = "none" && test -z "$LIBS"],
+			[AC_MSG_CHECKING([if libpowerman is just present in path])
+			 LIBS="-L/usr/lib -L/usr/local/lib -lpowerman"
+			 unset ac_cv_func_pm_connect || true
+			 AC_CHECK_FUNCS(pm_connect, [], [nut_have_libpowerman=no])
+			 AC_MSG_RESULT([${nut_have_libpowerman}])
+			], [nut_have_libpowerman=no]
+		)]
+	)
 
 	if test "${nut_have_libpowerman}" = "yes"; then
 		LIBPOWERMAN_CFLAGS="${CFLAGS}"
