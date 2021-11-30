@@ -1712,7 +1712,12 @@ bool_t load_mib2nut(const char *mib)
 	bool_t mibIsAuto = (0 == strcmp(mib, "auto"));
 	bool_t mibSeen = FALSE; /* Did we see the MIB name while walking mib2nut[]? */
 
-	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
+	upsdebugx(2, "SNMP UPS driver: entering %s(%s) to detect "
+		"proper MIB for device [%s] (host %s)",
+		__func__, mib,
+		upsname ? upsname : device_name,
+		device_path // the "port" from config section is hostname/IP for networked drivers
+		);
 
 	/* First, try to match against sysOID, if no MIB was provided.
 	 * This should speed up init stage
@@ -1771,7 +1776,9 @@ bool_t load_mib2nut(const char *mib)
 		mibname = m2n->mib_name;
 		mibvers = m2n->mib_version;
 		alarms_info = m2n->alarms_info;
-		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
+		upsdebugx(1, "%s: using %s MIB for device [%s] (host %s)",
+			__func__, mibname,
+			upsname ? upsname : device_name, device_path);
 		return TRUE;
 	}
 
@@ -1779,7 +1786,8 @@ bool_t load_mib2nut(const char *mib)
 	if (!mibIsAuto) {
 		if (mibSeen) {
 			fatalx(EXIT_FAILURE, "Requested 'mibs' value '%s' "
-				"did not match this device", mib);
+				"did not match this device [%s] (host %s)",
+				mib, upsname ? upsname : device_name, device_path);
 		} else {
 			/* String not seen during mib2nut[] walk -
 			 * and if we had no hits, we walked it all
@@ -1787,7 +1795,8 @@ bool_t load_mib2nut(const char *mib)
 			fatalx(EXIT_FAILURE, "Unknown 'mibs' value: %s", mib);
 		}
 	} else {
-		fatalx(EXIT_FAILURE, "No supported device detected");
+		fatalx(EXIT_FAILURE, "No supported device detected at [%s] (host %s)",
+			upsname ? upsname : device_name, device_path);
 	}
 
 	/* Should not get here thanks to fatalx() above, but need to silence a warning */
