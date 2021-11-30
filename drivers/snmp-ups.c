@@ -1724,7 +1724,8 @@ bool_t load_mib2nut(const char *mib)
 	 * (Note: sysOID points the device main MIB entry point) */
 	if (mibIsAuto)
 	{
-		upsdebugx(2, "%s: trying the new match_sysoid() method", __func__);
+		upsdebugx(2, "%s: trying the new match_sysoid() method with %s",
+			__func__, mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
 			if ((m2n = match_sysoid()) != NULL)
