@@ -1728,8 +1728,17 @@ bool_t load_mib2nut(const char *mib)
 			__func__, mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
+			upsdebugx(3, "%s: trying the new match_sysoid() method: attempt #%d",
+				__func__, (i+1));
 			if ((m2n = match_sysoid()) != NULL)
 				break;
+
+			if (m2n == NULL)
+				upsdebugx(3, "%s: failed with new match_sysoid() method",
+					__func__);
+			else
+				upsdebugx(3, "%s: found something with new match_sysoid() method",
+					__func__);
 		}
 	}
 
@@ -1740,9 +1749,12 @@ bool_t load_mib2nut(const char *mib)
 			/* Is there already a MIB name provided? */
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
+				upsdebugx(2, "%s: skip the \"%s\" entry which "
+					" is neither \"auto\" nor a name in the mapping table",
+					__func__, mib);
 				continue;
 			}
-			upsdebugx(2, "%s: trying classic method with '%s' mib",
+			upsdebugx(2, "%s: trying classic sysOID matching method with '%s' mib",
 				__func__, mib2nut[i]->mib_name);
 
 			/* Device might not support this MIB, but we want to
