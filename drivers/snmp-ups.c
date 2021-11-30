@@ -1712,7 +1712,7 @@ bool_t load_mib2nut(const char *mib)
 	bool_t mibIsAuto = (0 == strcmp(mib, "auto"));
 	bool_t mibSeen = FALSE; /* Did we see the MIB name while walking mib2nut[]? */
 
-	upsdebugx(2, "SNMP UPS driver: entering %s(%s) to detect "
+	upsdebugx(1, "SNMP UPS driver: entering %s(%s) to detect "
 		"proper MIB for device [%s] (host %s)",
 		__func__, mib,
 		upsname ? upsname : device_name,
@@ -1724,7 +1724,7 @@ bool_t load_mib2nut(const char *mib)
 	 * (Note: sysOID points the device main MIB entry point) */
 	if (mibIsAuto)
 	{
-		upsdebugx(1, "%s: trying the new match_sysoid() method", __func__);
+		upsdebugx(2, "%s: trying the new match_sysoid() method", __func__);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
 			if ((m2n = match_sysoid()) != NULL)
@@ -1741,7 +1741,7 @@ bool_t load_mib2nut(const char *mib)
 				/* "mib" is neither "auto" nor the name in mapping table */
 				continue;
 			}
-			upsdebugx(1, "%s: trying classic method with '%s' mib",
+			upsdebugx(2, "%s: trying classic method with '%s' mib",
 				__func__, mib2nut[i]->mib_name);
 
 			/* Device might not support this MIB, but we want to
@@ -1756,13 +1756,13 @@ bool_t load_mib2nut(const char *mib)
 
 			if (match_model_OID() != TRUE)
 			{
-				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!",
+				upsdebugx(3, "%s: testOID provided and doesn't match MIB '%s'!",
 					__func__, mib2nut[i]->mib_name);
 				snmp_info = NULL;
 				continue;
 			}
 			else
-				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!",
+				upsdebugx(3, "%s: testOID provided and matches MIB '%s'!",
 					__func__, mib2nut[i]->mib_name);
 
 			/* MIB found */
