@@ -1724,7 +1724,7 @@ bool_t load_mib2nut(const char *mib)
 	 * (Note: sysOID points the device main MIB entry point) */
 	if (mibIsAuto)
 	{
-		upsdebugx(1, "trying the new match_sysoid() method");
+		upsdebugx(1, "%s: trying the new match_sysoid() method", __func__);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
 			if ((m2n = match_sysoid()) != NULL)
@@ -1741,7 +1741,8 @@ bool_t load_mib2nut(const char *mib)
 				/* "mib" is neither "auto" nor the name in mapping table */
 				continue;
 			}
-			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
+			upsdebugx(1, "%s: trying classic method with '%s' mib",
+				__func__, mib2nut[i]->mib_name);
 
 			/* Device might not support this MIB, but we want to
 			 * track that the name string is valid for diags below
@@ -1755,12 +1756,14 @@ bool_t load_mib2nut(const char *mib)
 
 			if (match_model_OID() != TRUE)
 			{
-				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!",
+					__func__, mib2nut[i]->mib_name);
 				snmp_info = NULL;
 				continue;
 			}
 			else
-				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!",
+					__func__, mib2nut[i]->mib_name);
 
 			/* MIB found */
 			m2n = mib2nut[i];
