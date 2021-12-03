@@ -63,7 +63,7 @@
 #define FMT_DAYS   "                      %d    %d    %d    %d    %d    %d    %d"
 
 /* Date, time and programming group */
-static int const BASE_YEAR = 1998;
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
 static int device_day, device_month, device_year;
 static int device_hour, device_minute, device_second;
 static int power_off_hour, power_off_minute;
@@ -216,19 +216,20 @@ static void save_ups_config(void)
 	unsigned char configuration_packet[12];
 
 	/* Prepare configuration packet */
-	configuration_packet[0] = 0xCF;
-	configuration_packet[1] = host_hour;
-	configuration_packet[2] = host_minute;
-	configuration_packet[3] = host_second;
-	configuration_packet[4] = power_on_hour;
-	configuration_packet[5] = power_on_minute;
-	configuration_packet[6] = power_off_hour;
-	configuration_packet[7] = power_off_minute;
-	configuration_packet[8] = host_week << 5;
-	configuration_packet[8] = configuration_packet[8] | host_day;
-	configuration_packet[9] = host_month << 4;
-	configuration_packet[9] = configuration_packet[9] | (host_year - BASE_YEAR);
-	configuration_packet[10] = device_days_off;
+	/* FIXME? Check for overflows with int => char truncations? */
+	configuration_packet[0] = (unsigned char)0xCF;
+	configuration_packet[1] = (unsigned char)host_hour;
+	configuration_packet[2] = (unsigned char)host_minute;
+	configuration_packet[3] = (unsigned char)host_second;
+	configuration_packet[4] = (unsigned char)power_on_hour;
+	configuration_packet[5] = (unsigned char)power_on_minute;
+	configuration_packet[6] = (unsigned char)power_off_hour;
+	configuration_packet[7] = (unsigned char)power_off_minute;
+	configuration_packet[8] = (unsigned char)(host_week << 5);
+	configuration_packet[8] = (unsigned char)configuration_packet[8] | (unsigned char)host_day;
+	configuration_packet[9] = (unsigned char)(host_month << 4);
+	configuration_packet[9] = (unsigned char)configuration_packet[9] | (unsigned char)(host_year - BASE_YEAR);
+	configuration_packet[10] = (unsigned char)device_days_off;
 
 	/* MSB zero */
 	configuration_packet[10] = configuration_packet[10] & (~(0x80));
@@ -237,7 +238,8 @@ static void save_ups_config(void)
 	for (i = 0; i < 11; i++) {
 		checksum += configuration_packet[i];
 	}
-	configuration_packet[11] = checksum % 256;
+	/* FIXME? Does truncation to char have same effect as %256 ? */
+	configuration_packet[11] = (unsigned char)(checksum % 256);
 
 	/* Send final packet and checksum to serial port */
 	for (i = 0; i < 12; i++) {
