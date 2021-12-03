@@ -915,7 +915,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # an "erroneous" `1` as exit code. Why oh why?..
                 # (UPDATE: because expr returns boolean, and calculated 0 is false)
                 BUILDSTODO="`expr $BUILDSTODO - 1`" || BUILDSTODO=0
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
@@ -939,8 +945,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
-                    echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
                 fi
             done
             # TODO: Similar loops for other variations like TESTING,
