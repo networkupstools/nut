@@ -124,7 +124,7 @@ static oid *nut_usmHMACSHA1AuthProtocol;
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 static oid *nut_usmDESPrivProtocol;
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 static oid *nut_usmAES192PrivProtocol;
 # endif
@@ -291,7 +291,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol */
 
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
 						"usmAES192PrivProtocol");
@@ -307,7 +307,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 # endif /* NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol */
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 
 #if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
 	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
@@ -677,7 +677,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			}
 			else
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 			if (strcmp(sec->privProtocol, "AES192") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAES192PrivProtocol;
@@ -696,7 +696,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			}
 			else
 # endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 			if (strncmp(sec->privProtocol, "DES", 3) != 0) {
 #else
@@ -884,8 +884,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
-	if (max_threads_scantype > 0)
-		sem_init(semaphore_scantype, 0, max_threads_scantype);
+	if (max_threads_scantype > 0) {
+		if (SIZE_MAX > UINT_MAX && max_threads_scantype > UINT_MAX) {
+			upsdebugx(1,
+				"WARNING: %s: Limiting max_threads_scantype to range acceptable for sem_init()",
+				__func__);
+			max_threads_scantype = UINT_MAX - 1;
+		}
+		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+	}
 # endif /* HAVE_SEMAPHORE */
 
 #endif /* HAVE_PTHREAD */

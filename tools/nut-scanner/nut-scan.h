@@ -33,6 +33,7 @@
 
 #include "config.h"
 #include <sys/types.h>
+#include "nut_stdint.h"
 
 #include <nutscan-init.h>
 #include <nutscan-device.h>
@@ -139,8 +140,9 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
-extern sem_t semaphore;
-sem_t * nutscan_semaphore();
+/* Expose shared libnutscanner semaphore for overall thread count
+ * limited across different scanning methods (protocols/media): */
+sem_t * nutscan_semaphore(void);
 # endif
 #endif
 

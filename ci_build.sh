@@ -266,6 +266,10 @@ build_to_only_catch_errors() {
 }
 
 can_clean_check() {
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] ; then
+        # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
+        return 1
+    fi
     if [ -s Makefile ] && [ -e .git ] ; then
         return 0
     fi
@@ -895,7 +899,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || BUILDSTODO=0
                     continue
                 }
 
@@ -909,27 +913,44 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                # (UPDATE: because expr returns boolean, and calculated 0 is false)
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || BUILDSTODO=0
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                         }
                     else
                         optional_maintainer_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                         }
                     fi
+                    echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    $MAKE distclean -k || true
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
                 fi
             done
             # TODO: Similar loops for other variations like TESTING,
@@ -938,11 +959,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
-                    SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                        SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    fi
                 } || {
                     RES=$?
                     FAILED="${FAILED} [final_maintainer_clean]"
                 }
+                echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
 
             if [ -n "$SUCCEEDED" ]; then

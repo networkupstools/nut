@@ -22,10 +22,11 @@
 
 */
 
+#include "main.h"	/* Includes "config.h", must be first */
+
 #include <time.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "main.h"
 #include "serial.h"
 #include "nut_float.h"
 #include "microsol-common.h"
@@ -104,13 +105,15 @@ int load_power_factor, nominal_power;
 
 /**
  * Convert standard days string to firmware format
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
 static char *convert_days(char *cop)
 {
 	static char alt[8];
 
 	int ish, fim;
+	/* FIXME? Are range-checks needed for values more than 6? wire noise etc? */
 	if (host_week == 6)
 		ish = 0;
 	else
@@ -119,10 +122,15 @@ static char *convert_days(char *cop)
 	fim = 7 - ish;
 	/* rotate left only 7 bits */
 
-	memcpy(alt, &cop[ish], fim);
+	if (fim > 0) {
+		memcpy(alt, &cop[ish], (size_t)fim);
+	} else {
+		fatalx(EXIT_FAILURE, "%s: value out of range: %d (%d)",
+			__func__, fim, ish);
+	}
 
 	if (ish > 0)
-		memcpy(&alt[fim], cop, ish);
+		memcpy(&alt[fim], cop, (size_t)ish);
 
 	alt[7] = 0;		/* string terminator */
 
@@ -148,7 +156,8 @@ static int bitstring_to_binary(char *binStr)
 
 /**
  * Revert firmware format to standard string binary days
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
 static unsigned char revert_days(unsigned char firmware_week)
 {
@@ -582,7 +591,8 @@ static void get_base_info(void)
 			hourshut = power_off_hour;
 			minshut = power_off_minute;
 		} else {
-			/* If the UPS is to be powered off too, give a 5-minute grace time to shutdown hosts */
+			/* If the UPS is to be powered off too, give
+			 * a 5-minute grace time to shutdown hosts */
 			if (power_off_minute < 5) {
 				if (power_off_hour > 1)
 					hourshut = power_off_hour - 1;
