@@ -45,7 +45,8 @@ int nutscan_load_upsclient_library(const char *libname_path);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
-sem_t semaphore;
+/* Shared by library consumers, exposed by nutscan_semaphore() below */
+static sem_t semaphore;
 
 sem_t * nutscan_semaphore(void)
 {
