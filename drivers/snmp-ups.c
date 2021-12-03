@@ -472,7 +472,7 @@ void upsdrv_makevartable(void)
 	p += ret;
 	remain -= ret;
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 	pn = "AES192";
 	ret = snprintf(p, remain, "%s%s", (comma++ ? ", " : ""), pn );
@@ -491,7 +491,7 @@ void upsdrv_makevartable(void)
 	p += ret;
 	remain -= ret;
 # endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 
 	pn = "none supported";
 	ret = snprintf(p, remain, "%s", (comma++ ? "" : pn) );
@@ -855,7 +855,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		}
 		else
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 		if (strcmp(privProtocol, "AES192") == 0) {
 			g_snmp_sess.securityPrivProto = usmAES192PrivProtocol;
@@ -870,7 +870,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		}
 		else
 # endif
-#endif
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 privProtocol: %s", privProtocol);
 
 		/* set the privacy key to a MD5/SHA1 hashed version of our

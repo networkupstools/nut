@@ -274,7 +274,7 @@ static void show_usage()
 			"AES"
 			);
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
@@ -287,7 +287,7 @@ static void show_usage()
 			"AES256"
 			);
 # endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for encrypted SNMPv3 messages (default=DES if available)\n"

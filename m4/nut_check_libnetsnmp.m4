@@ -279,6 +279,21 @@ oid * pProto = usmHMACSHA1AuthProtocol;
 			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 0, [Variable or macro by this name is not resolvable])
 			])
 
+		AC_MSG_CHECKING([for defined NETSNMP_DRAFT_BLUMENTHAL_AES_04])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUMENTHAL_AES_04 is 1 */
+],
+[]
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 0, [Variable or macro by this name is not resolvable])
+			])
+
 	fi
 	AC_LANG_POP([C])
 
