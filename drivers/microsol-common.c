@@ -105,7 +105,8 @@ int load_power_factor, nominal_power;
 
 /**
  * Convert standard days string to firmware format
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
 static char *convert_days(char *cop)
 {
@@ -149,7 +150,8 @@ static int bitstring_to_binary(char *binStr)
 
 /**
  * Revert firmware format to standard string binary days
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
 static unsigned char revert_days(unsigned char firmware_week)
 {
@@ -583,7 +585,8 @@ static void get_base_info(void)
 			hourshut = power_off_hour;
 			minshut = power_off_minute;
 		} else {
-			/* If the UPS is to be powered off too, give a 5-minute grace time to shutdown hosts */
+			/* If the UPS is to be powered off too, give
+			 * a 5-minute grace time to shutdown hosts */
 			if (power_off_minute < 5) {
 				if (power_off_hour > 1)
 					hourshut = power_off_hour - 1;
