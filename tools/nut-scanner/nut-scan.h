@@ -140,7 +140,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 extern sem_t semaphore;
-sem_t * nutscan_semaphore();
+sem_t * nutscan_semaphore(void);
 # endif
 #endif
 
