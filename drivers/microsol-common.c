@@ -465,7 +465,7 @@ static void refresh_host_time(void)
 /** Query shut-down schedule configuration */
 static void setup_poweroff_schedule(void)
 {
-	int i1 = 0, i2 = 0;
+	bool_t i1 = 0, i2 = 0;
 	char *daysoff;
 
 	refresh_host_time();
