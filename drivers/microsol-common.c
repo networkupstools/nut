@@ -559,7 +559,7 @@ static void resynchronize_packet(void) {
 static void get_base_info(void)
 {
 	unsigned char packet[PACKET_SIZE];
-	unsigned int tam;
+	ssize_t tam;
 
 	if (testvar("battext")) {
 		battery_extension = atoi(getval("battext"));
@@ -575,11 +575,11 @@ static void get_base_info(void)
 
 	upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4) {
-		upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
+		upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 	}
-	comm_receive(packet, tam);
+	comm_receive(packet, (size_t)tam);
 
 	if (!detected) {
 		fatalx(EXIT_FAILURE, NO_SOLIS);
@@ -629,7 +629,7 @@ static void get_base_info(void)
 static void get_updated_info(void)
 {
 	unsigned char temp[256];
-	unsigned int tam;
+	ssize_t tam;
 
 	check_shutdown_schedule();
 
@@ -639,14 +639,14 @@ static void get_updated_info(void)
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, temp, PACKET_SIZE, 3, 0);
 
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4)
-		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 
 	packet_parsed = false;
 	if (temp[24] == RESP_END) {
 		/* Packet boundary found, process packet */
-		comm_receive(temp, tam);
+		comm_receive(temp, (size_t)tam);
 
 		packet_parsed = true;
 	} else {
