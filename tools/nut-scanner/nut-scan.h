@@ -140,7 +140,8 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
-extern sem_t semaphore;
+/* Expose shared libnutscanner semaphore for overall thread count
+ * limited across different scanning methods (protocols/media): */
 sem_t * nutscan_semaphore(void);
 # endif
 #endif
