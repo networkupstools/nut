@@ -94,6 +94,10 @@ void nutscan_init(void)
  * if-else proposition? At least when initializing?
  */
 # ifdef HAVE_SEMAPHORE
+	/* NOTE: This semaphore may get re-initialized in nut-scanner program
+	 * after parsing command-line arguments. It calls nutscan_init() before
+	 * parsing CLI, to know about available libs and to set defaults below.
+	 */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
 		upsdebugx(1,
 			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
