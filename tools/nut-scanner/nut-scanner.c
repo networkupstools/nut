@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
+#include "common.h"	/* Must be first include to pull "config.h" */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "common.h"
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
