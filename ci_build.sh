@@ -899,7 +899,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || BUILDSTODO=0
                     continue
                 }
 
@@ -914,7 +914,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
                 # (UPDATE: because expr returns boolean, and calculated 0 is false)
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || BUILDSTODO=0
                 echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
