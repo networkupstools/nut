@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "serial.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "microsol-common.h"
 #include "timehead.h"
 
@@ -67,7 +68,7 @@ static int device_day, device_month, device_year;
 static int device_hour, device_minute, device_second;
 static int power_off_hour, power_off_minute;
 static int power_on_hour, power_on_minute;
-static unsigned char device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
+static uint8_t device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
 
 static int isprogram = 0, progshut = 0, prgups = 0;
 static int hourshut, minshut;
@@ -138,9 +139,9 @@ static char *convert_days(char *cop)
 }
 
 /** Convert bitstring (e.g. 1100101) to binary */
-static int bitstring_to_binary(char *binStr)
+static uint8_t bitstring_to_binary(char *binStr)
 {
-	int result = 0;
+	uint8_t result = 0;
 	unsigned int i;
 
 	for (i = 0; i < 7; ++i) {
@@ -159,7 +160,7 @@ static int bitstring_to_binary(char *binStr)
  * This is needed because UPS sends binary date rotated
  * from current week day (first bit = current day)
  */
-static unsigned char revert_days(unsigned char firmware_week)
+static uint8_t revert_days(unsigned char firmware_week)
 {
 	char ordered_week[8];
 	int i;
