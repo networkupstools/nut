@@ -738,7 +738,12 @@ display_help:
 	   on lib (need to be thread safe). */
 	sem_t *current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
-	sem_init(current_sem, 0, max_threads);
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+		fprintf(stderr, "\n\n"
+			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
+		max_threads = UINT_MAX - 1;
+	}
+	sem_init(current_sem, 0, (unsigned int)max_threads);
 # endif
 #endif /* HAVE_PTHREAD */
 

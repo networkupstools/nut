@@ -1026,8 +1026,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
-	if (max_threads_scantype > 0)
-		sem_init(semaphore_scantype, 0, max_threads_scantype);
+	if (max_threads_scantype > 0) {
+		if (SIZE_MAX > UINT_MAX && max_threads_scantype > UINT_MAX) {
+			upsdebugx(1,
+				"WARNING: %s: Limiting max_threads_scantype to range acceptable for sem_init()",
+				__func__);
+			max_threads_scantype = UINT_MAX - 1;
+		}
+		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+	}
 # endif /* HAVE_SEMAPHORE */
 
 #endif /* HAVE_PTHREAD */
