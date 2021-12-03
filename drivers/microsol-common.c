@@ -22,10 +22,11 @@
 
 */
 
+#include "main.h"	/* Includes "config.h", must be first */
+
 #include <time.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "main.h"
 #include "serial.h"
 #include "nut_float.h"
 #include "microsol-common.h"
