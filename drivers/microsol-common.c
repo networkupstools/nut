@@ -113,6 +113,7 @@ static char *convert_days(char *cop)
 	static char alt[8];
 
 	int ish, fim;
+	/* FIXME? Are range-checks needed for values more than 6? wire noise etc? */
 	if (host_week == 6)
 		ish = 0;
 	else
@@ -121,10 +122,15 @@ static char *convert_days(char *cop)
 	fim = 7 - ish;
 	/* rotate left only 7 bits */
 
-	memcpy(alt, &cop[ish], fim);
+	if (fim > 0) {
+		memcpy(alt, &cop[ish], (size_t)fim);
+	} else {
+		fatalx(EXIT_FAILURE, "%s: value out of range: %d (%d)",
+			__func__, fim, ish);
+	}
 
 	if (ish > 0)
-		memcpy(&alt[fim], cop, ish);
+		memcpy(&alt[fim], cop, (size_t)ish);
 
 	alt[7] = 0;		/* string terminator */
 
