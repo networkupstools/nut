@@ -407,9 +407,9 @@ static void scan_received_pack(void)
  *  Byte 24: Packet checksum
  *  Byte 25: Packet delimiter, always 0xFE
  */
-static void comm_receive(const unsigned char *bufptr, int size)
+static void comm_receive(const unsigned char *bufptr, size_t size)
 {
-	unsigned int i;
+	size_t i;
 
 	if (size == PACKET_SIZE) {
 		int checksum = 0;
