@@ -13,8 +13,13 @@ libparseconf_la_SOURCES = parseconf.c
 # that the "common.c" required for builds below will be seeked in the
 # current directory. So for out-of-tree builds like distcheck, we have
 # to symlink the "real" source to build area:
-common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
+common.c: $(top_builddir)/include/nut_version.h
+if BUILDING_IN_TREE
+# No need for symlink hack
+else
+common.c: $(srcdir)/common.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
+endif
 
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
