@@ -93,7 +93,13 @@ void nutscan_init(void)
  * if-else proposition? At least when initializing?
  */
 # ifdef HAVE_SEMAPHORE
-	sem_init(&semaphore, 0, max_threads);
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+		upsdebugx(1,
+			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
+			__func__);
+		max_threads = UINT_MAX - 1;
+	}
+	sem_init(&semaphore, 0, (unsigned int)max_threads);
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN

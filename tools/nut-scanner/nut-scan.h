@@ -33,6 +33,7 @@
 
 #include "config.h"
 #include <sys/types.h>
+#include "nut_stdint.h"
 
 #include <nutscan-init.h>
 #include <nutscan-device.h>
