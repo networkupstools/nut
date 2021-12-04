@@ -82,7 +82,7 @@ static char _buf[256];
 static int optimodel = 0;
 enum {
 	OPTIMODEL_DEFAULT = 0,
-	OPTIMODEL_ZINTO =1
+	OPTIMODEL_ZINTO = 1
 };
 
 
@@ -523,7 +523,7 @@ void upsdrv_shutdown(void)
 	}
 
 	/* Just cycling power, schedule output stage to come back on in 60 seconds */
-	if ( !(s&OPTISBIT_ON_BATTERY_POWER) )
+	if ( !(s & OPTISBIT_ON_BATTERY_POWER) )
 		optiquery( "Cu00000600" );
 
 	/* Shutdown in 8 seconds */
