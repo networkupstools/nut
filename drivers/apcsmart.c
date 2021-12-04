@@ -1486,14 +1486,17 @@ static int sdcmd_S(const void *foo)
 static int sdcmd_CS(const void *foo)
 {
 	ssize_t ret;
-	int cshd = 3500000;
+	useconds_t cshd = 3500000;
 	char temp[APC_SBUF];
 	const char *val;
 	NUT_UNUSED_VARIABLE(foo);
 
-	/* TODO: Catch overflows! */
+	/* TODO: Catch overflows?
+	 * Let compilers complain about (non-)casting on systems
+	 * where useconds_t is not a good target for strtod() output
+	 */
 	if ((val = getval("cshdelay")))
-		cshd = (int)(strtod(val, NULL) * 1000000);
+		cshd = (strtod(val, NULL) * 1000000);
 
 	upsdebugx(1, "%s: issuing CS 'hack' [%s+%s] with %2.1f sec delay", __func__, prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN), (double)cshd / 1000000);
 	if (ups_status & APC_STAT_OL) {
