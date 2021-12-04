@@ -1298,7 +1298,7 @@ static int getbaseinfo(void)
 static int do_cal(int start)
 {
 	char	temp[APC_LBUF];
-	int	tval;
+	long	tval;
 	ssize_t	ret;
 
 	apc_flush(SER_AA);
@@ -1596,13 +1596,13 @@ static int sdcmd_Z(const void *foo)
 
 static void upsdrv_shutdown_simple(void)
 {
-	unsigned int sdtype = 0;
+	long sdtype = 0;
 	const char *val;
 
 	if ((val = getval("sdtype")))
 		sdtype = strtol(val, NULL, 10);
 
-	upsdebugx(1, "%s: currently: %s, sdtype: %d", __func__,
+	upsdebugx(1, "%s: currently: %s, sdtype: %ld", __func__,
 		(ups_status & APC_STAT_OL) ? "on-line" : "on battery", sdtype);
 
 	switch (sdtype) {
