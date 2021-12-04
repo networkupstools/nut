@@ -1510,7 +1510,7 @@ static int sdcmd_CS(const void *foo)
 static int sdcmd_AT(const void *str)
 {
 	ssize_t ret;
-	int cnt, padto, i;
+	size_t cnt, padto, i;
 	const char *awd = str;
 	char temp[APC_SBUF], *ptr;
 
@@ -1533,7 +1533,9 @@ static int sdcmd_AT(const void *str)
 	apc_flush(0);
 	ret = apc_write_long(temp);
 	if (ret != padto + 1) {
-		upslogx(LOG_ERR, "issuing [%s] with %d digits failed", prtchr(APC_CMD_GRACEDOWN), padto);
+		upslogx(LOG_ERR,
+			"issuing [%s] with %zu digits failed",
+			prtchr(APC_CMD_GRACEDOWN), padto);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1541,7 +1543,9 @@ static int sdcmd_AT(const void *str)
 	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
 		return (int)ret;
 
-	upslogx(LOG_ERR, "command [%s] with 2 digits doesn't work - try 3 digits", prtchr(APC_CMD_GRACEDOWN));
+	upslogx(LOG_ERR,
+		"command [%s] with 2 digits doesn't work - try 3 digits",
+		prtchr(APC_CMD_GRACEDOWN));
 	/*
 	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
 	 * failed; we have to abort the sequence with something bogus to have
@@ -1800,7 +1804,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 static int setvar_string(apc_vartab_t *vt, const char *val)
 {
-	unsigned int	i;
+	size_t	i;
 	ssize_t	ret;
 	char	temp[APC_LBUF], *ptr;
 
