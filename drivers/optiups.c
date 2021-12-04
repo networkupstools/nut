@@ -177,9 +177,9 @@ static inline ssize_t optiquery( const char *cmd )
 }
 
 /* Uses the ezfill_t structure to map UPS commands to the NUT variable destinations */
-static void optifill( ezfill_t *a, int len )
+static void optifill( ezfill_t *a, size_t len )
 {
-	int i;
+	size_t i;
 	ssize_t r;
 
 	/* Some things are easy to poll and store */
