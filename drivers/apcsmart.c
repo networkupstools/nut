@@ -806,7 +806,7 @@ static int poll_data(apc_vartab_t *vt)
 	/* automagically no longer supported by the hardware somehow */
 	if (!strncmp(temp, "NA", 2)) {
 		upslogx(LOG_WARNING, "%s: verified variable %s [%s] returned NA, removing", __func__, vt->name, prtchr(vt->cmd));
-		vt->flags &= ~APC_PRESENT;
+		vt->flags &= ~(unsigned int)APC_PRESENT;
 		apc_dstate_delinfo(vt, 0);
 	} else
 		apc_dstate_setinfo(vt, temp);
@@ -920,7 +920,7 @@ static void deprecate_vars(void)
 		temp = preread_data(vt);
 		/* no conversion here, validator should operate on raw values */
 		if (!temp || !rexhlp(vt->regex, temp)) {
-			vt->flags &= ~APC_PRESENT;
+			vt->flags &= ~(unsigned int)APC_PRESENT;
 
 			warn_cv((const unsigned char)vt->cmd, "variable combination", vt->name);
 			continue;
@@ -931,7 +931,7 @@ static void deprecate_vars(void)
 			vtn = &apc_vartab[j];
 			if (strcmp(vtn->name, vt->name) && vtn->cmd != vt->cmd)
 				continue;
-			vtn->flags &= ~APC_PRESENT;
+			vtn->flags &= ~(unsigned int)APC_PRESENT;
 		}
 
 		apc_dstate_setinfo(vt, temp);
