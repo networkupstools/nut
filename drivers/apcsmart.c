@@ -253,10 +253,10 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 #if defined(PENDIN) || defined(FLUSHO)
 	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
 #ifdef PENDIN
-		tio[i]->c_lflag &= ~PENDIN;
+		tio[i]->c_lflag &= ~(unsigned int)PENDIN;
 #endif
 #ifdef FLUSHO
-		tio[i]->c_lflag &= ~FLUSHO;
+		tio[i]->c_lflag &= ~(unsigned int)FLUSHO;
 #endif
 	}
 #endif /* defined(PENDIN) || defined(FLUSHO) */
@@ -325,10 +325,10 @@ static void apc_ser_set(void)
 #ifdef NOKERNINFO
 	tio.c_lflag |= NOKERNINFO;
 #endif
-	tio.c_lflag &= ~(ISIG | IEXTEN);
+	tio.c_lflag &= ~(unsigned int)(ISIG | IEXTEN);
 
 	tio.c_iflag |= (IGNCR | IGNPAR);
-	tio.c_iflag &= ~(IXON | IXOFF);
+	tio.c_iflag &= ~(unsigned int)(IXON | IXOFF);
 
 	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
 #ifdef _POSIX_VDISABLE
