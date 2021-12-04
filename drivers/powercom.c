@@ -385,7 +385,7 @@ static int validate_raw_data (void)
 /* get info from ups */
 static int ups_getinfo(void)
 {
-	int	i;
+	size_t	i;
 	ssize_t c;
 
 	/* send trigger char to UPS */
@@ -414,7 +414,7 @@ static int ups_getinfo(void)
 		/* FIXME: use upsdebug_hex() ? */
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
-			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
+			printf("%2zu 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
 		}
 	}
 
