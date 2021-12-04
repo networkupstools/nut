@@ -25,6 +25,7 @@
 
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_blazer-common.h"
 #include "nutdrv_qx_bestups.h"
@@ -624,13 +625,20 @@ static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+	long	l;
 
 	if (strspn(item->value, "0123456789") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
-	pins_shutdown_mode = strtol(item->value, NULL, 10);
+	l = strtol(item->value, NULL, 10);
+	if (l > INT_MAX) {
+		upsdebugx(2, "%s: pins_shutdown_mode out of range [%s: %s]",
+			__func__, item->info_type, item->value);
+		return -1;
+	}
+	pins_shutdown_mode = (int)l;
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -665,7 +673,8 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_
 /* Voltage settings */
 static int	bestups_voltage_settings(item_t *item, char *value, const size_t valuelen)
 {
-	int		index, val;
+	long		index;
+	int			val;
 	const char	*nominal_voltage;
 	const struct {
 		const int	low;		/* Low voltage		->	input.transfer.low / input.transfer.boost.low */
@@ -715,7 +724,7 @@ static int	bestups_voltage_settings(item_t *item, char *value, const size_t valu
 	index = strtol(item->value, NULL, 10);
 
 	if (index < 0 || index > 9) {
-		upsdebugx(2, "%s: value '%d' out of range [0..9]", __func__, index);
+		upsdebugx(2, "%s: value '%ld' out of range [0..9]", __func__, index);
 		return -1;
 	}
 
