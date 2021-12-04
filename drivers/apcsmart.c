@@ -1189,7 +1189,7 @@ static int firmware_table_lookup(void)
 	if ((ret = apc_read(buf, sizeof(buf), SER_TO)) < 0)
 		return 0;
 
-        /*
+	/*
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
 	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
