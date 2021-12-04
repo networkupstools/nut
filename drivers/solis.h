@@ -49,7 +49,7 @@ static const int nompow[5] = { 1000,1500,2000,3000,1200 };
 static const int inds[6] = { 0,0,1,2,3,4 };
 static const double InVolt_offset = 30.;
 #define PACKET_SIZE 25
-static const int packet_size = PACKET_SIZE;
+static const size_t packet_size = PACKET_SIZE;
 
 static const struct {
          int maxi;              /* power internals */
