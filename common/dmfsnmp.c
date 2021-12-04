@@ -243,10 +243,24 @@ info_lkp_new (int oid, const char *value
 #if WITH_SNMP_LKP_FUN
 // consider WITH_DMF_FUNCTIONS too?
 	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+/* ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+ * so we just don't compile this diags part if compiler might reject it
+ */
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
-			"so the provided value is effectively ignored: "
-			"fun_vp2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_vp2s='%p'",
-			(void*)fun_vp2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_vp2s);
+			"so the provided value is effectively ignored"
+			": fun_vp2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_vp2s='%p'",
+			(void*)fun_vp2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_vp2s
+			);
+# pragma GCC diagnostic pop
+#else
+/* Must not have unfinished code right before #pragma below, so ifdef and else... */
+		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
+			"so the provided value is effectively ignored"
+			);
+#endif
 	}
 	self->fun_vp2s = NULL;
 	self->nuf_s2l = NULL;
