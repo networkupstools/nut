@@ -197,9 +197,9 @@ static void alert_handler(char ch)
 	ups_status_set();
 }
 
-static int read_buf(char *buf, size_t buflen)
+static ssize_t read_buf(char *buf, size_t buflen)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_get_line_alert(upsfd, buf, buflen, ENDCHAR, POLL_IGNORE,
 		POLL_ALERT, alert_handler, SER_WAIT_SEC, SER_WAIT_USEC);
@@ -213,9 +213,9 @@ static int read_buf(char *buf, size_t buflen)
 	return ret;
 }
 
-static int poll_data(apc_vartab_t *vt)
+static ssize_t poll_data(apc_vartab_t *vt)
 {
-	int	ret;
+	ssize_t	ret;
 	char	tmp[SMALLBUF];
 
 	if ((vt->flags & APC_PRESENT) == 0)
@@ -251,7 +251,7 @@ static int poll_data(apc_vartab_t *vt)
 /* check for support or just update a named variable */
 static int query_ups(const char *var, int first)
 {
-	int	ret;
+	ssize_t	ret;
 	char	temp[256];
 	const char	*ptr;
 	apc_vartab_t *vt;
@@ -305,7 +305,8 @@ static void do_capabilities(void)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[512], cmd, loc, etmp[16], *endtemp;
-	int	nument, entlen, i, matrix, ret, valid;
+	int	nument, entlen, i, matrix, valid;
+	ssize_t	ret;
 	apc_vartab_t *vt;
 
 	upsdebugx(1, "APC - About to get capabilities string");
@@ -417,7 +418,7 @@ static void do_capabilities(void)
 
 static int update_status(void)
 {
-	int	ret;
+	ssize_t	ret;
 	char	buf[SMALLBUF];
 
 	upsdebugx(4, "update_status");
@@ -449,7 +450,7 @@ static int update_status(void)
 
 static void oldapcsetup(void)
 {
-	int	ret = 0;
+	ssize_t	ret = 0;
 
 	/* really old models ignore REQ_MODEL, so find them first */
 	ret = query_ups("ups.model", 1);
@@ -534,7 +535,7 @@ static void protocol_verify(unsigned char cmd)
 /* some hardware is a special case - hotwire the list of cmdchars */
 static int firmware_table_lookup(void)
 {
-	int	ret;
+	ssize_t	ret;
 	unsigned int	i, j;
 	char	buf[SMALLBUF];
 
@@ -607,7 +608,7 @@ static int firmware_table_lookup(void)
 static void getbaseinfo(void)
 {
 	unsigned int	i;
-	int	ret = 0;
+	ssize_t	ret = 0;
 	char 	*alrts, *cmds, temp[512];
 
 	/*
@@ -672,7 +673,8 @@ static void getbaseinfo(void)
 static int do_cal(int start)
 {
 	char	temp[256];
-	int	tval, ret;
+	int	tval;
+	ssize_t	ret;
 
 	ret = ser_send_char(upsfd, APC_STATUS);
 
@@ -747,7 +749,8 @@ static int do_cal(int start)
 /* get the UPS talking to us in smart mode */
 static int smartmode(void)
 {
-	int	ret, tries;
+	ssize_t	ret;
+	int	tries;
 	char	temp[256];
 
 	for (tries = 0; tries < 5; tries++) {
@@ -1032,7 +1035,8 @@ static void upsdrv_shutdown_advanced(int status)
 void upsdrv_shutdown(void)
 {
 	char	temp[32];
-	int	ret, status;
+	ssize_t	ret;
+	int	status;
 
 	if (!smartmode())
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
@@ -1109,7 +1113,8 @@ static void update_info_all(void)
 
 static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	orig[256], temp[256];
 	const char	*ptr;
 
@@ -1204,7 +1209,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
-	int	ret;
+	ssize_t	ret;
 	char	temp[256];
 
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
@@ -1307,7 +1312,7 @@ static int setvar(const char *varname, const char *val)
 /* actually send the instcmd's char to the ups */
 static int do_cmd(apc_cmdtab_t *ct)
 {
-	int	ret;
+	ssize_t	ret;
 	char	buf[SMALLBUF];
 
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
