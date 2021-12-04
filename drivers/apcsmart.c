@@ -844,15 +844,15 @@ static int update_status(void)
 
 static inline void confirm_cv(unsigned char cmd, const char *tag, const char *name)
 {
-	upsdebugx(1, "%s [%s] - %s supported", name, prtchr(cmd), tag);
+	upsdebugx(1, "%s [%s] - %s supported", name, prtchr((char)cmd), tag);
 }
 
 static inline void warn_cv(unsigned char cmd, const char *tag, const char *name)
 {
 	if (tag && name)
-		upslogx(LOG_WARNING, "%s [%s] - %s invalid", name, prtchr(cmd), tag);
+		upslogx(LOG_WARNING, "%s [%s] - %s invalid", name, prtchr((char)cmd), tag);
 	else
-		upslogx(LOG_WARNING, "[%s] unrecognized", prtchr(cmd));
+		upslogx(LOG_WARNING, "[%s] unrecognized", prtchr((char)cmd));
 }
 
 static void var_string_setup(apc_vartab_t *vt)
