@@ -510,14 +510,16 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		}
 
 	} else if (!strcasecmp(cmdname, "test.battery.start")) {
-		int	delay = extra ? strtol(extra, NULL, 10) : 10;
+		long	delay = extra ? strtol(extra, NULL, 10) : 10;
 
 		if ((delay < 1) || (delay > 99)) {
-			upslogx(LOG_ERR, "instcmd: command [%s] failed, delay [%s] out of range", cmdname, extra);
+			upslogx(LOG_ERR,
+				"instcmd: command [%s] failed, delay [%s] out of range",
+				cmdname, extra);
 			return STAT_INSTCMD_FAILED;
 		}
 
-		snprintf(buf, sizeof(buf), "T%02d\r", delay);
+		snprintf(buf, sizeof(buf), "T%02ld\r", delay);
 	} else {
 		upslogx(LOG_ERR, "instcmd: command [%s] not found", cmdname);
 		return STAT_INSTCMD_UNKNOWN;
