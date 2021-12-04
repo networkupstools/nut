@@ -32,8 +32,8 @@
 #include "blazer.h"
 #include "nut_float.h"
 
-static int	ondelay = 3;	/* minutes */
-static int	offdelay = 30;	/* seconds */
+static long	ondelay = 3;	/* minutes */
+static long	offdelay = 30;	/* seconds */
 
 static int	proto;
 static int	online = 1;
@@ -480,18 +480,18 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		if (ondelay == 0) {
 
 			if (offdelay < 60) {
-				snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+				snprintf(buf, sizeof(buf), "S.%ld\r", offdelay / 6);
 			} else {
-				snprintf(buf, sizeof(buf), "S%02d\r", offdelay / 60);
+				snprintf(buf, sizeof(buf), "S%02ld\r", offdelay / 60);
 			}
 
 		} else if (offdelay < 60) {
 
-			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
+			snprintf(buf, sizeof(buf), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 
 		} else {
 
-			snprintf(buf, sizeof(buf), "S%02dR%04d\r", offdelay / 60, ondelay);
+			snprintf(buf, sizeof(buf), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 
 		}
 
@@ -504,9 +504,9 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		 */
 
 		if (offdelay < 60) {
-			snprintf(buf, sizeof(buf), "S.%dR0000\r", offdelay / 6);
+			snprintf(buf, sizeof(buf), "S.%ldR0000\r", offdelay / 6);
 		} else {
-			snprintf(buf, sizeof(buf), "S%02dR0000\r", offdelay / 60);
+			snprintf(buf, sizeof(buf), "S%02ldR0000\r", offdelay / 60);
 		}
 
 	} else if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -568,7 +568,7 @@ void blazer_initups(void)
 	}
 
 	if ((ondelay < 0) || (ondelay > 9999)) {
-		fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+		fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 	}
 
 	val = getval("offdelay");
@@ -577,7 +577,7 @@ void blazer_initups(void)
 	}
 
 	if ((offdelay < 12) || (offdelay > 600)) {
-		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [12..600]", offdelay);
+		fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [12..600]", offdelay);
 	}
 
 	/* Truncate to nearest setable value */
@@ -771,8 +771,8 @@ void blazer_initinfo(void)
 
 	blazer_initbattery();
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	dstate_addcmd("beeper.toggle");
 	dstate_addcmd("load.off");
@@ -869,7 +869,7 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %d seconds", offdelay);
+		fatalx(EXIT_SUCCESS, "Shutting down in %ld seconds", offdelay);
 
 	}
 
