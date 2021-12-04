@@ -609,7 +609,7 @@ static ssize_t apc_write_long_i(const char *code, const char *fn, unsigned int l
 	char temp[APC_LBUF];
 	ssize_t ret;
 
-	ret = apc_write_i(*code, fn, ln);
+	ret = apc_write_i((const unsigned char)(*code), fn, ln);
 	if (ret != 1)
 		return ret;
 	/* peek for the answer - anything at this point is failure */
@@ -772,7 +772,7 @@ static const char *preread_data(apc_vartab_t *vt)
 	upsdebugx(1, "%s: %s [%s]", __func__, vt->name, prtchr(vt->cmd));
 
 	apc_flush(0);
-	ret = apc_write(vt->cmd);
+	ret = apc_write((const unsigned char)vt->cmd);
 
 	if (ret != 1)
 		return 0;
@@ -798,7 +798,7 @@ static int poll_data(apc_vartab_t *vt)
 	upsdebugx(1, "%s: %s [%s]", __func__, vt->name, prtchr(vt->cmd));
 
 	apc_flush(SER_AA);
-	if (apc_write(vt->cmd) != 1)
+	if (apc_write((const unsigned char)vt->cmd) != 1)
 		return 0;
 	if (apc_read(temp, sizeof(temp), SER_AA) < 1)
 		return 0;
@@ -881,7 +881,7 @@ static int var_verify(apc_vartab_t *vt)
 	temp = preread_data(vt);
 	/* no conversion here, validator should operate on raw values */
 	if (!temp || !rexhlp(vt->regex, temp)) {
-		warn_cv(vt->cmd, "variable", vt->name);
+		warn_cv((const unsigned char)vt->cmd, "variable", vt->name);
 		return 0;
 	}
 
@@ -889,7 +889,7 @@ static int var_verify(apc_vartab_t *vt)
 	apc_dstate_setinfo(vt, temp);
 	var_string_setup(vt);
 
-	confirm_cv(vt->cmd, "variable", vt->name);
+	confirm_cv((const unsigned char)vt->cmd, "variable", vt->name);
 
 	return 1;
 }
@@ -922,7 +922,7 @@ static void deprecate_vars(void)
 		if (!temp || !rexhlp(vt->regex, temp)) {
 			vt->flags &= ~APC_PRESENT;
 
-			warn_cv(vt->cmd, "variable combination", vt->name);
+			warn_cv((const unsigned char)vt->cmd, "variable combination", vt->name);
 			continue;
 		}
 
@@ -937,7 +937,7 @@ static void deprecate_vars(void)
 		apc_dstate_setinfo(vt, temp);
 		var_string_setup(vt);
 
-		confirm_cv(vt->cmd, "variable combination", vt->name);
+		confirm_cv((const unsigned char)vt->cmd, "variable combination", vt->name);
 	}
 }
 
@@ -1223,7 +1223,7 @@ static int firmware_table_lookup(void)
 			/* matched - run the cmdchars from the table */
 			upsdebugx(1, "parsing out supported cmds and vars");
 			for (j = 0; j < strlen(apc_compattab[i].cmdchars); j++)
-				protocol_verify(apc_compattab[i].cmdchars[j]);
+				protocol_verify((const unsigned char)(apc_compattab[i].cmdchars[j]));
 			deprecate_vars();
 
 			return 1;	/* matched */
@@ -1283,7 +1283,7 @@ static int getbaseinfo(void)
 	if (tail)
 		*tail = 0;
 	for (i = 0; i < strlen(cmds); i++)
-		protocol_verify(cmds[i]);
+		protocol_verify((const unsigned char)cmds[i]);
 	deprecate_vars();
 
 	/* if capabilities are supported, add them here */
@@ -1731,7 +1731,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	const char	*ptr;
 
 	apc_flush(SER_AA);
-	if (apc_write(vt->cmd) != 1)
+	if (apc_write((const unsigned char)vt->cmd) != 1)
 		return STAT_SET_FAILED;
 
 	ret = apc_read(orig, sizeof(orig), SER_AA);
@@ -1766,7 +1766,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			return STAT_SET_FAILED;
 
 		/* see what it rotated onto */
-		if (apc_write(vt->cmd) != 1)
+		if (apc_write((const unsigned char)vt->cmd) != 1)
 			return STAT_SET_FAILED;
 
 		ret = apc_read(temp, sizeof(temp), SER_AA);
@@ -1816,7 +1816,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	}
 
 	apc_flush(SER_AA);
-	if (apc_write(vt->cmd) != 1)
+	if (apc_write((const unsigned char)vt->cmd) != 1)
 		return STAT_SET_FAILED;
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
@@ -1916,10 +1916,10 @@ static int do_cmd(const apc_cmdtab_t *ct)
 	apc_flush(SER_AA);
 
 	if (ct->flags & APC_REPEAT) {
-		ret = apc_write_rep(ct->cmd);
+		ret = apc_write_rep((const unsigned char)ct->cmd);
 		c = 2;
 	} else {
-		ret = apc_write(ct->cmd);
+		ret = apc_write((const unsigned char)ct->cmd);
 		c = 1;
 	}
 
