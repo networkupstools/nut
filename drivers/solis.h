@@ -32,6 +32,8 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
+#include "nut_stdint.h"
+
 /* General FIXMEs:
  * * "static" declarations belong in some one single C source;
  *   headers should use "extern" to refer linker to look for
@@ -342,7 +344,7 @@ static int Day, Month, Year;
 static int isprogram = 0, progshut = 0, prgups = 0;
 static int dian=0, mesn=0, anon=0, weekn=0;
 static int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
-static unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
+static uint8_t DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
 static char seman[4];
 
 /* buffers */
