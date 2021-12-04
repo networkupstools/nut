@@ -22,6 +22,7 @@
 #include "main.h"
 #include "serial.h"
 #include "apcsmart-old.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
 #define DRIVER_VERSION	"2.1"
@@ -77,7 +78,7 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 {
 	static	char tmp[128];
-	int	tval;
+	long	tval;
 
 	switch(cmd_entry->flags & APC_FORMATMASK) {
 		case APC_F_PERCENT:
@@ -97,14 +98,14 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 
 			tval = 60 * 60 * strtol(upsval, NULL, 10);
 
-			snprintf(tmp, sizeof(tmp), "%d", tval);
+			snprintf(tmp, sizeof(tmp), "%ld", tval);
 			return tmp;
 
 		case APC_F_MINUTES:
 			/* Convert to seconds - NUT standard time measurement */
 			tval = 60 * strtol(upsval, NULL, 10);
 			/* Ignore errors - Theres not much we can do */
-			snprintf(tmp, sizeof(tmp), "%d", tval);
+			snprintf(tmp, sizeof(tmp), "%ld", tval);
 			return tmp;
 
 		case APC_F_REASON:
@@ -673,7 +674,7 @@ static void getbaseinfo(void)
 static int do_cal(int start)
 {
 	char	temp[256];
-	int	tval;
+	long	tval;
 	ssize_t	ret;
 
 	ret = ser_send_char(upsfd, APC_STATUS);
@@ -791,7 +792,7 @@ static int smartmode(void)
 /*
  * all shutdown commands should respond with 'OK' or '*'
  */
-static int sdok(void)
+static long sdok(void)
 {
 	char temp[16];
 
@@ -808,7 +809,7 @@ static int sdok(void)
 }
 
 /* soft hibernate: S - working only when OB, otherwise ignored */
-static int sdcmd_S(int dummy)
+static long sdcmd_S(long dummy)
 {
 	NUT_UNUSED_VARIABLE(dummy);
 
@@ -821,7 +822,7 @@ static int sdcmd_S(int dummy)
 }
 
 /* soft hibernate, hack version for CS 350 */
-static int sdcmd_CS(int tval)
+static long sdcmd_CS(long tval)
 {
 	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
 	if (tval & APC_STAT_OL) {
@@ -837,9 +838,10 @@ static int sdcmd_CS(int tval)
  * note: works differently for older and new models, see help function for
  * detailed info
  */
-static int sdcmd_ATn(int cnt)
+static long sdcmd_ATn(long cnt)
 {
-	int n = 0, mmax, ret;
+	long n = 0;
+	long mmax, ret;
 	const char *strval;
 	char timer[4];
 
@@ -852,10 +854,13 @@ static int sdcmd_ATn(int cnt)
 			n = 0;
 	}
 
-	snprintf(timer, sizeof(timer), "%.*d", cnt, n);
+	if (cnt > INT_MAX || cnt < 0) {
+		fatalx(EXIT_FAILURE, "Error: %s: cnt (%ld) is out of range", __func__, cnt);
+	}
+	snprintf(timer, sizeof(timer), "%.*ld", (int)cnt, n);
 
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
+	upsdebugx(1, "Issuing hard hibernate with %ld minutes additional wakeup delay", n*6);
 
 	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
 	usleep(CMDLONGDELAY);
@@ -879,7 +884,7 @@ static int sdcmd_ATn(int cnt)
 }
 
 /* shutdown: K - delayed poweroff */
-static int sdcmd_K(int dummy)
+static long sdcmd_K(long dummy)
 {
 	NUT_UNUSED_VARIABLE(dummy);
 
@@ -894,7 +899,7 @@ static int sdcmd_K(int dummy)
 }
 
 /* shutdown: Z - immediate poweroff */
-static int sdcmd_Z(int dummy)
+static long sdcmd_Z(long dummy)
 {
 	NUT_UNUSED_VARIABLE(dummy);
 
@@ -908,7 +913,7 @@ static int sdcmd_Z(int dummy)
 	return sdok();
 }
 
-static int (*sdlist[])(int) = {
+static long (*sdlist[])(long) = {
 	sdcmd_S,
 	sdcmd_ATn,	/* for @nnn version */
 	sdcmd_K,
@@ -926,7 +931,7 @@ static int (*sdlist[])(int) = {
 
 #define SDCNT 		6
 
-static void upsdrv_shutdown_simple(int status)
+static void upsdrv_shutdown_simple(long status)
 {
 	long sdtype = 0;
 	char *strval;
@@ -984,7 +989,7 @@ static void upsdrv_shutdown_simple(int status)
 	}
 }
 
-static void upsdrv_shutdown_advanced(int status)
+static void upsdrv_shutdown_advanced(long status)
 {
 	const char *strval;
 	const char deforder[] = {48 + SDIDX_S,
@@ -993,7 +998,7 @@ static void upsdrv_shutdown_advanced(int status)
 				 48 + SDIDX_Z,
 				  0};
 	size_t i;
-	int n;
+	long n;
 
 	strval = getval("advorder");
 
@@ -1036,7 +1041,7 @@ void upsdrv_shutdown(void)
 {
 	char	temp[32];
 	ssize_t	ret;
-	int	status;
+	long	status;
 
 	if (!smartmode())
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
@@ -1076,7 +1081,7 @@ static void init_serial_0095B(void)
 
 static void update_info_normal(void)
 {
-	int	i;
+	size_t	i;
 
 	upsdebugx(3, "update_info_normal: starting");
 
@@ -1096,7 +1101,7 @@ static void update_info_normal(void)
 
 static void update_info_all(void)
 {
-	int	i;
+	size_t	i;
 
 	upsdebugx(3, "update_info_all: starting");
 
