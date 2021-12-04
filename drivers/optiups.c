@@ -88,11 +88,11 @@ enum {
 
 /* Status bits returned by the "AG" command */
 enum {
-	OPTISBIT_NOOUTPUT = 2,
-	OPTISBIT_OVERLOAD = 8,
-	OPTISBIT_REPLACE_BATTERY = 16,
-	OPTISBIT_ON_BATTERY_POWER = 32,
-	OPTISBIT_LOW_BATTERY = 64
+	OPTISBIT_NOOUTPUT = 2L,
+	OPTISBIT_OVERLOAD = 8L,
+	OPTISBIT_REPLACE_BATTERY = 16L,
+	OPTISBIT_ON_BATTERY_POWER = 32L,
+	OPTISBIT_LOW_BATTERY = 64L
 };
 
 /* Helper struct for the optifill() function */
@@ -435,7 +435,7 @@ void upsdrv_updateinfo(void)
 	}
 	else
 	{
-		int s = strtol( _buf, NULL, 16 );
+		long s = strtol( _buf, NULL, 16 );
 		status_init();
 		if ( s & OPTISBIT_OVERLOAD )
 			status_set("OVER");
@@ -488,7 +488,7 @@ void upsdrv_shutdown(void)
 	/* OB: the load must remain off until the power returns */
 
 	/* If get no response, assume on battery & battery low */
-	int s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
+	long s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
 
 	ssize_t r = optiquery( "AG" );
 	if ( r < 1 )
