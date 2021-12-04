@@ -84,7 +84,7 @@ static int test_in_progress = VICTRON_NO_TEST;
 
 static int get_data (const char *out_string, char *in_string)
 {
-	int ret_code;
+	ssize_t ret_code;
 	ser_send(upsfd, "%s%c", out_string, ENDCHAR);
 	usleep (UPS_DELAY);
 	ret_code = ser_get_line(upsfd, in_string, LENGTH_TEMP, ENDCHAR,
