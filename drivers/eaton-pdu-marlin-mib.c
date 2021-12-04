@@ -720,7 +720,7 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 	/* snmp_value here would be a (long*) */
 	NUT_UNUSED_VARIABLE(raw_snmp_value);
 	return "dummy";
-};
+}
 #endif // WITH_SNMP_LKP_FUN_DUMMY
 
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {
