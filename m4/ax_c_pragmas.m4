@@ -109,6 +109,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP], 1, [define if your compiler has #pragma clang diagnostic push and pop])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wpedantic"],
+    [ax_cv__pragma__gcc__diags_ignored_pedantic],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wpedantic"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic=yes],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_pedantic" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wpedantic"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wpedantic" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wpedantic"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_pedantic_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wpedantic" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wformat-nonliteral"],
     [ax_cv__pragma__gcc__diags_ignored_format_nonliteral],
     [AC_COMPILE_IFELSE(
