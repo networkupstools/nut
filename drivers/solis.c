@@ -138,8 +138,8 @@ inline static int is_binary(char ch ) {
 }
 
 /* convert string to binary */
-static int str2bin( char *binStr ) {
-	int result = 0;
+static uint8_t str2bin( char *binStr ) {
+	uint8_t result = 0;
 	int i;
 
 	for (i = 0; i < 7; ++i) {
@@ -154,7 +154,7 @@ static int str2bin( char *binStr ) {
 }
 
 /* revert firmware format to standard string binary days */
-static unsigned char revert_days(unsigned char dweek) {
+static uint8_t revert_days(unsigned char dweek) {
 	char alt[8];
 	int i;
 
