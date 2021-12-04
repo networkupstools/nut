@@ -1532,7 +1532,8 @@ static int sdcmd_AT(const void *str)
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
-	if (ret != padto + 1) {
+	/* Range-check: padto is 2 or 3 per above */
+	if (ret != (ssize_t)padto + 1) {
 		upslogx(LOG_ERR,
 			"issuing [%s] with %zu digits failed",
 			prtchr(APC_CMD_GRACEDOWN), padto);
