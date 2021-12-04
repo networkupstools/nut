@@ -66,7 +66,7 @@ static int offdelay = 30;	/* seconds */
 static int safenet_command(const char *command)
 {
 	char	reply[32];
-	int	i;
+	size_t	i;
 	ssize_t	ret;
 
 	/*
