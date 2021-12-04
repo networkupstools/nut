@@ -151,16 +151,16 @@ static int hex2d(char *start, unsigned int len)
  * very clean.
  *
  * return: # of chars in buf, excluding terminating \0 */
-static int send_cmd(const char *str, char *buf, size_t len)
+static ssize_t send_cmd(const char *str, char *buf, size_t len)
 {
 	char c;
-	int ret = 0;
-	int i = 0;
+	ssize_t ret = 0;
+	ssize_t i = 0;
 
 	ser_flush_io(upsfd);
 	ser_send(upsfd, "%s", str);
 
-	if (!len || !buf || len > INT_MAX)
+	if (!len || !buf || len > SSIZE_MAX)
 		return -1;
 
 	for (;;) {
@@ -185,7 +185,8 @@ static int send_cmd(const char *str, char *buf, size_t len)
 
 static void get_letter_cmd(const char *str, char *buf, size_t len)
 {
-	int tries, ret;
+	int tries;
+	ssize_t ret;
 
 	for (tries = 0; tries < MAXTRIES; ++tries) {
 		ret = send_cmd(str, buf, len);
@@ -195,7 +196,7 @@ static void get_letter_cmd(const char *str, char *buf, size_t len)
 	fatalx(EXIT_FAILURE, "\nFailed to find UPS - giving up...");
 }
 
-static int do_reboot_now(void)
+static ssize_t do_reboot_now(void)
 {
 	char buf[256], cmd[16];
 
@@ -212,7 +213,7 @@ static void do_reboot(void)
 	do_reboot_now();
 }
 
-static int soft_shutdown(void)
+static ssize_t soft_shutdown(void)
 {
 	char buf[256], cmd[16];
 
@@ -221,7 +222,7 @@ static int soft_shutdown(void)
 	return send_cmd(":G\r", buf, sizeof buf);
 }
 
-static int hard_shutdown(void)
+static ssize_t hard_shutdown(void)
 {
 	char buf[256], cmd[16];
 
@@ -384,7 +385,8 @@ void upsdrv_updateinfo(void)
 {
 	static int numfails;
 	char buf[256];
-	int bp, volt, temp, load, vmax, vmin, stest, len;
+	int bp, temp, volt, load, vmax, vmin, stest;
+	ssize_t len;
 	int bcond, lstate, tstate, mode;
 	float bv, freq;
 
@@ -392,7 +394,7 @@ void upsdrv_updateinfo(void)
 	if (len != 21) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Data command failed: [%d] bytes != 21 bytes.", len);
+			ser_comm_fail("Data command failed: [%zd] bytes != 21 bytes.", len);
 			dstate_datastale();
 		}
 		return;
