@@ -135,7 +135,7 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
-static int hex2d(char *start, unsigned int len)
+static long hex2d(char *start, unsigned int len)
 {
 	char buf[32];
 
@@ -314,8 +314,8 @@ void upsdrv_initinfo(void)
 {
 	const char *model;
 	char w_value[16], l_value[16], v_value[16], x_value[16];
-	int  va, gen, plugs;
-	long w, l;
+	int  gen, plugs;
+	long w, l, va;
 
 	get_letter_cmd(":W\r", w_value, sizeof w_value);
 	get_letter_cmd(":L\r", l_value, sizeof l_value);
@@ -338,7 +338,7 @@ void upsdrv_initinfo(void)
 	gen = 1 + (!(x_value[0] & 0x07) * !(x_value[1] & 0x07));
 	plugs = x_value[0] - !!(x_value[1] >> 3) * 8;
 
-	dstate_setinfo("ups.model", "%s %d", model, va);
+	dstate_setinfo("ups.model", "%s %ld", model, va);
 	dstate_setinfo("ups.firmware", "%c%c (Gen %d)",
 			'A'+v_value[0]-'0', 'A'+v_value[1]-'0', gen);
 
@@ -385,8 +385,9 @@ void upsdrv_updateinfo(void)
 {
 	static int numfails;
 	char buf[256];
-	int bp, temp, volt, load, vmax, vmin, stest;
+	int bp, temp;
 	ssize_t len;
+	long volt, load, vmax, vmin, stest;
 	int bcond, lstate, tstate, mode;
 	float bv, freq;
 
@@ -414,7 +415,7 @@ void upsdrv_updateinfo(void)
 			freq > FREQ_MAX || freq < FREQ_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Data out of bounds: [%0d,%3d,%3d,%02.2f]",
+			ser_comm_fail("Data out of bounds: [%0ld,%3d,%3ld,%02.2f]",
 					volt, temp, load, freq);
 			dstate_datastale();
 		}
@@ -437,7 +438,7 @@ void upsdrv_updateinfo(void)
 	if (vmax > INVOLT_MAX || vmax < INVOLT_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("InVoltMax out of bounds: [%d]", vmax);
+			ser_comm_fail("InVoltMax out of bounds: [%ld]", vmax);
 			dstate_datastale();
 		}
 		return;
@@ -448,7 +449,7 @@ void upsdrv_updateinfo(void)
 	if (vmin > INVOLT_MAX || vmin < INVOLT_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("InVoltMin out of bounds: [%d]", vmin);
+			ser_comm_fail("InVoltMin out of bounds: [%ld]", vmin);
 			dstate_datastale();
 		}
 		return;
@@ -460,7 +461,7 @@ void upsdrv_updateinfo(void)
 	if (errno == ERANGE) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Self test is out of range: [%d]", stest);
+			ser_comm_fail("Self test is out of range: [%ld]", stest);
 			dstate_datastale();
 		}
 		return;
@@ -476,7 +477,7 @@ void upsdrv_updateinfo(void)
 	if (stest > 3 || stest < 0) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Self test out of bounds: [%d]", stest);
+			ser_comm_fail("Self test out of bounds: [%ld]", stest);
 			dstate_datastale();
 		}
 		return;
@@ -485,9 +486,9 @@ void upsdrv_updateinfo(void)
 	/* We've successfully gathered all the data for an update. */
 	numfails = 0;
 
-	dstate_setinfo("input.voltage", "%0d", volt);
+	dstate_setinfo("input.voltage", "%0ld", volt);
 	dstate_setinfo("ups.temperature", "%3d", temp);
-	dstate_setinfo("ups.load", "%3d", load);
+	dstate_setinfo("ups.load", "%3ld", load);
 	dstate_setinfo("input.frequency", "%02.2f", freq);
 
 	status_init();
@@ -565,8 +566,8 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("battery.voltage", "%.1f", bv);
 	dstate_setinfo("battery.charge",  "%3d", bp);
-	dstate_setinfo("input.voltage.maximum", "%d", vmax);
-	dstate_setinfo("input.voltage.minimum", "%d", vmin);
+	dstate_setinfo("input.voltage.maximum", "%ld", vmax);
+	dstate_setinfo("input.voltage.minimum", "%ld", vmin);
 
 	switch (stest) {
 		case 0:
