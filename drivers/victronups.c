@@ -239,7 +239,7 @@ void upsdrv_updateinfo(void)
 	int flags;
 	char temp[ LENGTH_TEMP ];
 	char test_result[ LENGTH_TEMP ];
-	int runtime_sec = -1;
+	long runtime_sec = -1;
 
 	if (start_is_datastale)
 	{
@@ -488,10 +488,10 @@ void upsdrv_updateinfo(void)
 	{
 		if (get_data("vBt?",temp)) return;
 		runtime_sec = strtol(temp+3, NULL, 10)*60;
-		snprintf(temp, sizeof(temp), "%d", runtime_sec);
+		snprintf(temp, sizeof(temp), "%ld", runtime_sec);
 		dstate_setinfo("battery.runtime", "%s", temp);
 	}
-	upsdebugx(1, "battery.runtime >%s<>%d<\n",temp,runtime_sec);
+	upsdebugx(1, "battery.runtime >%s<>%ld<\n",temp,runtime_sec);
 
 	dstate_dataok();
 }
