@@ -945,7 +945,8 @@ static void apc_getcaps(int qco)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[APC_LBUF], cmd, loc, etmp[APC_SBUF], *endtemp;
-	int	nument, entlen, i, matrix, valid;
+	int	matrix, valid;
+	size_t	nument, entlen, i;
 	ssize_t	ret;
 	apc_vartab_t *vt;
 
@@ -1018,8 +1019,19 @@ static void apc_getcaps(int qco)
 
 		cmd = ptr[0];
 		loc = ptr[1];
-		nument = ptr[2] - 48;
-		entlen = ptr[3] - 48;
+
+		if (ptr[2] < 48 || ptr[3] < 48) {
+			upsdebugx(0,
+				"%s: nument (%d) or entlen (%d) out of range",
+				__func__, (ptr[2] - 48), (ptr[3] - 48));
+			fatalx(EXIT_FAILURE,
+				"nument or entlen out of range\n"
+				"Please report this error\n"
+				"ERROR: capability overflow!");
+		}
+
+		nument = (size_t)ptr[2] - 48;
+		entlen = (size_t)ptr[3] - 48;
 		entptr = &ptr[4];
 
 		vt = vt_lookup_char(cmd);
