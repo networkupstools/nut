@@ -135,7 +135,7 @@ static int rexhlp(const char *rex, const char *val)
 static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 {
 	static char temp[APC_LBUF];
-	int tval;
+	long tval;
 
 	/* this should never happen */
 	if (strlen(upsval) >= sizeof(temp)) {
@@ -163,14 +163,14 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 
 			tval = 60 * 60 * strtol(upsval, NULL, 10);
 
-			snprintf(temp, sizeof(temp), "%d", tval);
+			snprintf(temp, sizeof(temp), "%ld", tval);
 			return temp;
 
 		case APC_F_MINUTES:
 			/* Convert to seconds - NUT standard time measurement */
 			tval = 60 * strtol(upsval, NULL, 10);
 			/* Ignore errors - there's not much we can do */
-			snprintf(temp, sizeof(temp), "%d", tval);
+			snprintf(temp, sizeof(temp), "%ld", tval);
 			return temp;
 
 		case APC_F_REASON:
