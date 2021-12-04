@@ -20,13 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "main.h"	/* Must be first, includes "config.h" */
+
 #include <sys/types.h>
 #include <sys/file.h>
 #include <regex.h>
 #include <ctype.h>
 #include <strings.h> /* strcasecmp() */
 
-#include "main.h"
 #include "serial.h"
 #include "timehead.h"
 
