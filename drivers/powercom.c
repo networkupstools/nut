@@ -385,7 +385,8 @@ static int validate_raw_data (void)
 /* get info from ups */
 static int ups_getinfo(void)
 {
-	int	i, c;
+	int	i;
+	ssize_t c;
 
 	/* send trigger char to UPS */
 	if (ser_send_char (upsfd, SEND_DATA) != 1) {
@@ -395,15 +396,17 @@ static int ups_getinfo(void)
 	} else {
 		upsdebugx(5, "Num of bytes requested for reading from UPS: %d", types[type].num_of_bytes_from_ups);
 
+		/* Note: num_of_bytes_from_ups is (unsigned char) so comparable
+		 * to ssize_t without more range checks */
 		c = ser_get_buf_len(upsfd, raw_data,
 			types[type].num_of_bytes_from_ups, 3, 0);
 
-		if (c != types[type].num_of_bytes_from_ups) {
-			upslogx(LOG_NOTICE, "data receiving error (%d instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
+		if (c != (ssize_t)types[type].num_of_bytes_from_ups) {
+			upslogx(LOG_NOTICE, "data receiving error (%zd instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %d", c);
+			upsdebugx(5, "Num of bytes received from UPS: %zd", c);
 	}
 
 	/* optional dump of raw data */
