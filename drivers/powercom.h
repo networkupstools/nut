@@ -42,18 +42,18 @@ struct type {
 	unsigned char num_of_bytes_from_ups;
 
 	struct method_of_flow_control {
-	    const char *name;
-	    void (*setup_flow_control)(void);
+		const char *name;
+		void (*setup_flow_control)(void);
 	} flowControl;
 
 	struct validation_byte {
-	    unsigned int index_of_byte, required_value;
-	    /* An example might explain the intention better then prose.
-	     * Suppose we want to validate the data with:
-	     *     powercom_raw_data[5] == 0x80
-	     * then we will set index_of_byte to 5U and required_value to
-	     * 0x80U: { 5U, 0x80U }.
-	     */
+		unsigned int index_of_byte, required_value;
+		/* An example might explain the intention better then prose.
+		 * Suppose we want to validate the data with:
+		 *     powercom_raw_data[5] == 0x80
+		 * then we will set index_of_byte to 5U and required_value to
+		 * 0x80U: { 5U, 0x80U }.
+		 */
 	} validation[3];
 	/* The validation array is of length 3 because 3 is longest
 	 * validation sequence for any type.
@@ -64,9 +64,9 @@ struct type {
 	 * seconds argument alone.
 	 */
 	struct delay_for_power_kill {
-	    unsigned char delay[2];   /* { minutes, seconds } */
-	    unsigned char minutesShouldBeUsed;
-	    /* 'n' in case the minutes value, which is delay[0], should
+		unsigned char delay[2];   /* { minutes, seconds } */
+		unsigned char minutesShouldBeUsed;
+		/* 'n' in case the minutes value, which is delay[0], should
 		 * be skipped and not sent to the UPS.
 		 */
 	} shutdown_arguments;
