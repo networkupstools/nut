@@ -30,6 +30,7 @@
 
 #include "serial.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
@@ -443,6 +444,10 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 	int	sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
+	if (buflen > (size_t)SSIZE_MAX) {
+		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
+	}
+
 	if (upsfd == -1)
 		return 0;
 	if (flags & SER_D0) {
@@ -517,7 +522,7 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 			/* standard "line received" condition */
 			if (temp[i] == ENDCHAR) {
 				ser_comm_good();
-				return count;
+				return (ssize_t)count;
 			}
 			/*
 			 * '*' is set as a secondary EOL; convert to 'OK' only as a
@@ -559,13 +564,14 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 	}
 
 	ser_comm_good();
-	return count;
+	/* buflen range limited above */
+	return (ssize_t)count;
 }
 
 #define apc_write(code) apc_write_i(code, __func__, __LINE__)
-static int apc_write_i(unsigned char code, const char *fn, unsigned int ln)
+static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 {
-	int ret;
+	ssize_t ret;
 	errno = 0;
 
 	if (upsfd == -1)
@@ -598,10 +604,10 @@ static int apc_write_i(unsigned char code, const char *fn, unsigned int ln)
  * confusing "success".
  */
 #define apc_write_long(code) apc_write_long_i(code, __func__, __LINE__)
-static int apc_write_long_i(const char *code, const char *fn, unsigned int ln)
+static ssize_t apc_write_long_i(const char *code, const char *fn, unsigned int ln)
 {
 	char temp[APC_LBUF];
-	int ret;
+	ssize_t ret;
 
 	ret = apc_write_i(*code, fn, ln);
 	if (ret != 1)
@@ -623,10 +629,10 @@ static int apc_write_long_i(const char *code, const char *fn, unsigned int ln)
 }
 
 #define apc_write_rep(code) apc_write_rep_i(code, __func__, __LINE__)
-static int apc_write_rep_i(unsigned char code, const char *fn, unsigned int ln)
+static ssize_t apc_write_rep_i(unsigned char code, const char *fn, unsigned int ln)
 {
 	char temp[APC_LBUF];
-	int ret;
+	ssize_t ret;
 
 	ret = apc_write_i(code, fn, ln);
 	if (ret != 1)
@@ -760,7 +766,7 @@ static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 
 static const char *preread_data(apc_vartab_t *vt)
 {
-	int ret;
+	ssize_t ret;
 	static char temp[APC_LBUF];
 
 	upsdebugx(1, "%s: %s [%s]", __func__, vt->name, prtchr(vt->cmd));
@@ -810,7 +816,7 @@ static int poll_data(apc_vartab_t *vt)
 
 static int update_status(void)
 {
-	int	ret;
+	ssize_t	ret;
 	char	buf[APC_LBUF];
 
 	upsdebugx(1, "%s: [%s]", __func__, prtchr(APC_STATUS));
@@ -939,7 +945,8 @@ static void apc_getcaps(int qco)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[APC_LBUF], cmd, loc, etmp[APC_SBUF], *endtemp;
-	int	nument, entlen, i, matrix, ret, valid;
+	int	nument, entlen, i, matrix, valid;
+	ssize_t	ret;
 	apc_vartab_t *vt;
 
 	/*
@@ -1158,7 +1165,7 @@ static void oldapcsetup(void)
 /* some hardware is a special case - hotwire the list of cmdchars */
 static int firmware_table_lookup(void)
 {
-	int ret;
+	ssize_t ret;
 	unsigned int i, j;
 	char buf[APC_LBUF];
 
@@ -1229,7 +1236,8 @@ static int firmware_table_lookup(void)
 static int getbaseinfo(void)
 {
 	unsigned int	i;
-	int	ret, qco;
+	ssize_t	ret;
+	int	qco;
 	char 	*cmds, *tail, temp[APC_LBUF];
 
 	/*
@@ -1290,7 +1298,8 @@ static int getbaseinfo(void)
 static int do_cal(int start)
 {
 	char	temp[APC_LBUF];
-	int	tval, ret;
+	int	tval;
+	ssize_t	ret;
 
 	apc_flush(SER_AA);
 	ret = apc_write(APC_STATUS);
@@ -1392,7 +1401,8 @@ static int smartmode(void)
  */
 static int smartmode(int cnt)
 {
-	int ret, tries;
+	ssize_t ret;
+	int tries;
 	char temp[APC_LBUF];
 
 	for (tries = 0; tries < cnt; tries++) {
@@ -1426,7 +1436,7 @@ static int smartmode(int cnt)
  */
 static int sdok(int ign)
 {
-	int ret;
+	ssize_t ret;
 	char temp[APC_SBUF];
 
 	/*
@@ -1463,11 +1473,13 @@ static int sdcmd_S(const void *foo)
 /* soft hibernate, hack version for CS 350 & co. */
 static int sdcmd_CS(const void *foo)
 {
-	int ret, cshd = 3500000;
+	ssize_t ret;
+	int cshd = 3500000;
 	char temp[APC_SBUF];
 	const char *val;
 	NUT_UNUSED_VARIABLE(foo);
 
+	/* TODO: Catch overflows! */
 	if ((val = getval("cshdelay")))
 		cshd = (int)(strtod(val, NULL) * 1000000);
 
@@ -1497,7 +1509,8 @@ static int sdcmd_CS(const void *foo)
  */
 static int sdcmd_AT(const void *str)
 {
-	int ret, cnt, padto, i;
+	ssize_t ret;
+	int cnt, padto, i;
 	const char *awd = str;
 	char temp[APC_SBUF], *ptr;
 
@@ -1514,8 +1527,8 @@ static int sdcmd_AT(const void *str)
 	}
 	strcpy(ptr, awd);
 
-	upsdebugx(1, "%s: issuing [%s] with %d minutes of additional wakeup delay",
-			__func__, prtchr(APC_CMD_GRACEDOWN), (int)strtol(awd, NULL, 10)*6);
+	upsdebugx(1, "%s: issuing [%s] with %ld minutes of additional wakeup delay",
+			__func__, prtchr(APC_CMD_GRACEDOWN), strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
@@ -1526,7 +1539,7 @@ static int sdcmd_AT(const void *str)
 
 	ret = sdok(0);
 	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
-		return ret;
+		return (int)ret;
 
 	upslogx(LOG_ERR, "command [%s] with 2 digits doesn't work - try 3 digits", prtchr(APC_CMD_GRACEDOWN));
 	/*
@@ -1545,7 +1558,7 @@ static int sdcmd_AT(const void *str)
 /* shutdown: K - delayed poweroff */
 static int sdcmd_K(const void *foo)
 {
-	int ret;
+	ssize_t ret;
 	NUT_UNUSED_VARIABLE(foo);
 
 	upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_SHUTDOWN));
@@ -1561,7 +1574,7 @@ static int sdcmd_K(const void *foo)
 /* shutdown: Z - immediate poweroff */
 static int sdcmd_Z(const void *foo)
 {
-	int ret;
+	ssize_t ret;
 	NUT_UNUSED_VARIABLE(foo);
 
 	upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_OFF));
@@ -1707,7 +1720,8 @@ static int update_info(int all)
 
 static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
-	int	i, ret;
+	int	i;
+	ssize_t ret;
 	char	orig[APC_LBUF], temp[APC_LBUF];
 	const char	*ptr;
 
@@ -1787,7 +1801,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
-	int	ret;
+	ssize_t	ret;
 	char	temp[APC_LBUF], *ptr;
 
 	/* sanitize length */
@@ -1890,7 +1904,8 @@ static int do_loadon(void)
 /* actually send the instcmd's char to the ups */
 static int do_cmd(const apc_cmdtab_t *ct)
 {
-	int ret, c;
+	ssize_t ret;
+	int c;
 	char temp[APC_LBUF];
 
 	apc_flush(SER_AA);
