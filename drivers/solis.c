@@ -689,7 +689,8 @@ static void get_base_info(void) {
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
-	int i1=0, i2=0, i;
+	int i1=0, i2=0;
+	size_t i;
 	ssize_t tam;
 
 	time_t tmt;
@@ -763,7 +764,7 @@ static void get_base_info(void) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
-		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
+		upsdebugx(4, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
 		tam = ser_get_buf_len(upsfd, packet, packet_size, 3, 0);
 		if (tam < 0) {
 			upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
@@ -873,7 +874,7 @@ static void get_update_info(void) {
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
 
-	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
+	upsdebugx(3, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
 	tam = ser_get_buf_len(upsfd, temp, packet_size, 3, 0);
 
 	if (tam < 0) {
