@@ -46,7 +46,7 @@ upsdrv_info_t upsdrv_info = {
 	{ &apc_tab_info, NULL }
 };
 
-static int ups_status = 0;
+static long ups_status = 0;
 
 /* some forwards */
 
