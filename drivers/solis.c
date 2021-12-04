@@ -202,27 +202,31 @@ static void send_shutdown( void ) {
 static void save_ups_config( void ) {
 	int i, chks = 0;
 
-	ConfigPack[0] = 0xCF;
-	ConfigPack[1] = ihour;
-	ConfigPack[2] = imin;
-	ConfigPack[3] = isec;
-	ConfigPack[4] = lhour;
-	ConfigPack[5] = lmin;
-	ConfigPack[6] = dhour;
-	ConfigPack[7] = dmin;
-	ConfigPack[8] = weekn << 5;
-	ConfigPack[8] = ConfigPack[8] | dian;
-	ConfigPack[9] = mesn << 4;
-	ConfigPack[9] = ConfigPack[9] | ( anon - BASE_YEAR );
-	ConfigPack[10] = DaysOffWeek;
+	/* FIXME? Check for overflows with int => char truncations?
+	 * See also microsol-common.c for very similar code
+	 */
+	ConfigPack[0] = (unsigned char)0xCF;
+	ConfigPack[1] = (unsigned char)ihour;
+	ConfigPack[2] = (unsigned char)imin;
+	ConfigPack[3] = (unsigned char)isec;
+	ConfigPack[4] = (unsigned char)lhour;
+	ConfigPack[5] = (unsigned char)lmin;
+	ConfigPack[6] = (unsigned char)dhour;
+	ConfigPack[7] = (unsigned char)dmin;
+	ConfigPack[8] = (unsigned char)(weekn << 5);
+	ConfigPack[8] = (unsigned char)ConfigPack[8] | (unsigned char)dian;
+	ConfigPack[9] = (unsigned char)(mesn << 4);
+	ConfigPack[9] = (unsigned char)ConfigPack[9] | (unsigned char)( anon - BASE_YEAR );
+	ConfigPack[10] = (unsigned char)DaysOffWeek;
 
 	/* MSB zero */
 	ConfigPack[10] = ConfigPack[10] & (~(0x80));
 
 	for (i=0; i < 11; i++)
-	  chks += ConfigPack[i];
+		chks += ConfigPack[i];
 
-	ConfigPack[11] = chks % 256;
+	/* FIXME? Does truncation to char have same effect as %256 ? */
+	ConfigPack[11] = (unsigned char)(chks % 256);
 
 	for (i=0; i < 12; i++)
 		ser_send_char(upsfd, ConfigPack[i]);

@@ -32,6 +32,12 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
+/* General FIXMEs:
+ * * "static" declarations belong in some one single C source;
+ *   headers should use "extern" to refer linker to look for
+ *   vars in other object files
+ * * use a common definition of bool_t
+ */
 typedef int bool_t;
 
 /* autonomy constants */
@@ -331,7 +337,7 @@ static const struct {
 };
 
 /* Date, time and programming group */
-static int const BASE_YEAR = 1998;
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
 static int Day, Month, Year;
 static int isprogram = 0, progshut = 0, prgups = 0;
 static int dian=0, mesn=0, anon=0, weekn=0;
