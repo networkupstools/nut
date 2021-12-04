@@ -53,8 +53,8 @@ typedef struct {
 	float          q_unknwn;
 } status_t;
 
-static int	ondelay = 1;	/* minutes */
-static int	offdelay = 60;	/* seconds */
+static long	ondelay = 1;	/* minutes */
+static long	offdelay = 60;	/* seconds */
 
 static char	powpan_answer[SMALLBUF];
 
@@ -160,21 +160,21 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "Z.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "Z.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "Z%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "Z%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "S.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "S%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "S%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%dR%04d\r", offdelay / 6, ondelay);
+			snprintf(command, sizeof(command), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 		} else {
-			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
+			snprintf(command, sizeof(command), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 		}
 	} else {
 		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
@@ -237,8 +237,8 @@ static void powpan_initinfo(void)
 	int	i;
 	char	*s;
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	/*
 	 * NOTE: The reply is already in the buffer, since the P4\r command
@@ -591,7 +591,7 @@ static ssize_t powpan_initups(void)
 		}
 
 		if ((ondelay < 0) || (ondelay > 9999)) {
-			fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+			fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 		}
 
 		val = getval("offdelay");
@@ -600,7 +600,7 @@ static ssize_t powpan_initups(void)
 		}
 
 		if ((offdelay < 6) || (offdelay > 600)) {
-			fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [6..600]", offdelay);
+			fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [6..600]", offdelay);
 		}
 
 		/* Truncate to nearest setable value */
