@@ -108,7 +108,7 @@
 typedef struct {
 	const	char	*name;		/* the variable name */
 	unsigned int	flags;	 	/* various flags		*/
-	char		cmd;		/* command character */
+	unsigned char	cmd;		/* command character */
 } apc_vartab_t;
 
 static apc_vartab_t	apc_vartab[] = {
@@ -218,7 +218,7 @@ static apc_vartab_t	apc_vartab[] = {
 typedef struct {
 	const	char	*name;
 	int	flags;
-	char	cmd;
+	unsigned char	cmd;
 } apc_cmdtab_t;
 
 static apc_cmdtab_t	apc_cmdtab[] =

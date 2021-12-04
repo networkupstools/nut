@@ -606,7 +606,7 @@ static int firmware_table_lookup(void)
 
 			/* matched - run the cmdchars from the table */
 			for (j = 0; j < strlen(compat_tab[i].cmdchars); j++)
-				protocol_verify(compat_tab[i].cmdchars[j]);
+				protocol_verify((const unsigned char)(compat_tab[i].cmdchars[j]));
 
 			return 1;	/* matched */
 		}
@@ -620,7 +620,8 @@ static void getbaseinfo(void)
 {
 	unsigned int	i;
 	ssize_t	ret = 0;
-	char 	*alrts, *cmds, temp[512];
+	char	*alrts, temp[512];
+	unsigned char	*cmds;
 
 	/*
 	 *  try firmware lookup first; we could start with 'a', but older models
@@ -664,17 +665,17 @@ static void getbaseinfo(void)
 	}
 	*alrts++ = 0;
 
-	cmds = strchr(alrts, '.');
+	cmds = (unsigned char*)strchr(alrts, '.');
 	if (cmds == NULL) {
 		fatalx(EXIT_FAILURE, "Unable to find APC command string");
 	}
 	*cmds++ = 0;
 
-	for (i = 0; i < strlen(cmds); i++)
+	for (i = 0; i < strlen((char *)cmds); i++)
 		protocol_verify(cmds[i]);
 
 	/* if capabilities are supported, add them here */
-	if (strchr(cmds, APC_CAPABILITY))
+	if (strchr((char *)cmds, APC_CAPABILITY))
 		do_capabilities();
 
 	upsdebugx(1, "APC - UPS capabilities determined");
@@ -1223,7 +1224,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 static int setvar_string(apc_vartab_t *vt, const char *val)
 {
-	unsigned int	i;
+	size_t	i;
 	ssize_t	ret;
 	char	temp[256];
 
@@ -1258,7 +1259,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	usleep(UPSDELAY);
 
 	for (i = 0; i < strlen(val); i++) {
-		ret = ser_send_char(upsfd, val[i]);
+		ret = ser_send_char(upsfd, (const unsigned char)(val[i]));
 
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
