@@ -602,9 +602,10 @@ static void scan_received_pack(void) {
 	CriticBattLast = CriticBatt;
 }
 
-static void comm_receive(const unsigned char *bufptr,  int size) {
+static void comm_receive(const unsigned char *bufptr, size_t size) {
 	if (size == packet_size) {
-		int CheckSum = 0, i;
+		int CheckSum = 0;
+		size_t i;
 
 		memcpy(RecPack, bufptr, packet_size);
 
@@ -688,7 +689,8 @@ static void get_base_info(void) {
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
-	int i1=0, i2=0, tam, i;
+	int i1=0, i2=0, i;
+	ssize_t tam;
 
 	time_t tmt;
 	struct tm *now;
@@ -763,11 +765,15 @@ static void get_base_info(void) {
 	} else {
 		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
 		tam = ser_get_buf_len(upsfd, packet, packet_size, 3, 0);
-		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-		if (tam > 0 && nut_debug_level >= 4) {
-			upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
+		if (tam < 0) {
+			upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+			fatalx(EXIT_FAILURE, NO_SOLIS);
 		}
-		comm_receive(packet, tam);
+		upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+		if (tam > 0 && nut_debug_level >= 4) {
+			upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
+		}
+		comm_receive(packet, (size_t)tam);
 	}
 
 	if (!detected)
@@ -830,7 +836,8 @@ static void get_base_info(void) {
 
 static void get_update_info(void) {
 	unsigned char temp[256];
-	int tam, isday, hourn, minn;
+	int isday, hourn, minn;
+	ssize_t tam;
 
 	/* time update and programable shutdown block */
 	time_t tmt;
@@ -869,11 +876,16 @@ static void get_update_info(void) {
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
 	tam = ser_get_buf_len(upsfd, temp, packet_size, 3, 0);
 
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-	if(tam > 0 && nut_debug_level >= 4)
-		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+	if (tam < 0) {
+		upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	}
 
-	comm_receive(temp, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+	if(tam > 0 && nut_debug_level >= 4)
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
+
+	comm_receive(temp, (size_t)tam);
 }
 
 static int instcmd(const char *cmdname, const char *extra) {

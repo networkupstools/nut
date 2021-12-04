@@ -388,7 +388,7 @@ static void print_info(void);
 static int  is_today( unsigned char, int );
 static void autonomy_calc( int );
 static void scan_received_pack(void);
-static void comm_receive(const unsigned char*,  int );
+static void comm_receive(const unsigned char*, size_t);
 static void get_base_info(void);
 static void get_update_info(void);
 
