@@ -132,9 +132,9 @@ static ezfill_t _initv[] = {
 /* All serial reads of the OPTI-UPS go through here.  We always expect a CR/LF terminated
  *   response.  Unknown/Unimplemented commands return ^U (0x15).  Actions that complete
  *   successfully return ^F (0x06). */
-static inline int optireadline(void)
+static inline ssize_t optireadline(void)
 {
-	int r;
+	ssize_t r;
 	usleep(150000);
 	r = ser_get_line(upsfd, _buf, sizeof(_buf), ENDCHAR, IGNCHARS, 0, 500000 );
 	_buf[sizeof(_buf)-1] = 0;
@@ -157,7 +157,7 @@ static inline int optireadline(void)
 		}
 	}
 	else
-		upsdebugx(1, "READ ERROR: %d", r );
+		upsdebugx(1, "READ ERROR: %zd", r );
 	return r;
 }
 
@@ -167,7 +167,7 @@ static inline int optireadline(void)
  *      -1  serial timeout
  *      -2  unknown/unimplemented command
  */
-static inline int optiquery( const char *cmd )
+static inline ssize_t optiquery( const char *cmd )
 {
 	upsdebugx(2, "SEND: \"%s\"", cmd );
 	ser_send( upsfd, "%s", cmd );
@@ -179,7 +179,8 @@ static inline int optiquery( const char *cmd )
 /* Uses the ezfill_t structure to map UPS commands to the NUT variable destinations */
 static void optifill( ezfill_t *a, int len )
 {
-	int i, r;
+	int i;
+	ssize_t r;
 
 	/* Some things are easy to poll and store */
 	for ( i=0; i<len; ++i )
@@ -315,7 +316,7 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	int r;
+	ssize_t r;
 
 	/* If an Zinto Online-USV is off, switch it on first. */
 	/* It sends only "2" when off, without "\r\n", and doesn't */
@@ -411,7 +412,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int r = optiquery( "AG" );
+	ssize_t r = optiquery( "AG" );
 
 	/* Online-UPS send only "2" when off, without "\r\n" */
 	if ( r < 1 && optimodel == OPTIMODEL_ZINTO )
@@ -489,7 +490,7 @@ void upsdrv_shutdown(void)
 	/* If get no response, assume on battery & battery low */
 	int s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
 
-	int r = optiquery( "AG" );
+	ssize_t r = optiquery( "AG" );
 	if ( r < 1 )
 	{
 		upslogx(LOG_ERR, "can't retrieve ups status during shutdown" );
