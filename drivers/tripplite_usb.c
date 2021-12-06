@@ -980,7 +980,8 @@ void upsdrv_initinfo(void)
 	char *model, *model_end;
 	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
 	     u_value[9], v_value[9], w_value[9];
-	int  va, ret;
+	long va;
+	ssize_t ret;
 	unsigned int proto_number = 0;
 
 	/* Read protocol: */
@@ -1055,7 +1056,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.model", "%s", model);
 
-	dstate_setinfo("ups.power.nominal", "%d", va);
+	dstate_setinfo("ups.power.nominal", "%ld", va);
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
