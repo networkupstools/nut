@@ -1,4 +1,4 @@
-/*!@file tripplite_usb.c 
+/*!@file tripplite_usb.c
  * @brief Driver for Tripp Lite non-PDC/HID USB models.
  */
 /*
@@ -26,7 +26,7 @@
 */
 
 
-/* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+/* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
  *
  * Protocol 1001
  *
@@ -37,12 +37,12 @@
  * :P     -> P01000X (1000VA unit)
  * :S     -> Sbb_XXX (bb = 10: on-line, 11: on battery)
  * :V     -> V102XXX (firmware/protocol version?)
- * :Wt    -> Wt      (watchdog; t = time in seconds (binary, not hex), 
+ * :Wt    -> Wt      (watchdog; t = time in seconds (binary, not hex),
  *                   0 = disable; if UPS is not pinged in this interval, it
  *                   will power off the load, and then power it back on after
  *                   a delay.)
  *
- * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
  *
  * The outgoing commands are sent with HID Set_Report commands over EP0
  * (control message), and incoming commands are received on EP1IN (interrupt
@@ -53,14 +53,14 @@
  * The descriptors say that bInterval is 10 ms. You generally need to wait at
  * least 80-90 ms to get some characters back from the device.  If it takes
  * more than 250 ms, you probably need to resend the command.
- * 
+ *
  * All outgoing commands are followed by a checksum, which is 255 - (sum of
  * characters after ':'), and then by '\r'. All responses should start with
  * the command letter that was sent (no colon), and should be followed by
  * '\r'. If the command is not supported (or apparently if there is a serial
  * timeout internally), the previous response will be echoed back.
  *
- * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
  *
  * SMARTPRO commands (3003):
  *
@@ -85,14 +85,14 @@
  * 			 individually switchable.)
  * :W_    -> W_		(watchdog)
  * :Z     -> Z		(reset for max/min; takes a moment to complete)
- * 
- * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
  *
  * The SMARTPRO unit seems to be slightly saner with regard to message
  * polling. It specifies an interrupt in interval of 100 ms, but I just
- * started at a 2 second timeout to obtain the above table. 
+ * started at a 2 second timeout to obtain the above table.
  *
- * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
  *
  * Commands from serial tripplite.c:
  *
@@ -151,13 +151,13 @@ upsdrv_info_t	upsdrv_info = {
 };
 
 /* TrippLite */
-#define TRIPPLITE_VENDORID 0x09ae 
+#define TRIPPLITE_VENDORID 0x09ae
 
 /* USB IDs device table */
 static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. OMNIVS1000, SMART550USB, ... */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001), NULL },
-	
+
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
@@ -490,16 +490,16 @@ static void decode_v(const unsigned char *value)
 	lb = value[4];
 
 	switch(ivn) {
-		case '0': input_voltage_nominal = 
+		case '0': input_voltage_nominal =
 			  input_voltage_scaled  = 100;
 			  break;
 
 		case 2: /* protocol 3005 */
-		case '1': input_voltage_nominal = 
+		case '1': input_voltage_nominal =
 			  input_voltage_scaled  = 120;
 			  break;
 
-		case '2': input_voltage_nominal = 
+		case '2': input_voltage_nominal =
 			  input_voltage_scaled  = 230;
 			  break;
 
@@ -641,8 +641,8 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 		upsdebugx(5, "send_cmd: received %s (%s)", hexascdump(reply, sizeof(buffer_out)),
 				done ? "OK" : "bad");
 	}
-	
-	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6, 
+
+	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6,
 			"send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
 
 	return done ? sizeof(buffer_out) : 0;
@@ -678,7 +678,7 @@ static void debug_message(const char *msg, size_t len)
 static void do_reboot_wait(unsigned dly)
 {
 	int ret;
-	char buf[256], cmd_W[]="Wx"; 
+	char buf[256], cmd_W[]="Wx";
 
 	cmd_W[1] = dly;
 	upsdebugx(3, "do_reboot_wait(wait=%d): N", dly);
@@ -718,8 +718,8 @@ static int soft_shutdown(void)
 	}
 
 	sleep(2);
-	
-	/*! The unit must be on battery for this to work. 
+
+	/*! The unit must be on battery for this to work.
 	 *
 	 * @todo check for on-battery condition, and print error if not.
 	 * @todo Find an equivalent command for non-OMNIVS models.
@@ -748,7 +748,7 @@ static int hard_shutdown(void)
 	if(ret != 8) return ret;
 
 	sleep(2);
-	
+
 	ret = send_cmd(cmd_K, sizeof(cmd_K), buf, sizeof(buf));
 	return (ret == 8);
 }
@@ -899,13 +899,13 @@ static int setvar(const char *varname, const char *val)
 	}
 
 	if (unit_id >= 0 && !strcasecmp(varname, "ups.id")) {
-                int new_unit_id, ret;
+		int new_unit_id, ret;
 		unsigned char J_msg[] = "J__", buf[9];
 
 		new_unit_id = atoi(val);
 		J_msg[1] = new_unit_id >> 8;
 		J_msg[2] = new_unit_id & 0xff;
-                ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
+		ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
 
 		if(ret <= 0) {
 			upslogx(LOG_NOTICE, "Could not set Unit ID (return code: %d).", ret);
@@ -989,8 +989,8 @@ void upsdrv_initinfo(void)
 		fatalx(EXIT_FAILURE, "Error reading protocol");
 	}
 
-	proto_number = ((unsigned)(proto_value[1]) << 8) 
-			          | (unsigned)(proto_value[2]);
+	proto_number = ((unsigned)(proto_value[1]) << 8)
+	              | (unsigned)(proto_value[2]);
 	tl_model = decode_protocol(proto_number);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
@@ -1059,7 +1059,7 @@ void upsdrv_initinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-        /* Fetch firmware version: */
+	/* Fetch firmware version: */
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
 	toprint_str((char *)(f_value+1), 6);
@@ -1378,7 +1378,7 @@ void upsdrv_updateinfo(void)
 
 		ret = send_cmd(m_msg, sizeof(m_msg), m_value, sizeof(m_value));
 
-                if(m_value[5] != 0x0d) { /* we only expect 4 hex/binary digits */
+		if(m_value[5] != 0x0d) { /* we only expect 4 hex/binary digits */
 			dstate_setinfo("ups.debug.M", "%s", hexascdump(m_value+1, 7));
 		}
 
@@ -1415,7 +1415,7 @@ void upsdrv_updateinfo(void)
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
 					break;
 			}
-                }
+		}
 
 		if( tl_model == TRIPP_LITE_SMART_0004 ) {
 			freq = hex2d(t_value + 3, 4);
@@ -1574,14 +1574,14 @@ void upsdrv_initups(void)
 	regex_matcher->next = &subdriver_matcher;
 
 	/* Search for the first supported UPS matching the regular
-	 *            expression */
+	 * expression */
 	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
 
 	hd = &curDevice;
-	
+
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
