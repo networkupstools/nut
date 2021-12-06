@@ -1350,19 +1350,21 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	for (p = buf; p < buf + buflen; p += ret) {
+		/* buflen constrained to INT_MAX above, so we can cast: */
 		if ((ret = usb_interrupt_read(udev,
 				USB_ENDPOINT_IN | 1,
-				p, buf + buflen - p, 1000)) <= 0
+				p, (int)(buf + buflen - p), 1000)) <= 0
 		) {
 			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			*buf = '\0';
 			return ret;
 		}
-		if ((e = memchr(p, '\r', ret)) != NULL) break;
+		if ((e = memchr(p, '\r', (size_t)ret)) != NULL) break;
 	}
 	if (e != NULL && ++e < buf + buflen) {
 		*e = '\0';
-		return e - buf;
+		/* buflen constrained to INT_MAX above, so we can cast: */
+		return (int)(e - buf);
 	} else {
 		upsdebugx(3, "read: buflen %zu too small", buflen);
 		*buf = '\0';
