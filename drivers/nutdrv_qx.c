@@ -2567,12 +2567,12 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 
 	int	ret = -1;
 
-#ifdef QX_USB
+# ifdef QX_USB
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	/* Communication: USB */
 	if (is_usb) {
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL (&& QX_USB)*/
 
 		if (udev == NULL) {
 			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
@@ -2621,11 +2621,11 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-	#ifdef ETIME
+#ifdef ETIME
 			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
 		fallthrough_case_ETIME:
-	#endif	/* ETIME */
+#endif	/* ETIME */
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
@@ -2650,14 +2650,14 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	/* Communication: serial */
 	} else {	/* !is_usb */
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL (&& QX_USB) */
 
-#endif	/* QX_USB */
+# endif	/* QX_USB (&& TESTING) */
 
-#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 
 		ser_flush_io(upsfd);
 
@@ -2680,11 +2680,11 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		upsdebug_hex(5, "read", buf, ret);
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	}	/* !is_usb */
-	#endif	/* QX_USB */
+#  endif	/* QX_USB (&& QX_SERIAL) */
 
-#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL (&& TESTING) */
 
 	return ret;
 
