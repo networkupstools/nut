@@ -656,7 +656,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
  * The variables are of the form "ups.debug.X" where "X" is the command
  * character.
  */
-static void debug_message(const char *msg, int len)
+static void debug_message(const char *msg, size_t len)
 {
 	int ret;
 	unsigned char tmp_value[9];
