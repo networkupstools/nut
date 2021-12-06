@@ -2556,6 +2556,13 @@ void	upsdrv_cleanup(void)
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
 static int	qx_command(const char *cmd, char *buf, size_t buflen)
 {
+/* NOTE: Could not find in which ifdef-ed codepath, but clang complained
+ * about unused parameters here. Reference them just in case...
+ */
+	NUT_UNUSED_VARIABLE(cmd);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+
 #ifndef TESTING
 
 	int	ret = -1;
