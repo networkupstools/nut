@@ -627,7 +627,9 @@ void upsdrv_initups(void)
 
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
-	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
+	daisychain_info = (daisychain_info_t**)malloc(
+		sizeof(daisychain_info_t) * (size_t)(devices_count + 1)
+		);
 	for (curdev = 0 ; curdev <= devices_count ; curdev++) {
 		daisychain_info[curdev] = (daisychain_info_t*)malloc(sizeof(daisychain_info_t));
 		daisychain_info[curdev]->input_phases = (long)-1;
@@ -1007,7 +1009,10 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		struct snmp_pdu ** new_ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		struct snmp_pdu ** new_ret_array = realloc(
+			ret_array,
+			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
+			);
 		if (new_ret_array == NULL) {
 			upsdebugx(1, "%s: Failed to realloc thread", __func__);
 			break;
