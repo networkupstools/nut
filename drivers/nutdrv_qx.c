@@ -873,7 +873,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int	di, si, size = buf[0];
+				unsigned int	di, si, size = (unsigned int)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 
 					if (di >= (buflen - 1))
@@ -886,8 +886,9 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 
 				}
 
+				/* Note: effective range of di should be unsigned char */
 				buf[di] = 0;
-				ret = di;
+				ret = (int)di;
 			}
 
 			/* "UPS No Ack" has a special meaning */
@@ -1142,7 +1143,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 			/* Simple unicode -> ASCII inplace conversion
 			 * FIXME: this code is at least shared with mge-shut/libshut
 			 * Create a common function? */
-			unsigned int	di, si, size = buf[0];
+			unsigned int	di, si, size = (unsigned int)buf[0];
 			for (di = 0, si = 2; si < size; si += 2) {
 				if (di >= (buflen - 1))
 					break;
@@ -1153,8 +1154,9 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 					buf[di++] = buf[si];
 			}
 
+			/* Note: effective range of di should be unsigned char */
 			buf[di] = 0;
-			ret = di;
+			ret = (int)di;
 		}
 /*	} */
 
@@ -1428,7 +1430,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 			/* Simple unicode -> ASCII inplace conversion
 				* FIXME: this code is at least shared with mge-shut/libshut
 				* Create a common function? */
-			unsigned int	di, si, size = buf[0];
+			unsigned int	di, si, size = (unsigned int)buf[0];
 			for (di = 0, si = 2; si < size; si += 2) {
 
 				if (di >= (buflen - 1))
@@ -1441,8 +1443,9 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 
 			}
 
+			/* Note: effective range of di should be unsigned char */
 			buf[di] = 0;
-			ret = di;
+			ret = (int)di;
 
 			/* "UPS No Ack" has a special meaning */
 			if (
