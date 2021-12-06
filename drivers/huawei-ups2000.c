@@ -163,7 +163,7 @@ static int ups2000_update_status(void);
 static int ups2000_update_alarm(void);
 static int ups2000_update_timers(void);
 static void ups2000_device_identification(void);
-static int ups2000_read_serial(uint8_t *buf, size_t buf_len);
+static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
@@ -1853,7 +1853,7 @@ static time_t time_seek(time_t t, int seconds)
  * ser_get_buf_let() requires a precalculated length, necessiates
  * our own read function.
  */
-static int ups2000_read_serial(uint8_t *buf, size_t buf_len)
+static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 {
 	ssize_t bytes = 0;
 	size_t total = 0;
