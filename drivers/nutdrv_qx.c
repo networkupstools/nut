@@ -445,11 +445,17 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	int	ret = 0;
 	size_t	i;
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -467,7 +473,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -485,7 +491,12 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 /* SGS communication subdriver */
@@ -495,17 +506,25 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	int	ret = 0;
 	size_t  cmdlen, i;
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/* Send command */
 	cmdlen = strlen(cmd);
 
-	for (i = 0; i < cmdlen; i += ret) {
+	for (i = 0; i < cmdlen; i += (size_t)ret) {
 
 		memset(tmp, 0, sizeof(tmp));
 
-		ret = (cmdlen - i) < 7 ? (cmdlen - i) : 7;
+		/* i and cmdlen are size_t nominally, but diff is not large */
+		ret = (int)((cmdlen - i) < 7 ? (cmdlen - i) : 7);
 
-		tmp[0] = ret;
-		memcpy(&tmp[1], &cmd[i], ret);
+		/* ret is between 0 and 7 */
+		tmp[0] = (char)ret;
+		memcpy(&tmp[1], &cmd[i], (unsigned char)ret);
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, tmp, 8, 5000);
@@ -524,7 +543,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; i <= buflen - 8; i += ret) {
+	for (i = 0; i <= buflen - 8; i += (size_t)ret) {
 
 		memset(tmp, 0, sizeof(tmp));
 
@@ -547,7 +566,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		ret = tmp[0] <= 7 ? tmp[0] : 7;
 
 		if (ret > 0)
-			memcpy(&buf[i], &tmp[1], ret);
+			memcpy(&buf[i], &tmp[1], (unsigned char)ret);
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
 		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
@@ -555,7 +574,12 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 /* Phoenix communication subdriver */
@@ -564,6 +588,12 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	char	tmp[SMALLBUF];
 	int	ret;
 	size_t	i;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	for (i = 0; i < 8; i++) {
 
@@ -594,7 +624,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -615,7 +645,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -635,7 +665,12 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 /* Ippon communication subdriver */
@@ -645,10 +680,16 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	int	ret;
 	size_t	i, len;
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/* Send command */
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev,
@@ -707,10 +748,14 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	memset(buf, 0, buflen);
 	memcpy(buf, tmp, len);
 
+	if (len > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, len);
+		return -1;
+	}
 	return (int)len;
 }
 
-static int 	hunnox_protocol(int asking_for) 
+static int 	hunnox_protocol(int asking_for)
 {
 	char	buf[1030];
 
@@ -782,6 +827,12 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 	int	i;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	for (i = 0; command[i].str; i++) {
 
@@ -885,6 +936,12 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	for (i = 0; commands[i].str; i++) {
 
 		if (strcmp(cmd, commands[i].str))
@@ -986,6 +1043,12 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	int	i, ret, index = 0;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	for (i = 0; commands[i].str; i++) {
 
@@ -1130,6 +1193,12 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 		{ NULL, 0 }
 	};
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/*
 	 * Queries (b1..b8) sent (as a 8-bytes interrupt) to the UPS adopt the following scheme:
 	 *
@@ -1213,7 +1282,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, &buf[i], 8, 1000);
@@ -1242,6 +1311,12 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	char *p, *e = NULL;
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	if ((ret = usb_control_msg(udev,
 			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
@@ -1310,6 +1385,12 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	int	i;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	if (buflen < 102) {
 		upsdebugx(4, "size of buf less than 102 byte!");
