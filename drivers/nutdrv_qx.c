@@ -480,7 +480,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
 
 	}
 
@@ -532,6 +532,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
 
 		/* No error!!! */
+		/* TODO: Macro code */
 		if (ret == -110)
 			break;
 
@@ -549,7 +550,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 			memcpy(&buf[i], &tmp[1], ret);
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
 
 	}
 
@@ -585,7 +586,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebug_hex(4, "dump", tmp, (size_t)ret);
 
 	}
 
@@ -629,7 +630,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
 
 	}
 
@@ -698,7 +699,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	if (!len)
 		len = strlen(tmp);
 
-	upsdebug_hex(5, "read", tmp, (int)len);
+	upsdebug_hex(5, "read", tmp, (size_t)len);
 	upsdebugx(3, "read: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	len = len < buflen ? len : buflen - 1;
@@ -850,7 +851,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
-			upsdebug_hex(5, "read", buf, ret);
+			upsdebug_hex(5, "read", buf, (size_t)ret);
 			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 			return ret;
@@ -944,7 +945,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	upsdebug_hex(5, "read", buf, ret);
+	upsdebug_hex(5, "read", buf, (size_t)ret);
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
@@ -1094,7 +1095,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 		}
 /*	} */
 
-	upsdebug_hex(5, "read", buf, ret);
+	upsdebug_hex(5, "read", buf, (size_t)ret);
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
@@ -1224,7 +1225,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		snprintf(read, sizeof(read), "read [%3d]", (int)i);
-		upsdebug_hex(5, read, &buf[i], ret);
+		upsdebug_hex(5, read, &buf[i], (size_t)ret);
 
 	}
 
@@ -1374,7 +1375,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
-			upsdebug_hex(5, "read", buf, ret);
+			upsdebug_hex(5, "read", buf, (size_t)ret);
 			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 			return ret;
@@ -2678,7 +2679,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 			return ret;
 		}
 
-		upsdebug_hex(5, "read", buf, ret);
+		upsdebug_hex(5, "read", buf, (size_t)ret);
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 
 #  ifdef QX_USB
