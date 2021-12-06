@@ -41,6 +41,7 @@
 #include "main.h"
 #include "attribute.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
@@ -128,7 +129,7 @@ typedef enum {
 /* Pointer to the active subdriver object (changed in subdriver_matcher() function) */
 static subdriver_t	*subdriver = NULL;
 
-static int	pollfreq = DEFAULT_POLLFREQ;
+static long	pollfreq = DEFAULT_POLLFREQ;
 static unsigned int	ups_status = 0;
 static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
@@ -1746,7 +1747,7 @@ int	setvar(const char *varname, const char *val)
 	/* Check if given value is in the range of accepted values (range) */
 	if (item->qxflags & QX_FLAG_RANGE) {
 
-		int	valuetoset, min, max;
+		long	valuetoset, min, max;
 
 		if (strspn(value, "0123456789 .") != strlen(value)) {
 			upslogx(LOG_ERR, "%s: non numerical value [%s: %s]", __func__, item->info_type, value);
@@ -2262,7 +2263,7 @@ void	upsdrv_initinfo(void)
 	if (val)
 		pollfreq = strtol(val, NULL, 10);
 
-	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
+	dstate_setinfo("driver.parameter.pollfreq", "%ld", pollfreq);
 
 	time(&lastpoll);
 
@@ -2891,14 +2892,22 @@ static void	qx_set_var(item_t *item)
 			/* This item is not available yet in NUT, so publish these data in the logs */
 			if (item->qxflags & QX_FLAG_NONUT) {
 
-				upslogx(LOG_INFO, "%s, settable range: %s..%s", item->info_type, from->value, to->value);
+				upslogx(LOG_INFO, "%s, settable range: %s..%s",
+					item->info_type, from->value, to->value);
 				ok++;
 
 			/* This item is available in NUT, add its range to the variable */
 			} else {
+				long lFrom = strtol(from->value, NULL, 10),
+					lTo = strtol(to->value, NULL, 10);
 
-				dstate_addrange(item->info_type, strtol(from->value, NULL, 10), strtol(to->value, NULL, 10));
-
+				if (lFrom > INT_MAX || lTo > INT_MAX) {
+					upslogx(LOG_INFO,
+						"%s, settable range exceeds INT_MAX: %ld..%ld",
+						item->info_type, lFrom, lTo);
+				} else {
+					dstate_addrange(item->info_type, (int)lFrom, (int)lTo);
+				}
 			}
 
 			from = NULL;
