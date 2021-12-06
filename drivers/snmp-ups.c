@@ -1343,17 +1343,33 @@ void nut_snmp_perror(struct snmp_session *sess, int status,
 			upsname?upsname:device_name, buf, snmperrstr);
 		free(snmperrstr);
 	} else if (status == STAT_SUCCESS) {
+/* Net-SNMP headers provide and consume errstat with different types:
+net-snmp/output_api.h:    const char     *snmp_errstring(int snmp_errorno);
+net-snmp/types.h:    long            errstat;
+ * Should we match in configure like for "getnameinfo()" arg types?
+ * Currently we cast one to another, below (detecting target type could help).
+ */
 		switch (response->errstat)
 		{
 		case SNMP_ERR_NOERROR:
 			break;
 		case SNMP_ERR_NOSUCHNAME:	/* harmless */
 			upsdebugx(2, "[%s] %s: %s",
-					 upsname?upsname:device_name, buf, snmp_errstring(response->errstat));
+				upsname?upsname:device_name,
+				buf,
+				(response->errstat > INT_MAX
+				    ? "(Net-SNMP errstat value is out of range)"
+				    : snmp_errstring((int)response->errstat)
+				));
 			break;
 		default:
 			upslogx(LOG_ERR, "[%s] %s: Error in packet: %s",
-				upsname?upsname:device_name, buf, snmp_errstring(response->errstat));
+				upsname?upsname:device_name,
+				buf,
+				(response->errstat > INT_MAX
+				    ? "(Net-SNMP errstat value is out of range)"
+				    : snmp_errstring((int)response->errstat)
+				));
 			break;
 		}
 	} else if (status == STAT_TIMEOUT) {
