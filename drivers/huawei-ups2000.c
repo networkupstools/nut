@@ -974,6 +974,7 @@ static int ups2000_update_alarm(void)
 			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
 
 		if (CHECK_BIT(val[idx], ups2000_alarm[i].bit)) {
+			int gotlen;
 			if (ups2000_alarm[i].reg == 40161)
 				/*
 				 * HACK: special treatment for register 40161. If this
@@ -985,10 +986,16 @@ static int ups2000_update_alarm(void)
 
 			alarm_count++;
 
-			all_alarms_len += snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
+			gotlen = snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
 						   ups2000_alarm[i].alarm_id,
 						   ups2000_alarm[i].alarm_cause_id,
 						   ups2000_alarm[i].alarm_name);
+
+			if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
+				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+			}
+
+			all_alarms_len += (size_t)gotlen;
 			alarm_set(alarm_buf);
 
 			if (ups2000_alarm[i].status_name)
@@ -1062,7 +1069,13 @@ static int ups2000_update_alarm(void)
 
 	if (alarm_count > 0) {
 		/* append this to the alarm string as a friendly reminder */
-		all_alarms_len += snprintf(alarm_buf, 128, "Check log for details!");
+		int gotlen = snprintf(alarm_buf, 128, "Check log for details!");
+
+		if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
+			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+		}
+
+		all_alarms_len += (size_t)gotlen;
 		alarm_set(alarm_buf);
 
 		/* if the alarm string is too long, replace it with this */
