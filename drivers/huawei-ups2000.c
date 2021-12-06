@@ -625,8 +625,8 @@ static int ups2000_update_info(void)
 				invalid = 1;
 			break;
 		case REG_UINT32:
-			val  = reg[page][idx] << 16;
-			val |= reg[page][idx + 1];
+			val  = (uint32_t)(reg[page][idx]) << 16;
+			val |= (uint32_t)(reg[page][idx + 1]);
 			if (val == REG_UINT32_INVALID)
 				invalid = 1;
 			break;
