@@ -442,7 +442,7 @@ static int	(*subdriver_command)(const char *cmd, char *buf, size_t buflen) = NUL
 static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
-	int	ret;
+	int	ret = 0;
 	size_t	i;
 
 	/* Send command */
@@ -492,7 +492,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
-	int	ret;
+	int	ret = 0;
 	size_t  cmdlen, i;
 
 	/* Send command */
