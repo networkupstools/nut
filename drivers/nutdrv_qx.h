@@ -175,12 +175,12 @@ int	qx_process(item_t *item, const char *command);
 	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */
 int	ups_infoval_set(item_t *item);
 	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
-int	qx_status(void);
+unsigned int	qx_status(void);
 	/* Edit the current status: it takes one of the NUT status (all but OB are supported, simply set it as not OL), eventually preceded with an exclamation mark to clear it from the status (e.g. !OL). */
 void	update_status(const char *nutvalue);
 
 /* Data for processing status values */
-#define	STATUS(x)	((unsigned)1<<x)
+#define	STATUS(x)	((unsigned int)1U<<x)
 
 typedef enum {
 	OL = 0,		/* On line */

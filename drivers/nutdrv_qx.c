@@ -129,7 +129,7 @@ typedef enum {
 static subdriver_t	*subdriver = NULL;
 
 static int	pollfreq = DEFAULT_POLLFREQ;
-static int	ups_status = 0;
+static unsigned int	ups_status = 0;
 static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
@@ -160,8 +160,8 @@ static void	qx_set_var(item_t *item);
 
 /* == Struct & data for status processing == */
 typedef struct {
-	const char	*status_str;	/* UPS status string */
-	const int	status_mask;	/* UPS status mask */
+	const char	*status_str;			/* UPS status string */
+	const unsigned int	status_mask;	/* UPS status mask */
 } status_lkp_t;
 
 static status_lkp_t	status_info[] = {
@@ -3374,7 +3374,7 @@ int	ups_infoval_set(item_t *item)
 }
 
 /* See header file for details. */
-int	qx_status(void)
+unsigned int	qx_status(void)
 {
 	return ups_status;
 }
