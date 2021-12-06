@@ -2075,5 +2075,5 @@ static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
 		crc_lo = table_crc_lo[i];
 	}
 
-	return (crc_hi << 8 | crc_lo);
+	return ((uint16_t)((uint16_t)(crc_hi) << 8) | (uint16_t)crc_lo);
 }
