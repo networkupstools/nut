@@ -21,6 +21,7 @@
 
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
@@ -29,7 +30,7 @@
 /* Support functions */
 static int	voltronic_claim(void);
 static void	voltronic_makevartable(void);
-static void	voltronic_massive_unskip(const int protocol);
+static void	voltronic_massive_unskip(const long protocol);
 
 /* Range/enum functions */
 static int	voltronic_batt_low(char *value, const size_t len);
@@ -86,7 +87,7 @@ static char	*bypass_alarm,
 		*limited_runtime_on_battery;
 
 /* ups.conf settings */
-static int	max_bypass_volt,
+static long	max_bypass_volt,
 		min_bypass_volt,
 		battery_number,
 		output_phase_angle,
@@ -131,7 +132,7 @@ static info_rw_t	voltronic_r_batt_low[] = {
 /* Preprocess range value for battery low voltage */
 static int	voltronic_batt_low(char *value, const size_t len)
 {
-	int		val = strtol(value, NULL, 10);
+	long		val = strtol(value, NULL, 10);
 	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
 			*ocn = dstate_getinfo("output.current.nominal");
 	NUT_UNUSED_VARIABLE(len);
@@ -212,7 +213,7 @@ static info_rw_t	voltronic_r_bypass_volt_max[] = {
 /* Preprocess range value for Bypass Mode maximum voltage */
 static int	voltronic_bypass_volt_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
@@ -367,7 +368,7 @@ static info_rw_t	voltronic_r_bypass_volt_min[] = {
 /* Preprocess range value for Bypass Mode minimum voltage */
 static int	voltronic_bypass_volt_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
@@ -514,7 +515,7 @@ static info_rw_t	voltronic_r_bypass_freq_max[] = {
 /* Preprocess range value for Bypass Mode maximum frequency */
 static int	voltronic_bypass_freq_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
@@ -613,7 +614,7 @@ static info_rw_t	voltronic_r_bypass_freq_min[] = {
 /* Preprocess range value for Bypass Mode minimum frequency */
 static int	voltronic_bypass_freq_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
@@ -728,7 +729,7 @@ static info_rw_t	voltronic_r_eco_freq_min[] = {
 /* Preprocess range value for ECO Mode minimum frequency */
 static int	voltronic_eco_freq_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
@@ -849,7 +850,7 @@ static info_rw_t	voltronic_r_eco_freq_max[] = {
 /* Preprocess range value for ECO Mode maximum frequency */
 static int	voltronic_eco_freq_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
@@ -1756,7 +1757,7 @@ static void	voltronic_makevartable(void)
 }
 
 /* Unskip vars according to protocol used by the UPS */
-static void	voltronic_massive_unskip(const int protocol)
+static void	voltronic_massive_unskip(const long protocol)
 {
 	item_t	*item;
 
@@ -1949,24 +1950,24 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		 * Accepted values for n: .2 -> .9 , 01 -> 99
 		 * Accepted values for m: 0001 -> 9999 */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
-			ondelay = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
+				ondelay = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
 
 		if (ondelay == 0) {
 
 			if (offdelay < 60) {
-				snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
+				snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
 			} else {
-				snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+				snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 			}
 
 		} else if (offdelay < 60) {
 
-			snprintf(buf, sizeof(buf), ".%dR%04d", offdelay / 6, ondelay);
+			snprintf(buf, sizeof(buf), ".%ldR%04ld", offdelay / 6, ondelay);
 
 		} else {
 
-			snprintf(buf, sizeof(buf), "%02dR%04d", offdelay / 60, ondelay);
+			snprintf(buf, sizeof(buf), "%02ldR%04ld", offdelay / 60, ondelay);
 
 		}
 
@@ -1976,12 +1977,12 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		 * Shutdown after n minutes and stay off
 		 * Accepted values for n: .2 -> .9 , 01 -> 99 */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
 
 		if (offdelay < 60) {
-			snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
+			snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
 		} else {
-			snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+			snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 		}
 
 	} else if (!strcasecmp(item->info_type, "test.battery.start")) {
@@ -1989,17 +1990,21 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		/* Accepted values for test time: .2 -> .9 (.2=12sec ..), 01 -> 99 (minutes)
 		 * -> you have to invoke test.battery.start + number of seconds [12..5940] */
 
-		int	delay;
+		long	delay;
 
 		if (strlen(value) != strspn(value, "0123456789")) {
-			upslogx(LOG_ERR, "%s: non numerical value [%s]", item->info_type, value);
+			upslogx(LOG_ERR,
+				"%s: non numerical value [%s]",
+				item->info_type, value);
 			return -1;
 		}
 
-		delay = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
+		delay = (strlen(value) > 0) ? strtol(value, NULL, 10) : 600;
 
 		if ((delay < 12) || (delay > 5940)) {
-			upslogx(LOG_ERR, "%s: battery test time '%d' out of range [12..5940] seconds", item->info_type, delay);
+			upslogx(LOG_ERR,
+				"%s: battery test time '%ld' out of range [12..5940] seconds",
+				item->info_type, delay);
 			return -1;
 		}
 
@@ -2007,13 +2012,13 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		if (delay < 60) {
 
 			delay = delay / 6;
-			snprintf(buf, sizeof(buf), ".%d", delay);
+			snprintf(buf, sizeof(buf), ".%ld", delay);
 
 		/* test time > 1 minute */
 		} else {
 
 			delay = delay / 60;
-			snprintf(buf, sizeof(buf), "%02d", delay);
+			snprintf(buf, sizeof(buf), "%02ld", delay);
 
 		}
 
@@ -2546,8 +2551,8 @@ static int	voltronic_capability_reset(item_t *item, char *value, const size_t va
 /* Voltage limits for ECO Mode */
 static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 {
-	const int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
-	int		ovn;
+	const long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+	int			ovn;
 	const char	*outvoltnom;
 	char		buf[SMALLBUF];
 	item_t		*unskip;
@@ -2563,7 +2568,9 @@ static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 	} min;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2,
+			"%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
@@ -2590,7 +2597,15 @@ static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 		return 0;
 	}
 
-	ovn = strtol(outvoltnom, NULL, 10);
+	{ /* scoping */
+		long l = strtol(outvoltnom, NULL, 10);
+		if (l > INT_MAX || l < 0) {
+			/* See comments above */
+			upsdebugx(2, "%s: unable to get output voltage nominal: %ld", __func__, l);
+			return 0;
+		}
+		ovn = (int)l;
+	}
 
 	/* For P01/P09 */
 	if (protocol == 1 || protocol == 9) {
@@ -2833,11 +2848,18 @@ static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen)
 	item_t	*unskip;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2, "%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
 	battery_number = strtol(item->value, NULL, 10);
+
+	if (battery_number > INT_MAX) {
+		upsdebugx(2, "%s: battery number out of range [%s: %s]",
+			__func__, item->info_type, item->value);
+		return -1;
+	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -2848,7 +2870,7 @@ static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->dfl, battery_number);
+	snprintf(value, valuelen, item->dfl, (int)battery_number);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -2902,7 +2924,7 @@ static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuel
 /* Protocol used by the UPS */
 static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	int	protocol;
+	long	protocol;
 
 	if (strncasecmp(item->value, "PI", 2)) {
 		upsdebugx(2, "%s: invalid start characters [%.2s]", __func__, item->value);
@@ -2935,12 +2957,12 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 
 	default:
 
-		upslogx(LOG_ERR, "Protocol [PI%02d] is not supported by this driver", protocol);
+		upslogx(LOG_ERR, "Protocol [PI%02ld] is not supported by this driver", protocol);
 		return -1;
 
 	}
 
-	snprintf(value, valuelen, "P%02d", protocol);
+	snprintf(value, valuelen, "P%02ld", protocol);
 
 	/* Unskip vars according to protocol */
 	voltronic_massive_unskip(protocol);
@@ -2952,7 +2974,7 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
  * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in qx2nut array: this function processes the reply to QFS query */
 static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
-	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
 	char	alarm[LARGEBUF]; /* can sprintf() SMALLBUF plus markup into here */
 
@@ -3838,7 +3860,8 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 	char	*val = "";
 
 	if (strspn(item->value, "01") != strlen(item->value)) {
-		upsdebugx(3, "%s: unexpected value %s@%d->%s", __func__, item->value, item->from, item->value);
+		upsdebugx(3, "%s: unexpected value %s@%d->%s",
+			__func__, item->value, item->from, item->value);
 		return -1;
 	}
 
@@ -3847,7 +3870,7 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 	case 63:	/* UPS Type - ups.type */
 
 		{
-			int	type = strtol(item->value, NULL, 10);
+			long	type = strtol(item->value, NULL, 10);
 
 			if (!type)		/* 00 -> Offline */
 				val = "offline";
@@ -3856,7 +3879,8 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 			else if (type == 10)	/* 10 -> Online */
 				val = "online";
 			else {
-				upsdebugx(2, "%s: invalid type [%s: %s]", __func__, item->info_type, item->value);
+				upsdebugx(2, "%s: invalid type [%s: %s]",
+					__func__, item->info_type, item->value);
 				return -1;
 			}
 		}
@@ -3897,7 +3921,7 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 				val = "TRIM";
 			} else if (vo < 1.05 * vi) {
 
-				int	prot = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+				long	prot = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
 				if (!prot || prot == 8) {	/* ups.alarm */
 
@@ -4197,7 +4221,13 @@ static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuel
 /* *SETVAR* Outlet delay time */
 static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t valuelen)
 {
-	int	delay = strtol(value, NULL, 10);
+	long	delay = strtol(value, NULL, 10);
+
+	if ((delay/60) > INT_MAX) {
+		upsdebugx(2, "%s: invalid delay %ld sec set for UPS [%s]",
+			__func__, delay, item->value);
+		return -1;
+	}
 
 	/* From seconds to minute */
 	delay = delay / 60;
@@ -4211,7 +4241,7 @@ static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t va
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->command, delay);
+	snprintf(value, valuelen, item->command, (int)delay);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -4222,16 +4252,21 @@ static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t va
 /* Type of battery */
 static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 
 	if ((item->value[0] != '0') || (strspn(item->value+1, "012") != 1)) {
-
-		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]", __func__, item->value);
+		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]",
+			__func__, item->value);
 		return -1;
-
 	}
 
 	val = strtol(item->value, NULL, 10);
+
+	if (val < 0 || (uintmax_t)val > SIZE_MAX) {
+		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]",
+			__func__, item->value);
+		return -1;
+	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -4242,7 +4277,7 @@ static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->dfl, item->info_rw[val].value);
+	snprintf(value, valuelen, item->dfl, item->info_rw[(size_t)val].value);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -4279,16 +4314,21 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 /* *NONUT* Actual device grid working range type for P31 UPSes */
 static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 
 	if ((item->value[0] != '0') || (strspn(item->value+1, "01") != 1)) {
-
-		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]", __func__, item->value);
+		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]",
+			__func__, item->value);
 		return -1;
-
 	}
 
 	val = strtol(item->value, NULL, 10);
+
+	if (val < 0 || (uintmax_t)val > SIZE_MAX) {
+		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]",
+			__func__, item->value);
+		return -1;
+	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -4299,7 +4339,7 @@ static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->dfl, item->info_rw[val].value);
+	snprintf(value, valuelen, item->dfl, item->info_rw[(size_t)val].value);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -4343,10 +4383,11 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 /* *NONUT* UPS actual input/output phase angles */
 static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 {
-	int	angle;
+	long	angle;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2, "%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
@@ -4374,6 +4415,12 @@ static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 
 	}
 
+	if (angle < 0 || angle > INT_MAX) {
+		upsdebugx(2, "%s: phase angle out of range [%s: %ld]",
+			__func__, item->value, angle);
+		return -1;
+	}
+
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -4383,7 +4430,7 @@ static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->dfl, angle);
+	snprintf(value, valuelen, item->dfl, (int)angle);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
