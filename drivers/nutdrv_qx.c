@@ -1182,12 +1182,13 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
 			read[SMALLBUF] = "";
-	int		ret, answer_len, val2;
+	int		ret, val2;
+	unsigned char	answer_len;
 	double		val1;
 	size_t		i;
 	const struct {
 		const char	*command;	/* Megatec command */
-		const int	answer_len;	/* Expected length of the answer to the ongoing query */
+		const unsigned char	answer_len;	/* Expected length of the answer to the ongoing query */
 	} query[] = {
 		{ "Q1",	47 },
 		{ "F",	22 },
@@ -1259,8 +1260,8 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	tmp[0] = 0x80;
 	/* 0x06 */
 	tmp[1] = 0x06;
-	/* <LEN> */
-	tmp[2] = strlen(command) + 1;
+	/* <LEN>; per above under 3 */
+	tmp[2] = (unsigned char)strlen(command) + 1;
 	/* 0x03 */
 	tmp[3] = 0x03;
 	/* <COMMAND> */
