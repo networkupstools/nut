@@ -412,10 +412,11 @@ static void ups2000_device_identification(void)
 		/* only one device is supported */
 		if (ups2000_ident[i].type == 0x87) {
 			/* so we assume 0x87 must be 1 */
-			ups_count = ups2000_ident[i].val[0] << 24 |
-				    ups2000_ident[i].val[1] << 16 |
-				    ups2000_ident[i].val[2] << 8  |
-				    ups2000_ident[i].val[3];
+			ups_count =
+				(uint32_t)(ups2000_ident[i].val[0]) << 24 |
+				(uint32_t)(ups2000_ident[i].val[1]) << 16 |
+				(uint32_t)(ups2000_ident[i].val[2]) << 8  |
+				(uint32_t)(ups2000_ident[i].val[3]);
 		}
 		if (ups2000_ident[i].type == 0x88) {
 			/*
