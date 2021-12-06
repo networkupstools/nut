@@ -302,13 +302,13 @@ static usb_communication_subdriver_t	*comm_driver = &usb_subdriver;
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
 static double V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
-static int battery_voltage_nominal = 12,
+static long battery_voltage_nominal = 12,
 	   input_voltage_nominal = 120,
 	   input_voltage_scaled = 120,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
 	   switchable_load_banks = 0,
-           unit_id = -1; /*!< range: 1-65535, most likely */
+	   unit_id = -1; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -369,7 +369,7 @@ static void toprint_str(char *str, size_t len)
  *
  * @return See strtol(3)
  */
-static int hex2d(const unsigned char *start, unsigned int len)
+static long hex2d(const unsigned char *start, unsigned int len)
 {
 	unsigned char buf[32];
 	buf[31] = '\0';
@@ -401,7 +401,7 @@ static unsigned int bin2d(const unsigned char *start, unsigned int len)
 	return value;
 }
 
-static int hex_or_bin2d(const unsigned char *start, unsigned int len)
+static long hex_or_bin2d(const unsigned char *start, unsigned int len)
 {
 	if(is_binary_protocol()) {
 		return bin2d(start, len);
@@ -476,7 +476,7 @@ static enum tl_model_t decode_protocol(unsigned int proto)
 static void decode_v(const unsigned char *value)
 {
 	unsigned char ivn, lb;
-	int bv;
+	long bv;
 
 	if(is_binary_protocol()) {
 		/* 0x00 0x0c -> 12V ? */
@@ -524,7 +524,7 @@ static void decode_v(const unsigned char *value)
 			}
 		}
 	}
-	upsdebugx(2, "Switchable load banks: %d", switchable_load_banks);
+	upsdebugx(2, "Switchable load banks: %ld", switchable_load_banks);
 }
 
 void upsdrv_initinfo(void);
@@ -1106,8 +1106,8 @@ void upsdrv_initinfo(void)
 		if(ret <= 0) {
 			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
 		} else {
-			unit_id = (int)((unsigned)(u_value[1]) << 8) 
-				| (unsigned)(u_value[2]);
+			unit_id = (long)((unsigned)(u_value[1]) << 8)
+			               | (unsigned)(u_value[2]);
 		}
 
 		if(tl_model == TRIPP_LITE_SMART_0004) {
@@ -1116,17 +1116,17 @@ void upsdrv_initinfo(void)
 	}
 
 	if(unit_id >= 0) {
-		dstate_setinfo("ups.id", "%d", unit_id);
+		dstate_setinfo("ups.id", "%ld", unit_id);
 		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.id", 5);
-		upslogx(LOG_DEBUG,"Unit ID: %d", unit_id);
+		upslogx(LOG_DEBUG,"Unit ID: %ld", unit_id);
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
-	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
-	dstate_setinfo("ups.debug.load_banks", "%d", switchable_load_banks);
+	dstate_setinfo("input.voltage.nominal", "%ld", input_voltage_nominal);
+	dstate_setinfo("battery.voltage.nominal", "%ld", battery_voltage_nominal);
+	dstate_setinfo("ups.debug.load_banks", "%ld", switchable_load_banks);
 
 	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
@@ -1179,7 +1179,8 @@ void upsdrv_updateinfo(void)
 			s_msg[] = "S", m_msg[] = "M", t_msg[] = "T";
 	unsigned char b_value[9], d_value[9], l_value[9], s_value[9],
 			m_value[9], t_value[9];
-	int bp, freq;
+	int bp;
+	long freq;
 	double bv_12V = 0.0; /*!< battery voltage, relative to a 12V battery */
 	double battery_voltage; /*!< the total battery voltage */
 
@@ -1352,7 +1353,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage", "%d",
+		dstate_setinfo("input.voltage", "%ld",
 				hex_or_bin2d(d_value+1, 2) * input_voltage_scaled / 120);
 
 		/* TODO: factor out the two constants */
@@ -1375,8 +1376,10 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage.minimum", "%3d", hex_or_bin2d(m_value+1, 2) * input_voltage_scaled / 120);
-		dstate_setinfo("input.voltage.maximum", "%3d", hex_or_bin2d(m_value+3, 2) * input_voltage_scaled / 120);
+		dstate_setinfo("input.voltage.minimum", "%3ld",
+			hex_or_bin2d(m_value+1, 2) * input_voltage_scaled / 120);
+		dstate_setinfo("input.voltage.maximum", "%3ld",
+			hex_or_bin2d(m_value+3, 2) * input_voltage_scaled / 120);
 
 		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -1408,10 +1411,12 @@ void upsdrv_updateinfo(void)
 		}
 
 		if( tl_model == TRIPP_LITE_SMART_3005 ) {
-			dstate_setinfo("ups.temperature", "%d", (unsigned)(hex2d(t_value+1, 1)));
+			dstate_setinfo("ups.temperature", "%d",
+				(unsigned)(hex2d(t_value+1, 1)));
 		} else {
 			/* I'm guessing this is a calibration constant of some sort. */
-			dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
+			dstate_setinfo("ups.temperature", "%.1f",
+				(unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
 		}
 	}
 
@@ -1445,16 +1450,17 @@ void upsdrv_updateinfo(void)
 	switch(tl_model) {
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
-			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/240.0*input_voltage_scaled);
+			dstate_setinfo("output.voltage", "%.1f",
+				hex2d(l_value+1, 4)/240.0*input_voltage_scaled);
 			break;
 		case TRIPP_LITE_SMARTPRO:
-			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			dstate_setinfo("ups.load", "%ld", hex2d(l_value+1, 2));
 			break;
 		case TRIPP_LITE_SMART_3005:
-			dstate_setinfo("ups.load", "%d", hex_or_bin2d(l_value+1, 1));
+			dstate_setinfo("ups.load", "%ld", hex_or_bin2d(l_value+1, 1));
 			break;
 		case TRIPP_LITE_SMART_0004:
-			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			dstate_setinfo("ups.load", "%ld", hex2d(l_value+1, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 		case TRIPP_LITE_UNKNOWN:
