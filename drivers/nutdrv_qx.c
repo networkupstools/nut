@@ -151,7 +151,7 @@ static struct {
 /* == Support functions == */
 static int	subdriver_matcher(void);
 static int	qx_command(const char *cmd, char *buf, size_t buflen);
-static int	qx_process_answer(item_t *item, const int len);
+static int	qx_process_answer(item_t *item, const size_t len);
 static bool_t	qx_ups_walk(walkmode_t mode);
 static void	ups_status_set(void);
 static void	ups_alarm_set(void);
@@ -3210,7 +3210,7 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 
 /* Process the answer we got back from the UPS
  * Return -1 on errors, 0 on success */
-static int	qx_process_answer(item_t *item, const int len)
+static int	qx_process_answer(item_t *item, const size_t len)
 {
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
@@ -3296,7 +3296,12 @@ int	qx_process(item_t *item, const char *command)
 	free (cmd);
 
 	/* Process the answer to get the value */
-	return qx_process_answer(item, len);
+	if (len < 0) {
+		upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
+		return -1;
+	}
+
+	return qx_process_answer(item, (size_t)len);
 }
 
 /* See header file for details. */

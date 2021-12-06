@@ -73,7 +73,7 @@ typedef struct item_t {
 
 	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime.
 						 * If you expect a nonvalid C string (e.g.: inner '\0's) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a preprocess_answer() function */
-	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there's no minimum length to look after. */
+	const size_t	answer_len;		/* Expected min length of the answer. Set it to 0 if there's no minimum length to look after. */
 	const char	leading;		/* Expected leading character of the answer (optional) */
 
 	char		value[SMALLBUF];	/* Value from the answer, filled at runtime (i.e. answer between from and to) */
