@@ -913,7 +913,7 @@ static struct {
 		"UPS has shutdown, bypass output was overload and exceeded "
 		"time limit.",
 	},
-	{ false, -1, -1, -1, -1, -1, -1, NULL, NULL, NULL }
+	{ false, 0, -1, -1, -1, -1, -1, NULL, NULL, NULL }
 };
 
 
