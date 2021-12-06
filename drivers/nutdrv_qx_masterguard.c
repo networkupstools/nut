@@ -510,7 +510,7 @@ static int masterguard_shutdown_stayoff(item_t *item, char *value, const size_t 
 static int masterguard_test_battery(item_t *item, char *value, const size_t valuelen) {
 	NUT_UNUSED_VARIABLE(item);
 
-	int duration;
+	long duration;
 	char *p;
 
 	if (value[0] == '\0') {
@@ -524,7 +524,7 @@ static int masterguard_test_battery(item_t *item, char *value, const size_t valu
 		return 0;
 	}
 	if (duration < 60 || duration > 99*60) goto ill;
-	snprintf(value, valuelen, "T%02d\r", duration / 60);
+	snprintf(value, valuelen, "T%02ld\r", duration / 60);
 	return 0;
 
 ill:	upsdebugx(2, "battery test: illegal duration %s", value);
