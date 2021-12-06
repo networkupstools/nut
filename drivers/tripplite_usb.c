@@ -886,9 +886,15 @@ static int instcmd(const char *cmdname, const char *extra)
 static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
-		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-		return STAT_SET_HANDLED;
+		int ival = atoi(val);
+		if (ival >= 0) {
+			offdelay = (unsigned int)ival;
+			dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+			return STAT_SET_HANDLED;
+		} else {
+			upslogx(LOG_NOTICE, "FAILED to set '%s' to %d", varname, ival);
+			return STAT_SET_UNKNOWN;
+		}
 	}
 
 	if (unit_id >= 0 && !strcasecmp(varname, "ups.id")) {
@@ -1128,16 +1134,16 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.voltage.nominal", "%ld", battery_voltage_nominal);
 	dstate_setinfo("ups.debug.load_banks", "%ld", switchable_load_banks);
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
 
 #if 0
-	dstate_setinfo("ups.delay.start", "%d", startdelay);
+	dstate_setinfo("ups.delay.start", "%u", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
 
-	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
@@ -1585,8 +1591,13 @@ void upsdrv_initups(void)
 
 	value = getval("offdelay");
 	if (value) {
-		offdelay = atoi(value);
-		upsdebugx(2, "Setting 'offdelay' to %d", offdelay);
+		int ival = atoi(value);
+		if (ival >= 0) {
+			offdelay = (unsigned int)ival;
+			upsdebugx(2, "Setting 'offdelay' to %u", offdelay);
+		} else {
+			upsdebugx(2, "FAILED to set 'offdelay' to %d", ival);
+		}
 	}
 
 	value = getval("battery_min");
