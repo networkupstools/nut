@@ -644,8 +644,12 @@ static int masterguard_new_slaveaddr(item_t *item, const int len) {
 	NUT_UNUSED_VARIABLE(item);
 
 	upsdebugx(3, "saved slaveaddr %ld", masterguard_next_slaveaddr);
-	masterguard_my_slaveaddr[0] = '0' + masterguard_next_slaveaddr / 10;
-	masterguard_my_slaveaddr[1] = '0' + masterguard_next_slaveaddr % 10;
+	if (masterguard_next_slaveaddr < 0 || masterguard_next_slaveaddr > 99) {
+		upsdebugx(2, "%s: illegal value %ld", __func__, masterguard_next_slaveaddr);
+		return -1;
+	}
+	masterguard_my_slaveaddr[0] = '0' + (char)(masterguard_next_slaveaddr / 10);
+	masterguard_my_slaveaddr[1] = '0' + (char)(masterguard_next_slaveaddr % 10);
 	upsdebugx(3, "new slaveaddr %s", masterguard_my_slaveaddr);
 	return len;
 }
