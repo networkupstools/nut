@@ -602,8 +602,8 @@ static int ups2000_update_info(void)
 
 	for (i = 0; ups2000_var[i].name != NULL; i++) {
 		uint16_t reg_id = ups2000_var[i].reg;
-		uint8_t page = reg_id / 1000 - 1;
-		uint8_t idx = reg_id % 1000;
+		uint8_t page = (uint8_t)(reg_id / 1000 - 1);
+		uint8_t idx =  (uint8_t)(reg_id % 1000);
 		uint32_t val;
 		bool invalid = 0;
 
