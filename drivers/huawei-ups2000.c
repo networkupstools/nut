@@ -301,14 +301,14 @@ static void ups2000_device_identification(void)
 		0x2B, 0x0E, 0x03, 0x03, 0x00, 0x00, 0x02,
 	};
 
-	bool serial_fail;  /* unable to read from serial */
+	bool serial_fail = 0;  /* unable to read from serial */
 	uint16_t crc16_recv, crc16_calc;  /* resp CRC */
-	bool crc16_fail;  /* resp CRC failure */
+	bool crc16_fail = 0;  /* resp CRC failure */
 	uint32_t ups_count = 0;  /* number of UPS in the resp list */
 	uint8_t ident_response[IDENT_RESPONSE_MAX_LEN];  /* resp buf */
 	size_t ident_response_len;    /* buf len */
-	uint8_t *ident_response_end;  /* buf end marker (excluding CRC) */
-	uint8_t *ptr;  /* buf iteratior */
+	uint8_t *ident_response_end = NULL;  /* buf end marker (excluding CRC) */
+	uint8_t *ptr = NULL;  /* buf iteratior */
 
 	/* a desc string copied from ups2000_ident[] */
 	char *ups2000_ident_desc = NULL;
@@ -1906,7 +1906,7 @@ static int retry_status = RETRY_ENABLE;
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
 	int i;
-	int r;
+	int r = -1;
 
 	if (addr < 10000)
 		upslogx(LOG_ERR, "Invalid register read from %04d detected. "
@@ -1951,7 +1951,7 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src)
 {
 	int i;
-	int r;
+	int r = -1;
 
 	if (addr < 10000)
 		upslogx(LOG_ERR, "Invalid register write to %04d detected. "
