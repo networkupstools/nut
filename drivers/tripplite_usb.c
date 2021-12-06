@@ -263,7 +263,7 @@ static int is_smart_protocol()
 }
 
 /*!@brief If a character is not printable, return a dot. */
-#define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
+#define toprint(x) (isalnum((int)x) ? (char)(x) : (char)'.')
 
 #define ENDCHAR 13
 
@@ -345,16 +345,17 @@ static int reconnect_ups(void)
 /*!@brief Convert a string to printable characters (in-place)
  *
  * @param[in,out] str	String to convert
- * @param[in] len	Maximum number of characters to convert, or <= 0 to
+ * @param[in] len	Maximum number of characters to convert, or == 0 to
  * convert all.
  *
  * Uses toprint() macro defined above.
  */
-static void toprint_str(char *str, int len)
+static void toprint_str(char *str, size_t len)
 {
-	int i;
-	if(len <= 0) len = strlen(str);
-	for(i=0; i < len; i++)
+	size_t i;
+	if (len == 0) len = strlen(str);
+	/* FIXME? Should we check for '\0' along the way? */
+	for (i = 0; i < len; i++)
 		str[i] = toprint(str[i]);
 }
 
@@ -434,7 +435,7 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	if (end-bufp > 0) *bufp++ = '\'';
 
 	for(i=0; i<len && end-bufp>0; i++) {
-		*bufp++ = toprint(msg[i]);
+		*bufp++ = (unsigned char)toprint(msg[i]);
 	}
 	if (end-bufp > 0) *bufp++ = '\'';
 
