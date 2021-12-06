@@ -1314,6 +1314,13 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	char *p, *e = NULL;
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
+	size_t cmdlen = strlen(cmd);
+
+	if (cmdlen > INT_MAX) {
+		upsdebugx(3, "%s: requested command is too long (%zu)",
+			__func__, cmdlen);
+		return 0;
+	}
 
 	if (buflen > INT_MAX) {
 		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
@@ -1323,7 +1330,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 
 	if ((ret = usb_control_msg(udev,
 			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
-			0x0d, 0, 0, (char *)cmd, strlen(cmd), 1000)) <= 0
+			0x0d, 0, 0, (char *)cmd, (int)cmdlen, 1000)) <= 0
 	) {
 		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 		*buf = '\0';
