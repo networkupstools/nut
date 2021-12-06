@@ -903,8 +903,9 @@ static int setvar(const char *varname, const char *val)
 		unsigned char J_msg[] = "J__", buf[9];
 
 		new_unit_id = atoi(val);
-		J_msg[1] = new_unit_id >> 8;
-		J_msg[2] = new_unit_id & 0xff;
+		/* FIXME: Assumes memory layout / endianness? */
+		J_msg[1] = (unsigned char)(new_unit_id >> 8);
+		J_msg[2] = (unsigned char)(new_unit_id & 0xff);
 		ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
 
 		if(ret <= 0) {
