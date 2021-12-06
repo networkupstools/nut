@@ -313,7 +313,7 @@ static void ups2000_device_identification(void)
 	/* a desc string copied from ups2000_ident[] */
 	char *ups2000_ident_desc = NULL;
 	int i;
-	int r;
+	ssize_t r;
 
 	/* attempt to obtain a response header with valid CRC. */
 	for (i = 0; i < 3; i++) {
