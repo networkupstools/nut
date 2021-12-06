@@ -96,7 +96,7 @@ static const char *supported_model[] = {
 #define UPS2000_IDENT_MAX_FIELDS 9
 #define UPS2000_IDENT_MAX_LEN 128
 #define UPS2000_IDENT_OFFSET
-struct {
+static struct {
 	uint8_t type;
 	uint8_t len;
 	uint8_t val[UPS2000_IDENT_MAX_LEN];
@@ -125,10 +125,10 @@ enum {
 	UPS2000_DESC_DEVICE_ID,    /* currently unused */
 	UPS2000_DESC_PARALLEL_ID   /* currently unused */
 };
-char ups2000_desc[UPS2000_DESC_MAX_FIELDS][UPS2000_DESC_MAX_LEN] = { { 0 } };
+static char ups2000_desc[UPS2000_DESC_MAX_FIELDS][UPS2000_DESC_MAX_LEN] = { { 0 } };
 
 /* global variable for modbus communication */
-modbus_t *modbus_ctx = NULL;
+static modbus_t *modbus_ctx = NULL;
 
 /*
  * How many seconds to wait before switching off/on/reboot the UPS?
@@ -1892,7 +1892,7 @@ enum {
 	RETRY_ENABLE,
 	RETRY_DISABLE_TEMPORARY
 };
-int retry_status = RETRY_ENABLE;
+static int retry_status = RETRY_ENABLE;
 
 
 /*
