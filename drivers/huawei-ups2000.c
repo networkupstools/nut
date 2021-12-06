@@ -1495,13 +1495,18 @@ static int instcmd(const char *cmd, const char *extra)
 
 	if (cmd_action->handler_func) {
 		/* handled by a function */
-		status = cmd_action->handler_func(cmd_action->reg1);
+		if (cmd_action->reg1 < 0) {
+			upslogx(LOG_WARNING, "instcmd: command [%s] reg1 is negative", cmd);
+			return STAT_INSTCMD_UNKNOWN;
+		} else {
+			status = cmd_action->handler_func((uint16_t)cmd_action->reg1);
+		}
 	}
-	else if (cmd_action->reg1 != -1 && cmd_action->val1 != -1) {
+	else if (cmd_action->reg1 >= 0 && cmd_action->val1 >= 0) {
 		/* handled by a register write */
 		int r = ups2000_write_register(modbus_ctx,
 					       10000 + cmd_action->reg1,
-					       cmd_action->val1);
+					       (uint16_t)cmd_action->val1);
 		if (r == 1)
 			status = STAT_INSTCMD_HANDLED;
 		else
@@ -1511,10 +1516,10 @@ static int instcmd(const char *cmd, const char *extra)
 		 * if the previous write succeeds and there is an additional
 		 * register to write.
 		 */
-		if (r == 1 && cmd_action->reg2 != -1 && cmd_action->val2 != -1) {
+		if (r == 1 && cmd_action->reg2 >= 0 && cmd_action->val2 >= 0) {
 			r = ups2000_write_register(modbus_ctx,
 						   10000 + cmd_action->reg2,
-						   cmd_action->val2);
+						   (uint16_t)cmd_action->val2);
 			if (r == 1)
 				status = STAT_INSTCMD_HANDLED;
 			else
