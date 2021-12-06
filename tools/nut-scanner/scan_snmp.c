@@ -101,11 +101,14 @@ static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
 			const oid *in_name2, size_t len2);
 static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
-/* NOTE: Older code had "u_int" as hashtype_len; are there different
- * relevant versions of NetSNMP out there with different ABI's?
+
+/* NOTE: Net-SNMP headers just are weird like that, in the same release:
+net-snmp/types.h:              size_t securityAuthProtoLen;
+net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int hashtype_len, ...
  * Should we match in configure like for "getnameinfo()" arg types?
+ * Currently we cast one to another below (detecting target type could help).
  */
-static int (*nut_generate_Ku)(const oid * hashtype, size_t hashtype_len,
+static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
@@ -641,8 +644,13 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 
 		/* set the authentication key to a MD5/SHA1 hashed version of
 		 * our passphrase (must be at least 8 characters long) */
+		if ((uintmax_t)snmp_sess->securityAuthProtoLen > UINT_MAX) {
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %zu",
+				snmp_sess->securityAuthProtoLen);
+			return 0;
+		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
-					snmp_sess->securityAuthProtoLen,
+					(u_int)snmp_sess->securityAuthProtoLen,
 					(unsigned char *) sec->authPassword,
 					strlen(sec->authPassword),
 					snmp_sess->securityAuthKey,
@@ -712,8 +720,13 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* set the private key to a MD5/SHA hashed version of
 		 * our passphrase (must be at least 8 characters long) */
 		snmp_sess->securityPrivKeyLen = USM_PRIV_KU_LEN;
+		if ((uintmax_t)snmp_sess->securityAuthProtoLen > UINT_MAX) {
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %zu",
+				snmp_sess->securityAuthProtoLen);
+			return 0;
+		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
-					snmp_sess->securityAuthProtoLen,
+					(u_int)snmp_sess->securityAuthProtoLen,
 					(unsigned char *) sec->privPassword,
 					strlen(sec->privPassword),
 					snmp_sess->securityPrivKey,

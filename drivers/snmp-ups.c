@@ -831,8 +831,20 @@ void nut_snmp_init(const char *type, const char *hostname)
 		/* set the authentication key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
 		if (g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
+/* NOTE: Net-SNMP headers just are weird like that, in the same release:
+net-snmp/types.h:              size_t securityAuthProtoLen;
+net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int hashtype_len, ...
+ * Should we match in configure like for "getnameinfo()" arg types?
+ * Currently we cast one to another, below (detecting target type could help).
+ */
+			if ((uintmax_t)g_snmp_sess.securityAuthProtoLen > UINT_MAX) {
+				fatalx(EXIT_FAILURE,
+					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					g_snmp_sess.securityAuthProtoLen);
+			}
+
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
-				g_snmp_sess.securityAuthProtoLen,
+				(u_int)g_snmp_sess.securityAuthProtoLen,
 				(const unsigned char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
 				&g_snmp_sess.securityAuthKeyLen) !=
@@ -879,8 +891,16 @@ void nut_snmp_init(const char *type, const char *hostname)
 		 * passphrase (must be at least 8 characters long) */
 		if (g_snmp_sess.securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) {
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
+
+			/* See comment on generate_Ku() a few dozen lines above */
+			if ((uintmax_t)g_snmp_sess.securityAuthProtoLen > UINT_MAX) {
+				fatalx(EXIT_FAILURE,
+					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					g_snmp_sess.securityAuthProtoLen);
+			}
+
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
-				g_snmp_sess.securityAuthProtoLen,
+				(u_int)g_snmp_sess.securityAuthProtoLen,
 				(const unsigned char *) privPassword, strlen(privPassword),
 				g_snmp_sess.securityPrivKey,
 				&g_snmp_sess.securityPrivKeyLen) !=
