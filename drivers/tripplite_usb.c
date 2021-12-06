@@ -919,16 +919,21 @@ static int setvar(const char *varname, const char *val)
 	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
 		char outlet_name[80];
 		char index_str[10], *first_dot, *next_dot;
-		int index_chars, index, state, ret;
+		long index_chars;
+		int  index, state, ret;
 
 		first_dot = strstr(varname, ".");
 		next_dot = strstr(first_dot + 1, ".");
+		if (!next_dot) {
+			upslogx(LOG_NOTICE, "FAILED to get outlet index from '%s' (no second dot)", varname);
+			return STAT_SET_UNKNOWN;
+		}
 		index_chars = next_dot - (first_dot + 1);
 
-		if(index_chars > 9) return STAT_SET_UNKNOWN;
+		if(index_chars > 9 || index_chars < 0) return STAT_SET_UNKNOWN;
 		if(strcmp(next_dot, ".switch")) return STAT_SET_UNKNOWN;
 
-		strncpy(index_str, first_dot + 1, index_chars);
+		strncpy(index_str, first_dot + 1, (size_t)index_chars);
 		index_str[index_chars] = 0;
 
 		index = atoi(index_str);
