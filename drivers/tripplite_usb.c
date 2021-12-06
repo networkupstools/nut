@@ -705,8 +705,9 @@ static int soft_shutdown(void)
 	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
 	/* Already binary: */
-	cmd_N[2] = offdelay;
-	cmd_N[1] = offdelay >> 8;
+	/* FIXME: Assumes memory layout / endianness? */
+	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
+	cmd_N[1] = (unsigned char)(offdelay >> 8);
 	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
