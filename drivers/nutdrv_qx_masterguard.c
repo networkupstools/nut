@@ -107,7 +107,7 @@ static int masterguard_series(item_t *item, char *value, const size_t valuelen) 
 static int masterguard_model(item_t *item, char *value, const size_t valuelen) {
 	char *model;
 	int rack;
-	int min_bp, max_bp;
+	char min_bp, max_bp;
 
 	rack = (strstr(item->value, "-19") != NULL);
 	if (strncmp(item->value, "A  700", 6) == 0) {
