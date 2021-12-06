@@ -347,14 +347,14 @@ static int masterguard_beeper_status(item_t *item, char *value, const size_t val
 static int masterguard_output_voltages(item_t *item, char *value, const size_t valuelen) {
 	char sep[] = " ";
 	char *w;
-	int n = 0;
+	size_t n = 0;
 
 	strncpy(value, item->value, valuelen); /* save before strtok mangles it */
 	for (w = strtok(item->value, sep); w; w = strtok(NULL, sep)) {
 		n++;
-		upsdebugx(4, "output voltage #%d: %s", n, w);
+		upsdebugx(4, "output voltage #%zu: %s", n, w);
 		if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, n * sizeof(info_rw_t))) == NULL) {
-			upsdebugx(1, "output voltages: allocating #%d failed", n);
+			upsdebugx(1, "output voltages: allocating #%zu failed", n);
 			return -1;
 		}
 		strncpy(masterguard_e_outvolts[n - 1].value, w, SMALLBUF - 1);
@@ -362,7 +362,7 @@ static int masterguard_output_voltages(item_t *item, char *value, const size_t v
 	}
 	/* need to do this seperately in case the loop is run zero times */
 	if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, (n + 1) * sizeof(info_rw_t))) == NULL) {
-		upsdebugx(1, "output voltages: allocating terminator after #%d failed", n);
+		upsdebugx(1, "output voltages: allocating terminator after #%zu failed", n);
 		return -1;
 	}
 	masterguard_e_outvolts[n].value[0] = '\0';
