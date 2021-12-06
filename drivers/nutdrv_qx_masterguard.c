@@ -32,11 +32,11 @@ static char masterguard_my_series = '?';
 /* slave address for commands that require it */
 static char masterguard_my_slaveaddr[3] = "??"; /* null-terminated for strtol() in claim() */
 /* next slaveaddr to use after the SS command (which needs the old one) has been run */
-static int masterguard_next_slaveaddr;
+static long masterguard_next_slaveaddr;
 /* output current/power computation */
-static int masterguard_my_power = 0;
+static long masterguard_my_power = 0;
 /* battery voltage computation */
-static int masterguard_my_numcells = 0;
+static long masterguard_my_numcells = 0;
 
 
 /* ranges */
@@ -632,7 +632,7 @@ static int masterguard_set_slaveaddr(item_t *item, char *value, const size_t val
 		upsdebugx(2, "set_slaveaddr: illegal value %s", value);
 		return -1;
 	}
-	upsdebugx(3, "next slaveaddr %d", masterguard_next_slaveaddr);
+	upsdebugx(3, "next slaveaddr %ld", masterguard_next_slaveaddr);
 	return masterguard_setvar(item, value, valuelen);
 }
 
@@ -643,7 +643,7 @@ static int masterguard_set_slaveaddr(item_t *item, char *value, const size_t val
 static int masterguard_new_slaveaddr(item_t *item, const int len) {
 	NUT_UNUSED_VARIABLE(item);
 
-	upsdebugx(3, "saved slaveaddr %d", masterguard_next_slaveaddr);
+	upsdebugx(3, "saved slaveaddr %ld", masterguard_next_slaveaddr);
 	masterguard_my_slaveaddr[0] = '0' + masterguard_next_slaveaddr / 10;
 	masterguard_my_slaveaddr[1] = '0' + masterguard_next_slaveaddr % 10;
 	upsdebugx(3, "new slaveaddr %s", masterguard_my_slaveaddr);
@@ -936,7 +936,7 @@ static int masterguard_claim(void) {
 		NULL
 	};
 	char **sp;
-	int config_slaveaddr;
+	long config_slaveaddr;
 	char *sa;
 	char **commands;
 
@@ -979,7 +979,7 @@ static int masterguard_claim(void) {
 	}
 
 	if (config_slaveaddr >= 0 && config_slaveaddr != strtol(masterguard_my_slaveaddr, NULL, 10)) {
-		upsdebugx(2, "claim: slave address mismatch: want %02d, have %s", config_slaveaddr, masterguard_my_slaveaddr);
+		upsdebugx(2, "claim: slave address mismatch: want %02ld, have %s", config_slaveaddr, masterguard_my_slaveaddr);
 		return 0;
 	}
 
