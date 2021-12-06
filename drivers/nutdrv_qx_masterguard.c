@@ -465,7 +465,7 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen, const int stayoff) {
 	NUT_UNUSED_VARIABLE(item);
 
-	int offdelay;
+	long offdelay;
 	char *p;
 	const char *val, *name;
 	char offstr[3];
@@ -475,21 +475,23 @@ static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen
 	if (offdelay < 0) {
 		goto ill;
 	} else if (offdelay < 60) {
-		offstr[0] = '.'; offstr[1] = '0' + offdelay / 6;
+		offstr[0] = '.';
+		offstr[1] = '0' + (char)offdelay / 6;
 	} else if (offdelay <= 99*60) {
-		int m = offdelay / 60;
-		offstr[0] = '0' + m / 10; offstr[1] = '0' + m % 10;
+		int m = (int)(offdelay / 60);
+		offstr[0] = '0' + (char)(m / 10);
+		offstr[1] = '0' + (char)(m % 10);
 	} else goto ill;
 	offstr[2] = '\0';
 	if (stayoff) {
 		snprintf(value, valuelen, "S%s\r", offstr);
 	} else {
-		int ondelay;
+		long ondelay;
 
 		ondelay = strtol((val = dstate_getinfo(name = "ups.delay.return")), &p, 10);
 		if (*p != '\0') goto ill;
 		if (ondelay < 0 || ondelay > 9999*60) goto ill;
-		snprintf(value, valuelen, "S%sR%04d\r", offstr, ondelay);
+		snprintf(value, valuelen, "S%sR%04ld\r", offstr, ondelay);
 	}
 	return 0;
 
