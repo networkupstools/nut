@@ -1871,14 +1871,17 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 
 	while (buf_len > 0) {
 		bytes = ser_get_buf(upsfd, buf, buf_len, 1, 0);
-		if (bytes == -1)
+		if (bytes < 0)
 			return 0;      /* read failure */
 		else if (bytes == 0)
 			return total;  /* nothing to read */
 
-		total += bytes;        /* increment byte counter */
-		buf += bytes;          /* advance buffer position */
-		buf_len -= bytes;      /* decrement limiter */
+		total += (size_t)bytes;        /* increment byte counter */
+		buf += bytes;                  /* advance buffer position */
+		if ((size_t)bytes > buf_len) {
+			fatalx(EXIT_FAILURE, "ups2000_read_serial() read too much!");
+		}
+		buf_len -= (size_t)bytes;      /* decrement limiter */
 	}
 	return 0;  /* buffer exhaustion */
 }
