@@ -151,8 +151,8 @@ static struct {
 
 /* == Support functions == */
 static int	subdriver_matcher(void);
-static int	qx_command(const char *cmd, char *buf, size_t buflen);
-static int	qx_process_answer(item_t *item, const size_t len);
+static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen);
+static int	qx_process_answer(item_t *item, const size_t len); /* returns just 0 or -1 */
 static bool_t	qx_ups_walk(walkmode_t mode);
 static void	ups_status_set(void);
 static void	ups_alarm_set(void);
@@ -2652,7 +2652,7 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
-static int	qx_command(const char *cmd, char *buf, size_t buflen)
+static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 {
 /* NOTE: Could not find in which ifdef-ed codepath, but clang complained
  * about unused parameters here. Reference them just in case...
@@ -2663,7 +2663,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 
 #ifndef TESTING
 
-	int	ret = -1;
+	ssize_t	ret = -1;
 
 # ifdef QX_USB
 
@@ -2762,7 +2762,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_send(upsfd, "%s", cmd);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? strerror(errno) : "timeout", ret);
+			upsdebugx(3, "send: %s (%zd)", ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
@@ -2771,7 +2771,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? strerror(errno) : "timeout", ret);
+			upsdebugx(3, "read: %s (%zd)", ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
@@ -3356,7 +3356,7 @@ static int	qx_process_answer(item_t *item, const size_t len)
 int	qx_process(item_t *item, const char *command)
 {
 	char	buf[sizeof(item->answer) - 1] = "", *cmd;
-	int	len;
+	ssize_t	len;
 	size_t cmdlen = command ?
 		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
 		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
@@ -3385,12 +3385,19 @@ int	qx_process(item_t *item, const char *command)
 	len = qx_command(cmd, buf, sizeof(buf));
 
 	memset(item->answer, 0, sizeof(item->answer));
+
+	if (len < 0 || len > INT_MAX) {
+		upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
+		free (cmd);
+		return -1;
+	}
+
 	memcpy(item->answer, buf, sizeof(buf));
 
 	/* Preprocess the answer */
 	if (item->preprocess_answer != NULL) {
-		len = item->preprocess_answer(item, len);
-		if (len == -1) {
+		len = item->preprocess_answer(item, (int)len);
+		if (len < 0 || len > INT_MAX) {
 			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
 			/* Clear answer, preventing it from being reused by next items with same command */
 			memset(item->answer, 0, sizeof(item->answer));
@@ -3402,11 +3409,6 @@ int	qx_process(item_t *item, const char *command)
 	free (cmd);
 
 	/* Process the answer to get the value */
-	if (len < 0) {
-		upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
-		return -1;
-	}
-
 	return qx_process_answer(item, (size_t)len);
 }
 
