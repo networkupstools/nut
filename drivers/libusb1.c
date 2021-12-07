@@ -29,6 +29,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
+#include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
 #define USB_DRIVER_VERSION	"0.9"
@@ -478,13 +479,31 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			goto next_device;
 		}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		if ((uintmax_t)rdlen > UINT16_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+			upsdebugx(2, "HID descriptor too long %d (max %u)",
+				rdlen, UINT16_MAX);
+			goto next_device;
+		}
+
 		/* libusb0: USB_ENDPOINT_IN + 1 */
 		res = libusb_control_transfer(udev,
 			LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 			LIBUSB_REQUEST_GET_DESCRIPTOR,
 			(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
 			usb_subdriver.hid_rep_index,
-			rdbuf, rdlen, USB_TIMEOUT);
+			rdbuf, (uint16_t)rdlen, USB_TIMEOUT);
 
 		if (res < 0)
 		{
