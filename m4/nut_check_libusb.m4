@@ -90,24 +90,25 @@ if test -z "${nut_have_libusb_seen}"; then
 		)]
 	)
 
+	dnl Pick up the default or caller-provided choice here from
+	dnl NUT_ARG_WITH(usb, ...) in the main configure.ac script
 	AC_MSG_CHECKING(for libusb preferred version)
-	AC_ARG_WITH(libusb-version,
-		AS_HELP_STRING([@<:@--with-libusb-version=(auto|0.1|1.0)@:>@], [require build with specified version of libusb library]),
-	[
-		case "${withval}" in
+	case "${nut_with_usb}" in
 		auto) ;; dnl Use preference picked above
-		1.0) dnl NOTE: Assuming there is no libusb-config-1.0 or similar script, never saw one
+		yes)  ;; dnl Use preference from above, fail in the end if none found
+		no)   ;; dnl Try to find, report in the end if that is discarded; TODO: not waste time?
+		libusb-1.0|1.0) dnl NOTE: Assuming there is no libusb-config-1.0 or similar script, never saw one
 			if test x"${LIBUSB_1_0_VERSION}" = xnone; then
-				AC_MSG_ERROR([option --with-libusb-version=${withval} was required, but this library version was not detected])
+				AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
 			fi
 			LIBUSB_VERSION="${LIBUSB_1_0_VERSION}"
 			nut_usb_lib="(libusb-1.0)"
 			;;
-		0.1)
+		libusb-0.1|0.1)
 			if test x"${LIBUSB_0_1_VERSION}" = xnone \
 			&& test x"${LIBUSB_CONFIG_VERSION}" = xnone \
 			; then
-				AC_MSG_ERROR([option --with-libusb-version=${withval} was required, but this library version was not detected])
+				AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
 			fi
 			if test x"${LIBUSB_0_1_VERSION}" != xnone ; then
 				LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
@@ -117,11 +118,10 @@ if test -z "${nut_have_libusb_seen}"; then
 				nut_usb_lib="(libusb-0.1-config)"
 			fi
 			;;
-		yes|no|*)
-			AC_MSG_ERROR([invalid option value --with-libusb-version=${withval} - see docs/configure.txt])
+		*)
+			AC_MSG_ERROR([invalid option value --with-usb=${withval} - see docs/configure.txt])
 			;;
-		esac
-	], [])
+	esac
 	AC_MSG_RESULT([${LIBUSB_VERSION} ${nut_usb_lib}])
 
 	AS_IF([test x"${LIBUSB_1_0_VERSION}" != xnone && test x"${nut_usb_lib}" != x"(libusb-1.0)" ],

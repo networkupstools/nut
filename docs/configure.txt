@@ -17,11 +17,14 @@ Build and install the serial drivers (default: yes)
 	--with-usb
 
 Build and install the USB drivers (default: auto-detect)
-Note that you need to install the libusb development package or files, and that
-both libusb 0.1 and 1.0 are supported. In case both are available, libusb 1.0
-takes precedence, and will be used.  It is however possible to override this
-default choice by explicitly calling '--with-usb=libusb-0.1' or
-'--with-usb=libusb-1.0'.
+Note that you need to install the libusb development package or files,
+and that both libusb 0.1 and 1.0 are supported. In case both are
+available, libusb 1.0 takes precedence, and will be used by default.
+It is however possible to override this default choice by explicitly
+calling `--with-usb=libusb-0.1` or `--with-usb=libusb-1.0`.
+If you do specify the version to use (or `yes` for auto-detection),
+this option would fail if requested (or any) libusb version was not
+found.  The default `auto` value would not fail in such case.
 
 	--with-snmp
 
@@ -221,11 +224,6 @@ Change the facility used when writing to the log file.  Read the man
 page for openlog to get some idea of what's available on your system.
 Default is LOG_DAEMON.
 
-	--with-libusb-version=(auto|0.1|1.0)
-
-If several libusb implementations are installed, `configure` script
-picks the best one by default (`auto`). This option allows to specify
-the version to use, or fail if it was not found.
 
 Installation directories
 ------------------------

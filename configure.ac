@@ -413,7 +413,7 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
-NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
+NUT_ARG_WITH([usb], [build and install USB drivers, optionally require build with specified version of libusb library and API: (auto|libusb-0.1|libusb-1.0)], [auto])
 nut_usb_lib=""
 NUT_CHECK_LIBUSB
 
