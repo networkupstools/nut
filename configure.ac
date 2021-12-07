@@ -387,12 +387,13 @@ AC_ARG_WITH(all,
 
 dnl ----------------------------------------------------------------------
 dnl declare a number of --with-FEATURE options. Do this early, so that
-dnl they are listed near the top by "./configure --help"
+dnl they are listed near the top by "./configure --help"; however,
+dnl note that options with further investigation methods are listed
+dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
-NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
+
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
 dnl a second-class citizen (if both are set, the old option name wins).
@@ -401,6 +402,7 @@ dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+
 NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
 NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
@@ -411,18 +413,25 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
+NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 nut_usb_lib=""
 
 NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
+
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
+
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
+
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
+
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
+
+NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
