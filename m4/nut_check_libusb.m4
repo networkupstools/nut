@@ -182,7 +182,11 @@ if test -z "${nut_have_libusb_seen}"; then
 	], [])
 	AC_MSG_RESULT([${LIBS}])
 
-	dnl check if libusb is usable
+	dnl TODO: Consult chosen nut_usb_lib value and/or nut_with_usb argument
+	dnl (with "auto" we may use a 0.1 if present and working while a 1.0 is
+	dnl present but useless)
+	dnl Check if libusb is usable
+	AC_LANG_PUSH([C])
 	if test -n "${LIBUSB_VERSION}"; then
 		dnl Test specifically for libusb-1.0 via pkg-config, else fall back below
 		test -n "$PKG_CONFIG" \
@@ -192,7 +196,13 @@ if test -z "${nut_have_libusb_seen}"; then
 			dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
 			AC_CHECK_HEADERS(libusb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
+			AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb=no; nut_have_libusb_strerror=no])
+			if test "${nut_have_libusb_strerror}" = "no"; then
+				AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+			fi
 			if test "${nut_have_libusb}" = "yes"; then
+				dnl This function is fairly old, but check for it anyway:
+				AC_CHECK_FUNCS(libusb_kernel_driver_active)
 				dnl Check for libusb "force driver unbind" availability
 				AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
 				dnl libusb 1.0: libusb_detach_kernel_driver
@@ -255,6 +265,7 @@ if test -z "${nut_have_libusb_seen}"; then
 				;;
 		esac
 	fi
+	AC_LANG_POP([C])
 
 	if test "${nut_have_libusb}" = "yes"; then
 		LIBUSB_CFLAGS="${CFLAGS}"
