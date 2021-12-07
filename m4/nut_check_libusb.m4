@@ -52,26 +52,27 @@ if test -z "${nut_have_libusb_seen}"; then
 		AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
 			[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
 		[
-			case "${withval}" in
-			"") ;;
-			yes|no) dnl MAYBE bump preference of script over pkg-config?
-				AC_MSG_ERROR(invalid option --with(out)-libusb-config - see docs/configure.txt)
-				;;
-			*)
+			AS_CASE(["${withval}"],
+				[""], [], dnl empty arg
+				[yes|no], [
+					dnl MAYBE bump preference of script over pkg-config?
+					AC_MSG_ERROR([invalid option --with(out)-libusb-config - see docs/configure.txt])
+				],
+				[dnl default
 				LIBUSB_CONFIG="${withval}"
-				;;
-			esac
+				]
+			)
 		]
 	)
 
 	AS_IF([test x"${LIBUSB_CONFIG}" != xnone],
-		AC_MSG_CHECKING([via ${LIBUSB_CONFIG}])
-		LIBUSB_CONFIG_VERSION="`$LIBUSB_CONFIG --version 2>/dev/null`" \
+		[AC_MSG_CHECKING([via ${LIBUSB_CONFIG}])
+		 LIBUSB_CONFIG_VERSION="`$LIBUSB_CONFIG --version 2>/dev/null`" \
 			&& test -n "${LIBUSB_CONFIG_VERSION}" \
 			|| LIBUSB_CONFIG_VERSION="none"
-		AC_MSG_RESULT(${LIBUSB_CONFIG_VERSION} found)
+		 AC_MSG_RESULT([${LIBUSB_CONFIG_VERSION} found])
 		], [LIBUSB_CONFIG_VERSION="none"]
-	])
+	)
 
 	dnl By default, prefer newest available, and if anything is known
 	dnl to pkg-config, prefer that. Otherwise, fall back to script data:
@@ -92,36 +93,36 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl Pick up the default or caller-provided choice here from
 	dnl NUT_ARG_WITH(usb, ...) in the main configure.ac script
-	AC_MSG_CHECKING(for libusb preferred version)
-	case "${nut_with_usb}" in
-		auto) ;; dnl Use preference picked above
-		yes)  ;; dnl Use preference from above, fail in the end if none found
-		no)   ;; dnl Try to find, report in the end if that is discarded; TODO: not waste time?
-		libusb-1.0|1.0) dnl NOTE: Assuming there is no libusb-config-1.0 or similar script, never saw one
-			if test x"${LIBUSB_1_0_VERSION}" = xnone; then
-				AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
-			fi
+	AC_MSG_CHECKING([for libusb preferred version])
+	AS_CASE(["${nut_with_usb}"],
+		[auto], [], dnl Use preference picked above
+		[yes],  [], dnl Use preference from above, fail in the end if none found
+		[no],   [], dnl Try to find, report in the end if that is discarded; TODO: not waste time?
+		[libusb-1.0|1.0], [
+			dnl NOTE: Assuming there is no libusb-config-1.0 or similar script, never saw one
+			AS_IF([test x"${LIBUSB_1_0_VERSION}" = xnone],
+				[AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
+				])
 			LIBUSB_VERSION="${LIBUSB_1_0_VERSION}"
 			nut_usb_lib="(libusb-1.0)"
-			;;
-		libusb-0.1|0.1)
-			if test x"${LIBUSB_0_1_VERSION}" = xnone \
-			&& test x"${LIBUSB_CONFIG_VERSION}" = xnone \
-			; then
-				AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
-			fi
-			if test x"${LIBUSB_0_1_VERSION}" != xnone ; then
-				LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
-				nut_usb_lib="(libusb-0.1)"
-			else
-				LIBUSB_VERSION="${LIBUSB_CONFIG_VERSION}"
-				nut_usb_lib="(libusb-0.1-config)"
-			fi
-			;;
-		*)
+			],
+		[libusb-0.1|0.1], [
+			AS_IF([test x"${LIBUSB_0_1_VERSION}" = xnone \
+				&& test x"${LIBUSB_CONFIG_VERSION}" = xnone],
+				[AC_MSG_ERROR([option --with-usb=${withval} was required, but this library version was not detected])
+				])
+			AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone],
+				[LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
+				 nut_usb_lib="(libusb-0.1)"
+				],
+				[LIBUSB_VERSION="${LIBUSB_CONFIG_VERSION}"
+				 nut_usb_lib="(libusb-0.1-config)"
+				])
+			],
+		[dnl default
 			AC_MSG_ERROR([invalid option value --with-usb=${withval} - see docs/configure.txt])
-			;;
-	esac
+			]
+	)
 	AC_MSG_RESULT([${LIBUSB_VERSION} ${nut_usb_lib}])
 
 	AS_IF([test x"${LIBUSB_1_0_VERSION}" != xnone && test x"${nut_usb_lib}" != x"(libusb-1.0)" ],
@@ -156,14 +157,14 @@ if test -z "${nut_have_libusb_seen}"; then
 	AC_ARG_WITH(usb-includes,
 		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
 	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
-			;;
-		*)
-			CFLAGS="${withval}"
-			;;
-		esac
+		AS_CASE(["${withval}"],
+			[yes|no], [
+				AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
+			],
+			[dnl default
+				CFLAGS="${withval}"
+			]
+		)
 	], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
@@ -171,14 +172,14 @@ if test -z "${nut_have_libusb_seen}"; then
 	AC_ARG_WITH(usb-libs,
 		AS_HELP_STRING([@<:@--with-usb-libs=LIBS@:>@], [linker flags for the libusb library]),
 	[
-		case "${withval}" in
-		yes|no)
-			AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
-			;;
-		*)
-			LIBS="${withval}"
-			;;
-		esac
+		AS_CASE(["${withval}"],
+			[yes|no], [
+				AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
+			],
+			[dnl default
+				LIBS="${withval}"
+			]
+		)
 	], [])
 	AC_MSG_RESULT([${LIBS}])
 
@@ -233,7 +234,7 @@ if test -z "${nut_have_libusb_seen}"; then
 		nut_have_libusb=no
 	fi
 
-	if test "${nut_have_libusb}" = "yes"; then
+	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		dnl ----------------------------------------------------------------------
 		dnl additional USB-related checks
 
@@ -248,8 +249,8 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl instead of differing codes like on other systems.
 		dnl Should we check for that below?..
 		dnl https://github.com/networkupstools/nut/issues/490
-		case "${target_os}" in
-			solaris2.1* )
+		AS_CASE(["${target_os}"],
+			[solaris2.1*], [
 				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
 				AC_SEARCH_LIBS(nanosleep, rt)
 				LIBS="-R/usr/sfw/lib ${LIBS}"
@@ -259,26 +260,26 @@ if test -z "${nut_have_libusb_seen}"; then
 				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
 				SUN_LIBUSB=1
 				AC_MSG_RESULT([${LIBS}])
-				;;
-			hpux11*)
+				],
+			[hpux11*], [
 				CFLAGS="${CFLAGS} -lpthread"
-				;;
-		esac
-	fi
+				]
+		)
+	])
 	AC_LANG_POP([C])
 
-	if test "${nut_have_libusb}" = "yes"; then
+	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		LIBUSB_CFLAGS="${CFLAGS}"
 		LIBUSB_LIBS="${LIBS}"
-	else
-		case "${nut_with_usb}" in
-			no|auto) ;;
-			yes|1.0|0.1|libusb-1.0|libusb-0.1)
-				dnl Explicitly choosing a library implies 'yes' (i.e. fail if not found), not 'auto'.
-				AC_MSG_ERROR([USB drivers requested, but libusb not found.])
-				;;
-		esac
-	fi
+	], [
+		AS_CASE(["${nut_with_usb}"],
+			[no|auto], [],
+			[yes|1.0|0.1|libusb-1.0|libusb-0.1],
+				[dnl Explicitly choosing a library implies 'yes' (i.e. fail if not found), not 'auto'.
+				 AC_MSG_ERROR([USB drivers requested, but libusb not found.])
+				]
+		)
+	])
 
 	if test "${nut_with_usb}" = "no"; then
 		if test -n "${nut_usb_lib}" && test "${nut_usb_lib}" != none ; then
