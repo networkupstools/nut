@@ -46,6 +46,10 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 fi
 
+if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    BUILD_TYPE="default-spellcheck"
+fi
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
