@@ -96,7 +96,7 @@ static const char *supported_model[] = {
 #define UPS2000_IDENT_MAX_FIELDS 9
 #define UPS2000_IDENT_MAX_LEN 128
 #define UPS2000_IDENT_OFFSET
-struct {
+static struct {
 	uint8_t type;
 	uint8_t len;
 	uint8_t val[UPS2000_IDENT_MAX_LEN];
@@ -125,10 +125,10 @@ enum {
 	UPS2000_DESC_DEVICE_ID,    /* currently unused */
 	UPS2000_DESC_PARALLEL_ID   /* currently unused */
 };
-char ups2000_desc[UPS2000_DESC_MAX_FIELDS][UPS2000_DESC_MAX_LEN] = { { 0 } };
+static char ups2000_desc[UPS2000_DESC_MAX_FIELDS][UPS2000_DESC_MAX_LEN] = { { 0 } };
 
 /* global variable for modbus communication */
-modbus_t *modbus_ctx = NULL;
+static modbus_t *modbus_ctx = NULL;
 
 /*
  * How many seconds to wait before switching off/on/reboot the UPS?
@@ -163,7 +163,7 @@ static int ups2000_update_status(void);
 static int ups2000_update_alarm(void);
 static int ups2000_update_timers(void);
 static void ups2000_device_identification(void);
-static int ups2000_read_serial(uint8_t *buf, size_t buf_len);
+static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
@@ -301,19 +301,19 @@ static void ups2000_device_identification(void)
 		0x2B, 0x0E, 0x03, 0x03, 0x00, 0x00, 0x02,
 	};
 
-	bool serial_fail;  /* unable to read from serial */
+	bool serial_fail = 0;  /* unable to read from serial */
 	uint16_t crc16_recv, crc16_calc;  /* resp CRC */
-	bool crc16_fail;  /* resp CRC failure */
+	bool crc16_fail = 0;  /* resp CRC failure */
 	uint32_t ups_count = 0;  /* number of UPS in the resp list */
 	uint8_t ident_response[IDENT_RESPONSE_MAX_LEN];  /* resp buf */
 	size_t ident_response_len;    /* buf len */
-	uint8_t *ident_response_end;  /* buf end marker (excluding CRC) */
-	uint8_t *ptr;  /* buf iteratior */
+	uint8_t *ident_response_end = NULL;  /* buf end marker (excluding CRC) */
+	uint8_t *ptr = NULL;  /* buf iteratior */
 
 	/* a desc string copied from ups2000_ident[] */
 	char *ups2000_ident_desc = NULL;
 	int i;
-	int r;
+	ssize_t r;
 
 	/* attempt to obtain a response header with valid CRC. */
 	for (i = 0; i < 3; i++) {
@@ -348,8 +348,15 @@ static void ups2000_device_identification(void)
 		}
 
 		/* step 3: check response CRC-16 */
-		crc16_recv = ident_response_end[0] << 8 | ident_response_end[1];
-		crc16_calc = crc16(ident_response, ident_response_len - IDENT_RESPONSE_CRC_LEN);
+		crc16_recv = (uint16_t)((uint16_t)(ident_response_end[0]) << 8) | (uint16_t)(ident_response_end[1]);
+		if (ident_response_len < IDENT_RESPONSE_CRC_LEN
+		|| (((uintmax_t)(ident_response_len) - IDENT_RESPONSE_CRC_LEN) > UINT16_MAX)
+		) {
+			fatalx(EXIT_FAILURE, "response header shorter than CRC "
+					     "or longer than UINT16_MAX!");
+		}
+
+		crc16_calc = crc16(ident_response, (uint16_t)(ident_response_len - IDENT_RESPONSE_CRC_LEN));
 		if (crc16_recv == crc16_calc) {
 			crc16_fail = 0;
 			break;
@@ -405,10 +412,11 @@ static void ups2000_device_identification(void)
 		/* only one device is supported */
 		if (ups2000_ident[i].type == 0x87) {
 			/* so we assume 0x87 must be 1 */
-			ups_count = ups2000_ident[i].val[0] << 24 |
-				    ups2000_ident[i].val[1] << 16 |
-				    ups2000_ident[i].val[2] << 8  |
-				    ups2000_ident[i].val[3];
+			ups_count =
+				(uint32_t)(ups2000_ident[i].val[0]) << 24 |
+				(uint32_t)(ups2000_ident[i].val[1]) << 16 |
+				(uint32_t)(ups2000_ident[i].val[2]) << 8  |
+				(uint32_t)(ups2000_ident[i].val[3]);
 		}
 		if (ups2000_ident[i].type == 0x88) {
 			/*
@@ -594,8 +602,8 @@ static int ups2000_update_info(void)
 
 	for (i = 0; ups2000_var[i].name != NULL; i++) {
 		uint16_t reg_id = ups2000_var[i].reg;
-		uint8_t page = reg_id / 1000 - 1;
-		uint8_t idx = reg_id % 1000;
+		uint8_t page = (uint8_t)(reg_id / 1000 - 1);
+		uint8_t idx =  (uint8_t)(reg_id % 1000);
 		uint32_t val;
 		bool invalid = 0;
 
@@ -617,8 +625,8 @@ static int ups2000_update_info(void)
 				invalid = 1;
 			break;
 		case REG_UINT32:
-			val  = reg[page][idx] << 16;
-			val |= reg[page][idx + 1];
+			val  = (uint32_t)(reg[page][idx]) << 16;
+			val |= (uint32_t)(reg[page][idx + 1]);
 			if (val == REG_UINT32_INVALID)
 				invalid = 1;
 			break;
@@ -631,8 +639,20 @@ static int ups2000_update_info(void)
 			return 1;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(ups2000_var[i].name, ups2000_var[i].fmt,
 			       (float) val / ups2000_var[i].scaling);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	}
 	return 0;
 }
@@ -913,7 +933,7 @@ static struct {
 		"UPS has shutdown, bypass output was overload and exceeded "
 		"time limit.",
 	},
-	{ false, -1, -1, -1, -1, -1, -1, NULL, NULL, NULL }
+	{ false, 0, -1, -1, -1, -1, -1, NULL, NULL, NULL }
 };
 
 
@@ -954,6 +974,7 @@ static int ups2000_update_alarm(void)
 			fatalx(EXIT_FAILURE, "register calculation overflow!\n");
 
 		if (CHECK_BIT(val[idx], ups2000_alarm[i].bit)) {
+			int gotlen;
 			if (ups2000_alarm[i].reg == 40161)
 				/*
 				 * HACK: special treatment for register 40161. If this
@@ -965,10 +986,16 @@ static int ups2000_update_alarm(void)
 
 			alarm_count++;
 
-			all_alarms_len += snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
+			gotlen = snprintf(alarm_buf, 128, "(ID %02d/%02d): %s!",
 						   ups2000_alarm[i].alarm_id,
 						   ups2000_alarm[i].alarm_cause_id,
 						   ups2000_alarm[i].alarm_name);
+
+			if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
+				fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+			}
+
+			all_alarms_len += (size_t)gotlen;
 			alarm_set(alarm_buf);
 
 			if (ups2000_alarm[i].status_name)
@@ -1042,7 +1069,13 @@ static int ups2000_update_alarm(void)
 
 	if (alarm_count > 0) {
 		/* append this to the alarm string as a friendly reminder */
-		all_alarms_len += snprintf(alarm_buf, 128, "Check log for details!");
+		int gotlen = snprintf(alarm_buf, 128, "Check log for details!");
+
+		if (gotlen < 0 || (uintmax_t)gotlen > SIZE_MAX) {
+			fatalx(EXIT_FAILURE, "alarm_buf preparation over/under-flow!\n");
+		}
+
+		all_alarms_len += (size_t)gotlen;
 		alarm_set(alarm_buf);
 
 		/* if the alarm string is too long, replace it with this */
@@ -1462,13 +1495,18 @@ static int instcmd(const char *cmd, const char *extra)
 
 	if (cmd_action->handler_func) {
 		/* handled by a function */
-		status = cmd_action->handler_func(cmd_action->reg1);
+		if (cmd_action->reg1 < 0) {
+			upslogx(LOG_WARNING, "instcmd: command [%s] reg1 is negative", cmd);
+			return STAT_INSTCMD_UNKNOWN;
+		} else {
+			status = cmd_action->handler_func((uint16_t)cmd_action->reg1);
+		}
 	}
-	else if (cmd_action->reg1 != -1 && cmd_action->val1 != -1) {
+	else if (cmd_action->reg1 >= 0 && cmd_action->val1 >= 0) {
 		/* handled by a register write */
 		int r = ups2000_write_register(modbus_ctx,
 					       10000 + cmd_action->reg1,
-					       cmd_action->val1);
+					       (uint16_t)cmd_action->val1);
 		if (r == 1)
 			status = STAT_INSTCMD_HANDLED;
 		else
@@ -1478,10 +1516,10 @@ static int instcmd(const char *cmd, const char *extra)
 		 * if the previous write succeeds and there is an additional
 		 * register to write.
 		 */
-		if (r == 1 && cmd_action->reg2 != -1 && cmd_action->val2 != -1) {
+		if (r == 1 && cmd_action->reg2 >= 0 && cmd_action->val2 >= 0) {
 			r = ups2000_write_register(modbus_ctx,
 						   10000 + cmd_action->reg2,
-						   cmd_action->val2);
+						   (uint16_t)cmd_action->val2);
 			if (r == 1)
 				status = STAT_INSTCMD_HANDLED;
 			else
@@ -1853,7 +1891,7 @@ static time_t time_seek(time_t t, int seconds)
  * ser_get_buf_let() requires a precalculated length, necessiates
  * our own read function.
  */
-static int ups2000_read_serial(uint8_t *buf, size_t buf_len)
+static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 {
 	ssize_t bytes = 0;
 	size_t total = 0;
@@ -1863,14 +1901,17 @@ static int ups2000_read_serial(uint8_t *buf, size_t buf_len)
 
 	while (buf_len > 0) {
 		bytes = ser_get_buf(upsfd, buf, buf_len, 1, 0);
-		if (bytes == -1)
+		if (bytes < 0)
 			return 0;      /* read failure */
 		else if (bytes == 0)
 			return total;  /* nothing to read */
 
-		total += bytes;        /* increment byte counter */
-		buf += bytes;          /* advance buffer position */
-		buf_len -= bytes;      /* decrement limiter */
+		total += (size_t)bytes;        /* increment byte counter */
+		buf += bytes;                  /* advance buffer position */
+		if ((size_t)bytes > buf_len) {
+			fatalx(EXIT_FAILURE, "ups2000_read_serial() read too much!");
+		}
+		buf_len -= (size_t)bytes;      /* decrement limiter */
 	}
 	return 0;  /* buffer exhaustion */
 }
@@ -1892,7 +1933,7 @@ enum {
 	RETRY_ENABLE,
 	RETRY_DISABLE_TEMPORARY
 };
-int retry_status = RETRY_ENABLE;
+static int retry_status = RETRY_ENABLE;
 
 
 /*
@@ -1906,7 +1947,7 @@ int retry_status = RETRY_ENABLE;
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
 	int i;
-	int r;
+	int r = -1;
 
 	if (addr < 10000)
 		upslogx(LOG_ERR, "Invalid register read from %04d detected. "
@@ -1951,7 +1992,7 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src)
 {
 	int i;
-	int r;
+	int r = -1;
 
 	if (addr < 10000)
 		upslogx(LOG_ERR, "Invalid register write to %04d detected. "
@@ -2075,5 +2116,5 @@ static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
 		crc_lo = table_crc_lo[i];
 	}
 
-	return (crc_hi << 8 | crc_lo);
+	return ((uint16_t)((uint16_t)(crc_hi) << 8) | (uint16_t)crc_lo);
 }
