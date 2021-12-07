@@ -49,6 +49,15 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     [ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
+if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    # Note: this is a little hack to reduce typing in (docs) developer
+    # iterations. Being part of this script, it has the overhead of full
+    # workspace cleanup and re-configuration (beneficial sometimes, a
+    # time waste at other times), so you may want `make -s spellcheck`
+    # instead and scroll its log for the complaints.
+    BUILD_TYPE="default-spellcheck"
+fi
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -269,6 +278,10 @@ build_to_only_catch_errors() {
 }
 
 can_clean_check() {
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] ; then
+        # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
+        return 1
+    fi
     if [ -s Makefile ] && [ -e .git ] ; then
         return 0
     fi
@@ -800,8 +813,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
               $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
-            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
-              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
+              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              # Make end of log useful:
+              echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+            )
             exit $?
             ;;
         "default-shellcheck")
@@ -915,7 +932,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             fi
 
             BUILDSTODO_INITIAL="$BUILDSTODO"
-            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations"
+            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations..."
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 # NOTE: Do not repeat a distclean before the loop,
                 # we have cleaned above before autogen, and here it
@@ -948,7 +965,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
@@ -962,27 +979,45 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                # (UPDATE: because expr returns boolean, and calculated 0 is false;
+                # so a `set -e` run aborts)
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                         }
                     else
                         optional_maintainer_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                         }
                     fi
+                    echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    $MAKE distclean -k || true
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
                 fi
             done
 
@@ -1030,7 +1065,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
@@ -1043,28 +1078,44 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
-                # an "erroneous" `1` as exit code. Why oh why?..
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                # an "erroneous" `1` as exit code. Notes above.
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
                         }
                     else
                         optional_maintainer_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
                         }
                     fi
+                    echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    $MAKE distclean -k || true
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
                 fi
             done
 
@@ -1074,11 +1125,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
-                    SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                        SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    fi
                 } || {
                     RES=$?
                     FAILED="${FAILED} [final_maintainer_clean]"
                 }
+                echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
 
             if [ -n "$SUCCEEDED" ]; then

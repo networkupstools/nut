@@ -52,6 +52,7 @@
 	#include "openups-hid.h"
 	#include "powercom-hid.h"
 	#include "powervar-hid.h"
+	#include "salicru-hid.h"
 	#include "tripplite-hid.h"
 #endif
 
@@ -72,6 +73,7 @@ static subdriver_t *subdriver_list[] = {
 	&openups_subdriver,
 	&powercom_subdriver,
 	&powervar_subdriver,
+	&salicru_subdriver,
 	&tripplite_subdriver,
 #endif
 	NULL
@@ -133,7 +135,7 @@ static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 #endif
 static int pollfreq = DEFAULT_POLLFREQ;
-static int ups_status = 0;
+static unsigned ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 #ifndef SUN_LIBUSB
 bool_t use_interrupt_pipe = TRUE;
@@ -172,8 +174,8 @@ reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
    collected from the hardware; not yet converted to official NUT
    status or alarms */
 typedef struct {
-	const char	*status_str;	/* ups status string */
-	const int	status_mask;	/* ups status mask */
+	const char	*status_str;			/* ups status string */
+	const unsigned int	status_mask;	/* ups status mask */
 } status_lkp_t;
 
 static status_lkp_t status_info[] = {
@@ -774,7 +776,7 @@ void upsdrv_updateinfo(void)
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
 		/* don't flood reconnection attempts */
-		if (now < (int)(lastpoll + poll_interval)) {
+		if (now < (lastpoll + poll_interval)) {
 			return;
 		}
 
@@ -1004,7 +1006,12 @@ void upsdrv_initups(void)
 	}
 	val = getval("interruptsize");
 	if (val) {
-		interrupt_size = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
@@ -1125,7 +1132,7 @@ static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char 
 	int ret;
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
-	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+	upsdebug_hex(3, "Report Descriptor", rdbuf, (size_t)rdlen);
 
 	/* Save the global "hd" for this driver instance */
 	hd = arghd;
@@ -1479,7 +1486,7 @@ static void ups_alarm_set(void)
 }
 
 /* Return the current value of ups_status */
-int ups_status_get(void)
+unsigned ups_status_get(void)
 {
 	return ups_status;
 }

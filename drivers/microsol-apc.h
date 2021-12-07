@@ -34,7 +34,10 @@ static const unsigned int MODELS[MODEL_COUNT] = {
 	191			/* APC Back-UPS BZ2200BI-BR */
 };
 
-static const unsigned int NOMINAL_POWER[MODEL_COUNT] = {
+/* Note: int type here is aligned with the "nominal_power"
+ * variable in microsol-common.h and many related drivers.
+ */
+static const int NOMINAL_POWER[MODEL_COUNT] = {
 	2200 /* Model 183 */ ,
 	1500 /* Model 190 */ ,
 	2200			/* Model 191 */

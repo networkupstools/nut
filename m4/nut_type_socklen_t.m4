@@ -47,6 +47,7 @@ AC_DEFUN([NUT_TYPE_SOCKLEN_T],
       [
          # Systems have either "struct sockaddr *" or
          # "void *" as the second argument to getpeername
+         AC_LANG_PUSH([C])
          nut_cv_socklen_t_equiv=
          for arg1 in "int" "SOCKET"; do
           for arg2 in "struct sockaddr" void; do
@@ -64,6 +65,7 @@ AC_DEFUN([NUT_TYPE_SOCKLEN_T],
             done
           done
          done
+         AC_LANG_POP([C])
 
          if test "x$nut_cv_socklen_t_equiv" = x; then
             AC_MSG_ERROR([Cannot find a type to use in place of socklen_t])

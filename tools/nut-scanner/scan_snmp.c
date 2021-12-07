@@ -80,7 +80,7 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-static long g_usec_timeout ;
+static useconds_t g_usec_timeout ;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -101,6 +101,13 @@ static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
 			const oid *in_name2, size_t len2);
 static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
+
+/* NOTE: Net-SNMP headers just are weird like that, in the same release:
+net-snmp/types.h:              size_t securityAuthProtoLen;
+net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int hashtype_len, ...
+ * Should we match in configure like for "getnameinfo()" arg types?
+ * Currently we cast one to another below (detecting target type could help).
+ */
 static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 			unsigned char * P, size_t pplen, unsigned char * Ku, size_t * kulen);
 static char* (*nut_snmp_out_toggle_options)(char *options);
@@ -120,7 +127,7 @@ static oid *nut_usmHMACSHA1AuthProtocol;
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 static oid *nut_usmDESPrivProtocol;
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 static oid *nut_usmAES192PrivProtocol;
 # endif
@@ -287,7 +294,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol */
 
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 	*(void **) (&nut_usmAES192PrivProtocol) = lt_dlsym(dl_handle,
 						"usmAES192PrivProtocol");
@@ -303,7 +310,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 # endif /* NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol */
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 
 #if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
 	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) = lt_dlsym(dl_handle,
@@ -588,7 +595,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 
 		if (sec->authProtocol) {
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-			if (strcmp(sec->authProtocol, "SHA") == 0) {
+			if (strncmp(sec->authProtocol, "SHA", 3) == 0) {
 				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
 					sizeof(usmHMACSHA1AuthProtocol)/
@@ -624,7 +631,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
-			if (strcmp(sec->authProtocol, "MD5") != 0) {
+			if (strncmp(sec->authProtocol, "MD5", 3) != 0) {
 #else
 			{
 #endif
@@ -637,8 +644,25 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 
 		/* set the authentication key to a MD5/SHA1 hashed version of
 		 * our passphrase (must be at least 8 characters long) */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		if ((uintmax_t)snmp_sess->securityAuthProtoLen > UINT_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %zu",
+				snmp_sess->securityAuthProtoLen);
+			return 0;
+		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
-					snmp_sess->securityAuthProtoLen,
+					(u_int)snmp_sess->securityAuthProtoLen,
 					(unsigned char *) sec->authPassword,
 					strlen(sec->authPassword),
 					snmp_sess->securityAuthKey,
@@ -665,7 +689,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 
 		if (sec->privProtocol) {
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-			if (strcmp(sec->privProtocol, "AES") == 0) {
+			if (strncmp(sec->privProtocol, "AES", 3) == 0) {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
@@ -673,7 +697,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			}
 			else
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 			if (strcmp(sec->privProtocol, "AES192") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAES192PrivProtocol;
@@ -692,9 +716,9 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			}
 			else
 # endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
-			if (strcmp(sec->privProtocol, "DES") != 0) {
+			if (strncmp(sec->privProtocol, "DES", 3) != 0) {
 #else
 			{
 #endif
@@ -708,8 +732,25 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* set the private key to a MD5/SHA hashed version of
 		 * our passphrase (must be at least 8 characters long) */
 		snmp_sess->securityPrivKeyLen = USM_PRIV_KU_LEN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		if ((uintmax_t)snmp_sess->securityAuthProtoLen > UINT_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %zu",
+				snmp_sess->securityAuthProtoLen);
+			return 0;
+		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
-					snmp_sess->securityAuthProtoLen,
+					(u_int)snmp_sess->securityAuthProtoLen,
 					(unsigned char *) sec->privPassword,
 					strlen(sec->privPassword),
 					snmp_sess->securityPrivKey,
@@ -746,7 +787,10 @@ static void * try_SysOID(void * arg)
 	}
 
 	snmp_sess.retries = 0;
-	snmp_sess.timeout = g_usec_timeout;
+	/* netsnmp timeout is accounted in uS, but typed as long
+	 * and not useconds_t (which is at most long per POSIX)
+	 */
+	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
@@ -855,10 +899,9 @@ try_SysOID_free:
 }
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
-	int i;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -870,7 +913,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
@@ -878,8 +921,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
-	if (max_threads_scantype > 0)
-		sem_init(semaphore_scantype, 0, max_threads_scantype);
+	if (max_threads_scantype > 0) {
+		if (SIZE_MAX > UINT_MAX && max_threads_scantype > UINT_MAX) {
+			upsdebugx(1,
+				"WARNING: %s: Limiting max_threads_scantype to range acceptable for sem_init()",
+				__func__);
+			max_threads_scantype = UINT_MAX - 1;
+		}
+		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+	}
 # endif /* HAVE_SEMAPHORE */
 
 #endif /* HAVE_PTHREAD */
@@ -943,7 +993,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 		) {
 			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %d), "
+				"(launched overall: %zu), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads
@@ -959,12 +1009,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
-							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
 						case 0:         // thread exited
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -973,13 +1023,13 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 							thread_array[i].active = FALSE;
 							break;
 						case EBUSY:     // actively running
-							upsdebugx(6, "%s: thread #%i still busy (%i)",
+							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
 						case EDEADLK:   // Errors with thread interactions... bail out?
 						case EINVAL:    // Errors with thread interactions... bail out?
 						default:        // new pthreads abilities?
-							upsdebugx(5, "%s: thread #%i reported code %i",
+							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -1048,7 +1098,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						if (max_threads_scantype > 0)
@@ -1101,7 +1151,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
@@ -1130,7 +1180,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #else /* WITH_SNMP */
 
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
-                                     long usec_timeout, nutscan_snmp_t * sec)
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(stop_ip);

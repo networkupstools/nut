@@ -17,6 +17,8 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
 
 	nut_have_libusb=no
 	nut_usb_lib="($1)"
@@ -66,12 +68,32 @@ if test -z "${nut_have_libusb_seen}"; then
 		]
 	)
 
-	AS_IF([test x"$libusb0_VERSION" = xnone && x"$libusb1_VERSION" = xnone],
-		[AC_MSG_CHECKING([via libusb-config (if available)])
-			libusb0_VERSION="`libusb-config --version 2>/dev/null`"
+	dnl Note: it seems the script was only shipped for libusb-0.1
+	dnl So we don't separate into LIBUSB_0_1_CONFIG and LIBUSB_1_0_CONFIG
+	AC_PATH_PROGS([LIBUSB_CONFIG], [libusb-config], [none])
+
+	AC_ARG_WITH(libusb-config,
+		AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
+			[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
+		[
+			case "${withval}" in
+			"") ;;
+			yes|no) dnl MAYBE bump preference of script over pkg-config?
+				AC_MSG_ERROR(invalid option --with(out)-libusb-config - see docs/configure.txt)
+				;;
+			*)
+				LIBUSB_CONFIG="${withval}"
+				;;
+			esac
+		]
+	)
+
+	AS_IF([test x"$libusb0_VERSION" = xnone && x"$libusb1_VERSION" = xnone && test x"$LIBUSB_CONFIG" != xnone],
+		[AC_MSG_CHECKING([for libusb version via ${LIBUSB_CONFIG}])
+			libusb0_VERSION="`$LIBUSB_CONFIG --version 2>/dev/null`"
 			if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
-				libusb0_CFLAGS="`libusb-config --cflags 2>/dev/null`"
-				libusb0_LIBS="`libusb-config --libs 2>/dev/null`"
+				libusb0_CFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
+				libusb0_LIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
 				nut_have_libusb=yes
 			else
 				libusb0_VERSION="none"
@@ -151,29 +173,44 @@ if test -z "${nut_have_libusb_seen}"; then
 				if test "${nut_have_libusb_strerror}" = "no"; then
 					AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
 				fi
-				dnl This function is fairly old, but check for it anyway:
-				AC_CHECK_FUNCS(libusb_kernel_driver_active)
-				dnl Check for libusb "force driver unbind" availability
-				AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
-				dnl libusb 1.0: libusb_detach_kernel_driver
-				dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
-				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+				if test "${nut_have_libusb}" = "yes"; then
+					dnl This function is fairly old, but check for it anyway:
+					AC_CHECK_FUNCS(libusb_kernel_driver_active)
+					dnl Check for libusb "force driver unbind" availability
+					AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
+					dnl libusb 1.0: libusb_detach_kernel_driver
+					dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
+					AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+				fi
 				if test "${nut_have_libusb}" = "yes"; then
 					AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb.])
 					nut_usb_lib="(libusb-1.0)"
 				fi
 			fi
 		fi
-		dnl if libusb 1.0 is not available or usable, or if libusb 0.1/libusb-compat is explicitly chosen, try it
+
+		dnl if libusb 1.0 is not available or usable, or if
+		dnl libusb 0.1/libusb-compat is explicitly chosen, try it
 		if test	"${nut_usb_lib}" != "(libusb-1.0)"; then
 			nut_usb_lib="(none)"
 			LIBS="${libusb0_LIBS}"
 			CFLAGS="${libusb0_CFLAGS}"
 			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
-			AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+			AC_CHECK_FUNCS(usb_init, [], [
+				dnl Some systems may just have libusb in their standard
+				dnl paths, but not the pkg-config or libusb-config data
+				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS"],
+					[AC_MSG_CHECKING([if libusb is just present in path])
+					 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+					 unset ac_cv_func_usb_init || true
+					 AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+					 AC_MSG_RESULT([${nut_have_libusb}])
+					], [nut_have_libusb=no]
+				)]
+			)
 			dnl Check for libusb "force driver unbind" availability
-			AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
 			if test "${nut_have_libusb}" = "yes"; then
+				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
 				AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
 				nut_usb_lib="(libusb-0.1)"
 			fi
@@ -190,6 +227,11 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl workarounds or not? e.g. OpenIndiana should include a capable
 		dnl version of libusb-1.0.23+ tailored with NUT tests in mind...
 		dnl HPUX, since v11, needs an explicit activation of pthreads
+		dnl TODO: There are reports about FreeBSD error-code
+		dnl handling in libusb-0.1 port returning "-1" always,
+		dnl instead of differing codes like on other systems.
+		dnl Should we check for that below?..
+		dnl https://github.com/networkupstools/nut/issues/490
 		case "${target_os}" in
 			solaris2.1* )
 				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
@@ -197,6 +239,7 @@ if test -z "${nut_have_libusb_seen}"; then
 				LIBS="-R/usr/sfw/lib ${LIBS}"
 				dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
 				dnl and need to call libusb close upon reconnection
+				dnl TODO: Somehow test for susceptible versions?
 				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
 				SUN_LIBUSB=1
 				AC_MSG_RESULT([${LIBS}])

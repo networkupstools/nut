@@ -141,10 +141,13 @@ new host reservation!
     > /tmp/x && virsh define /tmp/x
 ------
 +
-NOTE: My first urge was to also reduce a generic 64GB RAM allocation, but then
-   the launched QEMU containers were OOM-killed as they exceeded their memory
+NOTE: You may want to tune the default generic 64MB RAM allocation, so your
+   launched QEMU containers are not OOM-killed as they exceeded their memory
    cgroup limit. In practice they do not eat that much resident memory, just
-   want to have it addressable by VMM, I guess (swap is not very used either).
+   want to have it addressable by VMM, I guess (swap is not very used either),
+   at least not until active builds start (then it depends on `make` program
+   parallelism level you allow, e.g. by `MAXPARMAKES` envvar for `ci_build.sh`,
+   and on the number of Jenkins "executors" assigned to the build agent).
 +
 ** It may be needed to revert the generated "os/arch" to `x86_64` (and let
    QEMU handle the rest) in the `/tmp/x` file, and re-try the definition:

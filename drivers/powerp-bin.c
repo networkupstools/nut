@@ -31,6 +31,7 @@
 #include "serial.h"
 
 #include "powerp-bin.h"
+#include "nut_stdint.h"
 
 #include <math.h>
 
@@ -155,7 +156,7 @@ static const struct {
 static const struct {
 	const char	*cmd;
 	const char	*command;
-	const int	len;
+	const size_t	len;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\230\r", 3 },		/* 20 seconds test */
 	{ "test.battery.stop", "CT\r", 3 },
@@ -214,9 +215,9 @@ static float op_freq(unsigned char in)
 	return (12600.0 / (in + 32));
 }
 
-static int powpan_command(const char *buf, size_t bufsize)
+static ssize_t powpan_command(const char *buf, size_t bufsize)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -250,7 +251,7 @@ static int powpan_command(const char *buf, size_t bufsize)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 	return ret;
 }
 
@@ -259,14 +260,18 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 	int	i;
 
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
+		ssize_t	ret;
 
 		if (strcasecmp(cmdname, cmdtab[i].cmd)) {
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command, cmdtab[i].len) ==
-				cmdtab[i].len - 1) &&
-				(!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))) {
+		ret = powpan_command(cmdtab[i].command, cmdtab[i].len);
+		assert(cmdtab[i].len < SSIZE_MAX);
+		if (ret >= 0 &&
+		    (ret == (ssize_t)(cmdtab[i].len - 1)) &&
+		    (!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))
+		) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
@@ -416,9 +421,9 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.reboot");
 }
 
-static int powpan_status(status_t *status)
+static ssize_t powpan_status(status_t *status)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -457,7 +462,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", status, ret);
+	upsdebug_hex(3, "read", status, (size_t)ret);
 
 	if ((status->flags[0] + status->flags[1]) != 255) {
 		upsdebugx(4, "  \\_ : checksum flags[0..1] failed");
@@ -568,9 +573,10 @@ static int powpan_updateinfo(void)
 	return (status.flags[0] & 0x80) ? 1 : 0;
 }
 
-static int powpan_initups(void)
+static ssize_t powpan_initups(void)
 {
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	upsdebugx(1, "Trying %s protocol...", powpan_binary.version);
 
@@ -619,10 +625,10 @@ static int powpan_initups(void)
 			continue;
 		}
 
-		upsdebug_hex(3, "read", powpan_answer, ret);
+		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		if (ret < 20) {
-			upsdebugx(2, "Expected 20 bytes but only got %d", ret);
+			upsdebugx(2, "Expected 20 bytes but only got %zd", ret);
 			continue;
 		}
 

@@ -82,16 +82,16 @@ static int sec_upsrecv (char *buf)
 		return (-2);
 }
 
-static int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
+static ssize_t sec_cmd(const char mode, const char *command, char *msgbuf, ssize_t *buflen)
 {
 	char msg[140];
-	int ret;
+	ssize_t ret;
 
 	memset(msg, 0, sizeof(msg));
 
 	/* create the message string */
 	if (*buflen > 0) {
-		snprintf(msg, sizeof(msg), "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
+		snprintf(msg, sizeof(msg), "%c%c%03zd%s%s", SEC_MSG_STARTCHAR,
 			mode, (*buflen)+3, command, msgbuf);
 	}
 	else {
@@ -101,7 +101,7 @@ static int sec_cmd(const char mode, const char *command, char *msgbuf, int *bufl
 	upsdebugx(1, "PC-->UPS: \"%s\"",msg);
 	ret = ser_send(upsfd, "%s", msg);
 
-	upsdebugx(1, " send returned: %d",ret);
+	upsdebugx(1, " send returned: %zd",ret);
 
 	if (ret == -1) return -1;
 
@@ -167,31 +167,31 @@ static void update_pseudovars( void )
 {
 	status_init();
 
-	if(strcmp(sec_varlist[9].value,"1")== 0) {
+	if(strncmp(sec_varlist[9].value, "1", 1)== 0) {
 		status_set("OFF");
 	}
-	if(strcmp(sec_varlist[76].value,"0")== 0) {
+	if(strncmp(sec_varlist[76].value, "0", 1)== 0) {
 		status_set("OL");
 	}
-	if(strcmp(sec_varlist[76].value,"1")== 0) {
+	if(strncmp(sec_varlist[76].value, "1", 1)== 0) {
 		status_set("OB");
 	}
-	if(strcmp(sec_varlist[76].value,"2")== 0) {
+	if(strncmp(sec_varlist[76].value, "2", 1)== 0) {
 		status_set("BYPASS");
 	}
-	if(strcmp(sec_varlist[76].value,"3")== 0) {
+	if(strncmp(sec_varlist[76].value, "3", 1)== 0) {
 		status_set("TRIM");
 	}
-	if(strcmp(sec_varlist[76].value,"4")== 0) {
+	if(strncmp(sec_varlist[76].value, "4", 1)== 0) {
 		status_set("BOOST");
 	}
-	if(strcmp(sec_varlist[10].value,"1")== 0) {
+	if(strncmp(sec_varlist[10].value, "1", 1)== 0) {
 		status_set("OVER");
 	}
-	if(strcmp(sec_varlist[22].value,"1")== 0) {
+	if(strncmp(sec_varlist[22].value, "1", 1)== 0) {
 		status_set("LB");
 	}
-	if(strcmp(sec_varlist[19].value,"2")== 0) {
+	if(strncmp(sec_varlist[19].value, "2", 1)== 0) {
 		status_set("RB");
 	}
 
@@ -199,7 +199,8 @@ static void update_pseudovars( void )
 }
 
 static void sec_poll ( int pollflag ) {
-	int msglen, f, q;
+	ssize_t msglen;
+	int f, q;
 	char retbuf[140], *n, *r;
 
 	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
@@ -245,7 +246,7 @@ static void sec_poll ( int pollflag ) {
 				}
 
 				/* If SEC VAR is alarm and it's on, add it to the alarm property */
-				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
+				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strncmp(r, "1", 1)== 0) {
 					alarm_set(sec_varlist[sqv(q,f)].name);
 				}
 			}
@@ -259,7 +260,8 @@ static void sec_poll ( int pollflag ) {
 
 void upsdrv_initinfo(void)
 {
-	int msglen, v;
+	ssize_t msglen;
+	int v;
 	char *a, *p, avail_list[300];
 
 	/* find out which variables/commands this UPS supports */
@@ -301,20 +303,20 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int msg_len;
+	ssize_t msglen;
 	char msgbuf[SMALLBUF];
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "-1");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "1");
-	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "1");
+	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "2");
-	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "2");
+	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "5");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "5");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 }
 
 /*
@@ -347,7 +349,8 @@ void upsdrv_makevartable(void)
 static void setup_serial(const char *port)
 {
 	char temp[140];
-	int i, ret;
+	int i;
+	ssize_t ret;
 
 	/* Detect the ups baudrate  */
 	for (i=0; i<5; i++) {

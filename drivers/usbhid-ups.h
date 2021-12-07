@@ -70,7 +70,7 @@ typedef struct {
 } info_lkp_t;
 
 /* accessor on the status */
-extern int ups_status_get(void);
+extern unsigned ups_status_get(void);
 
 /* declarations of public lookup tables */
 /* boolean status values from UPS */
