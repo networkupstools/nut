@@ -415,8 +415,6 @@ dnl what will be in the --with-drivers argument.
 
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 nut_usb_lib=""
-
-NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
 
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
