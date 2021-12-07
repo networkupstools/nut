@@ -1,7 +1,12 @@
-dnl Check for LIBUSB 1.0 or 0.1 compiler flags. On success, set
+dnl Check for LIBUSB 1.0 or 0.1 (and, if found, fill 'nut_usb_lib' with its
+dnl approximate version) and its compiler flags. On success, set
 dnl nut_have_libusb="yes" and set LIBUSB_CFLAGS and LIBUSB_LIBS. On failure, set
 dnl nut_have_libusb="no". This macro can be run multiple times, but will
 dnl do the checking only once.
+dnl By default, if both libusb 1.0 and libusb 0.1 are available and appear to be
+dnl usable, libusb 1.0 takes precedence.
+dnl An optional argument with value 'libusb-1.0' or 'libusb-0.1' can be used to
+dnl restrict checks to a specific version.
 
 AC_DEFUN([NUT_CHECK_LIBUSB],
 [
@@ -14,21 +19,24 @@ if test -z "${nut_have_libusb_seen}"; then
 	LIBS_ORIG="${LIBS}"
 	CFLAGS=""
 	LIBS=""
+
+	dnl Magic-format string to hold chosen libusb version and its config-source
 	nut_usb_lib=""
 
 	dnl TOTHINK: What if there are more than 0.1 and 1.0 to juggle?
+	dnl TODO? Add libusb-compat (1.0 code with 0.1's API) to the mix?
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
-		[AC_MSG_CHECKING(for libusb-1.0 version via pkg-config)
+		[AC_MSG_CHECKING([for libusb-1.0 version via pkg-config])
 		 LIBUSB_1_0_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb-1.0 2>/dev/null`" \
 		    && test -n "${LIBUSB_1_0_VERSION}" \
 		    || LIBUSB_1_0_VERSION="none"
-		 AC_MSG_RESULT(${LIBUSB_1_0_VERSION} found)
+		 AC_MSG_RESULT([${LIBUSB_1_0_VERSION} found])
 
-		 AC_MSG_CHECKING(for libusb(-0.1) version via pkg-config)
+		 AC_MSG_CHECKING([for libusb(-0.1) version via pkg-config])
 		 LIBUSB_0_1_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb 2>/dev/null`" \
 		    && test -n "${LIBUSB_0_1_VERSION}" \
 		    || LIBUSB_0_1_VERSION="none"
-		 AC_MSG_RESULT(${LIBUSB_0_1_VERSION} found)
+		 AC_MSG_RESULT([${LIBUSB_0_1_VERSION} found])
 		],
 		[LIBUSB_0_1_VERSION="none"
 		 LIBUSB_1_0_VERSION="none"
