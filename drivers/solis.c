@@ -41,6 +41,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include "nut_stdint.h"
 #include "serial.h"
 #include "nut_float.h"
 #include "solis.h"
