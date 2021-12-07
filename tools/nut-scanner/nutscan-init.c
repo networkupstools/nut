@@ -46,7 +46,8 @@ int nutscan_load_upsclient_library(const char *libname_path);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
-sem_t semaphore;
+/* Shared by library consumers, exposed by nutscan_semaphore() below */
+static sem_t semaphore;
 
 sem_t * nutscan_semaphore(void)
 {
@@ -94,7 +95,17 @@ void nutscan_init(void)
  * if-else proposition? At least when initializing?
  */
 # ifdef HAVE_SEMAPHORE
-	sem_init(&semaphore, 0, max_threads);
+	/* NOTE: This semaphore may get re-initialized in nut-scanner program
+	 * after parsing command-line arguments. It calls nutscan_init() before
+	 * parsing CLI, to know about available libs and to set defaults below.
+	 */
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+		upsdebugx(1,
+			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
+			__func__);
+		max_threads = UINT_MAX - 1;
+	}
+	sem_init(&semaphore, 0, (unsigned int)max_threads);
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN

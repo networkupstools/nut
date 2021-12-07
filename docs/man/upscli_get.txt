@@ -10,8 +10,8 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
-			unsigned int *numa, char ***answer)
+ int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+			size_t *numa, char ***answer)
 
 DESCRIPTION
 -----------
@@ -43,7 +43,7 @@ QUERY FORMATTING
 To generate a request for `GET NUMLOGINS su700`, you would populate
 query and numq as follows:
 
-	unsigned int numq;
+	size_t numq;
 	const char *query[2];
 
 	query[0] = "NUMLOGINS";
@@ -58,7 +58,7 @@ ANSWER FORMATTING
 The raw response from upsd to the above query would be `NUMLOGINS su700 1`.
 Since this is split up for you, the values work out like this:
 
-	unsigned int numa;
+	size_t numa;
 
 	numa = 3;
 	answer[0] = "NUMLOGINS"

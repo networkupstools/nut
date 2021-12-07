@@ -12,6 +12,8 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
 	nut_usb_lib=""
 
 	dnl TOTHINK: What if there are more than 0.1 and 1.0 to juggle?
@@ -23,7 +25,7 @@ if test -z "${nut_have_libusb_seen}"; then
 		 AC_MSG_RESULT(${LIBUSB_1_0_VERSION} found)
 
 		 AC_MSG_CHECKING(for libusb(-0.1) version via pkg-config)
-		 LIBUSB_0_1_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`" \
+		 LIBUSB_0_1_VERSION="`$PKG_CONFIG --silence-errors --modversion libusb 2>/dev/null`" \
 		    && test -n "${LIBUSB_0_1_VERSION}" \
 		    || LIBUSB_0_1_VERSION="none"
 		 AC_MSG_RESULT(${LIBUSB_0_1_VERSION} found)
@@ -35,11 +37,33 @@ if test -z "${nut_have_libusb_seen}"; then
 	)
 
 	dnl Note: it seems the script was only shipped for libusb-0.1
-	AC_MSG_CHECKING([via libusb-config (if present)])
-	LIBUSB_CONFIG_VERSION="`libusb-config --version 2>/dev/null`" \
-	    && test -n "${LIBUSB_CONFIG_VERSION}" \
-	    || LIBUSB_CONFIG_VERSION="none"
-	AC_MSG_RESULT(${LIBUSB_CONFIG_VERSION} found)
+	dnl So we don't separate into LIBUSB_0_1_CONFIG and LIBUSB_1_0_CONFIG
+	AC_PATH_PROGS([LIBUSB_CONFIG], [libusb-config], [none])
+
+	AC_ARG_WITH(libusb-config,
+		AS_HELP_STRING([@<:@--with-libusb-config=/path/to/libusb-config@:>@],
+			[path to program that reports LibUSB configuration]), dnl ...for LibUSB-0.1
+		[
+			case "${withval}" in
+			"") ;;
+			yes|no) dnl MAYBE bump preference of script over pkg-config?
+				AC_MSG_ERROR(invalid option --with(out)-libusb-config - see docs/configure.txt)
+				;;
+			*)
+				LIBUSB_CONFIG="${withval}"
+				;;
+			esac
+		]
+	)
+
+	AS_IF([test x"${LIBUSB_CONFIG}" != xnone],
+		AC_MSG_CHECKING([via ${LIBUSB_CONFIG}])
+		LIBUSB_CONFIG_VERSION="`$LIBUSB_CONFIG --version 2>/dev/null`" \
+			&& test -n "${LIBUSB_CONFIG_VERSION}" \
+			|| LIBUSB_CONFIG_VERSION="none"
+		AC_MSG_RESULT(${LIBUSB_CONFIG_VERSION} found)
+		], [LIBUSB_CONFIG_VERSION="none"]
+	])
 
 	dnl By default, prefer newest available, and if anything is known
 	dnl to pkg-config, prefer that. Otherwise, fall back to script data:
@@ -98,8 +122,8 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	AS_CASE([${nut_usb_lib}],
 		["(libusb-1.0)"], [
-			CFLAGS="`pkg-config --silence-errors --cflags libusb-1.0 2>/dev/null`"
-			LIBS="`pkg-config --silence-errors --libs libusb-1.0 2>/dev/null`"
+			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
+			LIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
 			AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1)"], [
@@ -108,8 +132,8 @@ if test -z "${nut_have_libusb_seen}"; then
 			AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1-config)"], [
-			CFLAGS="`libusb-config --cflags 2>/dev/null`"
-			LIBS="`libusb-config --libs 2>/dev/null`"
+			CFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
+			LIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
 			AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via libusb-config).])
 			],
 		[dnl default, for other versions or "none"
@@ -160,17 +184,32 @@ if test -z "${nut_have_libusb_seen}"; then
 			dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
 			AC_CHECK_HEADERS(libusb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
-			dnl Check for libusb "force driver unbind" availability
-			AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
-			dnl libusb 1.0: libusb_detach_kernel_driver
-			dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
-			AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+			if test "${nut_have_libusb}" = "yes"; then
+				dnl Check for libusb "force driver unbind" availability
+				AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
+				dnl libusb 1.0: libusb_detach_kernel_driver
+				dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
+				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+			fi
 		else
 			dnl libusb 0.1, or missing pkg-config :
 			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
-			AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+			AC_CHECK_FUNCS(usb_init, [], [
+				dnl Some systems may just have libusb in their standard
+				dnl paths, but not the pkg-config or libusb-config data
+				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS"],
+					[AC_MSG_CHECKING([if libusb is just present in path])
+					 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+					 unset ac_cv_func_usb_init || true
+					 AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+					 AC_MSG_RESULT([${nut_have_libusb}])
+					], [nut_have_libusb=no]
+				)]
+			)
 			dnl Check for libusb "force driver unbind" availability
-			AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+			if test "${nut_have_libusb}" = "yes"; then
+				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+			fi
 		fi
 	else
 		nut_have_libusb=no
@@ -186,6 +225,11 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl workarounds or not? e.g. OpenIndiana should include a capable
 		dnl version of libusb-1.0.23+ tailored with NUT tests in mind...
 		dnl HPUX, since v11, needs an explicit activation of pthreads
+		dnl TODO: There are reports about FreeBSD error-code
+		dnl handling in libusb-0.1 port returning "-1" always,
+		dnl instead of differing codes like on other systems.
+		dnl Should we check for that below?..
+		dnl https://github.com/networkupstools/nut/issues/490
 		case "${target_os}" in
 			solaris2.1* )
 				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
@@ -193,6 +237,7 @@ if test -z "${nut_have_libusb_seen}"; then
 				LIBS="-R/usr/sfw/lib ${LIBS}"
 				dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
 				dnl and need to call libusb close upon reconnection
+				dnl TODO: Somehow test for susceptible versions?
 				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
 				SUN_LIBUSB=1
 				AC_MSG_RESULT([${LIBS}])

@@ -31,7 +31,9 @@ Note that you need to install libsnmp development package or files.
 	--with-net-snmp-config
 
 In addition to the `--with-snmp` option above, this one allows to provide
-a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
+a custom program name (in `PATH`) or complete pathname to `net-snmp-config`
+(may have copies named per architecture, e.g. `net-snmp-config-32` and
+`net-snmp-config-64`).
 This may be needed on build systems which support multiple architectures,
 or in cases where your distribution names this program differently.
 With a default value of `yes` it would mean preference of this program,
@@ -406,6 +408,14 @@ Default is /var/state/ups.
 Things the compiler might need to find
 --------------------------------------
 
+	--with-pkg-config
+
+This option allows to provide a custom program name (in `PATH`) or a
+complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
+possibly other build-time options in `*.pc` files, to use third-party
+libraries. On build systems which support multiple architectures you
+may also want to set `PKG_CONFIG_PATH` to match your current build.
+
 	--with-gd-includes="-I/foo/bar"
 
 If you installed gd in some place where your C preprocessor can't
@@ -427,18 +437,28 @@ a complete pathname to `gdlib-config`. This may be needed on build
 systems which support multiple architectures, or in cases where your
 distribution names this program differently.
 
+	--with-libusb-config
+
+This option allows to provide a custom program name (in `PATH`) or
+a complete pathname to `libusb-config` (usually delivered only for
+libusb-0.1 version, but not for libusb-1.0). This may be needed on
+build systems which support multiple architectures or provide several
+versions of libusb, or in cases where your distribution names this
+program differently.
+
 	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"
 
 If your system doesn't have pkg-config and support for any of the above
-libraries isn't found (but you know it is installed), you must specify the
-compiler flags that are needed.
+libraries isn't found (but you know it is installed), you must specify
+the compiler flags that are needed.
 
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
 	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
 
-If system doesn't have pkg-config or it fails to provides hints for some of the
-settings that are needed to set it up properly and the build in defaults are
-not right, you can specify the right variables here.
+If system doesn't have pkg-config or it fails to provides hints for
+some of the settings that are needed to set it up properly and the
+build in defaults are not right, you can specify the correct values
+for your system here.

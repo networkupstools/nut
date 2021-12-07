@@ -124,13 +124,13 @@ static usb_device_id_t pw_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f02), &phoenixtec_ups },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
 #define USB_ERR_LIMIT 10 /* start limiting after 10 in a row  */
 #define USB_ERR_RATE 10  /* then only print every 10th error */
-#define XCP_USB_TIMEOUT 5000
+#define XCP_USB_TIMEOUT 5000 /* in msec */
 
 /* global variables */
 static usb_dev_handle *upsdev = NULL;
@@ -174,11 +174,13 @@ void send_write_command(unsigned char *command, size_t command_length)
 #define PW_HEADER_SIZE (PW_HEADER_LENGTH + 1)
 #define PW_CMD_BUFSIZE	256
 /* get the answer of a command from the ups. And check that the answer is for this command */
-int get_answer(unsigned char *data, unsigned char command)
+ssize_t get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
-	int res, endblock, ellapsed_time, need_data;
-	int tail;
+	ssize_t res;
+	int endblock, need_data;
+	long elapsed_time; /* milliseconds */
+	ssize_t tail;
 	size_t bytes_read, end_length, length;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
@@ -191,7 +193,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	endblock = 0;      /* signal the last sequence in the block */
 	bytes_read = 0;    /* total length of data read, including XCP header */
 	res = 0;
-	ellapsed_time = 0;
+	elapsed_time = 0;
 	seq_num = 1;       /* current theoric sequence */
 
 	upsdebugx(1, "entering get_answer(%x)", command);
@@ -200,17 +202,21 @@ int get_answer(unsigned char *data, unsigned char command)
 	gettimeofday(&start_time, NULL);
 	memset(&buf, 0x0, PW_CMD_BUFSIZE);
 
-	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
+	assert (XCP_USB_TIMEOUT < INT_MAX);
+
+	while ( (!endblock) && ((XCP_USB_TIMEOUT - elapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
 		if (need_data > 0) {
-			res = usb_interrupt_read(upsdev, 0x81, (char *) buf + bytes_read,
+			res = usb_interrupt_read(upsdev,
+				0x81,
+				(char *) buf + bytes_read,
 				128,
-				(XCP_USB_TIMEOUT - ellapsed_time));
+				(int)(XCP_USB_TIMEOUT - elapsed_time));
 
 			/* Update time */
 			gettimeofday(&now, NULL);
-			ellapsed_time = (now.tv_sec - start_time.tv_sec)*1000 +
+			elapsed_time = (now.tv_sec - start_time.tv_sec)*1000 +
 					(now.tv_usec - start_time.tv_usec)/1000;
 
 			/* Check libusb return value */
@@ -267,6 +273,11 @@ int get_answer(unsigned char *data, unsigned char command)
 			return -1;
 		}
 
+		if (bytes_read >= SSIZE_MAX) {
+			upsdebugx(2, "get_answer: bad length (incredibly large read)");
+			return -1;
+		}
+
 		/* Test the Sequence # */
 		sequence = my_buf[3];
 		if ((sequence & PW_SEQ_MASK) != seq_num) {
@@ -302,15 +313,15 @@ int get_answer(unsigned char *data, unsigned char command)
 		/* increment pointers to process the next sequence */
 		end_length += length;
 
-		/* Work around signedness of comparison result: */
-		tail = (int)bytes_read;
-		tail -= (int)(length + PW_HEADER_SIZE);
+		/* Work around signedness of comparison result, SSIZE_MAX checked above: */
+		tail = (ssize_t)bytes_read;
+		tail -= (ssize_t)(length + PW_HEADER_SIZE);
 		if (tail > 0)
 			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
-		else /* if (tail < 0) */ {
-			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %d", tail);
+		else { /* if (tail < 0) */
+			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %zd", tail);
 			return -1;
 		}
 
@@ -318,15 +329,15 @@ int get_answer(unsigned char *data, unsigned char command)
 	}
 
 	upsdebug_hex (5, "get_answer", data, end_length);
-	assert (end_length < INT_MAX);
-	return (int)end_length;
+	assert (end_length < SSIZE_MAX);
+	return (ssize_t)end_length;
 }
 
 /* Sends a single command (length=1). and get the answer */
-int command_read_sequence(unsigned char command, unsigned char *data)
+ssize_t command_read_sequence(unsigned char command, unsigned char *data)
 {
-	int bytes_read = 0;
-	int retry = 0;
+	ssize_t bytes_read = 0;
+	size_t retry = 0;
 
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
@@ -344,10 +355,10 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
+ssize_t command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
-	int bytes_read = 0;
-	int retry = 0;
+	ssize_t bytes_read = 0;
+	size_t retry = 0;
 
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_write_command(command, command_length);

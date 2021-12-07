@@ -129,8 +129,10 @@ static void dump_buffer(unsigned char *buffer, int buf_len) {
 /* send a read command to the UPS, it retries 5 times before give up
    it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
 static void send_read_command(unsigned char command) {
-	int retry, sent;
+	int retry;
+	ssize_t sent;
 	unsigned char buf[4];
+
 	retry = 0;
 	sent = 0;
 	while ((sent != 4) && (retry < 5)) {
@@ -148,7 +150,8 @@ static void send_read_command(unsigned char command) {
    with a char* buffer
    it retries 5 times before give up */
 static void send_write_command(unsigned char *command, size_t command_length) {
-	int retry, sent, checksum;
+	int retry, checksum;
+	ssize_t sent;
 	size_t i;
 	unsigned char raw_buf[255];
 

@@ -202,7 +202,7 @@ static void do_time(const char *arg)
 static void getvar(const char *var)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -488,7 +488,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Warning: initial connect failed: %s\n",
 			upscli_strerror(&ups));
 
-	if (strcmp(logfn, "-") == 0)
+	if (strncmp(logfn, "-", 1) == 0)
 		logfile = stdout;
 	else
 		logfile = fopen(logfn, "a");

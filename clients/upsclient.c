@@ -40,6 +40,7 @@
 
 #include "upsclient.h"
 #include "common.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
@@ -162,32 +163,36 @@ static void ssl_debug(void)
 	}
 }
 
-static int ssl_error(SSL *ssl, int ret)
+static int ssl_error(SSL *ssl, ssize_t ret)
 {
 	int	e;
 
-	e = SSL_get_error(ssl, ret);
+	if (ret >= INT_MAX) {
+		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		return -1;
+	}
+	e = SSL_get_error(ssl, (int)ret);
 
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_READ", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upslogx(LOG_ERR, "ssl_error() EOF from client");
 		} else {
-			upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_SYSCALL", ret);
+			upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
+		upslogx(LOG_ERR, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
@@ -593,7 +598,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	ssize_t		ret;
 	fd_set		fds;
@@ -677,7 +682,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long tim
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static ssize_t upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static ssize_t upscli_select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	ssize_t		ret;
 	fd_set		fds;
@@ -1260,9 +1265,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 }
 
 /* make sure upsd is giving us what we asked for */
-static int verify_resp(unsigned int num, const char **q, char **a)
+static int verify_resp(size_t num, const char **q, char **a)
 {
-	unsigned int	i;
+	size_t	i;
 
 	for (i = 0; i < num; i++) {
 		if (strcasecmp(q[i], a[i]) != 0) {
@@ -1275,8 +1280,8 @@ static int verify_resp(unsigned int num, const char **q, char **a)
 	return 1;	/* OK */
 }
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer)
+int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 
@@ -1328,7 +1333,7 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 0;
 }
 
-int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
+int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 
@@ -1386,8 +1391,8 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 	return 0;
 }
 
-int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer)
+int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
 
@@ -1418,8 +1423,8 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 
 	/* see if this is the end */
 	if (ups->pc_ctx.numargs >= 2) {
-		if ((!strcmp(ups->pc_ctx.arglist[0], "END")) &&
-			(!strcmp(ups->pc_ctx.arglist[1], "LIST")))
+		if ((!strncmp(ups->pc_ctx.arglist[0], "END", 3)) &&
+			(!strncmp(ups->pc_ctx.arglist[1], "LIST", 4)))
 			return 0;
 	}
 
@@ -1613,7 +1618,9 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 		}
 	}
 
-	if ((*(++s) == '\0') || ((*port = strtol(s, NULL, 10)) < 1 )) {
+	/* FIXME: This assumes but does not check that "long" port
+	 * fits in an "int" and is in IP range (under 65535) */
+	if ((*(++s) == '\0') || ((*port = (int)strtol(s, NULL, 10)) < 1 )) {
 		fprintf(stderr, "upscli_splitaddr: no port specified after ':' separator\n");
 		return -1;
 	}

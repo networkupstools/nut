@@ -418,13 +418,15 @@ static int libusb_open(usb_dev_handle **udevp,
 				goto next_device;
 			}
 
+			/* Note: rdlen is safe to cast to unsigned below,
+			 * since the <0 case was ruled out above */
 			/* res = usb_get_descriptor(udev, USB_DT_REPORT, hid_desc_index, bigbuf, rdlen); */
 			res = usb_control_msg(udev,
 				USB_ENDPOINT_IN + 1,
 				USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
 				usb_subdriver.hid_rep_index,
-				rdbuf, rdlen, USB_TIMEOUT);
+				rdbuf, (unsigned)rdlen, USB_TIMEOUT);
 
 			if (res < 0)
 			{
