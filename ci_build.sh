@@ -47,6 +47,11 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
 fi
 
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    # Note: this is a little hack to reduce typing in (docs) developer
+    # iterations. Being part of this script, it has the overhead of full
+    # workspace cleanup and re-configuration (beneficial sometimes, a
+    # time waste at other times), so you may want `make -s spellcheck`
+    # instead and scroll its log for the complaints.
     BUILD_TYPE="default-spellcheck"
 fi
 
