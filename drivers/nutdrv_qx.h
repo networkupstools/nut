@@ -73,7 +73,7 @@ typedef struct item_t {
 
 	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime.
 						 * If you expect a nonvalid C string (e.g.: inner '\0's) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a preprocess_answer() function */
-	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there's no minimum length to look after. */
+	const size_t	answer_len;		/* Expected min length of the answer. Set it to 0 if there's no minimum length to look after. */
 	const char	leading;		/* Expected leading character of the answer (optional) */
 
 	char		value[SMALLBUF];	/* Value from the answer, filled at runtime (i.e. answer between from and to) */
@@ -175,12 +175,12 @@ int	qx_process(item_t *item, const char *command);
 	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */
 int	ups_infoval_set(item_t *item);
 	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
-int	qx_status(void);
+unsigned int	qx_status(void);
 	/* Edit the current status: it takes one of the NUT status (all but OB are supported, simply set it as not OL), eventually preceded with an exclamation mark to clear it from the status (e.g. !OL). */
 void	update_status(const char *nutvalue);
 
 /* Data for processing status values */
-#define	STATUS(x)	((unsigned)1<<x)
+#define	STATUS(x)	((unsigned int)1U<<x)
 
 typedef enum {
 	OL = 0,		/* On line */

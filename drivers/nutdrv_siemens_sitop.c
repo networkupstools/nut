@@ -101,7 +101,7 @@ static void rm_buffer_head(unsigned int n) {
 static int check_for_new_data() {
 	int new_data_received = 0;
 	int done = 0;
-	int num_received;
+	ssize_t num_received;
 
 	while (!done) {
 		/* Get new data from the serial port.
@@ -110,7 +110,7 @@ static int check_for_new_data() {
 		num_received = ser_get_buf(upsfd, rx_buffer + rx_count, RX_BUFFER_SIZE - rx_count, 0, 0);
 		if (num_received < 0) {
 			/* comm error */
-			ser_comm_fail("error %d while reading", num_received);
+			ser_comm_fail("error %zd while reading", num_received);
 			/* discard any remaining old data from the receive buffer: */
 			rx_count = 0;
 			/* try to re-open the serial port: */

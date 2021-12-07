@@ -297,7 +297,8 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int	ret, errors = 0;
+	ssize_t	ret;
+	int	errors = 0;
 
 	/* We really should be dealing with alarms through a separate callback, so that we can keep the
 	 * processing of alarms and polling for data separated. Currently, this isn't supported by the
@@ -313,7 +314,7 @@ void upsdrv_updateinfo(void)
 			/* alarm message received */
 
 			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
+			upsdebugx(2, "%s: ne_sock_read(%zd bytes) => %s", __func__, ret, buf);
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
@@ -329,7 +330,7 @@ void upsdrv_updateinfo(void)
 
 			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
 
-			upsdebugx(2, "%s: ne_sock_read(%d) => %s", __func__, ret, ne_sock_error(sock));
+			upsdebugx(2, "%s: ne_sock_read(%zd) => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
@@ -698,7 +699,8 @@ static int netxml_get_page(const char *page)
 
 static int netxml_alarm_subscribe(const char *page)
 {
-	int	ret, secret = -1;
+	ssize_t	ret;
+	int	secret = -1;
 	unsigned int	port = 0;
 	char	buf[LARGEBUF], *s;
 	ne_request	*request;

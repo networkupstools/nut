@@ -356,7 +356,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 /* Input/Output voltage */
 static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 	double	ret;
 	char	*str_end;
 
@@ -447,7 +447,7 @@ static int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t va
 /* Battery voltage */
 static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const size_t valuelen)
 {
-	int	val1, val2;
+	long	val1, val2;
 	char	*str_end;
 
 	if (strspn(item->value, "0123456789ABCDEFabcdef ") != strlen(item->value)) {
@@ -478,7 +478,7 @@ static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const siz
 /* Ratings bits */
 static int	voltronic_qs_hex_process_ratings_bits(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 	double	ret;
 
 	if (strspn(item->value, "01") != strlen(item->value)) {

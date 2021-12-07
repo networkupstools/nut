@@ -423,10 +423,10 @@ static USBDeviceMatcher_t device_matcher = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen)
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
-	int	ret;
+	ssize_t	ret;
 
 	if (udev == NULL) {
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
@@ -511,10 +511,11 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		return snprintf(buf, buflen, "%s", testing[i].answer);
+		/* TODO: Range-check int vs ssize_t values */
+		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
-	return snprintf(buf, buflen, "%s", testing[i].command);
+	return (ssize_t)snprintf(buf, buflen, "%s", testing[i].command);
 #endif	/* TESTING */
 }
 

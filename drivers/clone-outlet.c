@@ -142,7 +142,8 @@ static int parse_args(size_t numargs, char **arg)
 
 static int sstate_connect(void)
 {
-	int	ret, fd;
+	ssize_t	ret;
+	int	fd;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
@@ -231,7 +232,7 @@ static void sstate_disconnect(void)
 
 static int sstate_sendline(const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 
 	if (upsfd < 0) {
 		return -1;	/* failed */
@@ -250,7 +251,8 @@ static int sstate_sendline(const char *buf)
 
 static int sstate_readline(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	buf[SMALLBUF];
 
 	if (upsfd < 0) {

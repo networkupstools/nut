@@ -41,8 +41,8 @@ upsdrv_info_t upsdrv_info = {
 
 static struct {
 	struct {
-		int	start;
-		int	shutdown;
+		long	start;
+		long	shutdown;
 	} timer;
 	char	status[ST_MAX_VALUE_LEN];
 } ups = { { -1, -1 }, "WAIT" };
@@ -59,7 +59,7 @@ static struct {
 } battery = { { 0, 0 }, { 0, 0 } };
 
 static int	dumpdone = 0, online = 1, outlet = 1;
-static int	offdelay = 120, ondelay = 30;
+static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0,
@@ -158,7 +158,8 @@ static int parse_args(size_t numargs, char **arg)
 
 static int sstate_connect(void)
 {
-	int	ret, fd;
+	ssize_t	ret;
+	int	fd;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
@@ -247,7 +248,7 @@ static void sstate_disconnect(void)
 
 static int sstate_sendline(const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 
 	if (upsfd < 0) {
 		return -1;	/* failed */
@@ -266,7 +267,8 @@ static int sstate_sendline(const char *buf)
 
 static int sstate_readline(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	buf[SMALLBUF];
 
 	if (upsfd < 0) {
@@ -436,11 +438,11 @@ void upsdrv_initinfo(void)
 		battery.runtime.low = strtod(val, NULL);
 	}
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-	dstate_setinfo("ups.delay.start", "%d", ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", ondelay);
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -515,8 +517,8 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	last_poll = now;
 }

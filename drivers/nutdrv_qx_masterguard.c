@@ -32,11 +32,11 @@ static char masterguard_my_series = '?';
 /* slave address for commands that require it */
 static char masterguard_my_slaveaddr[3] = "??"; /* null-terminated for strtol() in claim() */
 /* next slaveaddr to use after the SS command (which needs the old one) has been run */
-static int masterguard_next_slaveaddr;
+static long masterguard_next_slaveaddr;
 /* output current/power computation */
-static int masterguard_my_power = 0;
+static long masterguard_my_power = 0;
 /* battery voltage computation */
-static int masterguard_my_numcells = 0;
+static long masterguard_my_numcells = 0;
 
 
 /* ranges */
@@ -107,7 +107,7 @@ static int masterguard_series(item_t *item, char *value, const size_t valuelen) 
 static int masterguard_model(item_t *item, char *value, const size_t valuelen) {
 	char *model;
 	int rack;
-	int min_bp, max_bp;
+	char min_bp, max_bp;
 
 	rack = (strstr(item->value, "-19") != NULL);
 	if (strncmp(item->value, "A  700", 6) == 0) {
@@ -347,14 +347,14 @@ static int masterguard_beeper_status(item_t *item, char *value, const size_t val
 static int masterguard_output_voltages(item_t *item, char *value, const size_t valuelen) {
 	char sep[] = " ";
 	char *w;
-	int n = 0;
+	size_t n = 0;
 
 	strncpy(value, item->value, valuelen); /* save before strtok mangles it */
 	for (w = strtok(item->value, sep); w; w = strtok(NULL, sep)) {
 		n++;
-		upsdebugx(4, "output voltage #%d: %s", n, w);
+		upsdebugx(4, "output voltage #%zu: %s", n, w);
 		if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, n * sizeof(info_rw_t))) == NULL) {
-			upsdebugx(1, "output voltages: allocating #%d failed", n);
+			upsdebugx(1, "output voltages: allocating #%zu failed", n);
 			return -1;
 		}
 		strncpy(masterguard_e_outvolts[n - 1].value, w, SMALLBUF - 1);
@@ -362,7 +362,7 @@ static int masterguard_output_voltages(item_t *item, char *value, const size_t v
 	}
 	/* need to do this seperately in case the loop is run zero times */
 	if ((masterguard_e_outvolts = realloc(masterguard_e_outvolts, (n + 1) * sizeof(info_rw_t))) == NULL) {
-		upsdebugx(1, "output voltages: allocating terminator after #%d failed", n);
+		upsdebugx(1, "output voltages: allocating terminator after #%zu failed", n);
 		return -1;
 	}
 	masterguard_e_outvolts[n].value[0] = '\0';
@@ -465,7 +465,7 @@ static int masterguard_add_slaveaddr(item_t *item, char *command, const size_t c
 static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen, const int stayoff) {
 	NUT_UNUSED_VARIABLE(item);
 
-	int offdelay;
+	long offdelay;
 	char *p;
 	const char *val, *name;
 	char offstr[3];
@@ -475,21 +475,23 @@ static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen
 	if (offdelay < 0) {
 		goto ill;
 	} else if (offdelay < 60) {
-		offstr[0] = '.'; offstr[1] = '0' + offdelay / 6;
+		offstr[0] = '.';
+		offstr[1] = '0' + (char)offdelay / 6;
 	} else if (offdelay <= 99*60) {
-		int m = offdelay / 60;
-		offstr[0] = '0' + m / 10; offstr[1] = '0' + m % 10;
+		int m = (int)(offdelay / 60);
+		offstr[0] = '0' + (char)(m / 10);
+		offstr[1] = '0' + (char)(m % 10);
 	} else goto ill;
 	offstr[2] = '\0';
 	if (stayoff) {
 		snprintf(value, valuelen, "S%s\r", offstr);
 	} else {
-		int ondelay;
+		long ondelay;
 
 		ondelay = strtol((val = dstate_getinfo(name = "ups.delay.return")), &p, 10);
 		if (*p != '\0') goto ill;
 		if (ondelay < 0 || ondelay > 9999*60) goto ill;
-		snprintf(value, valuelen, "S%sR%04d\r", offstr, ondelay);
+		snprintf(value, valuelen, "S%sR%04ld\r", offstr, ondelay);
 	}
 	return 0;
 
@@ -508,7 +510,7 @@ static int masterguard_shutdown_stayoff(item_t *item, char *value, const size_t 
 static int masterguard_test_battery(item_t *item, char *value, const size_t valuelen) {
 	NUT_UNUSED_VARIABLE(item);
 
-	int duration;
+	long duration;
 	char *p;
 
 	if (value[0] == '\0') {
@@ -522,7 +524,7 @@ static int masterguard_test_battery(item_t *item, char *value, const size_t valu
 		return 0;
 	}
 	if (duration < 60 || duration > 99*60) goto ill;
-	snprintf(value, valuelen, "T%02d\r", duration / 60);
+	snprintf(value, valuelen, "T%02ld\r", duration / 60);
 	return 0;
 
 ill:	upsdebugx(2, "battery test: illegal duration %s", value);
@@ -632,7 +634,7 @@ static int masterguard_set_slaveaddr(item_t *item, char *value, const size_t val
 		upsdebugx(2, "set_slaveaddr: illegal value %s", value);
 		return -1;
 	}
-	upsdebugx(3, "next slaveaddr %d", masterguard_next_slaveaddr);
+	upsdebugx(3, "next slaveaddr %ld", masterguard_next_slaveaddr);
 	return masterguard_setvar(item, value, valuelen);
 }
 
@@ -643,9 +645,13 @@ static int masterguard_set_slaveaddr(item_t *item, char *value, const size_t val
 static int masterguard_new_slaveaddr(item_t *item, const int len) {
 	NUT_UNUSED_VARIABLE(item);
 
-	upsdebugx(3, "saved slaveaddr %d", masterguard_next_slaveaddr);
-	masterguard_my_slaveaddr[0] = '0' + masterguard_next_slaveaddr / 10;
-	masterguard_my_slaveaddr[1] = '0' + masterguard_next_slaveaddr % 10;
+	upsdebugx(3, "saved slaveaddr %ld", masterguard_next_slaveaddr);
+	if (masterguard_next_slaveaddr < 0 || masterguard_next_slaveaddr > 99) {
+		upsdebugx(2, "%s: illegal value %ld", __func__, masterguard_next_slaveaddr);
+		return -1;
+	}
+	masterguard_my_slaveaddr[0] = '0' + (char)(masterguard_next_slaveaddr / 10);
+	masterguard_my_slaveaddr[1] = '0' + (char)(masterguard_next_slaveaddr % 10);
 	upsdebugx(3, "new slaveaddr %s", masterguard_my_slaveaddr);
 	return len;
 }
@@ -936,7 +942,7 @@ static int masterguard_claim(void) {
 		NULL
 	};
 	char **sp;
-	int config_slaveaddr;
+	long config_slaveaddr;
 	char *sa;
 	char **commands;
 
@@ -979,7 +985,7 @@ static int masterguard_claim(void) {
 	}
 
 	if (config_slaveaddr >= 0 && config_slaveaddr != strtol(masterguard_my_slaveaddr, NULL, 10)) {
-		upsdebugx(2, "claim: slave address mismatch: want %02d, have %s", config_slaveaddr, masterguard_my_slaveaddr);
+		upsdebugx(2, "claim: slave address mismatch: want %02ld, have %s", config_slaveaddr, masterguard_my_slaveaddr);
 		return 0;
 	}
 
