@@ -251,6 +251,23 @@ if test -z "${nut_have_libusb_seen}"; then
 	if test "${nut_have_libusb}" = "yes"; then
 		LIBUSB_CFLAGS="${CFLAGS}"
 		LIBUSB_LIBS="${LIBS}"
+	else
+		case "${nut_with_usb}" in
+			no|auto) ;;
+			yes|1.0|0.1|libusb-1.0|libusb-0.1)
+				dnl Explicitly choosing a library implies 'yes' (i.e. fail if not found), not 'auto'.
+				AC_MSG_ERROR([USB drivers requested, but libusb not found.])
+				;;
+		esac
+	fi
+
+	if test "${nut_with_usb}" = "no"; then
+		if test -n "${nut_usb_lib}" && test "${nut_usb_lib}" != none ; then
+			AC_MSG_NOTICE([libusb was detected ${nut_usb_lib}, but a build without USB drivers was requested])
+		fi
+		nut_usb_lib=""
+	else
+		nut_with_usb="${nut_have_libusb}"
 	fi
 
 	dnl restore original CFLAGS and LIBS
