@@ -75,9 +75,13 @@ DISTCLEANFILES += include/config.h.in~
 MAINTAINERCLEANFILES = INSTALL
 MAINTAINERCLEANFILES += aclocal.m4 config.guess config.sub
 MAINTAINERCLEANFILES += configure
-MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh missing test-driver
+MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh test-driver
 MAINTAINERCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
 MAINTAINERCLEANFILES += Makefile.in .dirstamp include/config.h.in
+
+# Executed after default rules
+maintainer-clean-local:
+	rm -f missing || true
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
