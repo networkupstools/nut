@@ -135,17 +135,14 @@ if test -z "${nut_have_libusb_seen}"; then
 		["(libusb-1.0)"], [
 			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
 			LIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
-			AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1)"], [
 			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
 			LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
-			AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1-config)"], [
 			CFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
 			LIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
-			AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via libusb-config).])
 			],
 		[dnl default, for other versions or "none"
 			AC_MSG_WARN([Defaulting libusb configuration])
@@ -291,6 +288,24 @@ if test -z "${nut_have_libusb_seen}"; then
 	else
 		nut_with_usb="${nut_have_libusb}"
 	fi
+
+	dnl Note: AC_DEFINE specifies a verbatim "value" so we pre-calculate it!
+	dnl Source code should be careful to use "#if" and not "#ifdef" when
+	dnl checking these values during the build. And both must be defined
+	dnl with some value.
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-0.1)"],
+		[AC_DEFINE([WITH_LIBUSB_1_0], [1],
+			[Define to 1 for version 1.0 of the libusb (via pkg-config).])],
+		[AC_DEFINE([WITH_LIBUSB_1_0], [0],
+			[Define to 1 for version 1.0 of the libusb (via pkg-config).])]
+	)
+
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-1.0)" -o "${nut_usb_lib}" = "(libusb-1.0-config)"],
+		[AC_DEFINE([WITH_LIBUSB_0_1], [1],
+			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])],
+		[AC_DEFINE([WITH_LIBUSB_0_1], [0],
+			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])]
+	)
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
