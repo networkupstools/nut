@@ -116,13 +116,13 @@ Set the 'security level' used for SNMPv3 messages. Allowed values are: noAuthNoP
 Set the 'security name' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level'.
 
 *-w* | *--authProtocol* 'authentication protocol'::
-Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5 or SHA. Default value is MD5.
+Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5, SHA, SHA256, SHA384 or SHA512 (depending on Net-SNMP library capabilities; check help of the `nut-scanner` binary program for the run-time supported list). Default value is MD5.
 
 *-W* | *--authPassword* 'authentication pass phrase'::
 Set the 'authentication pass phrase' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level' to authNoPriv or authPriv.
 
 *-x* | *--privProtocol* 'privacy protocol'::
-Set the 'privacy protocol' used for encrypted SNMPv3 messages. Allowed values are DES or AES. Default value is DES.
+Set the 'privacy protocol' used for encrypted SNMPv3 messages. Allowed values are DES, AES, AES192 or AES256 (depending on Net-SNMP library capabilities; check help of the `nut-scanner` binary program for the run-time supported list). Default value is DES.
 
 *-X* | *--privPassword* 'privacy pass phrase'::
 Set the 'privacy pass phrase' used for encrypted SNMPv3 messages. This parameter is mandatory if you set 'security level' to authPriv.
