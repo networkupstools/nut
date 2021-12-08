@@ -218,7 +218,7 @@ riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
-mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
+mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD) -lm
 
 # SNMP
