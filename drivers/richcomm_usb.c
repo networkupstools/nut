@@ -62,7 +62,7 @@ static usb_device_id_t richcomm_usb_id[] = {
 };
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  typedef libusb_device_handle usb_dev_handle;
  typedef unsigned char* usb_ctrl_char;
@@ -280,7 +280,7 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		return -1;
 	}
 
-#ifdef WITH_LIBUSB_0_1
+#if WITH_LIBUSB_0_1
 	if (usb_set_altinterface(handle, 0) < 0) {
 		upsdebugx(5, "Can't set USB alternate interface");
 		return -1;
@@ -315,7 +315,7 @@ static int usb_device_close(usb_dev_handle *handle)
 	 */
 	/* usb_release_interface(handle, 0); */
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 		libusb_close(handle);
 		libusb_exit(NULL);
 #else
@@ -332,7 +332,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
 
 	/* libusb base init */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	if (libusb_init(NULL) < 0) {
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
@@ -348,7 +348,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	usb_device_close(*handlep);
 #endif
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
@@ -408,7 +408,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			memset(device, 0, sizeof(*device));
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
 			bus = libusb_get_bus_number(dev);
@@ -528,7 +528,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 		next_device:
 			usb_close(handle);
-#ifndef WITH_LIBUSB_1_0
+#if (!WITH_LIBUSB_1_0)
 		}
 #endif /* WITH_LIBUSB_1_0 */
 	}

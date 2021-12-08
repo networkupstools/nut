@@ -119,7 +119,7 @@ upsdrv_info_t	upsdrv_info = {
 
 #ifdef QX_USB
 /* Compatibility layer between libusb 0.1 and 1.0 */
-# ifdef WITH_LIBUSB_1_0
+# if WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  /* defines */
  #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
