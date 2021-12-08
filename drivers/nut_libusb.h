@@ -34,6 +34,14 @@
 #include "main.h"	/* for subdrv_info_t */
 #include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
 
+#if (!WITH_LIBUSB_1_0) && (!WITH_LIBUSB_0_1)
+#error "configure script error: Neither WITH_LIBUSB_1_0 nor WITH_LIBUSB_0_1 is set"
+#endif
+
+#if (WITH_LIBUSB_1_0) && (WITH_LIBUSB_0_1)
+#error "configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set"
+#endif
+
 /* libusb header file */
 #if WITH_LIBUSB_1_0
 #include <libusb.h>
