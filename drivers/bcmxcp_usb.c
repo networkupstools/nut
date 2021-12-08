@@ -10,10 +10,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 /* libusb header file */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 #include <libusb.h>
 #endif
-#ifdef WITH_LIBUSB_0_1
+#if WITH_LIBUSB_0_1
 #include <usb.h>
 #endif
 
@@ -42,7 +42,7 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static USBDevice_t curDevice;
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  /* Structures */
  #define usb_dev_handle libusb_device_handle
@@ -69,7 +69,7 @@ static USBDevice_t curDevice;
  #define nut_usb_strerror(a) libusb_strerror(a)
 #else
  #define nut_usb_strerror(a) usb_strerror()
-#endif /* #ifdef WITH_LIBUSB_1_0 */
+#endif /* #if WITH_LIBUSB_1_0 */
 
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
@@ -428,7 +428,7 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static usb_dev_handle *open_powerware_usb(void)
 {
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
@@ -517,7 +517,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	upsdebugx(1, "entering nutusb_open()");
 
 	/* Initialize Libusb */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	if (libusb_init(NULL) < 0) {
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
@@ -597,7 +597,7 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 	if (dev_h)
 	{
 		usb_release_interface(dev_h, 0);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 		libusb_close(dev_h);
 		libusb_exit(NULL);
 #else

@@ -151,7 +151,7 @@ upsdrv_info_t	upsdrv_info = {
 };
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  #define ERROR_BUSY	LIBUSB_ERROR_BUSY
  #define ERROR_PIPE LIBUSB_ERROR_PIPE

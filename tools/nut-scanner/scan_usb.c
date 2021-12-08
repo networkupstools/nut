@@ -41,7 +41,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
  #define USB_INIT_SYMBOL "libusb_init"
  #define USB_OPEN_SYMBOL "libusb_open"
  #define USB_CLOSE_SYMBOL "libusb_close"
@@ -118,7 +118,7 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle, "libusb_exit");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
@@ -211,7 +211,7 @@ nutscan_device_t * nutscan_scan_usb()
 	uint16_t VendorID;
 	uint16_t ProductID;
 	char *busname;
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
 	uint8_t bus;
@@ -230,7 +230,7 @@ nutscan_device_t * nutscan_scan_usb()
 
 	/* libusb base init */
 	/* Initialize Libusb */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	if ((*nut_usb_init)(NULL) < 0) {
 		(*nut_usb_exit)(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
@@ -241,7 +241,7 @@ nutscan_device_t * nutscan_scan_usb()
 	(*nut_usb_find_devices)();
 #endif /* WITH_LIBUSB_1_0 */
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	ssize_t devcount = 0;
 	struct libusb_device_descriptor dev_desc;
 	int i;
@@ -288,7 +288,7 @@ nutscan_device_t * nutscan_scan_usb()
 					VendorID, ProductID)) != NULL) {
 
 				/* open the device */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 				ret = (*nut_usb_open)(dev, &udev);
 				if (!udev) {
 					fprintf(stderr,"Failed to open device, \
@@ -432,10 +432,10 @@ nutscan_device_t * nutscan_scan_usb()
 
 				(*nut_usb_close)(udev);
 			}
-#ifdef WITH_LIBUSB_0_1
+#if WITH_LIBUSB_0_1
 		}
 	}
-#else	/* WITH_LIBUSB_0_1 */
+#else	/* not WITH_LIBUSB_0_1 */
 		free(busname);
 	}
 

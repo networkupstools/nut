@@ -56,7 +56,7 @@ static uint8_t output_monophase;
 static TRielloData DevData;
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
  #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE

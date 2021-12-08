@@ -23,10 +23,10 @@
 #include "nut_stdint.h"	/* for uint16_t */
 
 #include <regex.h>
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 #include <libusb.h>
 #endif
-#ifdef WITH_LIBUSB_0_1
+#if WITH_LIBUSB_0_1
 #include <usb.h>
 #endif
 
