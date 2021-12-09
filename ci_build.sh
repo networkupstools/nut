@@ -46,15 +46,6 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 fi
 
-if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
-    # Note: this is a little hack to reduce typing in (docs) developer
-    # iterations. Being part of this script, it has the overhead of full
-    # workspace cleanup and re-configuration (beneficial sometimes, a
-    # time waste at other times), so you may want `make -s spellcheck`
-    # instead and scroll its log for the complaints.
-    BUILD_TYPE="default-spellcheck"
-fi
-
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -381,6 +372,18 @@ optional_dist_clean_check() {
     fi
     return 0
 }
+
+if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    # Note: this is a little hack to reduce typing
+    # and scrolling in (docs) developer iterations.
+    if [ -s Makefile ] && [ -s docs/Makefile ]; then
+        echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
+        build_to_only_catch_errors_target spellcheck ; exit
+    else
+        BUILD_TYPE="default-spellcheck"
+        shift
+    fi
+fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
