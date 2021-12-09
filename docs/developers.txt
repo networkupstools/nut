@@ -253,6 +253,16 @@ git repository branches with whatever systems they have available.
 
 * https://github.com/networkupstools/nut/issues/823
 
+While `autoconf` tries its best to provide portable shell code, sometimes
+there are builds of system shell that just fail under stress. If you are
+seeing random failures of `./configure` script in different spots with
+the same inputs, try telling `./ci_build.sh` to loop configuring until
+success (instead of quickly failing), and/or tell `./configure` to use
+another shell at least for the system call-outs, with options like these:
+
+	SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
+	./ci_build.sh
+
 Jenkins CI
 ^^^^^^^^^^
 
