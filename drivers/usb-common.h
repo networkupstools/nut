@@ -23,6 +23,15 @@
 #include "nut_stdint.h"	/* for uint16_t */
 
 #include <regex.h>
+
+#if (!WITH_LIBUSB_1_0) && (!WITH_LIBUSB_0_1)
+#error "configure script error: Neither WITH_LIBUSB_1_0 nor WITH_LIBUSB_0_1 is set"
+#endif
+
+#if (WITH_LIBUSB_1_0) && (WITH_LIBUSB_0_1)
+#error "configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set"
+#endif
+
 #if WITH_LIBUSB_1_0
 #include <libusb.h>
 #endif
