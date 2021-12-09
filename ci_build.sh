@@ -46,15 +46,6 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 fi
 
-if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
-    # Note: this is a little hack to reduce typing in (docs) developer
-    # iterations. Being part of this script, it has the overhead of full
-    # workspace cleanup and re-configuration (beneficial sometimes, a
-    # time waste at other times), so you may want `make -s spellcheck`
-    # instead and scroll its log for the complaints.
-    BUILD_TYPE="default-spellcheck"
-fi
-
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -244,10 +235,13 @@ configure_nut() {
 
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
-    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
-    || { RES=$?
+    while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
+      echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
+      echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+      [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
+      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && return 0 \
+      || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -255,16 +249,36 @@ configure_nut() {
         $GGREP -B 100 -A 1 'Cache variables' config.log 2>/dev/null \
         || cat config.log || true
         echo "=========== END OF config.log"
-        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
-        exit $RES
+
+        if [ "${CI_SHELL_IS_FLAKY-}" = true ]; then
+            # Real-life story from the trenches: there are weird systems
+            # which fail ./configure in random spots not due to script's
+            # quality. Then we'd just loop here.
+            echo "WOULD BE FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+        else
+            echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "If you are sure this is not a fault of scripting or config option, try" >&2
+            echo "    CI_SHELL_IS_FLAKY=true $0"
+            exit $RES
+        fi
        }
+    done
+}
+
+build_to_only_catch_errors_target() {
+    if [ $# = 0 ]; then
+        build_to_only_catch_errors_target all ; return $?
+    fi
+
+    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+      $CI_TIME $MAKE VERBOSE=1 "$@" -k ) || return $?
+    return 0
 }
 
 build_to_only_catch_errors() {
-    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
-    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-      $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
+    build_to_only_catch_errors_target all || return $?
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE VERBOSE=0 check \
@@ -358,6 +372,18 @@ optional_dist_clean_check() {
     fi
     return 0
 }
+
+if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    # Note: this is a little hack to reduce typing
+    # and scrolling in (docs) developer iterations.
+    if [ -s Makefile ] && [ -s docs/Makefile ]; then
+        echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
+        build_to_only_catch_errors_target spellcheck ; exit
+    else
+        BUILD_TYPE="default-spellcheck"
+        shift
+    fi
+fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
