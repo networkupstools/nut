@@ -517,8 +517,9 @@ NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb are in its m4 file and NUT_CHECK_LIBUSB() called above
 
-AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)")
-AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)" -o "${nut_usb_lib}" = "(libusb-1.0-config)")
+dnl Note: there is no libusb-config script (and variable) for libusb-1.0
+AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])

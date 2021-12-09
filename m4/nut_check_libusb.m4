@@ -297,14 +297,14 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl Source code should be careful to use "#if" and not "#ifdef" when
 	dnl checking these values during the build. And both must be defined
 	dnl with some value.
-	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-0.1)"],
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-1.0)"],
 		[AC_DEFINE([WITH_LIBUSB_1_0], [1],
 			[Define to 1 for version 1.0 of the libusb (via pkg-config).])],
 		[AC_DEFINE([WITH_LIBUSB_1_0], [0],
 			[Define to 1 for version 1.0 of the libusb (via pkg-config).])]
 	)
 
-	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-1.0)" -o "${nut_usb_lib}" = "(libusb-1.0-config)"],
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)"],
 		[AC_DEFINE([WITH_LIBUSB_0_1], [1],
 			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])],
 		[AC_DEFINE([WITH_LIBUSB_0_1], [0],
