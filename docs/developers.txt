@@ -198,6 +198,11 @@ to call the common script with pre-sets:
 fixing bugs file-by-file running a `make` after each save to confirm
 your solutions and uncover the next issue to address :-)
 
+Helpfully, the NUT CI farm build logs report the configuration used for
+each executed stage, so if some build combination fails -- you can just
+scroll to the end of that section and copy-paste the way to reproduce
+an issue locally (on an OS similar to that build case).
+
 Note that while spelling out sets of warnings can help in a quest to
 fix certain bugs during development (if only by removing noise from
 classes of warnings not relevant to the issue one is working on), there
