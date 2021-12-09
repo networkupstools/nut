@@ -244,10 +244,13 @@ configure_nut() {
 
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
-    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
-    || { RES=$?
+    while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
+      echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
+      echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+      [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
+      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && return 0 \
+      || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -255,9 +258,20 @@ configure_nut() {
         $GGREP -B 100 -A 1 'Cache variables' config.log 2>/dev/null \
         || cat config.log || true
         echo "=========== END OF config.log"
-        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
-        exit $RES
+
+        if [ "${CI_SHELL_IS_FLAKY-}" = true ]; then
+            # Real-life story from the trenches: there are weird systems
+            # which fail ./configure in random spots not due to script's
+            # quality. Then we'd just loop here.
+            echo "WOULD BE FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+        else
+            echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "If you are sure this is not a fault of scripting or config option, try" >&2
+            echo "    CI_SHELL_IS_FLAKY=true $0"
+            exit $RES
+        fi
        }
+    done
 }
 
 build_to_only_catch_errors() {
