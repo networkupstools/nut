@@ -274,11 +274,20 @@ configure_nut() {
     done
 }
 
-build_to_only_catch_errors() {
+build_to_only_catch_errors_target() {
+    if [ $# = 0 ]; then
+        build_to_only_catch_errors_target all ; return $?
+    fi
+
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-      $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
+      $CI_TIME $MAKE VERBOSE=1 "$@" -k ) || return $?
+    return 0
+}
+
+build_to_only_catch_errors() {
+    build_to_only_catch_errors_target all || return $?
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE VERBOSE=0 check \
