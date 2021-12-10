@@ -174,7 +174,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		if (need_data > 0) {
 			res = usb_interrupt_read(upsdev,
 				0x81,
-				(char *) buf + bytes_read,
+				(usb_ctrl_char) buf + bytes_read,
 				128,
 				(int)(XCP_USB_TIMEOUT - elapsed_time));
 
