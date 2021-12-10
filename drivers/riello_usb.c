@@ -122,7 +122,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_char) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -152,7 +152,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_char) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -173,8 +173,11 @@ static int Get_USB_Packet(uint8_t *buffer)
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
+	/* Note: depending on libusb API version, size is either int or uint16_t
+	 * either way, likely less than size_t limit. But we don't assign much.
+	 */
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, (char*) inBuf, (int)size, 1000);
+	err = usb_bulk_read(udev, ep, (usb_ctrl_char) inBuf, (int)size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
