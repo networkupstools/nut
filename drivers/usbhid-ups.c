@@ -103,7 +103,7 @@ typedef enum {
 } walkmode_t;
 
 /* Compatibility layer between libusb 0.1 and 1.0, for errno/return codes */
-#if WITH_LIBUSB_0_1 || SHUT_MODE
+#if WITH_LIBUSB_0_1 || (defined SHUT_MODE)
  #define ERROR_BUSY	-EBUSY
  #define ERROR_NO_DEVICE -ENODEV
  #define ERROR_ACCESS -EACCES
