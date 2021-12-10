@@ -1371,7 +1371,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	/* Write data */
 	ret = usb_interrupt_write(udev,
 		USB_ENDPOINT_OUT | 2,
-		(char *)tmp,
+		(const usb_ctrl_char)tmp,
 		8, USB_TIMEOUT);
 
 	if (ret <= 0) {
