@@ -61,12 +61,69 @@ static USBDevice_t curDevice;
  #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
  #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
  /* Functions */
- #define usb_control_msg libusb_control_transfer
+/*
+Map from libusb-0.1 API:
+ int usb_control_msg(usb_dev_handle *dev, int requesttype,
+    int request, int value, int index,
+    char *bytes, int size, int timeout);
+=> libusb-1.0 API:
+ int LIBUSB_CALL libusb_control_transfer(
+    libusb_device_handle *dev_handle, uint8_t request_type,
+    uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+    unsigned char *data, uint16_t wLength, unsigned int timeout);
+
+// #define usb_control_msg libusb_control_transfer
+*/
+
+ static inline  int usb_control_msg(usb_dev_handle *dev, int requesttype,
+                    int request, int value, int index,
+                    char *bytes, int size, int timeout)
+ {
+	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
+	||  request < 0 || (uintmax_t)request > UINT8_MAX
+	||  value < 0 || (uintmax_t)value > UINT16_MAX
+	||  index < 0 || (uintmax_t)index > UINT16_MAX
+	||  size < 0 || (uintmax_t)size > UINT16_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_control_msg() args out of range for libusb_control_transfer() implementation");
+	}
+
+	return libusb_control_transfer(
+		dev,
+		(uint8_t)requesttype,
+		(uint8_t)request,
+		(uint16_t)value,
+		(uint16_t)index,
+		(unsigned char *)bytes,
+		(uint16_t)size,
+		(unsigned int) timeout
+		);
+ }
+
+/*
+Map from libusb-0.1 API:
+ int usb_interrupt_read(usb_dev_handle *dev, int ep,
+        char *bytes, int size, int timeout)
+=> libusb-1.0 API plus change of logic per below code:
+ int LIBUSB_CALL libusb_interrupt_transfer(libusb_device_handle *dev_handle,
+    unsigned char endpoint, unsigned char *data, int length,
+    int *actual_length, unsigned int timeout);
+*/
+
  static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
         char *bytes, int size, int timeout)
  {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
+	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_interrupt_read() args out of range for libusb_interrupt_transfer() implementation");
+	}
+
+	int ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
+			size, &size, (unsigned int)timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
