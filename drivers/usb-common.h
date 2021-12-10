@@ -69,7 +69,12 @@
  #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
 
  /* Functions, including range-checks to convert data types of the two APIs */
-
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION
+# pragma GCC diagnostic ignored "-Wunused-function"
+#endif
  /* #define usb_control_msg libusb_control_transfer */
  static inline  int usb_control_msg(usb_dev_handle *dev, int requesttype,
                     int request, int value, int index,
@@ -190,6 +195,9 @@
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION)
+# pragma GCC diagnostic pop
+#endif
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
  #define usb_claim_interface libusb_claim_interface
