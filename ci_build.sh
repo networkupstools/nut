@@ -276,7 +276,7 @@ build_to_only_catch_errors_target() {
     fi
 
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+      $CI_TIME $MAKE VERBOSE=0 V=0 -s -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME $MAKE VERBOSE=1 "$@" -k ) || return $?
     return 0
@@ -286,7 +286,7 @@ build_to_only_catch_errors() {
     build_to_only_catch_errors_target all || return $?
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
-    $CI_TIME $MAKE VERBOSE=0 check \
+    $CI_TIME $MAKE VERBOSE=0 V=0 -s check \
     && echo "`date`: SUCCESS" \
     || return $?
 
@@ -845,14 +845,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
+              $CI_TIME $MAKE -s VERBOSE=0 V=0 -s SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
               $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
               # Make end of log useful:
               echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
-              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              $CI_TIME $MAKE -s VERBOSE=0 V=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
             )
             exit $?
             ;;
