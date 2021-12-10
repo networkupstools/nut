@@ -32,25 +32,8 @@
 #define NUT_LIBUSB_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
-#include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
-
-#if (!WITH_LIBUSB_1_0) && (!WITH_LIBUSB_0_1)
-#error "configure script error: Neither WITH_LIBUSB_1_0 nor WITH_LIBUSB_0_1 is set"
-#endif
-
-#if (WITH_LIBUSB_1_0) && (WITH_LIBUSB_0_1)
-#error "configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set"
-#endif
-
-/* libusb header file */
-#if WITH_LIBUSB_1_0
-#include <libusb.h>
-/* simple remap to avoid bloating structures */
-typedef libusb_device_handle usb_dev_handle;
-#endif
-#if WITH_LIBUSB_0_1
-#include <usb.h>
-#endif
+#include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t,
+                         * and for libusb headers and 0.1/1.0 mapping */
 
 /* Used in drivers/libusb*.c sources: */
 #define LIBUSB_DEFAULT_INTERFACE        0
