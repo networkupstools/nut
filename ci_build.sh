@@ -645,6 +645,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             fi
             ;;
         "default-all-errors")
+            # This mode aims to build as many codepaths (to collect warnings)
+            # as it can, so help it enable (require) as many options as we can.
+
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
@@ -872,6 +875,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             exit $?
             ;;
         "default-all-errors")
+            # This mode aims to build as many codepaths (to collect warnings)
+            # as it can, so help it enable (require) as many options as we can.
+
             # Try to run various build scenarios to collect build errors
             # (no checks here) as configured further by caller's choice
             # of BUILD_WARNFATAL and/or BUILD_WARNOPT envvars above.
