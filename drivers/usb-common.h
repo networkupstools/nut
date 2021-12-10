@@ -195,6 +195,57 @@
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
+
+ static inline  int usb_get_string(usb_dev_handle *dev, int index, int langid,
+                usb_ctrl_char buf, size_t buflen)
+ {
+	/*
+	Map from libusb-0.1 API (originally "char* buf") => libusb-1.0 API:
+	int libusb_get_string_descriptor(libusb_device_handle *dev_handle,
+		uint8_t desc_index, uint16_t langid, unsigned char *data, int length)
+	*/
+
+	if (index < 0 || (uintmax_t)index > UINT8_MAX
+	||  langid < 0 || (uintmax_t)langid > UINT16_MAX
+	||  (uintmax_t)buflen > INT_MAX
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_get_string() args out of range for libusb_get_string_descriptor() implementation");
+	}
+
+	return libusb_get_string_descriptor(
+		dev,
+		(uint8_t)index,
+		(uint16_t)langid,
+		(unsigned char *)buf,
+		(int) buflen
+		);
+
+ }
+
+ static inline  int usb_get_string_simple(usb_dev_handle *dev, int index,
+                usb_ctrl_char buf, size_t buflen)
+ {
+	/*
+	Map from libusb-0.1 API (originally "char* buf") => libusb-1.0 API:
+	int LIBUSB_CALL libusb_get_string_descriptor_ascii(libusb_device_handle *dev_handle,
+		uint8_t desc_index, unsigned char *data, int length);
+	*/
+
+	if (index < 0 || (uintmax_t)index > UINT8_MAX
+	||  (uintmax_t)buflen > INT_MAX
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_get_string_simple() args out of range for libusb_get_string_descriptor_ascii() implementation");
+	}
+
+	return libusb_get_string_descriptor_ascii(
+		dev,
+		(uint8_t)index,
+		(unsigned char *)buf,
+		(int) buflen
+		);
+ }
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION)
 # pragma GCC diagnostic pop
 #endif
@@ -203,8 +254,6 @@
  #define usb_claim_interface libusb_claim_interface
  #define usb_clear_halt libusb_clear_halt
  #define usb_close libusb_close
- #define usb_get_string libusb_get_string_descriptor
- #define usb_get_string_simple libusb_get_string_descriptor_ascii
  #define usb_set_configuration libusb_set_configuration
  #define usb_release_interface libusb_release_interface
  #define usb_reset libusb_reset_device
