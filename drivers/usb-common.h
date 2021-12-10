@@ -32,11 +32,14 @@
 #error "configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set"
 #endif
 
+/* libusb header file */
 #if WITH_LIBUSB_1_0
 #include <libusb.h>
 #endif
 #if WITH_LIBUSB_0_1
 #include <usb.h>
+/* simple remap to avoid bloating structures */
+typedef usb_dev_handle libusb_device_handle;
 #endif
 
 /* USB standard timeout [ms] */
