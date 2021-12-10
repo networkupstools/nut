@@ -622,7 +622,7 @@ void upsdrv_shutdown(void)
 		__func__);
 
 	ret = usb_interrupt_write(udev,
-		SHUTDOWN_ENDPOINT, (char *)shutdown_packet,
+		SHUTDOWN_ENDPOINT, (usb_ctrl_char)shutdown_packet,
 		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
@@ -635,7 +635,9 @@ void upsdrv_shutdown(void)
 	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
 	usleep(170*1000);
 
-	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
+	ret = usb_interrupt_write(udev,
+		SHUTDOWN_ENDPOINT, (usb_ctrl_char)shutdown_packet,
+		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
 		upslogx(LOG_ERR,
