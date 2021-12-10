@@ -117,51 +117,6 @@ upsdrv_info_t	upsdrv_info = {
 #endif	/* QX_USB */
 };
 
-#ifdef QX_USB
-/* Compatibility layer between libusb 0.1 and 1.0 */
-# if WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- /* defines */
- #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
- #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
- #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
- #define USB_TYPE_VENDOR LIBUSB_REQUEST_TYPE_VENDOR
- #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
- #define USB_RECIP_ENDPOINT LIBUSB_RECIPIENT_ENDPOINT
- /* Structures */
- #define usb_dev_handle libusb_device_handle
- typedef unsigned char* usb_ctrl_char;
- /* Functions */
- #define usb_control_msg libusb_control_transfer
- #define nut_usb_strerror(a) libusb_strerror(a)
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define usb_get_string libusb_get_string_descriptor
- #define usb_get_string_simple libusb_get_string_descriptor_ascii
- static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
-        unsigned char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
- static inline  int usb_interrupt_write(libusb_device_handle *dev, int ep,
-        const char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
-# else /* for libusb 0.1 */
- /* Structures */
- typedef char* usb_ctrl_char;
- /* Functions */
- #define nut_usb_strerror(a) usb_strerror()
-# endif
-#endif /* QX_USB */
-
 /* == Data walk modes == */
 typedef enum {
 	QX_WALKMODE_INIT = 0,

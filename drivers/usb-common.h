@@ -20,7 +20,10 @@
 #ifndef NUT_USB_COMMON_H
 #define NUT_USB_COMMON_H
 
-#include "nut_stdint.h"	/* for uint16_t */
+/* Note: usb-common.h (this file) is included by nut_libusb.h,
+ * so not looping the includes ;)
+ */
+#include "nut_stdint.h"	/* for uint16_t, UINT16_MAX, etc. */
 
 #include <regex.h>
 
@@ -32,14 +35,193 @@
 #error "configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set"
 #endif
 
-/* libusb header file */
+/* Select version-specific libusb header file and define a sort of
+ * "Compatibility layer" between libusb 0.1 and 1.0
+ */
 #if WITH_LIBUSB_1_0
-#include <libusb.h>
+# include <libusb.h>
+
+ /* Simply remap libusb functions/structures from 0.1 to 1.0 */
+
+ /* Structures */
+ /* #define usb_dev_handle libusb_device_handle */
+ typedef libusb_device_handle usb_dev_handle;
+ typedef unsigned char* usb_ctrl_char;
+
+ /* defines */
+ #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
+ #define USB_DT_STRING LIBUSB_DT_STRING
+ #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
+ #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
+ #define USB_RECIP_ENDPOINT LIBUSB_RECIPIENT_ENDPOINT
+ #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
+ #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
+ #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
+ #define USB_TYPE_VENDOR LIBUSB_REQUEST_TYPE_VENDOR
+
+ #define ERROR_PIPE LIBUSB_ERROR_PIPE
+ #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
+ #define ERROR_BUSY	LIBUSB_ERROR_BUSY
+ #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
+ #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
+ #define ERROR_IO LIBUSB_ERROR_IO
+ #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
+ #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
+
+ /* Functions, including range-checks to convert data types of the two APIs */
+
+ /* #define usb_control_msg libusb_control_transfer */
+ static inline  int usb_control_msg(usb_dev_handle *dev, int requesttype,
+                    int request, int value, int index,
+                    usb_ctrl_char bytes, int size, int timeout)
+ {
+	/*
+	Map from libusb-0.1 API => libusb-1.0 API:
+	 int LIBUSB_CALL libusb_control_transfer(
+		libusb_device_handle *dev_handle, uint8_t request_type,
+		uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+		unsigned char *data, uint16_t wLength, unsigned int timeout);
+	Note: In libusb-0.1 bytes was a (char*) but our consumer code
+	was already fixed to use "usb_ctrl_char" to match other methods.
+	*/
+
+	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
+	||  request < 0 || (uintmax_t)request > UINT8_MAX
+	||  value < 0 || (uintmax_t)value > UINT16_MAX
+	||  index < 0 || (uintmax_t)index > UINT16_MAX
+	||  size < 0 || (uintmax_t)size > UINT16_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_control_msg() args out of range for libusb_control_transfer() implementation");
+	}
+
+	return libusb_control_transfer(
+		dev,
+		(uint8_t)requesttype,
+		(uint8_t)request,
+		(uint16_t)value,
+		(uint16_t)index,
+		(unsigned char *)bytes,
+		(uint16_t)size,
+		(unsigned int) timeout
+		);
+ }
+
+ static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
+                usb_ctrl_char bytes, int size, int timeout)
+ {
+	/* NOTE: Also for routines below:
+	Map from libusb-0.1 API => libusb-1.0 API plus change of logic per below code:
+	 int LIBUSB_CALL libusb_interrupt_transfer(libusb_device_handle *dev_handle,
+		unsigned char endpoint, unsigned char *data, int length,
+		int *actual_length, unsigned int timeout);
+	Note: In libusb-0.1 bytes was a (char*) but our consumer code
+	was already fixed to use "usb_ctrl_char" to match other methods.
+	*/
+	int ret;
+
+	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_interrupt_read() args out of range for libusb_interrupt_transfer() implementation");
+	}
+
+	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
+			size, &size, (unsigned int)timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
+ }
+
+ static inline  int usb_interrupt_write(usb_dev_handle *dev, int ep,
+                const usb_ctrl_char bytes, int size, int timeout)
+ {
+	/* See conversion comments above */
+	int ret;
+
+	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_interrupt_write() args out of range for libusb_interrupt_transfer() implementation");
+	}
+
+	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
+			size, &size, (unsigned int)timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
+ }
+
+ static inline  int usb_bulk_read(usb_dev_handle *dev, int ep,
+                usb_ctrl_char bytes, int size, int timeout)
+ {
+	/* See conversion comments above */
+	int ret;
+
+	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_bulk_read() args out of range for libusb_interrupt_transfer() implementation");
+	}
+
+	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
+			size, &size, (unsigned int)timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
+ }
+
+ static inline  int usb_bulk_write(usb_dev_handle *dev, int ep,
+                usb_ctrl_char bytes, int size, int timeout)
+ {
+	/* See conversion comments above */
+	int ret;
+
+	if (ep < 0 || (uintmax_t)ep > UCHAR_MAX
+	||  timeout < 0
+	) {
+		fatalx(EXIT_FAILURE,
+			"usb_bulk_write() args out of range for libusb_interrupt_transfer() implementation");
+	}
+
+	ret = libusb_interrupt_transfer(dev, (unsigned char)ep, (unsigned char *) bytes,
+			size, &size, (unsigned int)timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
+ }
+
+ /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
+ #define usb_claim_interface libusb_claim_interface
+ #define usb_clear_halt libusb_clear_halt
+ #define usb_close libusb_close
+ #define usb_get_string libusb_get_string_descriptor
+ #define usb_get_string_simple libusb_get_string_descriptor_ascii
+ #define usb_set_configuration libusb_set_configuration
+ #define usb_release_interface libusb_release_interface
+ #define usb_reset libusb_reset_device
+
+ #define nut_usb_strerror(a) libusb_strerror(a)
 #endif
+
+/* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
-#include <usb.h>
-/* simple remap to avoid bloating structures */
-typedef usb_dev_handle libusb_device_handle;
+# include <usb.h>
+ /* Structures */
+ typedef char* usb_ctrl_char;
+
+ /* defines */
+ #define ERROR_PIPE -EPIPE
+ #define ERROR_TIMEOUT -ETIMEDOUT
+ #define ERROR_BUSY	-EBUSY
+ #define ERROR_NO_DEVICE -ENODEV
+ #define ERROR_ACCESS -EACCES
+ #define ERROR_IO -EIO
+ #define ERROR_OVERFLOW -EOVERFLOW
+ #define ERROR_NOT_FOUND -ENOENT
+
+ /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
+ #define nut_usb_strerror(a) usb_strerror()
 #endif
 
 /* USB standard timeout [ms] */

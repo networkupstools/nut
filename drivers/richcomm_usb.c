@@ -61,33 +61,6 @@ static usb_device_id_t richcomm_usb_id[] = {
 	{ 0, 0, NULL }
 };
 
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#if WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- typedef libusb_device_handle usb_dev_handle;
- typedef unsigned char* usb_ctrl_char;
- #define usb_control_msg libusb_control_transfer
- static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
-        unsigned char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
- #define usb_claim_interface libusb_claim_interface
- #define usb_close libusb_close
- #define usb_set_configuration libusb_set_configuration
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define usb_get_string libusb_get_string_descriptor
- #define usb_get_string_simple libusb_get_string_descriptor_ascii
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else
- typedef char* usb_ctrl_char;
- #define nut_usb_strerror(a) usb_strerror()
-#endif /* WITH_LIBUSB_1_0 */
-
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;

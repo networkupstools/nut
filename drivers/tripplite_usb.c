@@ -150,19 +150,6 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 };
 
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#if WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
- /*typedef libusb_device_handle usb_dev_handle;*/
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else /* for libusb 0.1 */
- #define ERROR_BUSY	-EBUSY
- #define ERROR_PIPE -EPIPE
- #define nut_usb_strerror(a) usb_strerror()
-#endif
-
 /* TrippLite */
 #define TRIPPLITE_VENDORID 0x09ae
 
