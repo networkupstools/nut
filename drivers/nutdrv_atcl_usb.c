@@ -128,7 +128,7 @@ static int query_ups(char *reply)
 {
 	int	ret;
 
-	ret = usb_interrupt_read(udev, STATUS_ENDPOINT, (usb_ctrl_char)reply, STATUS_PACKETSIZE, ATCL_USB_TIMEOUT);
+	ret = usb_interrupt_read(udev, STATUS_ENDPOINT, (usb_ctrl_charbuf)reply, STATUS_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
 		upsdebugx(2, "status interrupt read: %s", ret ? nut_usb_strerror(ret) : "timeout");
@@ -361,7 +361,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iManufacturer,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
 					if (device->Vendor == NULL) {
@@ -376,7 +376,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iProduct) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iProduct,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Product = strdup(buf);
 					if (device->Product == NULL) {
@@ -391,7 +391,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iSerialNumber) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iSerialNumber,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Serial = strdup(buf);
 					if (device->Serial == NULL) {
@@ -622,7 +622,7 @@ void upsdrv_shutdown(void)
 		__func__);
 
 	ret = usb_interrupt_write(udev,
-		SHUTDOWN_ENDPOINT, (usb_ctrl_char)shutdown_packet,
+		SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
 		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
@@ -636,7 +636,7 @@ void upsdrv_shutdown(void)
 	usleep(170*1000);
 
 	ret = usb_interrupt_write(udev,
-		SHUTDOWN_ENDPOINT, (usb_ctrl_char)shutdown_packet,
+		SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
 		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {

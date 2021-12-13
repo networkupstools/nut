@@ -46,7 +46,7 @@
  /* Structures */
  /* #define usb_dev_handle libusb_device_handle */
  typedef libusb_device_handle usb_dev_handle;
- typedef unsigned char* usb_ctrl_char;
+ typedef unsigned char* usb_ctrl_charbuf;
 
  /* defines */
  #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
@@ -78,7 +78,7 @@
  /* #define usb_control_msg libusb_control_transfer */
  static inline  int usb_control_msg(usb_dev_handle *dev, int requesttype,
                     int request, int value, int index,
-                    usb_ctrl_char bytes, int size, int timeout)
+                    usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/*
 	Map from libusb-0.1 API => libusb-1.0 API:
@@ -87,7 +87,7 @@
 		uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
 		unsigned char *data, uint16_t wLength, unsigned int timeout);
 	Note: In libusb-0.1 bytes was a (char*) but our consumer code
-	was already fixed to use "usb_ctrl_char" to match other methods.
+	was already fixed to use "usb_ctrl_charbuf" to match other methods.
 	*/
 
 	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
@@ -114,7 +114,7 @@
  }
 
  static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
-                usb_ctrl_char bytes, int size, int timeout)
+                usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/* NOTE: Also for routines below:
 	Map from libusb-0.1 API => libusb-1.0 API plus change of logic per below code:
@@ -122,7 +122,7 @@
 		unsigned char endpoint, unsigned char *data, int length,
 		int *actual_length, unsigned int timeout);
 	Note: In libusb-0.1 bytes was a (char*) but our consumer code
-	was already fixed to use "usb_ctrl_char" to match other methods.
+	was already fixed to use "usb_ctrl_charbuf" to match other methods.
 	*/
 	int ret;
 
@@ -140,7 +140,7 @@
  }
 
  static inline  int usb_interrupt_write(usb_dev_handle *dev, int ep,
-                const usb_ctrl_char bytes, int size, int timeout)
+                const usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/* See conversion comments above */
 	int ret;
@@ -159,7 +159,7 @@
  }
 
  static inline  int usb_bulk_read(usb_dev_handle *dev, int ep,
-                usb_ctrl_char bytes, int size, int timeout)
+                usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/* See conversion comments above */
 	int ret;
@@ -178,7 +178,7 @@
  }
 
  static inline  int usb_bulk_write(usb_dev_handle *dev, int ep,
-                usb_ctrl_char bytes, int size, int timeout)
+                usb_ctrl_charbuf bytes, int size, int timeout)
  {
 	/* See conversion comments above */
 	int ret;
@@ -197,7 +197,7 @@
  }
 
  static inline  int usb_get_string(usb_dev_handle *dev, int index, int langid,
-                usb_ctrl_char buf, size_t buflen)
+                usb_ctrl_charbuf buf, size_t buflen)
  {
 	/*
 	Map from libusb-0.1 API (originally "char* buf") => libusb-1.0 API:
@@ -224,7 +224,7 @@
  }
 
  static inline  int usb_get_string_simple(usb_dev_handle *dev, int index,
-                usb_ctrl_char buf, size_t buflen)
+                usb_ctrl_charbuf buf, size_t buflen)
  {
 	/*
 	Map from libusb-0.1 API (originally "char* buf") => libusb-1.0 API:
@@ -265,7 +265,7 @@
 #if WITH_LIBUSB_0_1
 # include <usb.h>
  /* Structures */
- typedef char* usb_ctrl_char;
+ typedef char* usb_ctrl_charbuf;
 
  /* defines */
  #define ERROR_PIPE -EPIPE

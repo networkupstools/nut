@@ -88,7 +88,7 @@ static int cypress_setfeatures()
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
 								0x09,						/* HID_REPORT_SET = 0x09 */
 								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (usb_ctrl_char) bufOut, 0x5, 1000);
+								0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
@@ -122,7 +122,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (usb_ctrl_char) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -152,7 +152,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (usb_ctrl_char) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -177,7 +177,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 	 * either way, likely less than size_t limit. But we don't assign much.
 	 */
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, (usb_ctrl_char) inBuf, (int)size, 1000);
+	err = usb_bulk_read(udev, ep, (usb_ctrl_charbuf) inBuf, (int)size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
