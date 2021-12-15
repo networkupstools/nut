@@ -939,12 +939,23 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
-		shut_pkt[1] = (data_size<<4) + data_size;
+		if (data_size > UCHAR_MAX) {
+			upsdebugx(1, "%s: ERROR: data_size %zu is too large for SHUT packet",
+					__func__, data_size);
+			return -1;
+		}
+		if (data_size > 0x0F) {
+			upsdebugx(1, "%s: WARNING: data_size %zu may be too large for SHUT packet?",
+					__func__, data_size);
+			// Do not abort here - maybe there is intentional maths
+			// in the protocol with overlapping/shifted-away numbers?
+		}
+		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
 			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
-		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], data_size);
+		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);
 
 		/* Packets need only to be sent once
 		* NACK handling should take care of the rest */
