@@ -441,7 +441,8 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = buf[7] | (buf[8] << 8);
+	desc->wDescriptorLength = (uint16_t)(buf[7]);
+	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
@@ -842,7 +843,7 @@ static int shut_get_string_simple(int arg_upsfd, int index,
 		if (tbuf[si + 1])   /* high byte */
 			buf[di++] = '?';
 		else
-			buf[di++] = tbuf[si];
+			buf[di++] = (char)tbuf[si];
 	}
 
 	buf[di] = 0;
@@ -896,14 +897,25 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 		remaining_size+= 8;
 	}
 
+	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
+	||  request < 0 || (uintmax_t)request > UINT8_MAX
+	||  value < 0 || (uintmax_t)value > UINT16_MAX
+	||  index < 0 || (uintmax_t)index > UINT16_MAX
+	||  (uintmax_t)size > UINT16_MAX
+	||  (uintmax_t)timeout > UINT32_MAX
+	) {
+		upsdebugx (1, "%s: input values out of range", __func__);
+		return -1;
+	}
+
 	/* build the control request */
-	ctrl.bRequestType = requesttype;
-	ctrl.bRequest = request;
-	ctrl.wValue = value;
-	ctrl.wIndex = index;
-	ctrl.wLength = size;
+	ctrl.bRequestType = (uint8_t)requesttype;
+	ctrl.bRequest = (uint8_t)request;
+	ctrl.wValue = (uint16_t)value;
+	ctrl.wIndex = (uint16_t)index;
+	ctrl.wLength = (uint16_t)size;
 	ctrl.data = bytes;
-	ctrl.timeout = timeout;
+	ctrl.timeout = (uint32_t)timeout;	/* in milliseconds */
 
 	align_request(&ctrl);
 
