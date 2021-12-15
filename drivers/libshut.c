@@ -771,8 +771,9 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 								datalen+=Pos;
 								Pos=0;
 							}
-							else
+							else {
 								return Pos;
+							}
 						}
 						else
 							upsdebugx (4, "need more data (%i)!", datalen);
@@ -785,12 +786,14 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 						Retry++;
 					}
 				}
-				else
+				else {
 					return 0;
+				}
 			}
 		}
-		else
+		else {
 			Retry++;
+		}
 	} /* while */
 
 	return 0;
