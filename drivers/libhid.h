@@ -124,7 +124,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab);
 /*
  * HIDGetDataValue
  * -------------------------------------------------------------------------- */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age);
+int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, time_t age);
 
 /*
  * HIDSetDataValue
