@@ -46,7 +46,14 @@
  /* Structures */
  /* #define usb_dev_handle libusb_device_handle */
  typedef libusb_device_handle usb_dev_handle;
+ typedef uint8_t usb_ctrl_requesttype;
+ typedef uint8_t usb_ctrl_request;
+ typedef unsigned char usb_ctrl_endpoint;
+ typedef uint16_t usb_ctrl_repindex;
+ typedef uint8_t usb_ctrl_descindex;
  typedef unsigned char* usb_ctrl_charbuf;
+ typedef uint16_t usb_ctrl_charbufsize;
+ typedef unsigned int usb_ctrl_timeout;
 
  /* defines */
  #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
@@ -265,7 +272,14 @@
 #if WITH_LIBUSB_0_1
 # include <usb.h>
  /* Structures */
+ typedef int usb_ctrl_requesttype;
+ typedef int usb_ctrl_request;
+ typedef int usb_ctrl_endpoint;
+ typedef int usb_ctrl_repindex;
+ typedef int usb_ctrl_descindex;
  typedef char* usb_ctrl_charbuf;
+ typedef int usb_ctrl_charbufsize;
+ typedef int usb_ctrl_timeout;
 
  /* defines */
  #define ERROR_PIPE -EPIPE
