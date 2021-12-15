@@ -74,16 +74,16 @@ typedef struct usb_communication_subdriver_s {
 	/* Used for Powervar UPS or similar cases to make sure
 	 * we use the right interface in the Composite device
 	 */
-	int hid_rep_index;
+	usb_ctrl_repindex hid_rep_index;
 	/* All devices use HID descriptor at index 0.
 	 * However, some UPS like newer Eaton units have
 	 * a light HID descriptor at index 0, and
 	 * the full version is at index 1 (in which
 	 * case, bcdDevice == 0x0202)
 	 */
-	int hid_desc_index;
-	int hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
-	int hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
+	usb_ctrl_descindex hid_desc_index;
+	usb_ctrl_endpoint hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
+	usb_ctrl_endpoint hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
 } usb_communication_subdriver_t;
 
 extern usb_communication_subdriver_t	usb_subdriver;
