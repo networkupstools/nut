@@ -60,7 +60,7 @@
 /* Note: usb-common.h (this file) is included by nut_libusb.h,
  * so not looping the includes ;)
  */
-#include "nut_stdint.h"	/* for uint16_t, UINT16_MAX, etc. */
+#include "nut_stdint.h"	/* for uint16_t, UINT16_MAX, PRIsize, etc. */
 
 #include <regex.h>
 
@@ -86,10 +86,13 @@
  typedef uint8_t usb_ctrl_requesttype;
  typedef uint8_t usb_ctrl_request;
  typedef unsigned char usb_ctrl_endpoint;
+ typedef uint16_t usb_ctrl_msgvalue;
  typedef uint16_t usb_ctrl_repindex;
+ typedef uint8_t usb_ctrl_strindex;
  typedef uint8_t usb_ctrl_descindex;
  typedef unsigned char* usb_ctrl_charbuf;
  typedef uint16_t usb_ctrl_charbufsize;
+ #define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIu16
  typedef unsigned int usb_ctrl_timeout_msec;	/* in milliseconds */
 	/* Note: there does not seem to be a standard type
 	 * for milliseconds, like there is an useconds_t */
@@ -318,10 +321,14 @@
  typedef int usb_ctrl_requesttype;
  typedef int usb_ctrl_request;
  typedef int usb_ctrl_endpoint;
+ typedef int usb_ctrl_msgvalue;
  typedef int usb_ctrl_repindex;
+ typedef int usb_ctrl_strindex;
  typedef int usb_ctrl_descindex;
  typedef char* usb_ctrl_charbuf;
  typedef int usb_ctrl_charbufsize;
+ /* There is no PRIi :) So we define directly by spec */
+ #define PRI_NUT_USB_CTRL_CHARBUFSIZE "i"
  typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 
  /* defines */
