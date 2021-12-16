@@ -305,7 +305,7 @@
  /* FIXME: some original libusb1.c code cast the (int) argument
   * as (enum libusb_error) - should we force that in the macro? */
  #define nut_usb_strerror(a) libusb_strerror(a)
-#endif
+#endif  /* WITH_LIBUSB_1_0 */
 
 /* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
@@ -332,7 +332,7 @@
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
  #define nut_usb_strerror(a) usb_strerror()
-#endif
+#endif  /* WITH_LIBUSB_0_1 */
 
 /* USB standard timeout [ms] */
 #define USB_TIMEOUT 5000
