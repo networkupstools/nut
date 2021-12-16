@@ -90,7 +90,9 @@
  typedef uint8_t usb_ctrl_descindex;
  typedef unsigned char* usb_ctrl_charbuf;
  typedef uint16_t usb_ctrl_charbufsize;
- typedef unsigned int usb_ctrl_timeout;
+ typedef unsigned int usb_ctrl_timeout_msec;	/* in milliseconds */
+	/* Note: there does not seem to be a standard type
+	 * for milliseconds, like there is an useconds_t */
 
  /* defines */
  #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
@@ -320,7 +322,7 @@
  typedef int usb_ctrl_descindex;
  typedef char* usb_ctrl_charbuf;
  typedef int usb_ctrl_charbufsize;
- typedef int usb_ctrl_timeout;
+ typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 
  /* defines */
  #define ERROR_PIPE -EPIPE
