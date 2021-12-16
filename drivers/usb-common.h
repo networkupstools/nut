@@ -1,6 +1,15 @@
 /* usb-common.h - prototypes for the common useful USB functions
+ * NOTE that it aims to consolidate use of different USB-related APIs
+ * such as libusb-0.1 and libusb-1.0 in a way that minimizes the coding
+ * difference for majority of NUT - so typedef'ing or converting various
+ * data types and method signatures.
+ * Also note that at least currently this does not deal with non-libusb
+ * APIs (important when looking for method signatures in documentation,
+ * since e.g. Linux Kernel USB subsystem uses some of libusb-0.1 method
+ * names, but with different set, type and order of arguments!)
 
-   Copyright (C) 2008  Arnaud Quette <arnaud.quette@gmail.com>
+   Copyright (C) 2008 - 2016  Arnaud Quette <arnaud.quette@gmail.com>
+   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
