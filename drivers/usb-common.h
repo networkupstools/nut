@@ -302,6 +302,8 @@
  #define usb_release_interface libusb_release_interface
  #define usb_reset libusb_reset_device
 
+ /* FIXME: some original libusb1.c code cast the (int) argument
+  * as (enum libusb_error) - should we force that in the macro? */
  #define nut_usb_strerror(a) libusb_strerror(a)
 #endif
 
