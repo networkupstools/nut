@@ -112,7 +112,9 @@
  #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
  #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
 
- /* Functions, including range-checks to convert data types of the two APIs */
+ /* Functions, including range-checks to convert data types of the two APIs.
+  * Follows an example from libusb-1.0 headers that liberally cast int args
+  * of one method to uint16_t to call another; at least we do so with checks: */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION)
 # pragma GCC diagnostic push
 #endif
