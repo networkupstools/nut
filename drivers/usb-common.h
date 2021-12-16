@@ -3,6 +3,34 @@
  * such as libusb-0.1 and libusb-1.0 in a way that minimizes the coding
  * difference for majority of NUT - so typedef'ing or converting various
  * data types and method signatures.
+ *
+ * Beside your system headers (content varies between distros) you can
+ * find some documentation online:
+ * - libusb-1.0:
+ *   https://github.com/libusb/libusb/blob/master/libusb/libusb.h
+ *   https://libusb.sourceforge.io/api-1.0/
+ *   https://libusb.sourceforge.io/api-1.0/libusb_api.html
+ *   https://github.com/libusb/libusb/wiki
+ *   https://nxmnpg.lemoda.net/3/libusb (one page, easy to search)
+ * - libusb-0.1 is nowadays hard to find, original web-site and
+ *   sourceforge project were discontinued over the past years.
+ *   A rendered copy of the libusb-0.1 Developers Guide was noted at:
+ *   http://transit.iut2.upmf-grenoble.fr/doc/libusb-dev/html/index.html
+ *   http://transit.iut2.upmf-grenoble.fr/doc/libusb-dev/html/functions.html
+ *   Original SGML for that seems to be in source tarball such as
+ *   http://deb.debian.org/debian/pool/main/libu/libusb/libusb_0.1.12.orig.tar.gz
+ *
+ * Related (but currently not directly used) projects include:
+ * - libusb-win32 port based on libusb-0.1 API (bug-fix-only mode,
+ *   new projects should use libusb Windows backend):
+ *   https://sourceforge.net/p/libusb-win32/wiki/Documentation/
+ * - (Currently not in NUT codebase scope, but might help...)
+ *   > A compatibility layer allowing applications written for
+ *   > libusb-0.1 to work with libusb-1.0. libusb-compat-0.1
+ *   > attempts to look, feel, smell and walk like libusb-0.1.
+ *   Mostly. Details (and known differences) documented at:
+ *   https://github.com/libusb/libusb-compat-0.1
+ *
  * Also note that at least currently this does not deal with non-libusb
  * APIs (important when looking for method signatures in documentation,
  * since e.g. Linux Kernel USB subsystem uses some of libusb-0.1 method
