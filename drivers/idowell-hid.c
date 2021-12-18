@@ -166,4 +166,5 @@ subdriver_t idowell_subdriver = {
 	idowell_format_model,
 	idowell_format_mfr,
 	idowell_format_serial,
+	fix_report_desc,
 };

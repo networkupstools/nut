@@ -245,4 +245,5 @@ subdriver_t salicru_subdriver = {
 	salicru_format_model,
 	salicru_format_mfr,
 	salicru_format_serial,
+	fix_report_desc,
 };

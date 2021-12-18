@@ -262,6 +262,79 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* CPS Models like CP900EPFCLCD return a syntactically legal but incorrect
+ * Report Descriptor whereby the Input High Transfer Max/Min values are used
+ * for the Output Voltage Usage Item limits. This corrects them by finding and 
+ * applying the Input Voltage limits as being more appropriate. 
+ */
+
+HIDData_t *FindReport(HIDDesc_t *pDesc, uint8_t ReportID, HIDNode_t node)
+{
+	size_t	i;
+
+	for (i = 0; i < pDesc->nitems; i++) {
+		HIDData_t *pData = &pDesc->item[i];
+
+		if (pData->ReportID != ReportID) {
+			continue;
+		}
+
+		HIDPath_t * pPath = &pData->Path;
+		uint8_t size = pPath->Size;
+		if (size == 0 || pPath->Node[size-1] != node) {
+			continue;
+		}
+
+		return pData;
+	}
+
+	return NULL;
+}
+
+static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc) {
+	HIDData_t *pData;
+
+	int vendorID = pDev->VendorID;
+	int productID = pDev->ProductID;
+	if (vendorID != CPS_VENDORID || productID != 0x0501) {
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor:%04x, Product:%04x", vendorID, productID);
+
+	/* Apply the fix cautiously by looking for input voltage, high voltage transfer and output voltage report usages.
+	 * If the output voltage log min/max equals high voltage transfer log min/max then the bug is present.
+	 * To fix it copy the input voltage log min/max settings as reasonable values for the output voltage limits.
+	 */
+
+	if ((pData=FindReport(pDesc, 15, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+		long input_logmin = pData->LogMin;
+		long input_logmax = pData->LogMax;
+		upsdebugx(4, "Fix Report Descriptor: input LogMin:%ld LogMax:%ld", input_logmin, input_logmax);
+
+		if ((pData=FindReport(pDesc, 16, (PAGE_POWER_DEVICE<<16)+USAGE_HIGHVOLTAGETRANSFER))) {
+			long hvt_logmin = pData->LogMin;
+			long hvt_logmax = pData->LogMax;
+			upsdebugx(4, "Fix Report Descriptor:hvt input LogMin:%ld LogMax:%ld", hvt_logmin, hvt_logmax);
+
+			if ((pData=FindReport(pDesc, 18, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+				long output_logmin = pData->LogMin;
+				long output_logmax = pData->LogMax;
+				upsdebugx(4, "Fix Report Descriptor: output LogMin:%ld LogMax:%ld", output_logmin, output_logmax);
+
+				if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
+					pData->LogMin = input_logmin;
+					pData->LogMax = input_logmax;
+					upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %ld, LogMax = %ld",
+							input_logmin, input_logmax);
+					return 1;
+				}
+			}	
+		}	
+	}	
+	return 0;
+}
+
 subdriver_t cps_subdriver = {
 	CPS_HID_VERSION,
 	cps_claim,
@@ -270,4 +343,5 @@ subdriver_t cps_subdriver = {
 	cps_format_model,
 	cps_format_mfr,
 	cps_format_serial,
+	cps_fix_report_desc,
 };

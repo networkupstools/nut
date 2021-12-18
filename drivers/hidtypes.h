@@ -91,6 +91,12 @@ extern "C" {
 #define ATTR_DATA_CST			0x01
 #define ATTR_NVOL_VOL			0x80
 
+/* Usage Pages */
+#define PAGE_POWER_DEVICE		0x84
+
+/* Usages */
+#define USAGE_HIGHVOLTAGETRANSFER	0x54
+#define USAGE_VOLTAGE			0x30
 /*
  * HIDNode_t struct
  *

@@ -317,4 +317,5 @@ subdriver_t delta_ups_subdriver = {
 	delta_ups_format_model,
 	delta_ups_format_mfr,
 	delta_ups_format_serial,
+	fix_report_desc,
 };

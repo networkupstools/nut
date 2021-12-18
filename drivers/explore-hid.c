@@ -74,4 +74,5 @@ subdriver_t explore_subdriver = {
 	explore_format_model,
 	explore_format_mfr,
 	explore_format_serial,
+	fix_report_desc,
 };
