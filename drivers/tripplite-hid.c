@@ -562,4 +562,5 @@ subdriver_t tripplite_subdriver = {
 	tripplite_format_model,
 	tripplite_format_mfr,
 	tripplite_format_serial,
+	fix_report_desc,
 };

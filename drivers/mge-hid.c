@@ -1591,4 +1591,5 @@ subdriver_t mge_subdriver = {
 	mge_format_model,
 	mge_format_mfr,
 	mge_format_serial,
+	fix_report_desc,
 };

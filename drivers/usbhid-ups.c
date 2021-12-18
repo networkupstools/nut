@@ -1183,6 +1183,9 @@ static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char 
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
+	if (subdriver->fix_report_desc(arghd, pDesc)) {
+		upsdebugx(2, "Report Descriptor Fixed");
+	}
 	HIDDumpTree(udev, subdriver->utab);
 
 #ifndef SHUT_MODE
@@ -1241,6 +1244,12 @@ static double interval(void)
 	return ret;
 }
 #endif
+
+/* default subdriver function which doesnt attempt to fix any issues in the parsed HID Report Descriptor */
+int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc) {
+	return 0;
+}
+
 
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(walkmode_t mode)
