@@ -306,7 +306,7 @@ static USBDeviceMatcher_t device_matcher = {
  * caller, don't do this here. Return < 0 on error, 0 or higher on
  * success.
  */
-static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
+static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
 	int ret = 0;
 	NUT_UNUSED_VARIABLE(device);

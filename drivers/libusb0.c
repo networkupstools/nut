@@ -69,10 +69,13 @@ void nut_usb_addvars(void)
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
 }
 
-/* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
- * using "char" is trouble.  Likewise, sizes should never be negative.
+/* From usbutils: workaround libusb (0.1) API goofs:
+ * "byte" should never be sign extended;
+ * using "char" is trouble.
+ * Likewise, sizes should never be negative.
  */
 
+/*
 static inline int typesafe_control_msg(usb_dev_handle *dev,
         unsigned char requesttype, unsigned char request,
         int value, int index,
@@ -81,6 +84,22 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 	return usb_control_msg(dev, requesttype, request, value, index,
 		(char *) bytes, (int) size, timeout);
 }
+*/
+
+static inline int typesafe_control_msg(
+	usb_dev_handle *dev,
+	unsigned char requesttype,
+	unsigned char request,
+	int value,
+	int index,
+	usb_ctrl_charbuf bytes,
+	usb_ctrl_charbufsize size,
+	usb_ctrl_timeout_msec timeout)
+{
+	return usb_control_msg(dev, requesttype, request, value, index,
+		(char *) bytes, (int) size, timeout);
+}
+
 
 /* invoke matcher against device */
 static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
@@ -144,13 +163,13 @@ static int nut_usb_set_altinterface(usb_dev_handle *udev)
 static int libusb_open(usb_dev_handle **udevp,
 	USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev,
-		USBDevice_t *hd, unsigned char *rdbuf, int rdlen)
+		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
 #endif
-	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	usb_ctrl_charbufsize rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -158,14 +177,14 @@ static int libusb_open(usb_dev_handle **udevp,
 	struct usb_interface_descriptor *iface;
 
 	int ret, res;
-	unsigned char buf[20];
-	unsigned char *p;
+	usb_ctrl_char buf[20];
+	usb_ctrl_char *p;
 	char string[256];
 	int i;
 
 	/* report descriptor */
-	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int		rdlen;
+	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
+	usb_ctrl_charbufsize		rdlen;
 
 	/* libusb base init */
 	usb_init();
@@ -361,7 +380,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			if (rdlen1 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 1 failed");
 			}
-			upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
+			upsdebugx(3,
+				"HID descriptor length (method 1) %" PRI_NUT_USB_CTRL_CHARBUFSIZE,
+				rdlen1);
 
 			/* SECOND METHOD: find HID descriptor among "extra" bytes of
 			   interface descriptor, i.e., bytes tucked onto the end of
@@ -376,8 +397,12 @@ static int libusb_open(usb_dev_handle **udevp,
 			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
 				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
 					iface->extra[i], iface->extra[i+1]);
-				if (i+9 <= iface->extralen && iface->extra[i] >= 9 && iface->extra[i+1] == 0x21) {
-					p = &iface->extra[i];
+
+				if (i+9 <= iface->extralen
+				&&  iface->extra[i] >= 9
+				&&  iface->extra[i+1] == 0x21
+				) {
+					p = (usb_ctrl_char *)&iface->extra[i];
 					upsdebug_hex(3, "HID descriptor, method 2", p, 9);
 					rdlen2 = p[7] | (p[8] << 8);
 					break;
@@ -387,7 +412,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			if (rdlen2 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 			}
-			upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
+			upsdebugx(3,
+				"HID descriptor length (method 2) %" PRI_NUT_USB_CTRL_CHARBUFSIZE,
+				rdlen2);
 
 			/* when available, always choose the second value, as it
 				seems to be more reliable (it is the one reported e.g. by
@@ -407,14 +434,20 @@ static int libusb_open(usb_dev_handle **udevp,
 			}
 			if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
 				upsdebugx(2, "Warning: two different HID descriptors retrieved "
-					"(Reportlen = %d vs. %d)", rdlen1, rdlen2);
+					"(Reportlen = %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+					" vs. %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
+					rdlen1, rdlen2);
 			}
 
-			upsdebugx(2, "HID descriptor length %d", rdlen);
+			upsdebugx(2,
+				"HID descriptor length %" PRI_NUT_USB_CTRL_CHARBUFSIZE,
+				rdlen);
 
-			if (rdlen > (int)sizeof(rdbuf)) {
-				upsdebugx(2, "HID descriptor too long %d (max %d)",
-					rdlen, (int)sizeof(rdbuf));
+			if ((uintmax_t)rdlen > sizeof(rdbuf)) {
+				upsdebugx(2,
+					"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+					" (max %zu)",
+					rdlen, sizeof(rdbuf));
 				goto next_device;
 			}
 
@@ -426,7 +459,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
 				usb_subdriver.hid_rep_index,
-				rdbuf, (unsigned)rdlen, USB_TIMEOUT);
+				rdbuf, rdlen, USB_TIMEOUT);
 
 			if (res < 0)
 			{
@@ -437,7 +470,8 @@ static int libusb_open(usb_dev_handle **udevp,
 			if (res < rdlen)
 			{
 				upsdebugx(2, "Warning: report descriptor too short "
-					"(expected %d, got %d)", rdlen, res);
+					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+					", got %d)", rdlen, res);
 				rdlen = res; /* correct rdlen if necessary */
 			}
 
@@ -447,7 +481,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				goto next_device;
 			}
 
-			upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
+			upsdebugx(2,
+				"Report descriptor retrieved (Reportlen = %"
+				PRI_NUT_USB_CTRL_CHARBUFSIZE ")", rdlen);
 			upsdebugx(2, "Found HID device");
 			fflush(stdout);
 
@@ -510,8 +546,15 @@ static int libusb_strerror(const int ret, const char *desc)
  * return -1 on failure, report length on success
  */
 
-static int libusb_get_report(usb_dev_handle *udev,
-	int ReportId, unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API:
+ * static int libusb_get_report(usb_dev_handle *udev,
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
+ */
+static int libusb_get_report(
+	usb_dev_handle *udev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	int	ret;
 
@@ -536,8 +579,15 @@ static int libusb_get_report(usb_dev_handle *udev,
 	return libusb_strerror(ret, __func__);
 }
 
-static int libusb_set_report(usb_dev_handle *udev,
-	int ReportId, unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API:
+ * static int libusb_set_report(usb_dev_handle *udev,
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
+ */
+static int libusb_set_report(
+	usb_dev_handle *udev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	int	ret;
 
@@ -560,22 +610,58 @@ static int libusb_set_report(usb_dev_handle *udev,
 	return libusb_strerror(ret, __func__);
 }
 
-static int libusb_get_string(usb_dev_handle *udev,
-	int StringIdx, char *buf, size_t buflen)
+/* Expected evaluated types for the API:
+ * static int libusb_get_string(usb_dev_handle *udev,
+ *	int StringIdx, char *buf, size_t buflen)
+ */
+static int libusb_get_string(
+	usb_dev_handle *udev,
+	usb_ctrl_strindex StringIdx,
+	char *buf,
+	usb_ctrl_charbufsize buflen)
 {
 	int ret;
 
-	if (!udev) {
+	if (!udev
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	/*
+	 * usb.h:int  usb_get_string_simple(usb_dev_handle *dev, int index,
+	 * usb.h-         char *buf, size_t buflen);
+	 */
+	|| StringIdx < 0 || (uintmax_t)StringIdx > INT_MAX
+	|| buflen < 0 || (uintmax_t)buflen > (uintmax_t)SIZE_MAX
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+	) {
 		return -1;
 	}
 
-	ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
+	ret = usb_get_string_simple(udev, StringIdx, buf, (size_t)buflen);
 
 	return libusb_strerror(ret, __func__);
 }
 
-static int libusb_get_interrupt(usb_dev_handle *udev,
-	unsigned char *buf, int bufsize, int timeout)
+/* Expected evaluated types for the API:
+ * static int libusb_get_interrupt(usb_dev_handle *udev,
+ *	unsigned char *buf, int bufsize, int timeout)
+ */
+static int libusb_get_interrupt(
+	usb_dev_handle *udev,
+	usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize,
+	usb_ctrl_timeout_msec timeout)
 {
 	int ret;
 

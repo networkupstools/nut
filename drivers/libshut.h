@@ -28,9 +28,74 @@
 #define NUT_LIBSHUT_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
-#include "nut_stdint.h"	/* for uint16_t */
+#include "nut_stdint.h"	/* for uint16_t, size_t, PRIsize etc. */
 
 extern upsdrv_info_t comm_upsdrv_info;
+
+/* These typedefs are also named in usb-common.h (=> nut_libusb.h), adhering
+ * to one or another libusb API version. For consistency of "ifdef SHUT_MODE"
+ * handling in libhid.c and some drivers, these symbolic names are used in
+ * all the headers and are expected to match binary code of object files at
+ * (monolithic) driver build time.
+ *
+ * The MIN/MAX definitions here are primarily to generalize range-check
+ * code (especially if anything is done outside the libraries).
+ * FIXME: It may make sense to constrain the limits to lowest common
+ * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+ * so that any build of the practical (driver) code knows to not exceed
+ * any use-case.
+ *
+ * Types below were mined from existing method signatures; see also the
+ * my_hid_descriptor struct in libshut.c for practical fixed-size types.
+ */
+
+/* Essentially the file descriptor type, "int" - as in ser_get_char() etc.: */
+typedef int usb_dev_handle;
+
+/* Originally "int" cast to "uint8_t" in shut_control_msg(),
+ * and "unsigned char" in shut_get_descriptor() */
+typedef unsigned char usb_ctrl_requesttype;
+#define USB_CTRL_REQUESTTYPE_MIN	0
+#define USB_CTRL_REQUESTTYPE_MAX	UCHAR_MAX
+
+typedef int usb_ctrl_request;
+#define USB_CTRL_REQUEST_MIN	INT_MIN
+#define USB_CTRL_REQUEST_MAX	INT_MAX
+
+typedef int usb_ctrl_endpoint;
+#define USB_CTRL_ENDPOINT_MIN	INT_MIN
+#define USB_CTRL_ENDPOINT_MAX	INT_MAX
+
+typedef int usb_ctrl_msgvalue;
+#define USB_CTRL_MSGVALUE_MIN	INT_MIN
+#define USB_CTRL_MSGVALUE_MAX	INT_MAX
+
+typedef int usb_ctrl_repindex;
+#define USB_CTRL_REPINDEX_MIN	INT_MIN
+#define USB_CTRL_REPINDEX_MAX	INT_MAX
+
+typedef int usb_ctrl_strindex;
+#define USB_CTRL_STRINDEX_MIN	INT_MIN
+#define USB_CTRL_STRINDEX_MAX	INT_MAX
+
+typedef unsigned char usb_ctrl_descindex;
+#define USB_CTRL_DESCINDEX_MIN	0
+#define USB_CTRL_DESCINDEX_MAX	UCHAR_MAX
+
+/* Here MIN/MAX should not matter much, type mostly used for casting */
+typedef unsigned char* usb_ctrl_charbuf;
+typedef unsigned char usb_ctrl_char;
+#define USB_CTRL_CHAR_MIN	0
+#define USB_CTRL_CHAR_MAX	UCHAR_MAX
+
+typedef size_t usb_ctrl_charbufsize;	/*typedef int usb_ctrl_charbufsize;*/
+#define USB_CTRL_CHARBUFSIZE_MIN	0
+#define USB_CTRL_CHARBUFSIZE_MAX	SIZE_MAX
+#define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIsize
+
+typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
+#define USB_CTRL_TIMEOUTMSEC_MIN	INT_MIN
+#define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
@@ -59,25 +124,26 @@ typedef struct shut_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;			/* version of this subdriver	*/
 
-	int (*open)(int *upsfd,			/* try to open the next available	*/
+	int (*open)(usb_dev_handle *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
-		int (*callback)(int upsfd, SHUTDevice_t *hd,
-			unsigned char *rdbuf, int rdlen));
+		int (*callback)(usb_dev_handle upsfd, SHUTDevice_t *hd,
+			usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen));
 
-	void (*close)(int upsfd);
+	void (*close)(usb_dev_handle upsfd);
 
-	int (*get_report)(int upsfd, int ReportId,
-		unsigned char *raw_buf, int ReportSize);
+	int (*get_report)(usb_dev_handle upsfd, usb_ctrl_repindex ReportId,
+		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);
 
-	int (*set_report)(int upsfd, int ReportId,
-		unsigned char *raw_buf, int ReportSize);
+	int (*set_report)(usb_dev_handle upsfd, usb_ctrl_repindex ReportId,
+		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);
 
-	int (*get_string)(int upsfd,
-		int StringIdx, char *buf, size_t buflen);
+	int (*get_string)(usb_dev_handle upsfd,
+		usb_ctrl_strindex StringIdx, char *buf, usb_ctrl_charbufsize buflen);
 
-	int (*get_interrupt)(int upsfd,
-		unsigned char *buf, int bufsize, int timeout);
+	int (*get_interrupt)(usb_dev_handle upsfd,
+		usb_ctrl_charbuf buf, usb_ctrl_charbufsize bufsize,
+		usb_ctrl_timeout_msec timeout);
 } shut_communication_subdriver_t;
 
 extern shut_communication_subdriver_t	shut_subdriver;
