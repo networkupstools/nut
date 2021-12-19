@@ -958,13 +958,29 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # that may be addressed separately, but counts should fit
                 BUILDSTODO="${BUILDSTODO_SSL}"
 
-                [ "$NUT_USB_VARIANTS" = "auto" ] || \
-                { [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
+                # Adding up only if we are building several USB variants
+                # or a single non-default variant (maybe a "no" option),
+                # so we should be trying both SSL's and that/those USB
+                ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
+                ###{ [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
+                if [ "${BUILDSTODO_USB}" -gt 1 ] \
+                || [ "$NUT_USB_VARIANTS" != "auto" ] \
+                ; then
                     BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
+                fi
+
+                if [ "$NUT_SSL_VARIANTS" = "auto" ] \
+                && [ "${BUILDSTODO_USB}" -gt 0 ] \
+                ; then
+                    echo "=== Only build USB scenario(s) picking whatever SSL is found"
+                    BUILDSTODO="${BUILDSTODO_USB}"
+                fi
             fi
 
             BUILDSTODO_INITIAL="$BUILDSTODO"
             echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations..."
+            # If we don't care about SSL implem and want to pick USB, go straight there
+            ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 # NOTE: Do not repeat a distclean before the loop,
                 # we have cleaned above before autogen, and here it
@@ -1059,8 +1075,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # or when caller explicitly requested to only test without it,
             # and then we only attempt the serial and/or USB options while
             # disabling other drivers for faster turnaround.
-            [ "$NUT_USB_VARIANTS" = "auto" ] || \
-            { [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
+            ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
+            ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
+            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
+                [ "${BUILDSTODO_USB}" -gt 1 ] || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
                 echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
