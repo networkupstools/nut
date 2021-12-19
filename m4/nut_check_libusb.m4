@@ -208,6 +208,9 @@ if test -z "${nut_have_libusb_seen}"; then
 				dnl libusb 1.0: libusb_detach_kernel_driver
 				dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
 				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+
+				dnl From libusb-0.1 - check these to have valid config.h definitions
+				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
 			fi
 		else
 			dnl libusb 0.1, or missing pkg-config :
@@ -227,6 +230,11 @@ if test -z "${nut_have_libusb_seen}"; then
 			dnl Check for libusb "force driver unbind" availability
 			if test "${nut_have_libusb}" = "yes"; then
 				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+
+				dnl From libusb-1.0 - check these to have valid config.h definitions
+				AC_CHECK_FUNCS(libusb_kernel_driver_active)
+				AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
+				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
 			fi
 		fi
 	else
