@@ -38,7 +38,7 @@ extern "C" {
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n);
+HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n);
 
 /*
  * Free_ReportDesc
