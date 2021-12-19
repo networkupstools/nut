@@ -1103,6 +1103,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                           configure_nut
                         )
                         ;;
+                    libusb-*)
+                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        ( CONFIG_OPTS+=("--without-all")
+                          CONFIG_OPTS+=("--without-ssl")
+                          CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
+                          configure_nut
+                        )
+                        ;;
                     *)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
                         ( CONFIG_OPTS+=("--without-all")
