@@ -566,6 +566,11 @@ int instcmd(const char *cmdname, const char *extradata)
 				return ret;
 			}
 
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
+
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
@@ -581,6 +586,11 @@ int instcmd(const char *cmdname, const char *extradata)
 			if (ret != STAT_INSTCMD_HANDLED) {
 				return ret;
 			}
+
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
 
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
