@@ -131,6 +131,8 @@ if test -z "${nut_have_libusb_seen}"; then
 		[AC_MSG_NOTICE([libusb-1.0 support was detected, but another was chosen ${nut_usb_lib}])]
 	)
 
+	dnl FIXME? Detect and report all CFLAGS/LIBS that we can,
+	dnl and *then* pick one set of values to use?
 	AS_CASE([${nut_usb_lib}],
 		["(libusb-1.0)"], [
 			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
@@ -152,6 +154,8 @@ if test -z "${nut_have_libusb_seen}"; then
 		]
 	)
 
+	dnl check optional user-provided values for cflags/ldflags
+	dnl and publish what we end up using
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes,
 		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
