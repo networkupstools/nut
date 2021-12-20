@@ -1508,7 +1508,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 	for (retry = 0; retry < 3; retry++) {
 		int	ret;
 
-        memset(buf, 0, buflen);
+		memset(buf, 0, buflen);
 		tmp[0] = 0x05;
 		tmp[1] = 0;
 		tmp[2] = 1 + (char)strcspn(cmd, "\r");
