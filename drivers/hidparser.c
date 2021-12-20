@@ -312,20 +312,24 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_LOG_MAX :
 			pParser->Data.LogMax = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
-                        /* HACK: If treating the value as signed (FormatValue(...)) results in a LogMax that is
+			/* HACK: If treating the value as signed (FormatValue(...)) results in a LogMax that is
 			 * less than the LogMin value then it is likely that the LogMax value has been
 			 * incorrectly encoded by the UPS firmware (field too short and overflowed into sign
 			 * bit).  In that case, reinterpret it as an unsigned number and log the problem.
 			 * This hack is not correct in the sense that it only looks at the LogMin value for
 			 * this item, whereas the HID spec says that Logical values persist in global state.
 			 */
-                        if (pParser->Data.LogMax < pParser->Data.LogMin) {
-                          upslogx(LOG_WARNING, "%s: LogMax is less than LogMin. "
-                                  "Vendor HID report descriptor may be incorrect; "
-                                  "interpreting LogMax %ld as %u in ReportID: 0x%02x", __func__,
-				  pParser->Data.LogMax, pParser->Value, pParser->Data.ReportID);
-                          pParser->Data.LogMax = (long) pParser->Value;
-                        }
+			if (pParser->Data.LogMax < pParser->Data.LogMin) {
+				upslogx(LOG_WARNING,
+					"%s: LogMax is less than LogMin. "
+					"Vendor HID report descriptor may be incorrect; "
+					"interpreting LogMax %ld as %u in ReportID: 0x%02x",
+					__func__,
+					pParser->Data.LogMax,
+					pParser->Value,
+					pParser->Data.ReportID);
+				pParser->Data.LogMax = (long) pParser->Value;
+			}
 			break;
 
 		case ITEM_PHY_MIN :
