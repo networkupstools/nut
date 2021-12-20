@@ -868,6 +868,7 @@
 "PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
+"PowerWalker"	"ups"	"3"	"VFI 3000 TG" "" "usbhid-ups" #https://powerwalker.com/?lang=en&page=product&item=10122043
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
