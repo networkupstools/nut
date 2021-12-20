@@ -392,7 +392,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case ERROR_ACCESS:    /* Permission denied */
 	case ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-	case -ENXIO:		/* No such device or address */
+	case -ENXIO:				/* No such device or address */
 #endif
 	case ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
