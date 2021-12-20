@@ -116,7 +116,8 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 		upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - "
 			"please email the nut-upsdev list with information about your UPS.", __func__);
 	} else {
-		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)", __func__);
+		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)",
+			__func__);
 	}
 	return ret;
 }
@@ -141,7 +142,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
-	ssize_t devcount = 0;
+	ssize_t	devcount = 0;
 	struct libusb_device_descriptor dev_desc;
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
@@ -574,7 +575,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 
 /* Expected evaluated types for the API:
  * static int nut_libusb_get_report(libusb_device_handle *udev,
- *	int ReportId, unsigned char *raw_buf, int ReportSize )
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
 static int nut_libusb_get_report(
 	libusb_device_handle *udev,
@@ -626,7 +627,7 @@ static int nut_libusb_get_report(
 
 /* Expected evaluated types for the API:
  * static int nut_libusb_set_report(libusb_device_handle *udev,
- *	int ReportId, unsigned char *raw_buf, int ReportSize )
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
 static int nut_libusb_set_report(
 	libusb_device_handle *udev,
