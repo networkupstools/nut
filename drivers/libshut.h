@@ -97,6 +97,16 @@ typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 #define USB_CTRL_TIMEOUTMSEC_MIN	INT_MIN
 #define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
+/* Same error-code definitions as in usb-common.h for libusb-0.1 API */
+#define ERROR_ACCESS		-EACCES
+#define ERROR_BUSY			-EBUSY
+#define ERROR_IO			-EIO
+#define ERROR_NO_DEVICE		-ENODEV
+#define ERROR_NOT_FOUND		-ENOENT
+#define ERROR_OVERFLOW		-EOVERFLOW
+#define ERROR_PIPE			-EPIPE
+#define ERROR_TIMEOUT		-ETIMEDOUT
+
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
  * the 5 pieces of information by which a SHUT device identifies
