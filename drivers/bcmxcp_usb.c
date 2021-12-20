@@ -43,10 +43,12 @@ void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, size_t size);
 
 /* usb_set_descriptor() for Powerware devices */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	assert (size < INT_MAX);
@@ -60,6 +62,7 @@ static void *powerware_ups(USBDevice_t *device) {
 }
 
 /* usb_set_descriptor() for Phoenixtec devices */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	NUT_UNUSED_VARIABLE(index);
