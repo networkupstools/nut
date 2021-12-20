@@ -40,7 +40,7 @@ static usb_device_id_t delta_ups_usb_device_table[] = {
 	{ USB_DEVICE(DELTA_UPS_VENDORID, 0x041b), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */

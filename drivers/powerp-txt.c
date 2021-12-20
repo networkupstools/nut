@@ -53,8 +53,8 @@ typedef struct {
 	float          q_unknwn;
 } status_t;
 
-static int	ondelay = 1;	/* minutes */
-static int	offdelay = 60;	/* seconds */
+static long	ondelay = 1;	/* minutes */
+static long	offdelay = 60;	/* seconds */
 
 static char	powpan_answer[SMALLBUF];
 
@@ -84,9 +84,9 @@ static struct {
 	{ NULL, NULL }
 };
 
-static int powpan_command(const char *command)
+static ssize_t powpan_command(const char *command)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -121,7 +121,7 @@ static int powpan_command(const char *command)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 	return ret;
 }
 
@@ -150,7 +150,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+		if ((powpan_command(cmdtab[i].command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
@@ -160,28 +160,28 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "Z.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "Z.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "Z%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "Z%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "S.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "S%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "S%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%dR%04d\r", offdelay / 6, ondelay);
+			snprintf(command, sizeof(command), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 		} else {
-			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
+			snprintf(command, sizeof(command), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 		}
 	} else {
 		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+	if ((powpan_command(command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -219,7 +219,7 @@ static int powpan_setvar(const char *varname, const char *val)
 #pragma GCC diagnostic pop
 #endif
 
-		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
+		if ((powpan_command(command) == 2) && (!strncasecmp(powpan_answer, "#0", 2))) {
 			dstate_setinfo(varname, "%s", val);
 			return STAT_SET_HANDLED;
 		}
@@ -237,8 +237,8 @@ static void powpan_initinfo(void)
 	int	i;
 	char	*s;
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	/*
 	 * NOTE: The reply is already in the buffer, since the P4\r command
@@ -377,9 +377,9 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.reboot");
 }
 
-static int powpan_status(status_t *status)
+static ssize_t powpan_status(status_t *status)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -420,7 +420,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 	ret = sscanf(powpan_answer, "#I%fO%fL%dB%dT%dF%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -460,7 +460,7 @@ static int powpan_status(status_t *status)
 			return -1;
 		}
 
-		upsdebug_hex(3, "read", powpan_answer, ret);
+		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -547,9 +547,10 @@ static int powpan_updateinfo(void)
 	return (status.flags[0] & 0x40) ? 1 : 0;
 }
 
-static int powpan_initups(void)
+static ssize_t powpan_initups(void)
 {
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	upsdebugx(1, "Trying text protocol...");
 
@@ -575,7 +576,7 @@ static int powpan_initups(void)
 		}
 
 		if (ret < 46) {
-			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
+			upsdebugx(2, "Expected 46 bytes, but only got %zd", ret);
 			continue;
 		}
 
@@ -590,7 +591,7 @@ static int powpan_initups(void)
 		}
 
 		if ((ondelay < 0) || (ondelay > 9999)) {
-			fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+			fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 		}
 
 		val = getval("offdelay");
@@ -599,7 +600,7 @@ static int powpan_initups(void)
 		}
 
 		if ((offdelay < 6) || (offdelay > 600)) {
-			fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [6..600]", offdelay);
+			fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [6..600]", offdelay);
 		}
 
 		/* Truncate to nearest setable value */

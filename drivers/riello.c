@@ -68,9 +68,14 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 				size--;
 				CRC_Word = 0x554D;
 				while(size--) {
-					pom = (CRC_Word ^ *buff) & 0xff;
-					pom = (pom ^ (pom << 4)) & 0xff;
-					pom = (pom << 8) ^ (pom << 3) ^ (pom >> 4);
+					pom  = (CRC_Word ^ *buff) & 0x00ff;
+					pom  = (pom ^ (pom << 4)) & 0x00ff;
+					/* Thanks to &0xff above, pom is at most 255 --
+					 * so shifted by 8 bits is still uint16_t range
+					 */
+					pom  = (uint16_t)(pom << 8);
+					pom ^= (pom << 3);
+					pom ^= (pom >> 4);
 					CRC_Word = (CRC_Word >> 8) ^ pom;
 					buff++;
 				}
@@ -372,7 +377,7 @@ uint8_t riello_prepare_shutsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 6;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -394,7 +399,7 @@ uint8_t riello_prepare_setrebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 2;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -405,7 +410,7 @@ uint8_t riello_prepare_rebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 1;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -452,7 +457,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKVA = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKVA = (uint16_t)pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
@@ -462,7 +468,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKW = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKW = (uint16_t)pom_long;
 
 	pom_word = (buffer[j++]-0x30)*256;
 	pom_word += (buffer[j++]-0x30)*16;
@@ -682,7 +689,7 @@ void riello_parse_rc(uint8_t* buffer, TRielloData* data)
 
 	j = 7;
 	for (i = 0; i < 22; i++, j+=2) {
-		data->StatusCodeT[i] = (buffer[j+1]-0x30);
+		data->StatusCodeT[i] = (char)(buffer[j+1]-0x30);
 		data->StatusCodeT[i] |= ((buffer[j]-0x30) << 4);
 	}
 	data->StatusCodeT[23] = 0;
@@ -733,11 +740,11 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 
 	data->SWversion = buffer[4]+256*buffer[5];
 
-	data->Version[0] = (uint8_t)(48 + ((data->SWversion / 1000) % 10));
-	data->Version[1] = (uint8_t)(48 + ((data->SWversion / 100) % 10));
+	data->Version[0] = (char)(uint8_t)(48 + ((data->SWversion / 1000) % 10));
+	data->Version[1] = (char)(uint8_t)(48 + ((data->SWversion / 100) % 10));
 	data->Version[2] = '.';
-	data->Version[3] = (uint8_t)(48 + ((data->SWversion / 10) % 10));
-	data->Version[4] = (uint8_t)(48 + (data->SWversion % 10));
+	data->Version[3] = (char)(uint8_t)(48 + ((data->SWversion / 10) % 10));
+	data->Version[4] = (char)(uint8_t)(48 + (data->SWversion % 10));
 
 	if (data->Model < 3000)
 		pom = data->Model*100;
@@ -769,9 +776,10 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uinp1 = buffer[35]*230/100;
 		data->Uinp2 = buffer[36]*230/100;
 		data->Uinp3 = buffer[37]*230/100;
-		data->Iinp1 = ((pom/690)*buffer[38])/100;
-		data->Iinp2 = ((pom/690)*buffer[39])/100;
-		data->Iinp3 = ((pom/690)*buffer[40])/100;
+		/* TODO: Range-check the casts to uint16_t? */
+		data->Iinp1 = (uint16_t)(((pom/690)*buffer[38])/100);
+		data->Iinp2 = (uint16_t)(((pom/690)*buffer[39])/100);
+		data->Iinp3 = (uint16_t)(((pom/690)*buffer[40])/100);
 		data->Finp = buffer[41]+256*buffer[42];
 
 		if (buffer[79] & 0x80) {
@@ -786,14 +794,16 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		}
 
 		if (buffer[73]) {
+			/* FIXME: Wondering how the addition below works for uint8_t[] buffer... */
+			/* TODO: Range-check the casts to uint16_t? */
 			if (buffer[73] < 100)
 				buffer[73]+=256;
 			if (data->Model < 3000) /* singlephase */
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100);
 			else
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100/3;
-			data->Iout2 = ((pom/buffer[73])*buffer[63])/100/3;
-			data->Iout3 = ((pom/buffer[73])*buffer[64])/100/3;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100/3);
+			data->Iout2 = (uint16_t)(((pom/buffer[73])*buffer[63])/100/3);
+			data->Iout3 = (uint16_t)(((pom/buffer[73])*buffer[64])/100/3);
 		}
 		else {
 			data->Iout1 = 0;

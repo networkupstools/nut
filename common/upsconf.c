@@ -54,7 +54,7 @@ static void conf_args(size_t numargs, char **arg)
 		return;
 
 	/* handle 'foo = bar', 'foo=bar', 'foo =bar' or 'foo= bar' forms */
-	if (!strcmp(arg[1], "=")) {
+	if (!strncmp(arg[1], "=", 1)) {
 		do_upsconf_args(ups_section, arg[0], arg[2]);
 		return;
 	}

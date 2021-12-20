@@ -23,6 +23,8 @@ else
 	done
 fi
 
+rm -f *.in.AUTOGEN_WITHOUT || true
+
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
@@ -38,7 +40,13 @@ then
 		echo "Error: Python is not available."
 		echo "Unable to regenerate Augeas lens for ups.conf parsing."
 		echo "----------------------------------------------------------------------"
-		exit 1
+		if [ "${WITHOUT_NUT_AUGEAS-}" = true ]; then
+			echo "Proceeding without Augeas integration, be sure to not require it in configure script" >&2
+			touch scripts/augeas/nutupsconf.aug.in scripts/augeas/nutupsconf.aug.in.AUTOGEN_WITHOUT
+		else
+			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true   and re-run" >&2
+			exit 1
+		fi
 	fi
 fi
 
@@ -56,7 +64,14 @@ then
 		echo "Error: Perl is not available."
 		echo "Unable to regenerate USB helper files."
 		echo "----------------------------------------------------------------------"
-		exit 1
+		if [ "${WITHOUT_NUT_USBINFO-}" = true ]; then
+			echo "Proceeding without NUT USB Info, be sure to not require it in configure script" >&2
+			touch scripts/udev/nut-usbups.rules.in scripts/udev/nut-usbups.rules.in.AUTOGEN_WITHOUT
+			touch scripts/devd/nut-usb.conf.in scripts/devd/nut-usb.conf.in.AUTOGEN_WITHOUT
+		else
+			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_USBINFO=true   and re-run" >&2
+			exit 1
+		fi
 	fi
 fi
 
@@ -65,7 +80,8 @@ if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
 fi
 
 # now we can safely call autoreconf
-if ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
+if ( command -v dos2unix ) 2>/dev/null >/dev/null \
+&& ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
 	echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
 	echo "this may cause issues for m4 parsing with autotools below."
 	if [ -e .git ] ; then
@@ -75,6 +91,10 @@ if ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; t
 	echo ""
 fi >&2
 
+# Note: on some systems "autoreconf", "automake" et al are dispatcher
+# scripts, and need you to explicitly say which version you want, e.g.
+#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
+# If you get issues with AC_DISABLE_STATIC make sure you have libtool.
 echo "Calling autoreconf..."
 autoreconf -iv && {
 	sh -n configure 2>/dev/null >/dev/null \

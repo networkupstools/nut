@@ -8,5 +8,5 @@ else
 endif
 endif
 
-clean-local:
-	rm -f *-spellchecked
+CLEANFILES = *-spellchecked
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

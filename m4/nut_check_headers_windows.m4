@@ -11,6 +11,7 @@ dnl Check for compilable and valid windows.h header
 
 AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
   AC_CACHE_CHECK([for windows.h], [nut_cv_header_windows_h], [
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
 #undef inline
@@ -30,6 +31,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
     ],[
       nut_cv_header_windows_h="no"
     ])
+    AC_LANG_POP([C])
   ])
   case "$nut_cv_header_windows_h" in
     yes)
@@ -50,6 +52,7 @@ AC_DEFUN([NUT_CHECK_NATIVE_WINDOWS], [
     if test "$nut_cv_header_windows_h" = "no"; then
       nut_cv_native_windows="no"
     else
+      AC_LANG_PUSH([C])
       AC_COMPILE_IFELSE([
         AC_LANG_PROGRAM([[
         ]],[[
@@ -65,6 +68,7 @@ AC_DEFUN([NUT_CHECK_NATIVE_WINDOWS], [
       ],[
         nut_cv_native_windows="no"
       ])
+      AC_LANG_POP([C])
     fi
   ])
   AM_CONDITIONAL(DOING_NATIVE_WINDOWS, test "x$nut_cv_native_windows" = xyes)
@@ -78,6 +82,7 @@ dnl Check for compilable and valid winsock.h header
 AC_DEFUN([NUT_CHECK_HEADER_WINSOCK], [
   AC_REQUIRE([NUT_CHECK_HEADER_WINDOWS])dnl
   AC_CACHE_CHECK([for winsock.h], [nut_cv_header_winsock_h], [
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
 #undef inline
@@ -98,6 +103,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK], [
     ],[
       nut_cv_header_winsock_h="no"
     ])
+    AC_LANG_POP([C])
   ])
   case "$nut_cv_header_winsock_h" in
     yes)
@@ -115,6 +121,7 @@ dnl Check for compilable and valid winsock2.h header
 AC_DEFUN([NUT_CHECK_HEADER_WINSOCK2], [
   AC_REQUIRE([NUT_CHECK_HEADER_WINDOWS])dnl
   AC_CACHE_CHECK([for winsock2.h], [nut_cv_header_winsock2_h], [
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
 #undef inline
@@ -135,6 +142,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK2], [
     ],[
       nut_cv_header_winsock2_h="no"
     ])
+    AC_LANG_POP([C])
   ])
   case "$nut_cv_header_winsock2_h" in
     yes)
@@ -152,6 +160,7 @@ dnl Check for compilable and valid ws2tcpip.h header
 AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
   AC_REQUIRE([NUT_CHECK_HEADER_WINSOCK2])dnl
   AC_CACHE_CHECK([for ws2tcpip.h], [nut_cv_header_ws2tcpip_h], [
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
 #undef inline
@@ -173,6 +182,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
     ],[
       nut_cv_header_ws2tcpip_h="no"
     ])
+    AC_LANG_POP([C])
   ])
   case "$nut_cv_header_ws2tcpip_h" in
     yes)

@@ -69,7 +69,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	/* see if the new value is allowed for this variable */
 
 	if (sstate_getflags(ups, var) & ST_FLAG_STRING) {
-		int	aux;
+		long	aux;
 
 		aux = sstate_getaux(ups, var);
 
@@ -82,6 +82,10 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 			return;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int) strlen(newval)) {
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
@@ -177,7 +181,7 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	/* SET VAR UPS VARNAME VALUE */
-	if (!strcasecmp(arg[0], "VAR")) {
+	if (!strncasecmp(arg[0], "VAR", 3)) {
 		if (numarg < 4) {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
 			return;
@@ -195,17 +199,21 @@ void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* SET TRACKING VALUE */
 	if (!strcasecmp(arg[0], "TRACKING")) {
-		if (!strcasecmp(arg[1], "ON")) {
+		if (!strncasecmp(arg[1], "ON", 2)) {
 			/* general enablement along with for this client */
 			client->tracking = tracking_enable();
 		}
-		else if (!strcasecmp(arg[1], "OFF")) {
+		else if (!strncasecmp(arg[1], "OFF", 3)) {
 			/* disable status tracking for this client first */
 			client->tracking = 0;
 			/* then only disable the general one if no other clients use it!
 			 * Note: don't call tracking_free() since we want info to
 			 * persist, and tracking_cleanup() takes care of cleaning */
-			tracking_disable();
+			if (tracking_disable()) {
+				upsdebugx(2, "%s: TRACKING disabled for one client, more remain.", __func__);
+			} else {
+				upsdebugx(2, "%s: TRACKING disabled for last client.", __func__);
+			}
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
