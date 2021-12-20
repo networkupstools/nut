@@ -99,24 +99,24 @@
 	 * for milliseconds, like there is an useconds_t */
 
  /* defines */
- #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
- #define USB_DT_STRING LIBUSB_DT_STRING
- #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
- #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
- #define USB_RECIP_ENDPOINT LIBUSB_RECIPIENT_ENDPOINT
- #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
- #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
- #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
- #define USB_TYPE_VENDOR LIBUSB_REQUEST_TYPE_VENDOR
+ #define USB_CLASS_PER_INTERFACE	LIBUSB_CLASS_PER_INTERFACE
+ #define USB_DT_STRING				LIBUSB_DT_STRING
+ #define USB_ENDPOINT_IN			LIBUSB_ENDPOINT_IN
+ #define USB_ENDPOINT_OUT			LIBUSB_ENDPOINT_OUT
+ #define USB_RECIP_ENDPOINT			LIBUSB_RECIPIENT_ENDPOINT
+ #define USB_RECIP_INTERFACE		LIBUSB_RECIPIENT_INTERFACE
+ #define USB_REQ_SET_DESCRIPTOR		LIBUSB_REQUEST_SET_DESCRIPTOR
+ #define USB_TYPE_CLASS				LIBUSB_REQUEST_TYPE_CLASS
+ #define USB_TYPE_VENDOR			LIBUSB_REQUEST_TYPE_VENDOR
 
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
- #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
- #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
- #define ERROR_IO LIBUSB_ERROR_IO
- #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
- #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
+ #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
+ #define ERROR_BUSY			LIBUSB_ERROR_BUSY
+ #define ERROR_IO			LIBUSB_ERROR_IO
+ #define ERROR_NO_DEVICE	LIBUSB_ERROR_NO_DEVICE
+ #define ERROR_NOT_FOUND	LIBUSB_ERROR_NOT_FOUND
+ #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
+ #define ERROR_PIPE			LIBUSB_ERROR_PIPE
+ #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
 
  /* Functions, including range-checks to convert data types of the two APIs.
   * Follows an example from libusb-1.0 headers that liberally cast int args
@@ -303,16 +303,16 @@
 #endif
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
- #define usb_claim_interface libusb_claim_interface
- #define usb_clear_halt libusb_clear_halt
- #define usb_close libusb_close
- #define usb_set_configuration libusb_set_configuration
- #define usb_release_interface libusb_release_interface
- #define usb_reset libusb_reset_device
+ #define usb_claim_interface	libusb_claim_interface
+ #define usb_clear_halt			libusb_clear_halt
+ #define usb_close				libusb_close
+ #define usb_set_configuration	libusb_set_configuration
+ #define usb_release_interface	libusb_release_interface
+ #define usb_reset				libusb_reset_device
 
  /* FIXME: some original libusb1.c code cast the (int) argument
   * as (enum libusb_error) - should we force that in the macro? */
- #define nut_usb_strerror(a) libusb_strerror(a)
+ #define nut_usb_strerror(a)	libusb_strerror(a)
 #endif  /* WITH_LIBUSB_1_0 */
 
 /* Note: Checked above that in practice we handle some one libusb API */
@@ -333,17 +333,17 @@
  typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 
  /* defines */
- #define ERROR_PIPE -EPIPE
- #define ERROR_TIMEOUT -ETIMEDOUT
- #define ERROR_BUSY	-EBUSY
- #define ERROR_NO_DEVICE -ENODEV
- #define ERROR_ACCESS -EACCES
- #define ERROR_IO -EIO
- #define ERROR_OVERFLOW -EOVERFLOW
- #define ERROR_NOT_FOUND -ENOENT
+ #define ERROR_ACCESS		-EACCES
+ #define ERROR_BUSY			-EBUSY
+ #define ERROR_IO			-EIO
+ #define ERROR_NO_DEVICE	-ENODEV
+ #define ERROR_NOT_FOUND	-ENOENT
+ #define ERROR_OVERFLOW		-EOVERFLOW
+ #define ERROR_PIPE			-EPIPE
+ #define ERROR_TIMEOUT		-ETIMEDOUT
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
- #define nut_usb_strerror(a) usb_strerror()
+ #define nut_usb_strerror(a)	usb_strerror()
 #endif  /* WITH_LIBUSB_0_1 */
 
 /* USB standard timeout [ms] */
