@@ -61,9 +61,9 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  #define USB_STRERROR_SYMBOL "usb_strerror"
  static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
  static void (*nut_usb_init)(void);
-static int (*nut_usb_find_busses)(void);
-static struct usb_bus * (*nut_usb_busses);
-static int (*nut_usb_find_devices)(void);
+ static int (*nut_usb_find_busses)(void);
+ static struct usb_bus * (*nut_usb_busses);
+ static int (*nut_usb_find_devices)(void);
  static char * (*nut_usb_strerror)(void);
 #endif
 
@@ -97,12 +97,12 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, USB_OPEN_SYMBOL);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -134,7 +134,7 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle, "libusb_get_device_descriptor");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 #else /* for libusb 0.1 */
@@ -149,7 +149,7 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle, "usb_find_devices");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 #endif /* WITH_LIBUSB_1_0 */
