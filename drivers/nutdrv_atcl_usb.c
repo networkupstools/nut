@@ -461,14 +461,18 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				/* this method requires at least libusb 0.1.8:
 				 * it forces device claiming by unbinding
 				 * attached driver... From libhid */
-				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
-					upsdebugx(1, "failed to detach kernel driver from USB device: %s", usb_strerror());
+				if ((ret = usb_detach_kernel_driver_np(handle, 0)) < 0) {
+					upsdebugx(1,
+						"failed to detach kernel driver from USB device: %s",
+						nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
 #elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER
 				if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
-					upsdebugx(4, "failed to detach kernel driver from USB device: %s", nut_usb_strerror(ret));
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
