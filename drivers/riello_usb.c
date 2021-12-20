@@ -353,26 +353,26 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	switch (ret)
 	{
-	case -EBUSY:		/* Device or resource busy */
+	case -EBUSY:				/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 
-	case -EPERM:		/* Operation not permitted */
+	case -EPERM:				/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 
-	case -EPIPE:		/* Broken pipe */
+	case -EPIPE:				/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
 #ifdef ETIME
 		goto fallthrough_case_etime;
-	case -ETIME:		/* Timer expired */
+	case -ETIME:				/* Timer expired */
 	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
