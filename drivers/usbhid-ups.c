@@ -411,18 +411,22 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
-	static char buf[20];
-	int year, month, day;
+	static char buf[32];
+	long year, month, day;
 
 	if ((long)value == 0) {
 		return "not set";
 	}
 
-	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */
+	/* TOTHINK: About the comment below...
+	 * Does bit-shift keep the negativeness on all architectures?
+	 */
+	/* negative value represents pre-1980 date: */
+	year = 1980 + ((long)value >> 9);
 	month = ((long)value >> 5) & 0x0f;
 	day = (long)value & 0x1f;
 
-	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+	snprintf(buf, sizeof(buf), "%04ld/%02ld/%02ld", year, month, day);
 
 	return buf;
 }
@@ -522,7 +526,9 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 		}
 	}
 
-	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver to vendor and/or product ID", __func__);
+	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver "
+		"to vendor and/or product ID",
+		__func__);
 	return 0;
 }
 
@@ -564,7 +570,8 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
-		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives", __func__, cmdname);
+		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives",
+			__func__, cmdname);
 
 		if (!strcasecmp(cmdname, "load.on")) {
 			return instcmd("load.on.delay", "0");
@@ -587,6 +594,11 @@ int instcmd(const char *cmdname, const char *extradata)
 				return ret;
 			}
 
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
+
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
@@ -602,6 +614,11 @@ int instcmd(const char *cmdname, const char *extradata)
 			if (ret != STAT_INSTCMD_HANDLED) {
 				return ret;
 			}
+
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
 
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
@@ -730,16 +747,23 @@ void upsdrv_makevartable(void)
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
+	snprintf(temp, sizeof(temp),
+		"Set low battery level, in %% (default=%s)",
+		DEFAULT_LOWBATT);
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set shutdown delay, in seconds (default=%s)",
+		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
-	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set startup delay, in seconds (default=%s)",
+		DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
+	snprintf(temp, sizeof(temp),
+		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
@@ -749,12 +773,17 @@ void upsdrv_makevartable(void)
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
-	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
-	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
-	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
-	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
+	addvar(VAR_FLAG, "explore",
+		"Diagnostic matching of unsupported UPS");
+	addvar(VAR_FLAG, "maxreport",
+		"Activate tweak for buggy APC Back-UPS firmware");
+	addvar(VAR_FLAG, "interruptonly",
+		"Don't use polling, only use interrupt pipe");
+	addvar(VAR_VALUE, "interruptsize",
+		"Number of bytes to read from interrupt pipe");
 #else
-	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
+	addvar(VAR_VALUE, "notification",
+		"Set notification type, (ignored, only for backward compatibility)");
 #endif
 }
 
@@ -835,7 +864,9 @@ void upsdrv_updateinfo(void)
 			continue;
 
 		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
+			upsdebugx(2,
+				"Path: %s, Type: %s, ReportID: 0x%02x, "
+				"Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(event[i], subdriver->utab),
 				HIDDataType(event[i]), event[i]->ReportID,
 				event[i]->Offset, event[i]->Size, value);
@@ -859,12 +890,14 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
+		interval());
 #endif
 	/* clear status buffer before begining */
 	status_init();
 
-	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
+	/* Do a full update (polling) every pollfreq
+	 * or upon data change (ie setvar/instcmd) */
 	if ((now > (lastpoll + pollfreq)) || (data_has_changed == TRUE)) {
 		upsdebugx(1, "Full update...");
 
@@ -891,7 +924,8 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling feature reports...\n",
+		interval());
 #endif
 }
 
@@ -975,12 +1009,16 @@ void upsdrv_initups(void)
 	case -1:
 		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
 #ifndef HAVE___ATTRIBUTE__NORETURN
-		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+		exit(EXIT_FAILURE);
+		/* Should not get here in practice, but
+		 * compiler is afraid we can fall through */
 #endif
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
-		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+		exit(EXIT_FAILURE);
+		/* Should not get here in practice, but
+		 * compiler is afraid we can fall through */
 #endif
 	}
 
@@ -996,7 +1034,8 @@ void upsdrv_initups(void)
 
 	hd = &curDevice;
 
-	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
+	upsdebugx(1, "Detected a UPS: %s/%s",
+		hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
 
 	/* Activate Powercom tweaks */
@@ -1241,7 +1280,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	int productID = curDevice.ProductID;
 #endif
 
-	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
+	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE
+	 * and HU_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
@@ -1380,8 +1420,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 		}
 
-		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
-			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
+		upsdebugx(2,
+			"Path: %s, Type: %s, ReportID: 0x%02x, "
+			"Offset: %i, Size: %i, Value: %g",
+			item->hidpath, HIDDataType(item->hiddata),
+			item->hiddata->ReportID,
 			item->hiddata->Offset, item->hiddata->Size, value);
 
 		if (item->hidflags & HU_TYPE_CMD) {
@@ -1602,12 +1645,16 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 		if (!(strcmp(info_lkp->nut_value, value))) {
-			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)", info_lkp->nut_value, info_lkp->hid_value);
+			upsdebugx(5,
+				"hu_find_valinfo: found %s (value: %ld)",
+				info_lkp->nut_value, info_lkp->hid_value);
 			return info_lkp->hid_value;
 		}
 	}
 
-	upsdebugx(3, "hu_find_valinfo: no matching HID value for this INFO_* value (%s)", value);
+	upsdebugx(3,
+		"hu_find_valinfo: no matching HID value for this INFO_* value (%s)",
+		value);
 	return -1;
 }
 
@@ -1624,12 +1671,16 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	/* use 'value' as an index for a lookup in an array */
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 		if (info_lkp->hid_value == (long)value) {
-			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)", info_lkp->nut_value, (long)value);
+			upsdebugx(5,
+				"hu_find_infoval: found %s (value: %ld)",
+				info_lkp->nut_value, (long)value);
 			return info_lkp->nut_value;
 		}
 	}
 
-	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%g)", value);
+	upsdebugx(3,
+		"hu_find_infoval: no matching INFO_* value for this HID value (%g)",
+		value);
 	return NULL;
 }
 
