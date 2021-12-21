@@ -630,7 +630,6 @@ static int libusb_get_string(
 {
 	int ret;
 
-	if (!udev
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -647,12 +646,13 @@ static int libusb_get_string(
 	 * usb.h:int  usb_get_string_simple(usb_dev_handle *dev, int index,
 	 * usb.h-         char *buf, size_t buflen);
 	 */
+	if (!udev
 	|| StringIdx < 0 || (uintmax_t)StringIdx > INT_MAX
 	|| buflen < 0 || (uintmax_t)buflen > (uintmax_t)SIZE_MAX
+	) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-	) {
 		return -1;
 	}
 
