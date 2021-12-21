@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2800 utf-8
+personal_ws-1.1 en 2801 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1746,6 +1746,7 @@ fsd
 ftdi
 fuji
 fullload
+func
 gamatronic
 gcc
 gcpp
