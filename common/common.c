@@ -48,7 +48,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 # endif
 #endif
 
-// https://stackoverflow.com/a/12844426/4715872
+/* https://stackoverflow.com/a/12844426/4715872 */
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ pid_t get_max_pid_t()
 	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
 	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
 	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
-#if defined(LLONG_MAX)  // C99
+#if defined(LLONG_MAX)  /* C99 */
 	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
 #endif
 	abort();
@@ -280,8 +280,8 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	{ // scoping
-		intmax_t _pid = strtol(buf, (char **)NULL, 10); // assuming 10 digits for a long
+	{ /* scoping */
+		intmax_t _pid = strtol(buf, (char **)NULL, 10); /* assuming 10 digits for a long */
 		if (_pid <= get_max_pid_t()) {
 			pid = (pid_t)_pid;
 		} else {
