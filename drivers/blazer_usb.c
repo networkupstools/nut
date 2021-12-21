@@ -132,7 +132,9 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_char)&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
@@ -160,7 +162,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&tmp, 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_char)&tmp, 8, 1000);
 
 		/*
 		 * This USB to serial implementation is crappy. In order to read correct
@@ -207,7 +211,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_char)&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
@@ -248,7 +254,9 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	/* Read all 64 bytes of the reply in one large chunk */
-	ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&tmp, sizeof(tmp), 1000);
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_char)&tmp, sizeof(tmp), 1000);
 
 	/*
 	 * Any errors here mean that we are unable to read a reply (which
@@ -314,10 +322,12 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
-				ret = usb_get_string(udev, command[i].index, langid_fix, (usb_ctrl_char)buf, buflen);
+				ret = usb_get_string(udev, command[i].index, langid_fix,
+					(usb_ctrl_char)buf, buflen);
 			}
 			else {
-				ret = usb_get_string_simple(udev, command[i].index, (usb_ctrl_char)buf, buflen);
+				ret = usb_get_string_simple(udev, command[i].index,
+					(usb_ctrl_char)buf, buflen);
 			}
 
 			if (ret <= 0) {

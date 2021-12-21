@@ -32,12 +32,13 @@ extern "C" {
 /* *INDENT-ON* */
 #endif /* __cplusplus */
 
+#include "config.h"
 #include "hidtypes.h"
 
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n);
+HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n);
 
 /*
  * Free_ReportDesc

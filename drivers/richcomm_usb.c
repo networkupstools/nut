@@ -128,7 +128,8 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	int	ret;
 
 	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
-		MESSAGE_VALUE, INDEX_VALUE, (usb_ctrl_char)query, QUERY_PACKETSIZE, 1000);
+		MESSAGE_VALUE, INDEX_VALUE,
+		(usb_ctrl_char)query, QUERY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s",
@@ -154,7 +155,9 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	}
 	upsdebug_hex(3, "send", query, (size_t)ret);
 
-	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, (usb_ctrl_char)reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(udev,
+		REPLY_REQUESTTYPE,
+		(usb_ctrl_char)reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s",
@@ -522,7 +525,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 				ret = callback(handle, device);
 				if (ret >= 0) {
-					upsdebugx(4, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
+					upsdebugx(4, "USB device [%04x:%04x] opened",
+						device->VendorID, device->ProductID);
 #ifdef WITH_LIBUSB_1_0
 					libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -533,7 +537,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				 * it force device claiming by unbinding
 				 * attached driver... From libhid */
 				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
-					upsdebugx(4, "failed to detach kernel driver from USB device: %s", usb_strerror());
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						usb_strerror());
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
@@ -549,7 +555,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #ifdef WITH_LIBUSB_1_0
 			libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
-			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
+			fatalx(EXIT_FAILURE,
+				"USB device [%04x:%04x] matches, but driver callback failed: %s",
 				device->VendorID, device->ProductID, nut_usb_strerror(ret));
 
 		next_device:

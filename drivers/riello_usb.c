@@ -68,7 +68,7 @@ static TRielloData DevData;
  #define ERROR_IO LIBUSB_ERROR_IO
  #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
  #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
- typedef libusb_device_handle usb_dev_handle;
+ /*typedef libusb_device_handle usb_dev_handle;*/
  typedef unsigned char* usb_ctrl_char;
  #define usb_control_msg libusb_control_transfer
  #define usb_claim_interface libusb_claim_interface
@@ -406,28 +406,28 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	switch (ret)
 	{
-	case ERROR_BUSY:		/* Device or resource busy */
+	case ERROR_BUSY:			/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-	case -EPERM:		/* Operation not permitted */
+	case -EPERM:				/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 # ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 # endif
 #endif
 
-	case ERROR_PIPE:		/* Broken pipe */
+	case ERROR_PIPE:			/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
 #if ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
-	case -ETIME:		/* Timer expired */
+	case -ETIME:				/* Timer expired */
 	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
