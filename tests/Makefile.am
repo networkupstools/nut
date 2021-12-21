@@ -25,6 +25,8 @@ hidparser.c: $(top_srcdir)/drivers/hidparser.c
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
+# Pull the right include path for chosen libusb version:
+getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):

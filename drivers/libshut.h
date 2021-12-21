@@ -58,19 +58,26 @@ typedef struct SHUTDevice_s {
 typedef struct shut_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;				/* version of this subdriver		*/
+
 	int (*open)(int *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
-		int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen));
+		int (*callback)(int upsfd, SHUTDevice_t *hd,
+			unsigned char *rdbuf, int rdlen));
+
 	void (*close)(int upsfd);
+
 	int (*get_report)(int upsfd, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
+		unsigned char *raw_buf, int ReportSize);
+
 	int (*set_report)(int upsfd, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
+		unsigned char *raw_buf, int ReportSize);
+
 	int (*get_string)(int upsfd,
-	int StringIdx, char *buf, size_t buflen);
+		int StringIdx, char *buf, size_t buflen);
+
 	int (*get_interrupt)(int upsfd,
-	unsigned char *buf, int bufsize, int timeout);
+		unsigned char *buf, int bufsize, int timeout);
 } shut_communication_subdriver_t;
 
 extern shut_communication_subdriver_t	shut_subdriver;

@@ -48,7 +48,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 # endif
 #endif
 
-// https://stackoverflow.com/a/12844426/4715872
+/* https://stackoverflow.com/a/12844426/4715872 */
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ pid_t get_max_pid_t()
 	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
 	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
 	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
-#if defined(LLONG_MAX)  // C99
+#if defined(LLONG_MAX)  /* C99 */
 	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
 #endif
 	abort();
@@ -280,8 +280,8 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	{ // scoping
-		intmax_t _pid = strtol(buf, (char **)NULL, 10); // assuming 10 digits for a long
+	{ /* scoping */
+		intmax_t _pid = strtol(buf, (char **)NULL, 10); /* assuming 10 digits for a long */
 		if (_pid <= get_max_pid_t()) {
 			pid = (pid_t)_pid;
 		} else {
@@ -530,6 +530,7 @@ void upslogx(int priority, const char *fmt, ...)
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	/* Note: Thanks to macro wrapping, we do not quite need this
 	 * test now, but we still need the "level" value to report
@@ -543,7 +544,6 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
  * of logging info he needs to see at the moment. Using '-DDDDD' all the time
  * is too brutal and needed high-level overview can be lost. This [D#] prefix
  * can help limit this debug stream quicker, than experimentally picking ;) */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -575,12 +575,12 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	if (nut_debug_level < level)
 		return;
 
 /* See comments above in upsdebug_with_errno() - they apply here too. */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);

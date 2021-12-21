@@ -409,8 +409,19 @@ compatibility can enable a few easy warning presets by default. This
 can be avoided with an explicit argument to `--disable-warnings` (or
 `--enable-warnings=no`).
 
-Hopefully this mechanism is extensible enough if we would need to add
-more compilers and/or "difficulty levels" in the future.
+All levels of warnings pre-sets for GCC in particular do not enforce
+the `-pedantic` mode for builds with C89/C90/ANSI standard revision
+(as guesstimated by `CFLAGS` content), because nowadays it complains
+more about the system and third-party library headers, than about NUT
+codebase quality (and "our offenses" are mostly something not worth
+fixing in this era, such as the use of `__func__` in debug commands).
+If there still are practical use-cases that require builds of NUT on
+pre-C99 compiler toolkits, pull requests are of course welcome -- but
+the maintainer team does not intend to spend much time on that.
+
+Hopefully this warnings pre-set mechanism is extensible enough if we
+would need to add more compilers and/or "difficulty levels" in the
+future.
 
 Finally, note that such pre-set warnings can be mixed with options
 passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
