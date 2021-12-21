@@ -535,6 +535,7 @@ void upslogx(int priority, const char *fmt, ...)
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	/* Note: Thanks to macro wrapping, we do not quite need this
 	 * test now, but we still need the "level" value to report
@@ -548,7 +549,6 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
  * of logging info he needs to see at the moment. Using '-DDDDD' all the time
  * is too brutal and needed high-level overview can be lost. This [D#] prefix
  * can help limit this debug stream quicker, than experimentally picking ;) */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -580,12 +580,12 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	if (nut_debug_level < level)
 		return;
 
 /* See comments above in upsdebug_with_errno() - they apply here too. */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
