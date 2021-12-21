@@ -155,7 +155,7 @@ upsdrv_info_t	upsdrv_info = {
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
  #define ERROR_BUSY	LIBUSB_ERROR_BUSY
  #define ERROR_PIPE LIBUSB_ERROR_PIPE
- typedef libusb_device_handle usb_dev_handle;
+ /*typedef libusb_device_handle usb_dev_handle;*/
  #define nut_usb_strerror(a) libusb_strerror(a)
 #else /* for libusb 0.1 */
  #define ERROR_BUSY	-EBUSY

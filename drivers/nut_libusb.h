@@ -37,13 +37,14 @@
 /* libusb header file */
 #ifdef WITH_LIBUSB_1_0
 #include <libusb.h>
+/* simple remap to avoid bloating structures */
+typedef libusb_device_handle usb_dev_handle;
 #endif
 #ifdef WITH_LIBUSB_0_1
 #include <usb.h>
-/* simple remap to avoid bloating structures */
-typedef usb_dev_handle libusb_device_handle;
 #endif
 
+/* Used in drivers/libusb*.c sources: */
 #define LIBUSB_DEFAULT_INTERFACE        0
 #define LIBUSB_DEFAULT_DESC_INDEX       0
 #define LIBUSB_DEFAULT_HID_EP_IN        1
@@ -58,19 +59,26 @@ extern upsdrv_info_t comm_upsdrv_info;
 typedef struct usb_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;				/* version of this subdriver		*/
-	int (*open)(libusb_device_handle **sdevp,	/* try to open the next available	*/
+
+	int (*open)(usb_dev_handle **sdevp,	/* try to open the next available	*/
 		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
 		USBDeviceMatcher_t *matcher,
-		int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen));
-	void (*close)(libusb_device_handle *sdev);
-	int (*get_report)(libusb_device_handle *sdev, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
-	int (*set_report)(libusb_device_handle *sdev, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
-	int (*get_string)(libusb_device_handle *sdev,
-	int StringIdx, char *buf, size_t buflen);
-	int (*get_interrupt)(libusb_device_handle *sdev,
-	unsigned char *buf, int bufsize, int timeout);
+		int (*callback)(usb_dev_handle *udev, USBDevice_t *hd,
+			unsigned char *rdbuf, int rdlen));
+
+	void (*close)(usb_dev_handle *sdev);
+
+	int (*get_report)(usb_dev_handle *sdev, int ReportId,
+		unsigned char *raw_buf, int ReportSize);
+
+	int (*set_report)(usb_dev_handle *sdev, int ReportId,
+		unsigned char *raw_buf, int ReportSize);
+
+	int (*get_string)(usb_dev_handle *sdev,
+		int StringIdx, char *buf, size_t buflen);
+
+	int (*get_interrupt)(usb_dev_handle *sdev,
+		unsigned char *buf, int bufsize, int timeout);
 
 	/* Used for Powervar UPS or similar cases to make sure
 	 * we use the right interface in the Composite device

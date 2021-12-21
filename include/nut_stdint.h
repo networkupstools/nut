@@ -47,4 +47,21 @@
 #define SIZE_MAX ((size_t)(-1LL))
 #endif
 
+/* Printing format for size_t and ssize_t */
+#ifndef PRIsize
+# if defined(__MINGW32__)
+#  define PRIsize "u"
+# else
+#  define PRIsize "zu"
+# endif
+#endif
+
+#ifndef PRIssize
+# if defined(__MINGW32__)
+#  define PRIssize "d"
+# else
+#  define PRIssize "zd"
+# endif
+#endif /* format for size_t and ssize_t */
+
 #endif	/* NUT_STDINT_H_SEEN */
