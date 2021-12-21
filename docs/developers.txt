@@ -21,6 +21,13 @@ Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
 string and all the usual string length checking of `snprintf()` routine.
 
+Some systems define `strcmp()` and `strcasecmp()` as macros or inline
+functions optimized for aligned memory access in a way that some compilers
+complain about array out-of-bounds access when comparing fixed short strings.
+For this reason, we compare strings with length 3 chars and less ("", "x",
+"on", "VAL") with fixed-length methods `strncmp()` and `strncasecmp()`,
+e.g. `strncmp(buf, "VAL", 3)`.
+
 Error reporting
 ~~~~~~~~~~~~~~~
 
@@ -191,6 +198,11 @@ to call the common script with pre-sets:
 fixing bugs file-by-file running a `make` after each save to confirm
 your solutions and uncover the next issue to address :-)
 
+Helpfully, the NUT CI farm build logs report the configuration used for
+each executed stage, so if some build combination fails -- you can just
+scroll to the end of that section and copy-paste the way to reproduce
+an issue locally (on an OS similar to that build case).
+
 Note that while spelling out sets of warnings can help in a quest to
 fix certain bugs during development (if only by removing noise from
 classes of warnings not relevant to the issue one is working on), there
@@ -240,6 +252,16 @@ Travis or a Jenkins instance with a matrix test job, to test their local
 git repository branches with whatever systems they have available.
 
 * https://github.com/networkupstools/nut/issues/823
+
+While `autoconf` tries its best to provide portable shell code, sometimes
+there are builds of system shell that just fail under stress. If you are
+seeing random failures of `./configure` script in different spots with
+the same inputs, try telling `./ci_build.sh` to loop configuring until
+success (instead of quickly failing), and/or tell `./configure` to use
+another shell at least for the system call-outs, with options like these:
+
+	SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
+	./ci_build.sh
 
 Jenkins CI
 ^^^^^^^^^^

@@ -66,7 +66,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -83,11 +83,13 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
@@ -100,7 +102,8 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -114,7 +117,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(char *)&tmp, 8, 1000);
 
 		/*
 		 * This USB to serial implementation is crappy. In order to read correct
@@ -134,13 +139,13 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebug_hex(4, "dump", tmp, (size_t)ret);
 	}
 
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -157,11 +162,13 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
@@ -174,7 +181,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -186,7 +194,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
@@ -201,7 +209,9 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	/* Read all 64 bytes of the reply in one large chunk */
-	ret = usb_interrupt_read(udev, 0x81, tmp, sizeof(tmp), 1000);
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(char *)&tmp, sizeof(tmp), 1000);
 
 	/*
 	 * Any errors here mean that we are unable to read a reply (which
@@ -267,10 +277,12 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
-				ret = usb_get_string(udev, command[i].index, langid_fix, buf, buflen);
+				ret = usb_get_string(udev, command[i].index, langid_fix,
+					buf, buflen);
 			}
 			else {
-				ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+				ret = usb_get_string_simple(udev, command[i].index,
+					buf, buflen);
 			}
 
 			if (ret <= 0) {
@@ -293,7 +305,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int di, si, size = buf[0];
+				size_t di, si, size = (size_t)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 					if (di >= (buflen - 1))
 						break;
@@ -304,7 +316,9 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 						buf[di++] = buf[si];
 				}
 				buf[di] = 0;
-				ret = di;
+				/* with buf a char* array, practical "size" limit and
+				 * so "di" are small enough to cast to int */
+				ret = (int)di;
 			}
 
 			/* "UPS No Ack" has a special meaning */
@@ -378,8 +392,9 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
-	/* end of list */
-	{-1, -1, NULL}
+
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 
@@ -418,10 +433,10 @@ static USBDeviceMatcher_t device_matcher = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen)
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
-	int	ret;
+	ssize_t	ret;
 
 	if (udev == NULL) {
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
@@ -506,10 +521,11 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		return snprintf(buf, buflen, "%s", testing[i].answer);
+		/* TODO: Range-check int vs ssize_t values */
+		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
-	return snprintf(buf, buflen, "%s", testing[i].command);
+	return (ssize_t)snprintf(buf, buflen, "%s", testing[i].command);
 #endif	/* TESTING */
 }
 
@@ -580,7 +596,7 @@ void upsdrv_initups(void)
 			upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 		}
 		else {
-			langid_fix = u_langid_fix;
+			langid_fix = (int)u_langid_fix;
 			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
 		}
 	}

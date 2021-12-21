@@ -48,7 +48,7 @@ static usb_device_id_t arduino_usb_device_table[] = {
 	{ USB_DEVICE(ARDUINO_VENDORID2, 0x8040), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;

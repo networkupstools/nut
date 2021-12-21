@@ -37,9 +37,11 @@
 
 */
 
+#include "main.h"	/* Includes "config.h", must be first */
+
 #include <ctype.h>
 #include <stdio.h>
-#include "main.h"
+#include "nut_stdint.h"
 #include "serial.h"
 #include "nut_float.h"
 #include "solis.h"
@@ -114,7 +116,7 @@ static char* convert_days(char *cop) {
 	static char alt[8];
 
 	int ish, fim;
-	if (weekn == 6)
+	if (weekn >= 6 || weekn < 0)
 		ish = 0;
 	else
 		ish = 1 + weekn;
@@ -122,10 +124,10 @@ static char* convert_days(char *cop) {
 	fim = 7 - ish;
 	/* rotate left only 7 bits */
 
-	memcpy(alt, &cop[ish], fim);
+	memcpy(alt, &cop[ish], (size_t)fim);
 
 	if (ish > 0)
-		memcpy(&alt[fim], cop, ish);
+		memcpy(&alt[fim], cop, (size_t)ish);
 
 	alt[7] = 0; /* string terminator */
 
@@ -137,8 +139,8 @@ inline static int is_binary(char ch ) {
 }
 
 /* convert string to binary */
-static int str2bin( char *binStr ) {
-	int result = 0;
+static uint8_t str2bin( char *binStr ) {
+	uint8_t result = 0;
 	int i;
 
 	for (i = 0; i < 7; ++i) {
@@ -153,7 +155,7 @@ static int str2bin( char *binStr ) {
 }
 
 /* revert firmware format to standard string binary days */
-static unsigned char revert_days(unsigned char dweek) {
+static uint8_t revert_days(unsigned char dweek) {
 	char alt[8];
 	int i;
 
@@ -202,27 +204,31 @@ static void send_shutdown( void ) {
 static void save_ups_config( void ) {
 	int i, chks = 0;
 
-	ConfigPack[0] = 0xCF;
-	ConfigPack[1] = ihour;
-	ConfigPack[2] = imin;
-	ConfigPack[3] = isec;
-	ConfigPack[4] = lhour;
-	ConfigPack[5] = lmin;
-	ConfigPack[6] = dhour;
-	ConfigPack[7] = dmin;
-	ConfigPack[8] = weekn << 5;
-	ConfigPack[8] = ConfigPack[8] | dian;
-	ConfigPack[9] = mesn << 4;
-	ConfigPack[9] = ConfigPack[9] | ( anon - BASE_YEAR );
-	ConfigPack[10] = DaysOffWeek;
+	/* FIXME? Check for overflows with int => char truncations?
+	 * See also microsol-common.c for very similar code
+	 */
+	ConfigPack[0] = (unsigned char)0xCF;
+	ConfigPack[1] = (unsigned char)ihour;
+	ConfigPack[2] = (unsigned char)imin;
+	ConfigPack[3] = (unsigned char)isec;
+	ConfigPack[4] = (unsigned char)lhour;
+	ConfigPack[5] = (unsigned char)lmin;
+	ConfigPack[6] = (unsigned char)dhour;
+	ConfigPack[7] = (unsigned char)dmin;
+	ConfigPack[8] = (unsigned char)(weekn << 5);
+	ConfigPack[8] = (unsigned char)ConfigPack[8] | (unsigned char)dian;
+	ConfigPack[9] = (unsigned char)(mesn << 4);
+	ConfigPack[9] = (unsigned char)ConfigPack[9] | (unsigned char)( anon - BASE_YEAR );
+	ConfigPack[10] = (unsigned char)DaysOffWeek;
 
 	/* MSB zero */
 	ConfigPack[10] = ConfigPack[10] & (~(0x80));
 
 	for (i=0; i < 11; i++)
-	  chks += ConfigPack[i];
+		chks += ConfigPack[i];
 
-	ConfigPack[11] = chks % 256;
+	/* FIXME? Does truncation to char have same effect as %256 ? */
+	ConfigPack[11] = (unsigned char)(chks % 256);
 
 	for (i=0; i < 12; i++)
 		ser_send_char(upsfd, ConfigPack[i]);
@@ -597,9 +603,10 @@ static void scan_received_pack(void) {
 	CriticBattLast = CriticBatt;
 }
 
-static void comm_receive(const unsigned char *bufptr,  int size) {
+static void comm_receive(const unsigned char *bufptr, size_t size) {
 	if (size == packet_size) {
-		int CheckSum = 0, i;
+		int CheckSum = 0;
+		size_t i;
 
 		memcpy(RecPack, bufptr, packet_size);
 
@@ -683,7 +690,9 @@ static void get_base_info(void) {
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 	unsigned char packet[PACKET_SIZE], syncEOR = '\0', syncEOR_was_read = 0;
-	int i1=0, i2=0, tam, i;
+	int i1=0, i2=0;
+	size_t i;
+	ssize_t tam;
 
 	time_t tmt;
 	struct tm *now;
@@ -756,13 +765,17 @@ static void get_base_info(void) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
-		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
+		upsdebugx(4, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
 		tam = ser_get_buf_len(upsfd, packet, packet_size, 3, 0);
-		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-		if (tam > 0 && nut_debug_level >= 4) {
-			upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
+		if (tam < 0) {
+			upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+			fatalx(EXIT_FAILURE, NO_SOLIS);
 		}
-		comm_receive(packet, tam);
+		upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+		if (tam > 0 && nut_debug_level >= 4) {
+			upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
+		}
+		comm_receive(packet, (size_t)tam);
 	}
 
 	if (!detected)
@@ -825,7 +838,8 @@ static void get_base_info(void) {
 
 static void get_update_info(void) {
 	unsigned char temp[256];
-	int tam, isday, hourn, minn;
+	int isday, hourn, minn;
+	ssize_t tam;
 
 	/* time update and programable shutdown block */
 	time_t tmt;
@@ -861,14 +875,19 @@ static void get_update_info(void) {
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
 
-	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
+	upsdebugx(3, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
 	tam = ser_get_buf_len(upsfd, temp, packet_size, 3, 0);
 
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
-	if(tam > 0 && nut_debug_level >= 4)
-		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+	if (tam < 0) {
+		upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	}
 
-	comm_receive(temp, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+	if(tam > 0 && nut_debug_level >= 4)
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
+
+	comm_receive(temp, (size_t)tam);
 }
 
 static int instcmd(const char *cmdname, const char *extra) {

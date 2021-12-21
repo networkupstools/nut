@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
+#include "common.h"	/* Must be first include to pull "config.h" */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "common.h"
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
@@ -104,7 +105,7 @@ static const struct option longopts[] = {
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
+static useconds_t timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
@@ -274,7 +275,7 @@ static void show_usage()
 			"AES"
 			);
 #endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
 # if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
@@ -287,7 +288,7 @@ static void show_usage()
 			"AES256"
 			);
 # endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for encrypted SNMPv3 messages (default=DES if available)\n"
@@ -383,7 +384,7 @@ int main(int argc, char *argv[])
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;
 	xml_sec.port_udp = 4679;
-	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
+	xml_sec.usec_timeout = 0; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
 	/* Parse command line options -- First loop: only get debug level */
@@ -409,8 +410,8 @@ int main(int argc, char *argv[])
 
 		switch(opt_ret) {
 			case 't':
-				timeout = atol(optarg)*1000*1000; /*in usec*/
-				if (timeout == 0) {
+				timeout = (useconds_t)atol(optarg) * 1000 * 1000; /*in usec*/
+				if (timeout <= 0) {
 					fprintf(stderr,
 						"Illegal timeout value, using default %ds\n",
 						DEFAULT_NETWORK_TIMEOUT);
@@ -508,10 +509,10 @@ int main(int argc, char *argv[])
 				else if (!strcmp(optarg, "STRAIGHT_PASSWORD_KEY")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY;
 				}
-				else if (!strcmp(optarg, "MD2")) {
+				else if (!strncmp(optarg, "MD2", 3)) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD2;
 				}
-				else if (!strcmp(optarg, "MD5")) {
+				else if (!strncmp(optarg, "MD5", 3)) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {
@@ -668,7 +669,12 @@ display_help:
 	   on lib (need to be thread safe). */
 	sem_t *current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
-	sem_init(current_sem, 0, max_threads);
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+		fprintf(stderr, "\n\n"
+			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
+		max_threads = UINT_MAX - 1;
+	}
+	sem_init(current_sem, 0, (unsigned int)max_threads);
 # endif
 #endif /* HAVE_PTHREAD */
 

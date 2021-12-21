@@ -39,6 +39,7 @@ ATTRS{idVendor}=="1cb0", ENV{UPOWER_VENDOR}="Legrand"
 ATTRS{idVendor}=="2341", ENV{UPOWER_VENDOR}="Arduino"
 ATTRS{idVendor}=="2A03", ENV{UPOWER_VENDOR}="Arduino"
 ATTRS{idVendor}=="2b2d", ENV{UPOWER_VENDOR}="AEG"
+ATTRS{idVendor}=="2e66", ENV{UPOWER_VENDOR}="Salicru"
 ATTRS{idVendor}=="4234", ENV{UPOWER_VENDOR}="Powervar"
 
 # Hewlett Packard
@@ -92,6 +93,7 @@ ATTRS{idVendor}=="0592", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Delta UPS
 ATTRS{idVendor}=="05dd", ATTRS{idProduct}=="041b", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="05dd", ATTRS{idProduct}=="a011", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Phoenixtec Power Co., Ltd
 ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
@@ -169,6 +171,9 @@ ATTRS{idVendor}=="2A03", ATTRS{idProduct}=="8040", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # AEG
 ATTRS{idVendor}=="2b2d", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Salicru
+ATTRS{idVendor}=="2e66", ATTRS{idProduct}=="0300", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Powervar
 ATTRS{idVendor}=="4234", ATTRS{idProduct}=="0002", ENV{UPOWER_BATTERY_TYPE}="ups"

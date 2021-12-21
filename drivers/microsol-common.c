@@ -22,12 +22,14 @@
 
 */
 
+#include "main.h"	/* Includes "config.h", must be first */
+
 #include <time.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "main.h"
 #include "serial.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "microsol-common.h"
 #include "timehead.h"
 
@@ -61,19 +63,19 @@
 #define FMT_DAYS   "                      %d    %d    %d    %d    %d    %d    %d"
 
 /* Date, time and programming group */
-int const BASE_YEAR = 1998;
-int device_day, device_month, device_year;
-int device_hour, device_minute, device_second;
-int power_off_hour, power_off_minute;
-int power_on_hour, power_on_minute;
-unsigned char device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
+static int device_day, device_month, device_year;
+static int device_hour, device_minute, device_second;
+static int power_off_hour, power_off_minute;
+static int power_on_hour, power_on_minute;
+static uint8_t device_days_on = 0, device_days_off = 0, days_to_shutdown = 0;
 
-int isprogram = 0, progshut = 0, prgups = 0;
-int hourshut, minshut;
+static int isprogram = 0, progshut = 0, prgups = 0;
+static int hourshut, minshut;
 
-int host_year, host_month, host_day;
-int host_week;
-int host_hour, host_minute, host_second;
+static int host_year, host_month, host_day;
+static int host_week;
+static int host_hour, host_minute, host_second;
 
 /* buffers */
 unsigned char received_packet[PACKET_SIZE];
@@ -86,9 +88,9 @@ bool_t input_220v, output_220v;
 /* logical */
 bool_t detected = 0;
 bool_t line_unpowered, overheat;
-bool_t overload;
-bool_t recharging, critical_battery, inverter_working;
-bool_t packet_parsed = false;
+bool_t overload, critical_battery, inverter_working;
+static bool_t recharging;
+static bool_t packet_parsed = false;
 
 double input_voltage, input_current, input_frequency;
 double output_voltage, output_current, output_frequency;
@@ -96,20 +98,23 @@ double output_voltage, output_current, output_frequency;
 double input_low_limit, input_high_limit;
 
 int battery_extension;
-double battery_voltage, temperature, battery_charge;
+double battery_voltage, battery_charge;
+double temperature;
 
 double apparent_power, real_power, ups_load;
 int load_power_factor, nominal_power;
 
 /**
  * Convert standard days string to firmware format
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
 static char *convert_days(char *cop)
 {
 	static char alt[8];
 
 	int ish, fim;
+	/* FIXME? Are range-checks needed for values more than 6? wire noise etc? */
 	if (host_week == 6)
 		ish = 0;
 	else
@@ -118,10 +123,15 @@ static char *convert_days(char *cop)
 	fim = 7 - ish;
 	/* rotate left only 7 bits */
 
-	memcpy(alt, &cop[ish], fim);
+	if (fim > 0) {
+		memcpy(alt, &cop[ish], (size_t)fim);
+	} else {
+		fatalx(EXIT_FAILURE, "%s: value out of range: %d (%d)",
+			__func__, fim, ish);
+	}
 
 	if (ish > 0)
-		memcpy(&alt[fim], cop, ish);
+		memcpy(&alt[fim], cop, (size_t)ish);
 
 	alt[7] = 0;		/* string terminator */
 
@@ -129,9 +139,9 @@ static char *convert_days(char *cop)
 }
 
 /** Convert bitstring (e.g. 1100101) to binary */
-static int bitstring_to_binary(char *binStr)
+static uint8_t bitstring_to_binary(char *binStr)
 {
-	int result = 0;
+	uint8_t result = 0;
 	unsigned int i;
 
 	for (i = 0; i < 7; ++i) {
@@ -147,9 +157,10 @@ static int bitstring_to_binary(char *binStr)
 
 /**
  * Revert firmware format to standard string binary days
- * This is needed because UPS sends binary date rotated from current week day (first bit = current day)
+ * This is needed because UPS sends binary date rotated
+ * from current week day (first bit = current day)
  */
-static unsigned char revert_days(unsigned char firmware_week)
+static uint8_t revert_days(unsigned char firmware_week)
 {
 	char ordered_week[8];
 	int i;
@@ -205,19 +216,20 @@ static void save_ups_config(void)
 	unsigned char configuration_packet[12];
 
 	/* Prepare configuration packet */
-	configuration_packet[0] = 0xCF;
-	configuration_packet[1] = host_hour;
-	configuration_packet[2] = host_minute;
-	configuration_packet[3] = host_second;
-	configuration_packet[4] = power_on_hour;
-	configuration_packet[5] = power_on_minute;
-	configuration_packet[6] = power_off_hour;
-	configuration_packet[7] = power_off_minute;
-	configuration_packet[8] = host_week << 5;
-	configuration_packet[8] = configuration_packet[8] | host_day;
-	configuration_packet[9] = host_month << 4;
-	configuration_packet[9] = configuration_packet[9] | (host_year - BASE_YEAR);
-	configuration_packet[10] = device_days_off;
+	/* FIXME? Check for overflows with int => char truncations? */
+	configuration_packet[0] = (unsigned char)0xCF;
+	configuration_packet[1] = (unsigned char)host_hour;
+	configuration_packet[2] = (unsigned char)host_minute;
+	configuration_packet[3] = (unsigned char)host_second;
+	configuration_packet[4] = (unsigned char)power_on_hour;
+	configuration_packet[5] = (unsigned char)power_on_minute;
+	configuration_packet[6] = (unsigned char)power_off_hour;
+	configuration_packet[7] = (unsigned char)power_off_minute;
+	configuration_packet[8] = (unsigned char)(host_week << 5);
+	configuration_packet[8] = (unsigned char)configuration_packet[8] | (unsigned char)host_day;
+	configuration_packet[9] = (unsigned char)(host_month << 4);
+	configuration_packet[9] = (unsigned char)configuration_packet[9] | (unsigned char)(host_year - BASE_YEAR);
+	configuration_packet[10] = (unsigned char)device_days_off;
 
 	/* MSB zero */
 	configuration_packet[10] = configuration_packet[10] & (~(0x80));
@@ -226,7 +238,8 @@ static void save_ups_config(void)
 	for (i = 0; i < 11; i++) {
 		checksum += configuration_packet[i];
 	}
-	configuration_packet[11] = checksum % 256;
+	/* FIXME? Does truncation to char have same effect as %256 ? */
+	configuration_packet[11] = (unsigned char)(checksum % 256);
 
 	/* Send final packet and checksum to serial port */
 	for (i = 0; i < 12; i++) {
@@ -394,9 +407,9 @@ static void scan_received_pack(void)
  *  Byte 24: Packet checksum
  *  Byte 25: Packet delimiter, always 0xFE
  */
-static void comm_receive(const unsigned char *bufptr, int size)
+static void comm_receive(const unsigned char *bufptr, size_t size)
 {
-	unsigned int i;
+	size_t i;
 
 	if (size == PACKET_SIZE) {
 		int checksum = 0;
@@ -452,7 +465,7 @@ static void refresh_host_time(void)
 /** Query shut-down schedule configuration */
 static void setup_poweroff_schedule(void)
 {
-	int i1 = 0, i2 = 0;
+	bool_t i1 = 0, i2 = 0;
 	char *daysoff;
 
 	refresh_host_time();
@@ -546,7 +559,7 @@ static void resynchronize_packet(void) {
 static void get_base_info(void)
 {
 	unsigned char packet[PACKET_SIZE];
-	unsigned int tam;
+	ssize_t tam;
 
 	if (testvar("battext")) {
 		battery_extension = atoi(getval("battext"));
@@ -562,11 +575,11 @@ static void get_base_info(void)
 
 	upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4) {
-		upsdebug_hex(4, "received from ser_get_buf_len()", packet, tam);
+		upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 	}
-	comm_receive(packet, tam);
+	comm_receive(packet, (size_t)tam);
 
 	if (!detected) {
 		fatalx(EXIT_FAILURE, NO_SOLIS);
@@ -581,7 +594,8 @@ static void get_base_info(void)
 			hourshut = power_off_hour;
 			minshut = power_off_minute;
 		} else {
-			/* If the UPS is to be powered off too, give a 5-minute grace time to shutdown hosts */
+			/* If the UPS is to be powered off too, give
+			 * a 5-minute grace time to shutdown hosts */
 			if (power_off_minute < 5) {
 				if (power_off_hour > 1)
 					hourshut = power_off_hour - 1;
@@ -615,7 +629,7 @@ static void get_base_info(void)
 static void get_updated_info(void)
 {
 	unsigned char temp[256];
-	unsigned int tam;
+	ssize_t tam;
 
 	check_shutdown_schedule();
 
@@ -625,14 +639,14 @@ static void get_updated_info(void)
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, temp, PACKET_SIZE, 3, 0);
 
-	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4)
-		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 
 	packet_parsed = false;
 	if (temp[24] == RESP_END) {
 		/* Packet boundary found, process packet */
-		comm_receive(temp, tam);
+		comm_receive(temp, (size_t)tam);
 
 		packet_parsed = true;
 	} else {

@@ -135,7 +135,7 @@ static long FormatValue(uint32_t Value, uint8_t Size)
 	case 4:
 		return (long)(int32_t)Value;
 	default:
-		return Value;
+		return (long)Value;
 	}
 }
 
@@ -158,7 +158,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
 			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
-				pParser->Value += pParser->ReportDesc[(pParser->Pos)+i] << (8*i);
+				pParser->Value += (uint32_t)(pParser->ReportDesc[(pParser->Pos)+i]) << (8*i);
 			}
 			/* Pos on next item */
 			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
@@ -176,7 +176,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			if ((pParser->Item & SIZE_MASK) > 2) {
 				pParser->UsageTab[pParser->UsageSize] = pParser->Value;
 			} else {
-				pParser->UsageTab[pParser->UsageSize] = (pParser->UPage << 16) | (pParser->Value & 0xFFFF);
+				pParser->UsageTab[pParser->UsageSize] = ((HIDNode_t)(pParser->UPage) << 16) | (pParser->Value & 0xFFFF);
 			}
 
 			/* Increment Usage stack size */
@@ -190,10 +190,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if (pParser->UsageSize > 0) {
-				int	i;
+				int	j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
 
 				/* Remove Usage */
@@ -242,11 +242,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if(pParser->UsageSize > 0) {
-				int i;
+				int j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
+
 				/* Remove Usage */
 				pParser->UsageSize--;
 			}
@@ -299,7 +300,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_UNIT :
-			pParser->Data.Unit = pParser->Value;
+			/* TOTHINK: Are there cases where Unit is not-signed,
+			 * but a Value too big becomes signed after casting --
+			 * and unintentionally so? */
+			pParser->Data.Unit = (long)pParser->Value;
 			break;
 
 		case ITEM_LOG_MIN :
@@ -308,6 +312,24 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_LOG_MAX :
 			pParser->Data.LogMax = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
+			/* HACK: If treating the value as signed (FormatValue(...)) results in a LogMax that is
+			 * less than the LogMin value then it is likely that the LogMax value has been
+			 * incorrectly encoded by the UPS firmware (field too short and overflowed into sign
+			 * bit).  In that case, reinterpret it as an unsigned number and log the problem.
+			 * This hack is not correct in the sense that it only looks at the LogMin value for
+			 * this item, whereas the HID spec says that Logical values persist in global state.
+			 */
+			if (pParser->Data.LogMax < pParser->Data.LogMin) {
+				upslogx(LOG_WARNING,
+					"%s: LogMax is less than LogMin. "
+					"Vendor HID report descriptor may be incorrect; "
+					"interpreting LogMax %ld as %u in ReportID: 0x%02x",
+					__func__,
+					pParser->Data.LogMax,
+					pParser->Value,
+					pParser->Data.ReportID);
+				pParser->Data.LogMax = (long) pParser->Value;
+			}
 			break;
 
 		case ITEM_PHY_MIN :
@@ -367,7 +389,7 @@ int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
  * -------------------------------------------------------------------------- */
 HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
@@ -393,7 +415,7 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
  * -------------------------------------------------------------------------- */
 HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
 	for (i = 0; i < pDesc->nitems; i++) {
 		HIDData_t *pData = &pDesc->item[i];
@@ -434,7 +456,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 
 	int	Weight, Bit;
 	unsigned long mask, signbit, magMax, magMin;
-	long	value = 0, range;
+	long	value = 0;
 
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
@@ -442,19 +464,8 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		int	State = Buf[Bit >> 3] & (1 << (Bit & 7));
 
 		if(State) {
-			value += (1 << Weight);
+			value += (1L << Weight);
 		}
-	}
-
-	range = pData->LogMax - pData->LogMin + 1;
-	if (range <= 0) {
-		/* makes no sense, give up */
-		*pValue = value;
-		/* Discussion: https://github.com/networkupstools/nut/pull/1138 */
-		upslogx(LOG_ERR, "ERROR in %s: LogMin is greater than LogMax, "
-			"possibly vendor HID is incorrect on device side; "
-			"skipping evaluation of these constraints", __func__);
-		return;
 	}
 
 	/* translate Value into a signed/unsigned value in the range
@@ -480,8 +491,8 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	something sensible. -PS */
 
 	/* determine representation without sign bit */
-	magMax = pData->LogMax >= 0 ? pData->LogMax : -(pData->LogMax + 1);
-	magMin = pData->LogMin >= 0 ? pData->LogMin : -(pData->LogMin + 1);
+	magMax = pData->LogMax >= 0 ? (unsigned long)(pData->LogMax) : (unsigned long)(-(pData->LogMax + 1));
+	magMin = pData->LogMin >= 0 ? (unsigned long)(pData->LogMin) : (unsigned long)(-(pData->LogMin + 1));
 
 	/* calculate where the sign bit will be if needed */
 	signbit = 1L << hibit(magMax > magMin ? magMax : magMin);
@@ -490,10 +501,10 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	mask = (signbit - 1) | ((pData->LogMin < 0) ? signbit : 0);
 
 	/* throw away excess high order bits (which may contain garbage) */
-	value = value & mask;
+	value = (long)((unsigned long)(value) & mask);
 
 	/* sign-extend it, if appropriate */
-	if (pData->LogMin < 0 && (value & signbit) != 0) {
+	if (pData->LogMin < 0 && ((unsigned long)(value) & signbit) != 0) {
 		value |= ~mask;
 	}
 
@@ -520,7 +531,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
 	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {
-		int	State = Value & (1 << Weight);
+		long	State = Value & (1L << Weight);
 
 		if (State) {
 			Buf[Bit >> 3] |= (1 << (Bit & 7));
@@ -538,7 +549,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    returned by this function must be freed with Free_ReportDesc(). */
 HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 {
-	int		ret;
+	int		ret = 0;
 	HIDDesc_t	*pDesc;
 	HIDParser_t	*parser;
 
@@ -562,8 +573,9 @@ HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 	parser->ReportDesc = ReportDesc;
 	parser->ReportDescSize = n;
 
-	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += ret) {
-		int	id, max;
+	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += (size_t)ret) {
+		uint8_t	id;
+		size_t	max;
 
 		ret = HIDParse(parser, &pDesc->item[pDesc->nitems]);
 		if (ret < 0) {

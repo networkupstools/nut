@@ -235,10 +235,13 @@ configure_nut() {
 
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
-    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
-    || { RES=$?
+    while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
+      echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
+      echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+      [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
+      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && return 0 \
+      || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -246,16 +249,36 @@ configure_nut() {
         $GGREP -B 100 -A 1 'Cache variables' config.log 2>/dev/null \
         || cat config.log || true
         echo "=========== END OF config.log"
-        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
-        exit $RES
+
+        if [ "${CI_SHELL_IS_FLAKY-}" = true ]; then
+            # Real-life story from the trenches: there are weird systems
+            # which fail ./configure in random spots not due to script's
+            # quality. Then we'd just loop here.
+            echo "WOULD BE FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+        else
+            echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "If you are sure this is not a fault of scripting or config option, try" >&2
+            echo "    CI_SHELL_IS_FLAKY=true $0"
+            exit $RES
+        fi
        }
+    done
+}
+
+build_to_only_catch_errors_target() {
+    if [ $# = 0 ]; then
+        build_to_only_catch_errors_target all ; return $?
+    fi
+
+    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+      $CI_TIME $MAKE VERBOSE=1 "$@" -k ) || return $?
+    return 0
 }
 
 build_to_only_catch_errors() {
-    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 -k $PARMAKE_FLAGS all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
-    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-      $CI_TIME $MAKE VERBOSE=1 all -k ) || return $?
+    build_to_only_catch_errors_target all || return $?
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE VERBOSE=0 check \
@@ -266,6 +289,10 @@ build_to_only_catch_errors() {
 }
 
 can_clean_check() {
+    if [ "${DO_CLEAN_CHECK-}" = "no" ] ; then
+        # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
+        return 1
+    fi
     if [ -s Makefile ] && [ -e .git ] ; then
         return 0
     fi
@@ -345,6 +372,18 @@ optional_dist_clean_check() {
     fi
     return 0
 }
+
+if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+    # Note: this is a little hack to reduce typing
+    # and scrolling in (docs) developer iterations.
+    if [ -s Makefile ] && [ -s docs/Makefile ]; then
+        echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
+        build_to_only_catch_errors_target spellcheck ; exit
+    else
+        BUILD_TYPE="default-spellcheck"
+        shift
+    fi
+fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
@@ -797,8 +836,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
               $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
-            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to summarize:" >&2
-              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
+              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              # Make end of log useful:
+              echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              $CI_TIME $MAKE -s VERBOSE=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+            )
             exit $?
             ;;
         "default-shellcheck")
@@ -891,7 +934,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
@@ -905,27 +948,45 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ]
-                echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                # (UPDATE: because expr returns boolean, and calculated 0 is false;
+                # so a `set -e` run aborts)
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
                 if can_clean_check ; then
                     if [ $BUILDSTODO -gt 0 ]; then
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                         }
                     else
                         optional_maintainer_clean_check && {
-                            SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            fi
                         } || {
                             RES=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                         }
                     fi
+                    echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    $MAKE distclean -k || true
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
                 fi
             done
             # TODO: Similar loops for other variations like TESTING,
@@ -934,11 +995,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
-                    SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                        SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                    fi
                 } || {
                     RES=$?
                     FAILED="${FAILED} [final_maintainer_clean]"
                 }
+                echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
 
             if [ -n "$SUCCEEDED" ]; then
