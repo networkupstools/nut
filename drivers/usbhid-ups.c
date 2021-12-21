@@ -390,18 +390,22 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
-	static char buf[20];
-	int year, month, day;
+	static char buf[32];
+	long year, month, day;
 
 	if ((long)value == 0) {
 		return "not set";
 	}
 
-	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */
+	/* TOTHINK: About the comment below...
+	 * Does bit-shift keep the negativeness on all architectures?
+	 */
+	/* negative value represents pre-1980 date: */
+	year = 1980 + ((long)value >> 9);
 	month = ((long)value >> 5) & 0x0f;
 	day = (long)value & 0x1f;
 
-	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+	snprintf(buf, sizeof(buf), "%04ld/%02ld/%02ld", year, month, day);
 
 	return buf;
 }

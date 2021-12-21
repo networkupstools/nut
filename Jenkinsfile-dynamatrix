@@ -26,6 +26,7 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
+    dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI = true
 
     // The NUT CI farm offers a few other architectures in containers backed
     // by QEMU virtual CPUs. Running builds in these is expensive (takes a
@@ -884,7 +885,42 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'], 'ansi' ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVARIANT': ['c'],
+                    ],
+                dynamatrixAxesCommonEnv: [],
+                dynamatrixAxesCommonEnvCartesian: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'],
+                    [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
+                    ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_STRICT_C,
+                    [~/BUILD_WARNOPT=hard/]
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
+                    dynacfgPipeline.axisCombos_GNU_C,
+                    dynacfgPipeline.axisCombos_WINDOWS
+                    ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'Strict ANSI C (C89/C90) standard builds on non-Windows platforms, without distcheck and docs (allowed to fail)',
+         disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
+         branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
+         branchRegexTarget: ~/fightwarn/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ 'ansi' ],
                     'CSTDVARIANT': ['c'],
                     ],
                 dynamatrixAxesCommonEnv: [],

@@ -37,7 +37,7 @@ static const uint8_t ItemSize[4] = { 0, 1, 2, 4 };
  * -------------------------------------------------------------------------- */
 typedef struct {
 	const unsigned char	*ReportDesc;		/* Report Descriptor		*/
-	int			ReportDescSize;		/* Size of Report Descriptor	*/
+	size_t			ReportDescSize;		/* Size of Report Descriptor	*/
 
 	uint16_t	Pos;				/* Store current pos in descriptor	*/
 	uint8_t		Item;				/* Store current Item		*/
@@ -547,7 +547,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
+HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n)
 {
 	int		ret = 0;
 	HIDDesc_t	*pDesc;
