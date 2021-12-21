@@ -52,7 +52,7 @@ static usb_device_id_t legrand_usb_device_table[] = {
 	{ USB_DEVICE(LEGRAND_VID, LEGRAND_PID_SP),	disable_interrupt_pipe },	/* Legrand Keor SP */
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */
