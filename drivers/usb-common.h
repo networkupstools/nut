@@ -61,6 +61,7 @@
  * so not looping the includes ;)
  */
 #include "nut_stdint.h"	/* for uint16_t, UINT16_MAX, PRIsize, etc. */
+#include "common.h"		/* for fatalx() etc. */
 
 #include <regex.h>
 
