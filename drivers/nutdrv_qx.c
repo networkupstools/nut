@@ -1569,6 +1569,14 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 	return 0;
 }
 
+static void	*ablerex_subdriver_fun(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &ablerex_command;
+	return NULL;
+}
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -1662,7 +1670,7 @@ typedef struct {
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
