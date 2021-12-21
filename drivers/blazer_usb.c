@@ -119,7 +119,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
 		ret = usb_interrupt_read(udev,
 			0x81,
-			&tmp, 8, 1000);
+			(char *)&tmp, 8, 1000);
 
 		/*
 		 * This USB to serial implementation is crappy. In order to read correct
@@ -211,7 +211,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	/* Read all 64 bytes of the reply in one large chunk */
 	ret = usb_interrupt_read(udev,
 		0x81,
-		&tmp, sizeof(tmp), 1000);
+		(char *)&tmp, sizeof(tmp), 1000);
 
 	/*
 	 * Any errors here mean that we are unable to read a reply (which
