@@ -246,8 +246,8 @@ configure_nut() {
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
       && return 0 \
-      || { RES=$?
-        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
+      || { RES_CFG=$?
+        echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
         echo "=========== DUMPING config.log :"
@@ -259,12 +259,12 @@ configure_nut() {
             # Real-life story from the trenches: there are weird systems
             # which fail ./configure in random spots not due to script's
             # quality. Then we'd just loop here.
-            echo "WOULD BE FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+            echo "WOULD BE FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
         else
-            echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]}" >&2
             echo "If you are sure this is not a fault of scripting or config option, try" >&2
             echo "    CI_SHELL_IS_FLAKY=true $0"
-            exit $RES
+            exit $RES_CFG
         fi
        }
     done
@@ -883,7 +883,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # of BUILD_WARNFATAL and/or BUILD_WARNOPT envvars above.
             # Note this is one scenario where we did not configure_nut()
             # in advance.
-            RES=0
+            RES_ALLERRORS=0
             FAILED=""
             SUCCEEDED=""
             BUILDSTODO=0
@@ -949,7 +949,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                 esac || {
-                    RES=$?
+                    RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
@@ -960,7 +960,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
-                    RES=$?
+                    RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 }
 
@@ -984,7 +984,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                                 SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                             fi
                         } || {
-                            RES=$?
+                            RES_ALLERRORS=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
                         }
                     else
@@ -993,7 +993,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                                 SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                             fi
                         } || {
-                            RES=$?
+                            RES_ALLERRORS=$?
                             FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
                         }
                     fi
@@ -1017,7 +1017,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
                     fi
                 } || {
-                    RES=$?
+                    RES_ALLERRORS=$?
                     FAILED="${FAILED} [final_maintainer_clean]"
                 }
                 echo "=== Completed sandbox maintainer-cleanup-check after all builds"
@@ -1027,9 +1027,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
             fi
 
-            if [ "$RES" != 0 ]; then
+            if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
-                echo "FAILED build(s) with:${FAILED}" >&2
+                echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
             fi
 
             echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
@@ -1037,7 +1037,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "(and missed the mark: ${BUILDSTODO} variations remain - did anything crash early above?)" >&2
             fi
 
-            exit $RES
+            exit $RES_ALLERRORS
             ;;
     esac
 
