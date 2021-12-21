@@ -1,6 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +22,7 @@
 
 #include <ctype.h>
 #include <syslog.h>
+#include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
@@ -32,6 +34,34 @@
 	need to be re-linked). */
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
+
+#include <stdio.h>
+
+/* Know which bitness we were built for,
+ * to adjust the search paths for get_libname() */
+#include "nut_stdint.h"
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+# define BUILD_64   1
+#else
+# ifdef BUILD_64
+#  undef BUILD_64
+# endif
+#endif
+
+// https://stackoverflow.com/a/12844426/4715872
+#include <sys/types.h>
+#include <limits.h>
+#include <stdlib.h>
+pid_t get_max_pid_t()
+{
+	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
+	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
+	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
+#if defined(LLONG_MAX)  // C99
+	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
+#endif
+	abort();
+}
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -209,7 +239,7 @@ void writepid(const char *name)
 {
 	char	fn[SMALLBUF];
 	FILE	*pidf;
-	int	mask;
+	mode_t	mask;
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
@@ -235,7 +265,8 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	int	pid, ret;
+	pid_t	pid = -1;
+	int	ret;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -249,10 +280,17 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	pid = strtol(buf, (char **)NULL, 10);
+	{ // scoping
+		intmax_t _pid = strtol(buf, (char **)NULL, 10); // assuming 10 digits for a long
+		if (_pid <= get_max_pid_t()) {
+			pid = (pid_t)_pid;
+		} else {
+			upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+		}
+	}
 
 	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
+		upslogx(LOG_NOTICE, "Ignoring invalid pid number %" PRIdMAX, (intmax_t) pid);
 		fclose(pidf);
 		return -1;
 	}
@@ -286,14 +324,46 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	int ret;
 
 	size--;
-	assert(len <= size);
+	if (len > size) {
+		/* Do not truncate existing string */
+		errno = ERANGE;
+		return -1;
+	}
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
 	ret = vsnprintf(dst + len, size - len, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	dst[size] = '\0';
-	return len + ret;
+
+	/* Note: there is a standards loophole here: strlen() must return size_t
+	 * and printf() family returns a signed int with negatives for errors.
+	 * In theory it can overflow a 64-vs-32 bit range, or signed-vs-unsigned.
+	 * In practice we hope to not have gigabytes-long config strings.
+	 */
+	if (ret < 0) {
+		return ret;
+	}
+#ifdef INT_MAX
+	if ( ( (unsigned long long)len + (unsigned long long)ret ) >= (unsigned long long)INT_MAX ) {
+		errno = ERANGE;
+		return -1;
+	}
+#endif
+	return (int)len + ret;
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
@@ -320,7 +390,19 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	int	ret;
 	char	buf[LARGEBUF];
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
@@ -330,7 +412,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0 };
+		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
@@ -407,7 +489,19 @@ void upslog_with_errno(int priority, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vupslog(priority, fmt, va, 1);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 }
 
@@ -417,14 +511,30 @@ void upslogx(int priority, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vupslog(priority, fmt, va, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 }
 
-void upsdebug_with_errno(int level, const char *fmt, ...)
+void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
 
+	/* Note: Thanks to macro wrapping, we do not quite need this
+	 * test now, but we still need the "level" value to report
+	 * below - when it is not zero.
+	 */
 	if (nut_debug_level < level)
 		return;
 
@@ -446,11 +556,23 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	}
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vupslog(LOG_DEBUG, fmt, va, 1);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 }
 
-void upsdebugx(int level, const char *fmt, ...)
+void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
 
@@ -471,20 +593,33 @@ void upsdebugx(int level, const char *fmt, ...)
 	}
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vupslog(LOG_DEBUG, fmt, va, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 }
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in
    hexadecimal. (This function replaces Philippe Marzouk's original
    dump_hex() function) */
-void upsdebug_hex(int level, const char *msg, const void *buf, int len)
+void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[100];
 	int n;	/* number of characters currently in line */
-	int i;	/* number of bytes output from buffer */
+	size_t i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len);
+	n = snprintf(line, sizeof(line), "%s: (%zu bytes) =>", msg, len);
+	if (n < 0) goto failed;
 
 	for (i = 0; i < len; i++) {
 
@@ -494,9 +629,16 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 		}
 
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
-			((unsigned char *)buf)[i]);
+			((const unsigned char *)buf)[i]);
+
+		if (n < 0) goto failed;
 	}
-	upsdebugx(level, "%s", line);
+
+	s_upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	s_upsdebugx(level, "%s", "Failed to print a hex dump for debug");
 }
 
 /* taken from www.asciitable.com */
@@ -536,29 +678,37 @@ static const char* ascii_symb[] = {
 };
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
-void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
+void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[256];
-	int i;
+	int n;	/* number of characters currently in line */
+	size_t i;	/* number of bytes output from buffer */
 	unsigned char ch;
 
 	if (nut_debug_level < level)
 		return;	/* save cpu cycles */
 
-	snprintf(line, sizeof(line), "%s", msg);
+	n = snprintf(line, sizeof(line), "%s", msg);
+	if (n < 0) goto failed;
 
 	for (i=0; i<len; ++i) {
-		ch = ((unsigned char *)buf)[i];
+		ch = ((const unsigned char *)buf)[i];
 
 		if (ch < 0x20)
-			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
+			n = snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
 		else if (ch >= 0x80)
-			snprintfcat(line, sizeof(line), "%02Xh ", ch);
+			n = snprintfcat(line, sizeof(line), "%02Xh ", ch);
 		else
-			snprintfcat(line, sizeof(line), "'%c' ", ch);
+			n = snprintfcat(line, sizeof(line), "'%c' ", ch);
+
+		if (n < 0) goto failed;
 	}
 
-	upsdebugx(level, "%s", line);
+	s_upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	s_upsdebugx(level, "%s", "Failed to print an ASCII data dump for debug");
 }
 
 static void vfatal(const char *fmt, va_list va, int use_strerror)
@@ -568,7 +718,19 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG_ON_FATAL))
 		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vupslog(LOG_ERR, fmt, va, use_strerror);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 }
 
 void fatal_with_errno(int status, const char *fmt, ...)
@@ -576,7 +738,19 @@ void fatal_with_errno(int status, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vfatal(fmt, va, (errno > 0) ? 1 : 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 
 	exit(status);
@@ -587,7 +761,19 @@ void fatalx(int status, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vfatal(fmt, va, 0);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(va);
 
 	exit(status);
@@ -634,7 +820,7 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -658,7 +844,7 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -680,15 +866,40 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 }
 
 
-/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or LD_LIBRARY_PATH */
-const char * search_paths[] = {
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
+ * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
+ * note that different OSes can have their pathnames set up differently
+ * with regard to default/preferred bitness (maybe a "32" in the name
+ * should also be searched explicitly - again, IFF our build is 32-bit).
+ *
+ * General premise for this solution is that some parts of NUT (e.g. the
+ * nut-scanner tool, or DMF feature code) must be pre-built and distributed
+ * in binary packages, but only at run-time it gets to know which third-party
+ * libraries it should use for particular operations. This differs from e.g.
+ * distribution packages which group NUT driver binaries explicitly dynamically
+ * linked against certain OS-provided libraries for accessing this or that
+ * communications media and/or vendor protocol.
+ */
+static const char * search_paths[] = {
+	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
 	"/usr"LIBDIR,
+	"/usr/local"LIBDIR,
+#ifdef BUILD_64
+	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
+	"/usr/lib/64",
 	"/usr/lib64",
-	"/lib64",
+#endif
 	"/usr/lib",
+#ifdef BUILD_64
+	"/lib/64",
+	"/lib64",
+#endif
 	"/lib",
+#ifdef BUILD_64
+	"/usr/local/lib/64",
 	"/usr/local/lib64",
+#endif
 	"/usr/local/lib",
 #ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
 	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,
@@ -728,7 +939,7 @@ char * get_libname(const char* base_libname)
 	int index = 0;
 	char *libname_path = NULL;
 	char current_test_path[LARGEBUF];
-	int base_libname_length = strlen(base_libname);
+	size_t base_libname_length = strlen(base_libname);
 
 	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
 	{

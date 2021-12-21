@@ -16,6 +16,8 @@
 
 */
 
+#include "config.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -24,9 +26,12 @@
 
 #include "main.h"
 #include "apcupsd-ups.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
 #define DRIVER_VERSION	"0.5"
+
+#define POLL_INTERVAL_MIN 10
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -37,7 +42,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static int port=3551;
+static uint16_t port=3551;
 static struct sockaddr_in host;
 
 static void process(char *item,char *data)
@@ -59,7 +64,7 @@ static void process(char *item,char *data)
 		else if(!strcmp(data,"SELFTEST"))status_set("OB");
 		else for(;(data=strtok(data," "));data=NULL)
 		{
-			if(!strcmp(data,"CAL"))status_set("CAL");
+			if(!strncmp(data, "CAL", 3))status_set("CAL");
 			else if(!strcmp(data,"TRIM"))status_set("TRIM");
 			else if(!strcmp(data,"BOOST"))status_set("BOOST");
 			else if(!strcmp(data,"ONLINE"))status_set("OL");
@@ -128,24 +133,41 @@ static void process(char *item,char *data)
 				data[(int)nut_data[i].info_len]=0;
 			dstate_setinfo(nut_data[i].info_type,"%s",data);
 		}
-		else dstate_setinfo(nut_data[i].info_type,
-			nut_data[i].default_value,
-			atof(data)*nut_data[i].info_len);
+		else
+		{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+			/* default_value acts as a format string in this case */
+			dstate_setinfo(nut_data[i].info_type,
+				nut_data[i].default_value,
+				atof(data)*nut_data[i].info_len);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		}
 		break;
 	}
 }
 
 static int getdata(void)
 {
-	int x, fd_flags;
-	short n;
+	ssize_t x;
+	int fd_flags;
+	uint16_t n;
 	char *item;
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
 
 	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags&DU_FLAG_INIT))
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
 	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
@@ -192,6 +214,12 @@ static int getdata(void)
 			return 0;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
+		/* Note: LGTM.com suggests "Comparison is always false because x >= 0"
+		 * for the line above, probably because ntohs() returns an uint type.
+		 * I am reluctant to fix this one, because googling for headers from
+		 * random OSes showed various types used as the return value (uint16_t,
+		 * unsigned_short, u_short, in_port_t...)
+		 */
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
@@ -200,7 +228,7 @@ static int getdata(void)
 
 		if(poll(&p,1,15000)!=1)break;
 
-		if(read(p.fd,bfr,x)!=x)
+		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
@@ -237,15 +265,20 @@ void upsdrv_initinfo(void)
 	if(!port)fatalx(EXIT_FAILURE,"invalid host or port specified!");
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
 {
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
@@ -270,9 +303,11 @@ void upsdrv_initups(void)
 		/* TODO: fix parsing since bare IPv6 addresses contain colons */
 		if((p=strchr(device_path,':')))
 		{
+			int i;
 			*p++=0;
-			port=atoi(p);
-			if(port<1||port>65535)port=0;
+			i=atoi(p);
+			if(i<1||i>65535)i=0;
+			port = (uint16_t)i;
 		}
 	}
 	else device_path="localhost";

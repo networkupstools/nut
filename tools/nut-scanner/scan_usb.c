@@ -44,12 +44,13 @@ static struct usb_bus * (*nut_usb_busses);
 static usb_dev_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_find_devices)(void);
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
-	if( dl_handle != NULL ) {
+	if (dl_handle != NULL) {
 			/* if previous init failed */
-			if( dl_handle == (void *)1 ) {
+			if (dl_handle == (void *)1) {
 					return 0;
 			}
 			/* init has already been done */
@@ -61,7 +62,7 @@ int nutscan_load_usb_library(const char *libname_path)
 		return 0;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
@@ -73,43 +74,43 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 	lt_dlerror();      /* Clear any existing error */
 	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, "usb_close");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, "usb_strerror");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, "usb_init");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
 					"usb_get_string_simple");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, "usb_open");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,"usb_find_devices");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle, "usb_find_devices");
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -127,10 +128,10 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 {
 	usb_device_id_t *usbdev;
 
-	for (usbdev=usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
-		if ( (usbdev->vendorID == dev_VendorID)
-				&& (usbdev->productID == dev_ProductID) ) {
-
+	for (usbdev = usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
+		if ((usbdev->vendorID == dev_VendorID)
+		 && (usbdev->productID == dev_ProductID)
+		) {
 			return usbdev->driver_name;
 		}
 	}
@@ -154,9 +155,9 @@ nutscan_device_t * nutscan_scan_usb()
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-        if( !nutscan_avail_usb ) {
-                return NULL;
-        }
+	if (!nutscan_avail_usb) {
+		return NULL;
+	}
 
 	/* libusb base init */
 	(*nut_usb_init)();
@@ -168,12 +169,13 @@ nutscan_device_t * nutscan_scan_usb()
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
 					dev->descriptor.idVendor,
-					dev->descriptor.idProduct)) != NULL) {
+					dev->descriptor.idProduct)) != NULL
+			) {
 
 				/* open the device */
 				udev = (*nut_usb_open)(dev);
 				if (!udev) {
-					fprintf(stderr,"Failed to open device, \
+					fprintf(stderr, "Failed to open device, \
 						skipping. (%s)\n",
 						(*nut_usb_strerror)());
 					continue;
@@ -188,6 +190,7 @@ nutscan_device_t * nutscan_scan_usb()
 						serialnumber = strdup(str_rtrim(string, ' '));
 					}
 				}
+
 				/* get product name */
 				if (dev->descriptor.iProduct) {
 					ret = (*nut_usb_get_string_simple)(udev,
@@ -201,7 +204,7 @@ nutscan_device_t * nutscan_scan_usb()
 				/* get vendor name */
 				if (dev->descriptor.iManufacturer) {
 					ret = (*nut_usb_get_string_simple)(udev,
-						dev->descriptor.iManufacturer, 
+						dev->descriptor.iManufacturer,
 						string, sizeof(string));
 					if (ret > 0) {
 						vendor_name = strdup(str_rtrim(string, ' '));
@@ -209,9 +212,9 @@ nutscan_device_t * nutscan_scan_usb()
 				}
 
 				nut_dev = nutscan_new_device();
-				if(nut_dev == NULL) {
-					fprintf(stderr,"Memory allocation \
-					error\n");
+				if (nut_dev == NULL) {
+					fprintf(stderr,
+						"Memory allocation error\n");
 					nutscan_free_device(current_nut_dev);
 					free(serialnumber);
 					free(device_name);
@@ -220,44 +223,54 @@ nutscan_device_t * nutscan_scan_usb()
 				}
 
 				nut_dev->type = TYPE_USB;
-				if(driver_name) {
+				if (driver_name) {
 					nut_dev->driver = strdup(driver_name);
 				}
 				nut_dev->port = strdup("auto");
-				sprintf(string,"%04X",dev->descriptor.idVendor);
-				nutscan_add_option_to_device(nut_dev,"vendorid",
-								string);
-				sprintf(string,"%04X",
+
+				sprintf(string, "%04X",
+					dev->descriptor.idVendor);
+				nutscan_add_option_to_device(nut_dev,
+					"vendorid",
+					string);
+
+				sprintf(string, "%04X",
 					dev->descriptor.idProduct);
-				nutscan_add_option_to_device(nut_dev,"productid",
-							string);
-				if(device_name) {
+				nutscan_add_option_to_device(nut_dev,
+					"productid",
+					string);
+
+				if (device_name) {
 					nutscan_add_option_to_device(nut_dev,
-								"product",
-								device_name);
+						"product",
+						device_name);
 					free(device_name);
 					device_name = NULL;
 				}
-				if(serialnumber) {
+
+				if (serialnumber) {
 					nutscan_add_option_to_device(nut_dev,
-								"serial",
-								serialnumber);
+						"serial",
+						serialnumber);
 					free(serialnumber);
 					serialnumber = NULL;
 				}
-				if(vendor_name) {
+
+				if (vendor_name) {
 					nutscan_add_option_to_device(nut_dev,
-								"vendor",
-								vendor_name);
+						"vendor",
+						vendor_name);
 					free(vendor_name);
 					vendor_name = NULL;
 				}
-				nutscan_add_option_to_device(nut_dev,"bus",
-							bus->dirname);
+
+				nutscan_add_option_to_device(nut_dev,
+					"bus",
+					bus->dirname);
 
 				current_nut_dev = nutscan_add_device_to_device(
-								current_nut_dev,
-								nut_dev);
+					current_nut_dev,
+					nut_dev);
 
 				memset (string, 0, sizeof(string));
 
@@ -274,4 +287,3 @@ nutscan_device_t * nutscan_scan_usb()
 	return NULL;
 }
 #endif /* WITH_USB */
-

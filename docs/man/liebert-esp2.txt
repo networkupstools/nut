@@ -1,7 +1,7 @@
 LIEBERT-ESP2(8)
 ==============
 
-NAME  
+NAME
 ----
 
 liebert-esp2 - Driver for Liebert UPS, using the ESP-II serial protocol
@@ -9,7 +9,7 @@ liebert-esp2 - Driver for Liebert UPS, using the ESP-II serial protocol
 NOTE
 ----
 This man page only documents the hardware-specific features of the
-liebert-esp2 driver.  For information about the core driver, see  
+liebert-esp2 driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SPECIAL CABLING NOTE

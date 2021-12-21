@@ -18,8 +18,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
 #define DRIVER_VERSION	"0.02"
@@ -49,10 +51,11 @@ static struct {
 	float	temperature;
 } battery;
 
-static int ivt_status(void)
+static ssize_t ivt_status(void)
 {
 	char	reply[SMALLBUF];
-	int	ret, i, j = 0;
+	int	i, j = 0;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -73,7 +76,7 @@ static int ivt_status(void)
 
 	upsdebugx(3, "send: F");
 	sleep(1);	/* allow controller some time to digest this */
-	
+
 	/*
 	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\n
 	 */
@@ -90,7 +93,7 @@ static int ivt_status(void)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r\n"), reply);
-	upsdebug_hex(4, "  \\_", reply, ret);
+	upsdebug_hex(4, "  \\_", reply, (size_t)ret);
 
 	for (i = 0; i < ret; i++) {
 		switch(reply[i])
@@ -112,7 +115,7 @@ static int ivt_status(void)
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
 
-	upsdebugx(3, "Parsed %d parameters from reply", ret);
+	upsdebugx(3, "Parsed %zd parameters from reply", ret);
 	return ret;
 }
 
@@ -123,10 +126,10 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
-		
+
 void upsdrv_initinfo(void)
 {
 	if (ivt_status() < 7) {
@@ -176,6 +179,9 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

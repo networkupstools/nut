@@ -1,9 +1,10 @@
-/* upsd.c - watches ups state files and answers queries 
+/* upsd.c - watches ups state files and answers queries
 
    Copyright (C)
 	1999		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
+	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,10 +31,11 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <poll.h>
+#include <signal.h>
 
 #include "user.h"
 #include "nut_ctype.h"
+#include "nut_stdint.h"
 #include "stype.h"
 #include "netssl.h"
 #include "sstate.h"
@@ -46,29 +48,38 @@ int	allow_severity = LOG_INFO;
 int	deny_severity = LOG_WARNING;
 #endif	/* HAVE_WRAP */
 
-	/* externally-visible settings and pointers */
+/* externally-visible settings and pointers */
 
-	upstype_t	*firstups = NULL;
+upstype_t	*firstups = NULL;
 
-	/* default 15 seconds before data is marked stale */
-	int	maxage = 15;
+/* default 15 seconds before data is marked stale */
+int	maxage = 15;
 
-	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-	int	maxconn = 0;
+/* default to 1h before cleaning up status tracking entries */
+int	tracking_delay = 3600;
 
-	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
-	char	*statepath = NULL;
+/*
+ * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
+ * (with higher prio for envvar); defaults to disabled for legacy compat.
+ */
+int allow_no_device = 0;
 
-	/* preloaded to DATADIR in main, can be overridden via upsd.conf */
-	char	*datapath = NULL;
+/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
+nfds_t	maxconn = 0;
 
-	/* everything else */
-	const char	*progname;
+/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
+char	*statepath = NULL;
+
+/* preloaded to DATADIR in main, can be overridden via upsd.conf */
+char	*datapath = NULL;
+
+/* everything else */
+static const char	*progname;
 
 nut_ctype_t	*firstclient = NULL;
 /* static nut_ctype_t	*lastclient = NULL; */
 
-	/* default is to listen on all local interfaces */
+/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
 
 static int 	opt_af = AF_UNSPEC;
@@ -84,6 +95,28 @@ typedef struct {
 	void		*data;
 } handler_t;
 
+
+/* Commands and settings status tracking */
+
+/* general enable/disable status info for commands and settings
+ * (disabled by default)
+ * Note that only client that requested it will have it enabled
+ * (see nut_ctype.h) */
+static int	tracking_enabled = 0;
+
+/* Commands and settings status tracking structure */
+typedef struct tracking_s {
+	char	*id;
+	int	status;
+	time_t	request_time; /* for cleanup */
+	/* doubly linked list */
+	struct tracking_s	*prev;
+	struct tracking_s	*next;
+} tracking_t;
+
+static tracking_t	*tracking_list = NULL;
+
+
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
 static handler_t	*handler = NULL;
@@ -93,6 +126,11 @@ static char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
+
+/* Minimalistic support for UUID v4 */
+/* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
+#define UUID4_BYTESIZE 16
+
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -204,7 +242,7 @@ static void setuptcp(stype_t *server)
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
-		
+
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
@@ -308,12 +346,15 @@ static void client_disconnect(nut_ctype_t *client)
 	return;
 }
 
-/* send the buffer <sendbuf> of length <sendlen> to host <dest> */
+/* send the buffer <sendbuf> of length <sendlen> to host <dest>
+ * returns effectively a boolean: 0 = failed, 1 = sent ok
+ */
 int sendback(nut_ctype_t *client, const char *fmt, ...)
 {
-	int	res, len;
-	char ans[NUT_NET_ANSWER_MAX+1];
-	va_list ap;
+	ssize_t	res;
+	size_t	len;
+	char	ans[NUT_NET_ANSWER_MAX+1];
+	va_list	ap;
 
 	if (!client) {
 		return 0;
@@ -325,18 +366,23 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
+	/* System write() and our ssl_write() have a loophole that they write a
+	 * size_t amount of bytes and upon success return that in ssize_t value
+	 */
+	assert(len < SSIZE_MAX);
+
 #ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%zu] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
-	if (len != res) {
+	if (res < 0 || len != (size_t)res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
 		client->last_heard = 0;
 		return 0;	/* failed */
@@ -396,7 +442,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, nut_ctype_t *client, int numarg, 
+static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -427,7 +473,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	}
 
 	/* looks good - call the command */
-	netcmds[cmdnum].func(client, numarg - 1, &arg[1]);
+	netcmds[cmdnum].func(client, (numarg < 2) ? 0 : (numarg - 1), (numarg > 1) ? &arg[1] : NULL);
 }
 
 /* parse requests from the network */
@@ -457,7 +503,7 @@ static void parse_net(nut_ctype_t *client)
 static void client_connect(stype_t *server)
 {
 	struct	sockaddr_storage csock;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	clen;
 #else
 	socklen_t	clen;
@@ -479,6 +525,8 @@ static void client_connect(stype_t *server)
 	time(&client->last_heard);
 
 	client->addr = xstrdup(inet_ntopW(&csock));
+
+	client->tracking = 0;
 
 	pconf_init(&client->ctx, NULL);
 
@@ -504,12 +552,13 @@ static void client_connect(stype_t *server)
 static void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 
 #ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
@@ -569,7 +618,7 @@ void server_load(void)
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
 	}
-	
+
 	/* check if we have at least 1 valid LISTEN interface */
 	if (firstaddr->sock_fd < 0) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
@@ -607,7 +656,7 @@ static void client_free(void)
 	}
 }
 
-void driver_free(void)
+static void driver_free(void)
 {
 	upstype_t	*ups, *unext;
 
@@ -640,10 +689,11 @@ static void upsd_cleanup(void)
 
 	user_flush();
 	desc_free();
-	
+
 	server_free();
 	client_free();
 	driver_free();
+	tracking_free();
 
 	free(statepath);
 	free(datapath);
@@ -655,27 +705,256 @@ static void upsd_cleanup(void)
 	free(handler);
 }
 
-void poll_reload(void)
+static void poll_reload(void)
 {
-	int	ret;
+	long	ret;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
-	if (ret < maxconn) {
+	if ((intmax_t)ret < (intmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
-			"Your system limits the maximum number of connections to %d\n"
-			"but you requested %d. The server won't start until this\n"
-			"problem is resolved.\n", ret, maxconn);
+			"Your system limits the maximum number of connections to %ld\n"
+			"but you requested %jd. The server won't start until this\n"
+			"problem is resolved.\n", ret, (intmax_t)maxconn);
 	}
 
-	fds = xrealloc(fds, maxconn * sizeof(*fds));
-	handler = xrealloc(handler, maxconn * sizeof(*handler));
+	if (1 > maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %jd as maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
+	}
+
+	/* How many items can we stuff into the array? */
+	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
+		fatalx(EXIT_FAILURE,
+			"You requested %jd as maximum number of connections, but we can only allocate %zu.\n"
+			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn, maxalloc);
+	}
+
+	/* The checks above effectively limit that maxconn is in size_t range */
+	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
+	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
+}
+
+/* instant command and setvar status tracking */
+
+/* allocate a new status tracking entry */
+int tracking_add(const char *id)
+{
+	tracking_t	*item;
+
+	if ((!tracking_enabled) || (!id))
+		return 0;
+
+	item = xcalloc(1, sizeof(*item));
+
+	item->id = xstrdup(id);
+	item->status = STAT_PENDING;
+	time(&item->request_time);
+
+	if (tracking_list) {
+		tracking_list->prev = item;
+		item->next = tracking_list;
+	}
+
+	tracking_list = item;
+
+	return 1;
+}
+
+/* set status of a specific tracking entry */
+int tracking_set(const char *id, const char *value)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity checks */
+	if ((!tracking_list) || (!id) || (!value))
+		return 0;
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (!strcasecmp(item->id, id)) {
+			item->status = atoi(value);
+			return 1;
+		}
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free a specific tracking entry */
+int tracking_del(const char *id)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity check */
+	if ((!tracking_list) || (!id))
+		return 0;
+
+	upsdebugx(3, "%s: deleting id %s", __func__, id);
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (strcasecmp(item->id, id))
+			continue;
+
+		if (item->prev)
+			item->prev->next = item->next;
+		else
+			/* deleting first entry */
+			tracking_list = item->next;
+
+		if (item->next)
+			item->next->prev = item->prev;
+
+		free(item->id);
+		free(item);
+
+		return 1;
+
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free all status tracking entries */
+void tracking_free(void)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity check */
+	if (!tracking_list)
+		return;
+
+	upsdebugx(3, "%s", __func__);
+
+	for (item = tracking_list; item; item = next_item) {
+		next_item = item->next;
+		tracking_del(item->id);
+	}
+}
+
+/* cleanup status tracking entries according to their age and tracking_delay */
+void tracking_cleanup(void)
+{
+	tracking_t	*item, *next_item;
+	time_t	now;
+
+	/* sanity check */
+	if (!tracking_list)
+		return;
+
+	time(&now);
+
+	upsdebugx(3, "%s", __func__);
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (difftime(now, item->request_time) > tracking_delay) {
+			tracking_del(item->id);
+		}
+	}
+}
+
+/* get status of a specific tracking entry */
+char *tracking_get(const char *id)
+{
+	tracking_t	*item, *next_item;
+
+	/* sanity checks */
+	if ((!tracking_list) || (!id))
+		return "ERR UNKNOWN";
+
+	for (item = tracking_list; item; item = next_item) {
+
+		next_item = item->next;
+
+		if (strcasecmp(item->id, id))
+			continue;
+
+		switch (item->status)
+		{
+		case STAT_PENDING:
+			return "PENDING";
+		case STAT_HANDLED:
+			return "SUCCESS";
+		case STAT_UNKNOWN:
+			return "ERR UNKNOWN";
+		case STAT_INVALID:
+			return "ERR INVALID-ARGUMENT";
+		case STAT_FAILED:
+			return "ERR FAILED";
+		}
+	}
+
+	return "ERR UNKNOWN"; /* id not found! */
+}
+
+/* enable general status tracking (tracking_enabled) and return its value (1). */
+int tracking_enable(void)
+{
+	tracking_enabled = 1;
+
+	return tracking_enabled;
+}
+
+/* disable general status tracking only if no client use it anymore.
+ * return the new value for tracking_enabled */
+int tracking_disable(void)
+{
+	nut_ctype_t		*client, *cnext;
+
+	for (client = firstclient; client; client = cnext) {
+		cnext = client->next;
+		if (client->tracking == 1)
+			return 1;
+	}
+	return 0;
+}
+
+/* return current general status of tracking (tracking_enabled). */
+int tracking_is_enabled(void)
+{
+	return tracking_enabled;
+}
+
+/* UUID v4 basic implementation
+ * Note: 'dest' must be at least `UUID4_LEN` long */
+int nut_uuid_v4(char *uuid_str)
+{
+	size_t		i;
+	uint8_t nut_uuid[UUID4_BYTESIZE];
+
+	if (!uuid_str)
+		return 0;
+
+	for (i = 0; i < UUID4_BYTESIZE; i++)
+		nut_uuid[i] = (uint8_t)rand() + (uint8_t)rand();
+
+	/* set variant and version */
+	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
+	nut_uuid[8] = (nut_uuid[8] & 0x3F) | 0x80;
+
+	return snprintf(uuid_str, UUID4_LEN,
+		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+		nut_uuid[0], nut_uuid[1], nut_uuid[2], nut_uuid[3],
+		nut_uuid[4], nut_uuid[5], nut_uuid[6], nut_uuid[7],
+		nut_uuid[8], nut_uuid[9], nut_uuid[10], nut_uuid[11],
+		nut_uuid[12], nut_uuid[13], nut_uuid[14], nut_uuid[15]);
 }
 
 /* service requests and check on new data */
 static void mainloop(void)
 {
-	int	i, ret, nfds = 0;
+	int	ret;
+	nfds_t	i, nfds = 0;
 
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
@@ -689,6 +968,9 @@ static void mainloop(void)
 		poll_reload();
 		reload_flag = 0;
 	}
+
+	/* cleanup instcmd/setvar status tracking entries if needed */
+	tracking_cleanup();
 
 	/* scan through driver sockets */
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
@@ -722,6 +1004,7 @@ static void mainloop(void)
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
+			/* FIXME: create an upsd.conf parameter (CLIENT_INACTIVITY_DELAY) */
 			client_disconnect(client);
 			continue;
 		}
@@ -756,7 +1039,7 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
+	upsdebugx(2, "%s: polling %jd filedescriptors", __func__, (intmax_t)nfds);
 
 	ret = poll(fds, nfds, 2000);
 
@@ -785,9 +1068,22 @@ static void mainloop(void)
 			case SERVER:
 				upsdebugx(2, "%s: server disconnected", __func__);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upsdebugx(2, "%s: <unknown> disconnected", __func__);
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
+
 			}
 
 			continue;
@@ -806,9 +1102,21 @@ static void mainloop(void)
 			case SERVER:
 				client_connect((stype_t *)handler[i].data);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upsdebugx(2, "%s: <unknown> has data available", __func__);
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 			}
 
 			continue;
@@ -816,10 +1124,13 @@ static void mainloop(void)
 	}
 }
 
-static void help(const char *progname) 
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", progname);
+	printf("usage: %s [OPTIONS]\n", arg_progname);
 
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
@@ -840,6 +1151,7 @@ static void help(const char *progname)
 
 static void set_reload_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
 	reload_flag = 1;
 }
 
@@ -857,7 +1169,14 @@ static void setup_signals(void)
 	sa.sa_flags = 0;
 
 	/* basic signal setup to ignore SIGPIPE */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	sigaction(SIGPIPE, &sa, NULL);
 
 	/* handle shutdown signals */
@@ -890,7 +1209,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, cmdret = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -908,23 +1227,27 @@ int main(int argc, char **argv)
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
-			case 'h':
-				help(progname);
-				break;
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+					exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
+
 			case 'q':
 				nut_log_level++;
 				break;
+
 			case 'r':
 				chroot_path = optarg;
 				break;
+
 			case 'u':
 				user = optarg;
 				break;
+
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
@@ -952,15 +1275,15 @@ int main(int argc, char **argv)
 				opt_af = AF_INET6;
 				break;
 
+			case 'h':
 			default:
 				help(progname);
-				break;
 		}
 	}
 
 	if (cmd) {
-		sendsignalfn(pidfn, cmd);
-		exit(EXIT_SUCCESS);
+		cmdret = sendsignalfn(pidfn, cmd);
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
@@ -995,11 +1318,34 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
-	/* default to system limit (may be overridden in upsd.conf */
-	maxconn = sysconf(_SC_OPEN_MAX);
+	/* default to system limit (may be overridden in upsd.conf) */
+	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
+
+	{ // scope
+	/* As documented above, the ALLOW_NO_DEVICE can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NO_DEVICE");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 0;
+		}
+	}
+	} // scope
 
 	/* start server */
 	server_load();
@@ -1019,7 +1365,11 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		if (allow_no_device) {
+			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
+		} else {
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		}
 	}
 
 	/* try to bring in the var/cmd descriptions */

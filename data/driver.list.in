@@ -229,6 +229,7 @@
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD205"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD301"	""	"snmp-ups"
 
 "Cyclades"	"pdu"	"1"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
@@ -258,6 +259,7 @@
 "Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card"	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
+"Delta"	"ups"	"4"	"Delta UPS Amplon R Series"	"USB port"	"usbhid-ups"
 
 "Deltec"	"ups"	"1"	"PowerRite Pro II"	""	"genericups upstype=15"
 "Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
@@ -448,6 +450,8 @@
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
+"HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
 "IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
@@ -483,6 +487,7 @@
 "Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Back Comfo Pro II 650/850/1050"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser"
@@ -801,6 +806,7 @@
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 "Opti-UPS"	"ups"	"1"	"VS 575C"	"type=OPTI"	"powercom"
+"Opti-UPS"	"ups"	"1"	"Power Series"	"PS1500E"	"blazer_usb"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
@@ -861,6 +867,8 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
+"PowerWalker"	"ups"	"3"	"VFI 3000 TG" "" "usbhid-ups" #https://powerwalker.com/?lang=en&page=product&item=10122043
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
@@ -941,9 +949,27 @@
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
+"Salicru"	"ups"	"2"	"SPS 650/850 HOME"	"usb"	"usbhid-ups (experimental)"
+
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
+
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
+
+"SNR"	"ups"	"2" "SNR-UPS-LID-600"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-LED-C13"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-600-LED-C13-PRO"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-800"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-800-LED-С13"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1000-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1200"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-1500"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-2000"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-2000-XPS"	""  "nutdrv_qx"
+"SNR"	"ups"	"2" "SNR-UPS-LID-3000-XPS"	""  "nutdrv_qx"
 
 "SOLA"	"ups"	"1"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"ups"	"1"	"325"	""	"blazer_ser or bestups"

@@ -3,13 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.10
+# Version: 0.12
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
-# 2015 - 2018 Arnaud Quette <ArnaudQuette@Eaton.com>
+# 2015 - 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
+# 2011 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -218,17 +219,15 @@ generate_C() {
 	static snmp_info_t ${LDRIVER}_mib[] = {
 
 		/* Data format:
-		 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar },
+		 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info },
 		 *
 		 *	info_type:	NUT INFO_ or CMD_ element name
 		 *	info_flags:	flags to set in addinfo
-		 *	info_len:	length of strings if STR
-		 *				cmd value if CMD, multiplier otherwise
+		 *	info_len:	length of strings if ST_FLAG_STRING, multiplier otherwise
 		 *	OID: SNMP OID or NULL
 		 *	dfl: default value
 		 *	flags: snmp-ups internal flags (FIXME: ...)
 		 *	oid2info: lookup table between OID and NUT values
-		 *	setvar: variable to set for SU_FLAG_SETINT
 		 *
 		 * Example:
 		 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
@@ -260,7 +259,7 @@ generate_C() {
 		fi
 		# get the matching numeric OID
 		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
-		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL, NULL },\n"
+		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
 	done < ${STRWALKFILE} >> ${CFILE}
 
 	# append footer
@@ -324,14 +323,14 @@ if [ -z "$NUMWALKFILE" ]; then
 	STRWALKFILE=$DFL_STRWALKFILE
 
 	# check if Net SNMP is available
-	if [ -z "`which snmpget`" -o -z "`which snmpwalk`" ]; then
+	if [ -z "`command -v snmpget`" -o -z "`command -v snmpwalk`" ] && \
+	   [ -z "`which snmpget`" -o -z "`which snmpwalk`" ]; then
 		echo "Net SNMP not found! snmpget and snmpwalk commands are required." >&2
 		exit 1
 	fi
 	# hostname is also mandatory
 	while [ -z "$HOSTNAME" ]; do
-		echo "
-		Please enter the SNMP host IP address or name."
+		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
 		if echo $HOSTNAME | egrep -q '[^a-zA-Z0-9]'; then
 			echo "Please use only letters and digits"

@@ -24,6 +24,7 @@
 
 #include "main.h"
 #include "usb-common.h"
+#include "nut_stdint.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
@@ -55,8 +56,8 @@ static usb_device_id_t richcomm_usb_id[] = {
 	/* Sweex 1000VA */
 	{ USB_DEVICE(0x0925, 0x1234),  NULL },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 static usb_dev_handle	*udev = NULL;
@@ -65,6 +66,8 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	switch (is_usb_device_supported(richcomm_usb_id, device))
 	{
 	case SUPPORTED:
@@ -83,6 +86,15 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL
 };
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static int execute_and_retrieve_query(char *query, char *reply)
 {
 	int	ret;
@@ -95,7 +107,23 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "send", query, ret);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	/* Cast up within the signed/unsigned same type */
+	if ((unsigned int)ret >= SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(3, "send: ret=%d exceeds SIZE_MAX", ret);
+	}
+	upsdebug_hex(3, "send", query, (size_t)ret);
 
 	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
 
@@ -104,9 +132,28 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "read", reply, ret);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	/* Cast up within the signed/unsigned same type */
+	if ((unsigned int)ret >= SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(3, "read: ret=%d exceeds SIZE_MAX", ret);
+	}
+	upsdebug_hex(3, "read", reply, (size_t)ret);
 	return ret;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static int query_ups(char *reply)
 {
@@ -147,7 +194,19 @@ static void usb_comm_fail(const char *fmt, ...)
 	}
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why))) {
@@ -163,7 +222,7 @@ static void usb_comm_good(void)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "Communications with UPS re-established");	
+	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
 
@@ -176,6 +235,8 @@ static void usb_comm_good(void)
  */
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (usb_set_configuration(handle, 1) < 0) {
 		upsdebugx(5, "Can't set USB configuration");
 		return -1;
@@ -206,8 +267,10 @@ static int usb_device_close(usb_dev_handle *handle)
 	}
 
 	/* usb_release_interface() sometimes blocks and goes
-	into uninterruptible sleep.  So don't do it. */
+	 * into uninterruptible sleep.  So don't do it.
+	 */
 	/* usb_release_interface(handle, 0); */
+
 	return usb_close(handle);
 }
 
@@ -236,9 +299,11 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i, ret;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
-				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)",
+				dev->descriptor.idVendor,
+				dev->descriptor.idProduct,
+				bus->dirname, dev->filename);
+
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
@@ -264,7 +329,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = strdup(bus->dirname);
-			
+
 			if (dev->descriptor.iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, dev->descriptor.iManufacturer,
@@ -300,7 +365,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
 
 			for (m = matcher; m; m = m->next) {
-				
+
 				switch (m->match_function(device, m->privdata))
 				{
 				case 0:
@@ -308,7 +373,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;

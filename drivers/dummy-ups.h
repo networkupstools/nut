@@ -18,8 +18,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_DUMMY_UPS_H_SEEN
+#define NUT_DUMMY_UPS_H_SEEN 1
+
 /* This file lists all valid data with their type and info.
- * 
+ *
  * These are then enabled through a definition file, specified
  * as the "port" parameter (only the file name, not the path).
  *
@@ -113,7 +116,9 @@ typedef struct {
 /* --------------------------------------------------------------- */
 
 /* FIXME: need to enforce value check with enum or bounds */
-dummy_info_t nut_data[] =
+/* This array is only used from dummy-ups.c (there's a namesake
+ * for apcupsd-ups.c defined elsewhere) */
+static dummy_info_t nut_data[] =
 {
 	/* Essential variables, loaded before parsing the definition file */
 	{ "ups.mfr", ST_FLAG_STRING | ST_FLAG_RW, 32, "Dummy Manufacturer", DU_FLAG_INIT, NULL },
@@ -234,3 +239,5 @@ beeper.disable
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, DU_FLAG_NONE, NULL }
 };
+
+#endif	/* NUT_DUMMY_UPS_H_SEEN */

@@ -26,12 +26,13 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef _LIBHID_H
-#define _LIBHID_H
+#ifndef NUT_LIBHID_H_SEEN
+#define NUT_LIBHID_H_SEEN
 
 #include "config.h"
 
 #include <sys/types.h>
+#include "nut_stdint.h"
 #include "hidtypes.h"
 
 #include "timehead.h"
@@ -82,15 +83,16 @@ extern HIDDesc_t	*pDesc;	/* parsed Report Descriptor */
 /* report buffer structure: holds data about most recent report for
    each given report id */
 typedef struct reportbuf_s {
-       time_t	ts[256];			/* timestamp when report was retrieved */
-       int	len[256];			/* size of report data */
-       unsigned char	*data[256];		/* report data (allocated) */
+	time_t	ts[256];			/* timestamp when report was retrieved */
+	size_t	len[256];			/* size of report data */
+	unsigned char	*data[256];		/* report data (allocated) */
 } reportbuf_t;
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
+extern size_t max_report_size;
 extern int interrupt_only;
-extern unsigned int interrupt_size;
+extern size_t interrupt_size;
 
 /* ---------------------------------------------------------------------- */
 
@@ -148,4 +150,4 @@ const char *HIDDataType(const HIDData_t *hiddata);
 void free_report_buffer(reportbuf_t *rbuf);
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc);
 
-#endif /* _LIBHID_H */
+#endif /* NUT_LIBHID_H_SEEN */

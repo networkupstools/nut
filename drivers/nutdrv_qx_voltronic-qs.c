@@ -191,12 +191,24 @@ static void	voltronic_qs_initups(void)
 /* Protocol used by the UPS */
 static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	if (strcasecmp(item->value, "V")) {
+	if (strncasecmp(item->value, "V", 1)) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 		return -1;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, item->value);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }

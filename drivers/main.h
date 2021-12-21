@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef NUT_MAIN_H_SEEN
+#define NUT_MAIN_H_SEEN
 
 #include "common.h"
 #include "upsconf.h"
@@ -10,7 +10,7 @@
 extern const char	*progname, *upsname, *device_name;
 extern char		*device_path;
 extern int		upsfd, extrafd, broken_driver, experimental_driver, do_lock_port, exit_flag;
-extern unsigned int	poll_interval;
+extern time_t	poll_interval;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
@@ -53,7 +53,7 @@ void addvar(int vartype, const char *name, const char *desc);
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {
-	const char	*name;		/* driver full name, for banner printing, ... */ 
+	const char	*name;		/* driver full name, for banner printing, ... */
 	const char	*version;	/* driver version */
 	const char	*authors;	/* authors name */
 	const int	status;		/* driver development status */
@@ -76,4 +76,4 @@ typedef struct upsdrv_info_s {
 /* public driver information from the driver file */
 extern upsdrv_info_t	upsdrv_info;
 
-#endif /* MAIN_H */
+#endif /* NUT_MAIN_H_SEEN */

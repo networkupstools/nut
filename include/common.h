@@ -1,6 +1,3 @@
-#ifndef NUT_COMMON_H
-#define NUT_COMMON_H
-
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
@@ -19,6 +16,9 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#ifndef NUT_COMMON_H_SEEN
+#define NUT_COMMON_H_SEEN 1
 
 #include "config.h"		/* must be the first header */
 
@@ -53,6 +53,24 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
+/* Use in code to notify the developers and quiesce the compiler that
+ * (for this codepath) the argument or variable is unused intentionally.
+ * void f(int x) {
+ *   NUT_UNUSED_VARIABLE(x);
+ *   ...
+ * }
+ *
+ * Note that solutions which mark up function arguments or employ this or
+ * that __attribute__ proved not portable enough for wherever NUT builds.
+ */
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+
+/** @brief Default timeout (in seconds) for network operations, as used by `upsclient` and `nut-scanner`. */
+#define DEFAULT_NETWORK_TIMEOUT		5
+
+/** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
+#define DEFAULT_TRACKING_TIMEOUT	10
+
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
 
@@ -77,6 +95,9 @@ int sendsignal(const char *progname, int sig);
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
+/* Report maximum platform value for the pid_t */
+pid_t get_max_pid_t(void);
+
 /* open <pidfn>, get the pid, then send it <sig> */
 int sendsignalfn(const char *pidfn, int sig);
 
@@ -95,16 +116,50 @@ const char * dflt_statepath(void);
 /* Return the alternate path for pid files */
 const char * altpidpath(void);
 
+/* upslog*() messages are sent to syslog always;
+ * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upslogx(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug_with_errno(int level, const char *fmt, ...)
+
+/* upsdebug*() messages are only logged if debugging
+ * level is high enough. To speed up a bit (minimize
+ * passing of ultimately ignored data trough the stack)
+ * these are "hidden" implementations wrapped into
+ * macros for earlier routine names spread around the
+ * codebase, they would check debug level first and
+ * only if logging should happen - call the routine
+ * and pass around pointers and other data.
+ */
+void s_upsdebug_with_errno(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebugx(int level, const char *fmt, ...)
+void s_upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug_hex(int level, const char *msg, const void *buf, int len);
-void upsdebug_ascii(int level, const char *msg, const void *buf, int len);
+void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len);
+void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len);
+/* These macros should help avoid run-time overheads
+ * passing data for messages nobody would ever see.
+ *
+ * Also NOTE: the "level" may be specified by callers in various ways,
+ * e.g. as a "X ? Y : Z" style expression; to catch those expansions
+ * transparently we hide them into parentheses as "(label)".
+ *
+ * For stricter C99 compatibility, all parameters specified to a macro
+ * must be populated by caller (so we do not handle "fmt, args..." where
+ * the args part may be skipped by caller because fmt is a fixed string).
+ * Note it is then up to the caller (and compiler checks) that at least
+ * one argument is provided, the format string (maybe fixed) -- as would
+ * be required by the actual s_upsdebugx*() method after macro evaluation.
+ */
+#define upsdebug_with_errno(level, ...) \
+	do { if (nut_debug_level >= (level)) { s_upsdebug_with_errno((level), __VA_ARGS__); } } while(0)
+#define upsdebugx(level, ...) \
+	do { if (nut_debug_level >= (level)) { s_upsdebugx((level), __VA_ARGS__); } } while(0)
+#define upsdebug_hex(level, msg, buf, len) \
+	do { if (nut_debug_level >= (level)) { s_upsdebug_hex((level), msg, buf, len); } } while(0)
+#define upsdebug_ascii(level, msg, buf, len) \
+	do { if (nut_debug_level >= (level)) { s_upsdebug_ascii((level), msg, buf, len); } } while(0)
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
@@ -119,14 +174,17 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
-int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 
 char * get_libname(const char* base_libname);
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512
 #define LARGEBUF	1024
+
+/** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
+#define UUID4_LEN	37
 
 /* Provide declarations for getopt() global variables */
 
@@ -157,4 +215,4 @@ extern int optind;
 /* *INDENT-ON* */
 #endif
 
-#endif /* NUT_COMMON_H */
+#endif /* NUT_COMMON_H_SEEN */

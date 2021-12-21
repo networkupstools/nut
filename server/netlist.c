@@ -52,7 +52,7 @@ static int tree_dump(st_tree_t *node, nut_ctype_t *client, const char *ups,
 		if (node->flags & ST_FLAG_RW) {
 			ret = sendback(client, "RW %s %s \"%s\"\n",
 				ups, node->var, node->val);
-		
+
 		} else {
 			ret = 1;	/* dummy */
 		}
@@ -240,7 +240,7 @@ static void list_ups(nut_ctype_t *client)
 			pconf_encode(utmp->desc, esc, sizeof(esc));
 			ret = sendback(client, "UPS %s \"%s\"\n",
 				utmp->name, esc);
-		
+
 		} else {
 			ret = sendback(client, "UPS %s \"Description unavailable\"\n",
 				 utmp->name);
@@ -253,7 +253,7 @@ static void list_ups(nut_ctype_t *client)
 	}
 
 	sendback(client, "END LIST UPS\n");
-}	
+}
 
 static void list_clients(nut_ctype_t *client, const char *upsname)
 {
@@ -285,7 +285,7 @@ static void list_clients(nut_ctype_t *client, const char *upsname)
 	sendback(client, "END LIST CLIENT %s\n", upsname);
 }
 
-void net_list(nut_ctype_t *client, int numarg, const char **arg)
+void net_list(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -293,7 +293,7 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	}
 
 	/* LIST UPS */
-	if (!strcasecmp(arg[0], "UPS")) {
+	if (!strncasecmp(arg[0], "UPS", 3)) {
 		list_ups(client);
 		return;
 	}
@@ -304,19 +304,19 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	}
 
 	/* LIST VAR UPS */
-	if (!strcasecmp(arg[0], "VAR")) {
+	if (!strncasecmp(arg[0], "VAR", 3)) {
 		list_var(client, arg[1]);
 		return;
 	}
 
 	/* LIST RW UPS */
-	if (!strcasecmp(arg[0], "RW")) {
+	if (!strncasecmp(arg[0], "RW", 2)) {
 		list_rw(client, arg[1]);
 		return;
 	}
 
 	/* LIST CMD UPS */
-	if (!strcasecmp(arg[0], "CMD")) {
+	if (!strncasecmp(arg[0], "CMD", 3)) {
 		list_cmd(client, arg[1]);
 		return;
 	}

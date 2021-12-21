@@ -24,6 +24,7 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "nut_float.h"
 #include "usbhid-ups.h"
 #include "cps-hid.h"
 #include "usb-common.h"
@@ -49,6 +50,8 @@ static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	might_need_battery_scale = 1;
 	return NULL;
 }
@@ -63,7 +66,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /*! Adjusts @a battery_scale if voltage is well above nominal.
@@ -84,7 +87,7 @@ static void cps_adjust_battery_scale(double batt_volt)
 	}
 
 	batt_volt_nom = strtod(batt_volt_nom_str, NULL);
-	if(batt_volt_nom == 0) {
+	if(d_equal(batt_volt_nom, 0)) {
 		upsdebugx(3, "%s: 'battery.voltage.nominal' is %s", __func__, batt_volt_nom_str);
 		return;
 	}
@@ -114,7 +117,7 @@ static const char *cps_battvolt_fun(double value)
 }
 
 static info_lkp_t cps_battvolt[] = {
-	{ 0, NULL, &cps_battvolt_fun }
+	{ 0, NULL, &cps_battvolt_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -130,7 +133,7 @@ static const char *cps_battcharge_fun(double value)
 }
 
 static info_lkp_t cps_battcharge[] = {
-	{ 0, NULL, &cps_battcharge_fun }
+	{ 0, NULL, &cps_battcharge_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */

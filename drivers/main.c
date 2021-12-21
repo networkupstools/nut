@@ -20,38 +20,41 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 #include "main.h"
+#include "nut_stdint.h"
 #include "dstate.h"
+#include "attribute.h"
 
-	/* data which may be useful to the drivers */
-	int		upsfd = -1;
-	char		*device_path = NULL;
-	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+/* data which may be useful to the drivers */
+int		upsfd = -1;
+char		*device_path = NULL;
+const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
-	/* may be set by the driver to wake up while in dstate_poll_fds */
-	int	extrafd = -1;
+/* may be set by the driver to wake up while in dstate_poll_fds */
+int	extrafd = -1;
 
-	/* for ser_open */
-	int	do_lock_port = 1;
+/* for ser_open */
+int	do_lock_port = 1;
 
-	/* for dstate->sock_connect, default to asynchronous */
-	int	do_synchronous = 0;
+/* for dstate->sock_connect, default to asynchronous */
+int	do_synchronous = 0;
 
-	/* for detecting -a values that don't match anything */
-	static	int	upsname_found = 0;
+/* for detecting -a values that don't match anything */
+static	int	upsname_found = 0;
 
-	static vartab_t	*vartab_h = NULL;
+static vartab_t	*vartab_h = NULL;
 
-	/* variables possibly set by the global part of ups.conf */
-	unsigned int	poll_interval = 2;
-	static char	*chroot_path = NULL, *user = NULL;
+/* variables possibly set by the global part of ups.conf */
+time_t	poll_interval = 2;
+static char	*chroot_path = NULL, *user = NULL;
 
-	/* signal handling */
-	int	exit_flag = 0;
+/* signal handling */
+int	exit_flag = 0;
 
-	/* everything else */
-	static char	*pidfn = NULL;
-	int	dump_data = 0; /* Store the update_count requested */
+/* everything else */
+static char	*pidfn = NULL;
+static int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -77,6 +80,9 @@ void upsdrv_banner (void)
 }
 
 /* power down the attached load immediately */
+static void forceshutdown(void)
+	__attribute__((noreturn));
+
 static void forceshutdown(void)
 {
 	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
@@ -299,10 +305,10 @@ static int main_arg(char *var, char *val)
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 
 		return 1;	/* handled */
 	}
@@ -321,7 +327,12 @@ static int main_arg(char *var, char *val)
 static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		}
 		return;
 	}
 
@@ -336,10 +347,10 @@ static void do_global_args(const char *var, const char *val)
 	}
 
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 	}
 
 
@@ -386,7 +397,13 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+				confupsname, ipv);
+		}
 		return;
 	}
 
@@ -493,7 +510,14 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 }
@@ -543,8 +567,15 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
-			case 'i':
-				poll_interval = atoi(optarg);
+			case 'i': { // scope
+					int ipv = atoi(optarg);
+					if (ipv > 0) {
+						poll_interval = (time_t)ipv;
+					} else {
+						fatalx(EXIT_FAILURE, "Error: command-line: invalid pollinterval: %d",
+							ipv);
+					}
+				}
 				break;
 			case 'k':
 				do_lock_port = 0;
@@ -607,9 +638,9 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off */
+	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
 	/* This avoid case where ie /var is umounted */
-	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
+	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
@@ -642,14 +673,17 @@ int main(int argc, char **argv)
 			sleep(5);
 		}
 
-		pidfn = xstrdup(buffer);
-		writepid(pidfn);	/* before backgrounding */
+		/* Only write pid if we're not just dumping data, for discovery */
+		if (!dump_data) {
+			pidfn = xstrdup(buffer);
+			writepid(pidfn);	/* before backgrounding */
+		}
 	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
-	/* note: device.type is set early to be overriden by the driver
+	/* note: device.type is set early to be overridden by the driver
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
@@ -670,6 +704,14 @@ int main(int argc, char **argv)
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);
+
+	/*
+	 * If we are not debugging, send the early startup logs generated by
+	 * upsdrv_initinfo() and upsdrv_updateinfo() to syslog, not just stderr.
+	 * Otherwise these logs are lost.
+	 */
+	if ((nut_debug_level == 0) && (!dump_data))
+		syslogbit_set();
 
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
@@ -698,10 +740,12 @@ int main(int argc, char **argv)
 	}
 
 	/* now we can start servicing requests */
-	dstate_init(progname, upsname);
+	/* Only write pid if we're not just dumping data, for discovery */
+	if (!dump_data)
+		dstate_init(progname, upsname);
 
 	/* The poll_interval may have been changed from the default */
-	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",
@@ -739,9 +783,10 @@ int main(int argc, char **argv)
 			else
 				update_count++;
 		}
-
-		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
-			/* repeat until time is up or extrafd has data */
+		else {
+			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
+				/* repeat until time is up or extrafd has data */
+			}
 		}
 	}
 

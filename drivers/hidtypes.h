@@ -111,7 +111,7 @@ typedef struct {
 /*
  * HIDData struct
  *
- * Describe a HID Data with its location in report 
+ * Describe a HID Data with its location in report
  * -------------------------------------------------------------------------- */
 typedef struct {
 	HIDPath_t	Path;				/* HID Path				*/
@@ -140,9 +140,9 @@ typedef struct {
  * Holds a parsed report descriptor
  * -------------------------------------------------------------------------- */
 typedef struct {
-	int		nitems;				/* number of items in descriptor */
+	size_t		nitems;				/* number of items in descriptor */
 	HIDData_t	*item;				/* list of items			*/
-	int		replen[256];			/* list of report lengths, in byte */
+	size_t		replen[256];		/* list of report lengths, in byte */
 } HIDDesc_t;
 
 #ifdef __cplusplus

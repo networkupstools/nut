@@ -25,7 +25,9 @@
 #include "timehead.h"
 
 #include "sstate.h"
+#include "upsd.h"
 #include "upstype.h"
+#include "nut_stdint.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -33,9 +35,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h> 
+#include <sys/un.h>
 
-static int parse_args(upstype_t *ups, int numargs, char **arg)
+static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 {
 	if (numargs < 1)
 		return 0;
@@ -104,21 +106,9 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 		return 1;
 	}
 
-	/* ADDRANGE <varname> <minvalue> <maxvalue> */
-	if (!strcasecmp(arg[0], "ADDRANGE")) {
-		state_addrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
-		return 1;
-	}
-
 	/* DELENUM <varname> <enumval> */
 	if (!strcasecmp(arg[0], "DELENUM")) {
 		state_delenum(ups->inforoot, arg[1], arg[2]);
-		return 1;
-	}
-
-	/* DELRANGE <varname> <minvalue> <maxvalue> */
-	if (!strcasecmp(arg[0], "DELRANGE")) {
-		state_delrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
 		return 1;
 	}
 
@@ -128,24 +118,51 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 		return 1;
 	}
 
+	/* TRACKING <id> <status> */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		tracking_set(arg[1], arg[2]);
+		upsdebugx(1, "TRACKING: ID %s status %s", arg[1], arg[2]);
+
+		/* log actual result of instcmd / setvar */
+		if (strncmp(arg[2], "PENDING", 7) != 0) {
+			upslogx(LOG_INFO, "tracking ID: %s\tresult: %s", arg[1], tracking_get(arg[1]));
+		}
+		return 1;
+	}
+
+	if (numargs < 4)
+		return 0;
+
+	/* ADDRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "ADDRANGE")) {
+		state_addrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
+		return 1;
+	}
+
+	/* DELRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "DELRANGE")) {
+		state_delrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
+		return 1;
+	}
+
 	return 0;
 }
 
 /* nothing fancy - just make the driver say something back to us */
 static void sendping(upstype_t *ups)
 {
-	int	ret;
+	ssize_t	ret;
 	const char	*cmd = "PING\n";
+	size_t	cmdlen = strlen(cmd);
 
 	if ((!ups) || (ups->sock_fd < 0)) {
 		return;
 	}
 
 	upsdebugx(3, "Pinging UPS [%s]", ups->name);
+	ret = write(ups->sock_fd, cmd, cmdlen);
 
-	ret = write(ups->sock_fd, cmd, strlen(cmd));
-
-	if (ret != (int)strlen(cmd))  {
+	if ((ret < 1) || (ret != (ssize_t)cmdlen))  {
 		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
 		sstate_disconnect(ups);
 		return;
@@ -158,8 +175,10 @@ static void sendping(upstype_t *ups)
 
 int sstate_connect(upstype_t *ups)
 {
-	int	ret, fd;
+	int	fd;
 	const char	*dumpcmd = "DUMPALL\n";
+	size_t	dumpcmdlen = strlen(dumpcmd);
+	ssize_t	ret;
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -186,7 +205,7 @@ int sstate_connect(upstype_t *ups)
 			return -1;
 
 		ups->last_connfail = now;
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", 
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 			ups->name, ups->fn);
 
 		return -1;
@@ -209,9 +228,9 @@ int sstate_connect(upstype_t *ups)
 	}
 
 	/* get a dump started so we have a fresh set of data */
-	ret = write(fd, dumpcmd, strlen(dumpcmd));
+	ret = write(fd, dumpcmd, dumpcmdlen);
 
-	if (ret != (int)strlen(dumpcmd)) {
+	if ((ret < 1) || (ret != (ssize_t)dumpcmdlen))  {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		close(fd);
 		return -1;
@@ -250,7 +269,7 @@ void sstate_disconnect(upstype_t *ups)
 
 void sstate_readline(upstype_t *ups)
 {
-	int	i, ret;
+	ssize_t	i, ret;
 	char	buf[SMALLBUF];
 
 	if ((!ups) || (ups->sock_fd < 0)) {
@@ -280,7 +299,7 @@ void sstate_readline(upstype_t *ups)
 		case 1:
 			/* set the 'last heard' time to now for later staleness checks */
 			if (parse_args(ups, ups->sock_ctx.numargs, ups->sock_ctx.arglist)) {
-			        time(&ups->last_heard);
+				time(&ups->last_heard);
 			}
 			continue;
 
@@ -303,12 +322,12 @@ const char *sstate_getinfo(const upstype_t *ups, const char *var)
 int sstate_getflags(const upstype_t *ups, const char *var)
 {
 	return state_getflags(ups->inforoot, var);
-}	
+}
 
-int sstate_getaux(const upstype_t *ups, const char *var)
+long sstate_getaux(const upstype_t *ups, const char *var)
 {
 	return state_getaux(ups->inforoot, var);
-}	
+}
 
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {
@@ -325,7 +344,7 @@ const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 	return ups->cmdlist;
 }
 
-int sstate_dead(upstype_t *ups, int maxage)
+int sstate_dead(upstype_t *ups, int arg_maxage)
 {
 	time_t	now;
 	double	elapsed;
@@ -347,12 +366,12 @@ int sstate_dead(upstype_t *ups, int maxage)
 	elapsed = difftime(now, ups->last_heard);
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */
-	if ((elapsed > (maxage / 3)) && (difftime(now, ups->last_ping) > (maxage / 3)))
+	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > maxage) {
+	if (elapsed > arg_maxage) {
 		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-					ups->name, elapsed, maxage);
+					ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */
 	}
 
@@ -376,16 +395,24 @@ void sstate_cmdfree(upstype_t *ups)
 
 int sstate_sendline(upstype_t *ups, const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
+	size_t	buflen;
 
 	if ((!ups) ||(ups->sock_fd < 0)) {
 		return 0;	/* failed */
 	}
 
-	ret = write(ups->sock_fd, buf, strlen(buf));
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret... */
+		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed: buffered message too large", ups->name);
+		return 0;	/* failed */
+	}
 
-	if (ret == (int)strlen(buf)) {
-		return 1;	
+	ret = write(ups->sock_fd, buf, buflen);
+
+	if (ret == (ssize_t)buflen) {
+		return 1;
 	}
 
 	upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);

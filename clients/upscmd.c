@@ -1,6 +1,8 @@
 /* upscmd - simple "client" to test instant commands via upsd
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2000  Russell Kroll <rkroll@exploits.org>
+     2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,10 +28,13 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 
-static char		*upsname = NULL, *hostname = NULL;
+static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+static int			tracking_enabled = 0;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -41,13 +46,16 @@ static void usage(const char *prog)
 	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] <ups> <command> [<value>]\n\n", prog);
+	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
+	printf("  -w            wait for the completion of command by the driver\n");
+	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
@@ -57,7 +65,7 @@ static void usage(const char *prog)
 static void print_cmd(char *cmdname)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -80,7 +88,7 @@ static void print_cmd(char *cmdname)
 static void listcmds(void)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 	struct list_t	*lhead = NULL, *llast = NULL, *ltmp, *lnext;
@@ -105,7 +113,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,
@@ -136,9 +144,21 @@ static void listcmds(void)
 	}
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_cmd(char **argv, const int argc)
 {
+	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
+	char	tracking_id[UUID4_LEN];
+	time_t	start, now;
 
 	if (argc > 1) {
 		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
@@ -154,13 +174,87 @@ static void do_cmd(char **argv, const int argc)
 		fatalx(EXIT_FAILURE, "Instant command failed: %s", upscli_strerror(ups));
 	}
 
-	/* FUTURE: status cookies will tie in here */
+	/* verify answer */
 	if (strncmp(buf, "OK", 2) != 0) {
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	/* check for status tracking id */
+	if (
+		!tracking_enabled ||
+		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
+		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
+	) {
+		/* reply as usual */
+		fprintf(stderr, "%s\n", buf);
+		return;
+	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 */
+	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
+	time(&start);
+
+	/* send status tracking request, looping if status is PENDING */
+	while (!cmd_complete) {
+
+		/* check for timeout */
+		time(&now);
+		if (difftime(now, start) >= timeout)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+
+		snprintf(buf, sizeof(buf), "GET TRACKING %s\n", tracking_id);
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
+			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* and get status tracking reply */
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
+
+		if (strncmp(buf, "PENDING", 7))
+			cmd_complete = 1;
+		else
+			/* wait a second before retrying */
+			sleep(1);
+	}
+
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static void clean_exit(void)
 {
@@ -175,12 +269,13 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, ret, port;
+	int	i, port;
+	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF], username[SMALLBUF], password[SMALLBUF];
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
 	const char	*prog = xbasename(argv[0]);
 
-	while ((i = getopt(argc, argv, "+lhu:p:V")) != -1) {
+	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
 
 		switch (i)
 		{
@@ -198,8 +293,20 @@ int main(int argc, char **argv)
 			have_pw = 1;
 			break;
 
+		case 't':
+			if (!str_to_uint(optarg, &timeout, 10))
+				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
+			break;
+
+		case 'w':
+			tracking_enabled = 1;
+			break;
+
 		case 'V':
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 		case 'h':
 		default:
@@ -311,6 +418,25 @@ int main(int argc, char **argv)
 
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
+	}
+
+	/* enable status tracking ID */
+	if (tracking_enabled) {
+
+		snprintf(buf, sizeof(buf), "SET TRACKING ON\n");
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Can't enable command status tracking: %s", upscli_strerror(ups));
+		}
+
+		if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed: %s", upscli_strerror(ups));
+		}
+
+		/* Verify the result */
+		if (strncmp(buf, "OK", 2) != 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
+		}
 	}
 
 	do_cmd(&argv[1], argc - 1);

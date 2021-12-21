@@ -28,6 +28,7 @@
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
+#include "attribute.h"
 
 typedef struct {
 	char	*upsname;
@@ -178,6 +179,8 @@ static void stop_driver(const ups_t *ups)
 
 static void waitpid_timeout(const int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* do nothing */
 	return;
 }
@@ -222,10 +225,13 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		sigaction(SIGALRM, &sa, NULL);
 
 		/* Use the local maxstartdelay, if available */
-		if (ups->maxstartdelay != -1)
-			alarm(ups->maxstartdelay);
-		else /* Otherwise, use the global (or default) value */
-			alarm(maxstartdelay);
+		if (ups->maxstartdelay != -1) {
+			if (ups->maxstartdelay >= 0)
+				alarm((unsigned int)ups->maxstartdelay);
+		} else { /* Otherwise, use the global (or default) value */
+			if (maxstartdelay >= 0)
+				alarm((unsigned int)maxstartdelay);
+		}
 
 		ret = waitpid(pid, &wstat, 0);
 
@@ -323,10 +329,14 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				sleep (retrydelay);
+				if (retrydelay >= 0)
+					sleep ((unsigned int)retrydelay);
 		}
 	}
 }
+
+static void help(const char *progname)
+	__attribute__((noreturn));
 
 static void help(const char *progname)
 {
@@ -429,7 +439,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		while (ups) {
 			if (ups->sdorder == i)
 				command(ups);
-			
+
 			ups = ups->next;
 		}
 	}
@@ -489,7 +499,6 @@ int main(int argc, char **argv)
 			case 'h':
 			default:
 				help(prog);
-				break;
 		}
 	}
 

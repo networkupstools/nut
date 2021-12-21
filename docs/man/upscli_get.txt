@@ -10,8 +10,8 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
-			unsigned int *numa, char ***answer)
+ int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+			size_t *numa, char ***answer)
 
 DESCRIPTION
 -----------
@@ -43,7 +43,7 @@ QUERY FORMATTING
 To generate a request for `GET NUMLOGINS su700`, you would populate
 query and numq as follows:
 
-	unsigned int numq;
+	size_t numq;
 	const char *query[2];
 
 	query[0] = "NUMLOGINS";
@@ -58,7 +58,7 @@ ANSWER FORMATTING
 The raw response from upsd to the above query would be `NUMLOGINS su700 1`.
 Since this is split up for you, the values work out like this:
 
-	unsigned int numa;
+	size_t numa;
 
 	numa = 3;
 	answer[0] = "NUMLOGINS"
@@ -71,7 +71,7 @@ ERROR CHECKING
 --------------
 This function will check your query against the response from
 linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
-will expect to see those at the beginning of the response. 
+will expect to see those at the beginning of the response.
 
 If the results from *upsd* do not pass this case-insensitive test
 against your request, this function will return an error.   When this
@@ -90,7 +90,7 @@ which were returned by the most recent call.  You also must not attempt
 to use more than 'numa' elements in 'answer'.  Such behavior is
 undefined, and may yield bogus data or a crash.
 
-The array will be deleted after calling linkman:upscli_disconnect[3].  Any 
+The array will be deleted after calling linkman:upscli_disconnect[3].  Any
 access after that point is also undefined.
 
 RETURN VALUE

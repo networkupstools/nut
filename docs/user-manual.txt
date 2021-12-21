@@ -15,7 +15,7 @@ Units and Solar Controllers.
 NUT provides many control and monitoring <<Features,features>>, with a uniform
 control and management interface.
 
-More than 100 different manufacturers, and several thousands models are
+More than 140 different manufacturers, and several thousands of models are
 <<HCL,compatible>>.
 
 This software is the combined effort of many
@@ -71,7 +71,7 @@ possibly some more packages to gain access to the serial ports.
 Other features, such as USB / SNMP / whatever, will also need extra software
 installed.
 
-Success reports are welcomed to keep this list accurate. 
+Success reports are welcomed to keep this list accurate.
 
 
 [[Download_instructions]]
@@ -174,6 +174,10 @@ include::cables.txt[]
 Appendix H: Configure options
 =============================
 
+NOTE: For more information about build environment setup, see chapters
+below about <<Config_Prereqs,Configuration prerequisites>>
+and <<CI_Farm_Notes,CI Farm configuration notes>>.
+
 include::configure.txt[]
 
 
@@ -189,3 +193,23 @@ Appendix J: Project history
 ===========================
 
 include::history.txt[]
+
+
+[[Config_Prereqs]]
+Appendix K: Prerequisites for building NUT on different OSes
+============================================================
+
+include::config-prereqs.txt[]
+
+
+[[CI_Farm_Notes]]
+Appendix L: CI Farm configuration notes
+=======================================
+
+NOTE: This chapter contains information about NUT CI farm setup tricks
+that were applied at different times by the maintainer team to ensure
+regular builds and tests of the codebase.  Whether these are used in
+daily production today or not, similar setup should be possible locally
+on developer and contributor machines.
+
+include::ci-farm-lxc-setup.txt[]

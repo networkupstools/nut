@@ -113,8 +113,8 @@ of the driver behavior.
 
 *user*::
 
-Optional.  If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Optional.  Overrides the compiled-in default unprivileged username. See the
+discussion of the `-u` option in linkman:nutupsdrv[8] for details.
 
 UPS FIELDS
 ----------
@@ -150,9 +150,9 @@ to clients that ask for a list of connected equipment.
 Optional.  When you specify this, the driver skips the port locking routines
 every time it starts.  This may allow other processes to seize the port if
 you start more than one accidentally.
-+  
++
 You should only use this if your system won't work without it.
-+  
++
 This may be needed on Mac OS X systems.
 
 *ignorelb*::

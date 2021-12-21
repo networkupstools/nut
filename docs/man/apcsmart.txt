@@ -128,19 +128,21 @@ behaviour quite a bit, depending on the model.
     This is most basic command present in probably all APC models. It will
     hibernate the UPS, and subsequently wake it up when the mains supply
     returns. *The command doesn't work if the UPS is running on mains.*
-
-    "old" models:::
++
+--
+    "old" models: ::
         The behaviour here is unfortunately pretty primitive - when the power
         returns, the UPS just wakes up. No grace periods, no min. battery
         charge condition, etc. This is probably not what you want.
 
-    "new" models:::
+    "new" models: ::
         The behaviour here is as expected - the power is cut off after the
         EEPROM defined grace period. The UPS will wake up when the power
         returns, after the EEPROM defined delay AND if the EEPROM defined min.
         battery charge level is met. The delay is counted from the power's
         return.
-
+--
++
 *CS* (aka "force OB hack")::
     This is a trick to make UPS power down even if it's running on mains.
     Immediately before issuing *S*, "simulate power failure" is issued. The
@@ -160,7 +162,7 @@ command if your UPS supports it (and is not too old, see below).
     can be used to specify additional wake-up delay (in 6 minute units).
 +
 --
-    "old" models:::
+    "old" models: ::
         The behaviour is - unfortunately - similarly primitive to *S*. The UPS
         unconditionally wakes up after $$nnn*6$$ minutes - *it doesn't care if the
         power returned !* If nnn = 000, then UPS will do precisely nothing. On
@@ -170,7 +172,7 @@ command if your UPS supports it (and is not too old, see below).
         connection with the UPS, until it wakes up (with *S*, the serial
         connection is kept alive).
 
-    "new" models:::
+    "new" models: ::
         All the usual variables defined in EEPROM are respected (see *S*).
         Additionally, if nnn > 0, the $$nnn*6$$ minutes are added to EEPROM
         defined delay. UPS will not power up if it's running on batteries,
@@ -267,7 +269,7 @@ APC units - even if they report LB mode - will not go into shutdown
 automatically. This gives us even more control with reference to "when to
 actually shutdown PSU". Since version 2.6.2, NUT supports *ignorelb* option in
 driver's section of linkman:ups.conf[5]. When such option is in effect,
-the core driver will ignore LB state as reported by specific driver and 
+the core driver will ignore LB state as reported by specific driver and
 start shutdown basing the decision _only_ on two conditions:
 
 battery.charge < battery.charge.low
@@ -293,8 +295,6 @@ shutdown. You might want to disable this condition entirely, when relying on
 such feature).
 
 Simple example:
-
-[source,conf]
 ----
 [apc]
     ignorelb

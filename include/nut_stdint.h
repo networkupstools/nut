@@ -19,9 +19,17 @@
  */
 
 #ifndef NUT_STDINT_H_SEEN
-#define NUT_STDINT_H_SEEN
+#define NUT_STDINT_H_SEEN 1
 
 #include "config.h"
+
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS 1
+#endif
+
+#ifndef __STDC_CONSTANT_MACROS
+#define __STDC_CONSTANT_MACROS 1
+#endif
 
 #if defined HAVE_INTTYPES_H
 #  include <inttypes.h>
@@ -29,6 +37,14 @@
 
 #if defined HAVE_STDINT_H
 #  include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>
+#endif
+
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)(-1LL))
 #endif
 
 #endif	/* NUT_STDINT_H_SEEN */

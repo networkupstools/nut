@@ -7,7 +7,7 @@
  *	John Stamp <kinsayder@hotmail.com>
  *      Peter Selinger <selinger@users.sourceforge.net>
  *      Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	
+ *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
  *      The logic of this file is ripped from mge-shut driver (also from
@@ -57,11 +57,11 @@ static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
 /* Tweak flag for APC Back-UPS */
-int max_report_size = 0;
+size_t max_report_size = 0;
 
 /* Tweaks for Powercom, at least */
 int interrupt_only = 0;
-int unsigned interrupt_size = 0;
+size_t interrupt_size = 0;
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
@@ -90,13 +90,14 @@ void free_report_buffer(reportbuf_t *rbuf)
 /* allocate a new report buffer. Return pointer on success, else NULL
    with errno set. The returned data structure must later be freed
    with free_report_buffer(). */
-reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
+reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
-	int		i, id;
+	int		id;
+	size_t	i;
 
-	if (!pDesc)
+	if (!arg_pDesc)
 		return NULL;
 
 	rbuf = calloc(1, sizeof(*rbuf));
@@ -105,9 +106,9 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 	}
 
 	/* now go through all items that are part of this report */
-	for (i=0; i<pDesc->nitems; i++) {
+	for (i=0; i<arg_pDesc->nitems; i++) {
 
-		pData = &pDesc->item[i];
+		pData = &arg_pDesc->item[i];
 
 		id = pData->ReportID;
 
@@ -116,7 +117,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 			continue;
 
 		/* first byte holds id */
-		rbuf->len[id] = pDesc->replen[id] + 1;
+		rbuf->len[id] = arg_pDesc->replen[id] + 1;
 
 		/* skip zero length reports */
 		if (rbuf->len[id] < 1) {
@@ -150,7 +151,8 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
-	int	r;
+	int	ret;
+	size_t	r;
 
 	if (interrupt_only || rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -158,15 +160,18 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id],
-		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
+	ret = comm_driver->get_report(udev, id, rbuf->data[id],
+		max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id]);
 
-	if (r <= 0) {
+	if (ret <= 0) {
 		return -1;
 	}
+	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
+		upsdebugx(2,
+			"%s: expected %zu bytes, but got %zu instead",
+			__func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
 	} else {
 		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
@@ -224,7 +229,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
    report has been obtained without having been explicitly requested,
    e.g., it arrived through an interrupt transfer. Returns 0 on
    success, -1 on error with errno set. */
-static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
+static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t buflen)
 {
 	int id = buf[0];
 
@@ -232,7 +237,9 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	memcpy(rbuf->data[id], buf, (buflen < rbuf->len[id]) ? buflen : rbuf->len[id]);
 
 	if (rbuf->len[id] != buflen) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
+		upsdebugx(2,
+			"%s: expected %zu bytes, but got %zu instead",
+			__func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 	} else {
 		upsdebug_hex(3, "Report[int]", rbuf->data[id], rbuf->len[id]);
@@ -272,7 +279,7 @@ static struct {
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
-	int	i;
+	size_t	i;
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
 	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
@@ -288,7 +295,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
-	upsdebugx(1, "%i HID objects found", pDesc->nitems);
+	upsdebugx(1, "%zu HID objects found", pDesc->nitems);
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
@@ -392,10 +399,10 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 	}
 
 	*Value = hValue;
-	
+
 	/* Convert Logical Min, Max and Value into Physical */
 	*Value = logical_to_physical(hiddata, hValue);
-	
+
 	/* Process exponents and units */
 	*Value *= exponent(10, get_unit_expo(hiddata));
 
@@ -455,7 +462,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	/* Process exponents and units */
 	Value /= exponent(10, get_unit_expo(hiddata));
-	
+
 	/* Convert Physical Min, Max and Value into Logical */
 	hValue = physical_to_logical(hiddata, Value);
 
@@ -467,7 +474,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	/* flush the report buffer (data may have changed) */
 	memset(reportbuf->ts, 0, sizeof(reportbuf->ts));
-	
+
 	upsdebugx(4, "Set report succeeded");
 	return 1;
 }
@@ -487,16 +494,17 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
-	int		buflen, r, i;
+	int		buflen, r;
+	size_t	i;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size:sizeof(buf), 250);
+	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size : sizeof(buf), 250);
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
-	r = file_report_buffer(reportbuf, buf, buflen);
+	r = file_report_buffer(reportbuf, buf, (size_t)buflen);
 	if (r < 0) {
 		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
 		return -errno;
@@ -558,7 +566,7 @@ static double logical_to_physical(HIDData_t *Data, long logical)
 		/* this should not really happen */
 		return (double)logical;
 	}
-	
+
 	Factor = (double)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
 	/* Convert Value */
 	physical = (double)((logical - Data->LogMin) * Factor) + Data->PhyMin;
@@ -596,7 +604,7 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 		/* this should not really happen */
 		return (long)physical;
 	}
-	
+
 	Factor = (double)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
 	/* Convert Value */
 	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
@@ -647,38 +655,51 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	int	i = 0;
 	long	usage;
 	char	buf[SMALLBUF];
-	char	*token, *last; 
-	
+	char	*token, *last;
+
 	snprintf(buf, sizeof(buf), "%s", string);
 
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{
 		/* lookup tables first (to override defaults) */
-		if ((usage = hid_lookup_usage(token, utab)) != -1)
+		if ((usage = hid_lookup_usage(token, utab)) >= 0)
 		{
-			path->Node[i++] = usage;
+			path->Node[i++] = (HIDNode_t)usage;
 			continue;
 		}
 
 		/* translate unnamed path components such as "ff860024" */
 		if (strlen(token) == strspn(token, "1234567890abcdefABCDEF"))
 		{
-			path->Node[i++] = strtol(token, NULL, 16);
+			long l = strtol(token, NULL, 16);
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				goto badvalue;
+			}
+			path->Node[i++] = (HIDNode_t)l;
 			continue;
 		}
 
 		/* indexed collection */
 		if (strlen(token) == strspn(token, "[1234567890]"))
 		{
-			path->Node[i++] = 0x00ff0000 + atoi(token+1);
+			int l = atoi(token + 1); /* +1: skip the bracket */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				goto badvalue;
+			}
+			path->Node[i++] = 0x00ff0000 + (HIDNode_t)l;
 			continue;
 		}
 
+badvalue:
 		/* Uh oh, typo in usage table? */
 		upsdebugx(1, "string_to_path: couldn't parse %s from %s", token, string);
 	}
 
-	path->Size = i;
+	if (i < 0 || i > (int)UINT8_MAX) {
+		fatalx(EXIT_FAILURE, "Error: string_to_path(): length exceeded");
+	}
+	path->Size = (uint8_t)i; /* by construct, i>=0; but anyway checked above to be sure */
 
 	upsdebugx(4, "string_to_path: depth = %d", path->Size);
 	return i;
@@ -691,7 +712,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 	const char	*p;
 
 	snprintf(string, size, "%s", "");
-	
+
 	for (i = 0; i < path->Size; i++)
 	{
 		if (i > 0)
@@ -705,20 +726,22 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 		}
 
 		/* indexed collection */
-		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)	
+		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
 			snprintfcat(string, size, "[%i]", path->Node[i] & 0x0000ffff);
 			continue;
 		}
 
 		/* unnamed path components such as "ff860024" */
-		snprintfcat(string, size, "%08x", path->Node[i]); 
+		snprintfcat(string, size, "%08x", path->Node[i]);
 	}
 
 	return i;
 }
 
-/* usage conversion string -> numeric */
+/* usage conversion string -> numeric
+ * Returns -1 for error, or a (HIDNode_t) ranged code value
+ */
 static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 {
 	int i, j;
@@ -730,8 +753,9 @@ static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 			if (strcasecmp(utab[i][j].usage_name, name))
 				continue;
 
-			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (unsigned int)utab[i][j].usage_code);
-			return utab[i][j].usage_code;
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (uint32_t)utab[i][j].usage_code);
+			return (long)(utab[i][j].usage_code);
 		}
 	}
 
@@ -821,7 +845,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "SwitchOffControl",			0x00840051 },
 	{  "ToggleControl",			0x00840052 },
 	{  "LowVoltageTransfer",		0x00840053 },
-	{  "HighVoltageTransfer",		0x00840054 },	
+	{  "HighVoltageTransfer",		0x00840054 },
 	{  "DelayBeforeReboot",			0x00840055 },
 	{  "DelayBeforeStartup",		0x00840056 },
 	{  "DelayBeforeShutdown",		0x00840057 },
@@ -834,7 +858,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "InternalFailure",			0x00840062 },
 	{  "VoltageOutOfRange",			0x00840063 },
 	{  "FrequencyOutOfRange",		0x00840064 },
-	{  "Overload",				0x00840065 }, 
+	{  "Overload",				0x00840065 },
 	/* Note: the correct spelling is "Overload", not "OverLoad",
 	 * according to the official specification, "Universal Serial
 	 * Bus Usage Tables for HID Power Devices", Release 1.0,

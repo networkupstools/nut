@@ -47,17 +47,20 @@ static double   io_current_scale = 1.0;
 /* Specific handlers for USB device matching */
 static void *battery_scale_1dot0(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
 static void *battery_scale_0dot1(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 0.1;
 	return NULL;
 }
 static void *smart1500lcdt_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 100000.0;
 	io_voltage_scale = 100000.0;
 	io_frequency_scale = 0.01;
@@ -114,6 +117,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite Smart1500LCD (newer unit) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), smart1500lcdt_scale },
+	/* e.g. TrippLite AVR750U (newer unit) */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3024), smart1500lcdt_scale },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -151,7 +156,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(DELTA_VENDORID, 0xa011), battery_scale_1dot0 },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -177,7 +182,7 @@ static const char *tripplite_chemistry_fun(double value)
 }
 
 static info_lkp_t tripplite_chemistry[] = {
-	{ 0, NULL, tripplite_chemistry_fun }
+	{ 0, NULL, tripplite_chemistry_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -192,7 +197,7 @@ static const char *tripplite_battvolt_fun(double value)
 }
 
 static info_lkp_t tripplite_battvolt[] = {
-	{ 0, NULL, tripplite_battvolt_fun }
+	{ 0, NULL, tripplite_battvolt_fun, NULL }
 };
 
 static const char *tripplite_iovolt_fun(double value)
@@ -205,7 +210,7 @@ static const char *tripplite_iovolt_fun(double value)
 }
 
 static info_lkp_t tripplite_iovolt[] = {
-	{ 0, NULL, tripplite_iovolt_fun }
+	{ 0, NULL, tripplite_iovolt_fun, NULL }
 };
 
 static const char *tripplite_iofreq_fun(double value)
@@ -218,7 +223,7 @@ static const char *tripplite_iofreq_fun(double value)
 }
 
 static info_lkp_t tripplite_iofreq[] = {
-	{ 0, NULL, tripplite_iofreq_fun }
+	{ 0, NULL, tripplite_iofreq_fun, NULL }
 };
 
 static const char *tripplite_ioamp_fun(double value)
@@ -231,7 +236,7 @@ static const char *tripplite_ioamp_fun(double value)
 }
 
 static info_lkp_t tripplite_ioamp[] = {
-	{ 0, NULL, tripplite_ioamp_fun }
+	{ 0, NULL, tripplite_ioamp_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
