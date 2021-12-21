@@ -390,7 +390,7 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
-	static char buf[20];
+	static char buf[32];
 	long year, month, day;
 
 	if ((long)value == 0) {
