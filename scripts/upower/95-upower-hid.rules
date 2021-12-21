@@ -92,6 +92,7 @@ ATTRS{idVendor}=="0592", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Delta UPS
 ATTRS{idVendor}=="05dd", ATTRS{idProduct}=="041b", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="05dd", ATTRS{idProduct}=="a011", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Phoenixtec Power Co., Ltd
 ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
