@@ -156,6 +156,7 @@ AC_CHECK_HEADER([limits.h],
 
 AC_CHECK_HEADER([sys/resource.h],
     [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/resource.h>
 ],
@@ -164,19 +165,22 @@ getrlimit(RLIMIT_NOFILE, &limit);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
             [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
      AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
@@ -186,13 +190,15 @@ sem_destroy(&semaphore);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
@@ -478,6 +484,7 @@ AS_IF([test "${nut_with_serial}" != "no"],
     dnl Don't mind the stupid code below, it just probes the tokens and
     dnl sails around compiler warnings
     AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
@@ -499,21 +506,23 @@ getspeed(&baudrate);
         ],
         [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
          nut_have_serial_types=no
+        ]
+     )
+     AC_LANG_POP([C])
+
+     dnl Restore common set-or-discovered CFLAGS
+     CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+     AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_IF([test "${nut_have_serial_types}" = yes],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+         AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
         ])
-
-        dnl Restore common set-or-discovered CFLAGS
-        CFLAGS="${CFLAGS_SAVED_SERIAL}"
-
-        AC_MSG_CHECKING([whether we can build serial drivers])
-        AS_IF([test "${nut_have_serial_types}" = yes],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
-             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
-            ])
-        AS_IF([test "${nut_with_serial}" = "yes"],
-            [AC_MSG_RESULT([yes])],
-            [AC_MSG_RESULT([no])])
-    ])
+     AS_IF([test "${nut_with_serial}" = "yes"],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])])
+])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
@@ -929,7 +938,7 @@ if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
 		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
-		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" || AC_MSG_ERROR([Can not detect 'srcdir']) ;;
 	esac
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
@@ -2293,6 +2302,8 @@ AS_CASE(["${nut_enable_warnings}"],
     [gcc-minimal], [
         dnl Builds with C89 (and aliases) are quite noisy for C99+ syntax used
         dnl in NUT. The minimal-warnings should not complain in these builds.
+        dnl To make matters worse, many modern OS and third-party library
+        dnl headers can not be used with "C90 + pedantic" mode of GCC, either.
         CFLAGS="${CFLAGS} -Wall -Wsign-compare"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
         AS_CASE(["${CFLAGS}"],
@@ -2301,8 +2312,12 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ],
     [gcc-medium|gcc-hard], [
-        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        AS_CASE(["${CFLAGS}"],
+            [*89*|*90*|*ansi*], [],
+            [CFLAGS="${CFLAGS} -pedantic"]
+        )
         ]
 )
 
@@ -2331,10 +2346,14 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
     [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
         [TOP_BUILDDIR="${ac_pwd}"],
         [TOP_BUILDDIR="`dirname "$0"`"
-         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`"]
+         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
 AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+
+ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
+ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
+AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],

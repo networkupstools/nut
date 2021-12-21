@@ -93,7 +93,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 #endif
 
@@ -807,12 +807,12 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /* Limit reporting "online / !online" to when "!off" */
 static const char *eaton_converter_online_fun(double value)
 {
-	int ups_status = ups_status_get();
+	unsigned ups_status = ups_status_get();
 
-	if (!(ups_status & STATUS(OFF)))
-		return (d_equal(value, 0)) ? "!online" : "online";
-	else
+	if (ups_status & STATUS(OFF))
 		return NULL;
+	else
+		return (d_equal(value, 0)) ? "!online" : "online";
 }
 
 static info_lkp_t eaton_converter_online_info[] = {

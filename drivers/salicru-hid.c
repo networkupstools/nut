@@ -43,7 +43,7 @@ static usb_device_id_t salicru_usb_device_table[] = {
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 

@@ -56,8 +56,8 @@ static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
 	{ USB_DEVICE(0x0001, 0x0000),  NULL },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 static usb_dev_handle	*udev = NULL;
@@ -134,7 +134,8 @@ static int query_ups(char *reply)
 		return ret;
 	}
 
-	upsdebug_hex(3, "read", reply, ret);
+	assert ((uintmax_t)ret < (uintmax_t)SIZE_MAX);
+	upsdebug_hex(3, "read", reply, (size_t)ret);
 	return ret;
 }
 

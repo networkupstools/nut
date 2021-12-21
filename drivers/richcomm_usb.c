@@ -56,8 +56,8 @@ static usb_device_id_t richcomm_usb_id[] = {
 	/* Sweex 1000VA */
 	{ USB_DEVICE(0x0925, 0x1234),  NULL },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 static usb_dev_handle	*udev = NULL;
@@ -100,26 +100,55 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	int	ret;
 
 	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
-		MESSAGE_VALUE, INDEX_VALUE, query, QUERY_PACKETSIZE, 1000);
+		MESSAGE_VALUE, INDEX_VALUE,
+		query, QUERY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
 		return ret;
 	}
 
-	if ((unsigned int)ret > SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	/* Cast up within the signed/unsigned same type */
+	if ((unsigned int)ret >= SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		upsdebugx(3, "send: ret=%d exceeds SIZE_MAX", ret);
 	}
 	upsdebug_hex(3, "send", query, (size_t)ret);
 
-	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(udev,
+		REPLY_REQUESTTYPE,
+		reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 		return ret;
 	}
 
-	if ((unsigned int)ret > SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	/* Cast up within the signed/unsigned same type */
+	if ((unsigned int)ret >= SIZE_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		upsdebugx(3, "read: ret=%d exceeds SIZE_MAX", ret);
 	}
 	upsdebug_hex(3, "read", reply, (size_t)ret);
@@ -367,7 +396,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 				ret = callback(handle, device);
 				if (ret >= 0) {
-					upsdebugx(4, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
+					upsdebugx(4, "USB device [%04x:%04x] opened",
+						device->VendorID, device->ProductID);
 					return ret;
 				}
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
@@ -375,14 +405,17 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				 * it force device claiming by unbinding
 				 * attached driver... From libhid */
 				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
-					upsdebugx(4, "failed to detach kernel driver from USB device: %s", usb_strerror());
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						usb_strerror());
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
 #endif
 			}
 
-			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
+			fatalx(EXIT_FAILURE,
+				"USB device [%04x:%04x] matches, but driver callback failed: %s",
 				device->VendorID, device->ProductID, usb_strerror());
 
 		next_device:

@@ -75,20 +75,22 @@ static char UpsFamily [3];
  *  the correct number of characters are returned.
  */
 
-static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
+static ssize_t OneacGetResponse (char* chBuff, const size_t BuffSize, int ExpectedCount)
 {
 	int Retries = 10;		/* x/2 seconds max with 500000 USEC */
-	int return_val;
+	ssize_t return_val;
 
 	do
 	{
-		return_val = ser_get_line(upsfd, chBuff, BuffSize, ENDCHAR, IGNCHARS,
-																	SECS, USEC);
+		return_val = ser_get_line(upsfd,
+			chBuff, BuffSize, ENDCHAR, IGNCHARS, SECS, USEC);
 
 		if (return_val == ExpectedCount)
 			break;
 
-		upsdebugx (3,"!OneacGetResponse retry (%d, %d)...", return_val,Retries);
+		upsdebugx (3,
+			"!OneacGetResponse retry (%zd, %d)...",
+			return_val, Retries);
 
 	} while (--Retries > 0);
 
@@ -107,7 +109,7 @@ static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount
 		return_val = 0;					/* Good comms */
 	}
 
-    return return_val;
+	return return_val;
 }
 
 static void do_battery_test(void)
@@ -165,7 +167,7 @@ static int SetOutputAllow(const char* lowval, const char* highval)
 }
 
 static void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
-															const int buff2size)
+															const size_t buff2size)
 {
 	int i = 0;
 	int j = 0;
@@ -205,7 +207,7 @@ void upsdrv_initinfo(void)
 	int i,j, k;
 	int VRange=0;
 	int timevalue;
-	int RetValue;
+	ssize_t RetValue;
 	char buffer[256], buffer2[32];
 
 	/* All families should reply to this request so we can confirm that it is
@@ -489,7 +491,7 @@ void upsdrv_updateinfo(void)
 	char buffer[256];	/* Main response buffer */
 	char buffer2[32];	/* Conversion buffer */
 	char s;
-	int RetValue;
+	ssize_t RetValue;
 	int timevalue;
 
 	/* Start with EG/ON information */
@@ -1028,13 +1030,13 @@ int setcmd(const char* varname, const char* setvalue)
 
 	if (!strcasecmp(varname, "ups.start.auto"))
 	{
-		if (!strcasecmp(setvalue, "yes"))
+		if (!strncasecmp(setvalue, "yes", 3))
 		{
 			ser_send(upsfd,"%c0%s",SETX_AUTO_START, COMMAND_END);
 			dstate_setinfo("ups.start.auto", "yes");
 			return STAT_SET_HANDLED;
 		}
-		else if (!strcasecmp(setvalue, "no"))
+		else if (!strncasecmp(setvalue, "no", 2))
 		{
 			ser_send(upsfd,"%c1%s",SETX_AUTO_START, COMMAND_END);
 			dstate_setinfo("ups.start.auto", "no");

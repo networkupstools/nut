@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2818 utf-8
+personal_ws-1.1 en 2831 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -499,6 +499,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+KRTS
 KTTS
 Kain
 Kaminski
@@ -581,6 +582,7 @@ MANPATH
 MAXAGE
 MAXCONN
 MAXLINEV
+MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
@@ -1192,6 +1194,7 @@ UPStation
 UPower
 URI
 USBDEVFS
+USBDevice
 USERADDed
 USV
 USVs
@@ -1427,6 +1430,7 @@ baudrate
 baytech
 baz
 bbh
+bcdDevice
 bcmxcp
 bd
 beepertone
@@ -1762,6 +1766,7 @@ fsd
 ftdi
 fuji
 fullload
+func
 gamatronic
 gcc
 gcpp
@@ -1935,6 +1940,7 @@ ktrace
 labcd
 lan
 langid
+largp
 lasaine
 ld
 le
@@ -2500,6 +2506,7 @@ srv
 srw
 ss
 sshd
+ssize
 ssl
 stan
 startIP
@@ -2518,11 +2525,14 @@ strarr
 strcasecmp
 strcat
 strchr
+strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
+strncasecmp
+strncmp
 struct
 structs
 sts
@@ -2545,6 +2555,7 @@ subtree
 sudo
 suid
 superset
+suseconds
 sv
 svc
 svcadm
@@ -2642,6 +2653,7 @@ udev
 udevadm
 ufw
 ugen
+uint
 ukUNV
 ul
 un
@@ -2720,6 +2732,7 @@ usbups
 usbus
 usd
 usec
+useconds
 useradd
 userid
 usermap

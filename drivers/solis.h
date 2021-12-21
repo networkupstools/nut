@@ -32,6 +32,14 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
+#include "nut_stdint.h"
+
+/* General FIXMEs:
+ * * "static" declarations belong in some one single C source;
+ *   headers should use "extern" to refer linker to look for
+ *   vars in other object files
+ * * use a common definition of bool_t
+ */
 typedef int bool_t;
 
 /* autonomy constants */
@@ -41,7 +49,7 @@ static const int nompow[5] = { 1000,1500,2000,3000,1200 };
 static const int inds[6] = { 0,0,1,2,3,4 };
 static const double InVolt_offset = 30.;
 #define PACKET_SIZE 25
-static const int packet_size = PACKET_SIZE;
+static const size_t packet_size = PACKET_SIZE;
 
 static const struct {
          int maxi;              /* power internals */
@@ -331,12 +339,12 @@ static const struct {
 };
 
 /* Date, time and programming group */
-static int const BASE_YEAR = 1998;
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
 static int Day, Month, Year;
 static int isprogram = 0, progshut = 0, prgups = 0;
 static int dian=0, mesn=0, anon=0, weekn=0;
 static int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
-static unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
+static uint8_t DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
 static char seman[4];
 
 /* buffers */
@@ -380,7 +388,7 @@ static void print_info(void);
 static int  is_today( unsigned char, int );
 static void autonomy_calc( int );
 static void scan_received_pack(void);
-static void comm_receive(const unsigned char*,  int );
+static void comm_receive(const unsigned char*, size_t);
 static void get_base_info(void);
 static void get_update_info(void);
 
