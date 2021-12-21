@@ -1145,10 +1145,10 @@ static int shut_control_msg(
 	||  index < 0 || (uintmax_t)index > UINT16_MAX
 	||  (uintmax_t)size > UINT16_MAX
 	||  (uintmax_t)timeout > UINT32_MAX
+	) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-	) {
 		upsdebugx (1, "%s: input values out of range", __func__);
 		return -1;
 	}
