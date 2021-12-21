@@ -2898,6 +2898,8 @@ AS_CASE(["${nut_enable_warnings}"],
     [gcc-minimal], [
         dnl Builds with C89 (and aliases) are quite noisy for C99+ syntax used
         dnl in NUT. The minimal-warnings should not complain in these builds.
+        dnl To make matters worse, many modern OS and third-party library
+        dnl headers can not be used with "C90 + pedantic" mode of GCC, either.
         CFLAGS="${CFLAGS} -Wall -Wsign-compare"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
         AS_CASE(["${CFLAGS}"],
@@ -2906,8 +2908,12 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ],
     [gcc-medium|gcc-hard], [
-        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        AS_CASE(["${CFLAGS}"],
+            [*89*|*90*|*ansi*], [],
+            [CFLAGS="${CFLAGS} -pedantic"]
+        )
         ]
 )
 
