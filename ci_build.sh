@@ -1031,7 +1031,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # so a `set -e` run aborts)
                 BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
 
-                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                     # For last iteration with DO_CLEAN_CHECK=no,
                     # we would leave built products in place
                     echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
@@ -1060,7 +1060,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                         $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
@@ -1141,7 +1141,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # an "erroneous" `1` as exit code. Notes above.
                 BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
 
-                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                     # For last iteration with DO_CLEAN_CHECK=no,
                     # we would leave built products in place
                     echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
@@ -1170,7 +1170,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                         $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
