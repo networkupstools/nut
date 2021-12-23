@@ -148,7 +148,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 /* because buggy firmwares from APC return wrong report size, we either
    ask the report with the found report size or with the whole buffer size
    depending on the max_report_size flag */
-static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
+static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, time_t age)
 {
 	int	id = pData->ReportID;
 	int	ret;
@@ -187,7 +187,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 0 and
    store the answer in *value. On failure, return -1 and set errno. */
-static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, int age)
+static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, time_t age)
 {
 	int id = pData->ReportID;
 	int r;
@@ -385,7 +385,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 /* Return the physical value associated with the given HIDData path.
  * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
  */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age)
+int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, time_t age)
 {
 	int	r;
 	long	hValue;

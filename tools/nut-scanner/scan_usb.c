@@ -445,7 +445,7 @@ nutscan_device_t * nutscan_scan_usb()
 
 	return nutscan_rewind_device(current_nut_dev);
 }
-#else /* WITH_USB */
+#else /* not WITH_USB */
 nutscan_device_t * nutscan_scan_usb()
 {
 	return NULL;
