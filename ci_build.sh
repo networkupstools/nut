@@ -1122,7 +1122,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                 esac || {
-                    RES=$?
+                    RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
@@ -1133,7 +1133,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 } || {
-                    RES=$?
+                    RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 }
 
@@ -1155,7 +1155,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                                 SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
                             fi
                         } || {
-                            RES=$?
+                            RES_ALLERRORS=$?
                             FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
                         }
                     else
@@ -1164,7 +1164,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                                 SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
                             fi
                         } || {
-                            RES=$?
+                            RES_ALLERRORS=$?
                             FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
                         }
                     fi
