@@ -168,6 +168,7 @@ void upsdrv_updateinfo(void)
 		} else {
 			status_set("OB");
 			online = 0;
+
 			/* if DISCHRG state is not mapped to a contact and UPS is on
 			 * batteries set status to DISCHRG state */
 			if (sigar[DISCHRG_T].addr == NOTUSED) {
@@ -194,10 +195,10 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	/*
-	* update UPS status regarding CHARGING state via HB. HB is usually
-	* mapped to "ready" contact when closed indicates a charging state > 85%
-	*/
+    /*
+     * update UPS status regarding CHARGING state via HB. HB is usually
+	 * mapped to "ready" contact when closed indicates a charging state > 85%
+	 */
 	if (sigar[HB_T].addr != NOTUSED) {
 		rval = get_signal_state(HB_T);
 		upsdebugx(2, "HB value: %d", rval);
@@ -717,31 +718,31 @@ void get_config_vars()
 
     /* check if response time out (s) is set ang get the value */
     if (testvar("mod_resp_to_s")) {
-        mod_resp_to_s = (int)strtol(getval("mod_resp_to_s"), NULL, 10);
+        mod_resp_to_s = (uint32_t)strtol(getval("mod_resp_to_s"), NULL, 10);
     }
     upsdebugx(2, "mod_resp_to_s %d", mod_resp_to_s);
 
     /* check if response time out (us) is set ang get the value */
     if (testvar("mod_resp_to_us")) {
-        mod_resp_to_us = (int)strtol(getval("mod_resp_to_us"), NULL, 10);
-    }
-    if (mod_resp_to_us > 999999 || mod_resp_to_us < 0) {
-        fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_resp_to_us %d", mod_resp_to_us);
+        mod_resp_to_us = (uint32_t) strtol(getval("mod_resp_to_us"), NULL, 10);
+        if (mod_resp_to_us > 999999) {
+            fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_resp_to_us %d", mod_resp_to_us);
+        }
     }
     upsdebugx(2, "mod_resp_to_us %d", mod_resp_to_us);
 
     /* check if byte time out (s) is set ang get the value */
     if (testvar("mod_byte_to_s")) {
-        mod_byte_to_s = (int)strtol(getval("mod_byte_to_s"), NULL, 10);
+        mod_byte_to_s = (uint32_t)strtol(getval("mod_byte_to_s"), NULL, 10);
     }
     upsdebugx(2, "mod_byte_to_s %d", mod_byte_to_s);
 
     /* check if byte time out (us) is set ang get the value */
     if (testvar("mod_byte_to_us")) {
-        mod_byte_to_us = (int)strtol(getval("mod_byte_to_us"), NULL, 10);
-    }
-    if (mod_byte_to_us > 999999 || mod_byte_to_us < 0) {
-        fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_byte_to_us %d", mod_byte_to_us);
+        mod_byte_to_us = (uint32_t) strtol(getval("mod_byte_to_us"), NULL, 10);
+        if (mod_byte_to_us > 999999) {
+            fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_byte_to_us %d", mod_byte_to_us);
+        }
     }
     upsdebugx(2, "mod_byte_to_us %d", mod_byte_to_us);
 
@@ -755,6 +756,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
 		sigar[OL_T].type = (unsigned int)strtol(getval("OL_regtype"), NULL, 10);
@@ -775,6 +777,7 @@ void get_config_vars()
 			sigar[OB_T].noro = 0;
 		}
 	}
+
 	/* check if OB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OB_regtype")) {
 		sigar[OB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
@@ -795,6 +798,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if LB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("LB_regtype")) {
 		sigar[LB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
@@ -815,6 +819,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if HB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("HB_regtype")) {
 		sigar[HB_T].type = (unsigned int)strtol(getval("HB_regtype"), NULL, 10);
@@ -835,6 +840,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if RB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("RB_regtype")) {
 		sigar[RB_T].type = (unsigned int)strtol(getval("RB_regtype"), NULL, 10);
@@ -855,6 +861,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if CHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("CHRG_regtype")) {
 		sigar[CHRG_T].type = (unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
@@ -875,6 +882,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if DISCHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("DISCHRG_regtype")) {
 		sigar[DISCHRG_T].type = (unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
@@ -895,6 +903,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if FSD register type is set and get the value otherwise set to COIL */
 	if (testvar("FSD_regtype")) {
 		sigar[FSD_T].type = (unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
