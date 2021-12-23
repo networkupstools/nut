@@ -93,7 +93,7 @@ upsdrv_info_t upsdrv_info = {
 #ifndef TESTING
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
-static libusb_device_handle		*udev = NULL;
+static usb_dev_handle		*udev = NULL;
 static USBDevice_t		usbdevice;
 static USBDeviceMatcher_t	*reopen_matcher = NULL;
 static USBDeviceMatcher_t	*regex_matcher = NULL;

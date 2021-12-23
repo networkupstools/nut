@@ -46,7 +46,7 @@
 	#include "nut_libusb.h"
 	typedef USBDevice_t                   HIDDevice_t;
 	typedef USBDeviceMatcher_t            HIDDeviceMatcher_t;
-	typedef libusb_device_handle *        hid_dev_handle_t;
+	typedef usb_dev_handle *              hid_dev_handle_t;
 	typedef usb_communication_subdriver_t communication_subdriver_t;
 #endif
 
