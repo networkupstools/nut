@@ -85,9 +85,11 @@ if test -z "${nut_have_libusb_seen}"; then
 			 nut_usb_lib="(libusb-0.1)"
 			],
 			[LIBUSB_VERSION="${LIBUSB_CONFIG_VERSION}"
-			 dnl TODO: This assumes 0.1; check for 1.0+ somehow?
-			 nut_usb_lib="(libusb-0.1-config)"
-			]
+			 AS_IF([test x"${LIBUSB_CONFIG_VERSION}" != xnone],
+				[dnl TODO: This assumes 0.1; check for 1.0+ somehow?
+				 nut_usb_lib="(libusb-0.1-config)"],
+				[nut_usb_lib=""]
+			)]
 		)]
 	)
 
