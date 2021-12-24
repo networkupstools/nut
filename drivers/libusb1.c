@@ -334,7 +334,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #endif
 
-#if HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = 3;
