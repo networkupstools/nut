@@ -314,7 +314,7 @@ nutscan_device_t * nutscan_scan_usb()
 						serialnumber = strdup(str_rtrim(string, ' '));
 						if (serialnumber == NULL) {
 							(*nut_usb_close)(udev);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 							free(busname);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
@@ -333,7 +333,7 @@ nutscan_device_t * nutscan_scan_usb()
 						if (device_name == NULL) {
 							free(serialnumber);
 							(*nut_usb_close)(udev);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 							free(busname);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
@@ -353,7 +353,7 @@ nutscan_device_t * nutscan_scan_usb()
 							free(serialnumber);
 							free(device_name);
 							(*nut_usb_close)(udev);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 							free(busname);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
@@ -372,7 +372,7 @@ nutscan_device_t * nutscan_scan_usb()
 					free(device_name);
 					free(vendor_name);
 					(*nut_usb_close)(udev);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 					free(busname);
 					(*nut_usb_free_device_list)(devlist, 1);
 					(*nut_usb_exit)(NULL);

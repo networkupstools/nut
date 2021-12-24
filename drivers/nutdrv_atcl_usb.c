@@ -420,7 +420,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
 					if (device->Vendor == NULL) {
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 						libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 						fatal_with_errno(EXIT_FAILURE, "Out of memory");
@@ -435,7 +435,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				if (ret > 0) {
 					device->Product = strdup(buf);
 					if (device->Product == NULL) {
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 						libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 						fatal_with_errno(EXIT_FAILURE, "Out of memory");
@@ -450,7 +450,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				if (ret > 0) {
 					device->Serial = strdup(buf);
 					if (device->Serial == NULL) {
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 						libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 						fatal_with_errno(EXIT_FAILURE, "Out of memory");
@@ -473,7 +473,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					upsdebugx(4, "Device does not match - skipping");
 					goto next_device;
 				case -1:
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 					libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 					fatal_with_errno(EXIT_FAILURE, "matcher");
@@ -507,7 +507,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				ret = callback(handle, device);
 				if (ret >= 0) {
 					upsdebugx(3, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 					libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 					return ret;
@@ -530,7 +530,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
 			}
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 			libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 			fatalx(EXIT_FAILURE,
@@ -546,7 +546,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	}
 
 	*handlep = NULL;
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_free_device_list(devlist, 1);
 #endif	/* WITH_LIBUSB_1_0 */
 	upsdebugx(3, "No matching USB device found");
