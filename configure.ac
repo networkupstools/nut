@@ -2263,6 +2263,11 @@ dnl #    signatures differ between dependency releases; sometimes they just
 dnl #    happened too hard to unravel cleanly and add more warnings.
 dnl #    This exclusion may be removed after common warnings are solved,
 dnl #    to allow progress on rectifying these cases next.
+dnl # -Wno-incompatible-pointer-types-discards-qualifiers -- our code often
+dnl #    defines (char*) as the type for struct fields and method arguments,
+dnl #    but initializes/passes (char[]) variables or fixed strings.
+dnl #    This makes at least clang-3.4 quite upset and noisy (seems newer
+dnl #    versions care less about this situation).
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -2273,7 +2278,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
