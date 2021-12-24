@@ -215,7 +215,7 @@ nutscan_device_t * nutscan_scan_usb()
 	libusb_device *dev;
 	libusb_device **devlist;
 	uint8_t bus;
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 	struct usb_device *dev;
 	struct usb_bus *bus;
 #endif /* WITH_LIBUSB_1_0 */
@@ -235,7 +235,7 @@ nutscan_device_t * nutscan_scan_usb()
 		(*nut_usb_exit)(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
 	}
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 	(*nut_usb_init)();
 	(*nut_usb_find_busses)();
 	(*nut_usb_find_devices)();
@@ -271,7 +271,7 @@ nutscan_device_t * nutscan_scan_usb()
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
 		snprintf(busname, 4, "%03d", bus);
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
 
@@ -296,7 +296,7 @@ nutscan_device_t * nutscan_scan_usb()
 						(*nut_usb_strerror)(ret));
 					continue;
 				}
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 				udev = (*nut_usb_open)(dev);
 				if (!udev) {
 					fprintf(stderr, "Failed to open device, \
