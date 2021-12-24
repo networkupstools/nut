@@ -939,13 +939,13 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
-		if (data_size > UCHAR_MAX) {
-			upsdebugx(1, "%s: ERROR: data_size %zu is too large for SHUT packet",
+		if (data_size < 0 || data_size > UCHAR_MAX) {
+			upsdebugx(1, "%s: ERROR: data_size %i is out of range for SHUT packet",
 					__func__, data_size);
 			return -1;
 		}
 		if (data_size > 0x0F) {
-			upsdebugx(1, "%s: WARNING: data_size %zu may be too large for SHUT packet?",
+			upsdebugx(1, "%s: WARNING: data_size %i may be too large for SHUT packet?",
 					__func__, data_size);
 			// Do not abort here - maybe there is intentional maths
 			// in the protocol with overlapping/shifted-away numbers?
