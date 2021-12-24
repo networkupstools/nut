@@ -442,7 +442,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		 * This function is not available on FreeBSD 10.1-10.3 */
 		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
 			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
-				libusb_strerror((enum libusb_error)ret));
+				nut_usb_strerror((enum libusb_error)ret));
 		else
 			upsdebugx(2, "auto detached kernel driver from USB device");
 #endif /* HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */

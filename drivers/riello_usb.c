@@ -315,8 +315,8 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned
 	NUT_UNUSED_VARIABLE(rdlen);
 
 /*
-	if (usb_set_configuration(handle, 1) < 0) {
-		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
+	if ((ret = usb_set_configuration(handle, 1)) < 0) {
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", nut_usb_strerror(ret));
 		return -1;
 	}
 */
