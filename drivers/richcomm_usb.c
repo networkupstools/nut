@@ -495,7 +495,15 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
-#endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
+#elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP
+				if ((ret = libusb_detach_kernel_driver_np(udev, 0)) < 0) {
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						nut_usb_strerror(ret));
+				} else {
+					upsdebugx(4, "detached kernel driver from USB device...");
+				}
+#endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER or HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP */
 			}
 
 			fatalx(EXIT_FAILURE,
