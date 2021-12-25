@@ -68,7 +68,7 @@ void nut_usb_addvars(void)
 
 #ifdef LIBUSB_API_VERSION
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
-#else  /* LIBUSB_API_VERSION */
+#else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
 }
@@ -137,7 +137,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		USBDevice_t *hd, unsigned char *rdbuf, int rdlen)
 	)
 {
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 	int retries;
 #endif
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -324,8 +324,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			/* Try the auto-detach kernel driver method.
 			 * This function is not available on FreeBSD 10.1-10.3 */
 			if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) != LIBUSB_SUCCESS) {
-				upsdebugx(1, "failed to set kernel driver auto-detach driver flag for USB device: %s",
-						libusb_strerror((enum libusb_error)ret));
+				upsdebugx(1, "failed to set kernel driver auto-detach "
+					"driver flag for USB device: %s",
+					libusb_strerror((enum libusb_error)ret));
 			} else {
 				upsdebugx(2, "successfully set kernel driver auto-detach flag");
 			}
@@ -334,7 +335,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #endif
 
-#if HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = 3;
@@ -342,7 +343,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
-			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+				if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
+				if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# endif
 				if (ret == LIBUSB_ERROR_NOT_FOUND)
 					upsdebugx(2, "Kernel driver already detached");
 				else
@@ -355,9 +360,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			if (retries-- > 0) {
 				continue;
 			}
+
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
-			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]@%d/%d: %s",
+			fatalx(EXIT_FAILURE,
+				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
@@ -367,7 +374,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		if ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS ) {
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
-			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]@%d/%d: %s",
+			fatalx(EXIT_FAILURE,
+				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
@@ -375,7 +383,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #endif
 		/* if_claimed = 1; */
-		upsdebugx(2, "Claimed interface %d successfully", usb_subdriver.hid_rep_index);
+		upsdebugx(2, "Claimed interface %d successfully",
+			usb_subdriver.hid_rep_index);
 
 		nut_usb_set_altinterface(udev);
 
@@ -394,6 +403,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		rdlen2 = -1;
 
 		/* Get HID descriptor */
+
 		/* FIRST METHOD: ask for HID descriptor directly. */
 		/* libusb0: USB_ENDPOINT_IN + 1 */
 		res = libusb_control_transfer(udev,
@@ -431,7 +441,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		   altsetting 0, as above. */
 
 		if_desc = &(conf_desc->interface[usb_subdriver.hid_rep_index].altsetting[0]);
-		for (i=0; i<if_desc->extra_length; i+=if_desc->extra[i]) {
+		for (i = 0; i < if_desc->extra_length; i += if_desc->extra[i]) {
 			upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
 				if_desc->extra[i], if_desc->extra[i+1]);
 			if (i+9 <= if_desc->extra_length && if_desc->extra[i] >= 9 && if_desc->extra[i+1] == 0x21) {

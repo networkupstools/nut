@@ -387,12 +387,13 @@ AC_ARG_WITH(all,
 
 dnl ----------------------------------------------------------------------
 dnl declare a number of --with-FEATURE options. Do this early, so that
-dnl they are listed near the top by "./configure --help"
+dnl they are listed near the top by "./configure --help"; however,
+dnl note that options with further investigation methods are listed
+dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
-NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
+
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
 dnl a second-class citizen (if both are set, the old option name wins).
@@ -401,6 +402,7 @@ dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
+
 NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
 NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
 
@@ -411,15 +413,23 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
-NUT_CHECK_LIBNETSNMP
+NUT_ARG_WITH([usb], [build and install USB drivers, optionally require build with specified version of libusb library and API: (auto|libusb-0.1|libusb-1.0)], [auto])
+nut_usb_lib=""
+NUT_CHECK_LIBUSB
+
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
+
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
+
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
+
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
+
+NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
@@ -505,51 +515,14 @@ NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-usb
+dnl checks related to --with-usb are in its m4 file and NUT_CHECK_LIBUSB() called above
 
-nut_usb_lib=""
-
-if test "${nut_with_usb}" != "no"; then
-	if test "${nut_with_usb}" = "libusb-1.0" -o "${nut_with_usb}" = "libusb-0.1"; then
-		NUT_CHECK_LIBUSB([${nut_with_usb}])
-		dnl Explicitly choosing a library implies 'yes' (i.e. fail if not found), not 'auto'.
-		nut_with_usb=yes
-	else
-		NUT_CHECK_LIBUSB
-	fi
-	dnl Any other value not implying 'yes' is treated as 'auto'.
-	if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-		AC_MSG_ERROR([USB drivers requested, but libusb not found.])
-	fi
-   nut_with_usb="${nut_have_libusb}"
-fi
-
-AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)")
+dnl Note: there is no libusb-config script (and variable) for libusb-1.0
 AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
+
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
-
-
-dnl ----------------------------------------------------------------------
-dnl additional USB-related checks
-
-dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
-dnl HPUX, since v11, needs an explicit activation of pthreads
-case ${target_os} in
-   solaris2.1* )
-      AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
-      AC_SEARCH_LIBS(nanosleep, rt)
-      LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
-      dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
-      dnl and need to call libusb close upon reconnection
-      AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
-      SUN_LIBUSB=1
-      AC_MSG_RESULT([${LIBUSB_LIBS}])
-      ;;
-    hpux11*)
-      CFLAGS="${CFLAGS} -lpthread"
-      ;;
-esac
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -2290,6 +2263,11 @@ dnl #    signatures differ between dependency releases; sometimes they just
 dnl #    happened too hard to unravel cleanly and add more warnings.
 dnl #    This exclusion may be removed after common warnings are solved,
 dnl #    to allow progress on rectifying these cases next.
+dnl # -Wno-incompatible-pointer-types-discards-qualifiers -- our code often
+dnl #    defines (char*) as the type for struct fields and method arguments,
+dnl #    but initializes/passes (char[]) variables or fixed strings.
+dnl #    This makes at least clang-3.4 quite upset and noisy (seems newer
+dnl #    versions care less about this situation).
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -2300,7 +2278,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [

@@ -142,10 +142,16 @@ sub gen_usb_files
 	print $outputDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
 	print $outputDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
 	print $outputDevScanner "/* libusb header file */\n";
-	print $outputDevScanner "#ifdef WITH_LIBUSB_1_0\n";
+	print $outputDevScanner "#if (!WITH_LIBUSB_1_0) && (!WITH_LIBUSB_0_1)\n";
+	print $outputDevScanner "#error \"configure script error: Neither WITH_LIBUSB_1_0 nor WITH_LIBUSB_0_1 is set\"\n";
+	print $outputDevScanner "#endif\n\n";
+	print $outputDevScanner "#if (WITH_LIBUSB_1_0) && (WITH_LIBUSB_0_1)\n";
+	print $outputDevScanner "#error \"configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set\"\n";
+	print $outputDevScanner "#endif\n\n";
+	print $outputDevScanner "#if WITH_LIBUSB_1_0\n";
 	print $outputDevScanner " #include <libusb.h>\n";
 	print $outputDevScanner "#endif\n";
-	print $outputDevScanner "#ifdef WITH_LIBUSB_0_1\n";
+	print $outputDevScanner "#if WITH_LIBUSB_0_1\n";
 	print $outputDevScanner " #include <usb.h>\n";
 	print $outputDevScanner " /* simple remap to avoid bloating structures */\n";
 	print $outputDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
