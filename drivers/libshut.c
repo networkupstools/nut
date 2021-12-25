@@ -441,7 +441,8 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = buf[7] | (buf[8] << 8);
+	desc->wDescriptorLength = (uint16_t)(buf[7]);
+	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
@@ -771,8 +772,9 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 								datalen+=Pos;
 								Pos=0;
 							}
-							else
+							else {
 								return Pos;
+							}
 						}
 						else
 							upsdebugx (4, "need more data (%i)!", datalen);
@@ -785,12 +787,14 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 						Retry++;
 					}
 				}
-				else
+				else {
 					return 0;
+				}
 			}
 		}
-		else
+		else {
 			Retry++;
+		}
 	} /* while */
 
 	return 0;
@@ -839,7 +843,7 @@ static int shut_get_string_simple(int arg_upsfd, int index,
 		if (tbuf[si + 1])   /* high byte */
 			buf[di++] = '?';
 		else
-			buf[di++] = tbuf[si];
+			buf[di++] = (char)tbuf[si];
 	}
 
 	buf[di] = 0;
@@ -893,14 +897,25 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 		remaining_size+= 8;
 	}
 
+	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
+	||  request < 0 || (uintmax_t)request > UINT8_MAX
+	||  value < 0 || (uintmax_t)value > UINT16_MAX
+	||  index < 0 || (uintmax_t)index > UINT16_MAX
+	||  (uintmax_t)size > UINT16_MAX
+	||  (uintmax_t)timeout > UINT32_MAX
+	) {
+		upsdebugx (1, "%s: input values out of range", __func__);
+		return -1;
+	}
+
 	/* build the control request */
-	ctrl.bRequestType = requesttype;
-	ctrl.bRequest = request;
-	ctrl.wValue = value;
-	ctrl.wIndex = index;
-	ctrl.wLength = size;
+	ctrl.bRequestType = (uint8_t)requesttype;
+	ctrl.bRequest = (uint8_t)request;
+	ctrl.wValue = (uint16_t)value;
+	ctrl.wIndex = (uint16_t)index;
+	ctrl.wLength = (uint16_t)size;
 	ctrl.data = bytes;
-	ctrl.timeout = timeout;
+	ctrl.timeout = (uint32_t)timeout;	/* in milliseconds */
 
 	align_request(&ctrl);
 
@@ -924,12 +939,23 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
-		shut_pkt[1] = (data_size<<4) + data_size;
+		if (data_size < 0 || data_size > UCHAR_MAX) {
+			upsdebugx(1, "%s: ERROR: data_size %i is out of range for SHUT packet",
+					__func__, data_size);
+			return -1;
+		}
+		if (data_size > 0x0F) {
+			upsdebugx(1, "%s: WARNING: data_size %i may be too large for SHUT packet?",
+					__func__, data_size);
+			// Do not abort here - maybe there is intentional maths
+			// in the protocol with overlapping/shifted-away numbers?
+		}
+		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
 			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
-		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], data_size);
+		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);
 
 		/* Packets need only to be sent once
 		* NACK handling should take care of the rest */

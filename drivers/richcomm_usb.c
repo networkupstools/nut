@@ -61,33 +61,6 @@ static usb_device_id_t richcomm_usb_id[] = {
 	{ 0, 0, NULL }
 };
 
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- typedef libusb_device_handle usb_dev_handle;
- typedef unsigned char* usb_ctrl_char;
- #define usb_control_msg libusb_control_transfer
- static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
-        unsigned char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
- #define usb_claim_interface libusb_claim_interface
- #define usb_close libusb_close
- #define usb_set_configuration libusb_set_configuration
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define usb_get_string libusb_get_string_descriptor
- #define usb_get_string_simple libusb_get_string_descriptor_ascii
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else
- typedef char* usb_ctrl_char;
- #define nut_usb_strerror(a) usb_strerror()
-#endif /* WITH_LIBUSB_1_0 */
-
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;
@@ -129,7 +102,7 @@ static int execute_and_retrieve_query(char *query, char *reply)
 
 	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
 		MESSAGE_VALUE, INDEX_VALUE,
-		(usb_ctrl_char)query, QUERY_PACKETSIZE, 1000);
+		(usb_ctrl_charbuf)query, QUERY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s",
@@ -157,7 +130,7 @@ static int execute_and_retrieve_query(char *query, char *reply)
 
 	ret = usb_interrupt_read(udev,
 		REPLY_REQUESTTYPE,
-		(usb_ctrl_char)reply, REPLY_PACKETSIZE, 1000);
+		(usb_ctrl_charbuf)reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s",
@@ -280,7 +253,7 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		return -1;
 	}
 
-#ifdef WITH_LIBUSB_0_1
+#if WITH_LIBUSB_0_1
 	if (usb_set_altinterface(handle, 0) < 0) {
 		upsdebugx(5, "Can't set USB alternate interface");
 		return -1;
@@ -315,7 +288,7 @@ static int usb_device_close(usb_dev_handle *handle)
 	 */
 	/* usb_release_interface(handle, 0); */
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 		libusb_close(handle);
 		libusb_exit(NULL);
 #else
@@ -332,7 +305,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
 
 	/* libusb base init */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	if (libusb_init(NULL) < 0) {
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
@@ -348,7 +321,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	usb_device_close(*handlep);
 #endif
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
@@ -408,7 +381,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			memset(device, 0, sizeof(*device));
 
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
 			bus = libusb_get_bus_number(dev);
@@ -429,7 +402,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iManufacturer,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
 				}
@@ -438,7 +411,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iProduct) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iProduct,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Product = strdup(buf);
 				}
@@ -447,7 +420,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			if (iSerialNumber) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, iSerialNumber,
-					(usb_ctrl_char)buf, sizeof(buf));
+					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Serial = strdup(buf);
 				}
@@ -488,8 +461,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		/* First, try the auto-detach kernel driver method
 		 * This function is not available on FreeBSD 10.1-10.3 */
 		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
-			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
-				libusb_strerror((enum libusb_error)ret));
+			upsdebugx(2,
+				"failed to auto detach kernel driver from USB device: %s",
+				nut_usb_strerror((enum libusb_error)ret));
 		else
 			upsdebugx(2, "auto detached kernel driver from USB device");
 #endif /* HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */
@@ -502,24 +476,34 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 						device->VendorID, device->ProductID);
 					return ret;
 				}
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+#if WITH_LIBUSB_0_1 && (defined HAVE_USB_DETACH_KERNEL_DRIVER_NP)
 				/* this method requires at least libusb 0.1.8:
 				 * it force device claiming by unbinding
 				 * attached driver... From libhid */
-				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
+				if ((ret = usb_detach_kernel_driver_np(handle, 0)) < 0) {
 					upsdebugx(4,
 						"failed to detach kernel driver from USB device: %s",
-						usb_strerror());
+						nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
 #elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER
 				if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
-					upsdebugx(4, "failed to detach kernel driver from USB device: %s", nut_usb_strerror(ret));
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
-#endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
+#elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP
+				if ((ret = libusb_detach_kernel_driver_np(udev, 0)) < 0) {
+					upsdebugx(4,
+						"failed to detach kernel driver from USB device: %s",
+						nut_usb_strerror(ret));
+				} else {
+					upsdebugx(4, "detached kernel driver from USB device...");
+				}
+#endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER or HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP */
 			}
 
 			fatalx(EXIT_FAILURE,
@@ -528,7 +512,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 		next_device:
 			usb_close(handle);
-#ifndef WITH_LIBUSB_1_0
+#if (!WITH_LIBUSB_1_0)
 		}
 #endif /* WITH_LIBUSB_1_0 */
 	}

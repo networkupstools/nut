@@ -131,21 +131,20 @@ if test -z "${nut_have_libusb_seen}"; then
 		[AC_MSG_NOTICE([libusb-1.0 support was detected, but another was chosen ${nut_usb_lib}])]
 	)
 
+	dnl FIXME? Detect and report all CFLAGS/LIBS that we can,
+	dnl and *then* pick one set of values to use?
 	AS_CASE([${nut_usb_lib}],
 		["(libusb-1.0)"], [
 			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
 			LIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
-			AC_DEFINE(WITH_LIBUSB_1_0, 1, [Define to 1 for version 1.0 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1)"], [
 			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
 			LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
-			AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via pkg-config).])
 			],
 		["(libusb-0.1-config)"], [
 			CFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
 			LIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
-			AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb (via libusb-config).])
 			],
 		[dnl default, for other versions or "none"
 			AC_MSG_WARN([Defaulting libusb configuration])
@@ -155,6 +154,8 @@ if test -z "${nut_have_libusb_seen}"; then
 		]
 	)
 
+	dnl check optional user-provided values for cflags/ldflags
+	dnl and publish what we end up using
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes,
 		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
@@ -211,6 +212,13 @@ if test -z "${nut_have_libusb_seen}"; then
 				dnl libusb 1.0: libusb_detach_kernel_driver
 				dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
 				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+				AC_CHECK_FUNCS(libusb_detach_kernel_driver_np)
+
+				dnl From libusb-0.1 - check these to have valid config.h definitions
+				dnl Note: confusingly, FreeBSD does find both as defined
+				dnl (despite being spread across usb.h and libusb.h),
+				dnl so our source code has to care :\
+				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
 			fi
 		else
 			dnl libusb 0.1, or missing pkg-config :
@@ -230,6 +238,12 @@ if test -z "${nut_have_libusb_seen}"; then
 			dnl Check for libusb "force driver unbind" availability
 			if test "${nut_have_libusb}" = "yes"; then
 				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+
+				dnl From libusb-1.0 - check these to have valid config.h definitions
+				AC_CHECK_FUNCS(libusb_kernel_driver_active)
+				AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
+				AC_CHECK_FUNCS(libusb_detach_kernel_driver)
+				AC_CHECK_FUNCS(libusb_detach_kernel_driver_np)
 			fi
 		fi
 	else
@@ -291,6 +305,28 @@ if test -z "${nut_have_libusb_seen}"; then
 	else
 		nut_with_usb="${nut_have_libusb}"
 	fi
+
+	dnl AC_MSG_NOTICE([DEBUG: nut_have_libusb='${nut_have_libusb}'])
+	dnl AC_MSG_NOTICE([DEBUG: nut_with_usb='${nut_with_usb}'])
+	dnl AC_MSG_NOTICE([DEBUG: nut_usb_lib='${nut_usb_lib}'])
+
+	dnl Note: AC_DEFINE specifies a verbatim "value" so we pre-calculate it!
+	dnl Source code should be careful to use "#if" and not "#ifdef" when
+	dnl checking these values during the build. And both must be defined
+	dnl with some value.
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-1.0)"],
+		[AC_DEFINE([WITH_LIBUSB_1_0], [1],
+			[Define to 1 for version 1.0 of the libusb (via pkg-config).])],
+		[AC_DEFINE([WITH_LIBUSB_1_0], [0],
+			[Define to 1 for version 1.0 of the libusb (via pkg-config).])]
+	)
+
+	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)"],
+		[AC_DEFINE([WITH_LIBUSB_0_1], [1],
+			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])],
+		[AC_DEFINE([WITH_LIBUSB_0_1], [0],
+			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])]
+	)
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

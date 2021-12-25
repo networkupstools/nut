@@ -517,8 +517,9 @@ NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb are in its m4 file and NUT_CHECK_LIBUSB() called above
 
-AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)")
-AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)" -o "${nut_usb_lib}" = "(libusb-1.0-config)")
+dnl Note: there is no libusb-config script (and variable) for libusb-1.0
+AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
@@ -2262,6 +2263,11 @@ dnl #    signatures differ between dependency releases; sometimes they just
 dnl #    happened too hard to unravel cleanly and add more warnings.
 dnl #    This exclusion may be removed after common warnings are solved,
 dnl #    to allow progress on rectifying these cases next.
+dnl # -Wno-incompatible-pointer-types-discards-qualifiers -- our code often
+dnl #    defines (char*) as the type for struct fields and method arguments,
+dnl #    but initializes/passes (char[]) variables or fixed strings.
+dnl #    This makes at least clang-3.4 quite upset and noisy (seems newer
+dnl #    versions care less about this situation).
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -2272,7 +2278,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [

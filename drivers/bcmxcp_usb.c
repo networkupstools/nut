@@ -9,13 +9,6 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
-/* libusb header file */
-#ifdef WITH_LIBUSB_1_0
-#include <libusb.h>
-#endif
-#ifdef WITH_LIBUSB_0_1
-#include <usb.h>
-#endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
 #define SUBDRIVER_VERSION "0.23"
@@ -42,35 +35,6 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static USBDevice_t curDevice;
 
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- /* Structures */
- #define usb_dev_handle libusb_device_handle
- /* defines */
- #define USB_DT_STRING LIBUSB_DT_STRING
- #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
- #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
- #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
- /* Functions */
- #define usb_control_msg libusb_control_transfer
- static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
-        char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
-
- #define usb_claim_interface libusb_claim_interface
- #define usb_release_interface libusb_release_interface
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else
- #define nut_usb_strerror(a) usb_strerror()
-#endif /* #ifdef WITH_LIBUSB_1_0 */
-
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
 int nutusb_close(usb_dev_handle *dev_h, const char *port);
@@ -79,10 +43,12 @@ void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, size_t size);
 
 /* usb_set_descriptor() for Powerware devices */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	assert (size < INT_MAX);
@@ -96,6 +62,7 @@ static void *powerware_ups(USBDevice_t *device) {
 }
 
 /* usb_set_descriptor() for Phoenixtec devices */
+/* FIXME? Use usb_ctrl_* typedefs*/
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	NUT_UNUSED_VARIABLE(index);
@@ -210,7 +177,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		if (need_data > 0) {
 			res = usb_interrupt_read(upsdev,
 				0x81,
-				(char *) buf + bytes_read,
+				(usb_ctrl_charbuf) buf + bytes_read,
 				128,
 				(int)(XCP_USB_TIMEOUT - elapsed_time));
 
@@ -423,7 +390,7 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static usb_dev_handle *open_powerware_usb(void)
 {
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
@@ -506,7 +473,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	upsdebugx(1, "entering nutusb_open()");
 
 	/* Initialize Libusb */
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 	if (libusb_init(NULL) < 0) {
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
@@ -586,7 +553,7 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 	if (dev_h)
 	{
 		usb_release_interface(dev_h, 0);
-#ifdef WITH_LIBUSB_1_0
+#if WITH_LIBUSB_1_0
 		libusb_close(dev_h);
 		libusb_exit(NULL);
 #else

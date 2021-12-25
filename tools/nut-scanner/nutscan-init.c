@@ -115,7 +115,7 @@ void nutscan_init(void)
 
 	char *libname = NULL;
 #ifdef WITH_USB
- #ifdef WITH_LIBUSB_1_0
+ #if WITH_LIBUSB_1_0
 	libname = get_libname("libusb-1.0.so");
  #else
 	libname = get_libname("libusb-0.1.so");

@@ -5,6 +5,7 @@
  * @author Copyright (C)
  *      2003 - 2016 Arnaud Quette <aquette.dev@gmail.com>
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
+ *      2021 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -32,17 +33,8 @@
 #define NUT_LIBUSB_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
-#include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
-
-/* libusb header file */
-#ifdef WITH_LIBUSB_1_0
-#include <libusb.h>
-/* simple remap to avoid bloating structures */
-typedef libusb_device_handle usb_dev_handle;
-#endif
-#ifdef WITH_LIBUSB_0_1
-#include <usb.h>
-#endif
+#include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t,
+                         * and for libusb headers and 0.1/1.0 mapping */
 
 /* Used in drivers/libusb*.c sources: */
 #define LIBUSB_DEFAULT_INTERFACE        0
@@ -58,7 +50,7 @@ extern upsdrv_info_t comm_upsdrv_info;
  */
 typedef struct usb_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
-	const char *version;				/* version of this subdriver		*/
+	const char *version;			/* version of this subdriver	*/
 
 	int (*open)(usb_dev_handle **sdevp,	/* try to open the next available	*/
 		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
@@ -81,18 +73,36 @@ typedef struct usb_communication_subdriver_s {
 		unsigned char *buf, int bufsize, int timeout);
 
 	/* Used for Powervar UPS or similar cases to make sure
-	 * we use the right interface in the Composite device
+	 * we use the right interface in the Composite device.
+	 * In a few cases our libusb*.c sets the value for specific
+	 * VID/PID combinations, in others the subdrivers do so.
+	 * FIXME: The numeric value here seems to fit and
+	 * gets used in several contexts, it may be cleaner
+	 * to separate them eventually. Usages in NUT were
+	 * seen as following libusb API (1.0 and 0.1) args,
+	 * along with some hints from libusb sources/headers:
+	 * libusb-1.0:
+	 *   libusb_claim_interface - "int interface_number"
+	 *   libusb_detach_kernel_driver - "int interface_number"
+	 *   libusb_get_config_descriptor - "uint8_t config_index" ("the index of the configuration you wish to retrieve")
+	 *   libusb_control_transfer - "uint16_t wIndex" ("the index field for the setup packet"; "should be given in host-endian byte order")
+	 * libusb-0.1: // The parameters mirror the types of the same name in the USB specification
+	 *   usb_claim_interface - "int interface"
+	 *   usb_control_msg - "int index"
+	 * (_np = non-portable => only on some systems, like FreeBSD)
+	 *   usb_detach_kernel_driver_np - "int interface"
 	 */
-	int hid_rep_index;
+	usb_ctrl_repindex hid_rep_index;		/* number of the interface we use in a composite USB device; see comments above */
+
 	/* All devices use HID descriptor at index 0.
 	 * However, some UPS like newer Eaton units have
 	 * a light HID descriptor at index 0, and
 	 * the full version is at index 1 (in which
 	 * case, bcdDevice == 0x0202)
 	 */
-	int hid_desc_index;
-	int hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
-	int hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
+	usb_ctrl_descindex hid_desc_index;		/* HID descriptor is at this index (non-trivial for composite USB devices); see comments above */
+	usb_ctrl_endpoint hid_ep_in;			/* Input interrupt endpoint. Default is 1	*/
+	usb_ctrl_endpoint hid_ep_out;			/* Output interrupt endpoint. Default is 1	*/
 } usb_communication_subdriver_t;
 
 extern usb_communication_subdriver_t	usb_subdriver;
