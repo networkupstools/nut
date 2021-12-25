@@ -137,7 +137,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		USBDevice_t *hd, unsigned char *rdbuf, int rdlen)
 	)
 {
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 	int retries;
 #endif
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -335,7 +335,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #endif
 
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = 3;
@@ -343,7 +343,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
-			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+				if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
+				if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+# endif
 				if (ret == LIBUSB_ERROR_NOT_FOUND)
 					upsdebugx(2, "Kernel driver already detached");
 				else
