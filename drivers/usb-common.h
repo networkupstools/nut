@@ -309,6 +309,7 @@
  #define usb_set_configuration	libusb_set_configuration
  #define usb_release_interface	libusb_release_interface
  #define usb_reset				libusb_reset_device
+ #define usb_detach_kernel_driver_np	libusb_detach_kernel_driver_np
 
  /* FIXME: some original libusb1.c code cast the (int) argument
   * as (enum libusb_error) - should we force that in the macro? */
