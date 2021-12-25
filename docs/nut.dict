@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2817 utf-8
+personal_ws-1.1 en 2818 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1270,9 +1270,9 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
-Yifeng
 Yunto
 ZFS
 ZProject
@@ -1346,6 +1346,7 @@ arg
 argc
 args
 argv
+armac
 armel
 armhf
 asapm

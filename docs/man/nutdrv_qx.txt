@@ -338,7 +338,7 @@ Note that device numbers are not guaranteed by the OS to be stable across re-boo
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr* and *armac*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
