@@ -215,6 +215,9 @@ if test -z "${nut_have_libusb_seen}"; then
 				AC_CHECK_FUNCS(libusb_detach_kernel_driver_np)
 
 				dnl From libusb-0.1 - check these to have valid config.h definitions
+				dnl Note: confusingly, FreeBSD does find both as defined
+				dnl (despite being spread across usb.h and libusb.h),
+				dnl so our source code has to care :\
 				AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
 			fi
 		else

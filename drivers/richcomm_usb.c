@@ -476,7 +476,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 						device->VendorID, device->ProductID);
 					return ret;
 				}
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+#if WITH_LIBUSB_0_1 && (defined HAVE_USB_DETACH_KERNEL_DRIVER_NP)
 				/* this method requires at least libusb 0.1.8:
 				 * it force device claiming by unbinding
 				 * attached driver... From libhid */
