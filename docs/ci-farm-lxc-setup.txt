@@ -139,6 +139,16 @@ Host CPE ID from /etc/os-release:
 lxc-create: jenkins-centos7-i686: lxccontainer.c: create_run_template: 1616 Failed to create container from template
 lxc-create: jenkins-centos7-i686: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-i686
 ------
++
+   Note also that with such "third-party" distributions you may face other
+   issues; for example, the CentOS helper did not generate some fields in
+   the `config` file that were needed for conversion into libvirt "domxml"
+   (as found by trial and error, and comparison to other `config` files):
++
+------
+lxc.uts.name = jenkins-centos7-i686
+lxc.arch = i686
+------
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
   on the host, e.g.:
