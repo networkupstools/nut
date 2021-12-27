@@ -127,7 +127,8 @@ further options for each "template" by invoking its help action, e.g.:
 ** For distributions with a different packaging mechanism from that on the
    LXC host system, you may need to install corresponding tools (e.g. `yum4`,
    `rpm` and `dnf` on Debian hosts for installing CentOS and related guests).
-   You may also need to pepper with symlinks to taste (e.g. `yum => yum4`).
+   You may also need to pepper with symlinks to taste (e.g. `yum => yum4`),
+   or find a `pacman` build to install Arch Linux or derivative, etc.
    Otherwise, you risk seeing something like this:
 +
 ------
