@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2842 utf-8
+personal_ws-1.1 en 2846 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -175,6 +175,7 @@ COMMOK
 CONFILE
 CONTEXTs
 CPAN
+CPE
 CPM
 CPP
 CPPFLAGS
@@ -1478,6 +1479,7 @@ ccache
 cd
 cdc
 cef
+centos
 cerr
 certfile
 certname
@@ -1646,6 +1648,7 @@ dmfify
 dmfnutscan
 dmfpath
 dmfsnmp
+dnf
 dnl
 dnsmasq
 docbook
@@ -2030,6 +2033,7 @@ lv
 lvo
 lxc
 lxcbr
+lxccontainer
 lxml
 lxyz
 mA
