@@ -83,6 +83,15 @@ deletes the directories after failure, it shows the pathname where it
 writes the log (also deleted). Before re-trying the container creation, this
 file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 
+NOTE: You can find the list of LXC "template" definitions on your system
+by looking at the contents of the `/usr/share/lxc/templates/` directory,
+e.g. a script named `lxc-debian` for the "debian" template. You can see
+further options for each "template" by invoking its help action, e.g.:
++
+------
+:; lxc-create -t debian -h
+------
+
 * Install containers like this:
 +
 ------
@@ -114,11 +123,6 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 ------
 :; lxc-create -n jenkins-ubuntu1804-s390x -P /srv/libvirt/rootfs -t ubuntu -- \
     -r bionic -a s390x
-------
-** See further options for the "template" with its help, e.g.:
-+
-------
-:; lxc-create -t debian -h
 ------
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
