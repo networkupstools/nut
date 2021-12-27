@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2805 utf-8
+personal_ws-1.1 en 2806 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -2214,6 +2214,7 @@ ostream
 otherprotocols
 outliers
 pF
+pacman
 paramkeywords
 parsable
 parseconf
