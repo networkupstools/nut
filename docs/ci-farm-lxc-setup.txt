@@ -231,6 +231,14 @@ Shepherd the herd
    done
 ------
 
+* Verify that unique MAC addresses were defined (e.g. `00:16:3e:00:00:01`
+  tends to pop up often, while `52:54:00:xx:xx:xx` are assigned to other
+  containers); edit the domain definitions to randomize, if needed:
++
+------
+:; grep 'mac add' /etc/libvirt/lxc/*.xml | awk '{print $NF" "$1}' | sort
+------
+
 * Make sure at least one console device exists (end of file, under the
   network interface definition tags), e.g.:
 +
