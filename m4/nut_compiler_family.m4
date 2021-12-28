@@ -72,4 +72,10 @@ dnl # to "cc1: error: unrecognized command line option '-Wno-unknown-warning'
 dnl # [-Werror]"... so we do not pass it by default:
 dnl    AS_IF([test "x$GCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning"])
 dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
+
+    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
+        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
+
+    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
+        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
 ])
