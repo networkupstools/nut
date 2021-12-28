@@ -54,6 +54,16 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #include <stdlib.h>
 pid_t get_max_pid_t()
 {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
 	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
 	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
@@ -61,6 +71,12 @@ pid_t get_max_pid_t()
 	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
 #endif
 	abort();
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 }
 
 	int	nut_debug_level = 0;
