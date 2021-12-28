@@ -18,6 +18,8 @@
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
  *  Masterguard additions
  *    2020-2021 Edgar Fuß, Mathematisches Institut der Universität Bonn <ef@math.uni-bonn.de>
+ *  Armac (Richcomm-variant) additions
+ *    2021      Tomasz Fortuna <bla@thera.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
