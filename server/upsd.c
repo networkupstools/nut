@@ -1075,6 +1075,11 @@ static void mainloop(void)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 			/* All enum cases defined as of the time of coding
 			 * have been covered above. Handle later definitions,
 			 * memory corruptions and buggy inputs below...
@@ -1082,6 +1087,9 @@ static void mainloop(void)
 			default:
 				upsdebugx(2, "%s: <unknown> disconnected", __func__);
 				break;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
@@ -1109,6 +1117,11 @@ static void mainloop(void)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 			/* All enum cases defined as of the time of coding
 			 * have been covered above. Handle later definitions,
 			 * memory corruptions and buggy inputs below...
@@ -1116,6 +1129,9 @@ static void mainloop(void)
 			default:
 				upsdebugx(2, "%s: <unknown> has data available", __func__);
 				break;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
