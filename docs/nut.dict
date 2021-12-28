@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2847 utf-8
+personal_ws-1.1 en 2855 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -288,6 +288,7 @@ ENDFOR
 ENV
 EOF
 EOLed
+EPEL
 EPERM
 EPO
 EPS
@@ -1406,6 +1407,7 @@ backport
 backported
 backupspro
 badpassword
+baseurl
 batchable
 batt
 battcap
@@ -1911,6 +1913,8 @@ ip
 ipE
 ipF
 ipmi
+ipmidetectd
+ipmimonitoring
 ipmipsu
 ippon
 ipv
@@ -1984,6 +1988,7 @@ libtool
 libupsclient
 libusb
 libusbugen
+libusbx
 libvirt
 libwrap
 libxml
@@ -2026,6 +2031,7 @@ lowvoltsout
 lposix
 lr
 lsusb
+ltdl
 lu
 lua
 luaOutlet
@@ -2096,6 +2102,7 @@ minvalue
 minvi
 minvo
 mips
+mirrorlist
 mis
 misconfigured
 mkdir
@@ -2488,6 +2495,7 @@ slavesync
 slewrate
 sm
 smartups
+smbus
 sms
 sn
 snailmail

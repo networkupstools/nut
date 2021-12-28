@@ -154,6 +154,103 @@ in the target chroot (or do this from the running container).
 For DMF, additionally install `python-pycparser` (or in newer distributions,
 an explicitly versioned package, e.g. `python3-pycparser`), and `libxml2-dev`.
 
+CentOS 7
+~~~~~~~~
+
+CentOS is another popular baseline among Linux distributions, being a free
+derivative of the RedHat Linux, upon which many other distros are based as
+well. These systems typically use the RPM package manager, using directly
+`rpm` command, or `yum` or `dnf` front-ends depending on their generation.
+
+For CentOS 7 it seems that not all repositories are equally good; some of
+the software below is only served by EPEL (Extra Packages for Enterprise
+Linux), as detailed at:
+* https://docs.fedoraproject.org/en-US/epel/
+* https://www.redhat.com/en/blog/whats-epel-and-how-do-i-use-it
+* https://pkgs.org/download/epel-release
+
+You may have to specify a mirror as the `baseurl` in a `/etc/yum.repos.d/...`
+file (as the aged distributions become less served by mirrors), such as:
+* https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7/x86_64/
++
+------
+# e.g. for CentOS7 currently:
+:; yum install https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+
+# And edit /etc/yum.repos.d/epel.repo to uncomment and set the baseurl=...
+# lines, and comment away the mirrorlist= lines (if yum hiccups otherwise)
+------
+
+General developer system helpers mentioned in `ci-farm-lxc-setup.txt`:
+------
+:; yum update
+
+:; yum install \
+    sudo vim mc p7zip pigz pbzip2
+------
+
+NOTE: Below we request to install generic `python` per system defaults.
+You may request specifically `python2` or `python3` (or both): NUT should
+be compatible with both (2.7+ at least).
+
+NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version.
+
+NOTE: On CentOS, it seems that development against libi2c/smbus is not
+supported. Neither the suitable devel packages were found, nor i2c-based
+drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
+
+NOTE: `busybox` is not packaged for CentOS 7 release; a static binary can
+be downloaded if needed. For more details, see
+https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
+
+------
+:; yum install \
+    ccache time \
+    file systemd-devel \
+    git python curl \
+    make autoconf automake libtool-ltdl-devel libtool \
+    valgrind \
+    cppcheck \
+    pkgconfig \
+    gcc gcc-c++ clang \
+    asciidoc source-highlight python-pygments dblatex aspell \
+    gd-devel
+
+:; yum install \
+    cppunit-devel \
+    openssl-devel nss-devel \
+    augeas augeas-devel \
+    libusb-devel libusbx-devel \
+    i2c-tools \
+    libmodbus-devel \
+    net-snmp-devel \
+    powerman-devel \
+    freeipmi-devel \
+    avahi-devel \
+    neon-devel
+#?# is python-augeas needed? exists at least...
+#?# no (lib)i2c-devel ...
+#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd" cut it at least for run-time?
+
+# Some NUT code related to lua may be currently limited to lua-5.1
+# or possibly 5.2; the former is default in CentOS 7 releases...
+:; yum install \
+    lua-devel
+
+:; yum install \
+    bash dash ksh
+----
+
+CentOS packaging for 64-bit systems delivers the directory for dispatching
+compiler symlinks as `/usr/lib64/ccache`. You can set it up same way as for
+other described environments by adding a symlink `/usr/lib/ccache`:
+----
+:; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
+----
+
+NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
+(technically, needs at least JRE 8+).
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 
