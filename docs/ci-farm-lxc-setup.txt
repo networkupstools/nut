@@ -260,7 +260,6 @@ Shepherd the herd
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
-    chroot "$ALTROOT" apt-get install sudo bash ; \
     grep eth0 "$ALTROOT/etc/issue" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
     grep eth0 "$ALTROOT/etc/issue.net" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
@@ -318,9 +317,14 @@ may be not yet configured or still struggling to access the Internet):
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" ; \
-    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 git \
+    chroot "$ALTROOT" apt-get install \
+        sudo bash vim mc p7zip p7zip-full pigz pbzip2 git \
    ; done
 ------
+
+Similarly for `yum`-managed systems (CentOS and relatives), though specific
+package names can differ, and additional package repositories may need to
+be enabled first (see link:config-prereqs.txt for details).
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker
 account on the host system to build in the prepared filesystems without the
