@@ -147,7 +147,8 @@ complete environments):
 ----
 
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
-(technically, needs at least JRE 8+).
+(technically, needs at least JRE 8+). You may have to ensure `/proc` is mounted
+in the target chroot (or do this from the running container).
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
