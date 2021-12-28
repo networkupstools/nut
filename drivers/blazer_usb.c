@@ -475,7 +475,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#if ETIME && WITH_LIBUSB_0_1
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
 	fallthrough_case_etime:
