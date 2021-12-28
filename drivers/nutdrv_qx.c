@@ -1635,10 +1635,10 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
 	 * parameterized tests. */
-	const unsigned int cmdlen = strlen(cmd);
+	const size_t cmdlen = strlen(cmd);
 	i = 0;
 	for (; i < cmdlen;) {
-		const int bytes_to_send = (cmdlen - i) <= 3 ? (cmdlen - i) : 3;
+		const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		tmpbuf[0] = 0xa0 + bytes_to_send;
 		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
@@ -1658,9 +1658,9 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	memset(buf, 0, buflen);
-	unsigned int bufpos = 0;
+	size_t bufpos = 0;
 
-	while (bufpos < buflen - 6) {
+	while (bufpos + 6 < buflen) {
 		/* Read data in 6-byte chunks */
 		ret = usb_interrupt_read(udev,
 			0x81,
@@ -1683,7 +1683,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
 			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
 
-		const char bytes_available = tmpbuf[0] & 0x0f;
+		const size_t bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
@@ -1698,7 +1698,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	if (bufpos >= buflen - 6) {
+	if (bufpos + 6 >= buflen) {
 		upsdebugx(2, "Protocol error, too much data read.");
 		return -1;
 	}
@@ -1707,7 +1707,8 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 		(int)strcspn(cmd, "\r"), cmd,
 		(int)strcspn(buf, "\r"), buf
 		);
-	return bufpos;
+
+	return (int)bufpos;
 }
 
 
