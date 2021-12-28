@@ -2932,7 +2932,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-#if ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
 		fallthrough_case_ETIME:
