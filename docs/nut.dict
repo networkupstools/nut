@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2814 utf-8
+personal_ws-1.1 en 2817 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -488,6 +488,7 @@ JavaScript
 Javadoc
 Javascript
 Jenkinsfile
+JoinControllers
 Joon
 Jumpered
 KNutClient
@@ -1492,6 +1493,7 @@ cflags
 cgi
 cgipath
 cgroup
+cgroupsv
 chargedvbattery
 chargermode
 chargetime
@@ -1519,6 +1521,7 @@ clearlogs
 clearpassword
 clepple
 clicky
+cls
 clueful
 cmd
 cmdline
