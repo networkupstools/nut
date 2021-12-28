@@ -245,7 +245,11 @@ OpenBSD delivers many versions of numerous packages, you should specify
 your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
 
 During builds, you may have to tell system dispatcher scripts which version
-to use, e.g.: `export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10`
+to use (which feels inconvenient, but on the up-side for CI -- this system
+allows to test many versions of auto-tools in the same agent), e.g.:
+------
+:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10
+------
 
 To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
 base installation. It is not required for "legacy" builds arranged by just
