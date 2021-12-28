@@ -73,9 +73,10 @@ dnl # [-Werror]"... so we do not pass it by default:
 dnl    AS_IF([test "x$GCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning"])
 dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
-    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
-        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
-
-    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
-        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
+dnl # There should be no need to include standard system paths (and possibly
+dnl # confuse the compiler assumptions - along with its provided headers):
+dnl #    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
+dnl #        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
+dnl #    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
+dnl #        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
 ])
