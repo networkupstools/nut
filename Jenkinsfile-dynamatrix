@@ -26,7 +26,11 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
-    dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI = true
+
+    // Beside the flag here, the pre-defined C89/C90/ANSI scenarios
+    // should only get considered in branches named ~/fightwarn.*89.*/
+    // or PRs to those:
+    dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI = false
 
     // The NUT CI farm offers a few other architectures in containers backed
     // by QEMU virtual CPUs. Running builds in these is expensive (takes a
@@ -518,7 +522,7 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': ['default-alldrv:no-distcheck']
                     ],
@@ -699,9 +703,44 @@ set | sort -n """
                 requiredNodelabels: [],
                 excludedNodelabels: [],
 
+                // NOTE: C89 not included here as its warnings are quite
+                // noisy as in "not relevant for more modern revisions".
+                // It has a separate slowBuild filter configuration below.
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
+                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                    ]
+                    ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_WINDOWS
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'GNU C89 standard builds with non-fatal warnings, without distcheck and docs (must pass)',
+         disabled: dynacfgPipeline.disableSlowBuildCIBuildANSI,
+         branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
+         branchRegexTarget: ~/fightwarn.*89.*/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                requiredNodelabels: [],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -805,7 +844,7 @@ set | sort -n """
          // logs is actively fixing the C89 compatibility. So off by default,
          // and would only run for a PR against a "fightwarn.*89.*" named
          // branch or for a build of such branch.
-         disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
+         disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
@@ -910,8 +949,8 @@ set | sort -n """
 
         ,[name: 'Strict ANSI C (C89/C90) standard builds on non-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
-         branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
-         branchRegexTarget: ~/fightwarn/,
+         branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
+         branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
