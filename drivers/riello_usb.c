@@ -379,7 +379,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#if ETIME && WITH_LIBUSB_0_1
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:				/* Timer expired */
 	fallthrough_case_etime:
