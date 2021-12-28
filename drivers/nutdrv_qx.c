@@ -1639,7 +1639,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 	i = 0;
 	for (; i < cmdlen;) {
 		const int bytes_to_send = (cmdlen - i) <= 3 ? (cmdlen - i) : 3;
-		memset(tmpbuf, 0, sizeof(*tmpbuf));
+		memset(tmpbuf, 0, sizeof(tmpbuf));
 		tmpbuf[0] = 0xa0 + bytes_to_send;
 		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
 		ret = usb_control_msg(udev,
