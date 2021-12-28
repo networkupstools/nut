@@ -658,6 +658,8 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
+			break;
+
 		case ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
