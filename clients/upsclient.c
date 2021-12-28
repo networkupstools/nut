@@ -314,7 +314,8 @@ int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
 #ifdef WITH_OPENSSL
-	int ret, ssl_mode = SSL_VERIFY_NONE;
+	long ret;
+	int ssl_mode = SSL_VERIFY_NONE;
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
