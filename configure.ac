@@ -2237,6 +2237,9 @@ AC_MSG_RESULT(["${nut_enable_warnings}"])
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
 dnl # make a difference.
+dnl # Note that "gcc-medium" and "gcc-hard" settings trigger warnings also
+dnl # from system headers, so we try to avoid them, using "-isystem path":
+dnl #    https://stackoverflow.com/questions/36355232/disable-certain-warnings-for-system-headers
 dnl # Some of the compiler flags (including those added by pkg-config of some
 dnl # third-party dependency packages) can upset older compiler releases which
 dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
@@ -2305,8 +2308,8 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ],
     [gcc-medium|gcc-hard], [
-        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare"
-        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -isystem /usr/include -isystem /usr/local/include -Wno-system-headers"
+        CXXFLAGS="${CXXFLAGS} -Wall -Wextra -isystem /usr/include -isystem /usr/local/include -Wno-system-headers"
         AS_CASE(["${CFLAGS}"],
             [*89*|*90*|*ansi*], [],
             [CFLAGS="${CFLAGS} -pedantic"]
