@@ -1239,6 +1239,7 @@ static int shut_control_msg(
 
 				Retry=1;
 				break;
+
 			case -1:
 				if (Retry >= MAX_TRY)
 				{
@@ -1257,14 +1258,18 @@ static int shut_control_msg(
 					Retry++;
 				}
 				break;
+
 			case -3:
 				/* FIXME: notification caught => to be processed */
 
 				/* Send a NACK for the moment, to get a resend from the UPS */
 				ser_send_char(arg_upsfd, SHUT_NOK);
 				Retry++;
+				goto fallthrough_default;
+
 			default:
-				;
+			fallthrough_default:
+				break;
 		}
 	}
 	if (remaining_size != 0)
