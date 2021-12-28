@@ -2241,6 +2241,7 @@ dnl # Note that "medium" and "hard" settings tend to trigger warnings also
 dnl # from system headers, so we try to avoid them, using "-isystem path"
 dnl # pre-set in our `m4/nut_compiler_family.m4` script:
 dnl #    https://stackoverflow.com/questions/36355232/disable-certain-warnings-for-system-headers
+dnl # and "-Wno-system-headers" below.
 dnl # Some of the compiler flags (including those added by pkg-config of some
 dnl # third-party dependency packages) can upset older compiler releases which
 dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
@@ -2278,18 +2279,21 @@ dnl #    defines (char*) as the type for struct fields and method arguments,
 dnl #    but initializes/passes (char[]) variables or fixed strings.
 dnl #    This makes at least clang-3.4 quite upset and noisy (seems newer
 dnl #    versions care less about this situation).
+dnl # -Wno-disabled-macro-expansion -- some system definitions of strncmp()
+dnl #    and other routines are in fact recursive macros. The -Weverything
+dnl #    mode of clang(-3.4) disables their handling, unless told otherwise.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
