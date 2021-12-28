@@ -132,12 +132,12 @@ further options for each "template" by invoking its help action, e.g.:
    Otherwise, you risk seeing something like this:
 +
 ------
-root@debian:~# lxc-create -n jenkins-centos7-x86_64 -P /srv/libvirt/rootfs \
+root@debian:~# lxc-create -n jenkins-centos7-x86-64 -P /srv/libvirt/rootfs \
     -t centos -- -R 7 -a x86_64
 Host CPE ID from /etc/os-release: 
 'yum' command is missing
-lxc-create: jenkins-centos7-x86_64: lxccontainer.c: create_run_template: 1616 Failed to create container from template
-lxc-create: jenkins-centos7-x86_64: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-x86_64
+lxc-create: jenkins-centos7-x86-64: lxccontainer.c: create_run_template: 1616 Failed to create container from template
+lxc-create: jenkins-centos7-x86-64: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-x86-64
 ------
 +
    Note also that with such "third-party" distributions you may face other
@@ -146,9 +146,13 @@ lxc-create: jenkins-centos7-x86_64: tools/lxc_create.c: main: 319 Failed to crea
    (as found by trial and error, and comparison to other `config` files):
 +
 ------
-lxc.uts.name = jenkins-centos7-x86_64
+lxc.uts.name = jenkins-centos7-x86-64
 lxc.arch = x86_64
 ------
++
+   Also note the container/system naming without underscore in "x86_64" --
+   the deployed system discards the character when assigning its hostname.
+   Using "amd64" is another reasonable choice here.
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
   on the host, e.g.:
