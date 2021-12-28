@@ -132,12 +132,12 @@ further options for each "template" by invoking its help action, e.g.:
    Otherwise, you risk seeing something like this:
 +
 ------
-root@debian:~# lxc-create -n jenkins-centos7-i686 -P /srv/libvirt/rootfs \
-    -t centos -- -R 7 -a i686
+root@debian:~# lxc-create -n jenkins-centos7-x86_64 -P /srv/libvirt/rootfs \
+    -t centos -- -R 7 -a x86_64
 Host CPE ID from /etc/os-release: 
 'yum' command is missing
-lxc-create: jenkins-centos7-i686: lxccontainer.c: create_run_template: 1616 Failed to create container from template
-lxc-create: jenkins-centos7-i686: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-i686
+lxc-create: jenkins-centos7-x86_64: lxccontainer.c: create_run_template: 1616 Failed to create container from template
+lxc-create: jenkins-centos7-x86_64: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-x86_64
 ------
 +
    Note also that with such "third-party" distributions you may face other
@@ -146,8 +146,8 @@ lxc-create: jenkins-centos7-i686: tools/lxc_create.c: main: 319 Failed to create
    (as found by trial and error, and comparison to other `config` files):
 +
 ------
-lxc.uts.name = jenkins-centos7-i686
-lxc.arch = i686
+lxc.uts.name = jenkins-centos7-x86_64
+lxc.arch = x86_64
 ------
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
