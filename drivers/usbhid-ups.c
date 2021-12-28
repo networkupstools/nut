@@ -1247,9 +1247,9 @@ static double interval(void)
 
 /* default subdriver function which doesn't attempt to fix
  * any issues in the parsed HID Report Descriptor */
-int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc) {
-	NUT_UNUSED_VARIABLE(pDev);
-	NUT_UNUSED_VARIABLE(pDesc);
+int fix_report_desc(HIDDevice_t *arg_pDev, HIDDesc_t *arg_pDesc) {
+	NUT_UNUSED_VARIABLE(arg_pDev);
+	NUT_UNUSED_VARIABLE(arg_pDesc);
 
 	return 0;
 }
