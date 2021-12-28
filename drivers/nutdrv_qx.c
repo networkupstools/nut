@@ -1610,7 +1610,9 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmpbuf[6];
 	int	ret = 0;
-	size_t	i;
+	size_t	i, bufpos;
+	const size_t cmdlen = strlen(cmd);
+
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
 	 */
@@ -1635,9 +1637,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
 	 * parameterized tests. */
-	const size_t cmdlen = strlen(cmd);
-	i = 0;
-	for (; i < cmdlen;) {
+	for (i = 0; i < cmdlen;) {
 		const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
 		memset(tmpbuf, 0, sizeof(tmpbuf));
 		tmpbuf[0] = 0xa0 + bytes_to_send;
@@ -1658,9 +1658,11 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	memset(buf, 0, buflen);
-	size_t bufpos = 0;
 
+	bufpos = 0;
 	while (bufpos + 6 < buflen) {
+		size_t bytes_available;
+
 		/* Read data in 6-byte chunks */
 		ret = usb_interrupt_read(udev,
 			0x81,
@@ -1683,7 +1685,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
 			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
 
-		const size_t bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
+		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
