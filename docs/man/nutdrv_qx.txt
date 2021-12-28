@@ -353,6 +353,13 @@ If this flag is set, don't autoscan valid range for langid.
 IMPLEMENTATION NOTES
 ^^^^^^^^^^^^^^^^^^^^
 
+*'armac' subdriver*::
+The Armac communication subdriver reproduces a communication protocol used by
+an old release of "PowerManagerII" software, which doesn't seem to be Armac
+specific: its banner is "2004 Richcomm Technologies, Inc. Dec 27 2005 ver 1.1."
+Maybe other Richcomm UPSes would work with this -- maybe better than with
+the older standalone `richcomm_usb` driver.
+
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.

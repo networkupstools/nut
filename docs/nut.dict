@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2818 utf-8
+personal_ws-1.1 en 2820 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -842,6 +842,7 @@ PowerKinetics
 PowerMIB
 PowerMac
 PowerMan
+PowerManagerII
 PowerMust
 PowerNet
 PowerOff
@@ -2748,6 +2749,7 @@ varvalue
 vbatt
 vc
 vendorid
+ver
 verifySourceSig
 versa
 victron
