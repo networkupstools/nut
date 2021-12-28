@@ -1608,81 +1608,106 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
  */
 int armac_command(const char *cmd, char *buf, size_t buflen)
 {
-  char tmpbuf[6];
-  int	ret = 0;
-  size_t i;
-  /* UPS ignores (doesn't echo back) unsupported commands which makes the
-     initialization long. List commands tested to be unsupported */
-  const char *unsupported[] = {
-      "QGS\r", "QS\r", "QPI\r", "M\r", "D\r", NULL
-  };
-  for (i = 0; unsupported[i] != NULL; i++) {
-      if (strcmp(cmd, unsupported[i]) == 0) {
-          upsdebugx(2, "armac: unsupported cmd: %.*s", (int)strcspn(cmd, "\r"), cmd);
-          return snprintf(buf, buflen, "%s", cmd);
-      }
-  }
-  upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
+	char	tmpbuf[6];
+	int	ret = 0;
+	size_t	i;
+	/* UPS ignores (doesn't echo back) unsupported commands which makes
+	 * the initialization long. List commands tested to be unsupported:
+	 */
+	const char *unsupported[] = {
+		"QGS\r",
+		"QS\r",
+		"QPI\r",
+		"M\r",
+		"D\r",
+		NULL
+	};
 
-  /* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
-   * parametrized tests. */
-  const unsigned int cmdlen = strlen(cmd);
-  i = 0;
-  for (; i < cmdlen;) {
-      const int bytes_to_send = (cmdlen - i) <= 3 ? (cmdlen - i) : 3;
-      memset(tmpbuf, 0, sizeof(*tmpbuf));
-      tmpbuf[0] = 0xa0 + bytes_to_send;
-      memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
-      ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-                            0x09, 0x200, 0, tmpbuf, 4, 5000);
-      i += bytes_to_send;
-  }
+	for (i = 0; unsupported[i] != NULL; i++) {
+		if (strcmp(cmd, unsupported[i]) == 0) {
+			upsdebugx(2,
+				"armac: unsupported cmd: %.*s",
+				(int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+		}
+	}
+	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
 
-  if (ret <= 0) {
-      upsdebugx(1, "send control: %s (%d)", ret ? usb_strerror() : "timeout", ret);
-      return ret;
-  }
+	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
+	 * parameterized tests. */
+	const unsigned int cmdlen = strlen(cmd);
+	i = 0;
+	for (; i < cmdlen;) {
+		const int bytes_to_send = (cmdlen - i) <= 3 ? (cmdlen - i) : 3;
+		memset(tmpbuf, 0, sizeof(*tmpbuf));
+		tmpbuf[0] = 0xa0 + bytes_to_send;
+		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0,
+			tmpbuf, 4, 5000);
+		i += bytes_to_send;
+	}
 
-  memset(buf, 0, buflen);
-  unsigned int bufpos = 0;
+	if (ret <= 0) {
+		upsdebugx(1,
+			"send control: %s (%d)",
+			ret ? usb_strerror() : "timeout",
+			ret);
+		return ret;
+	}
 
-  while (bufpos < buflen - 6) {
-      /* Read data in 6-byte chunks */
-      ret = usb_interrupt_read(udev, 0x81, tmpbuf, 6, 1000);
+	memset(buf, 0, buflen);
+	unsigned int bufpos = 0;
 
-      /* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-      if (ret != 6) {
-          upsdebugx(1, "interrupt read error: %s (%d)", ret ? usb_strerror() : "timeout", ret);
-          return ret;
-      }
+	while (bufpos < buflen - 6) {
+		/* Read data in 6-byte chunks */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			tmpbuf, 6, 1000);
 
-      upsdebugx(4, "read: ret %d buf %02hhx: %02hhx %02hhx %02hhx %02hhx %02hhx  >%c%c%c%c%c<", ret,
-                tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-                tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret != 6) {
+			upsdebugx(1,
+				"interrupt read error: %s (%d)",
+				ret ? usb_strerror() : "timeout",
+				ret);
+			return ret;
+		}
 
-      const char bytes_available = tmpbuf[0] & 0x0f;
-      if (bytes_available == 0) {
-          /* End of transfer */
-          break;
-      }
+		upsdebugx(4,
+			"read: ret %d buf %02hhx: %02hhx %02hhx %02hhx %02hhx %02hhx  >%c%c%c%c%c<",
+			ret,
+			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
+			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
 
-      memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
-      bufpos += bytes_available;
+		const char bytes_available = tmpbuf[0] & 0x0f;
+		if (bytes_available == 0) {
+			/* End of transfer */
+			break;
+		}
 
-      if (bytes_available <= 2) {
-          /* Slow down, let the UPS buffer more bytes */
-          usleep(15000);
-      }
-  }
+		memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
+		bufpos += bytes_available;
 
-  if (bufpos >= buflen - 6) {
-      upsdebugx(2, "Protocol error, too much data read.");
-      return -1;
-  }
-  upsdebugx(3, "armac command %.*s response read: '%.*s'",
-            (int)strcspn(cmd, "\r"), cmd,
-            (int)strcspn(buf, "\r"), buf);
-  return bufpos;
+		if (bytes_available <= 2) {
+			/* Slow down, let the UPS buffer more bytes */
+			usleep(15000);
+		}
+	}
+
+	if (bufpos >= buflen - 6) {
+		upsdebugx(2, "Protocol error, too much data read.");
+		return -1;
+	}
+
+	upsdebugx(3, "armac command %.*s response read: '%.*s'",
+		(int)strcspn(cmd, "\r"), cmd,
+		(int)strcspn(buf, "\r"), buf
+		);
+	return bufpos;
 }
 
 
@@ -1769,10 +1794,10 @@ static void	*snr_subdriver(USBDevice_t *device)
 
 static void	*armac_subdriver(USBDevice_t *device)
 {
-    NUT_UNUSED_VARIABLE(device);
+	NUT_UNUSED_VARIABLE(device);
 
-    subdriver_command = &armac_command;
-    return NULL;
+	subdriver_command = &armac_command;
+	return NULL;
 }
 
 /* USB device match structure */
