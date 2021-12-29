@@ -84,12 +84,14 @@ dnl   Do not die due to `clang: error: argument unused during compilation: '-I .
 dnl -Wno-unknown-warning-option: Do not die (on older clang releases) due to
 dnl   error: unknown warning option '-Wno-double-promotion'; did you mean
 dnl          '-Wno-documentation'? [-Werror,-Wunknown-warning-option]
-dnl -fcolor-diagnostics: help find where bugs are in the wall of text
+dnl -fcolor-diagnostics: help find where bugs are in the wall of text (clang)
+dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
 
     m4_foreach_w([TESTCOMPILERFLAG], [
         -Qunused-arguments
         -Wno-unknown-warning-option
         -fcolor-diagnostics
+        -fdiagnostics-color=always
     ], [
         NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
     ])
