@@ -99,7 +99,24 @@ void nutscan_init(void)
 	 * after parsing command-line arguments. It calls nutscan_init() before
 	 * parsing CLI, to know about available libs and to set defaults below.
 	 */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Different platforms, different sizes, none fits all... */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 		upsdebugx(1,
 			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
 			__func__);
