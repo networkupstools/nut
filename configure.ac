@@ -2343,6 +2343,117 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT(["${nut_enable_Werror}"])
 
+dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
+dnl that are implemented as macros in system headers -- but only for some
+dnl sources like snmp-ups.c, nutscan-serial.c, scan_eaton_serial.c, serial.c,
+dnl scan_avahi.c, scan_xml_http.c, scan_snmp.c... (Seems they all refer to
+dnl -DNETSNMP_USE_INLINE among other options, and tends to happen more with
+dnl OpenSSL-enabled builds). Check if we like them?
+AC_CHECK_HEADER([string.h],
+    [AC_LANG_PUSH([C])
+     CFLAGS_SAVED="${CFLAGS}"
+     CFLAGS_BUILTIN_STR="-fno-builtin-strchr -fno-builtin-strcmp -fno-builtin-strncmp"
+     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     AC_MSG_CHECKING([whether we should disable string built-ins])
+     dnl AC_DEFINE([HAVE_STRING_H], [1], [Define to 1 if you have <string.h>.])
+     AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[#include <string.h>
+            ]], [char *s = "v1", c = '%';
+if (strcmp(s, "v1") != 0) return 1;
+if (strchr(s, '1') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+            ])],
+        [CFLAGS="${CFLAGS_SAVED}"
+         AC_MSG_RESULT([no, they are not a problem])],
+        [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS}"
+         AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM(
+                [[#include <string.h>
+                ]], [char *s = "v1", c = '%';
+if (strcmp(s, "v1") != 0) return 1;
+if (strchr(s, '1') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+                ])],
+            [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS_SAVED}"
+             AC_MSG_RESULT([yes, this solves a problem])],
+            [CFLAGS="${CFLAGS} -Wno-unreachable-code"
+             AC_COMPILE_IFELSE(
+                [AC_LANG_PROGRAM(
+                    [[#include <string.h>
+                    ]], [char *s = "mibs", c = '%';
+/* Macro version of strcmp() has problems with strings shorter than
+ * 3 or 4 bytes, so to avoid nailing "-Warray-bounds" as well,
+ * here we just test for longer strings - existing NUT sources were
+ * fixed for this situation already */
+if (strcmp(s, "mibs") != 0) return 1;
+if (strchr(s, 'b') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+                    ])],
+                [CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code"
+                 dnl TODO: Constrain to just LIBNETSNMP_CFLAGS ?
+                 AC_MSG_RESULT([no, but -Wno-unreachable-code solves the problem for this compiler])],
+                [CFLAGS="${CFLAGS_SAVED}"
+                 AC_MSG_RESULT([no, this does not solve the problem or is not supported])
+                ])
+            ])
+        ]
+     )
+     AC_LANG_POP([C])]
+)
+
+dnl Similar to above, for s_addr = htonl((ntohl(ip->start.s_addr) + 1));
+dnl which causes "shadowed local variable" as (re-)defined in nested macros.
+dnl Technically also needs to `#include <netinet/in.h>` for struct in_addr
+dnl but that should be pulled by inet.h anyway
+AC_CHECK_HEADER([arpa/inet.h],
+    [AC_LANG_PUSH([C])
+     CFLAGS_SAVED="${CFLAGS}"
+     CFLAGS_BUILTIN_NTOHL="-fno-builtin-htonl -fno-builtin-ntohl"
+     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     AC_MSG_CHECKING([whether we should disable htonl/ntohl built-ins])
+     dnl AC_DEFINE([HAVE_ARPA_INET_H], [1], [Define to 1 if you have <arpa/inet.h>.])
+     AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[#include <arpa/inet.h>
+            ]], [struct in_addr sin;
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+/* no ";return 0;" here - autoconf adds one */
+            ])],
+        [CFLAGS="${CFLAGS_SAVED}"
+         AC_MSG_RESULT([no, they are not a problem])],
+        [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS}"
+         AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM(
+                [[#include <arpa/inet.h>
+                ]], [struct in_addr sin;
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+/* no ";return 0;" here - autoconf adds one */
+                ])],
+            [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS_SAVED}"
+             AC_MSG_RESULT([yes, this solves a problem])],
+            [CFLAGS="${CFLAGS} -Wno-shadow"
+             AC_COMPILE_IFELSE(
+                [AC_LANG_PROGRAM(
+                    [[#include <arpa/inet.h>
+                    ]], [struct in_addr sin;
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+                    ])],
+                [CFLAGS="${CFLAGS_SAVED} -Wno-shadow"
+                 dnl TODO: Constrain to just LIBNETSNMP_CFLAGS ?
+                 AC_MSG_RESULT([no, but -Wno-shadow solves the problem for this compiler])],
+                [CFLAGS="${CFLAGS_SAVED}"
+                 AC_MSG_RESULT([no, this does not solve the problem or is not supported])
+                ])
+            ])
+        ]
+     )
+     AC_LANG_POP([C])]
+)
+
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
