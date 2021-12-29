@@ -90,11 +90,19 @@ dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
     m4_foreach_w([TESTCOMPILERFLAG], [
         -Qunused-arguments
         -Wno-unknown-warning-option
-        -fcolor-diagnostics
-        -fdiagnostics-color=always
     ], [
         NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
     ])
+
+    dnl Note: each m4_foreach_w arg must be named uniquely
+    AS_IF([test x"${nut_enable_Wcolor}" = xyes], [
+        m4_foreach_w([TESTCOMPILERFLAG_COLOR], [
+            -fcolor-diagnostics
+            -fdiagnostics-color=always
+        ], [
+            NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG_COLOR])
+        ])
+    ], [AC_MSG_NOTICE([NOT checking for options to request colorized compiler output (pass --enable-Wcolor for that)])])
 
 dnl # Older "brute-forced" settings:
 dnl    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])

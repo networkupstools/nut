@@ -130,6 +130,10 @@ AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
+NUT_ARG_ENABLE([Wcolor],
+    [Request that compiler output is colorized (no = leave it up to compiler defaults)],
+    [no])
 NUT_COMPILER_FAMILY_FLAGS
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
@@ -410,6 +414,7 @@ NUT_ARG_ENABLE([warnings],
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
     [no])
+dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
