@@ -2421,7 +2421,7 @@ AC_CHECK_HEADER([arpa/inet.h],
      AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM(
             [[#include <arpa/inet.h>
-            ]], [struct in_addr sin;
+            ]], [struct in_addr sin = {0};
 sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
 /* no ";return 0;" here - autoconf adds one */
             ])],
@@ -2431,7 +2431,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
          AC_COMPILE_IFELSE(
             [AC_LANG_PROGRAM(
                 [[#include <arpa/inet.h>
-                ]], [struct in_addr sin;
+                ]], [struct in_addr sin = {0};
 sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
 /* no ";return 0;" here - autoconf adds one */
                 ])],
@@ -2441,7 +2441,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <arpa/inet.h>
-                    ]], [struct in_addr sin;
+                    ]], [struct in_addr sin = {0};
 sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                     ])],
                 [CFLAGS="${CFLAGS_SAVED}"
