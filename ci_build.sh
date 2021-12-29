@@ -777,6 +777,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
     fi
 
+    # Tell interactive and CI builds to prefer colorized output so warnings
+    # and errors are found more easily in a wall of text:
+    CONFIG_OPTS+=("--enable-Wcolor")
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
