@@ -2325,11 +2325,6 @@ AS_CASE(["${nut_enable_warnings}"],
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
-        dnl Do not die due to `clang: error: argument unused during compilation: '-I .'`
-        AS_IF([test "${CLANGCC}" = "yes"],
-            [CFLAGS="${CFLAGS} -Qunused-arguments"
-             CXXFLAGS="${CXXFLAGS} -Qunused-arguments"])
-
         CFLAGS="${CFLAGS} -Werror"
         CXXFLAGS="${CXXFLAGS} -Werror"
         ],

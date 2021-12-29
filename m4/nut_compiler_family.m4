@@ -59,10 +59,44 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes])
 ])
 
+AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
+[
+dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
+dnl the -Werror below is needed to detect "warnings" about unsupported options
+    COMPILERFLAG="$1"
+    AC_LANG_PUSH([C])
+    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+        [CFLAGS="$CFLAGS ${COMPILERFLAG}"], [], [-Werror])
+    AC_LANG_POP([C])
+
+    AC_LANG_PUSH([C++])
+    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"], [], [-Werror])
+    AC_LANG_POP([C++])
+])
+
 AC_DEFUN([NUT_COMPILER_FAMILY_FLAGS],
 [
-    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])
-    AS_IF([test "x$CLANGXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option"])
+    AC_MSG_NOTICE([Detecting support for additional compiler flags])
+
+dnl -Qunused-arguments:
+dnl   Do not die due to `clang: error: argument unused during compilation: '-I .'`
+dnl -Wno-unknown-warning-option: Do not die (on older clang releases) due to
+dnl   error: unknown warning option '-Wno-double-promotion'; did you mean
+dnl          '-Wno-documentation'? [-Werror,-Wunknown-warning-option]
+dnl -fcolor-diagnostics: help find where bugs are in the wall of text
+
+    m4_foreach_w([TESTCOMPILERFLAG], [
+        -Qunused-arguments
+        -Wno-unknown-warning-option
+        -fcolor-diagnostics
+    ], [
+        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
+    ])
+
+dnl # Older "brute-forced" settings:
+dnl    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])
+dnl    AS_IF([test "x$CLANGXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option"])
 
 dnl # Despite the internet lore, practical GCC versions seen so far
 dnl # (4.x-10.x) do not know of this CLI option, with varied results
