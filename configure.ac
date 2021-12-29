@@ -2393,8 +2393,10 @@ if (strchr(s, 'b') == NULL) return 1;
 if (strchr(s, c) != NULL) return 1
 /* no ";return 0;" here - autoconf adds one */
                     ])],
-                [CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code"
-                 dnl TODO: Constrain to just LIBNETSNMP_CFLAGS ?
+                [dnl CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code"
+                 dnl NOTE: Empirically, constrain to just LIBNETSNMP_CFLAGS
+                 CFLAGS="${CFLAGS_SAVED}"
+                 LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-unreachable-code"
                  AC_MSG_RESULT([no, but -Wno-unreachable-code solves the problem for this compiler])],
                 [CFLAGS="${CFLAGS_SAVED}"
                  AC_MSG_RESULT([no, this does not solve the problem or is not supported])
@@ -2442,8 +2444,8 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                     ]], [struct in_addr sin;
 sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                     ])],
-                [CFLAGS="${CFLAGS_SAVED} -Wno-shadow"
-                 dnl TODO: Constrain to just LIBNETSNMP_CFLAGS ?
+                [CFLAGS="${CFLAGS_SAVED}"
+                 LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-shadow"
                  AC_MSG_RESULT([no, but -Wno-shadow solves the problem for this compiler])],
                 [CFLAGS="${CFLAGS_SAVED}"
                  AC_MSG_RESULT([no, this does not solve the problem or is not supported])
