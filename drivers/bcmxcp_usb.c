@@ -169,7 +169,24 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 	gettimeofday(&start_time, NULL);
 	memset(&buf, 0x0, PW_CMD_BUFSIZE);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Stay ahead of possible redefinitions... */
 	assert (XCP_USB_TIMEOUT < INT_MAX);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	while ( (!endblock) && ((XCP_USB_TIMEOUT - elapsed_time)  > 0) ) {
 
