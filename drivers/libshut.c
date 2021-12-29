@@ -417,7 +417,21 @@ static int libshut_open(
 	}
 
 	/* Get DEVICE descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	dev_descriptor = (struct device_descriptor_s *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -498,7 +512,21 @@ static int libshut_open(
 	}
 
 	/* Get HID descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	desc = (struct my_hid_descriptor *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
