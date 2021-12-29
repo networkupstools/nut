@@ -87,12 +87,16 @@ dnl          '-Wno-documentation'? [-Werror,-Wunknown-warning-option]
 dnl -fcolor-diagnostics: help find where bugs are in the wall of text (clang)
 dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
 
-    m4_foreach_w([TESTCOMPILERFLAG], [
-        -Qunused-arguments
-        -Wno-unknown-warning-option
-    ], [
-        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
-    ])
+    dnl First check for this to avoid failing on unused include paths etc:
+    NUT_CHECK_COMPILE_FLAG([-Qunused-arguments])
+
+dnl # Future: test for something else?
+dnl    m4_foreach_w([TESTCOMPILERFLAG], [
+dnl        -Qunused-arguments
+dnl        -Wno-unknown-warning-option
+dnl    ], [
+dnl        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
+dnl    ])
 
     dnl Note: each m4_foreach_w arg must be named uniquely
     AS_IF([test x"${nut_enable_Wcolor}" = xyes], [
@@ -103,6 +107,9 @@ dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
             NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG_COLOR])
         ])
     ], [AC_MSG_NOTICE([NOT checking for options to request colorized compiler output (pass --enable-Wcolor for that)])])
+
+    dnl Last check for this to avoid accepting anything regardless of support:
+    NUT_CHECK_COMPILE_FLAG([-Wno-unknown-warning-option])
 
 dnl # Older "brute-forced" settings:
 dnl    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])
