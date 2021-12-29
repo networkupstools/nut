@@ -515,11 +515,28 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 
 	/* Without a standard TIME_MAX, signedness may suffer;
 	 * but we can at least check the number should fit */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Stay ahead of possible redefinitions... */
 	if (sizeof(mfg_date_time) < sizeof(timetmp))
 	{
 		libfreeipmi_cleanup();
 		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process");
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	timetmp = (time_t)mfg_date_time;
 	localtime_r (&timetmp, &mfg_date_time_tm);
