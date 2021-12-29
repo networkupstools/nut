@@ -2273,6 +2273,9 @@ dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
 dnl #    float variables. Also variadic functions like printf() cast their
 dnl #    floating-point arguments into double (and small integer types into
 dnl #    "int") which then confuses pedantic checks of printf("%f", floatval).
+dnl # -Wno-conversion -- similarly for error: implicit conversion loses
+dnl #    floating-point precision: 'double' to 'float' [-Werror,-Wconversion]
+dnl #      max_output = atof(sValue);
 dnl # -Wno-cast-qual -- our code calls some library methods in ways which use
 dnl #    a "const char *" as a "char *" or vice-versa. Sometimes these method
 dnl #    signatures differ between dependency releases; sometimes they just
@@ -2297,7 +2300,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
