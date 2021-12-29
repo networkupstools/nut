@@ -75,6 +75,10 @@ case "$CI_REQUIRE_GOOD_GITIGNORE" in
         CI_REQUIRE_GOOD_GITIGNORE="true" ;;
 esac
 
+# Abort loops like BUILD_TYPE=default-all-errors as soon as we have a problem
+# (allowing to rebuild interactively and investigate that set-up)?
+[ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
+
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
@@ -1027,6 +1031,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
@@ -1081,8 +1089,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # disabling other drivers for faster turnaround.
             ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
             ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
-            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
-                [ "${BUILDSTODO_USB}" -gt 1 ] || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
+             || [ "${BUILDSTODO_USB}" -gt 1 ] \
+             || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ) && \
+            (   [ "$CI_FAILFAST" != "true" ] \
+             || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
                 echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
@@ -1139,6 +1151,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
