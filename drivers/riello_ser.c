@@ -24,10 +24,11 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <string.h>
 #include <stdint.h>
 
-#include "config.h"
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
