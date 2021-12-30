@@ -39,6 +39,8 @@
 
  */
 
+#include "config.h" /* must be first */
+
 #include <stdlib.h>
 #include <string.h>
 #include "timehead.h"
