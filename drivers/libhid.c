@@ -30,8 +30,15 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
-#include <string.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 /* #include <math.h> */
 #include "libhid.h"
 #include "hidparser.h"
