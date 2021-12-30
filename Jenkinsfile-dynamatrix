@@ -764,7 +764,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    dynacfgPipeline.axisCombos_COMPILER_NOT_GCC
+                    [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -797,7 +797,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    dynacfgPipeline.axisCombos_COMPILER_GCC
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -1022,7 +1022,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS
-                    ] + dynacfgPipeline.axisCombos_COMPILER_NOT_GCC
+                    ] + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -1057,7 +1057,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS
-                    ] + dynacfgPipeline.axisCombos_COMPILER_GCC
+                    ] + [dynacfgPipeline.axisCombos_COMPILER_GCC]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
