@@ -1185,16 +1185,17 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(4, "command index: 0x%02x", index);
 
 /*	if (hunnox_patch) { */
-		// Enable lock-step protocol for Hunnox
+		/* Enable lock-step protocol for Hunnox */
 		if (hunnox_protocol(index) != 0) {
 			return 0;
 		}
 
-		// Seems that if we inform a large buffer, the USB locks.
-		// This value was captured from the Windows "official" client.
-		// Note this should not be a problem programmatically: it just
-		// means that the caller reserved a longer buffer that we need
-		// in practice to write a response into.
+		/* Seems that if we inform a large buffer, the USB locks.
+		 * This value was captured from the Windows "official" client.
+		 * Note this should not be a problem programmatically: it just
+		 * means that the caller reserved a longer buffer that we need
+		 * in practice to write a response into.
+		 */
 		if (buflen > 102) {
 			buflen = 102;
 		}
