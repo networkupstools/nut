@@ -133,6 +133,7 @@ liebert_SOURCES = liebert.c
 liebert_esp2_SOURCES = liebert-esp2.c
 masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
+metasys_LDADD = $(LDADD) -lm
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 microsol_apc_SOURCES = microsol-apc.c microsol-common.c
