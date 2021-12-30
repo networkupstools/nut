@@ -26,6 +26,8 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdint.h>
 
 #include "main.h"
