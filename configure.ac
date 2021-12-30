@@ -219,7 +219,10 @@ AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
-dnl compilation modes, only in GNU, POSIX or other extension modes:
+dnl compilation modes (not part of ANSI or later standard), only in GNU,
+dnl POSIX or other extension modes. Note that on modern systems they are
+dnl available, just hidden in headers - so AC_CHECK_FUNCS() finds them
+dnl by adding a declaration, while the "real" codebase can't use them.
 AC_MSG_NOTICE(
 [-----------------------------------------------------------------------
 The next few tests look for required C library routines; if something is
@@ -228,11 +231,15 @@ version. You may also have to configure without extreme warning levels
 since autotools tests fail those on their own and assume system lacks
 stuff (although note we try to not involve standard -W* flags here).
 -----------------------------------------------------------------------])
-AC_CHECK_FUNCS(strcasecmp strncasecmp,
-	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
+dnl# AC_CHECK_FUNCS(strcasecmp strncasecmp,
+dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
-AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+dnl# Methods below currently do not cause build errors for C99+ modes so are
+dnl# not tested as thoroughly as those further below:
+ AC_CHECK_FUNCS(strtok_r fileno localtime_r sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+AC_LANG_PUSH([C])
 
 AC_CHECK_HEADER([string.h],
     [AC_DEFINE([HAVE_STRING_H], [1],
@@ -241,6 +248,74 @@ AC_CHECK_HEADER([string.h],
 AC_CHECK_HEADER([strings.h],
     [AC_DEFINE([HAVE_STRINGS_H], [1],
         [Define to 1 if you have <strings.h>.])])
+
+CODE_STRINGINCL='#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif'
+
+AC_CACHE_CHECK([for strcasecmp(s1,s2)],
+    [ac_cv_func_strcasecmp],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strcasecmp("STR1", "str1") != 0) return 1])],
+        [ac_cv_func_strcasecmp=yes], [ac_cv_func_strcasecmp=no]
+    )])
+AS_IF([test x"${ac_cv_func_strcasecmp}" = xyes],
+    [AC_DEFINE([HAVE_STRCASECMP], 1, [defined if standard library has, and C standard allows, the strcasecmp(s1,s2) method])],
+    [AC_MSG_WARN([Required C library routine strcasecmp not found; try adding __EXTENSIONS__])]
+    )
+
+AC_CACHE_CHECK([for strncasecmp(s1,s2,n)],
+    [ac_cv_func_strncasecmp],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strncasecmp("STR1", "strX", 2) != 0) return 1])],
+        [ac_cv_func_strncasecmp=yes], [ac_cv_func_strncasecmp=no]
+    )])
+AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
+    [AC_DEFINE([HAVE_STRNCASECMP], 1, [defined if standard library has, and C standard allows, the strncasecmp(s1,s2,n) method])],
+    [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
+    )
+
+AC_CACHE_CHECK([for strdup(s)],
+    [ac_cv_func_strdup],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [[int res = 0;
+char *t = "Test";
+char *s = strdup(t);
+if (!s || !(s[0]=='T'&&s[1]=='e'&&s[2]=='s'&&s[3]=='t'&&s[4]=='\0') || s == t) res = 1;
+if (s) free (s);
+if (res != 0) return res
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_strdup=yes], [ac_cv_func_strdup=no]
+    )])
+AS_IF([test x"${ac_cv_func_strdup}" = xyes],
+    [AC_DEFINE([HAVE_STRDUP], 1, [defined if standard library has, and C standard allows, the strdup(s) method])],
+    [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for usleep(us)],
+    [ac_cv_func_usleep],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <unistd.h>
+        ]],
+            [[useconds_t us = 1000;
+if (usleep(us) != 0) return 1 /* per doc, no erros are returned actually*/
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_usleep=yes], [ac_cv_func_usleep=no]
+    )])
+AS_IF([test x"${ac_cv_func_usleep}" = xyes],
+    [AC_DEFINE([HAVE_USLEEP], 1, [defined if standard library has, and C standard allows, the usleep(us) method])],
+    [AC_MSG_WARN([Required C library routine usleep not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_LANG_POP([C])
 
 dnl These routines' arg types differ in strict C standard mode
 dnl from what they use in the modes expected by NUT codebase:
