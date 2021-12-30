@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2801 utf-8
+personal_ws-1.1 en 2804 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1854,6 +1854,8 @@ inh
 init
 init's
 initctl
+initializer
+initializers
 initinfo
 initscripts
 initups
@@ -2725,6 +2727,7 @@ var's
 varargs
 varhigh
 variable's
+variadic
 varlow
 varname
 varvalue
