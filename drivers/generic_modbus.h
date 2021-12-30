@@ -98,4 +98,4 @@ typedef struct sigattr sigattr_t;
  */
 
 
-#endif //NUT_GENERIC_MODBUS_H
+#endif /* NUT_GENERIC_MODBUS_H */
