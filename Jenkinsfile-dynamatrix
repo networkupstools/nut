@@ -729,7 +729,7 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         ,[name: 'GNU C89 standard builds with non-fatal warnings, without distcheck and docs (must pass)',
-         disabled: dynacfgPipeline.disableSlowBuildCIBuildANSI,
+         disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
