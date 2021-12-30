@@ -349,7 +349,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 		if (ret < 0)
 			return ret;
 
-		upsdrv_initinfo();	//reconekt usb cable
+		upsdrv_initinfo();	/* reconnect usb cable */
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
