@@ -158,6 +158,14 @@ AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
 
+AC_CHECK_HEADER([signal.h],
+    [AC_DEFINE([HAVE_SIGNAL_H], [1],
+        [Define to 1 if you have <signal.h>.])])
+
+AC_CHECK_HEADER([sys/signal.h],
+    [AC_DEFINE([HAVE_SYS_SIGNAL_H], [1],
+        [Define to 1 if you have <sys/signal.h>.])])
+
 AC_CHECK_HEADER([sys/resource.h],
     [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
      AC_LANG_PUSH([C])
@@ -225,6 +233,14 @@ AC_CHECK_FUNCS(strcasecmp strncasecmp,
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+AC_CHECK_HEADER([string.h],
+    [AC_DEFINE([HAVE_STRING_H], [1],
+        [Define to 1 if you have <string.h>.])])
+
+AC_CHECK_HEADER([strings.h],
+    [AC_DEFINE([HAVE_STRINGS_H], [1],
+        [Define to 1 if you have <strings.h>.])])
 
 dnl These routines' arg types differ in strict C standard mode
 dnl from what they use in the modes expected by NUT codebase:
