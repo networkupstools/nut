@@ -29,6 +29,8 @@
  * - validate / complete commands and data table in mge-hid from mge-shut
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
