@@ -219,7 +219,7 @@ static void show_usage()
 
 		/* Construct help for AUTHPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (");
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		printf("%s%s",
@@ -261,7 +261,7 @@ static void show_usage()
 
 		/* Construct help for PRIVPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (");
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		printf("%s%s",
