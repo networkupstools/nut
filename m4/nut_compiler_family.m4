@@ -99,9 +99,10 @@ dnl        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
 dnl    ])
 
     dnl Note: each m4_foreach_w arg must be named uniquely
+    dnl Note: Seems -fcolor-diagnostics is clang-only and sometimes
+    dnl gcc blindly accepts it in test and fails to use later.
     AS_IF([test x"${nut_enable_Wcolor}" = xyes], [
         m4_foreach_w([TESTCOMPILERFLAG_COLOR], [
-            -fcolor-diagnostics
             -fdiagnostics-color=always
         ], [
             NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG_COLOR])
