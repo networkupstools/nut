@@ -1248,8 +1248,9 @@ static int shut_control_msg(
 			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 				" may be too large for SHUT packet?",
 				__func__, data_size);
-			// Do not abort here - maybe there is intentional maths
-			// in the protocol with overlapping/shifted-away numbers?
+			/* Do not abort here - maybe there is intentional maths
+			 * in the protocol with overlapping/shifted-away numbers?
+			 */
 		}
 		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
