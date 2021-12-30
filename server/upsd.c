@@ -33,7 +33,13 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netdb.h>
+
+#ifdef HAVE_SYS_SIGNAL_H
+#include <sys/signal.h>
+#endif
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #include "user.h"
 #include "nut_ctype.h"
