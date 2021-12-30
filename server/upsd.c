@@ -1361,7 +1361,7 @@ int main(int argc, char **argv)
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
 
-	{ // scope
+	{ /* scope */
 	/* As documented above, the ALLOW_NO_DEVICE can be provided via
 	 * envvars and then has higher priority than an upsd.conf setting
 	 */
@@ -1381,7 +1381,7 @@ int main(int argc, char **argv)
 			allow_no_device = 0;
 		}
 	}
-	} // scope
+	} /* scope */
 
 	/* start server */
 	server_load();
