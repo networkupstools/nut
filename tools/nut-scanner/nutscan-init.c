@@ -76,7 +76,7 @@ size_t curr_threads = 0;
 
 size_t max_threads_netxml = 1021; /* experimental finding, see PR#1158 */
 size_t max_threads_oldnut = 1021;
-size_t max_threads_netsnmp = 0; // 10240;
+size_t max_threads_netsnmp = 0; /* 10240; */
 	/* per reports in PR#1158, some versions of net-snmp could be limited
 	 * to 1024 threads in the past; this was not found in practice.
 	 * Still, some practical limit can be useful (configurable?)
