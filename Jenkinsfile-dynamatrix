@@ -301,7 +301,7 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'merge' ], // 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace' ], // 'excludeCombos': 'merge' ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C
