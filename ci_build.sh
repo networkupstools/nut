@@ -635,6 +635,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-doc=yes")
                 fi
             fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
+            fi
             ;;
         "default-withdoc:man")
             # Some systems lack tools for HTML/PDF generation
@@ -644,6 +649,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 CONFIG_OPTS+=("--with-doc=auto")
             else
                 CONFIG_OPTS+=("--with-doc=man")
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             ;;
         "default-all-errors")
@@ -691,6 +701,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_CPPCHECK_TESTS-}" = no ] ; then
                 echo "WARNING: Build agent says it has a broken cppcheck, but we requested a BUILD_TYPE='$BUILD_TYPE'" >&2
                 exit 1
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             CONFIG_OPTS+=("--enable-cppcheck=yes")
             CONFIG_OPTS+=("--with-doc=skip")
