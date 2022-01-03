@@ -454,7 +454,7 @@ set | sort -n """
                     'BUILD_TYPE': ['default-tgt:cppcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no'
                      //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
                     ]
                     ],
