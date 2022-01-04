@@ -301,7 +301,7 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace' ], // 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'excludeCombos': 'merge' ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_STRICT_C
@@ -309,7 +309,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
-                //excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_AUTOTOOLS
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
@@ -339,7 +339,7 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
 
-                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // 'excludeCombos': 'merge' ],
+                mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
                     ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall']
@@ -352,7 +352,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
-                //excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_AUTOTOOLS
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
