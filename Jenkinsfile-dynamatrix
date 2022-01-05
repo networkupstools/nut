@@ -448,7 +448,13 @@ set | sort -n """
                 excludedNodelabels: ["NUT_BUILD_CAPS=cppcheck=no"],
 
                 dynamatrixAxesVirtualLabelsMap: [
-                    'BITS': [32, 64],
+                    // For cppcheck we do not iterate BITS,
+                    // doing one (default) hit per system:
+                    //'BITS': [32, 64],
+
+                    // Take systems that CAN build C; do not really
+                    // care about revision here since it is hardcoded
+                    // in the Makefile to create two analysis XMLs now:
                     'CSTDVERSION_${KEY}': [ ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': ['default-tgt:cppcheck']
