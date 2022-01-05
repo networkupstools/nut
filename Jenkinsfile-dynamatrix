@@ -1240,7 +1240,7 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [],
                 dynamatrixAxesCommonEnvCartesian: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'],
+                    [ ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'] ],
                     [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
                     ],
                 allowedFailure: [
