@@ -145,6 +145,12 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.axisCombos_WINDOWS = [~/OS_FAMILY=windows/]
     dynacfgPipeline.axisCombos_NOT_WINDOWS = [~/OS_FAMILY=(?!windows)/]
 
+    // At a minimum, we don't want to mess up our arches:
+    dynacfgPipeline.excludeCombos_DEFAULT = [
+        dynacfgPipeline.axisCombos_ARCH32x64,
+        dynacfgPipeline.axisCombos_ARCH64x32
+        ]
+
     dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT = [
         dynacfgPipeline.axisCombos_CPPUNIT,
         dynacfgPipeline.axisCombos_ARCH32x64,
