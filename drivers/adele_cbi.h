@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 /*  adele_cbi.h - Driver for ADELE CB/CBI DC-UPS
  *
  *  Copyright (C)
  *    2022 Dimitris Economou <dimitris.s.economou@gmail.com>
+=======
+/*  adele_cbi.h - Driver for generic UPS connected via modbus RIO
+ *
+ *  Copyright (C)
+ *    2021 Dimitris Economou <dimitris.s.economou@gmail.com>
+>>>>>>> under construction
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,11 +30,16 @@
 #ifndef ADELE_CBI_H
 #define ADELE_CBI_H
 
+<<<<<<< HEAD
 #include <stdint.h>
 
 /* UPS device details */
 #define DEVICE_MFR  "ADELE"
 #define DEVICE_TYPE "DC-UPS"
+=======
+/* UPS device details */
+#define DEVICE_MFR  "ADELE"
+>>>>>>> under construction
 #define DEVICE_MODEL "CB/CBI"
 
 /* serial access parameters */
@@ -48,6 +60,7 @@
 /* modbus access parameters */
 #define MODBUS_SLAVE_ID 5
 
+<<<<<<< HEAD
 /* number of modbus registers */
 #define MODBUS_NUMOF_REGS 98
 
@@ -145,11 +158,36 @@ typedef struct alrm_ar alrm_ar_t;
  */
 
 /* Charging status */
+=======
+/* definition of register type */
+enum regtype {
+	COIL = 0,
+	INPUT_B,
+	INPUT_R,
+	HOLDING
+};
+typedef enum regtype regtype_t;
+
+/* UPS device state enum */
+enum devstate {
+    CHRG = 0,       /* Charging status */
+    BATV,           /* Battery voltage */
+    BCEF = 6,       /* Battery charge efficiency factor (CEF) */
+    BSOH,           /* Battery state-of-health */
+    BSOC = 9,       /* Battery state-of-charge */
+    BTMP = 11,      /* Battery temperature in Kelvin units */
+    PMNG = 15,      /* Power management */
+};
+typedef enum devstate devstate_t;
+
+/* BIT MASKS and VALUES */
+>>>>>>> under construction
 #define CHRG_NONE 0
 #define CHRG_RECV 1
 #define CHRG_BULK 2
 #define CHRG_ABSR 3
 #define CHRG_FLOAT 4
+<<<<<<< HEAD
 
 /* power management */
 #define PMNG_BCKUP 0
@@ -368,6 +406,25 @@ typedef union devstate devstate_t;
 
 /* ADELE CBI registers */
 static regattr_t regs[] = {
+=======
+#define PMNG_BKUP 0
+#define PMNG_CHRG 1
+#define PMNG_BOOST 2
+#define PMNG_NCHRG 3
+
+/* UPS state signal attributes */
+struct regattr {
+    int num;
+	int saddr;          /* register start address */
+    int xaddr;          /* register hex address */
+    float scale;        /* scale */
+	regtype_t type;     /* register type */
+};
+typedef struct regattr regattr_t;
+
+/* ADELE CBI registers */
+regattr_t regs[] = {
+>>>>>>> under construction
          {40005, 0, 0, 1, HOLDING},    /* Charging status */
          {40008, 0, 0, 1, HOLDING},    /* Battery voltage */
          {40014, 0, 0, 1, HOLDING},    /* Battery charge current */
@@ -384,8 +441,13 @@ static regattr_t regs[] = {
          {40089, 0, 0, 1, HOLDING},   /* Number of battery cells */
          {40100, 0, 0, 1, HOLDING},   /* SoC/SoH test possible */
          {40006, 0, 0, 1, HOLDING},   /* Power management
+<<<<<<< HEAD
                                        * 0:Backup 1:Charging 2:boost 3:Not charging
                                        */
+=======
+                                                                        * 0:Backup 1:Charging 2:boost 3:Not charging
+                                                                        */
+>>>>>>> under construction
          {40007, 0, 0, 1, HOLDING},   /* Nominal output voltage */
          {40009, 0, 0, 1, HOLDING},   /* Parameter map version ID */
          {40010, 0, 0, 1, HOLDING},   /* Software ID */
@@ -408,9 +470,15 @@ static regattr_t regs[] = {
          {40062, 0, 0, 1, HOLDING},   /* Lowest battery voltage */
          {40061, 0, 0, .1, HOLDING},  /* Maximum depth of discharge */
          {40064, 0, 0, .1, HOLDING},  /* Average depth of discharge */
+<<<<<<< HEAD
          {40056, 0, 0, 1, HOLDING},   /* Number of over temperature inside events */
          {40054, 0, 0, 1, HOLDING},   /* Number of low VAC events at mains input */
          {40055, 0, 0, 1, HOLDING},   /* Number of High VAC events at mains input */
+=======
+         {40056, 0, 0, 1, HOLDING},   /* Number of overtemperature inside events */
+         {40054, 0, 0, 1, HOLDING},   /* Number of low AC input voltage events at mains input */
+         {40055, 0, 0, 1, HOLDING},   /* Number of High AC input voltage events at mains input */
+>>>>>>> under construction
          {40057, 0, 0, 1, HOLDING},   /* Number of mains-backup transitions */
          {40060, 0, 0, 1, HOLDING},   /* Highest output load voltage */
          {40063, 0, 0, 1, HOLDING},   /* Lowest output load voltage */
@@ -449,10 +517,14 @@ static regattr_t regs[] = {
          {40034, 0, 0, 1, HOLDING},   /* Load output off duration after PC shutdown */
          {40065, 0, 0, 1, HOLDING},   /* History clear all */
          {40066, 0, 0, 1, HOLDING},   /* Factory settings */
+<<<<<<< HEAD
          {40088, 0, 0, 1, HOLDING},   /* Backup Inhibit 0 = Backup allowed
                                                                         * 1 = Backup not allowed 0
                                                                         * */
          {40041, 0, 0, 1, HOLDING},   /* Force shutdown */
+=======
+         {40088, 0, 0, 1, HOLDING},   /* Backup Inhibit 0 = Backup allowed 1 = Backup not allowed 0 */
+>>>>>>> under construction
          {40104, 0, 0, 1, HOLDING},   /* Time buffering */
          {40111, 0, 0, 1, HOLDING},   /* PC power supply removal delay */
          {40036, 0, 0, 1, HOLDING},   /* Low AC input voltage alarm threshold */
@@ -468,7 +540,17 @@ static regattr_t regs[] = {
          {40043, 0, 0, 1, HOLDING},   /* Device failure */
          {40047, 0, 0, 1, HOLDING},   /* On board temperature alarm */
          {40045, 0, 0, 1, HOLDING},   /* AC input voltage alarm */
+<<<<<<< HEAD
          {40046, 0, 0, 1, HOLDING},   /* Mains status */
          {40038, 0, 0, 1, HOLDING}    /* Load alarm */
 };
+=======
+         {40046, 0, 0, 1, HOLDING},   /* Input mains on / backup */
+         {40038, 0, 0, 1, HOLDING}    /* Load alarm */
+};
+
+#define NUMOF_REGS 14
+#define NOTUSED -1
+
+>>>>>>> under construction
 #endif /* ADELE_CBI_H */
