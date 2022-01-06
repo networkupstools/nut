@@ -23,6 +23,8 @@
 #ifndef ADELE_CBI_H
 #define ADELE_CBI_H
 
+#include <stdint.h>
+
 /* UPS device details */
 #define DEVICE_MFR  "ADELE"
 #define DEVICE_MODEL "CB/CBI"
@@ -54,6 +56,95 @@ enum regtype {
 };
 typedef enum regtype regtype_t;
 
+struct prodname {
+    uint16_t val;
+    char *name;
+};
+typedef struct prodname prodname_t;
+
+/* product name */
+prodname_t prdn[] = {
+        {1, "CBI1235A"},
+        {2, "CBI2420A"},
+        {3, "CBI4810A"},
+        {4, "CBI2801224"},
+        {7, "CBI480W"},
+        {8, "CB122410A"},
+        {9, "CB480W"},
+        {11, "CB12245AJ"},
+        {12, "CB1235A"},
+        {13, "CB2420A"},
+        {14, "CB4810A"}
+};
+
+/* charging status */
+char *chrgs[] = {
+        "none",
+        "recovery",
+        "bulk",
+        "float"
+};
+
+/*
+ * BIT MASKS and VALUES
+ */
+
+/* Charging status */
+#define CHRG_NONE 0
+#define CHRG_RECV 1
+#define CHRG_BULK 2
+#define CHRG_ABSR 3
+#define CHRG_FLOAT 4
+
+/* power management */
+#define PMNG_BKUP 0
+#define PMNG_CHRG 1
+#define PMNG_BOOST 2
+#define PMNG_NCHRG 3
+
+/* product name */
+#define PRDN_MAX 14
+
+/* Mains status */
+#define MAINS_AVAIL 0x0001      /* available */
+#define SHUTD_REQST 0x0002      /* shutdown requested */
+
+/* AC input voltage alarms */
+#define VACA_HIALRM 0x0001      /* high alarm */
+#define VACA_LOALRM 0x0002      /* low alarm */
+
+/* Onboard temperature alarm */
+#define OBTA_HIALRM 1           /* high alarm */
+
+/* Device failure */
+#define DEVF_RCALRM 0x0001      /* rectifier failure */
+#define DEVF_INALRM 0x0006      /* internal failure */
+#define DEVF_LFNAVL 0x0008      /* lifetest not available */
+
+/* Battery temp sensor failure */
+#define BTSF_FCND 0x0001        /* connection fault */
+#define BTSF_NCND 0x0001        /* not connected */
+
+/* Battery voltage alarm */
+#define BVAL_HIALRM 0x0001      /* high voltage */
+#define BVAL_LOALRM 0x0002      /* low voltage */
+#define BVAL_BSTSFL 0x0004      /* battery start with battery flat */
+
+/* SoH and SoC alarms */
+#define SHSC_HIRESI 0x0001      /* high internal resistance */
+#define SHSC_LOCHEF 0x0002      /* low charge efficiency */
+#define SHSC_LOEFCP 0x0004      /* low effective capacity */
+#define SHSC_LOWSOC 0x0040      /* low state of charge */
+
+/* Battery status alarms */
+#define BSTA_REVPOL 0x0001      /* reversed polarity */
+#define BSTA_NOCNND 0x0002      /* not connected */
+#define BSTA_CLSHCR 0x0004      /* cell short circuit */
+#define BSTA_SULPHD 0x0008      /* sulphated */
+#define BSTA_CHEMNS 0x0010      /* chemistry not supported */
+#define BSTA_CNNFLT 0x0020      /* connection fault */
+
+
 /* UPS device state enum */
 enum devstate {
     CHRG = 0,       /* Charging status */
@@ -63,27 +154,26 @@ enum devstate {
     BSOC = 9,       /* Battery state-of-charge */
     BTMP = 11,      /* Battery temperature in Kelvin units */
     PMNG = 15,      /* Power management */
+    PRDN = 21,      /* Product name */
+    FSD  = 80,      /* Force shutdown */
+    BSTA = 89,      /* Battery status alarms */
+    SCSH = 90,      /* SoH and SoC alarms */
+    BVAL = 91,      /* Battery voltage alarm */
+    BTSF = 92,      /* Battery temp sensor failure */
+    DEVF = 93,      /* Device failure */
+    OBTA = 94,      /* On board temp alarm */
+    VACA = 95,      /* VAC alarms */
+    MAIN = 96       /* Mains status */
 };
 typedef enum devstate devstate_t;
-
-/* BIT MASKS and VALUES */
-#define CHRG_NONE 0
-#define CHRG_RECV 1
-#define CHRG_BULK 2
-#define CHRG_ABSR 3
-#define CHRG_FLOAT 4
-#define PMNG_BKUP 0
-#define PMNG_CHRG 1
-#define PMNG_BOOST 2
-#define PMNG_NCHRG 3
 
 /* UPS state signal attributes */
 struct regattr {
     int num;
-	int saddr;          /* register start address */
+    int saddr;          /* register start address */
     int xaddr;          /* register hex address */
     float scale;        /* scale */
-	regtype_t type;     /* register type */
+    regtype_t type;     /* register type */
 };
 typedef struct regattr regattr_t;
 
@@ -129,9 +219,9 @@ regattr_t regs[] = {
          {40062, 0, 0, 1, HOLDING},   /* Lowest battery voltage */
          {40061, 0, 0, .1, HOLDING},  /* Maximum depth of discharge */
          {40064, 0, 0, .1, HOLDING},  /* Average depth of discharge */
-         {40056, 0, 0, 1, HOLDING},   /* Number of overtemperature inside events */
-         {40054, 0, 0, 1, HOLDING},   /* Number of low AC input voltage events at mains input */
-         {40055, 0, 0, 1, HOLDING},   /* Number of High AC input voltage events at mains input */
+         {40056, 0, 0, 1, HOLDING},   /* Number of over temperature inside events */
+         {40054, 0, 0, 1, HOLDING},   /* Number of low VAC events at mains input */
+         {40055, 0, 0, 1, HOLDING},   /* Number of High VAC events at mains input */
          {40057, 0, 0, 1, HOLDING},   /* Number of mains-backup transitions */
          {40060, 0, 0, 1, HOLDING},   /* Highest output load voltage */
          {40063, 0, 0, 1, HOLDING},   /* Lowest output load voltage */
@@ -170,7 +260,10 @@ regattr_t regs[] = {
          {40034, 0, 0, 1, HOLDING},   /* Load output off duration after PC shutdown */
          {40065, 0, 0, 1, HOLDING},   /* History clear all */
          {40066, 0, 0, 1, HOLDING},   /* Factory settings */
-         {40088, 0, 0, 1, HOLDING},   /* Backup Inhibit 0 = Backup allowed 1 = Backup not allowed 0 */
+         {40088, 0, 0, 1, HOLDING},   /* Backup Inhibit 0 = Backup allowed
+                                                                        * 1 = Backup not allowed 0
+                                                                        * */
+         {40041, 0, 0, 1, HOLDING},   /* Force shutdown */
          {40104, 0, 0, 1, HOLDING},   /* Time buffering */
          {40111, 0, 0, 1, HOLDING},   /* PC power supply removal delay */
          {40036, 0, 0, 1, HOLDING},   /* Low AC input voltage alarm threshold */
@@ -186,7 +279,7 @@ regattr_t regs[] = {
          {40043, 0, 0, 1, HOLDING},   /* Device failure */
          {40047, 0, 0, 1, HOLDING},   /* On board temperature alarm */
          {40045, 0, 0, 1, HOLDING},   /* AC input voltage alarm */
-         {40046, 0, 0, 1, HOLDING},   /* Input mains on / backup */
+         {40046, 0, 0, 1, HOLDING},   /* Mains status */
          {40038, 0, 0, 1, HOLDING}    /* Load alarm */
 };
 
