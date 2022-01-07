@@ -403,8 +403,13 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
-NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
-NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
+dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
+NUT_ARG_ENABLE([warnings],
+    [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
+    [medium])
+NUT_ARG_ENABLE([Werror],
+    [fail the build if compiler emits any warnings (treat them as errors)],
+    [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -2187,7 +2192,8 @@ dnl least-surprise default if caller did not specify any --enable-warnings.
 dnl Note: Currently the "gcc-minimal" mode below adapts to builds with
 dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
 dnl default "nut_warning_difficulty" and/or the case handling below.
-nut_warning_difficulty="minimal"
+dnl NOTE: Until X-Mas 2021, the default was "minimal" (now "medium")
+nut_warning_difficulty="medium"
 AC_MSG_CHECKING([whether to pre-set warnings])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],

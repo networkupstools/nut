@@ -84,19 +84,62 @@
  /* Structures */
  /* #define usb_dev_handle libusb_device_handle */
  typedef libusb_device_handle usb_dev_handle;
+/* These typedefs are also named in libshut.h, so we can consistenly
+ * handle the "ifdef SHUT_MODE" handling in libhid.c and some drivers.
+ * These symbolic names are used in all the headers and are expected to
+ * match binary code of object files at (monolithic) driver build time.
+ *
+ * The MIN/MAX definitions here are primarily to generalize range-check
+ * code (especially if anything is done outside the libraries).
+ * FIXME: It may make sense to constrain the limits to lowest common
+ * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+ * so that any build of the practical (driver) code knows to not exceed
+ * any use-case.
+ */
  typedef uint8_t usb_ctrl_requesttype;
+ #define USB_CTRL_REQUESTTYPE_MIN	0
+ #define USB_CTRL_REQUESTTYPE_MAX	UINT8_MAX
+
  typedef uint8_t usb_ctrl_request;
+ #define USB_CTRL_REQUEST_MIN	0
+ #define USB_CTRL_REQUEST_MAX	UINT8_MAX
+
  typedef unsigned char usb_ctrl_endpoint;
+ #define USB_CTRL_ENDPOINT_MIN	0
+ #define USB_CTRL_ENDPOINT_MAX	UCHAR_MAX
+
  typedef uint16_t usb_ctrl_msgvalue;
+ #define USB_CTRL_MSGVALUE_MIN	0
+ #define USB_CTRL_MSGVALUE_MAX	UINT16_MAX
+
  typedef uint16_t usb_ctrl_repindex;
+ #define USB_CTRL_REPINDEX_MIN	0
+ #define USB_CTRL_REPINDEX_MAX	UINT16_MAX
+
  typedef uint8_t usb_ctrl_strindex;
+ #define USB_CTRL_STRINDEX_MIN	0
+ #define USB_CTRL_STRINDEX_MAX	UINT8_MAX
+
  typedef uint8_t usb_ctrl_descindex;
+ #define USB_CTRL_DESCINDEX_MIN	0
+ #define USB_CTRL_DESCINDEX_MAX	UINT8_MAX
+
  typedef unsigned char* usb_ctrl_charbuf;
+ typedef unsigned char usb_ctrl_char;
+ #define USB_CTRL_CHAR_MIN	0
+ #define USB_CTRL_CHAR_MAX	UCHAR_MAX
+
+ /* Here MIN/MAX should not matter much, type mostly used for casting */
  typedef uint16_t usb_ctrl_charbufsize;
+ #define USB_CTRL_CHARBUFSIZE_MIN	0
+ #define USB_CTRL_CHARBUFSIZE_MAX	UINT16_MAX
  #define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIu16
+
  typedef unsigned int usb_ctrl_timeout_msec;	/* in milliseconds */
 	/* Note: there does not seem to be a standard type
 	 * for milliseconds, like there is an useconds_t */
+ #define USB_CTRL_TIMEOUTMSEC_MIN	0
+ #define USB_CTRL_TIMEOUTMSEC_MAX	UINT_MAX
 
  /* defines */
  #define USB_CLASS_PER_INTERFACE	LIBUSB_CLASS_PER_INTERFACE
@@ -319,18 +362,57 @@
 #if WITH_LIBUSB_0_1
 # include <usb.h>
  /* Structures */
+ /* See detailed comments above, in libusb-1.0 definitions
+  * FIXME: It may make sense to constrain the limits to lowest common
+  * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+  * so that any build of the practical (driver) code knows to not exceed
+  * any use-case.
+  */
+ /* no typedef for usb_dev_handle - part of libusb-0.1 API names */
+
  typedef int usb_ctrl_requesttype;
+ #define USB_CTRL_REQUESTTYPE_MIN	INT_MIN
+ #define USB_CTRL_REQUESTTYPE_MAX	INT_MAX
+
  typedef int usb_ctrl_request;
+ #define USB_CTRL_REQUEST_MIN	INT_MIN
+ #define USB_CTRL_REQUEST_MAX	INT_MAX
+
  typedef int usb_ctrl_endpoint;
+ #define USB_CTRL_ENDPOINT_MIN	INT_MIN
+ #define USB_CTRL_ENDPOINT_MAX	INT_MAX
+
  typedef int usb_ctrl_msgvalue;
+ #define USB_CTRL_MSGVALUE_MIN	INT_MIN
+ #define USB_CTRL_MSGVALUE_MAX	INT_MAX
+
  typedef int usb_ctrl_repindex;
+ #define USB_CTRL_REPINDEX_MIN	INT_MIN
+ #define USB_CTRL_REPINDEX_MAX	INT_MAX
+
  typedef int usb_ctrl_strindex;
+ #define USB_CTRL_STRINDEX_MIN	INT_MIN
+ #define USB_CTRL_STRINDEX_MAX	INT_MAX
+
  typedef int usb_ctrl_descindex;
+ #define USB_CTRL_DESCINDEX_MIN	INT_MIN
+ #define USB_CTRL_DESCINDEX_MAX	INT_MAX
+
+ /* Here MIN/MAX should not matter much, type mostly used for casting */
  typedef char* usb_ctrl_charbuf;
+ typedef char usb_ctrl_char;
+ #define USB_CTRL_CHAR_MIN	CHAR_MIN
+ #define USB_CTRL_CHAR_MAX	CHAR_MAX
+
  typedef int usb_ctrl_charbufsize;
+ #define USB_CTRL_CHARBUFSIZE_MIN	INT_MIN
+ #define USB_CTRL_CHARBUFSIZE_MAX	INT_MAX
  /* There is no PRIi :) So we define directly by spec */
  #define PRI_NUT_USB_CTRL_CHARBUFSIZE "i"
+
  typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
+ #define USB_CTRL_TIMEOUTMSEC_MIN	INT_MIN
+ #define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
  /* defines */
  #define ERROR_ACCESS		-EACCES

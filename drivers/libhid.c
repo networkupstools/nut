@@ -63,6 +63,9 @@ size_t max_report_size = 0;
 int interrupt_only = 0;
 size_t interrupt_size = 0;
 
+#define SMIN(a, b) ( ((intmax_t)(a) < (intmax_t)(b)) ? (a) : (b) )
+#define UMIN(a, b) ( ((uintmax_t)(a) < (uintmax_t)(b)) ? (a) : (b) )
+
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
 
@@ -150,7 +153,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
    depending on the max_report_size flag */
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, time_t age)
 {
-	int	id = pData->ReportID;
+	usb_ctrl_repindex	id = pData->ReportID;
 	int	ret;
 	size_t	r;
 
@@ -160,8 +163,50 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	ret = comm_driver->get_report(udev, id, rbuf->data[id],
-		max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id]);
+	r = max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id];
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %zu exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"report will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
+
+		/* Avoid overflowing known buffer size, to be sure: */
+		r = UMIN(r, sizeof(rbuf->data[id]));
+		if (!max_report_size) {
+			r = UMIN(r, rbuf->len[id]);
+		}
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	ret = comm_driver->get_report(udev, id,
+		(usb_ctrl_charbuf)rbuf->data[id],
+		(usb_ctrl_charbufsize)r);
 
 	if (ret <= 0) {
 		return -1;
@@ -169,12 +214,15 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
+		/* e.g. if maxreportsize flag was set */
 		upsdebugx(2,
 			"%s: expected %zu bytes, but got %zu instead",
 			__func__, rbuf->len[id], r);
-		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
+		upsdebug_hex(3, "Report[err]",
+			(usb_ctrl_charbuf)rbuf->data[id], r);
 	} else {
-		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
+		upsdebug_hex(3, "Report[get]",
+			(usb_ctrl_charbuf)rbuf->data[id], rbuf->len[id]);
 	}
 
 	/* have (valid) report */
@@ -207,17 +255,54 @@ static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
    -1 and set errno. The updated value is sent to the device. */
 static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long Value)
 {
-	int id = pData->ReportID;
-	int r;
+	usb_ctrl_repindex id = pData->ReportID;
+	int ret;
+	size_t	r = rbuf->len[id];
 
 	SetValue(pData, rbuf->data[id], Value);
 
-	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
-	if (r <= 0) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %zu exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"item setting will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	ret = comm_driver->set_report(udev, id,
+		(usb_ctrl_charbuf)rbuf->data[id],
+		(usb_ctrl_charbufsize)r);
+	if (ret <= 0) {
 		return -1;
 	}
 
-	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex(3, "Report[set]", rbuf->data[id], r);
 
 	/* expire report */
 	rbuf->ts[id] = 0;
@@ -423,7 +508,59 @@ int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, u
  */
 char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_t buflen)
 {
-	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
+	usb_ctrl_strindex	idx;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if ((uintmax_t)Index > (uintmax_t)USB_CTRL_STRINDEX_MAX
+	||  (intmax_t)Index < (intmax_t)USB_CTRL_STRINDEX_MIN
+	) {
+		upsdebugx(2,
+			"%s: requested index number is out of range, "
+			"expected %jd < %i < %ju",
+			__func__,
+			(intmax_t)USB_CTRL_STRINDEX_MIN,
+			Index,
+			(uintmax_t)USB_CTRL_STRINDEX_MAX);
+		return NULL;
+	}
+	idx = (usb_ctrl_strindex)Index;
+
+	if ((uintmax_t)buflen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %zu exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"index string will be constrained",
+			__func__, buflen,
+			(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			buflen = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			buflen = (size_t)UINT8_MAX - 1;
+		}
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	if (comm_driver->get_string(udev, idx, buf, (usb_ctrl_charbufsize)buflen) < 1)
 		buf[0] = '\0';
 
 	return str_rtrim(buf, '\n');
@@ -496,18 +633,62 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
-	int		buflen, r;
-	size_t	i;
+	int		buflen, ret;
+	size_t	i, r;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size : sizeof(buf), 250);
+	r = interrupt_size ? interrupt_size : sizeof(buf);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		/* FIXME: Should we try here, or plain abort? */
+		upsdebugx(2,
+			"%s: suggested buffer size %zu exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"report will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
+
+		/* Avoid overflowing known buffer size, to be sure: */
+		r = UMIN(r, sizeof(buf));
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	buflen = comm_driver->get_interrupt(
+		udev, (usb_ctrl_charbuf)buf,
+		(usb_ctrl_charbufsize)r,
+		250);
+
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
-	r = file_report_buffer(reportbuf, buf, (size_t)buflen);
-	if (r < 0) {
+	ret = file_report_buffer(reportbuf, buf, (size_t)buflen);
+	if (ret < 0) {
 		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
 		return -errno;
 	}

@@ -4,6 +4,7 @@
  *
  * @author Copyright (C) 2016 Eaton
  *         Copyright (C) 2016 Arnaud Quette <aquette.dev@gmail.com>
+ *         Copyright (C) 2021 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
@@ -115,7 +116,8 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 		upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - "
 			"please email the nut-upsdev list with information about your UPS.", __func__);
 	} else {
-		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)", __func__);
+		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)",
+			__func__);
 	}
 	return ret;
 }
@@ -131,7 +133,7 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 static int nut_libusb_open(libusb_device_handle **udevp,
 	USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(libusb_device_handle *udev,
-		USBDevice_t *hd, unsigned char *rdbuf, int rdlen)
+		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
 #if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
@@ -140,7 +142,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
-	ssize_t devcount = 0;
+	ssize_t	devcount = 0;
 	struct libusb_device_descriptor dev_desc;
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
@@ -274,7 +276,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 
 		upsdebugx(2, "Reading first configuration descriptor");
-		ret = libusb_get_config_descriptor(device, usb_subdriver.hid_rep_index, &conf_desc);
+		ret = libusb_get_config_descriptor(device,
+			(uint8_t)usb_subdriver.hid_rep_index,
+			&conf_desc);
 		/*ret = libusb_get_active_config_descriptor(device, &conf_desc);*/
 		if (ret < 0)
 			upsdebugx(2, "result: %i (%s)",
@@ -438,7 +442,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			goto next_device;
 		}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic push
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
@@ -447,8 +451,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
 		if ((uintmax_t)rdlen > UINT16_MAX) {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
 			upsdebugx(2, "HID descriptor too long %d (max %u)",
@@ -477,7 +484,18 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			rdlen = res; /* correct rdlen if necessary */
 		}
 
-		res = callback(udev, curDevice, rdbuf, rdlen);
+		if (rdlen < USB_CTRL_CHARBUFSIZE_MIN
+		||  (uintmax_t)rdlen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
+		) {
+			upsdebugx(2,
+				"Report descriptor length is out of range on this device: "
+				"should be %ji < %d < %ju",
+					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
+					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+			goto next_device;
+		}
+
+		res = callback(udev, curDevice, rdbuf, (usb_ctrl_charbufsize)rdlen);
 		if (res < 1) {
 			upsdebugx(2, "Caller doesn't like this device");
 			goto next_device;
@@ -555,14 +573,39 @@ static int nut_libusb_strerror(const int ret, const char *desc)
  * return -1 on failure, report length on success
  */
 
-static int nut_libusb_get_report(libusb_device_handle *udev,
-	int ReportId, unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API:
+ * static int nut_libusb_get_report(libusb_device_handle *udev,
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
+ */
+static int nut_libusb_get_report(
+	libusb_device_handle *udev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	int	ret;
 
 	upsdebugx(4, "Entering libusb_get_report");
 
-	if (!udev) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if (!udev
+	|| ReportId < 0 || (uintmax_t)ReportId > UINT16_MAX
+	|| ReportSize < 0 || (uintmax_t)ReportSize > UINT16_MAX
+	) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 
@@ -570,9 +613,9 @@ static int nut_libusb_get_report(libusb_device_handle *udev,
 	ret = libusb_control_transfer(udev,
 		LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_CLASS|LIBUSB_RECIPIENT_INTERFACE,
 		0x01, /* HID_REPORT_GET */
-		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		(uint16_t)ReportId + (0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		usb_subdriver.hid_rep_index,
-		raw_buf, ReportSize, USB_TIMEOUT);
+		raw_buf, (uint16_t)ReportSize, USB_TIMEOUT);
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == LIBUSB_ERROR_PIPE) {
@@ -582,12 +625,37 @@ static int nut_libusb_get_report(libusb_device_handle *udev,
 	return nut_libusb_strerror(ret, __func__);
 }
 
-static int nut_libusb_set_report(libusb_device_handle *udev,
-	int ReportId, unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API:
+ * static int nut_libusb_set_report(libusb_device_handle *udev,
+ *	int ReportId, unsigned char *raw_buf, int ReportSize)
+ */
+static int nut_libusb_set_report(
+	libusb_device_handle *udev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	int	ret;
 
-	if (!udev) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if (!udev
+	|| ReportId < 0 || (uintmax_t)ReportId > UINT16_MAX
+	|| ReportSize < 0 || (uintmax_t)ReportSize > UINT16_MAX
+	) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		return 0;
 	}
 
@@ -595,9 +663,9 @@ static int nut_libusb_set_report(libusb_device_handle *udev,
 	ret = libusb_control_transfer(udev,
 		LIBUSB_ENDPOINT_OUT|LIBUSB_REQUEST_TYPE_CLASS|LIBUSB_RECIPIENT_INTERFACE,
 		0x09, /* HID_REPORT_SET = 0x09*/
-		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		(uint16_t)ReportId + (0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		usb_subdriver.hid_rep_index,
-		raw_buf, ReportSize, USB_TIMEOUT);
+		raw_buf, (uint16_t)ReportSize, USB_TIMEOUT);
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == LIBUSB_ERROR_PIPE) {
@@ -607,35 +675,94 @@ static int nut_libusb_set_report(libusb_device_handle *udev,
 	return nut_libusb_strerror(ret, __func__);
 }
 
-static int nut_libusb_get_string(libusb_device_handle *udev,
-	int StringIdx, char *buf, size_t buflen)
+/* Expected evaluated types for the API:
+ * static int nut_libusb_get_string(libusb_device_handle *udev,
+ *	int StringIdx, char *buf, int buflen)
+ */
+static int nut_libusb_get_string(
+	libusb_device_handle *udev,
+	usb_ctrl_strindex StringIdx,
+	char *buf,
+	usb_ctrl_charbufsize buflen)
 {
 	int ret;
 
-	if (!udev) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if (!udev
+	|| StringIdx < 0 || (uintmax_t)StringIdx > UINT8_MAX
+	|| buflen < 0 || (uintmax_t)buflen > (uintmax_t)INT_MAX
+	) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		return -1;
 	}
 
-	ret = libusb_get_string_descriptor_ascii(udev, StringIdx,
-		(unsigned char*)buf, buflen);
+	ret = libusb_get_string_descriptor_ascii(udev, (uint8_t)StringIdx,
+		(unsigned char*)buf, (int)buflen);
 
 	return nut_libusb_strerror(ret, __func__);
 }
 
-static int nut_libusb_get_interrupt(libusb_device_handle *udev,
-	unsigned char *buf, int bufsize, int timeout)
+/* Expected evaluated types for the API:
+ * static int nut_libusb_get_interrupt(libusb_device_handle *udev,
+ *	unsigned char *buf, int bufsize, int timeout)
+ */
+static int nut_libusb_get_interrupt(
+	libusb_device_handle *udev,
+	usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize,
+	usb_ctrl_timeout_msec timeout)
 {
-	int ret;
+	int ret, tmpbufsize;
 
-	if (!udev) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if (!udev
+	||  bufsize < 0 || (uintmax_t)bufsize > (uintmax_t)INT_MAX
+	) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 		return -1;
 	}
+
+	/* NOTE: With all the fuss about word sized arguments,
+	 * the libusb_interrupt_transfer() lengths are about ints:
+	 * int LIBUSB_CALL libusb_interrupt_transfer(libusb_device_handle *dev_handle,
+	 *	unsigned char endpoint, unsigned char *data, int length,
+	 *	int *actual_length, unsigned int timeout);
+	 */
+	tmpbufsize = (int)bufsize;
 
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	/* ret = libusb_interrupt_transfer(udev, 0x81, buf, bufsize, &bufsize, timeout); */
 	/* libusb0: ret = usb_interrupt_read(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, timeout); */
 	/* Interrupt EP is LIBUSB_ENDPOINT_IN with offset defined in hid_ep_in, which is 0 by default, unless overridden in subdriver. */
-	ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (unsigned char *)buf, bufsize, &bufsize, timeout);
+	ret = libusb_interrupt_transfer(udev,
+		LIBUSB_ENDPOINT_IN + usb_subdriver.hid_ep_in,
+		(unsigned char *)buf, tmpbufsize, &tmpbufsize, timeout);
 
 	/* Clear stall condition */
 	if (ret == LIBUSB_ERROR_PIPE) {
@@ -644,7 +771,12 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev,
 
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	if (ret == LIBUSB_SUCCESS) {
-		ret = bufsize;
+		if (tmpbufsize < 0
+		||  (uintmax_t)tmpbufsize > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
+		) {
+			return -1;
+		}
+		ret = (usb_ctrl_charbufsize)bufsize;
 	}
 
 	return nut_libusb_strerror(ret, __func__);
