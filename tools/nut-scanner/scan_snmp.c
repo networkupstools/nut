@@ -337,6 +337,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
 	return 1;
+
 err:
 	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
 		libname_path, dl_error);
@@ -475,7 +476,7 @@ static void try_all_oid(void * arg, const char * mib_found)
 	int index = 0;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
-	upsdebugx(2, "%s", __func__);
+	upsdebugx(2, "Entering %s for %s", __func__, sec->peername);
 
 	while (snmp_device_table[index].mib != NULL) {
 
@@ -779,7 +780,7 @@ static void * try_SysOID(void * arg)
 	int index = 0;
 	char *mib_found = NULL;
 
-	upsdebugx(2, "%s", __func__);
+	upsdebugx(2, "Entering %s for %s", __func__, sec->peername);
 
 	/* Initialize session */
 	if (!init_session(&snmp_sess, sec)) {
@@ -795,16 +796,17 @@ static void * try_SysOID(void * arg)
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
-		fprintf(stderr,
-			"Failed to open SNMP session for %s.\n",
+		upsdebugx(2,
+			"Failed to open SNMP session for %s",
 			sec->peername);
 		goto try_SysOID_free;
 	}
 
 	/* create and send request. */
 	if (!(*nut_snmp_parse_oid)(SysOID, name, &name_len)) {
-		fprintf(stderr,
-			"SNMP errors: %s\n",
+		upsdebugx(2,
+			"SNMP errors for %s: %s",
+			sec->peername,
 			(*nut_snmp_api_errstring)((*nut_snmp_errno)));
 		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;

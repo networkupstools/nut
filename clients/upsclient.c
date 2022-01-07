@@ -1122,24 +1122,24 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	if (tryssl || forcessl) {
 		ret = upscli_sslinit(ups, certverify);
 		if (forcessl && ret != 1) {
-			upslogx(LOG_ERR, "Can not connect to %s in SSL, disconnect", host);
+			upslogx(LOG_ERR, "Can not connect to NUT server %s in SSL, disconnect", host);
 			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
 		} else if (tryssl && ret == -1) {
-			upslogx(LOG_NOTICE, "Error while connecting to %s, disconnect", host);
+			upslogx(LOG_NOTICE, "Error while connecting to NUT server %s, disconnect", host);
 			upscli_disconnect(ups);
 			return -1;
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
-				upslogx(LOG_NOTICE, "Can not connect to %s in SSL and "
+				upslogx(LOG_NOTICE, "Can not connect to NUT server %s in SSL and "
 				"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
-			upsdebugx(3, "Can not connect to %s in SSL, continue unencrypted", host);
+			upsdebugx(3, "Can not connect to NUT server %s in SSL, continue unencrypted", host);
 		} else {
-			upslogx(LOG_INFO, "Connected to %s in SSL", host);
+			upslogx(LOG_INFO, "Connected to NUT server %s in SSL", host);
 			if (certverify == 0) {
 				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
 				upslogx(LOG_WARNING, "Certificate verification is disabled");
