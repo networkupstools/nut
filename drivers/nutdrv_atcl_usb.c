@@ -263,7 +263,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
 	}
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
@@ -295,7 +295,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		libusb_get_device_descriptor(dev, &dev_desc);
 		ret = libusb_open(dev, &handle);
 		*handlep = handle;
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 	struct usb_bus	*bus;
 	for (bus = usb_busses; bus; bus = bus->next) {
 
@@ -349,7 +349,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
-#else
+#else  /* => WITH_LIBUSB_0_1 */
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = xstrdup(bus->dirname);
@@ -469,7 +469,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
-#elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+#else
+# ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
 				if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
 					upsdebugx(4,
 						"failed to detach kernel driver from USB device: %s",
@@ -477,7 +478,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
-#elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP
+# else
+#  ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP
 				if ((ret = libusb_detach_kernel_driver_np(udev, 0)) < 0) {
 					upsdebugx(4,
 						"failed to detach kernel driver from USB device: %s",
@@ -485,6 +487,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
+#  endif /* HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP */
+# endif /* HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
 #endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER or HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP */
 			}
 
@@ -498,7 +502,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 		next_device:
 			usb_close(handle);
-#if (!WITH_LIBUSB_1_0)
+#if (!WITH_LIBUSB_1_0)  /* => WITH_LIBUSB_0_1 */
 		}
 #endif /* WITH_LIBUSB_1_0 */
 	}

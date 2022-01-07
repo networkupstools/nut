@@ -613,11 +613,13 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
 		upsdebugx(6, "send_cmd send_try %d", send_try+1);
 
-		ret = comm_driver->set_report(udev, 0, buffer_out, sizeof(buffer_out));
+		ret = comm_driver->set_report(udev, 0,
+			(usb_ctrl_charbuf)buffer_out,
+			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %u",
-				ret, (unsigned)(sizeof(buffer_out)));
+			upslogx(1, "libusb_set_report() returned %d instead of %zu",
+				ret, sizeof(buffer_out));
 			return ret;
 		}
 
@@ -627,7 +629,10 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
-			ret = comm_driver->get_interrupt(udev, reply, sizeof(buffer_out), RECV_WAIT_MSEC);
+			ret = comm_driver->get_interrupt(udev,
+				(usb_ctrl_charbuf)reply,
+				(usb_ctrl_charbufsize)sizeof(buffer_out),
+				RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
 				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
 					ret, (unsigned)(sizeof(buffer_out)),
