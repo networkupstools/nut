@@ -57,11 +57,21 @@
 #ifndef NUT_USB_COMMON_H
 #define NUT_USB_COMMON_H
 
+#include "config.h"	/* be sure to know all about the system config */
+
 /* Note: usb-common.h (this file) is included by nut_libusb.h,
  * so not looping the includes ;)
  */
 #include "nut_stdint.h"	/* for uint16_t, UINT16_MAX, PRIsize, etc. */
 #include "common.h"		/* for fatalx() etc. */
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>	/* PATH_MAX for usb.h, among other stuff */
+#endif
+
+#if defined HAVE_SYS_PARAM_H
+#  include <sys/param.h>
+#endif
 
 #include <regex.h>
 
