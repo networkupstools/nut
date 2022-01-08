@@ -1,4 +1,4 @@
-/*  adele_cbi.h - Driver for generic UPS connected via modbus RIO
+/*  adele_cbi.h - Driver for ADELE CB/CBI DC-UPS
  *
  *  Copyright (C)
  *    2021 Dimitris Economou <dimitris.s.economou@gmail.com>
@@ -47,6 +47,12 @@
 /* modbus access parameters */
 #define MODBUS_SLAVE_ID 5
 
+/* number of modbus registers */
+#define MODBUS_NUMOF_REGS 98
+
+/* number of device models */
+#define DEV_NUMOF_MODELS 10
+
 /* definition of register type */
 enum regtype {
 	COIL = 0,
@@ -56,14 +62,13 @@ enum regtype {
 };
 typedef enum regtype regtype_t;
 
+/* product name info, "device.model" */
 struct prodname {
     uint16_t val;
     char *name;
 };
 typedef struct prodname prodname_t;
-
-/* product name */
-prodname_t prdn[] = {
+prodname_t prdnm_i[] = {
         {1, "CBI1235A"},
         {2, "CBI2420A"},
         {3, "CBI4810A"},
@@ -77,13 +82,42 @@ prodname_t prdn[] = {
         {14, "CB4810A"}
 };
 
-/* charging status */
-char *chrgs[] = {
+/* charging status info, "battery.charger.status" */
+char *chrgs_i[] = {
         "none",
-        "recovery",
-        "bulk",
-        "float"
+        "recovery",     /* "resting" */
+        "bulk",         /* "charging" */
+        "absorb",       /* "charging" */
+        "float"         /* "floating" */
 };
+struct chrgs {
+    int state;
+    char *info;
+};
+typedef struct chrgs chrgs_t;
+
+/* power management info, "ups.status", "battery.charger.status" */
+char *pwrmng_i[] = {
+        "backup",       /* "OB", "discharging" */
+        "charging",     /* "OL" */
+        "boost",
+        "not charging"
+};
+struct pwrmng {
+    int state;
+    char *info;
+};
+typedef struct pwrmng pwrmng_t;
+
+/* general modbus register value */
+struct reg {
+    union {
+        uint16_t val16;
+        uint8_t val8;
+    };
+    char *strval;
+};
+typedef struct reg reg_t;
 
 /*
  * BIT MASKS and VALUES
@@ -97,8 +131,8 @@ char *chrgs[] = {
 #define CHRG_FLOAT 4
 
 /* power management */
-#define PMNG_BKUP 0
-#define PMNG_CHRG 1
+#define PMNG_BCKUP 0
+#define PMNG_CHRGN 1
 #define PMNG_BOOST 2
 #define PMNG_NCHRG 3
 
@@ -145,29 +179,35 @@ char *chrgs[] = {
 #define BSTA_CNNFLT 0x0020      /* connection fault */
 
 
-/* UPS device state enum */
-enum devstate {
-    CHRG = 0,       /* Charging status */
-    BATV,           /* Battery voltage */
+/* UPS device reg enum */
+enum devreg {
+    CHRG = 0,       /* Charging status, "battery.charger.status" */
+    BATV,           /* Battery voltage, "battery.voltage" */
     BCEF = 6,       /* Battery charge efficiency factor (CEF) */
     BSOH,           /* Battery state-of-health */
-    BSOC = 9,       /* Battery state-of-charge */
-    BTMP = 11,      /* Battery temperature in Kelvin units */
-    PMNG = 15,      /* Power management */
-    PRDN = 21,      /* Product name */
-    FSD  = 80,      /* Force shutdown */
+    BSOC = 9,       /* Battery state-of-charge, "battery.charge" */
+    BTMP = 11,      /* Battery temperature in Kelvin units, "battery.temperature" */
+    PMNG = 15,      /* Power management, "ups.status" */
+    OTMP = 20,      /* Onboard temperature, "ups.temperature" */
+    PRDN,           /* Product name, "ups.model" */
+    VAC  = 24,      /* AC voltage, "input.voltage" */
+    LVDC,           /* Load voltage, "output.voltage" */
+    LCUR,           /* Load current, "output.current" */
+    BINH = 79,      /* Backup inhibit */
+    FSD,            /* Force shutdown */
+    TBUF,           /* Time buffering */
     BSTA = 89,      /* Battery status alarms */
-    SCSH = 90,      /* SoH and SoC alarms */
-    BVAL = 91,      /* Battery voltage alarm */
-    BTSF = 92,      /* Battery temp sensor failure */
-    DEVF = 93,      /* Device failure */
-    OBTA = 94,      /* On board temp alarm */
-    VACA = 95,      /* VAC alarms */
-    MAIN = 96       /* Mains status */
+    SCSH,           /* SoH and SoC alarms */
+    BVAL,           /* Battery voltage alarm */
+    BTSF,           /* Battery temp sensor failure */
+    DEVF,           /* Device failure */
+    OBTA,           /* On board temp alarm */
+    VACA,           /* VAC alarms */
+    MAIN            /* Mains status */
 };
-typedef enum devstate devstate_t;
+typedef enum devreg devreg_t;
 
-/* UPS state signal attributes */
+/* UPS register attributes */
 struct regattr {
     int num;
     int saddr;          /* register start address */
@@ -176,6 +216,16 @@ struct regattr {
     regtype_t type;     /* register type */
 };
 typedef struct regattr regattr_t;
+
+/* UPS device state info union */
+union devstate {
+    prodname_t product;
+    chrgs_t charge;
+    pwrmng_t power;
+    reg_t reg;
+};
+
+typedef union devstate devstate_t;
 
 /* ADELE CBI registers */
 regattr_t regs[] = {
@@ -282,8 +332,4 @@ regattr_t regs[] = {
          {40046, 0, 0, 1, HOLDING},   /* Mains status */
          {40038, 0, 0, 1, HOLDING}    /* Load alarm */
 };
-
-#define NUMOF_REGS 14
-#define NOTUSED -1
-
 #endif /* ADELE_CBI_H */
