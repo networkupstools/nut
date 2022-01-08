@@ -1,4 +1,4 @@
-/*  adele_cbi.c - Driver for adele CB/CBI UPS
+/*  adele_cbi.c - driver for ADELE CB/CBI DC-UPS
  *
  *  Copyright (C)
  *    2021 Dimitris Economou <dimitris.s.economou@gmail.com>
@@ -62,7 +62,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
 int upscmd(const char *cmd, const char *arg);
 
 /* read signal status */
-int get_signal_state(devstate_t state);
+int get_signal_state(devreg_t state);
 
 /* count the time elapsed since start */
 long time_elapsed(struct timeval *start);
@@ -297,7 +297,7 @@ void upsdrv_shutdown(void)
 
 		/* wait for an increasing time interval before sending shutdown command */
 		while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
-		upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
+		upsdebugx(2, "ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
 		cnt--;
 	}
 	switch (rval) {
@@ -346,6 +346,45 @@ void upsdrv_cleanup(void)
  * driver support functions
  */
 
+/* initialize register start address and hex address from register number */
+void reginit()
+{
+    int i; /* local index */
+
+    for (i = 1; i < MODBUS_NUMOF_REGS; i++) {
+        int rnum = regs[i].num;
+        switch (regs[i].type) {
+            case COIL:
+                regs[i].saddr = rnum - 1;
+                regs[i].xaddr = 0x0 + regs[i].num - 1;
+                break;
+            case INPUT_B:
+                rnum -= 10000;
+                regs[i].saddr = rnum - 1;
+                regs[i].xaddr = 0x10000 + rnum - 1;
+                break;
+            case INPUT_R:
+                rnum -= 30000;
+                regs[i].saddr = rnum - 1;
+                regs[i].xaddr = 0x30000 + rnum - 1;
+                break;
+            case HOLDING:
+                rnum -= 40000;
+                regs[i].saddr = rnum - 1;
+                regs[i].xaddr = 0x40000 + rnum - 1;
+                break;
+            default:
+                upslogx(LOG_ERR, "Invalid register type %d for register %d\n", regs[i].type, regs[i].num);
+                upsdebugx(3, "Invalid register type %d for register %d\n", regs[i].type, regs[i].num);
+        }
+        upsdebugx(3, "register num:%d, type: %d saddr %d, xaddr x%x\n", regs[i].num,
+                  regs[i].type,
+                  regs[i].saddr,
+                  regs[i].xaddr
+        );
+    }
+}
+
 /* Read a modbus register */
 int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 {
@@ -385,7 +424,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2,"ERROR: register_read: invalid register type %d\n", type);
+			upsdebugx(2, "ERROR: register_read: invalid register type %d\n", type);
 			break;
 	}
 	if (rval == -1) {
@@ -561,52 +600,116 @@ int upscmd(const char *cmd, const char *arg)
 	return rval;
 }
 
-/* read signal state from modbus RIO, returns 0|1 state or -1 on communication error */
-int get_signal_state(devstate_t state)
+/* read device state, returns 0 on success or -1 on communication error */
+int get_dev_state(devreg_t regnum, devstate_t *state)
 {
-	int rval = -1;
-	int reg_val;
-	regtype_t rtype = 0;    /* register type */
-	int addr = -1;          /* register address */
+    int i;                          /* local index */
+    int rval = -1;                  /* return value */
+	uint reg_val;                   /* register value */
+    regtype_t rtype = 0;            /* register type */
+    int addr = regs[regnum].xaddr;
+    int rtype = regs[regnum].type;
 
-	/* assign register address and type  */
-	switch (state) {
-		case OL_T:
-			addr = sigar[OL_T].addr;
-			rtype = sigar[OL_T].type;
-			break;
-		case OB_T:
-			addr = sigar[OB_T].addr;
-			rtype = sigar[OB_T].type;
-			break;
-		case LB_T:
-			addr = sigar[LB_T].addr;
-			rtype = sigar[LB_T].type;
-			break;
-		case HB_T:
-			addr = sigar[HB_T].addr;
-			rtype = sigar[HB_T].type;
-			break;
-		case RB_T:
-			addr = sigar[RB_T].addr;
-			rtype = sigar[RB_T].type;
-			break;
-		case CHRG_T:
-			addr = sigar[CHRG_T].addr;
-			rtype = sigar[CHRG_T].type;
-			break;
-		case DISCHRG_T:
-			addr = sigar[DISCHRG_T].addr;
-			rtype = sigar[DISCHRG_T].type;
-			break;
+    rval = register_read(mbctx, addr, rtype, &reg_val);
+    if (rval == -1) {
+        return rval;
+    }
 
-		case BYPASS_T:
-		case CAL_T:
-		case FSD_T:
-		case OFF_T:
-		case OVER_T:
-		case TRIM_T:
-		case BOOST_T:
+	/* process register data */
+	switch (regnum) {
+		case CHRG:
+            if (reg_val == CHRG_NONE) {
+                state->charge.state = CHRG_NONE;
+                state->charge.info = chrgs_i[CHRG_NONE];
+            } else if (reg_val == CHRG_RECV) {
+                state->charge.state = CHRG_RECV;
+                state->charge.info = chrgs_i[CHRG_RECV];
+            } else if (reg_val == CHRG_BULK) {
+                state->charge.state = CHRG_BULK;
+                state->charge.info = chrgs_i[CHRG_BULK];
+            } else if (reg_val == CHRG_ABSR) {
+                state->charge.state = CHRG_ABSR;
+                state->charge.info = chrgs_i[CHRG_ABSR];
+            } else if (reg_val == CHRG_FLOAT) {
+                state->charge.state = CHRG_FLOAT;
+                state->charge.info = chrgs_i[CHRG_FLOAT];
+            }
+			break;
+        case BATV:                  /* "battery.voltage" */
+        case LVDC:                  /* "output.voltage" */
+        case LCUR:                  /* "output.current" */
+            if (reg_val != 0) {
+                state->reg.val16 = reg_val;
+                double fval = reg_val / 1000.00; /* convert mV to V, mA to A */
+                int n = snprintf(NULL, 0, "%f", fval);
+                char *fval_s = (char *)malloc(sizeof(char) * (n + 1));
+                sprintf(fval_s, "%f", fval);
+                state->reg.strval = fval_s;
+            } else {
+                state->reg.val16 = 0;
+                state->reg.strval = "0";
+            }
+            break;
+        case BSOH:
+        case BCEF:
+        case VAC:                   /* "input.voltage" */
+            if (reg_val != 0) {
+                state->reg.val16 = reg_val;
+                int n = snprintf(NULL, 0, "%d", reg_val);
+                char *reg_val_s = (char *)malloc(sizeof(char) * (n + 1));
+                sprintf(reg_val_s, "%d", reg_val);
+                state->reg.strval = reg_val_s;
+            } else {
+                state->reg.val16 = 0;
+                state->reg.strval = "0";
+            }
+            break;
+        case BSOC:                  /* "battery.charge" */
+            if (reg_val != 0) {
+                state->reg.val16 = reg_val;
+                double fval = (double )reg_val * regs[BSOC].scale;
+                int n = snprintf(NULL, 0, "%f", fval);
+                char *fval_s = (char *)malloc(sizeof(char) * (n + 1));
+                sprintf(fval_s, "%f", fval);
+                state->reg.strval = fval_s;
+            } else {
+                state->reg.val16 = 0;
+                state->reg.strval = "0";
+            }
+            break;
+        case BTMP:                  /* "battery.temperature" */
+        case OTMP:                  /* "ups.temperature" */
+            state->reg.val16 = reg_val;
+            double fval = reg_val - 273.15;
+            int n = snprintf(NULL, 0, "%f", fval);
+            char *fval_s = (char *)malloc(sizeof(char) * (n + 1));
+            sprintf(fval_s, "%f", fval);
+            state->reg.strval = fval_s;
+            break;
+		case PMNG:                  /* "ups.status" & "battery.charge" */
+            if (reg_val == PMNG_BCKUP) {
+                state->power.state = PMNG_BCKUP;
+                state->power.info = pwrmng_i[PMNG_BCKUP];
+            } else if (reg_val == PMNG_CHRGN) {
+                state->power.state = PMNG_CHRGN;
+                state->power.info = pwrmng_i[PMNG_CHRGN];
+            } else if (reg_val == PMNG_BOOST) {
+                state->power.state = PMNG_BOOST;
+                state->power.info = pwrmng_i[PMNG_BOOST];
+            } else if (reg_val == PMNG_NCHRG) {
+                state->power.state = PMNG_NCHRG;
+                state->power.info = pwrmng_i[PMNG_NCHRG];
+            }
+			break;
+        case PRDN:                  /* "ups.model" */
+            for (i = 0; i < DEV_NUMOF_MODELS; i++) {
+                if (prdnm_i[i].val == reg_val) {
+                    break;
+                }
+            }
+            state->product.val = reg_val;
+            state->product.name = prdnm_i[i].name;
+            break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
@@ -622,10 +725,7 @@ int get_signal_state(devstate_t state)
 			break;
 	}
 
-	rval = register_read(mbctx, addr, rtype, &reg_val);
-	if (rval > -1) {
-		rval = reg_val;
-	}
+
 	upsdebugx(3, "get_signal_state: state: %d", reg_val);
 	return rval;
 }
