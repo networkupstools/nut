@@ -27,6 +27,7 @@
 
 /* UPS device details */
 #define DEVICE_MFR  "ADELE"
+#define DEVICE_TYPE "DC-UPS"
 #define DEVICE_MODEL "CB/CBI"
 
 /* serial access parameters */
@@ -85,10 +86,10 @@ prodname_t prdnm_i[] = {
 /* charging status info, "battery.charger.status" */
 char *chrgs_i[] = {
         "none",
-        "recovery",     /* "resting" */
-        "bulk",         /* "charging" */
-        "absorb",       /* "charging" */
-        "float"         /* "floating" */
+        "resting",     /* recovering */
+        "charging",    /* bulk */
+        "charging",    /* absorb */
+        "floating"     /* float */
 };
 struct chrgs {
     int state;
@@ -119,6 +120,20 @@ struct reg {
 };
 typedef struct reg reg_t;
 
+/* general alarm struct */
+struct alrm {
+    int actv;               /* active flag */
+    char *descr;            /* description field */
+};
+typedef struct alrm alrm_t;
+
+/* general alarm array */
+struct alrm_ar {
+    int alrm_c;             /* alarm count */
+    alrm_t alrm[];          /* alarm array */
+};
+typedef struct alrm_ar alrm_ar_t;
+
 /*
  * BIT MASKS and VALUES
  */
@@ -139,45 +154,151 @@ typedef struct reg reg_t;
 /* product name */
 #define PRDN_MAX 14
 
-/* Mains status */
-#define MAINS_AVAIL 0x0001      /* available */
-#define SHUTD_REQST 0x0002      /* shutdown requested */
+/* Mains alarm masks */
+#define MAINS_AVAIL_M 0x0001    /* 0: available 1: not available */
+#define SHUTD_REQST_M 0x0002    /* shutdown requested */
 
-/* AC input voltage alarms */
-#define VACA_HIALRM 0x0001      /* high alarm */
-#define VACA_LOALRM 0x0002      /* low alarm */
+/* Mains alarm indices */
+#define MAINS_AVAIL_I 0         /* 0: available 1: not available */
+#define SHUTD_REQST_I 1         /* shutdown requested */
+
+/* AC input voltage alarm masks */
+#define VACA_HIALRM_M 0x0001    /* high alarm */
+#define VACA_LOALRM_M 0x0002    /* low alarm */
+
+/* AC input voltage alarm indices */
+#define VACA_HIALRM_I 0         /* high alarm */
+#define VACA_LOALRM_I 1         /* low alarm */
 
 /* Onboard temperature alarm */
 #define OBTA_HIALRM 1           /* high alarm */
 
-/* Device failure */
-#define DEVF_RCALRM 0x0001      /* rectifier failure */
-#define DEVF_INALRM 0x0006      /* internal failure */
-#define DEVF_LFNAVL 0x0008      /* lifetest not available */
+/* Device failure alarm masks */
+#define DEVF_RCALRM_M 0x0001    /* rectifier failure */
+#define DEVF_INALRM_M 0x0006    /* internal failure */
+#define DEVF_LFNAVL_M 0x0008    /* lifetest not available */
 
-/* Battery temp sensor failure */
-#define BTSF_FCND 0x0001        /* connection fault */
-#define BTSF_NCND 0x0001        /* not connected */
+/* Device failure alarm indices */
+#define DEVF_RCALRM_I 0         /* rectifier failure */
+#define DEVF_INALRM_I 1         /* internal failure */
+#define DEVF_LFNAVL_I 2         /* lifetest not available */
 
-/* Battery voltage alarm */
-#define BVAL_HIALRM 0x0001      /* high voltage */
-#define BVAL_LOALRM 0x0002      /* low voltage */
-#define BVAL_BSTSFL 0x0004      /* battery start with battery flat */
+/* Battery temp sensor failure alarm masks */
+#define BTSF_FCND_M 0x0001      /* connection fault */
+#define BTSF_NCND_M 0x0002      /* not connected */
 
-/* SoH and SoC alarms */
-#define SHSC_HIRESI 0x0001      /* high internal resistance */
-#define SHSC_LOCHEF 0x0002      /* low charge efficiency */
-#define SHSC_LOEFCP 0x0004      /* low effective capacity */
-#define SHSC_LOWSOC 0x0040      /* low state of charge */
+/* Battery temp sensor failure alarm indices */
+#define BTSF_FCND_I 0           /* connection fault */
+#define BTSF_NCND_I 1           /* not connected */
 
-/* Battery status alarms */
-#define BSTA_REVPOL 0x0001      /* reversed polarity */
-#define BSTA_NOCNND 0x0002      /* not connected */
-#define BSTA_CLSHCR 0x0004      /* cell short circuit */
-#define BSTA_SULPHD 0x0008      /* sulphated */
-#define BSTA_CHEMNS 0x0010      /* chemistry not supported */
-#define BSTA_CNNFLT 0x0020      /* connection fault */
+/* Battery voltage alarm masks */
+#define BVAL_HIALRM_M 0x0001    /* high voltage */
+#define BVAL_LOALRM_M 0x0002    /* low voltage */
+#define BVAL_BSTSFL_M 0x0004    /* battery start with battery flat */
 
+/* Battery voltage alarm indices */
+#define BVAL_HIALRM_I 0         /* high voltage */
+#define BVAL_LOALRM_I 1         /* low voltage */
+#define BVAL_BSTSFL_I 2         /* battery start with battery flat */
+
+/* SoH and SoC alarm masks */
+#define SHSC_HIRESI_M 0x0001    /* high internal resistance */
+#define SHSC_LOCHEF_M 0x0002    /* low charge efficiency */
+#define SHSC_LOEFCP_M 0x0004    /* low effective capacity */
+#define SHSC_LOWSOC_M 0x0040    /* low state of charge */
+
+/* SoH and SoC alarm indices */
+#define SHSC_HIRESI_I 0         /* high internal resistance */
+#define SHSC_LOCHEF_I 1         /* low charge efficiency */
+#define SHSC_LOEFCP_I 2         /* low effective capacity */
+#define SHSC_LOWSOC_I 3         /* low state of charge */
+
+/* Battery status alarm masks */
+#define BSTA_REVPOL_M 0x0001    /* reversed polarity */
+#define BSTA_NOCNND_M 0x0002    /* not connected */
+#define BSTA_CLSHCR_M 0x0004    /* cell short circuit */
+#define BSTA_SULPHD_M 0x0008    /* sulphated */
+#define BSTA_CHEMNS_M 0x0010    /* chemistry not supported */
+#define BSTA_CNNFLT_M 0x0020    /* connection fault */
+
+/* Battery status alarm indices */
+#define BSTA_REVPOL_I 0         /* reversed polarity */
+#define BSTA_NOCNND_I 1         /* not connected */
+#define BSTA_CLSHCR_I 2         /* cell short circuit */
+#define BSTA_SULPHD_I 3         /* sulphated */
+#define BSTA_CHEMNS_I 4         /* chemistry not supported */
+#define BSTA_CNNFLT_I 5         /* connection fault */
+
+/* input mains and shutdown alarms */
+alrm_ar_t mains = {
+        2,
+        {
+                {0, "input voltage not available"},
+                {0, "ups shutdown requested"}
+        }
+};
+
+/* AC input voltage alarms */
+alrm_ar_t vaca = {
+        2,
+        {
+                {0, "input voltage high alarm"},
+                {0, "input voltage low alarm"}
+        }
+};
+
+/* device failure alarms */
+alrm_ar_t devf = {
+        3,
+        {
+                {0, "UPS rectifier failure"},
+                {0, "UPS internal failure"},
+                {0, "UPS lifetest not available"}
+        }
+};
+
+/* battery sensor failure alarms */
+alrm_ar_t btsf = {
+        2,
+        {
+                {0, "battery temp sensor connection fault"},
+                {0, "battery temp sensor not connected"}
+        }
+};
+
+/* battery voltage alarms */
+alrm_ar_t bval = {
+        3,
+        {
+                {0, "battery high voltage"},
+                {0, "battery low voltage"},
+                {0, "battery start with battery flat"}
+        }
+};
+
+/* battery SoH and SoC alarms */
+alrm_ar_t shsc = {
+        4,
+        {
+                {0, "battery high internal resistance"},
+                {0, "battery low charge efficiency"},
+                {0, "battery low effective capacity"},
+                {0, "battery low state of charge"}
+        }
+};
+
+/* battery status alarm */
+alrm_ar_t bsta = {
+        6,
+        {
+                {0, "battery reversed polarity"},
+                {0, "battery not connected"},
+                {0, "battery cell short circuit"},
+                {0, "battery sulphated"},
+                {0, "battery chemistry not supported"},
+                {0, "battery connection fault"}
+        }
+};
 
 /* UPS device reg enum */
 enum devreg {
@@ -195,7 +316,7 @@ enum devreg {
     LCUR,           /* Load current, "output.current" */
     BINH = 79,      /* Backup inhibit */
     FSD,            /* Force shutdown */
-    TBUF,           /* Time buffering */
+    TBUF,           /* Time buffering, "battery runtime" */
     BSTA = 89,      /* Battery status alarms */
     SCSH,           /* SoH and SoC alarms */
     BVAL,           /* Battery voltage alarm */
@@ -219,10 +340,11 @@ typedef struct regattr regattr_t;
 
 /* UPS device state info union */
 union devstate {
-    prodname_t product;
-    chrgs_t charge;
-    pwrmng_t power;
-    reg_t reg;
+    prodname_t product; /* ups model name */
+    chrgs_t charge;     /* charging status */
+    pwrmng_t power;     /* ups status */
+    reg_t reg;          /* state register*/
+    alrm_ar_t *alrm;    /* alarm statuses */
 };
 
 typedef union devstate devstate_t;
