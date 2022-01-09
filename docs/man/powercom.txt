@@ -109,6 +109,11 @@ then set A=2, B=0. The default is type-dependent and is given below. Do note
 that the braces and commas are mandatory, as well as the lack of whitespace
 characters.
 
+*nobt*::
+If this flag is present, the battery check on startup is skipped. This is
+useful for systems that tend to overload the UPS when testing the battery on
+system startup when power consumption tends to be high.
+
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
  linevoltage = 230
@@ -197,7 +202,8 @@ AUTHOR
 ------
 Peter Bieringer <pb@bieringer.de>,
 Alexey Sidorov <alexsid@altlinux.org>,
-Keven L. Ates <atescomp@gmail.com>
+Keven L. Ates <atescomp@gmail.com>,
+Rouben Tchakhmakhtchian <rouben@rouben.net>
 
 SEE ALSO
 --------

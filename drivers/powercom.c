@@ -74,6 +74,10 @@
  * - Fixed the processing of input/output voltages for KIN models
  *   (https://github.com/networkupstools/nut/issues/187)
  *
+ * rev 0.18: Rouben Tchakhmakhtchian
+ * - Added nobt flag to config that skips UPS battery check on startup/init
+ *   (https://github.com/networkupstools/nut/issues/546)
+ *
  */
 
 #include "main.h"
@@ -82,7 +86,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -92,7 +96,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Peter Bieringer <pb@bieringer.de>\n" \
 	"Alexey Sidorov <alexsid@altlinux.org>\n" \
 	"Florian Bruhin <nut@the-compiler.org>\n" \
-	"Arnaud Quette <ArnaudQuette@Eaton.com>",
+	"Arnaud Quette <ArnaudQuette@Eaton.com>\n" \
+	"Rouben Tchakhmakhtchian <rouben@rouben.net>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -854,19 +859,19 @@ void upsdrv_initups(void)
 	static char buf[20];
 
 	/* check manufacturer name from arguments */
-	if (getval("manufacturer") != NULL)
+	if (testvar("manufacturer"))
 		manufacturer = getval("manufacturer");
 
 	/* check model name from arguments */
-	if (getval("modelname") != NULL)
+	if (testvar("modelname"))
 		modelname = getval("modelname");
 
 	/* check serial number from arguments */
-	if (getval("serialnumber") != NULL)
+	if (testvar("serialnumber"))
 		serialnumber = getval("serialnumber");
 
 	/* get and check type */
-	if (getval("type") != NULL) {
+	if (testvar("type")) {
 		for (i = 0;
 			 i < NUM_OF_SUBTYPES  &&  strcmp(types[i].name, getval("type"));
 			 i++) ;
@@ -878,7 +883,7 @@ void upsdrv_initups(void)
 	}
 
 	/* check line voltage from arguments */
-	if (getval("linevoltage") != NULL) {
+	if (testvar("linevoltage")) {
 		tmp = atoi(getval("linevoltage"));
 		if (! ( (tmp >= 200 && tmp <= 240) || (tmp >= 100 && tmp <= 120) ) ) {
 			printf("Given line voltage '%d' is out of range (100-120 or 200-240 V)\n", tmp);
@@ -887,7 +892,7 @@ void upsdrv_initups(void)
 		linevoltage = (unsigned int) tmp;
 	}
 
-	if (getval("numOfBytesFromUPS") != NULL) {
+	if (testvar("numOfBytesFromUPS")) {
 		tmp = atoi(getval("numOfBytesFromUPS"));
 		if (! (tmp > 0 && tmp <= MAX_NUM_OF_BYTES_FROM_UPS) ) {
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
@@ -897,7 +902,7 @@ void upsdrv_initups(void)
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
-	if (getval("methodOfFlowControl") != NULL) {
+	if (testvar("methodOfFlowControl")) {
 		for (i = 0;
 			 i < NUM_OF_SUBTYPES  &&
 					strcmp(types[i].flowControl.name,
@@ -911,7 +916,7 @@ void upsdrv_initups(void)
 		types[type].flowControl = types[i].flowControl;
 	}
 
-	if (getval("validationSequence")  &&
+	if (testvar("validationSequence")  &&
 	    sscanf(getval("validationSequence"),
 			        "{{%u,%x},{%u,%x},{%u,%x}}",
 			                &types[type].validation[0].index_of_byte,
@@ -929,7 +934,7 @@ void upsdrv_initups(void)
 
 	/* NOTE: %hhu is not supported before C99; that would need reading
 	 * arguments into an uint as %u, checking range and casting */
-	if (getval("shutdownArguments")  &&
+	if (testvar("shutdownArguments")  &&
 	    sscanf(getval("shutdownArguments"), "{{%hhu,%hhu},%c}",
 	                &types[type].shutdown_arguments.delay[0],
 	                &types[type].shutdown_arguments.delay[1],
@@ -941,7 +946,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("frequency")  &&
+	if (testvar("frequency")  &&
 	        sscanf(getval("frequency"), "{%f,%f}",
 	                &types[type].freq[0], &types[type].freq[1]
 	              ) < 2
@@ -951,7 +956,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("loadPercentage")  &&
+	if (testvar("loadPercentage")  &&
 	        sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
 	            &types[type].loadpct[0], &types[type].loadpct[1],
 	            &types[type].loadpct[2], &types[type].loadpct[3]
@@ -962,7 +967,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("batteryPercentage")  &&
+	if (testvar("batteryPercentage")  &&
 	        sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
 	                &types[type].battpct[0], &types[type].battpct[1],
 	                &types[type].battpct[2], &types[type].battpct[3],
@@ -974,7 +979,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("voltage")  &&
+	if (testvar("voltage")  &&
 	        sscanf(getval("voltage"), "{%f,%f,%f,%f}",
 	            &types[type].voltage[0], &types[type].voltage[1],
 	            &types[type].voltage[2], &types[type].voltage[3]
@@ -1029,10 +1034,16 @@ void upsdrv_initups(void)
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
 		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
-		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
-			upslogx(LOG_NOTICE, "writing error");
-			dstate_datastale();
-			return;
+		if (testvar("nobt") || dstate_getinfo("driver.flag.nobt")) {
+			upslogx(LOG_NOTICE, "nobt flag set, skipping battery test as requested");
+		}
+		else {
+			upslogx(LOG_NOTICE, "nobt flag not set, performing battery test as requested");
+			if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
+				upslogx(LOG_NOTICE, "Write error: failed to send battery test command to UPS!");
+				dstate_datastale();
+				return;
+			}
 		}
 	}
 
@@ -1117,7 +1128,8 @@ void upsdrv_help(void)
 	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
 	printf("                 {240A,240B,120A,120B}\n");
 	printf("                 used in function: A*x+B\n");
-	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n\n");
+	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n");
+	printf(" nobt:          Flag to skip battery check on init/startup.\n\n");
 
 	printf("Example for BNT1500AP in ups.conf:\n");
 	printf("[BNT1500AP]\n");
@@ -1137,6 +1149,7 @@ void upsdrv_help(void)
 	printf("#   loadPercentage = {1.0000,0.0,1.0000,0.0}\n");
 	printf("#   batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}\n");
 	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
+	printf("    nobt\n");
 	return;
 }
 
@@ -1190,6 +1203,8 @@ void upsdrv_makevartable(void)
 			"Battery conversion values: OffFactor, LoadFactor, OffConst, OnFactor, OnConst");
 		addvar(VAR_VALUE, "voltage",
 			"Voltage conversion values: 240VFactor, 240VConst, 120VFactor, 120VConst");
+		addvar(VAR_FLAG, "nobt",
+			"Disable battery test at driver init/startup");
 	}
 }
 
