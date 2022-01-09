@@ -37,6 +37,7 @@
 #include <timehead.h>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define DRIVER_NAME "NUT Adele DC-UPS CB/CBI driver"
 #define DRIVER_VERSION "0.01"
 
@@ -62,26 +63,31 @@ static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;        /* set the modbus by
 void reginit();
 =======
 #define DRIVER_NAME	"NUT Adele CBI driver"
+=======
+#define DRIVER_NAME	"NUT Adele DC-UPS CB/CBI driver"
+>>>>>>> alrm_t, alrm_ar_t data structures, construction of upsdrv_updateinfo in progress
 #define DRIVER_VERSION "0.01"
 
 /* variables */
-static modbus_t *mbctx = NULL;                             /* modbus memory context */
-static regattr_t sigar[NUMOF_SIG_STATES];                  /* array of ups signal attributes */
-static int errcnt = 0;                                     /* modbus access error counter */
-
-static char *device_mfr = DEVICE_MFR;                      /* device manufacturer */
-static char *device_model = DEVICE_MODEL;                  /* device model */
-static int ser_baud_rate = BAUD_RATE;                      /* serial port baud rate */
-static char ser_parity = PARITY;                           /* serial port parity */
-static int ser_data_bit = DATA_BIT;                        /* serial port data bit */
-static int ser_stop_bit = STOP_BIT;                        /* serial port stop bit */
-static int rio_slave_id = MODBUS_SLAVE_ID;                 /* set device ID to default value */
-static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;         /* set the modbus response time out (s) */
-static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;       /* set the modbus response time out (us) */
-static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;         /* set the modbus byte time out (us) */
-static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;       /* set the modbus byte time out (us) */
+static modbus_t *mbctx = NULL;                              /* modbus memory context */
+static int errcnt = 0;                                      /* modbus access error counter */
+static char *device_mfr = DEVICE_MFR;                       /* device manufacturer */
+static char *device_model = DEVICE_MODEL;                   /* device model */
+static char *device_type = DEVICE_TYPE;                     /* device model */
+static int ser_baud_rate = BAUD_RATE;                       /* serial port baud rate */
+static char ser_parity = PARITY;                            /* serial port parity */
+static int ser_data_bit = DATA_BIT;                         /* serial port data bit */
+static int ser_stop_bit = STOP_BIT;                         /* serial port stop bit */
+static int rio_slave_id = MODBUS_SLAVE_ID;                  /* set device ID to default value */
+static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;          /* set the modbus response time out (s) */
+static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;        /* set the modbus response time out (us) */
+static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;          /* set the modbus byte time out (us) */
+static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;        /* set the modbus byte time out (us) */
 
 >>>>>>> under construction
+
+/* initialize register start address and hex address from register number */
+void reginit();
 
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
@@ -123,8 +129,8 @@ upsdrv_info_t upsdrv_info = {
 /* instant command triggered by upsd */
 int upscmd(const char *cmd, const char *arg);
 
-/* read signal status */
-int get_signal_state(devreg_t state);
+/* get device state */
+int get_dev_state(devreg_t regnum, devstate_t *state);
 
 /* count the time elapsed since start */
 long time_elapsed(struct timeval *start);
@@ -146,14 +152,20 @@ upsdrv_info_t upsdrv_info = {
  */
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> alrm_t, alrm_ar_t data structures, construction of upsdrv_updateinfo in progress
 /* read configuration variables from ups.conf and connect to ups device */
 void upsdrv_initups(void)
 {
     int rval;
     upsdebugx(2, "upsdrv_initups");
 
+<<<<<<< HEAD
 
     dstate = (devstate_t *)xmalloc(sizeof(devstate_t));
+=======
+>>>>>>> alrm_t, alrm_ar_t data structures, construction of upsdrv_updateinfo in progress
     reginit();
     get_config_vars();
 
@@ -191,6 +203,7 @@ void upsdrv_initups(void)
     }
 }
 
+<<<<<<< HEAD
 /* initialize ups driver information */
 void upsdrv_initinfo(void)
 {
@@ -465,64 +478,30 @@ void upsdrv_updateinfo(void)
         dstate_datastale();
     }
 =======
+=======
+>>>>>>> alrm_t, alrm_ar_t data structures, construction of upsdrv_updateinfo in progress
 /* initialize ups driver information */
-void upsdrv_initinfo(void) {
+void upsdrv_initinfo(void)
+{
+    devstate_t ds;      /* device state */
 	upsdebugx(2, "upsdrv_initinfo");
 
 	/* set device information */
 	dstate_setinfo("device.mfr", "%s", device_mfr);
 	dstate_setinfo("device.model", "%s", device_model);
+    dstate_setinfo("device.type", "%s", device_type);
 
-	/* register instant commands */
-	if (sigar[FSD_T].addr != NOTUSED) {
-		dstate_addcmd("load.off");
-	}
+    /* read ups model */
+    get_dev_state(PRDN, &ds);
+    dstate_setinfo("ups.model", "%s", ds.product.name);
+
+    /* register instant commands */
+	dstate_addcmd("load.off");
 
 	/* set callback for instant commands */
 	upsh.instcmd = upscmd;
 }
 
-/* open serial connection and connect to modbus RIO */
-void upsdrv_initups(void)
-{
-	int rval;
-	upsdebugx(2, "upsdrv_initups");
-
-	get_config_vars();
-
-	/* open communication port */
-	mbctx = modbus_new(device_path);
-	if (mbctx == NULL) {
-		fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open communication port context");
-	}
-
-	/* set slave ID */
-	rval = modbus_set_slave(mbctx, rio_slave_id);
-	if (rval < 0) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", rio_slave_id);
-	}
-
-	/* connect to modbus device  */
-	if (modbus_connect(mbctx) == -1) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: error(%s)", modbus_strerror(errno));
-	}
-
-	/* set modbus response timeout */
-	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
-	if (rval < 0) {
-	    modbus_free(mbctx);
-	    fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-	}
-
-	/* set modbus response time out to 200ms */
-	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
-	if (rval < 0) {
-	    modbus_free(mbctx);
-	    fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
-	}
-}
 
 /* update UPS signal state */
 void upsdrv_updateinfo(void)
@@ -530,10 +509,19 @@ void upsdrv_updateinfo(void)
 	int rval;
 	int online = -1;    /* keep online state */
 	errcnt = 0;
+    devstate_t ds;      /* device state */
 
 	upsdebugx(2, "upsdrv_updateinfo");
 	status_init();      /* initialize ups.status update */
 	alarm_init();       /* initialize ups.alarm update */
+
+    /* get "battery.charger.status" */
+    get_dev_state(CHRG, &ds);
+    dstate_setinfo("battery.charger.status", "%s", ds.charge.info);
+
+    /* get "battery.voltage" */
+    get_dev_state(BATV, &ds);
+    dstate_setinfo("battery.charger.status", "%s", ds.reg.strval);
 
 	/*
 	 * update UPS status regarding MAINS state either via OL | OB.
@@ -1506,16 +1494,18 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
 	return rval;
 }
 
-/* read device state, returns 0 on success or -1 on communication error */
+/* read device state, returns 0 on success or -1 on communication error
+   it formats state depending on register semantics */
 int get_dev_state(devreg_t regnum, devstate_t *state)
 {
     int i;                          /* local index */
-    int rval = -1;                  /* return value */
+    int rval;                       /* return value */
 	uint reg_val;                   /* register value */
-    regtype_t rtype = 0;            /* register type */
-    int addr = regs[regnum].xaddr;
-    int rtype = regs[regnum].type;
+    regtype_t rtype;                /* register type */
+    int addr;                       /* register address */
 
+    addr = regs[regnum].xaddr;
+    rtype = regs[regnum].type;
     rval = register_read(mbctx, addr, rtype, &reg_val);
     if (rval == -1) {
         return rval;
@@ -1556,6 +1546,7 @@ int get_dev_state(devreg_t regnum, devstate_t *state)
                 state->reg.strval = "0";
             }
             break;
+        case TBUF:
         case BSOH:
         case BCEF:
         case VAC:                   /* "input.voltage" */
@@ -1627,7 +1618,141 @@ int get_dev_state(devreg_t regnum, devstate_t *state)
             state->product.val = reg_val;
             state->product.name = prdnm_i[i].name;
             break;
+<<<<<<< HEAD
 >>>>>>> structure device data, code get_dev_state, in progress
+=======
+        case BSTA:
+            if (reg_val & BSTA_REVPOL_M) {
+                bsta.alrm[BSTA_REVPOL_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_REVPOL_I].actv = 0;
+            }
+            if (reg_val & BSTA_NOCNND_M) {
+                bsta.alrm[BSTA_NOCNND_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_NOCNND_I].actv = 0;
+            }
+            if (reg_val & BSTA_CLSHCR_M) {
+                bsta.alrm[BSTA_CLSHCR_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_CLSHCR_I].actv = 0;
+            }
+            if (reg_val & BSTA_SULPHD_M) {
+                bsta.alrm[BSTA_SULPHD_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_SULPHD_I].actv = 0;
+            }
+            if (reg_val & BSTA_CHEMNS_M) {
+                bsta.alrm[BSTA_CHEMNS_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_CHEMNS_I].actv = 0;
+            }
+            if (reg_val & BSTA_CNNFLT_M) {
+                bsta.alrm[BSTA_CNNFLT_I].actv = 1;
+            } else {
+                bsta.alrm[BSTA_CNNFLT_I].actv = 0;
+            }
+            state->alrm = &bsta;
+            break;
+        case SCSH:
+            if (reg_val & SHSC_HIRESI_M) {
+                shsc.alrm[SHSC_HIRESI_I].actv = 1;
+            } else {
+                shsc.alrm[SHSC_HIRESI_I].actv = 0;
+            }
+            if (reg_val & SHSC_LOCHEF_M) {
+                shsc.alrm[SHSC_LOCHEF_I].actv = 1;
+            } else {
+                shsc.alrm[SHSC_LOCHEF_I].actv = 0;
+            }
+            if (reg_val & SHSC_LOEFCP_M) {
+                shsc.alrm[SHSC_LOEFCP_I].actv = 1;
+            } else {
+                shsc.alrm[SHSC_LOEFCP_I].actv = 0;
+            }
+            if (reg_val & SHSC_LOWSOC_M) {
+                shsc.alrm[SHSC_LOWSOC_I].actv = 1;
+            } else {
+                shsc.alrm[SHSC_LOWSOC_I].actv = 0;
+            }
+            state->alrm = &shsc;
+            break;
+        case BVAL:
+            if (reg_val & BVAL_HIALRM_M) {
+                bval.alrm[BVAL_HIALRM_I].actv = 1;
+            } else {
+                bval.alrm[BVAL_HIALRM_I].actv = 0;
+            }
+            if (reg_val & BVAL_LOALRM_M) {
+                bval.alrm[BVAL_LOALRM_I].actv = 1;
+            } else {
+                bval.alrm[BVAL_LOALRM_I].actv = 0;
+            }
+            if (reg_val & BVAL_BSTSFL_M) {
+                bval.alrm[BVAL_BSTSFL_I].actv = 1;
+            } else {
+                bval.alrm[BVAL_BSTSFL_I].actv = 0;
+            }
+            state->alrm = bval;
+            break;
+        case BTSF:
+            if (reg_val & BTSF_FCND_M) {
+                btsf.alrm[BTSF_FCND_I].actv = 1;
+            } else {
+                btsf.alrm[BTSF_FCND_I].actv = 0;
+            }
+            if (reg_val & BTSF_NCND_M) {
+                btsf.alrm[BTSF_NCND_I].actv = 1;
+            } else {
+                btsf.alrm[BTSF_NCND_I].actv = 0;
+            }
+            state->alrm = &btsf;
+            break;
+        case DEVF:
+            if (reg_val & DEVF_RCALRM_M) {
+                devf.alrm[DEVF_RCALRM_I].actv = 1;
+            } else {
+                devf.alrm[DEVF_RCALRM_I].actv = 0;
+            }
+            if (reg_val & DEVF_INALRM_M) {
+                devf.alrm[DEVF_INALRM_I].actv = 1;
+            } else {
+                devf.alrm[DEVF_INALRM_I].actv = 0;
+            }
+            if (reg_val & DEVF_LFNAVL_M) {
+                devf.alrm[DEVF_LFNAVL_I].actv = 1;
+            } else {
+                devf.alrm[DEVF_LFNAVL_I].actv = 0;
+            }
+            state->alrm = &devf;
+            break;
+        case VACA:
+            if (reg_val & VACA_HIALRM_M) {
+                vaca.alrm[VACA_HIALRM_I].actv = 1;
+            } else {
+                vaca.alrm[VACA_HIALRM_I].actv = 0;
+            }
+            if (reg_val == VACA_LOALRM_M) {
+                vaca.alrm[VACA_LOALRM_I].actv = 1;
+            } else {
+                vaca.alrm[VACA_LOALRM_I].actv = 0;
+            }
+            state->alrm = &vaca;
+            break;
+        case MAIN:
+            if (reg_val & MAINS_AVAIL_M) {
+                mains.alrm[MAINS_AVAIL_I].actv = 1;
+            } else {
+                mains.alrm[MAINS_AVAIL_I].actv = 0;
+            }
+            if (reg_val == SHUTD_REQST_M) {
+                mains.alrm[SHUTD_REQST_I].actv = 1;
+            } else {
+                mains.alrm[SHUTD_REQST_I].actv = 0;
+            }
+            state->alrm = &mains;
+            break;
+>>>>>>> alrm_t, alrm_ar_t data structures, construction of upsdrv_updateinfo in progress
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
@@ -1666,8 +1791,7 @@ int get_dev_state(devreg_t regnum, devstate_t *state)
 			break;
 	}
 
-
-	upsdebugx(3, "get_signal_state: state: %d", reg_val);
+	upsdebugx(3, "get_dev_state: state: %d", reg_val);
 	return rval;
 >>>>>>> under construction
 }
