@@ -93,11 +93,17 @@ void reginit();
 void get_config_vars(void);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /* get device state */
 int get_dev_state(devreg_t regindx, devstate_t **dstate);
 
 =======
 >>>>>>> under construction
+=======
+/* get device state */
+int get_dev_state(devreg_t regnum, devstate_t *state);
+
+>>>>>>> first testing release
 /* create a new modbus context based on connection type (serial or TCP) */
 modbus_t *modbus_new(const char *port);
 
@@ -107,6 +113,7 @@ void modbus_reconnect();
 /* modbus register read function */
 int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 /* modbus register write function */
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -126,16 +133,17 @@ upsdrv_info_t upsdrv_info = {
     DRV_BETA,
     {NULL}
 =======
+=======
+/* modbus register write function */
+int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
+
+>>>>>>> first testing release
 /* instant command triggered by upsd */
 int upscmd(const char *cmd, const char *arg);
-
-/* get device state */
-int get_dev_state(devreg_t regnum, devstate_t *state);
 
 /* count the time elapsed since start */
 long time_elapsed(struct timeval *start);
 
-int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -506,8 +514,8 @@ void upsdrv_initinfo(void)
 /* update UPS signal state */
 void upsdrv_updateinfo(void)
 {
-	int rval;
-	int online = -1;    /* keep online state */
+    int rval;
+    int i;              /* local index */
 	errcnt = 0;
     devstate_t ds;      /* device state */
 
@@ -515,132 +523,198 @@ void upsdrv_updateinfo(void)
 	status_init();      /* initialize ups.status update */
 	alarm_init();       /* initialize ups.alarm update */
 
-    /* get "battery.charger.status" */
-    get_dev_state(CHRG, &ds);
-    dstate_setinfo("battery.charger.status", "%s", ds.charge.info);
-
-    /* get "battery.voltage" */
-    get_dev_state(BATV, &ds);
-    dstate_setinfo("battery.charger.status", "%s", ds.reg.strval);
-
 	/*
-	 * update UPS status regarding MAINS state either via OL | OB.
-	 * if both statuses are mapped to contacts then only OL is evaluated.
+	 * update UPS status regarding MAINS and SHUTDOWN request
+	 *  - OL:  On line (mains is present)
+	 *  - OB:  On battery (mains is not present)
 	 */
-	if (sigar[OL_T].addr != NOTUSED) {
-		rval = get_signal_state(OL_T);
-		upsdebugx(2, "OL value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[OL_T].noro)) {
-			status_set("OL");
-			online = 1;
-		} else {
-			status_set("OB");
-			online = 0;
-
-			/* if DISCHRG state is not mapped to a contact and UPS is on
-			 * batteries set status to DISCHRG state */
-			if (sigar[DISCHRG_T].addr == NOTUSED) {
-				status_set("DISCHRG");
-				dstate_setinfo("battery.charger.status", "discharging");
-			}
-
-		}
-	} else if (sigar[OB_T].addr != NOTUSED) {
-		rval = get_signal_state(OB_T);
-		upsdebugx(2, "OB value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[OB_T].noro)) {
-			status_set("OB");
-			online = 0;
-			if (sigar[DISCHRG_T].addr == NOTUSED) {
-				status_set("DISCHRG");
-				dstate_setinfo("battery.charger.status", "discharging");
-			}
-		} else {
-			status_set("OL");
-			online = 1;
-		}
-	}
+    rval = get_dev_state(MAIN, &ds);
+    if (rval == -1) {
+       errcnt++;
+    }
+    if (ds.alrm->alrm[MAINS_AVAIL_I].actv) {
+        status_set("OB");
+        alarm_set(mains.alrm[MAINS_AVAIL_I].descr);
+    } else {
+        status_set("OL");
+    }
+    if (ds.alrm->alrm[SHUTD_REQST_I].actv) {
+        status_set("FSD");
+        alarm_set(mains.alrm[SHUTD_REQST_I].descr);
+    }
 
     /*
-     * update UPS status regarding CHARGING state via HB. HB is usually
-	 * mapped to "ready" contact when closed indicates a charging state > 85%
-	 */
-	if (sigar[HB_T].addr != NOTUSED) {
-		rval = get_signal_state(HB_T);
-		upsdebugx(2, "HB value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[HB_T].noro)) {
-			status_set("HB");
-			dstate_setinfo("battery.charger.status", "resting");
-		} else if (online == 1 && sigar[CHRG_T].addr == NOTUSED && errcnt == 0) {
-			status_set("CHRG");
-			dstate_setinfo("battery.charger.status", "charging");
-		} else if (online == 0 && sigar[DISCHRG_T].addr == NOTUSED && errcnt == 0) {
-			status_set("DISCHRG");
-			dstate_setinfo("battery.charger.status", "discharging");
-		}
-	}
+     * update UPS status regarding battery voltage
+     */
+    rval = get_dev_state(BVAL, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    if (ds.alrm->alrm[BVAL_LOALRM_I].actv) {
+        status_set("LB");
+        alarm_set( bval.alrm[BVAL_LOALRM_I].descr);
+    }
+    if (ds.alrm->alrm[BVAL_HIALRM_I].actv) {
+        status_set("HB");
+        alarm_set( bval.alrm[BVAL_HIALRM_I].descr);
+    }
+    if (ds.alrm->alrm[BVAL_BSTSFL_I].actv) {
+        alarm_set( bval.alrm[BVAL_BSTSFL_I].descr);
+    }
 
-	/*
-	 * update UPS status regarding DISCHARGING state via LB. LB is mapped
-	 * to "battery low" contact.
-	 */
-	if (sigar[LB_T].addr != NOTUSED) {
-		rval = get_signal_state(LB_T);
-		upsdebugx(2, "LB value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[LB_T].noro)) {
-			status_set("LB");
-			alarm_set("Low Battery (Charge)");
-		}
-	}
+    /* get "battery.voltage" */
+    rval = get_dev_state(BATV, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("battery.voltage", "%s", ds.reg.strval);
 
-	/*
-	 * update UPS status regarding battery HEALTH state via RB. RB is mapped
-	 * to "replace battery" contact
-	 */
-	if (sigar[RB_T].addr != NOTUSED) {
-		rval = get_signal_state(RB_T);
-		upsdebugx(2, "RB value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[RB_T].noro)) {
-			status_set("RB");
-			alarm_set("Replace Battery");
-		}
-	}
+    /*
+     * update UPS status regarding battery charger status
+     */
 
-	/*
-	 * update UPS status regarding battery HEALTH state via RB. RB is mapped
-	 * to "replace battery" contact
-	 */
-	if (sigar[CHRG_T].addr != NOTUSED) {
-		rval = get_signal_state(CHRG_T);
-		upsdebugx(2, "CHRG value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[CHRG_T].noro)) {
-			status_set("CHRG");
-			dstate_setinfo("battery.charger.status", "charging");
-		}
-	} else if (sigar[DISCHRG_T].addr != NOTUSED) {
-		rval = get_signal_state(DISCHRG_T);
-		upsdebugx(2, "DISCHRG value: %d", rval);
-		if (rval == -1) {
-			errcnt++;
-		} else if (rval == (1 ^ sigar[DISCHRG_T].noro)) {
-			status_set("DISCHRG");
-			dstate_setinfo("battery.charger.status", "discharging");
-		}
-	}
+    /* get "battery.charger.status" */
+    rval = get_dev_state(CHRG, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    if (ds.charge.state == CHRG_BULK || ds.charge.state == CHRG_ABSR) {
+        status_set("CHRG");
+    }
+    dstate_setinfo("battery.charger.status", "%s", ds.charge.info);
 
-	/* check for communication errors */
+    rval = get_dev_state(PMNG, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    if (ds.power.state == PMNG_BCKUP) {
+        status_set("DISCHRG");
+        dstate_setinfo("battery.charger.status", "discharging");
+    }
+    if (ds.power.state == PMNG_BOOST) {
+        status_set("BOOST");
+    }
+
+    /*
+     * update UPS battery state of charge
+     */
+    rval = get_dev_state(BSOC, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("battery.charge", "%s", ds.reg.strval);
+
+    /*
+     * update UPS AC input state
+     */
+    rval = get_dev_state(VACA, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+    rval = get_dev_state(VAC, &ds);
+    dstate_setinfo("input.voltage", "%s", ds.reg.strval);
+
+    /*
+     * update UPS onboard temperature state
+     */
+    rval = get_dev_state(OBTA, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+    rval = get_dev_state(OTMP, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("ups.temperature", "%s", ds.reg.strval);
+
+    /*
+     * update UPS battery temperature state
+     */
+    rval = get_dev_state(BSTA, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+    rval = get_dev_state(BTMP, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("battery.temperature", "%s", ds.reg.strval);
+    rval = get_dev_state(TBUF, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("battery.runtime", "%s", ds.reg.strval);
+
+    /*
+     * update UPS device failure state
+     */
+    rval = get_dev_state(DEVF, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+
+    /*
+     * update UPS SoH and SoC states
+     */
+    rval = get_dev_state(SCSH, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+
+    /*
+     * update UPS battery state
+     */
+    rval = get_dev_state(BSTA, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    for (i = 0; i < ds.alrm->alrm_c; i++) {
+        if (ds.alrm[i].alrm->actv) {
+            alarm_set(ds.alrm[i].alrm->descr);
+        }
+    }
+
+    /*
+     * update UPS load status
+     */
+    rval = get_dev_state(LVDC, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("output.voltage", "%s", ds.reg.strval);
+    rval = get_dev_state(LCUR, &ds);
+    if (rval == -1) {
+        errcnt++;
+    }
+    dstate_setinfo("output.current", "%s", ds.reg.strval);
+
+
+    /* check for communication errors */
 	if (errcnt == 0) {
 		alarm_commit();
 		status_commit();
@@ -1427,67 +1501,24 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
 =======
 	int rval;
 	int data;
-	struct timeval start;
-	long etime;
 
 	if (!strcasecmp(cmd, "load.off")) {
-		if (sigar[FSD_T].addr != NOTUSED &&
-		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
-		) {
-			data = 1 ^ sigar[FSD_T].noro;
-			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
-			if (rval == -1) {
-				upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
-					modbus_strerror(errno),
-					sigar[FSD_T].addr,
-					sigar[FSD_T].type,
-					device_path
-				);
-				upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
-				rval = STAT_INSTCMD_FAILED;
-			} else {
-				upsdebugx(2, "load.off: addr: 0x%x, data: %d", sigar[FSD_T].addr, data);
-				rval = STAT_INSTCMD_HANDLED;
-			}
-
-			/* if pulse has been defined and rising edge was successful */
-			if (FSD_pulse_duration != NOTUSED && rval == STAT_INSTCMD_HANDLED) {
-				rval = gettimeofday(&start, NULL);
-				if (rval < 0) {
-					upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
-				}
-
-				/* wait for FSD_pulse_duration ms */
-				while ((etime = time_elapsed(&start)) < FSD_pulse_duration);
-
-				data = 0 ^ sigar[FSD_T].noro;
-				rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
-				if (rval == -1) {
-					upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
-						modbus_strerror(errno),
-						sigar[FSD_T].addr,
-						sigar[FSD_T].type,
-						device_path
-					);
-					upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
-					rval = STAT_INSTCMD_FAILED;
-				} else {
-					upsdebugx(2, "load.off: addr: 0x%x, data: %d, elapsed time: %lims",
-						sigar[FSD_T].addr,
-						data,
-						etime
-					);
-					rval = STAT_INSTCMD_HANDLED;
-				}
-			}
-		} else {
-			upslogx(LOG_NOTICE,"load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
-				cmd,
-				arg
-			);
-			rval = STAT_INSTCMD_FAILED;
-		}
-	} else {
+        data = 1;
+        rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
+        if (rval == -1) {
+            upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+                    modbus_strerror(errno),
+                    regs[FSD].xaddr,
+                    regs[FSD].type,
+                    device_path
+            );
+            upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+            rval = STAT_INSTCMD_FAILED;
+        } else {
+            upsdebugx(2, "load.off: addr: 0x%x, data: %d", regs[FSD].xaddr, data);
+            rval = STAT_INSTCMD_HANDLED;
+        }
+    } else {
 		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
 		rval = STAT_INSTCMD_UNKNOWN;
 	}
@@ -1693,7 +1724,7 @@ int get_dev_state(devreg_t regnum, devstate_t *state)
             } else {
                 bval.alrm[BVAL_BSTSFL_I].actv = 0;
             }
-            state->alrm = bval;
+            state->alrm = &bval;
             break;
         case BTSF:
             if (reg_val & BTSF_FCND_M) {
@@ -1800,6 +1831,7 @@ int get_dev_state(devreg_t regnum, devstate_t *state)
 void get_config_vars()
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     /* check if device manufacturer is set ang get the value */
     if (testvar("device_mfr")) {
         device_mfr = getval("device_mfr");
@@ -1857,6 +1889,8 @@ void get_config_vars()
 		sigar[i].noro = 0;          /* ON corresponds to 1 (closed contact) */
 	}
 
+=======
+>>>>>>> first testing release
 	/* check if device manufacturer is set ang get the value */
 	if (testvar("device_mfr")) {
 		device_mfr = getval("device_mfr");
@@ -1936,6 +1970,7 @@ void get_config_vars()
         }
     }
     upsdebugx(2, "mod_byte_to_us %d", mod_byte_to_us);
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 
@@ -2150,6 +2185,8 @@ void get_config_vars()
 		}
 	}
 >>>>>>> under construction
+=======
+>>>>>>> first testing release
 }
 
 /* create a new modbus context based on connection type (serial or TCP) */

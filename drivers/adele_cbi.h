@@ -81,12 +81,16 @@
 #define DEV_NUMOF_MODELS 10
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> first testing release
 /* shutdown repeat on error */
 #define FSD_REPEAT_CNT 3
 
 /* shutdown repeat interval in ms */
 #define FSD_REPEAT_INTRV 1500
 
+<<<<<<< HEAD
 /* definition of register type */
 enum regtype {
     COIL = 0,
@@ -175,6 +179,8 @@ typedef struct alrm_ar alrm_ar_t;
 =======
 =======
 >>>>>>> structure device data, code get_dev_state, in progress
+=======
+>>>>>>> first testing release
 /* definition of register type */
 enum regtype {
 	COIL = 0,
@@ -515,11 +521,11 @@ static regattr_t regs[] = {
 #define PRDN_MAX 14
 
 /* Mains alarm masks */
-#define MAINS_AVAIL_M 0x0001    /* 0: available 1: not available */
+#define MAINS_AVAIL_M 0x0001    /* 0: available (OL) 1: not available (OB) */
 #define SHUTD_REQST_M 0x0002    /* shutdown requested */
 
 /* Mains alarm indices */
-#define MAINS_AVAIL_I 0         /* 0: available 1: not available */
+#define MAINS_AVAIL_I 0         /* 0: available (OL) 1: not available (OB) */
 #define SHUTD_REQST_I 1         /* shutdown requested */
 
 /* AC input voltage alarm masks */
@@ -676,7 +682,7 @@ enum devreg {
     LCUR,           /* Load current, "output.current" */
     BINH = 79,      /* Backup inhibit */
     FSD,            /* Force shutdown */
-    TBUF,           /* Time buffering, "battery runtime" */
+    TBUF,           /* Time buffering, "battery.runtime" */
     BSTA = 89,      /* Battery status alarms */
     SCSH,           /* SoH and SoC alarms */
     BVAL,           /* Battery voltage alarm */
