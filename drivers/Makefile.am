@@ -184,7 +184,12 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-LIBUSB_IMPL = libusb.c
+if WITH_LIBUSB_0_1
+LIBUSB_IMPL = libusb0.c
+endif
+if WITH_LIBUSB_1_0
+LIBUSB_IMPL = libusb1.c
+endif
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c salicru-hid.c
@@ -213,7 +218,7 @@ riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
-mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
+mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE=1
 mge_shut_LDADD = $(LDADD) -lm
 
 # SNMP
@@ -308,7 +313,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 dist_noinst_HEADERS = apc-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
- hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
+ hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\

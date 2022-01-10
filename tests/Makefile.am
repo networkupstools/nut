@@ -4,7 +4,7 @@ all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
-TESTS = nutlogtest getvaluetest
+TESTS = nutlogtest
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
@@ -23,11 +23,15 @@ LINKED_SOURCE_FILES = hidparser.c
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
 
+if WITH_USB
+TESTS += getvaluetest
+
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+endif
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la: dummy

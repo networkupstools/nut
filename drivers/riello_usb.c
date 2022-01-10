@@ -7,6 +7,7 @@
  *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
+ * Copyright (C) 2016   Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,12 +29,12 @@
 #include <stdint.h>
 
 #include "main.h"
-#include "libusb.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -87,10 +88,10 @@ static int cypress_setfeatures()
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
 								0x09,						/* HID_REPORT_SET = 0x09 */
 								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (char*) bufOut, 0x5, 1000);
+								0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s", ret ? usb_strerror() : "error");
+		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
 		return ret;
 	}
 
@@ -102,6 +103,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
 	int i, err, size;
+	/*int errno;*/
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -120,7 +122,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -150,7 +152,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -170,8 +172,11 @@ static int Get_USB_Packet(uint8_t *buffer)
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
+	/* Note: depending on libusb API version, size is either int or uint16_t
+	 * either way, likely less than size_t limit. But we don't assign much.
+	 */
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, (char*) inBuf, (int)size, 1000);
+	err = usb_bulk_read(udev, ep, (usb_ctrl_charbuf) inBuf, (int)size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
@@ -301,21 +306,22 @@ static USBDeviceMatcher_t device_matcher = {
  * caller, don't do this here. Return < 0 on error, 0 or higher on
  * success.
  */
-static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
+static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
-	 NUT_UNUSED_VARIABLE(device);
-	 NUT_UNUSED_VARIABLE(rdbuf);
-	 NUT_UNUSED_VARIABLE(rdlen);
+	int ret = 0;
+	NUT_UNUSED_VARIABLE(device);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
 
 /*
-	if (usb_set_configuration(handle, 1) < 0) {
-		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
+	if ((ret = usb_set_configuration(handle, 1)) < 0) {
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", nut_usb_strerror(ret));
 		return -1;
 	}
 */
 
-	if (usb_claim_interface(handle, 0) < 0) {
-		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());
+	if ((ret = usb_claim_interface(handle, 0)) < 0) {
+		upslogx(LOG_WARNING, "Can't claim USB interface: %s", nut_usb_strerror(ret));
 		return -1;
 	}
 
@@ -353,24 +359,26 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	switch (ret)
 	{
-	case -EBUSY:				/* Device or resource busy */
+	case ERROR_BUSY:			/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -EPERM:				/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
-#ifndef HAVE___ATTRIBUTE__NORETURN
+# ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# endif
 #endif
 
-	case -EPIPE:				/* Broken pipe */
+	case ERROR_PIPE:			/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#ifdef ETIME
+#if ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:				/* Timer expired */
 	fallthrough_case_etime:
@@ -379,23 +387,25 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 			upsdebugx(1, "Device reset handled");
 		}
 		goto fallthrough_case_reconnect;
-	case -ENODEV:		/* No such device */
-	case -EACCES:		/* Permission denied */
-	case -EIO:		/* I/O error */
-	case -ENXIO:		/* No such device or address */
-	case -ENOENT:		/* No such file or directory */
+	case ERROR_NO_DEVICE:		/* No such device */
+	case ERROR_ACCESS:			/* Permission denied */
+	case ERROR_IO:				/* I/O error */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+	case -ENXIO:				/* No such device or address */
+#endif
+	case ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
 		break;
 
-	case -ETIMEDOUT:	/* Connection timed out */
+	case ERROR_TIMEOUT:  /* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
 		break;
 
-	case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+	case ERROR_OVERFLOW: /* Value too large for defined data type */
+#if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
 #endif
 		break;

@@ -9,6 +9,7 @@
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
    Copyright (C) 2005-2008, 2014  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2016  Eaton
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -129,14 +130,13 @@
  */
 
 #include "main.h"
-#include "libusb.h"
+#include "nut_libusb.h"
 #include <math.h>
 #include <ctype.h>
-#include <usb.h>
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -539,7 +539,7 @@ static void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case -EBUSY:
+		case ERROR_BUSY:
 			upslogx(LOG_WARNING,
 				"%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
@@ -550,7 +550,7 @@ static void usb_comm_fail(int res, const char *msg)
 		default:
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
-				msg, res, usb_strerror());
+				msg, res, nut_usb_strerror(res));
 
 			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
 			hd = NULL;
@@ -613,11 +613,13 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
 		upsdebugx(6, "send_cmd send_try %d", send_try+1);
 
-		ret = comm_driver->set_report(udev, 0, buffer_out, sizeof(buffer_out));
+		ret = comm_driver->set_report(udev, 0,
+			(usb_ctrl_charbuf)buffer_out,
+			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %u",
-				ret, (unsigned)(sizeof(buffer_out)));
+			upslogx(1, "libusb_set_report() returned %d instead of %zu",
+				ret, sizeof(buffer_out));
 			return ret;
 		}
 
@@ -627,7 +629,10 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
-			ret = comm_driver->get_interrupt(udev, reply, sizeof(buffer_out), RECV_WAIT_MSEC);
+			ret = comm_driver->get_interrupt(udev,
+				(usb_ctrl_charbuf)reply,
+				(usb_ctrl_charbufsize)sizeof(buffer_out),
+				RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
 				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
 					ret, (unsigned)(sizeof(buffer_out)),
@@ -1007,7 +1012,7 @@ void upsdrv_initinfo(void)
 	if(tl_model != TRIPP_LITE_SMARTPRO ) {
 		ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 		if(ret <= 0) {
-			if(ret == -EPIPE) {
+			if(ret == ERROR_PIPE) {
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
