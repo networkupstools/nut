@@ -735,9 +735,15 @@ skeletal man page that will probably miss many of the finer points of
 the driver and hardware.
 
 The same remark goes for device entries: if you add support for new models,
-remember to also complete the hardware compatibility list, present
+please remember to also complete the hardware compatibility list, present
 in data/driver.list.in. This will be used to generate both textual, static
 HTML and dynamic searchable HTML for the website.
+
+Finally, don't forget about fame and glory: if you added or substantially
+updated a driver, your copyright belongs in the heading comment (along
+with existing ones). For vendor backed (or sponsored) contributions we
+welcome an entry in the docs/acknowledgements.txt file as well, to track
+and know the industry players who help make NUT better and more useful.
 
 Source code management
 ----------------------
