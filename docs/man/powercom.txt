@@ -112,7 +112,7 @@ characters.
 *nobt*::
 If this flag is present, the battery check on startup is skipped. This is
 useful for systems that tend to overload the UPS when testing the battery on
-system startup when power consumption tends to be high.
+system startup -- just when the power consumption tends to be high.
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
