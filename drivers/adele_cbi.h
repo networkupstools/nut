@@ -4,6 +4,7 @@
  *
  *  Copyright (C)
  *    2022 Dimitris Economou <dimitris.s.economou@gmail.com>
+<<<<<<< HEAD
 =======
 /*  adele_cbi.h - Driver for generic UPS connected via modbus RIO
 =======
@@ -13,6 +14,8 @@
  *  Copyright (C)
  *    2021 Dimitris Economou <dimitris.s.economou@gmail.com>
 >>>>>>> under construction
+=======
+>>>>>>> ghost alarms bug fix, other bug fixes
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -183,10 +186,10 @@ typedef struct alrm_ar alrm_ar_t;
 >>>>>>> first testing release
 /* definition of register type */
 enum regtype {
-	COIL = 0,
-	INPUT_B,
-	INPUT_R,
-	HOLDING
+    COIL = 0,
+    INPUT_B,
+    INPUT_R,
+    HOLDING
 };
 typedef enum regtype regtype_t;
 
@@ -196,6 +199,7 @@ struct prodname {
     char *name;
 };
 typedef struct prodname prodname_t;
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 <<<<<<< HEAD
@@ -207,6 +211,9 @@ prodname_t prdn[] = {
 =======
 prodname_t prdnm_i[] = {
 >>>>>>> structure device data, code get_dev_state, in progress
+=======
+static prodname_t prdnm_i[] = {
+>>>>>>> ghost alarms bug fix, other bug fixes
         {1, "CBI1235A"},
         {2, "CBI2420A"},
         {3, "CBI4810A"},
@@ -221,7 +228,7 @@ prodname_t prdnm_i[] = {
 };
 
 /* charging status info, "battery.charger.status" */
-char *chrgs_i[] = {
+static char *chrgs_i[] = {
         "none",
         "resting",     /* recovering */
         "charging",    /* bulk */
@@ -235,7 +242,7 @@ struct chrgs {
 typedef struct chrgs chrgs_t;
 
 /* power management info, "ups.status", "battery.charger.status" */
-char *pwrmng_i[] = {
+static char *pwrmng_i[] = {
         "backup",       /* "OB", "discharging" */
         "charging",     /* "OL" */
         "boost",
@@ -315,6 +322,7 @@ typedef struct alrm_ar alrm_ar_t;
 
 /* Onboard temperature alarm index */
 #define OBTA_HIALRM_I 0         /* high alarm */
+<<<<<<< HEAD
 
 /* Device failure alarm masks */
 #define DEVF_RCALRM_M 0x0001    /* rectifier failure */
@@ -538,6 +546,8 @@ static regattr_t regs[] = {
 
 /* Onboard temperature alarm */
 #define OBTA_HIALRM 1           /* high alarm */
+=======
+>>>>>>> ghost alarms bug fix, other bug fixes
 
 /* Device failure alarm masks */
 #define DEVF_RCALRM_M 0x0001    /* rectifier failure */
@@ -596,7 +606,7 @@ static regattr_t regs[] = {
 #define BSTA_CNNFLT_I 5         /* connection fault */
 
 /* input mains and shutdown alarms */
-alrm_ar_t mains = {
+static alrm_ar_t mains = {
         2,
         {
                 {0, "input voltage not available"},
@@ -605,7 +615,7 @@ alrm_ar_t mains = {
 };
 
 /* AC input voltage alarms */
-alrm_ar_t vaca = {
+static alrm_ar_t vaca = {
         2,
         {
                 {0, "input voltage high alarm"},
@@ -614,7 +624,7 @@ alrm_ar_t vaca = {
 };
 
 /* device failure alarms */
-alrm_ar_t devf = {
+static alrm_ar_t devf = {
         3,
         {
                 {0, "UPS rectifier failure"},
@@ -624,7 +634,7 @@ alrm_ar_t devf = {
 };
 
 /* battery sensor failure alarms */
-alrm_ar_t btsf = {
+static alrm_ar_t btsf = {
         2,
         {
                 {0, "battery temp sensor connection fault"},
@@ -633,7 +643,7 @@ alrm_ar_t btsf = {
 };
 
 /* battery voltage alarms */
-alrm_ar_t bval = {
+static alrm_ar_t bval = {
         3,
         {
                 {0, "battery high voltage"},
@@ -643,7 +653,7 @@ alrm_ar_t bval = {
 };
 
 /* battery SoH and SoC alarms */
-alrm_ar_t shsc = {
+static alrm_ar_t shsc = {
         4,
         {
                 {0, "battery high internal resistance"},
@@ -654,7 +664,7 @@ alrm_ar_t shsc = {
 };
 
 /* battery status alarm */
-alrm_ar_t bsta = {
+static alrm_ar_t bsta = {
         6,
         {
                 {0, "battery reversed polarity"},
@@ -663,6 +673,14 @@ alrm_ar_t bsta = {
                 {0, "battery sulphated"},
                 {0, "battery chemistry not supported"},
                 {0, "battery connection fault"}
+        }
+};
+
+/* onboard temperature alarm */
+static alrm_ar_t obta = {
+        1,
+        {
+                {0, "onboard temperature high"}
         }
 };
 
@@ -716,8 +734,12 @@ union devstate {
 typedef union devstate devstate_t;
 
 /* ADELE CBI registers */
+<<<<<<< HEAD
 regattr_t regs[] = {
 >>>>>>> under construction
+=======
+static regattr_t regs[] = {
+>>>>>>> ghost alarms bug fix, other bug fixes
          {40005, 0, 0, 1, HOLDING},    /* Charging status */
          {40008, 0, 0, 1, HOLDING},    /* Battery voltage */
          {40014, 0, 0, 1, HOLDING},    /* Battery charge current */
@@ -735,12 +757,17 @@ regattr_t regs[] = {
          {40100, 0, 0, 1, HOLDING},   /* SoC/SoH test possible */
          {40006, 0, 0, 1, HOLDING},   /* Power management
 <<<<<<< HEAD
+<<<<<<< HEAD
                                        * 0:Backup 1:Charging 2:boost 3:Not charging
                                        */
 =======
                                                                         * 0:Backup 1:Charging 2:boost 3:Not charging
                                                                         */
 >>>>>>> under construction
+=======
+                                       * 0:Backup 1:Charging 2:boost 3:Not charging
+                                       */
+>>>>>>> ghost alarms bug fix, other bug fixes
          {40007, 0, 0, 1, HOLDING},   /* Nominal output voltage */
          {40009, 0, 0, 1, HOLDING},   /* Parameter map version ID */
          {40010, 0, 0, 1, HOLDING},   /* Software ID */
