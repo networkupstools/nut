@@ -22,7 +22,7 @@
   of "real" changes in the other commits. Similarly for typo fixes in
   comments or text documents.
 
-## Frequent "underwater rocks"
+## Frequent "underwater rocks" for driver addition/update PRs
 
 - [ ] Revised existing driver families and added a sub-driver if applicable
   (`nutdrv_qx`, `usbhid-ups`...) or added a brand new driver in the other
@@ -53,6 +53,13 @@
   should be raised on the NUT Developers mailing list to standardize the new
   concept.
 
+- [ ] Updated `data/driver.list.in` if applicable (new tested device info)
+<!-- Comment:
+Also note below, a point about PR posting for NUT DDL
+-->
+
+## Frequent "underwater rocks" for general C code PRs
+
 - [ ] Did not "blindly assume" default integer type sizes and value ranges,
   structure layout and alignment in memory, endianness (layout of bytes and
   bits in memory for multi-byte numeric types), or use of generic `int` where
@@ -67,7 +74,8 @@
 - [ ] Progress and errors are handled with `upsdebugx()`, `upslogx()`,
   `fatalx()` and related methods, not with direct `printf()` or `exit()`.
   Similarly, NUT helpers are used for error-checked memory allocation and
-  string operations.
+  string operations (except where customized error handling is needed,
+  such as unlocking device ports, etc.)
 
 - [ ] Coding style (including whitespace for indentations) follows precedent
   in the code of the file, and examples/guide in `docs/developers.txt` file.
@@ -75,9 +83,7 @@
 - [ ] For newly added files, the `Makefile.am` recipes were updated and the
   `make distcheck` target passes.
 
-## Documentation updates
-
-- [ ] Updated `data/driver.list.in`
+## General documentation updates
 
 - [ ] Updated `docs/acknowledgements.txt` (for vendor-backed device support)
 
