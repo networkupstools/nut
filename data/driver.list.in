@@ -16,8 +16,8 @@
 # ========
 # - device type:
 #   "ups" for Uninterruptible Power Supply
-#   "pdu" for Power Distributions Unit
-#   "scd" for Solar Controlers Device
+#   "pdu" for Power Distribution Unit
+#   "scd" for Solar Controller Device
 #   "ats" for Automatic Transfer Switch
 #
 # - support level: a number from "1" to "5" (stars) meaning:
@@ -224,6 +224,7 @@
 "Cyber Power Systems"	"ups"	"3"	"EC750G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/desktop/ec750g
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"PR1500RT2U"	""	"usbhid-ups" # https://www.cyberpowersystems.com/product/ups/new-smart-app-sinewave/pr1500rt2u/
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR2200LCDRT2U"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
