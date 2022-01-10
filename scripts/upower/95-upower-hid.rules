@@ -168,6 +168,9 @@ ATTRS{idVendor}=="2A03", ATTRS{idProduct}=="8040", ENV{UPOWER_BATTERY_TYPE}="ups
 ATTRS{idVendor}=="2b2d", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Salicru
+ATTRS{idVendor}=="2e66", ATTRS{idProduct}=="0201", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="2e66", ATTRS{idProduct}=="0202", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="2e66", ATTRS{idProduct}=="0203", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="2e66", ATTRS{idProduct}=="0300", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Powervar
