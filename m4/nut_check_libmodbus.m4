@@ -159,16 +159,20 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 		dnl it simple -- and assume some same approach
 		dnl applies to the same generation of the library.
 		 AC_LANG_POP([C])
-		 AS_IF([test x"$nut_cv_func_modbus_set_byte_timeout_args" = x"unknown"],
-			[AC_MSG_WARN([Cannot find proper types to use for modbus_set_byte_timeout])
-			 nut_have_libmodbus=no],
-			[AC_MSG_RESULT([Found types to use for modbus_set_byte_timeout: ${nut_cv_func_modbus_set_byte_timeout_args}])
-			 dnl NOTE: code should check for having a token name defined e.g.:
-			 dnl   #ifdef NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32
-			 AC_DEFINE_UNQUOTED(
-				[NUT_MODBUS_TIMEOUT_ARG_${nut_cv_func_modbus_set_byte_timeout_args}],
-				1, [Define to specify timeout method args approach for libmodbus])
-			])
+		 AC_MSG_RESULT([Found types to use for modbus_set_byte_timeout: ${nut_cv_func_modbus_set_byte_timeout_args}])
+		 dnl NOTE: code should check for having a token name defined e.g.:
+		 dnl   #ifdef NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32
+		 dnl Alas, we can't pass variables as macro name to AC_DEFINE
+		 COMMENT="Define to specify timeout method args approach for libmodbus"
+		 AS_CASE(["${nut_cv_func_modbus_set_byte_timeout_args}"],
+			[timeval_numeric_fields], [AC_DEFINE([NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields], 1, [${COMMENT}])],
+			[timeval], [AC_DEFINE([NUT_MODBUS_TIMEOUT_ARG_timeval], 1, [${COMMENT}])],
+			[sec_usec_uint32_cast_timeval_fields], [AC_DEFINE([NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields], 1, [${COMMENT}])],
+			[sec_usec_uint32], [AC_DEFINE([NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32], 1, [${COMMENT}])],
+			[dnl default
+			 AC_MSG_WARN([Cannot find proper types to use for modbus_set_byte_timeout])
+			 nut_have_libmodbus=no]
+			)
 	])
 
 	AS_IF([test x"${nut_have_libmodbus}" = x"yes"],
