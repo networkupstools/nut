@@ -72,6 +72,78 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
 	AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
 
+	dnl modbus_set_byte_timeout() and modbus_set_response_timeout()
+	dnl in 3.0.x and 3.1.x have different args (since ~2013): the
+	dnl older version used to accept timeout as a struct timeval
+	dnl instead of seconds and microseconds. Detect which we use?..
+	AS_IF([test x"$nut_have_libmodbus" = xyes],
+		[dnl Do not rely on versions if we can test actual API
+		 AX_C_PRAGMAS
+		 AC_LANG_PUSH([C])
+		 AC_CACHE_CHECK([types of arguments for modbus_set_byte_timeout],
+			[nut_cv_func_modbus_set_byte_timeout_args],
+			[nut_cv_func_modbus_set_byte_timeout_args="unknown"
+			 AC_COMPILE_IFELSE(
+				[dnl Try purely the new API (timeval)
+				 AC_LANG_PROGRAM([
+#include <time.h>
+#include <modbus.h>
+], [modbus_t ctx = (modbus_t){0}; struct timeval to = (struct timeval){0};
+modbus_set_byte_timeout(&ctx, &to);])
+				], [nut_cv_func_modbus_set_byte_timeout_args="timeval"],
+				[dnl Try another API variant: old API with
+				 dnl fields of struct timeval as numbers
+				 dnl (checks they exist, and are compatible
+				 dnl numeric types so compiler can convert)
+				 AC_COMPILE_IFELSE(
+					[AC_LANG_PROGRAM([
+#include <time.h>
+#include <stdint.h>
+#include <modbus.h>
+], [modbus_t ctx = (modbus_t){0}; struct timeval to = (struct timeval){0};
+/* TODO: Clarify and detect warning names and
+ * so pragmas for signed/unsigned assignment (e.g.
+ * for timeval definitions that have "long" fields)
+ */
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE
+# pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+uint32_t to_sec = to.tv_sec, to_usec = to.tv_usec;
+modbus_set_byte_timeout(&ctx, to_sec, to_usec);
+])
+					], [nut_cv_func_modbus_set_byte_timeout_args="sec_usec_uint32_cast_timeval_fields"],
+					[dnl Try another API variant: old API purely
+					 AC_COMPILE_IFELSE(
+						[AC_LANG_PROGRAM([
+#include <stdint.h>
+#include <modbus.h>
+], [modbus_t ctx = (modbus_t){0}; uint32_t to_sec = 0, to_usec = 0;
+modbus_set_byte_timeout(&ctx, to_sec, to_usec);])
+						], [nut_cv_func_modbus_set_byte_timeout_args="sec_usec_uint32"])
+					])
+				])
+			])
+
+		dnl NOTE: We could add similar tests to above for
+		dnl other time-related methods, but for now keep
+		dnl it simple -- and assume some same approach
+		dnl applies to the same generation of the library.
+		 AC_LANG_POP([C])
+		 AS_IF([test x"$nut_cv_func_modbus_set_byte_timeout_args" = x"unknown"],
+			[AC_MSG_WARN([Cannot find proper types to use for modbus_set_byte_timeout])
+			 nut_have_libmodbus=no],
+			[AC_MSG_RESULT([Found types to use for modbus_set_byte_timeout: ${nut_cv_func_modbus_set_byte_timeout_args}])
+			 dnl NOTE: code should check for having a token name defined e.g.:
+			 dnl   #ifdef NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32
+			 AC_DEFINE_UNQUOTED(
+				[NUT_MODBUS_TIMEOUT_ARG_${nut_cv_func_modbus_set_byte_timeout_args}],
+				1, [Define to specify timeout method args approach for libmodbus])
+			])
+	])
+
 	AS_IF([test x"${nut_have_libmodbus}" = x"yes"],
 		[LIBMODBUS_CFLAGS="${CFLAGS}"
 		 LIBMODBUS_LIBS="${LIBS}"]
