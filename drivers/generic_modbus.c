@@ -128,18 +128,47 @@ void upsdrv_initups(void)
     }
 
     /* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
     rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
     if (rval < 0) {
         modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
     }
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+    {
+        /* Older libmodbus API (with timeval), and we have
+         * checked at configure time that we can put uint32_t
+         * into its fields. They are probably "long" on many
+         * systems as respectively time_t and suseconds_t -
+         * but that is not guaranteed; for more details see
+         * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html
+         */
+        struct timeval to = (struct timeval){0};
+        to.tv_sec = mod_resp_to_s;
+        to.tv_usec = mod_resp_to_us;
+        /* void */ modbus_set_response_timeout(mbctx, &to);
+    }
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#else
+# error "Can not use libmodbus API for timeouts"
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
     /* set modbus byte time out */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
     rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
     if (rval < 0) {
         modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
     }
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+    {   /* see comments above */
+        struct timeval to = (struct timeval){0};
+        to.tv_sec = mod_byte_to_s;
+        to.tv_usec = mod_byte_to_us;
+        /* void */ modbus_set_byte_timeout(mbctx, &to);
+    }
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 }
 
 /* update UPS signal state */
@@ -1017,16 +1046,36 @@ void modbus_reconnect()
     }
 
     /* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
     rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
     if (rval < 0) {
         modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
     }
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+    {   /* see comments above */
+        struct timeval to = (struct timeval){0};
+        to.tv_sec = mod_resp_to_s;
+        to.tv_usec = mod_resp_to_us;
+        /* void */ modbus_set_response_timeout(mbctx, &to);
+    }
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
     /* set modbus byte timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
     rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
     if (rval < 0) {
         modbus_free(mbctx);
         fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
     }
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+    {   /* see comments above */
+        struct timeval to = (struct timeval){0};
+        to.tv_sec = mod_byte_to_s;
+        to.tv_usec = mod_byte_to_us;
+        /* void */ modbus_set_byte_timeout(mbctx, &to);
+    }
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 }
