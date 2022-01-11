@@ -26,7 +26,7 @@
 #include <timehead.h>
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.01"
+#define DRIVER_VERSION  "0.02"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
