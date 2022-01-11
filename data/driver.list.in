@@ -16,8 +16,8 @@
 # ========
 # - device type:
 #   "ups" for Uninterruptible Power Supply
-#   "pdu" for Power Distributions Unit
-#   "scd" for Solar Controlers Device
+#   "pdu" for Power Distribution Unit
+#   "scd" for Solar Controller Device
 #   "ats" for Automatic Transfer Switch
 #
 # - support level: a number from "1" to "5" (stars) meaning:
