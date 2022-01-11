@@ -84,14 +84,14 @@ if test -z "${nut_have_libmodbus_seen}"; then
 			[nut_cv_func_modbus_set_byte_timeout_args],
 			[nut_cv_func_modbus_set_byte_timeout_args="unknown"
 			 AC_COMPILE_IFELSE(
-				[dnl Try purely the new API (timeval)
+				[dnl Try purely the old API (timeval)
 				 AC_LANG_PROGRAM([
 #include <time.h>
 #include <modbus.h>
 ], [modbus_t *ctx; struct timeval to = (struct timeval){0};
 modbus_set_byte_timeout(ctx, &to);])
 				], [nut_cv_func_modbus_set_byte_timeout_args="timeval"],
-				[dnl Try another API variant: old API with
+				[dnl Try another API variant: new API with
 				 dnl fields of struct timeval as numbers
 				 dnl (checks they exist, and are compatible
 				 dnl numeric types so compiler can convert)
@@ -115,7 +115,7 @@ uint32_t to_sec = to.tv_sec, to_usec = to.tv_usec;
 modbus_set_byte_timeout(ctx, to_sec, to_usec);
 ])
 					], [nut_cv_func_modbus_set_byte_timeout_args="sec_usec_uint32_cast_timeval_fields"],
-					[dnl Try another API variant: old API purely
+					[dnl Try another API variant: new API purely (two uint32's)
 					 AC_COMPILE_IFELSE(
 						[AC_LANG_PROGRAM([
 #include <stdint.h>
