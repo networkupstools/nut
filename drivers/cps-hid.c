@@ -34,6 +34,12 @@
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
 
+/* Values for correcting the HID on some models
+ * where LogMin and LogMax are set incorrectly in the HID.
+ */
+#define CPS_VOLTAGE_LOGMIN 0
+#define CPS_VOLTAGE_LOGMAX 511 /* Includes safety margin. */
+
 /*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
  * of 1.5 so we need to apply a scale factor to it to get the real
@@ -263,9 +269,11 @@ static int cps_claim(HIDDevice_t *hd) {
 }
 
 /* CPS Models like CP900EPFCLCD return a syntactically legal but incorrect
- * Report Descriptor whereby the Input High Transfer Max/Min values are used
- * for the Output Voltage Usage Item limits. This corrects them by finding and 
- * applying the Input Voltage limits as being more appropriate. 
+ * Report Descriptor whereby the Input High Transfer Max/Min values
+ * are used for the Output Voltage Usage Item limits.
+ * Additionally the Input Voltage LogMax is set incorrectly for EU models.
+ * This corrects them by finding and applying fixed
+ * voltage limits as being more appropriate. 
  */
 
 HIDData_t *FindReport(HIDDesc_t *pDesc, uint8_t ReportID, HIDNode_t node)
@@ -300,38 +308,42 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc) {
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor:%04x, Product:%04x", vendorID, productID);
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
 
 	/* Apply the fix cautiously by looking for input voltage, high voltage transfer and output voltage report usages.
 	 * If the output voltage log min/max equals high voltage transfer log min/max then the bug is present.
-	 * To fix it copy the input voltage log min/max settings as reasonable values for the output voltage limits.
+	 * To fix it Set both the input and output voltages to pre-defined settings.
 	 */
 
-	if ((pData=FindReport(pDesc, 15, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
-		long input_logmin = pData->LogMin;
-		long input_logmax = pData->LogMax;
-		upsdebugx(4, "Fix Report Descriptor: input LogMin:%ld LogMax:%ld", input_logmin, input_logmax);
+	if ((pData=FindReport(pDesc, 16, (PAGE_POWER_DEVICE<<16)+USAGE_HIGHVOLTAGETRANSFER))) {
+		long hvt_logmin = pData->LogMin;
+		long hvt_logmax = pData->LogMax;
+		upsdebugx(4, "Report Descriptor: hvt input LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
 
-		if ((pData=FindReport(pDesc, 16, (PAGE_POWER_DEVICE<<16)+USAGE_HIGHVOLTAGETRANSFER))) {
-			long hvt_logmin = pData->LogMin;
-			long hvt_logmax = pData->LogMax;
-			upsdebugx(4, "Fix Report Descriptor:hvt input LogMin:%ld LogMax:%ld", hvt_logmin, hvt_logmax);
+		if ((pData=FindReport(pDesc, 18, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+			long output_logmin = pData->LogMin;
+			long output_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld", 
+					output_logmin, output_logmax);
 
-			if ((pData=FindReport(pDesc, 18, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
-				long output_logmin = pData->LogMin;
-				long output_logmax = pData->LogMax;
-				upsdebugx(4, "Fix Report Descriptor: output LogMin:%ld LogMax:%ld", output_logmin, output_logmax);
-
-				if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
-					pData->LogMin = input_logmin;
-					pData->LogMax = input_logmax;
-					upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %ld, LogMax = %ld",
+			if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
+				pData->LogMin = CPS_VOLTAGE_LOGMIN;
+				pData->LogMax = CPS_VOLTAGE_LOGMAX;
+				upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %d, LogMax = %d",
+							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+				if ((pData=FindReport(pDesc, 15, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+					long input_logmin = pData->LogMin;
+					long input_logmax = pData->LogMax;
+					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld", 
 							input_logmin, input_logmax);
-					return 1;
+					upsdebugx(3, "Fixing Report Descriptor. Set Input Voltage LogMin = %d, LogMax = %d",
+							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
 				}
-			}	
-		}	
-	}	
+			
+				return 1;
+			}
+		}
+	}
 	return 0;
 }
 
