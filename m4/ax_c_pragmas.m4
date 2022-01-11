@@ -2,6 +2,9 @@ dnl Check for current compiler support of specific pragmas we use,
 dnl e.g. diagnostics management to keep warnings quiet sometimes
 
 AC_DEFUN([AX_C_PRAGMAS], [
+if test -z "${nut_have_ax_c_pragmas_seen}"; then
+  nut_have_ax_c_pragmas_seen="yes"
+
   CFLAGS_SAVED="${CFLAGS}"
   CXXFLAGS_SAVED="${CXXFLAGS}"
 
@@ -787,9 +790,13 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
 
   CFLAGS="${CFLAGS_SAVED}"
   CXXFLAGS="${CXXFLAGS_SAVED}"
+fi
 ])
 
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
+  nut_have_ax_c_printf_string_null_seen="yes"
+
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
@@ -829,4 +836,5 @@ exit 0;
   ])
 
   AC_LANG_POP([C])
+fi
 ])
