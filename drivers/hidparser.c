@@ -22,10 +22,11 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h" /* must be first */
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "hidparser.h"
 #include "nut_stdint.h"  /* for int8_t, int16_t, int32_t */
 #include "common.h"      /* for fatalx() */
