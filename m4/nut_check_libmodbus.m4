@@ -72,10 +72,10 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
 	AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
 
-	if test "${nut_have_libmodbus}" = "yes"; then
-		LIBMODBUS_CFLAGS="${CFLAGS}"
-		LIBMODBUS_LIBS="${LIBS}"
-	fi
+	AS_IF([test x"${nut_have_libmodbus}" = x"yes"],
+		[LIBMODBUS_CFLAGS="${CFLAGS}"
+		 LIBMODBUS_LIBS="${LIBS}"]
+	)
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
