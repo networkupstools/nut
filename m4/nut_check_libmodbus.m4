@@ -88,8 +88,8 @@ if test -z "${nut_have_libmodbus_seen}"; then
 				 AC_LANG_PROGRAM([
 #include <time.h>
 #include <modbus.h>
-], [modbus_t ctx = (modbus_t){0}; struct timeval to = (struct timeval){0};
-modbus_set_byte_timeout(&ctx, &to);])
+], [modbus_t *ctx; struct timeval to = (struct timeval){0};
+modbus_set_byte_timeout(ctx, &to);])
 				], [nut_cv_func_modbus_set_byte_timeout_args="timeval"],
 				[dnl Try another API variant: old API with
 				 dnl fields of struct timeval as numbers
@@ -100,7 +100,7 @@ modbus_set_byte_timeout(&ctx, &to);])
 #include <time.h>
 #include <stdint.h>
 #include <modbus.h>
-], [modbus_t ctx = (modbus_t){0}; struct timeval to = (struct timeval){0};
+], [modbus_t *ctx; struct timeval to = (struct timeval){0};
 /* TODO: Clarify and detect warning names and
  * so pragmas for signed/unsigned assignment (e.g.
  * for timeval definitions that have "long" fields)
@@ -112,7 +112,7 @@ modbus_set_byte_timeout(&ctx, &to);])
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 uint32_t to_sec = to.tv_sec, to_usec = to.tv_usec;
-modbus_set_byte_timeout(&ctx, to_sec, to_usec);
+modbus_set_byte_timeout(ctx, to_sec, to_usec);
 ])
 					], [nut_cv_func_modbus_set_byte_timeout_args="sec_usec_uint32_cast_timeval_fields"],
 					[dnl Try another API variant: old API purely
@@ -120,8 +120,8 @@ modbus_set_byte_timeout(&ctx, to_sec, to_usec);
 						[AC_LANG_PROGRAM([
 #include <stdint.h>
 #include <modbus.h>
-], [modbus_t ctx = (modbus_t){0}; uint32_t to_sec = 0, to_usec = 0;
-modbus_set_byte_timeout(&ctx, to_sec, to_usec);])
+], [modbus_t *ctx; uint32_t to_sec = 0, to_usec = 0;
+modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 						], [nut_cv_func_modbus_set_byte_timeout_args="sec_usec_uint32"])
 					])
 				])
