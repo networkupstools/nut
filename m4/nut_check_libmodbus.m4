@@ -90,7 +90,34 @@ if test -z "${nut_have_libmodbus_seen}"; then
 #include <modbus.h>
 ], [modbus_t *ctx; struct timeval to = (struct timeval){0};
 modbus_set_byte_timeout(ctx, &to);])
-				], [nut_cv_func_modbus_set_byte_timeout_args="timeval"],
+				], [nut_cv_func_modbus_set_byte_timeout_args="timeval"
+				dnl Try the old API in more detail: check
+				dnl if we can just assign uint32's for new
+				dnl code into timeval fields (exist+numeric)?
+				 AC_COMPILE_IFELSE(
+					[AC_LANG_PROGRAM([
+#include <time.h>
+#include <stdint.h>
+#include <modbus.h>
+], [modbus_t *ctx; uint32_t to_sec = 10, to_usec = 50;
+struct timeval to = (struct timeval){0};
+/* TODO: Clarify and detect warning names and
+ * so pragmas for signed/unsigned assignment (e.g.
+ * for timeval definitions that have "long" fields)
+ */
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE
+# pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+to.tv_sec = to_sec;
+to.tv_usec = to_usec;
+modbus_set_byte_timeout(ctx, &to);
+])
+					], [nut_cv_func_modbus_set_byte_timeout_args="timeval_numeric_fields"])
+				],
+
 				[dnl Try another API variant: new API with
 				 dnl fields of struct timeval as numbers
 				 dnl (checks they exist, and are compatible
