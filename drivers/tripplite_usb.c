@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1638,4 +1638,9 @@ void upsdrv_cleanup(void)
 	comm_driver->close(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+	free(curDevice.Vendor);
+	free(curDevice.Product);
+	free(curDevice.Serial);
+	free(curDevice.Bus);
+	free(curDevice.Device);
 }

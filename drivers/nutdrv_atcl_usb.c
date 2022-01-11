@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.11"
+#define DRIVER_VERSION	"1.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -271,7 +271,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
-	usb_device_close(*handlep);
+	/* usb_device_close(*handlep); */
+	if (*handlep)
+		usb_close(*handlep);
 #endif
 
 #if WITH_LIBUSB_1_0
@@ -338,7 +340,11 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
 			bus = libusb_get_bus_number(dev);
-			device->Bus = (char *)xmalloc(4);
+			device->Bus = (char *)malloc(4);
+			if (device->Bus == NULL) {
+				libusb_free_device_list(devlist, 1);
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
 			sprintf(device->Bus, "%03d", bus);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
@@ -346,7 +352,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #else  /* => WITH_LIBUSB_0_1 */
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
-			device->Bus = strdup(bus->dirname);
+			device->Bus = xstrdup(bus->dirname);
 			iManufacturer = dev->descriptor.iManufacturer;
 			iProduct = dev->descriptor.iProduct;
 			iSerialNumber = dev->descriptor.iSerialNumber;
@@ -358,6 +364,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
+					if (device->Vendor == NULL) {
+#if WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 
@@ -367,6 +379,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Product = strdup(buf);
+					if (device->Product == NULL) {
+#if WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 
@@ -376,6 +394,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_charbuf)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Serial = strdup(buf);
+					if (device->Serial == NULL) {
+#if WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 
@@ -394,6 +418,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					upsdebugx(4, "Device does not match - skipping");
 					goto next_device;
 				case -1:
+#if WITH_LIBUSB_1_0
+					libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 					fatal_with_errno(EXIT_FAILURE, "matcher");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 # if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
@@ -425,6 +452,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				ret = callback(handle, device);
 				if (ret >= 0) {
 					upsdebugx(3, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
+#if WITH_LIBUSB_1_0
+					libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 					return ret;
 				}
 
@@ -462,6 +492,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif /* HAVE_USB_DETACH_KERNEL_DRIVER_NP or HAVE_LIBUSB_DETACH_KERNEL_DRIVER or HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP */
 			}
 
+#if WITH_LIBUSB_1_0
+			libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 			fatalx(EXIT_FAILURE,
 				"USB device [%04x:%04x] matches, but driver callback failed: %s",
 				device->VendorID, device->ProductID,
@@ -475,6 +508,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	}
 
 	*handlep = NULL;
+#if WITH_LIBUSB_1_0
+	libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 	upsdebugx(3, "No matching USB device found");
 
 	return -1;

@@ -681,7 +681,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	buflen = comm_driver->get_interrupt(
 		udev, (usb_ctrl_charbuf)buf,
 		(usb_ctrl_charbufsize)r,
-		250);
+		750);
 
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */

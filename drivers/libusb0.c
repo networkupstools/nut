@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.34"
+#define USB_DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -200,6 +200,8 @@ static int libusb_open(usb_dev_handle **udevp,
 
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
+			/* int	if_claimed = 0; */
+
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)",
 				dev->descriptor.idVendor, dev->descriptor.idProduct,
 				bus->dirname, dev->filename);
@@ -232,15 +234,15 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
-			curDevice->Bus = strdup(bus->dirname);
-			curDevice->Device = strdup(dev->filename);
+			curDevice->Bus = xstrdup(bus->dirname);
+			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Vendor = strdup(string);
+					curDevice->Vendor = xstrdup(string);
 				}
 			}
 
@@ -248,7 +250,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Product = strdup(string);
+					curDevice->Product = xstrdup(string);
 				}
 			}
 
@@ -256,7 +258,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Serial = strdup(string);
+					curDevice->Serial = xstrdup(string);
 				}
 			}
 
@@ -339,6 +341,7 @@ static int libusb_open(usb_dev_handle **udevp,
 					usb_strerror());
 			}
 #endif
+			/* if_claimed = 1; */
 
 			nut_usb_set_altinterface(udev);
 
@@ -490,6 +493,11 @@ static int libusb_open(usb_dev_handle **udevp,
 			return rdlen;
 
 		next_device:
+			/* usb_release_interface() sometimes blocks
+			 * and goes into uninterruptible sleep.
+			 * So don't do it. */
+			/* if (if_claimed)
+				usb_release_interface(udev, 0); */
 			usb_close(udev);
 		}
 	}
