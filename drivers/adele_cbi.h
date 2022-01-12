@@ -81,7 +81,10 @@
 #define MODBUS_NUMOF_REGS 98
 
 /* max registers */
-#define MAX_REGS 116
+#define MAX_REGS 120
+
+/* start register number  */
+#define REG_STARTIDX 0
 
 /* read all regs */
 #define READALL_REGS 1
