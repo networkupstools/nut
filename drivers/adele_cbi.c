@@ -49,6 +49,9 @@ static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;        /* set the modbus by
 /* initialize register start address and hex address from register number */
 void reginit();
 
+/* read all registers */
+int read_all_regs(modbus_t *mb, uint16_t *data);
+
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
 
@@ -168,7 +171,12 @@ void upsdrv_updateinfo(void)
     errcnt = 0;         /* initialize error counter to zero */
     status_init();      /* initialize ups.status update */
     alarm_init();       /* initialize ups.alarm update */
-
+#if READALL_REGS == 1
+    rval = read_all_regs(mbctx, regs_data);
+    if (rval == -1) {
+        errcnt++;
+    } else {
+#endif
     /*
      * update UPS status regarding MAINS and SHUTDOWN request
      *  - OL:  On line (mains is present)
@@ -396,6 +404,9 @@ void upsdrv_updateinfo(void)
         dstate_setinfo("output.current", "%s", ds->reg.strval);
         upslogx(LOG_DEBUG, "output.current = %s", ds->reg.strval);
     }
+#if READALL_REGS == 1
+    }
+#endif
     /* check for communication errors */
     if (errcnt == 0) {
         alarm_commit();
@@ -513,6 +524,28 @@ void reginit()
                                                         regs[i].saddr,
                                                         regs[i].xaddr
         );
+    }
+}
+
+/* read all register data image */
+int read_all_regs(modbus_t *mb, uint16_t *data) 
+{
+    int rval; 
+
+    rval = modbus_read_registers(mb, regs[CHRG].xaddr, MAX_REGS, regs_data);
+    if (rval == -1) {
+        upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
+            modbus_strerror(errno),
+            regs[CHRG].xaddr,
+            MAX_REGS,
+            device_path
+        );
+
+        /* on BROKEN PIPE error try to reconnect */
+        if (errno == EPIPE) {
+            upsdebugx(1, "register_read: error(%s)", modbus_strerror(errno));
+            modbus_reconnect();
+        }
     }
 }
 
@@ -706,7 +739,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
     num = regs[regindx].num;
     addr = regs[regindx].xaddr;
     rtype = regs[regindx].type;
-
+#if READALL_REGS == 1
+    reg_val = regs_data[regindx];
+    rval = 0;
+#elif READALL_REGS == 0
     rval = register_read(mbctx, addr, rtype, &reg_val);
     if (rval == -1) {
         return rval;
@@ -717,7 +753,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
                                                                          rtype,
                                                                          reg_val
     );
-
+#endif
     /* process register data */
     switch (regindx) {
         case CHRG:                  /* "ups.charge" */
