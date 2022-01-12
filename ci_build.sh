@@ -1312,9 +1312,17 @@ bindings)
     if [ -s Makefile ]; then
         ${MAKE} realclean -k || true
     fi
+
     ./autogen.sh
+
+    # NOTE: Default NUT "configure" actually insists on some features,
+    # like serial port support unless told otherwise, or docs if possible.
+    # Below we aim for really fast iterations of C/C++ development so
+    # enable whatever is auto-detectable (except docs), and highlight
+    # any warnings if we can:
     #./configure
     ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check
