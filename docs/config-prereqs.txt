@@ -81,6 +81,14 @@ distros for Raspberry Pi, as well as many others. The package list below
 should largely apply to those as well, however note that some well-known
 package names tend to differ. A few of those are noted below.
 
+NOTE: While Debian distros I've seen (8 to 11) provide a "libusb-dev"
+for libusb-0.1 headers, the binary library package name is specifically
+versioned package by default of the current release (e.g. "libusb-0.1-4"),
+while names of both the library and development packages for libusb-1.0
+must be determined with `apt-cache search 'libusb.*1\.0.*` yielding e.g.
+"libusb-1.0-0-dev" (string name was seen with different actual package
+source versions on both Debian 8 Jessie and Debian 11 Buster).
+
 ----
 :; apt-get update
 
@@ -102,7 +110,7 @@ package names tend to differ. A few of those are noted below.
     libcppunit-dev \
     openssl-dev libnss3-dev \
     augeas-tools libaugeas-dev augeas-lenses \
-    libusb-dev \
+    libusb-dev libusb-1.0-0-dev \
     libi2c-dev \
     libmodbus-dev \
     libsnmp-dev \
@@ -212,6 +220,8 @@ https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
     asciidoc source-highlight python-pygments dblatex aspell \
     gd-devel
 
+# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
+# vs. the older "libusb" as the package with "libusb-0.1"
 :; yum install \
     cppunit-devel \
     openssl-devel nss-devel \
