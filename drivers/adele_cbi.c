@@ -610,12 +610,13 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 {
     int rval; 
 
-    rval = modbus_read_registers(mb, regs[REG_STARTIDX].xaddr, MAX_REGS, regs_data);
+    /* read all HOLDING registers */
+    rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, regs_data);
     if (rval == -1) {
         upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
             modbus_strerror(errno),
-            regs[CHRG].xaddr,
-            MAX_REGS,
+            regs[H_REG_STARTIDX].xaddr,
+            MAX_H_REGS,
             device_path
         );
 
@@ -625,6 +626,9 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
             modbus_reconnect();
         }
     }
+
+    /* no COIL, INPUT_B or INPUT_R register regions to read */
+
     return rval;
 }
 
