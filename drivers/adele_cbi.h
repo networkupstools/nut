@@ -80,6 +80,9 @@
 /* number of modbus registers */
 #define MODBUS_NUMOF_REGS 98
 
+/* max registers */
+#define MAX_REGS 116
+
 /* number of device models */
 #define DEV_NUMOF_MODELS 10
 
@@ -507,6 +510,9 @@ union devstate {
 };
 
 typedef union devstate devstate_t;
+
+/* device register memory image */
+static uint16_t regs_data[MAX_REGS];
 
 /* ADELE CBI registers */
 static regattr_t regs[] = {
