@@ -139,13 +139,16 @@ dnl # currently can build in that mode, reliability of
 dnl # results is uncertain - third-party and/or system
 dnl # headers and libs seemingly no longer care for C90
 dnl # on modern systems, and we have no recent data from
-dnl # truly legacy systems which have no choice:
+dnl # truly legacy systems which have no choice.
+dnl # Some distributions and platforms also have problems
+dnl # building in "strict C" mode, so for the GNU-compatible
+dnl # compilers we default to the GNU C/C++ dialects.
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
         [AS_CASE(["${CFLAGS}"], [*-std=*], [],
             [AC_LANG_PUSH([C])
-             AX_CHECK_COMPILE_FLAG([-std=c99],
-                [AC_MSG_NOTICE([Defaulting C standard support to C99 on a GCC or CLANG compatible compiler])
-                 CFLAGS="$CFLAGS -std=c99"
+             AX_CHECK_COMPILE_FLAG([-std=gnu99],
+                [AC_MSG_NOTICE([Defaulting C standard support to GNU C99 on a GCC or CLANG compatible compiler])
+                 CFLAGS="$CFLAGS -std=gnu99"
                 ], [], [-Werror])
              AC_LANG_POP([C])
          ])
@@ -156,9 +159,9 @@ dnl # but then by default we wouldn't build C++ parts
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
         [AS_CASE(["${CXXFLAGS}"], [*-std=*], [],
             [AC_LANG_PUSH([C++])
-             AX_CHECK_COMPILE_FLAG([-std=c++11],
-                [AC_MSG_NOTICE([Defaulting C++ standard support to C++11 on a GCC or CLANG compatible compiler])
-                 CXXFLAGS="$CXXFLAGS -std=c++11"
+             AX_CHECK_COMPILE_FLAG([-std=gnu++11],
+                [AC_MSG_NOTICE([Defaulting C++ standard support to GNU C++11 on a GCC or CLANG compatible compiler])
+                 CXXFLAGS="$CXXFLAGS -std=gnu++11"
                 ], [], [-Werror])
              AC_LANG_POP([C++])
          ])
