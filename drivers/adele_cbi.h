@@ -54,6 +54,9 @@
 /* max registers */
 #define MAX_REGS 116
 
+/* read all regs */
+#define READALL_REGS 1
+
 /* number of device models */
 #define DEV_NUMOF_MODELS 10
 
