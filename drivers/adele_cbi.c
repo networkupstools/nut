@@ -625,6 +625,7 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
             modbus_reconnect();
         }
     }
+    return rval;
 }
 
 /* Read a modbus register */
@@ -1737,20 +1738,22 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
     int n;
     int rval;                       /* return value */
     static char *ptr = NULL;        /* temporary pointer */
-    uint num;                       /* register number */
     uint reg_val;                   /* register value */
+#if READALL_REGS == 0
+    uint num;                       /* register number */
     regtype_t rtype;                /* register type */
     int addr;                       /* register address */
+#endif
     devstate_t *state;              /* device state */
 
     state = *dstate;
-    num = regs[regindx].num;
-    addr = regs[regindx].xaddr;
-    rtype = regs[regindx].type;
 #if READALL_REGS == 1
     reg_val = regs_data[regindx];
     rval = 0;
 #elif READALL_REGS == 0
+    num = regs[regindx].num;
+    addr = regs[regindx].xaddr;
+    rtype = regs[regindx].type;
     rval = register_read(mbctx, addr, rtype, &reg_val);
     if (rval == -1) {
         return rval;
