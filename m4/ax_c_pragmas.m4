@@ -421,6 +421,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunreachable-code-break" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunreachable-code-return"],
+    [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wunreachable-code-return"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return=yes],
+      [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code_return" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunreachable-code-return"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunreachable-code-return" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wunreachable-code-return"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_unreachable_code_return_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unreachable_code_return_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunreachable-code-return" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunreachable-code"],
     [ax_cv__pragma__gcc__diags_ignored_unreachable_code],
     [AC_COMPILE_IFELSE(
