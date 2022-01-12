@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be first */
+
 #include <sys/ioctl.h>
 
 #include "main.h"
@@ -342,7 +344,24 @@ void upsdrv_shutdown(void)
 			sdtime);
 
 		if (sdtime > 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+			/* Different platforms, different sizes, none fits all... */
 			if (sizeof(long) > sizeof(unsigned int) && sdtime < (long)UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 				sleep((unsigned int)sdtime);
 			} else {
 				sleep(UINT_MAX);

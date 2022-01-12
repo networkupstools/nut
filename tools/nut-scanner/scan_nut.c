@@ -239,7 +239,24 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 # ifdef HAVE_SEMAPHORE
 	if (max_threads_scantype > 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		/* Different platforms, different sizes, none fits all... */
 		if (SIZE_MAX > UINT_MAX && max_threads_scantype > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 			upsdebugx(1,
 				"WARNING: %s: Limiting max_threads_scantype to range acceptable for sem_init()",
 				__func__);
@@ -329,10 +346,10 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
-						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
 							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
-						case 0:         // thread exited
+						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
 								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
@@ -343,13 +360,13 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 							}
 							thread_array[i].active = FALSE;
 							break;
-						case EBUSY:     // actively running
+						case EBUSY:     /* actively running */
 							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
-						case EDEADLK:   // Errors with thread interactions... bail out?
-						case EINVAL:    // Errors with thread interactions... bail out?
-						default:        // new pthreads abilities?
+						case EDEADLK:   /* Errors with thread interactions... bail out? */
+						case EINVAL:    /* Errors with thread interactions... bail out? */
+						default:        /* new pthreads abilities? */
 							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
@@ -360,7 +377,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 				if (curr_threads >= max_threads
 				|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 				) {
-					usleep (10000); // microSec's, so 0.01s here
+					usleep (10000); /* microSec's, so 0.01s here */
 				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);

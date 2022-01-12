@@ -219,7 +219,7 @@ static void show_usage()
 
 		/* Construct help for AUTHPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (");
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		printf("%s%s",
@@ -261,7 +261,7 @@ static void show_usage()
 
 		/* Construct help for PRIVPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (");
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		printf("%s%s",
@@ -669,7 +669,24 @@ display_help:
 	   on lib (need to be thread safe). */
 	sem_t *current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Different platforms, different sizes, none fits all... */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 		fprintf(stderr, "\n\n"
 			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
 		max_threads = UINT_MAX - 1;

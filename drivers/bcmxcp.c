@@ -1101,7 +1101,7 @@ void init_ext_vars(void)
 	length = command_write_sequence(cbuf, 4, answer);
 	if (length <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-	if (length < 4)  //UPS dont have configurable vars
+	if (length < 4)  /* UPS doesn't have configurable vars */
 		return;
 	for (index=3; index < length; index++) {
 		switch(answer[index]) {

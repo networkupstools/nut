@@ -35,10 +35,19 @@ extern "C" {
 #include "config.h"
 #include "hidtypes.h"
 
+/* Include "usb-common.h" or "libshut.h" as appropriate, to define the 
+ * usb_ctrl_* types used below according to the backend USB API version
+ */
+#ifdef SHUT_MODE
+# include "libshut.h"
+#else
+# include "usb-common.h"
+#endif
+
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n);
+HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_charbufsize n);
 
 /*
  * Free_ReportDesc

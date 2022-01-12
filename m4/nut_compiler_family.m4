@@ -59,10 +59,62 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes])
 ])
 
+AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
+[
+dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
+dnl the -Werror below is needed to detect "warnings" about unsupported options
+    COMPILERFLAG="$1"
+    AC_LANG_PUSH([C])
+    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+        [CFLAGS="$CFLAGS ${COMPILERFLAG}"], [], [-Werror])
+    AC_LANG_POP([C])
+
+    AC_LANG_PUSH([C++])
+    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"], [], [-Werror])
+    AC_LANG_POP([C++])
+])
+
 AC_DEFUN([NUT_COMPILER_FAMILY_FLAGS],
 [
-    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])
-    AS_IF([test "x$CLANGXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option"])
+    AC_MSG_NOTICE([Detecting support for additional compiler flags])
+
+dnl -Qunused-arguments:
+dnl   Do not die due to `clang: error: argument unused during compilation: '-I .'`
+dnl -Wno-unknown-warning-option: Do not die (on older clang releases) due to
+dnl   error: unknown warning option '-Wno-double-promotion'; did you mean
+dnl          '-Wno-documentation'? [-Werror,-Wunknown-warning-option]
+dnl -fcolor-diagnostics: help find where bugs are in the wall of text (clang)
+dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
+
+    dnl First check for this to avoid failing on unused include paths etc:
+    NUT_CHECK_COMPILE_FLAG([-Qunused-arguments])
+
+dnl # Future: test for something else?
+dnl    m4_foreach_w([TESTCOMPILERFLAG], [
+dnl        -Qunused-arguments
+dnl        -Wno-unknown-warning-option
+dnl    ], [
+dnl        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
+dnl    ])
+
+    dnl Note: each m4_foreach_w arg must be named uniquely
+    dnl Note: Seems -fcolor-diagnostics is clang-only and sometimes
+    dnl gcc blindly accepts it in test and fails to use later.
+    AS_IF([test x"${nut_enable_Wcolor}" = xyes], [
+        m4_foreach_w([TESTCOMPILERFLAG_COLOR], [
+            -fdiagnostics-color=always
+        ], [
+            NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG_COLOR])
+        ])
+    ], [AC_MSG_NOTICE([NOT checking for options to request colorized compiler output (pass --enable-Wcolor for that)])])
+
+    dnl Last check for this to avoid accepting anything regardless of support:
+    NUT_CHECK_COMPILE_FLAG([-Wno-unknown-warning-option])
+
+dnl # Older "brute-forced" settings:
+dnl    AS_IF([test "x$CLANGCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning-option"])
+dnl    AS_IF([test "x$CLANGXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning-option"])
 
 dnl # Despite the internet lore, practical GCC versions seen so far
 dnl # (4.x-10.x) do not know of this CLI option, with varied results
@@ -72,4 +124,11 @@ dnl # to "cc1: error: unrecognized command line option '-Wno-unknown-warning'
 dnl # [-Werror]"... so we do not pass it by default:
 dnl    AS_IF([test "x$GCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning"])
 dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
+
+dnl # There should be no need to include standard system paths (and possibly
+dnl # confuse the compiler assumptions - along with its provided headers):
+dnl #    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
+dnl #        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
+dnl #    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
+dnl #        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
 ])

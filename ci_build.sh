@@ -44,6 +44,9 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # emit varied warnings. But so far would be nice to get the majority
     # of shared codebase clean first:
     [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+
+    # Similarly for libusb implementations with varying support
+    [ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
 # Set this to enable verbose profiling
@@ -71,6 +74,10 @@ case "$CI_REQUIRE_GOOD_GITIGNORE" in
     [Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
         CI_REQUIRE_GOOD_GITIGNORE="true" ;;
 esac
+
+# Abort loops like BUILD_TYPE=default-all-errors as soon as we have a problem
+# (allowing to rebuild interactively and investigate that set-up)?
+[ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
@@ -628,6 +635,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-doc=yes")
                 fi
             fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
+            fi
             ;;
         "default-withdoc:man")
             # Some systems lack tools for HTML/PDF generation
@@ -637,6 +649,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 CONFIG_OPTS+=("--with-doc=auto")
             else
                 CONFIG_OPTS+=("--with-doc=man")
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             ;;
         "default-all-errors")
@@ -684,6 +701,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_CPPCHECK_TESTS-}" = no ] ; then
                 echo "WARNING: Build agent says it has a broken cppcheck, but we requested a BUILD_TYPE='$BUILD_TYPE'" >&2
                 exit 1
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             CONFIG_OPTS+=("--enable-cppcheck=yes")
             CONFIG_OPTS+=("--with-doc=skip")
@@ -773,6 +795,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -n "${BUILD_WARNFATAL-}" ]; then
         CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
     fi
+
+    # Tell interactive and CI builds to prefer colorized output so warnings
+    # and errors are found more easily in a wall of text:
+    CONFIG_OPTS+=("--enable-Wcolor")
 
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
@@ -898,16 +924,86 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 fi
             fi
 
+            if [ -z "$NUT_USB_VARIANTS" ] ; then
+                # Check preferred version first, in case BUILD_USB_ONCE==true
+                if pkg-config --exists libusb-1.0 ; then
+                    NUT_USB_VARIANTS="1.0"
+                fi
+
+                # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
+                if pkg-config --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
+                    if [ -z "$NUT_USB_VARIANTS" ] ; then
+                        NUT_USB_VARIANTS="0.1"
+                    else
+                        if [ "${BUILD_USB_ONCE-}" != "true" ] ; then
+                            NUT_USB_VARIANTS="$NUT_USB_VARIANTS 0.1"
+                        fi
+                    fi
+                fi
+
+                if [ -z "$NUT_USB_VARIANTS" ] ; then
+                    # Nothing supported detected...
+                    NUT_USB_VARIANTS="auto"
+                fi
+
+                # Consider also a build --without-usb to test that codepath?
+                # (e.g. for nutdrv_qx that has both serial and USB parts)
+                if [ "$NUT_USB_VARIANTS" != auto ] && [ "${BUILD_USB_ONCE-}" != "true" ]; then
+                    NUT_USB_VARIANTS="$NUT_USB_VARIANTS no"
+                fi
+            fi
+
             # Count our expected build variants, so the last one gets the
             # "maintainer-clean" check and not a mere "distclean" check
-            # NOTE: When/if we loop other dependency variations, include
-            # them in this count!
+            # NOTE: We count different dependency variations separately,
+            # and analyze later, to avoid building same (auto+auto) twice
+            BUILDSTODO_SSL=0
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                BUILDSTODO="`expr $BUILDSTODO + 1`"
+                BUILDSTODO_SSL="`expr $BUILDSTODO_SSL + 1`"
             done
-            BUILDSTODO_INITIAL="$BUILDSTODO"
 
-            #echo "=== Will loop now with $BUILDSTODO build variants..."
+            BUILDSTODO_USB=0
+            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
+                BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
+            done
+
+            if [ "${BUILDSTODO_SSL}" -gt 1 ] \
+            && [ "${BUILDSTODO_USB}" -gt 1 ] \
+            ; then
+                BUILDSTODO="`expr $BUILDSTODO_SSL + $BUILDSTODO_USB`"
+            else
+                ###BUILDSTODO=0
+                ###if [ "${BUILDSTODO_SSL}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_SSL}" ; fi
+                ###if [ "${BUILDSTODO_USB}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_USB}" ; fi
+
+                # Use same logic as in actual loops below
+                # It may be imperfect (WRT avoiding extra builds) -- and
+                # that may be addressed separately, but counts should fit
+                BUILDSTODO="${BUILDSTODO_SSL}"
+
+                # Adding up only if we are building several USB variants
+                # or a single non-default variant (maybe a "no" option),
+                # so we should be trying both SSL's and that/those USB
+                ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
+                ###{ [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
+                if [ "${BUILDSTODO_USB}" -gt 1 ] \
+                || [ "$NUT_USB_VARIANTS" != "auto" ] \
+                ; then
+                    BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
+                fi
+
+                if [ "$NUT_SSL_VARIANTS" = "auto" ] \
+                && [ "${BUILDSTODO_USB}" -gt 0 ] \
+                ; then
+                    echo "=== Only build USB scenario(s) picking whatever SSL is found"
+                    BUILDSTODO="${BUILDSTODO_USB}"
+                fi
+            fi
+
+            BUILDSTODO_INITIAL="$BUILDSTODO"
+            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations..."
+            # If we don't care about SSL implem and want to pick USB, go straight there
+            ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
             for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
                 # NOTE: Do not repeat a distclean before the loop,
                 # we have cleaned above before autogen, and here it
@@ -950,6 +1046,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
@@ -958,7 +1058,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # so a `set -e` run aborts)
                 BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
 
-                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                     # For last iteration with DO_CLEAN_CHECK=no,
                     # we would leave built products in place
                     echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
@@ -987,7 +1087,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
-                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" ! = no ]; then
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                         $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
@@ -995,8 +1095,127 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                 fi
             done
+
+            # Effectively, whatever up to one version of LibUSB support
+            # was detected (or not), was tested above among SSL builds.
+            # Here we drill deeper for envs that have more than one LibUSB,
+            # or when caller explicitly requested to only test without it,
+            # and then we only attempt the serial and/or USB options while
+            # disabling other drivers for faster turnaround.
+            ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
+            ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
+            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
+             || [ "${BUILDSTODO_USB}" -gt 1 ] \
+             || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ) && \
+            (   [ "$CI_FAILFAST" != "true" ] \
+             || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
+            ) && \
+            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
+                echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
+                case "$NUT_USB_VARIANT" in
+                    ""|auto|default)
+                        # Quietly build one scenario, whatever we can (or not)
+                        # configure regarding USB and other features
+                        NUT_USB_VARIANT=auto
+                        ( CONFIG_OPTS+=("--without-all")
+                          CONFIG_OPTS+=("--without-ssl")
+                          CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--with-usb")
+                          configure_nut
+                        )
+                        ;;
+                    no)
+                        echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
+                        ( CONFIG_OPTS+=("--without-all")
+                          CONFIG_OPTS+=("--without-ssl")
+                          CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--without-usb")
+                          configure_nut
+                        )
+                        ;;
+                    libusb-*)
+                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        ( CONFIG_OPTS+=("--without-all")
+                          CONFIG_OPTS+=("--without-ssl")
+                          CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
+                          configure_nut
+                        )
+                        ;;
+                    *)
+                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        ( CONFIG_OPTS+=("--without-all")
+                          CONFIG_OPTS+=("--without-ssl")
+                          CONFIG_OPTS+=("--with-serial=auto")
+                          CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
+                          configure_nut
+                        )
+                        ;;
+                esac || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
+                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+                    continue
+                }
+
+                echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                build_to_only_catch_errors && {
+                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                } || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
+                }
+
+                # Note: when `expr` calculates a zero value below, it returns
+                # an "erroneous" `1` as exit code. Notes above.
+                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
+
+                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
+                    # For last iteration with DO_CLEAN_CHECK=no,
+                    # we would leave built products in place
+                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
+                fi
+
+                if can_clean_check ; then
+                    if [ $BUILDSTODO -gt 0 ]; then
+                        ### Avoid having to re-autogen in a loop:
+                        optional_dist_clean_check && {
+                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                            fi
+                        } || {
+                            RES_ALLERRORS=$?
+                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
+                        }
+                    else
+                        optional_maintainer_clean_check && {
+                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
+                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                            fi
+                        } || {
+                            RES_ALLERRORS=$?
+                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
+                        }
+                    fi
+                    echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
+                else
+                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
+                    else
+                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
+                    fi
+                fi
+            done
+
             # TODO: Similar loops for other variations like TESTING,
-            # MGE SHUT vs other serial protocols, libusb version...
+            # MGE SHUT vs other serial protocols...
 
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
@@ -1095,7 +1314,7 @@ bindings)
     fi
     ./autogen.sh
     #./configure
-    ./configure --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check
