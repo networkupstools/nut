@@ -51,13 +51,13 @@
 /* number of modbus registers */
 #define MODBUS_NUMOF_REGS 98
 
-/* max registers */
-#define MAX_REGS 120
+/* max HOLDING registers */
+#define MAX_H_REGS 120
 
-/* start register number  */
-#define REG_STARTIDX 0
+/* start HOLDING register index */
+#define H_REG_STARTIDX 0
 
-/* read all regs */
+/* read all regs preprocessor flag */
 #define READALL_REGS 1
 
 /* number of device models */
@@ -376,7 +376,7 @@ union devstate {
 typedef union devstate devstate_t;
 
 /* device register memory image */
-static uint16_t regs_data[MAX_REGS];
+static uint16_t regs_data[MAX_H_REGS];
 
 /* ADELE CBI registers */
 static regattr_t regs[] = {
