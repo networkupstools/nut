@@ -2280,6 +2280,15 @@ AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
+dnl On a related note to warning setup below, we limit the minimum C and C++
+dnl standard versions to ones we actively strive to support (C99 and C++11,
+dnl GNU dialects tend to work on more systems if supported by compiler there).
+dnl It is assumed that on very old systems whose compilers do not know these
+dnl standards (only support ANSI/C89/C90 or older), as well as for builds
+dnl that explicitly specify a CFLAGS="-std=..." (for GCC/CLANG toolkits),
+dnl nothing should get added to CFLAGS/CXXFLAGS by this method:
+NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD
+
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.

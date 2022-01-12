@@ -131,7 +131,10 @@ dnl #    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
 dnl #        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
 dnl #    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
 dnl #        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
+])
 
+AC_DEFUN([NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD],
+[
 dnl # Default to avoid noisy warnings on older compilers
 dnl # (gcc-4.x, clang-3.x) due to their preference of
 dnl # ANSI C (C89/C90) out of the box. While NUT codebase
