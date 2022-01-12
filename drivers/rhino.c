@@ -27,6 +27,8 @@
 
 */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
 
 #include "main.h"

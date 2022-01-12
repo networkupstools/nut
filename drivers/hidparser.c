@@ -22,10 +22,11 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h" /* must be first */
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "hidparser.h"
 #include "nut_stdint.h"  /* for int8_t, int16_t, int32_t */
 #include "common.h"      /* for fatalx() */
@@ -35,6 +36,9 @@ static const uint8_t ItemSize[4] = { 0, 1, 2, 4 };
 /*
  * HIDParser struct
  * -------------------------------------------------------------------------- */
+/* FIXME? Should this structure remain with reasonable fixed int types,
+ * or changed to align with libusb API version and usb_ctrl_* typedefs?
+ */
 typedef struct {
 	const unsigned char	*ReportDesc;		/* Report Descriptor		*/
 	size_t			ReportDescSize;		/* Size of Report Descriptor	*/
@@ -547,16 +551,46 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n)
+HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_charbufsize n)
 {
 	int		ret = 0;
 	HIDDesc_t	*pDesc;
 	HIDParser_t	*parser;
 
 	pDesc = calloc(1, sizeof(*pDesc));
-	if (!pDesc) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (!pDesc
+	|| n < 0 || (uintmax_t)n > SIZE_MAX
+	) {
 		return NULL;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 
 	pDesc->item = calloc(MAX_REPORT, sizeof(*pDesc->item));
 	if (!pDesc->item) {
@@ -570,8 +604,8 @@ HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const size_t n)
 		return NULL;
 	}
 
-	parser->ReportDesc = ReportDesc;
-	parser->ReportDescSize = n;
+	parser->ReportDesc = (const unsigned char *)ReportDesc;
+	parser->ReportDescSize = (const size_t)n;
 
 	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += (size_t)ret) {
 		uint8_t	id;

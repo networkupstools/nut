@@ -6,8 +6,9 @@ if test -z "${nut_have_cppcheck_seen}"; then
 	dnl NOTE: Did not really investigate suitable CPPCHECK_MIN_VERSION
 	dnl values, just using current available as the baseline; maybe
 	dnl older releases are also okay (if someone proves so).
+	dnl The oldest available on the NUT CI build farm was 1.6 that worked.
 	nut_have_cppcheck_seen=yes
-	CPPCHECK_MIN_VERSION="2.5"
+	CPPCHECK_MIN_VERSION="1.0"
 
 	AC_PATH_PROGS([CPPCHECK], [cppcheck])
 	if test -n "${CPPCHECK}"; then
