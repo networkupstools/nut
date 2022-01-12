@@ -29,6 +29,8 @@
  * - validate / complete commands and data table in mge-hid from mge-shut
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -417,7 +419,21 @@ static int libshut_open(
 	}
 
 	/* Get DEVICE descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	dev_descriptor = (struct device_descriptor_s *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -498,7 +514,21 @@ static int libshut_open(
 	}
 
 	/* Get HID descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	desc = (struct my_hid_descriptor *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -1196,7 +1226,16 @@ static int shut_control_msg(
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		if (data_size < 0 || data_size > UCHAR_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
@@ -1209,8 +1248,9 @@ static int shut_control_msg(
 			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 				" may be too large for SHUT packet?",
 				__func__, data_size);
-			// Do not abort here - maybe there is intentional maths
-			// in the protocol with overlapping/shifted-away numbers?
+			/* Do not abort here - maybe there is intentional maths
+			 * in the protocol with overlapping/shifted-away numbers?
+			 */
 		}
 		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
@@ -1239,6 +1279,7 @@ static int shut_control_msg(
 
 				Retry=1;
 				break;
+
 			case -1:
 				if (Retry >= MAX_TRY)
 				{
@@ -1257,14 +1298,18 @@ static int shut_control_msg(
 					Retry++;
 				}
 				break;
+
 			case -3:
 				/* FIXME: notification caught => to be processed */
 
 				/* Send a NACK for the moment, to get a resend from the UPS */
 				ser_send_char(arg_upsfd, SHUT_NOK);
 				Retry++;
+				goto fallthrough_default;
+
 			default:
-				;
+			fallthrough_default:
+				break;
 		}
 	}
 	if (remaining_size != 0)

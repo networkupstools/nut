@@ -131,6 +131,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case ERROR_PIPE:    /** Pipe error or Broken pipe */
 			usb_clear_halt(udev, 0x81);
+			break;
+
 		case ERROR_TIMEOUT: /** Operation or Connection timed out */
 			break;
 		}
@@ -473,7 +475,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#if ETIME && WITH_LIBUSB_0_1
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
 	fallthrough_case_etime:

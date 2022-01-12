@@ -209,7 +209,7 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
-// FIXME: daisychain commands support!
+/* FIXME: daisychain commands support! */
 su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
@@ -358,7 +358,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -442,7 +442,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -1462,7 +1462,7 @@ static void disable_transfer_oids(void)
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
-	char info_type[128]; // We tweak incoming "su_info_p->info_type" value in some cases
+	char info_type[128]; /* We tweak incoming "su_info_p->info_type" value in some cases */
 
 /* FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?),
  *and same macro or sizeof(info_type) below? */
@@ -1782,7 +1782,7 @@ bool_t load_mib2nut(const char *mib)
 		"proper MIB for device [%s] (host %s)",
 		__func__, mib,
 		upsname ? upsname : device_name,
-		device_path // the "port" from config section is hostname/IP for networked drivers
+		device_path /* the "port" from config section is hostname/IP for networked drivers */
 		);
 
 	/* First, try to match against sysOID, if no MIB was provided.
@@ -2349,7 +2349,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 							&tmp_buf[0], current_device_number, cur_nut_index);
 					}
 					else {
-						// FIXME: daisychain-whole, what to do?
+						/* FIXME: daisychain-whole, what to do? */
 						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
 					}
@@ -2373,8 +2373,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 					if (current_device_number > 0) {
 						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number + device_template_offset);
 					}
-					//else
-					// FIXME: daisychain-whole, what to do?
+					/*else
+					 * FIXME: daisychain-whole, what to do?
+					 */
 				}
 				else {
 					/* Special processing for daisychain:
@@ -2814,7 +2815,7 @@ bool_t snmp_ups_walk(int mode)
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
-					(current_device_number == 1)?"master":"slave"); // FIXME: daisychain
+					(current_device_number == 1)?"master":"slave"); /* FIXME: daisychain */
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
@@ -2872,7 +2873,7 @@ bool_t snmp_ups_walk(int mode)
 						{
 							if (current_device_number == 0)
 							{
-								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
+								su_setinfo(su_info_p, NULL); /* FIXME: daisychain-whole, what to do? */
 							} else {
 								status = process_template(mode, "device", su_info_p);
 							}
@@ -2941,7 +2942,9 @@ bool_t snmp_ups_walk(int mode)
 				else {
 */					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
-//				}
+/*
+				}
+*/
 			}
 		}	/* for (su_info_p... */
 

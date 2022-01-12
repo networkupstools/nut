@@ -658,6 +658,8 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
+			break;
+
 		case ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
@@ -1183,16 +1185,17 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(4, "command index: 0x%02x", index);
 
 /*	if (hunnox_patch) { */
-		// Enable lock-step protocol for Hunnox
+		/* Enable lock-step protocol for Hunnox */
 		if (hunnox_protocol(index) != 0) {
 			return 0;
 		}
 
-		// Seems that if we inform a large buffer, the USB locks.
-		// This value was captured from the Windows "official" client.
-		// Note this should not be a problem programmatically: it just
-		// means that the caller reserved a longer buffer that we need
-		// in practice to write a response into.
+		/* Seems that if we inform a large buffer, the USB locks.
+		 * This value was captured from the Windows "official" client.
+		 * Note this should not be a problem programmatically: it just
+		 * means that the caller reserved a longer buffer that we need
+		 * in practice to write a response into.
+		 */
 		if (buflen > 102) {
 			buflen = 102;
 		}
@@ -2930,7 +2933,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-#if ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
 		fallthrough_case_ETIME:
@@ -3338,9 +3341,20 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			break;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 	/* All enum cases defined as of the time of coding
 	 * have been covered above. Handle later definitions,
@@ -3348,7 +3362,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	 */
 		default:
 			fatalx(EXIT_FAILURE, "%s: unknown update mode!", __func__);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 

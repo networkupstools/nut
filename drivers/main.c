@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
-			case 'i': { // scope
+			case 'i': { /* scope */
 					int ipv = atoi(optarg);
 					if (ipv > 0) {
 						poll_interval = (time_t)ipv;

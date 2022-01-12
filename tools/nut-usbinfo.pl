@@ -141,6 +141,9 @@ sub gen_usb_files
 	open my $outputDevScanner, ">$outputDevScanner" || die "error $outputDevScanner : $!";
 	print $outputDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
 	print $outputDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
+	print $outputDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t etc. */\n\n";
+	print $outputDevScanner "#include <limits.h>\t/* for PATH_MAX in usb.h etc. */\n\n";
+	print $outputDevScanner "#include <sys/param.h>\t/* for MAXPATHLEN etc. */\n\n";
 	print $outputDevScanner "/* libusb header file */\n";
 	print $outputDevScanner "#if (!WITH_LIBUSB_1_0) && (!WITH_LIBUSB_0_1)\n";
 	print $outputDevScanner "#error \"configure script error: Neither WITH_LIBUSB_1_0 nor WITH_LIBUSB_0_1 is set\"\n";
@@ -156,7 +159,6 @@ sub gen_usb_files
 	print $outputDevScanner " /* simple remap to avoid bloating structures */\n";
 	print $outputDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
 	print $outputDevScanner "#endif\n";
-	print $outputDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t */\n\n";
 	# vid, pid, driver
 	print $outputDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
 	print $outputDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";

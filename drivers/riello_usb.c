@@ -26,6 +26,8 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdint.h>
 
 #include "main.h"
@@ -347,7 +349,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 		if (ret < 0)
 			return ret;
 
-		upsdrv_initinfo();	//reconekt usb cable
+		upsdrv_initinfo();	/* reconnect usb cable */
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -379,7 +381,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#if ETIME && WITH_LIBUSB_0_1
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:				/* Timer expired */
 	fallthrough_case_etime:

@@ -75,6 +75,10 @@ case "$CI_REQUIRE_GOOD_GITIGNORE" in
         CI_REQUIRE_GOOD_GITIGNORE="true" ;;
 esac
 
+# Abort loops like BUILD_TYPE=default-all-errors as soon as we have a problem
+# (allowing to rebuild interactively and investigate that set-up)?
+[ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
+
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
@@ -631,6 +635,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-doc=yes")
                 fi
             fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
+            fi
             ;;
         "default-withdoc:man")
             # Some systems lack tools for HTML/PDF generation
@@ -640,6 +649,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 CONFIG_OPTS+=("--with-doc=auto")
             else
                 CONFIG_OPTS+=("--with-doc=man")
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             ;;
         "default-all-errors")
@@ -687,6 +701,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_CPPCHECK_TESTS-}" = no ] ; then
                 echo "WARNING: Build agent says it has a broken cppcheck, but we requested a BUILD_TYPE='$BUILD_TYPE'" >&2
                 exit 1
+            fi
+            if [ -z "${DO_CLEAN_CHECK-}" ]; then
+                # This is one of recipes where we want to
+                # keep the build products by default ;)
+                DO_CLEAN_CHECK=no
             fi
             CONFIG_OPTS+=("--enable-cppcheck=yes")
             CONFIG_OPTS+=("--with-doc=skip")
@@ -776,6 +795,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -n "${BUILD_WARNFATAL-}" ]; then
         CONFIG_OPTS+=("--enable-Werror=${BUILD_WARNFATAL}")
     fi
+
+    # Tell interactive and CI builds to prefer colorized output so warnings
+    # and errors are found more easily in a wall of text:
+    CONFIG_OPTS+=("--enable-Wcolor")
 
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
@@ -1023,6 +1046,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
@@ -1077,8 +1104,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # disabling other drivers for faster turnaround.
             ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
             ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
-            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
-                [ "${BUILDSTODO_USB}" -gt 1 ] || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
+             || [ "${BUILDSTODO_USB}" -gt 1 ] \
+             || [ "$NUT_USB_VARIANTS" != "auto" ] \
+            ) && \
+            (   [ "$CI_FAILFAST" != "true" ] \
+             || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
                 echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
@@ -1135,6 +1166,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                 }
 
                 # Note: when `expr` calculates a zero value below, it returns
@@ -1279,7 +1314,7 @@ bindings)
     fi
     ./autogen.sh
     #./configure
-    ./configure --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check
