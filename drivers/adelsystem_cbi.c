@@ -542,8 +542,8 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
             device_path
         );
 
-        /* on BROKEN PIPE error try to reconnect */
-        if (errno == EPIPE) {
+        /* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
+        if (errno == EPIPE || errno == EMBBADDATA || errno == EMBBADCRC) {
             upsdebugx(1, "register_read: error(%s)", modbus_strerror(errno));
             modbus_reconnect();
         }
