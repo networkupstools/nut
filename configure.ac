@@ -2453,7 +2453,7 @@ AC_CHECK_HEADER([string.h],
     [AC_LANG_PUSH([C])
      CFLAGS_SAVED="${CFLAGS}"
      CFLAGS_BUILTIN_STR="-fno-builtin-strchr -fno-builtin-strcmp -fno-builtin-strncmp"
-     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
      AC_MSG_CHECKING([whether we should disable string built-ins])
      dnl AC_DEFINE([HAVE_STRING_H], [1], [Define to 1 if you have <string.h>.])
      AC_COMPILE_IFELSE(
@@ -2479,7 +2479,7 @@ if (strchr(s, c) != NULL) return 1
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS} -Wno-unreachable-code"
+            [CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <string.h>
