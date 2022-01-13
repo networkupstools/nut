@@ -563,6 +563,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcovered-switch-default" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wextra-semi-stmt"],
+    [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt=yes],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi-stmt"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wextra-semi-stmt" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wextra-semi-stmt"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi-stmt" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-align"],
     [ax_cv__pragma__gcc__diags_ignored_cast_align],
     [AC_COMPILE_IFELSE(
