@@ -225,7 +225,9 @@ struct passwd *get_user_pwent(const char *name)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code"
-#pragma clang diagnostic ignored "-Wunreachable-code-return"
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+#  pragma clang diagnostic ignored "-Wunreachable-code-return"
+# endif
 #endif
 	/* Oh joy, adding unreachable "return" to make one compiler happy,
 	 * and pragmas around to make other compilers happy, all at once! */
