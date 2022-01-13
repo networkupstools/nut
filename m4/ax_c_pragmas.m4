@@ -109,6 +109,40 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP], 1, [define if your compiler has #pragma clang diagnostic push and pop])
   ])
 
+  dnl Test for some clang-specific pragma support: primarily useful for older
+  dnl clang (3.x) releases, so polluting NUT codebase only when unavoidable.
+  dnl In most cases, GCC pragmas are usable by both; in a few others, direct
+  dnl use of `#ifdef __clang__` suffices.
+  AS_IF([test "${CLANG}" = "yes"], [
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wunreachable-code-return"],
+        [ax_cv__pragma__clang__diags_ignored_unreachable_code_return],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[void func(void) {
+#pragma clang diagnostic ignored "-Wunreachable-code-return"
+}
+    ]], [])],
+          [ax_cv__pragma__clang__diags_ignored_unreachable_code_return=yes],
+          [ax_cv__pragma__clang__diags_ignored_unreachable_code_return=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_unreachable_code_return" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wunreachable-code-return"])
+      ])
+
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wunreachable-code-return" (outside functions)],
+        [ax_cv__pragma__clang__diags_ignored_unreachable_code_return_besidefunc],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[#pragma clang diagnostic ignored "-Wunreachable-code-return"]], [])],
+          [ax_cv__pragma__clang__diags_ignored_unreachable_code_return_besidefunc=yes],
+          [ax_cv__pragma__clang__diags_ignored_unreachable_code_return_besidefunc=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_unreachable_code_return_besidefunc" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN_BESIDEFUNC], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wunreachable-code-return" (outside functions)])
+      ])
+  ]) dnl Special pragma support testing for clang
+
+  dnl Test common pragmas for GCC (and compatible) compilers
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunused-function"],
     [ax_cv__pragma__gcc__diags_ignored_unused_function],
     [AC_COMPILE_IFELSE(
