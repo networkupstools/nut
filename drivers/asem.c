@@ -105,7 +105,18 @@ void upsdrv_initinfo(void)
 	__u8 buffer[10];
 	unsigned short year, month, day;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Set capacity mode in mA(h) */
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x03);
@@ -171,7 +182,18 @@ void upsdrv_updateinfo(void)
 	static __s32 temperature;
 	static __s32 runtime_to_empty;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, CHARGER_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 	/* Charger only supplies online/offline status */
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x13);
 	if (i2c_status == -1) {
@@ -182,7 +204,18 @@ void upsdrv_updateinfo(void)
 	online = (i2c_status & 0x8000) != 0;
 	upsdebugx(3, "Charger status 0x%02X, online %d", i2c_status, online);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x16);
 	if (i2c_status == -1) {
 		dstate_datastale();
@@ -342,7 +375,18 @@ void upsdrv_initups(void)
 		fatal_with_errno(EXIT_FAILURE, "Could not open device port '%s'", device_path);
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Get ManufacturerName */
 	memset(DeviceName_buffer, 0, 10);
