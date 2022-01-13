@@ -10,8 +10,8 @@ AC_DEFUN([AX_C_PRAGMAS], [
 
   dnl # This is expected to fail builds with unknown pragma names on GCC or CLANG at least
   AS_IF([test "${CLANG}" = "yes"],
-    [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"
-     CXXFLAGS="${CXXFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"],
+    [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-pragmas -Werror=unknown-warning-option"
+     CXXFLAGS="${CXXFLAGS_SAVED} -Werror=pragmas -Werror=unknown-pragmas -Werror=unknown-warning-option"],
     [AS_IF([test "${GCC}" = "yes"],
 dnl ### Despite the docs, this dies with lack of (apparently) support for
 dnl ### -Wunknown-warning(-options) on all GCC versions I tried (v5-v10)
