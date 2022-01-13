@@ -528,11 +528,17 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
 	/* Stay ahead of possible redefinitions... */
-	if (sizeof(mfg_date_time) < sizeof(timetmp))
+	if (sizeof(mfg_date_time) > sizeof(timetmp))
 	{
 		libfreeipmi_cleanup();
-		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process");
+		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process into a time_t");
 	}
+	/* NOTE: Code until the end of method would also be "unreachable"
+	 * for compilers or static analyzers that care about this, if the
+	 * sizeof() check above fails on some architecture; build warnings
+	 * should expose that so we look for a fix - so do not just blindly
+	 * move the closing pragmas to end of method ;)
+	 */
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
