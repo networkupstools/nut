@@ -37,13 +37,16 @@ No IPP - Unix server available ! Press Enter to continue.
             Select UPS Manager Password
 The UPS manager password is used to secure the shut-off of UPS.
 Please enter the UPS server password, this cannot be empty (characters will not appear when typed):
+Re-enter the UPS server password (characters will not appear):
             Please review your configuration
 Managing UPS for local use only
 Managing UPS and allow remote clients
 Connecting to remote IPP for Unix servers
 Configured UPS devices:
 Minimum number of supplies needed:
-Shutoff delay:
+Early shutdown timeout, minutes (-1 for disabled feature):
+UPS Shutoff delay, seconds:
+UPS Shutoff and power-cycling enforcement (empty for auto):
 Is this correct ? (y/n) 
             How is your UPS connected to this host ?
                       1. Serial Connection (COM port)
@@ -102,8 +105,8 @@ Give the number of power supplies that must be receiving power to keep this syst
 No such UPS
             Network device login/password
 Enter login for network device:
-Enter password for network device (character will not appear):
-Re-enter password for network device (character will not appear):
+Enter password for network device (characters will not appear):
+Re-enter password for network device (characters will not appear):
 Passwords are different, please try again.
             Power Failure Settings
 Note that the shutdown duration (the time left for your system to shutdown before the UPS shuts-off) is set on the server side. Push Enter key to continue... 
@@ -115,3 +118,8 @@ Do you want to scan your network for available devices or directly enter an IP a
                 Enter selection: 
             Network device IP
 Please enter your network device IP:
+Do you want to "enforce" or "forbid" this host to always power-cycle the UPS as part of powerfail shutdown, or should it depend on other setup and run-time situation?
+Please enter "enforce" ("e"), "forbid" ("f") or "auto" (empty line); if unsure - default to "auto":
+Unexpected string was entered, please try again.
+Do you want to enable early shutdown timer ("-1" or empty for usual late shutdown to maximize uptime, 0 or more for minutes spent ONBATT with less than MINSUPPLIES power sources known protected, before beginning to shut down)
+Please enter a number (either "-1", or 0 or more); if unsure - default to "-1":

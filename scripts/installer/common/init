@@ -1,14 +1,54 @@
-#!/sbin/sh
+#!/bin/sh
+#	init
+#
+#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to command UPSes to disable delayed power off of outlet
+#	groups, which could have ben requested as part of the emergency shutdown
+#	driven by IPP - Unix (NUT); called from nut init-script
+#
+# Requires configuration from ipp.conf, or otherwise default to the values below
+#
+# TODO remaining per IPSSUNIX-29:
+#	* Mismatch against the `shutdown` script: during shutdown we set
+#	  `load.on.delay` and `load.off.delay` via `upscmd` for the UPS itself,
+#	  as well as `upsrw` the similar settings for outlet groups, but during
+#	  the `init` we reset to `-1` only the outlet group settings and not
+#	  those of the UPS itself
+#	* The script acts on ALL UPSes configured on this system (`upsc -l`),
+#	  rather than those MONITORed as feeding a non-zero amount
+#	  power-sources in `upsmon.conf`
+#	* The username is hardcoded as `admin` rather than taken from config
+#	* Maybe we do not try every possible instcmd for UPS poweroff/reboot -
+#	  revise against upsrw and upscmd for NETXML and SNMP drivers at least
 
 NUT_DIR="/usr/local/ups"
+NUT_UPSC="$NUT_DIR/bin/upsc"
+NUT_UPSCMD="$NUT_DIR/bin/upscmd"
+NUT_UPSRW="$NUT_DIR/bin/upsrw"
+
+LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
 
 # get shutdown delay and admin password
-. $NUT_DIR/etc/ipp.conf
+. "$NUT_DIR/etc/ipp.conf"
 
-upslist=`$NUT_DIR/bin/upsc -l`
-echo $upslist
-for u in $upslist;do
-	$NUT_DIR/bin/upsrw -s outlet.3.delay.shutdown=-1 -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.2.delay.shutdown=-1 -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.1.delay.shutdown=-1 -u admin -p $PASSWORD $u 
+if [ "$IPP_DEBUG" = yes ] ; then
+	# Keep entries with the same log as shutdown
+	exec >> /var/tmp/ipp-shutdown.log 2>&1
+	echo "`date`: Started booting: $0 $*" >&2
+	set >&2
+	set -x
+fi
+
+# TODO: Here we want to refine the list to only MONITORed UPSes that power us?
+# Convert to parsing of "ipp-status -p" which reports all needed details
+upslist="`"$NUT_UPSC" -l`"
+echo "$upslist"
+for u in $upslist; do
+	echo "Disabling poweroff for UPS outlet-groups on '$u' ..."
+	for o in 3 2 1 ; do
+		"$NUT_UPSRW" -s "outlet.$o.delay.shutdown=-1" \
+			-u admin -p "$PASSWORD" "$u"
+	done
 done

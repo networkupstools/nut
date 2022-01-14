@@ -10,14 +10,15 @@ exit
 #	It needs ipp.conf file.
 #
 
-CMD_NOTIFIER=/usr/local/ups/bin/ipp-notifier.sh
-DAEMON="/usr/local/ups/bin/ipp-shutdown-daemon.sh"
+NUT_DIR="/usr/local/ups"
+CMD_NOTIFIER="$NUT_DIR/bin/ipp-notifier.sh"
+DAEMON="$NUT_DIR/bin/ipp-shutdown-daemon.sh"
 
 #call notifier script
 $CMD_NOTIFIER "$*" &
 
-PROC=`ps -ef | grep $DAEMON | awk   -F" " '{print $2}'`
-case $1 in
+PROC="`ps -ef | grep "$DAEMON" | awk   -F" " '{print $2}'`"
+case "$1" in
 	ONBATT)
 		if [ $PROC = "" ];then
 			$DAEMON &
