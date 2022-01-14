@@ -1,12 +1,12 @@
 #!/bin/sh
 #	install.sh
-#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
 #	A shell script which installs IPP - Unix
 #	It installs the native package then runs NUT configuration tools
 #	to create an initial configuration and finally run the service.
 . ./version.sh
 
-PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin"
+PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/ccs/bin:/usr/xpg4/bin:/usr/xpg6/bin"
 export PATH
 
 
@@ -16,6 +16,7 @@ NUT_PACKAGE_SOLINT="NUT_solaris_i386_package2.6.5.local"
 COMMON_DIR="common"
 LOG_FILE=install.log
 [ x"${IPP_DEBUG-}" = xyes ] || IPP_DEBUG=no
+[ x"${IPP_WIPE_OLD_CONFIG-}" = xyes ] || IPP_WIPE_OLD_CONFIG=no
 
 #configuration data
 C_MODE="standalone"
@@ -69,7 +70,6 @@ get_parameters() {
 		SYSTEM=$1
 		;;
 	esac
-	
 }
 
 check_locale_language() {
@@ -115,12 +115,12 @@ compute_SYSTEM () {
 		7)
 			SYSTEM=AIX
 			;;
-		*)	
+		*)
 			SYSTEM="This AIX version is not supported"
 		;;
 		esac
 		;;
-	*)	
+	*)
 		SYSTEM="Unknown System"
 		;;
 	esac
@@ -132,15 +132,19 @@ compute_system () {
 	case "$SYSTEM" in
 	SOLINT)
 		system=solint
+		COMMON_DIR_SYS=solcmn
 		;;
 	SOLARI)
 		system=solari
+		COMMON_DIR_SYS=solcmn
 		;;
 	HPUX)
 		system=hpux
+		COMMON_DIR_SYS="$system"
 		;;
 	AIX)
 		system=aix
+		COMMON_DIR_SYS="$system"
 		;;
 	*)
 		echo
@@ -158,7 +162,7 @@ compute_system () {
 read_def () {
 	default="$2"
 
-	if [ "$2" = "" ];then
+	if [ "$2" = "" ]; then
 		necho "$1"
 	else
 		necho "$1" "[" "$2" "]"
@@ -239,6 +243,20 @@ install_files () {
 	fi
 	if [ -d "$instpath/etc" ]; then
 		cp -prf "$instpath/etc" "$instpath/etc.bak-$$"
+		if [ x"${IPP_WIPE_OLD_CONFIG}" = xyes ]; then
+			echo "Removing old configs because IPP_WIPE_OLD_CONFIG=yes"
+			rm -rf "$instpath/etc"
+		fi
+	fi
+	if [ -d "$instpath/xbin" ]; then
+		rm -rf "$instpath/xbin"
+	fi
+	if [ -x "$instpath/bin/uninstall-ipp" ]; then
+		necho $CS_REMOVE_OLDIPP
+		"$instpath/bin/uninstall-ipp" || true
+	fi
+	if [ -e "$instpath/bin/ipp-wrapper" ]; then
+		rm -f "$instpath/bin/ipp-wrapper" || true
 	fi
 
 	case "$system" in
@@ -260,8 +278,8 @@ install_files () {
 		rm -f "$ADMIN_FILE"
 		# Modified initscript, to run upsmon as full root,
 		# for optional early-shutdown support
-		if [ -s "$COMMON_DIR/solaris_init" ]; then
-			cp -f "$COMMON_DIR/solaris_init" "$instpath/nut"
+		if [ -s "$COMMON_DIR_SYS/solaris_init" ]; then
+			cp -f "$COMMON_DIR_SYS/solaris_init" "$instpath/nut"
 			res=$?
 			if [ ! $res = 0 ]; then
 				necho $INSTALL_ERROR
@@ -303,8 +321,8 @@ install_files () {
 		rm -f "$ADMIN_FILE"
 		# Modified initscript, to run upsmon as full root,
 		# for optional early-shutdown support
-		if [ -s "$COMMON_DIR/solaris_init" ]; then
-			cp -f "$COMMON_DIR/solaris_init" "$instpath/nut"
+		if [ -s "$COMMON_DIR_SYS/solaris_init" ]; then
+			cp -f "$COMMON_DIR_SYS/solaris_init" "$instpath/nut"
 			res=$?
 			if [ ! $res = 0 ]; then
 				necho $INSTALL_ERROR
@@ -362,6 +380,7 @@ install_files () {
 	;;
 	aix)
 		necho $REMOVE_PACKAGE | tee -a "$LOG_FILE"
+		rm -rf "$instpath/share/man" >> "$LOG_FILE" 2>&1
 		rpm -e nut >> "$LOG_FILE" 2>&1
 		rpm -e nut-client >> "$LOG_FILE" 2>&1
 		necho $INSTALL_PACKAGE | tee -a "$LOG_FILE"
@@ -381,8 +400,8 @@ install_files () {
 		fi
 		# Modified initscript, to run upsmon as full root,
 		# for optional early-shutdown support
-		if [ -s "$COMMON_DIR/aix_init" ]; then
-			cp -f "$COMMON_DIR/aix_init" /etc/rc.d/init.d/ups
+		if [ -s "$COMMON_DIR_SYS/aix_init" ]; then
+			cp -f "$COMMON_DIR_SYS/aix_init" /etc/rc.d/init.d/ups
 			res=$?
 			chown root:ipp "/etc/rc.d/init.d/ups" >> "$LOG_FILE" 2>&1
 			chmod 755 "/etc/rc.d/init.d/ups" >> "$LOG_FILE" 2>&1
@@ -391,6 +410,15 @@ install_files () {
 				exit 1
 			fi
 		fi
+		if [ ! -d "$instpath/share/man" ]; then
+			for N in 1 3 5 8 ; do
+				mkdir -p "$instpath/share/man/man$N" && \
+				( cd "$instpath/share/man/man$N" && { \
+					ln -s ../../../man/man$N/*.$N .
+					ln -s ../../doc/nut-*/docs/man/*.$N . 2>/dev/null
+				  } ; )
+			done >> "$LOG_FILE" 2>&1
+		fi
 	;;
 
 	*)
@@ -398,6 +426,25 @@ install_files () {
 		exit 1
 	;;
 	esac
+
+	#ipp-wrapper goes first of custom files, to symlink against just
+	# the packaged binaries - an action which we do first of all
+	mkdir "$instpath/xbin" >> "$LOG_FILE" 2>&1
+	chown root:ipp "$instpath/xbin" >> "$LOG_FILE" 2>&1
+	chmod 755 "$instpath/xbin" >> "$LOG_FILE" 2>&1
+	( cd "$instpath/bin" && for F in * ; do
+		if [ -f "$F" ] && [ ! -d "$F" ] && [ -x "$F" ] ; then
+			ln -s "../bin/ipp-wrapper" "../xbin/$F"
+		fi
+	  done )
+	( cd "$instpath/sbin" && for F in * ; do
+		if [ -f "$F" ] && [ ! -d "$F" ] && [ -x "$F" ] && [ ! -x "../xbin/$F" ] ; then
+			ln -s "../bin/ipp-wrapper" "../xbin/$F"
+		fi
+	  done )
+	cp "$COMMON_DIR/ipp-wrapper" "$instpath/bin" >> "$LOG_FILE" 2>&1
+	chown root:ipp "$instpath/bin/ipp-wrapper" >> "$LOG_FILE" 2>&1
+	chmod 755 "$instpath/bin/ipp-wrapper" >> "$LOG_FILE" 2>&1
 
 	#install additional libraries
 	cp "$systemdir/libs/"* "$instpath/lib" >> "$LOG_FILE" 2>&1
@@ -417,18 +464,18 @@ install_files () {
 	chmod 744 "$instpath/sbin/ipp-os-shutdown" >> "$LOG_FILE" 2>&1
 
 	# Config file with parameters for the shutdown program
-	cp -f "$systemdir/ipp-os-shutdown.conf.sample" "$instpath/etc"
-	if [ ! -f "$instpath/etc/ipp-os-shutdown.conf" ];then
+	cp -f "$COMMON_DIR_SYS/ipp-os-shutdown.conf.sample" "$instpath/etc"
+	if [ ! -s "$instpath/etc/ipp-os-shutdown.conf" ]; then
 		cp -f "$instpath/etc/ipp-os-shutdown.conf.sample" \
 			"$instpath/etc/ipp-os-shutdown.conf" >> "$LOG_FILE" 2>&1
 	fi
 	chown root:ipp "$instpath/etc/ipp-os-shutdown.conf" >> "$LOG_FILE" 2>&1
 	chmod 640 "$instpath/etc/ipp-os-shutdown.conf" >> "$LOG_FILE" 2>&1
 
-	#custom delivery: AIX Clusterware shutdown script
-	cp "$COMMON_DIR/AIX_Clusterware_shutdown" "$instpath/sbin" >> "$LOG_FILE" 2>&1
-	chown root:ipp "$instpath/sbin/AIX_Clusterware_shutdown" >> "$LOG_FILE" 2>&1
-	chmod 744 "$instpath/sbin/AIX_Clusterware_shutdown" >> "$LOG_FILE" 2>&1
+	#custom shutdown procedure script
+	cp "$COMMON_DIR/ipp-host-shutdown.sample" "$instpath/sbin" >> "$LOG_FILE" 2>&1
+	chown root:ipp "$instpath/sbin/ipp-host-shutdown.sample" >> "$LOG_FILE" 2>&1
+	chmod 644 "$instpath/sbin/ipp-host-shutdown.sample" >> "$LOG_FILE" 2>&1
 
 	#notifier script
 	cp "$COMMON_DIR/ipp-notifier.sh" "$instpath/bin" >> "$LOG_FILE" 2>&1
@@ -436,8 +483,9 @@ install_files () {
 	chmod 754 "$instpath/bin/ipp-notifier.sh" >> "$LOG_FILE" 2>&1
 
 	#sensitive config file, including passwords
-	if [ ! -f "$instpath/etc/ipp.conf" ];then
-		cp -f "$COMMON_DIR/ipp.conf" "$instpath/etc" >> "$LOG_FILE" 2>&1
+	cp -f "$COMMON_DIR/ipp.conf" "$instpath/etc/ipp.conf.sample" >> "$LOG_FILE" 2>&1
+	if [ ! -s "$instpath/etc/ipp.conf" ]; then
+		cp -f "$instpath/etc/ipp.conf.sample" "$instpath/etc/ipp.conf" >> "$LOG_FILE" 2>&1
 	fi
 	chown root:ipp "$instpath/etc/ipp.conf" >> "$LOG_FILE" 2>&1
 	chmod 640 "$instpath/etc/ipp.conf" >> "$LOG_FILE" 2>&1
@@ -457,6 +505,7 @@ install_files () {
 	cp "$COMMON_DIR/ipp-status" "$instpath/bin" >> "$LOG_FILE" 2>&1
 	chown root:ipp "$instpath/bin/ipp-status" >> "$LOG_FILE" 2>&1
 	chmod 755 "$instpath/bin/ipp-status" >> "$LOG_FILE" 2>&1
+
 }
 
 #######################
@@ -465,10 +514,10 @@ install_files () {
 initial_configure () {
 
 	conf_ok=""
-	while [ -z "$conf_ok" ];do
+	while [ -z "$conf_ok" ]; do
 		C_NUM_DEV=0
 		choose_mode
-		if [ $? = 1 ];then 
+		if [ $? = 1 ]; then
 			review_conf
 		fi
 	done
@@ -488,6 +537,27 @@ initial_configure () {
 
 	chown ipp:ipp "$instpath/etc/upsd.users" >> "$LOG_FILE" 2>&1
 	chmod 640 "$instpath/etc/upsd.users" >> "$LOG_FILE" 2>&1
+
+	# Report the SHUTDOWNSCRIPT_CUSTOM value or that it is missing
+	_VAR="`egrep '^[ \t]*SHUTDOWNSCRIPT_CUSTOM=' "$instpath/etc/ipp.conf" 2>/dev/null`" || CC_SHUTDOWNSCRIPT_CUSTOM=""
+	if [ -n "${_VAR}" ] ; then
+		_VAR="`echo "${_VAR}" | sed 's,^[ \t]*SHUTDOWNSCRIPT_CUSTOM=,,'`"
+		_VAR="`echo "${_VAR}" | sed -e 's,^"\(.*\)"$,\1,g' -e "s,^\'\(.*\)\'$,\1,g"`"
+		case "${_VAR}" in
+			*NUT_DIR*) _VAR1="`egrep '^[^\#]*NUT_DIR=' "$instpath/etc/ipp.conf" 2>/dev/null`" \
+				&& [ -n "${_VAR1}" ] && _VAR1="`eval $_VAR1 && echo "$NUT_DIR"`" && [ -n "${_VAR1}" ] \
+				&& _VAR2="`NUT_DIR="${_VAR1}" ; eval echo "${_VAR}"`" \
+				&& [ -n "${_VAR2}" ] && _VAR="${_VAR2}" ;;
+		esac
+		if [ -n "${_VAR}" ] && [ -s "${_VAR}" ] && [ -x "${_VAR}" ]; then
+			echo "INFO: Your ipp.conf contains SHUTDOWNSCRIPT_CUSTOM='${_VAR}' which points to an executable file"
+		else
+			echo "WARNING: Your ipp.conf contains SHUTDOWNSCRIPT_CUSTOM='${_VAR}' which points to a missing or not executable file"
+		fi
+	else
+		echo "WARNING: Your ipp.conf does not have a SHUTDOWNSCRIPT_CUSTOM set, you might want one"
+	fi
+	unset _VAR _VAR1 _VAR2
 }
 
 choose_network() {
@@ -513,7 +583,7 @@ choose_network() {
 display_device () {
 	DISP_COUNTER=1
 
-	while [ "$DISP_COUNTER" -le "$C_NUM_DEV" ];do
+	while [ "$DISP_COUNTER" -le "$C_NUM_DEV" ]; do
 		eval TMP=\$C_DEVICE"$DISP_COUNTER"
 #		DEV_TYPE="`printf "${DISP_COUNTER}- $TMP" | awk   -F' ' '{print \$2}'`"
 		DEV_CONF="`echo "$TMP" | awk   -F' ' '{print \$3}'`"
@@ -523,18 +593,18 @@ display_device () {
 }
 
 remove_ups () {
-	if [ "$answer" -lt 1 ];then
+	if [ "$answer" -lt 1 ]; then
 		necho $CS_REMOVE_UPS_2
 		return
 	fi
-	if [ "$answer" -gt "$C_NUM_DEV" ];then
+	if [ "$answer" -gt "$C_NUM_DEV" ]; then
 		necho $CS_REMOVE_UPS_2
 		return
 	fi
 
 	OLD_NUM_DEV="$C_NUM_DEV"
 	C_NUM_DEV="`expr $C_NUM_DEV - 1`"
-	if [ "$C_NUM_DEV" -ne 0 ];then
+	if [ "$C_NUM_DEV" -ne 0 ]; then
 		eval C_DEVICE$answer=\${C_DEVICE$OLD_NUM_DEV}
 		eval C_OPTION$answer=\${C_OPTION$OLD_NUM_DEV}
 
@@ -545,7 +615,7 @@ remove_ups () {
 #return 1 to continue the configuration
 #retuen 2 to add another UPS
 manage_ups () {
-	if [ "$C_NUM_DEV" = 0 ];then
+	if [ "$C_NUM_DEV" = 0 ]; then
 		return 0
 	fi
 
@@ -601,9 +671,11 @@ choose_mode() {
 		necho $CS_CLIENT_SD_DURATION_2
 		read TMP
 
+		choose_esd_timer
+
 		C_MODE="netclient"
 		ret=2
-		while [ $ret = 2 ];do
+		while [ $ret = 2 ]; do
 			choose_server
 			manage_ups
 			ret=$?
@@ -611,36 +683,33 @@ choose_mode() {
 		;;
 	*)
 		choose_shutdown_duration
+		choose_esd_timer
 		choose_network
 		ret=2
-		while [ $ret = 2 ];do
+		while [ $ret = 2 ]; do
 			choose_connectivity
 			manage_ups
 			ret=$?
 		done
 
-		if [ $ret = 1 ];then
+		if [ $ret = 1 ]; then
 			ret=""
 			choose_password
+			ret=$?
+		fi
+
+		if [ $C_NUM_DEV -gt 0 ]; then
+			ret=""
+			choose_static_powercycle
 			ret=$?
 		fi
 		;;
 	esac
 
-	if [ $ret = 1 ];then
-		if [ $C_NUM_DEV -gt 0 ];then
-			ret=""
-			choose_static_powercycle
-			ret=$?
-		fi
-		if [ $C_NUM_DEV -gt 1 ];then
+	if [ $ret = 1 ]; then
+		if [ $C_NUM_DEV -gt 1 ]; then
 			ret=""
 			choose_minsupplies
-			ret=$?
-		fi
-		if [ "$C_MINSUPPLIES" -gt 0 ];then
-			ret=""
-			choose_esd_timer
 			ret=$?
 		fi
 	fi
@@ -680,7 +749,7 @@ choose_esd_timer() {
 	necho $CS_SEPARATOR_1
 
 	answer=""
-	while [ "$answer" = "" ];do
+	while [ "$answer" = "" ]; do
 		read_def $CS_ESDTIMER_2 "$C_SHUTDOWN_TIMER"
 		#Check if this is a valid number
 		if [ "$answer" = "" ]; then answer="-1"; fi
@@ -706,12 +775,12 @@ choose_minsupplies() {
 	necho $CS_SEPARATOR_1
 
 	answer=""
-	while [ "$answer" = "" ];do
+	while [ "$answer" = "" ]; do
 		read_def $CS_MINSUP_2 $C_NUM_DEV
 		#Check if this is a valid number
 		if echo "$answer" | egrep '^[0-9]+$' > /dev/null 2>&1 ; then
 			#this is a number
-			if [ $answer -lt 1 ];then
+			if [ $answer -lt 1 ]; then
 				answer=""
 			fi
 		else
@@ -721,7 +790,7 @@ choose_minsupplies() {
 	done;
 
 	C_MINSUPPLIES="$answer"
-	if [ "$answer" -gt "$C_NUM_DEV" ];then
+	if [ "$answer" -gt "$C_NUM_DEV" ]; then
 		C_MINSUPPLIES="$C_NUM_DEV"
 	fi
 
@@ -730,7 +799,7 @@ choose_minsupplies() {
 
 choose_connectivity() {
 	ret="0"
-	while [ $ret = "0" ];do
+	while [ $ret = "0" ]; do
 		necho $CS_SEPARATOR_1
 		necho $CS_CONNECTIVITY_1
 		necho $CS_SEPARATOR_1
@@ -759,7 +828,7 @@ choose_connectivity() {
 
 choose_ask_scan_serial() {
 	ret="0"
-	while [ $ret = "0" ];do
+	while [ $ret = "0" ]; do
 		necho $CS_SEPARATOR_1
 		necho $CS_ASK_SERIAL_1
 		necho $CS_SEPARATOR_1
@@ -789,7 +858,7 @@ choose_ask_scan_serial() {
 
 choose_serial() {
 	serial_list="`$NUTCONF --scan-serial auto 2>> "$LOG_FILE"`"
-	if [ x"$serial_list" = x"" ];then
+	if [ x"$serial_list" = x"" ]; then
 		echo
 		read_def $CS_ERR_NO_SERIAL ""
 		echo
@@ -806,7 +875,7 @@ choose_serial() {
 "
 
 	i="1"
-	for s in $serial_list;do
+	for s in $serial_list; do
 		DEV_NAME="`echo "$s" | awk   -F' ' '{print \$3}'`"
 		echo "                      $i. $DEV_NAME"
 		i="`expr $i + 1`"
@@ -827,8 +896,8 @@ choose_serial() {
 
 		C_NUM_DEV="`expr $C_NUM_DEV + 1`"
 		i="1"
-		for s in $serial_list;do
-			if [ "$i" = "$answer" ];then
+		for s in $serial_list; do
+			if [ "$i" = "$answer" ]; then
 				eval C_DEVICE$C_NUM_DEV=\"$s\"
 				eval C_OPTION$C_NUM_DEV=\"\"
 				break;
@@ -852,7 +921,7 @@ choose_manual_serial () {
 
 	DEV="`$NUTCONF --scan-serial $answer 2>> "$LOG_FILE"`"
 
-	if [ "$DEV" = "" ];then
+	if [ "$DEV" = "" ]; then
 		read_def $CS_MANUAL_SERIAL_ERR ""
 		return 0;
 	fi
@@ -896,7 +965,7 @@ choose_xml_manual() {
 	echo
 	read_def $CS_XML_MANU_2 ""
 
-	if [ x"$answer" = x"" ];then
+	if [ x"$answer" = x"" ]; then
 		return 0
 	fi
 
@@ -918,7 +987,7 @@ choose_xml() {
 	echo
 
 	LIST_XML="`$NUTCONF --scan-xml-http 2>> "$LOG_FILE"`"
-	if [ "$LIST_XML" = "" ];then
+	if [ "$LIST_XML" = "" ]; then
 		read_def $CS_SNMP_7 ""
 		choose_snmp
 		return $?
@@ -964,8 +1033,8 @@ choose_xml() {
 
 		C_NUM_DEV="`expr $C_NUM_DEV + 1`"
 		i="1"
-		for s in $LIST_XML;do
-			if [ "$i" = "$answer" ];then
+		for s in $LIST_XML; do
+			if [ "$i" = "$answer" ]; then
 				eval C_DEVICE$C_NUM_DEV=\"$s\"
 				nmc_login
 				IFS=$OLD1_IFS
@@ -990,12 +1059,12 @@ choose_snmp() {
 	echo
 	read_def $CS_SNMP_3 $FIRST_IP
 	FIRST_IP="$answer"
-	if [ "$answer" = "" ];then
+	if [ "$answer" = "" ]; then
 		return 0
 	fi
 	read_def $CS_SNMP_4 $LAST_IP
 	LAST_IP="$answer"
-	if [ "$answer" = "" ];then
+	if [ "$answer" = "" ]; then
 		LAST_IP="$FIRST_IP"
 	fi
 
@@ -1014,7 +1083,7 @@ choose_snmp() {
 
 	filter_snmp_list
 
-	if [ "$LIST_SNMP" = "" ];then
+	if [ "$LIST_SNMP" = "" ]; then
 		read_def $CS_SNMP_7 ""
 		return 0
 	fi
@@ -1048,8 +1117,8 @@ choose_snmp() {
 
 		C_NUM_DEV="`expr $C_NUM_DEV + 1`"
 		i="1"
-		for s in $LIST_SNMP;do
-			if [ "$i" = "$answer" ];then
+		for s in $LIST_SNMP; do
+			if [ "$i" = "$answer" ]; then
 				eval C_DEVICE$C_NUM_DEV=\"$s\"
 				eval C_OPTION$C_NUM_DEV=\"community=$C_COMMUNITY\"
 				IFS="$OLD1_IFS"
@@ -1071,17 +1140,17 @@ filter_snmp_list() {
 	OLD1_IFS="$IFS"
 	IFS="
 "
-	for s in $list;do
+	for s in $list; do
 		IP_SNMP="`echo "$s" | awk   -F' ' '{print \$3}'`"
 		TO_ADD="$s"
-		for x in $LIST_XML;do
+		for x in $LIST_XML; do
 			IP_XML="`echo "$x" | awk   -F' ' '{print \$3}' | sed 's/http:\/\///g'`"
-			if [ "$IP_SNMP" = "$IP_XML" ];then
+			if [ "$IP_SNMP" = "$IP_XML" ]; then
 				TO_ADD=""
 				break
 			fi
 		done
-		if [ ! "$TO_ADD" = "" ];then
+		if [ ! "$TO_ADD" = "" ]; then
 			LIST_SNMP="`echo "$LIST_SNMP";echo "$TO_ADD"`"
 		fi
 	done
@@ -1099,12 +1168,12 @@ choose_server() {
 	echo
 	read_def $CS_SERVER_3 ""
 	FIRST_IP="$answer"
-	if [ x"$answer" = x"" ];then
+	if [ x"$answer" = x"" ]; then
 		return 0
 	fi
 	read_def $CS_SERVER_4 ""
 	LAST_IP="$answer"
-	if [ x"$answer" = x"" ];then
+	if [ x"$answer" = x"" ]; then
 		LAST_IP=$FIRST_IP
 	fi
 
@@ -1114,7 +1183,7 @@ choose_server() {
 
 	list="`$NUTCONF --scan-nut "$FIRST_IP" "$LAST_IP" "$NUT_PORT" 2>> "$LOG_FILE"`"
 #TODO parse scan results
-	if [ "$list" = "" ];then
+	if [ "$list" = "" ]; then
 		read_def $CS_SERVER_6 ""
 		return 0
 	fi
@@ -1126,7 +1195,7 @@ choose_server() {
 "
 
 	i="1"
-	for s in $list;do
+	for s in $list; do
 		UPS="`echo "$s" | awk   -F' ' '{print \$3}'`"
 		echo "                      $i. $UPS"
 		i="`expr $i + 1`"
@@ -1148,8 +1217,8 @@ choose_server() {
 		OLD1_IFS="$IFS"
 		IFS="
 "
-		for s in $list;do
-			if [ "$i" = "$answer" ];then
+		for s in $list; do
+			if [ "$i" = "$answer" ]; then
 				eval C_DEVICE$C_NUM_DEV=\"$s\"
 				eval C_OPTION$C_NUM_DEV=\"\"
 				break
@@ -1170,11 +1239,11 @@ choose_password() {
 
 	answer=""
 	PASS1="1"
-	while [ ! "$answer" = "$PASS1" ] || [ -z "$answer" ];do
+	while [ ! "$answer" = "$PASS1" ] || [ -z "$answer" ]; do
 		read_def_silent $CS_PASSWORD_3 ""
 		PASS1="$answer"
 		read_def_silent $CS_PASSWORD_4 ""
-		if [ ! "$answer" = "$PASS1" ];then
+		if [ ! "$answer" = "$PASS1" ]; then
 			echo
 			necho $CS_ERR_PASSWORDS_DIFFER
 			echo
@@ -1189,11 +1258,11 @@ get_networked_device() {
 	NDEV=0
 	C_NUM_NETWORK_DEVICE=0
 
-	while [ "$NDEV" -lt "$C_NUM_DEV" ];do
+	while [ "$NDEV" -lt "$C_NUM_DEV" ]; do
 		NDEV="`expr $NDEV + 1`"
 		eval TMP=\$C_DEVICE"$NDEV"
 		DRIVER="`echo "$TMP" | awk -F' ' '{print \$2}'`"
-		if [ "$DRIVER" = "netxml-ups" ];then
+		if [ "$DRIVER" = "netxml-ups" ]; then
 			C_NUM_NETWORK_DEVICE="`expr $C_NUM_NETWORK_DEVICE + 1`"
 		fi
 	done
@@ -1208,17 +1277,31 @@ nmc_login() {
 	NMC_LOGIN="$answer"
 	answer=""
 	PASS1="1"
-	while [ ! "$answer" = "$PASS1" ];do
+	while [ ! "$answer" = "$PASS1" ]; do
 		read_def_silent $CS_NMC_LOGIN_3 ""
 		PASS1="$answer"
 		read_def_silent $CS_NMC_LOGIN_4 ""
-		if [ ! "$answer" = "$PASS1" ];then
+		if [ ! "$answer" = "$PASS1" ]; then
 			echo
 			necho $CS_ERR_PASSWORDS_DIFFER
 			echo
 		fi
 	done
-	eval C_OPTION$C_NUM_DEV=\"login=$NMC_LOGIN password=$answer subscribe=yes shutdown_duration=$C_SHUTDOWN_DURATION\"
+	ESD_NETXML_OPTION=""
+	if [ "$C_SHUTDOWN_TIMER" -gt 0 ] 2>/dev/null; then
+		# Note the leading space is included if value is set
+		# Also note this is a cosmetic setting for NMC web-gui
+		# to display the value, discrepancies that creep in
+		# during later system administration are not sync'ed.
+		ESD_NETXML_OPTION=" shutdown_timer=`expr $C_SHUTDOWN_TIMER \* 60`" || \
+		ESD_NETXML_OPTION=""
+	fi
+	if [ "$C_SHUTDOWN_TIMER" -eq 0 ] 2>/dev/null; then
+		# Some value >0 must be set to be picked up; for this
+		# choice of "1 sec" the NMC Web-GUI shows "0 min" anyway
+		ESD_NETXML_OPTION=" shutdown_timer=1"
+	fi
+	eval C_OPTION$C_NUM_DEV=\"login=$NMC_LOGIN password=$answer subscribe=yes$ESD_NETXML_OPTION shutdown_duration=$C_SHUTDOWN_DURATION\"
 }
 
 choose_shutdown_duration() {
@@ -1227,7 +1310,7 @@ choose_shutdown_duration() {
 	necho $CS_SEPARATOR_1
 	echo
 	answer=""
-	while [ "$answer" = "" ];do
+	while [ "$answer" = "" ]; do
 		read_def $CS_SHUTOFF_DELAY_3 "$C_SHUTDOWN_DURATION"
 		#Check if this is a valid number
 		if echo "$answer" | egrep '^[0-9]+$' > /dev/null 2>&1; then
@@ -1312,14 +1395,22 @@ set_notify() {
 	$NUTCONF --set-notifyflags NOPARENT EXEC 2>> "$LOG_FILE"
 }
 
-set_shutdown_duration() {
-	cat "$instpath/etc/ipp.conf" | \
-		grep -v "DELAY=" | grep -v "PASSWORD=" \
-		> "$instpath/etc/ipp.conf.tmp"
-	echo "DELAY='$C_SHUTDOWN_DURATION'" >> "$instpath/etc/ipp.conf.tmp"
-	echo "PASSWORD='$C_PASSWORD'" >> "$instpath/etc/ipp.conf.tmp"
+set_ippconf_value() {
+	# Replaces a value in the installed ipp.conf which is an assignment
+	# of "$1='$2'" and which is not a comment (optional whitespace may
+	# be prepended in the present line, but will be removed in the end)
+	egrep -v '^[ \t]*('"$1"')=' "$instpath/etc/ipp.conf" \
+		> "$instpath/etc/ipp.conf.tmp" && \
+	echo "$1='$2'" >> "$instpath/etc/ipp.conf.tmp" && \
 	cat "$instpath/etc/ipp.conf.tmp" > "$instpath/etc/ipp.conf"
+	res=$?
 	rm -f "$instpath/etc/ipp.conf.tmp"
+	return $res
+}
+
+set_shutdown_duration() {
+	set_ippconf_value DELAY "$C_SHUTDOWN_DURATION"
+	set_ippconf_value PASSWORD "$C_PASSWORD"
 }
 
 set_minsupplies() {
@@ -1328,38 +1419,23 @@ set_minsupplies() {
 
 set_debug_flag() {
 	# Keep an old value if it was set
-	egrep '^IPP_DEBUG=' "$instpath/etc/ipp.conf" >/dev/null || \
-		echo "IPP_DEBUG=\"$IPP_DEBUG\"" >> "$instpath/etc/ipp.conf"
+	egrep '^[ \t]*IPP_DEBUG=' "$instpath/etc/ipp.conf" >/dev/null || \
+		echo "IPP_DEBUG='$IPP_DEBUG'" >> "$instpath/etc/ipp.conf"
 }
 
 set_esd_timer() {
-	cat "$instpath/etc/ipp.conf" | \
-		grep -v "SHUTDOWN_TIMER=" \
-		> "$instpath/etc/ipp.conf.tmp"
-	echo "SHUTDOWN_TIMER=\"$C_SHUTDOWN_TIMER\"" >> "$instpath/etc/ipp.conf.tmp"
-	cat "$instpath/etc/ipp.conf.tmp" > "$instpath/etc/ipp.conf"
-	rm -f "$instpath/etc/ipp.conf.tmp"
+	set_ippconf_value SHUTDOWN_TIMER "$C_SHUTDOWN_TIMER"
 }
 
 set_host_os_flavour() {
-	cat "$instpath/etc/ipp.conf" | \
-		grep -v "HOST_OS_FLAVOUR=" \
-		> "$instpath/etc/ipp.conf.tmp"
-	echo "HOST_OS_FLAVOUR=\"$system\"" >> "$instpath/etc/ipp.conf.tmp"
-	cat "$instpath/etc/ipp.conf.tmp" > "$instpath/etc/ipp.conf"
-	rm -f "$instpath/etc/ipp.conf.tmp"
+	set_ippconf_value HOST_OS_FLAVOUR "$system"
 }
 
 set_static_powercycle() {
 	# Generally this variable should be left empty and the powercycling
 	# would be enabled or diabled based on killpower flag. However in some
 	# cases a user may want to enforce the setting (e.g. last ESD host).
-	cat "$instpath/etc/ipp.conf" | \
-		grep -v "POWERDOWNFLAG_USER=" \
-		> "$instpath/etc/ipp.conf.tmp"
-	echo "POWERDOWNFLAG_USER=\"$C_POWERDOWNFLAG_USER\"" >> "$instpath/etc/ipp.conf.tmp"
-	cat "$instpath/etc/ipp.conf.tmp" > "$instpath/etc/ipp.conf"
-	rm -f "$instpath/etc/ipp.conf.tmp"
+	set_ippconf_value POWERDOWNFLAG_USER "$C_POWERDOWNFLAG_USER"
 }
 
 review_conf() {
@@ -1405,20 +1481,20 @@ display_conf() {
 	necho $CS_REVIEW_1
 	necho $CS_SEPARATOR_1
 	echo
-	if [ "$C_MODE" = "standalone" ];then
+	if [ "$C_MODE" = "standalone" ]; then
 		necho $CS_REVIEW_2
 	fi
-	if [ "$C_MODE" = "netserver" ];then
+	if [ "$C_MODE" = "netserver" ]; then
 		necho $CS_REVIEW_3
 	fi
-	if [ "$C_MODE" = "netclient" ];then
+	if [ "$C_MODE" = "netclient" ]; then
 		necho $CS_REVIEW_4
 	fi
 	echo
 	necho $CS_REVIEW_5
 	display_device
 	echo
-	if [ "$C_NUM_DEV" -gt 1 ];then
+	if [ "$C_NUM_DEV" -gt 1 ]; then
 		necho $CS_REVIEW_6 " " $C_MINSUPPLIES
 	fi
 
@@ -1446,7 +1522,7 @@ apply_conf_client() {
 	# (later) specifies real powersource counts, and topology is not 1:1
 	$NUTCONF --set-monitor "${UPS}" "$HOST" 1 upsmon upsmon slave 2>> "$LOG_FILE"
 
-	while [ "$NDEV" -lt "$C_NUM_DEV" ];do
+	while [ "$NDEV" -lt "$C_NUM_DEV" ]; do
 		NDEV="`expr $NDEV + 1`"
 		eval TMP=\$C_DEVICE$NDEV
 		DEV="`echo "$TMP" | awk -F' ' '{print \$3}'`"
@@ -1481,7 +1557,7 @@ set_device_monitor_user () {
 
 	echo "$PORT" | grep '^/dev/tty' >/dev/null && setup_tty "$PORT"
 
-	while [ "$NDEV" -lt "$C_NUM_DEV" ];do
+	while [ "$NDEV" -lt "$C_NUM_DEV" ]; do
 		NDEV="`expr $NDEV + 1`"
 		split_device
 		eval TMP=\$C_OPTION$NDEV
@@ -1552,7 +1628,7 @@ stop_service () {
 }
 
 add_hpux_upsmon_esd_support () {
-	if [ -f /etc/rc.config.d/nut-upsmon ];then
+	if [ -f /etc/rc.config.d/nut-upsmon ]; then
 		cat >>/etc/rc.config.d/nut-upsmon <<HERE
 ##### IPP - Unix ESD support begin #####
 # Do not remove nor change the line above, it's used
@@ -1597,16 +1673,19 @@ remove_hpux_upsmon_esd_support () {
 }
 
 add_profile_settings () {
-	if [ -f /etc/profile ];then
+	if [ -f /etc/profile ]; then
 		cat >>/etc/profile <<HERE
 ##### IPP - Unix settings begin #####
 # Do not remove nor change the line above, it's used
 # for automatic removal of the section upon uninstallation
-PATH=\$PATH:/usr/local/ups/bin
+# NOTE: The xbin directory contains symlinks to a wrapper
+# which sets the environment for packaged programs in bin;
+# but the bin also has scripts.
+PATH="\$PATH:/usr/local/ups/xbin:/usr/local/ups/bin"
 export PATH
-LD_LIBRARY_PATH=/usr/local/ups/lib:\$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH
-MANPATH=\$MANPATH:/usr/local/ups/share/man
+#LD_LIBRARY_PATH="/usr/local/ups/lib:\$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+MANPATH="\$MANPATH:/usr/local/ups/share/man"
 export MANPATH
 # Again, do not remove nor change the line below
 ##### IPP - Unix settings end #####
@@ -1664,13 +1743,13 @@ ret=TRUE
 		get_parameters $3
 	fi
 
-# Get language locale 
+# Get language locale
 	if [ "$lang" = "" ]; then
 		check_locale_language
 		if [ -z "$lang" ]; then
 			lang=EN
 		fi
-	fi 
+	fi
 
 #  Initialize resource strings.
 	installres="$COMMON_DIR"_$lang/install.res
@@ -1684,11 +1763,14 @@ ret=TRUE
 
 	who="`whoami 2>/dev/null`"
 	if [ "$who" != 'root' ]; then
-#work around in case no whoami is present 
+#work around in case no whoami is present
 		who="`id -u 2>/dev/null`"
 		if [ "$who" != '0' ]; then
-			necho $ERR_ROOT
-			exit 1
+			who="`id 2>/dev/null | grep -w '0' | grep -w root`"
+			if [ -z "$who" ]; then
+				necho $ERR_ROOT
+				exit 1
+			fi
 		fi
 	fi
 
@@ -1792,8 +1874,10 @@ ret=TRUE
 
 	# Build initial configuration
 	if [ -z "$skip_config" ]; then
-		LD_LIBRARY_PATH="$instpath/lib:/usr/local/lib:$LD_LIBRARY_PATH"
-		export LD_LIBRARY_PATH
+		PATH="$PATH:/usr/local/ups/xbin:/usr/local/ups/bin"
+		export PATH
+#		LD_LIBRARY_PATH="$instpath/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+#		export LD_LIBRARY_PATH
 		initial_configure
 	fi
 

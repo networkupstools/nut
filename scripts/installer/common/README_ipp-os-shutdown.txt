@@ -1,10 +1,9 @@
-= README for the ipp-unix-1.40-4_AIX_Clusterware hotfix edition
+= README for the ipp-os-shutdown and early shutdown features in IPP - UNIX
 
 == General information
 
-This delivery contains a customized variant of ipp-unix-1.40-4 with the
-same basic binary software and enhanced scripts and configuration which
-enable to configure "early shutdown" functionality for chosen AIX hosts.
+This version of IPP - Unix includes enhanced scripts and configuration
+which enable to configure "early shutdown" functionality on chosen hosts.
 This allows selected systems to power themselves off after a certain
 time that less than `$MINSUPPLIES` power sources are protected by UPSes 
 that are fully "ONLINE".
@@ -17,6 +16,17 @@ variable is `-1` which retains the standard behavior of staying up as
 long as possible, and shutting down only when the UPS sends an alert
 that too little battery runtime remains (as configured by default or
 customized by `shutdown_duration` option for the `netxml-ups` driver).
+
+[NOTE]
+NOTE: If this feature is used, it is recommended to specify the timeout
+for an early-shutdown feature of at least 5 minutes (`SHUTDOWN_TIMER=5`).
+Reason: When an NMC in the UPS is rebooted, it can announce dummy values
+about the UPS and battery status for some time, while it is collecting
+real data from the UPS hardware, and this data can cause a protected host
+to begin an early shutdown needlessly. A sufficiently long `SHUTDOWN_TIMER`
+value allows the host to receive real data from the UPS and so to cancel
+the pending shutdown (if the battery is indeed well charged and the UPS
+is really online).
 
 Another added option is `POWERDOWNFLAG_USER` which may be pre-set to
 `enforce` or `forbid` to enable or disable UPS power-cycling at the
@@ -39,15 +49,22 @@ required by the `MINSUPPLIES` setting. UPSes whose state is currently
 `unknown` are not considered, in order to avoid erroneous shutdowns
 while the communications are just starting up. If the protection is
 deemed insufficient, the new `ipp-os-shutdown` script is launched,
-which can invoke a custom `AIX_Clusterware_shutdown` for host-specific procedures
-(such as clusterware shutdown).
+which can invoke a customized copy of `ipp-host-shutdown.sample` script
+for host-specific procedures (such as clusterware shutdown).
 
-This script has several roles:
+The `ipp-os-shutdown` script has several roles:
 * it manages the delayed shutdown (which can be canceled before the timer
 expires, and can not be aborted after the timer expires - so it proceeds
 to the end)
-* it wraps the custom logic for the AIX cluster-ware shutdown and
-a long sleep for it to complete, if its `clstop` script is detected
+* it wraps the call to a customized shutdown script, if one is configured
+and detected
+* it detects whether the UPSes should be told to power-cycle or not,
+based on the `killpower` flag-file from `upsmon`, a setting in `ipp.conf`
+file, or an explicit request from the caller of this shutdown script
+* in the end it detects whether the UPSes came back online, so the host
+should try to `reboot` rather than `poweroff` (unless a specific action
+was requested by the caller of this shutdown script) and calls the OS
+shutdown program to complete this activity
 * the same script (with an option of zero delay) is configured as the
 `SHUTDOWNCMD` in `upsmon.conf` so the same logic is executed in all
 the different supported shutdown scenarios.
@@ -80,14 +97,16 @@ web-interface for the UPS).
 
 == Installation
 
-Since the package already includes modified scripts and files to suit
-AIX_Clusterware requirements, the installation is simplified.
-
 * Install the package as usual
 
-- Uncompress the `ipp-aix-1.40-4_AIX_Clusterware.powerpc.tar.gz` archive
+- Uncompress the `ipp-*.tar.gz` archive for your OS
 
-- Change into the resulting `ipp-aix-1.40-4_AIX_Clusterware.powerpc` subdirectory
+- Change into the resulting `ipp-*` subdirectory
+
+- (optional) If a complete reinstallation is desired (including removal
+of old configuration files so they do not conflict with the new delivery),
+please also execute `IPP_WIPE_OLD_CONFIG=yes; export IPP_WIPE_OLD_CONFIG`
+in the shell before running the installation script
 
 - Launch the `install.sh` script and follow the installer instructions
 
@@ -103,26 +122,25 @@ You can configure the variable `SHUTDOWNSCRIPT_CUSTOM` in `ipp.conf` to
 point at a custom complementary shutdown script with a shutdown routine
 required by this particular host, which will be called by the master
 powerfail shutdown script (`/usr/local/ups/sbin/ipp-os-shutdown`).
-This variable is set by default to `/usr/local/ups/sbin/AIX_Clusterware_shutdown`
-for this delivery.
+This variable is not set by default.
 
 * Configure operating system shutdown command and options
 
 Optionally, modify the operating system shutdown command and type.
-By default, operating system shutdown uses:
-
-- the `/usr/sbin/shutdown` command on AIX systems,
-- `-p` (poweroff) for standard hosts,
-- `-p -F` (poweroff, fast) for cluster hosts.
-
 To modify the shutdown command or specific option for the various types
 of shutdown), edit the file `/usr/local/ups/etc/ipp-os-shutdown.conf`
 and set or adapt the variables:
 
 - `CMD_SHUTDOWN` to point at the shutdown command. This may include
 the basic mandatory option options, such as the non-interactive flag
-(`-y`) on some OS such as HP-UX,
+(`-y`) on some OS such as HP-UX or Solaris,
 - `SDFLAG_*` to point at the right option for poweroff, reboot or halt.
+
+Note that depending on the OS and hardware features, there may be no
+difference between "halt" (stop the OS and keep the hardware running)
+and a "poweroff" (halt and instruct the server's PSU to cut the power
+going to the motherboard -- if that is supported; might be unavailable
+in e.g. virtualized environments or older hardware).
 
 To modify the default shutdown option to halt or reboot, edit the file
 `/usr/local/ups/etc/ipp.conf` and set `SDFLAG_POWERSTATE_DEFAULT` to
@@ -142,8 +160,8 @@ the OS shutdown to complete safely before the UPS(es) power is cut.
 
 == Testing
 
-The following points about this delivery were verified on AIX 7.1.
-It was tested:
+The following points about this delivery were verified on AIX 7.1 and
+Solaris 11. It was tested:
 
 - to be installable (and runnable via init-script)
 
@@ -152,9 +170,11 @@ killpower flag-file maintained by `upsmon` (with the default setting
 of `SHUTDOWN_TIMER=-1` in the `ipp.conf` file)
 
 - to report progress of the powerfail shutdown onto the system consoles
-(with `wall`) and into the `syslog`
+(with `wall`) and into the `syslog` (note: default syslog priority from
+IPP - Unix is `user.notice` which may be ignored by default `syslog`
+configuration, check with `/etc/syslog.conf` or equivalent in your OS).
 
-- to execute early shutdown when `SHUTDOWN_TIMER=2` (after 2 minutes
+- to execute early shutdown when `SHUTDOWN_TIMER=5` (after 5 minutes
 ONBATT) is defined manually in the `ipp.conf` file
 
 - to cancel shutdown if power returns back before timeout expires
@@ -165,18 +185,24 @@ and shutdown routine has started (and reported to be irreversible)
 - to report that the shutdown is in irreversible stage, as reaction
 to CTRL+C during console-run invokations like `ipp-os-shutdown -t now`
 
-- to execute `clstop+sleep` if the clusterware scripts are found,
-and to skip them if they are not available
+- to execute custom shutdown script if it is found, and to skip it
+if not available
 
-- to power-off the host (LPAR) if power remains lost at the moment
+- to power-off the protected host if power remains lost at the moment
 when we are about to proceed to `/sbin/shutdown`
 
 - to reboot the host if power is already back when we are about to
 proceed to `/sbin/shutdown`
 
+- to set the `netxml-ups` driver argument `shutdown_timer` during
+installation to a value which matches the chosen `SHUTDOWN_TIMER`
+(if it is non-negative) so the selected ONBATT timeout is shown in
+the Eaton NMC Web-GUI
+
 - to implement numerous fixes and improvements in the `install.sh`
 script, including integration of new settings for early shutdown
 and UPS powercycling strategy
+
 
 === A few important notes helpful during testing
 
@@ -185,7 +211,7 @@ shutdown status can be queried with the following command:
 
 ----
 :; ps -ef | grep -v grep | egrep 'ipp|ups|nut|shut|sleep' ; \
-   ( ls -la /usr/local/ups/etc/killpower ) 2>/dev/null ; \
+   ls -la /usr/local/ups/etc/killpower ; \
    /usr/local/ups/bin/ipp-status; \
    /usr/local/ups/sbin/ipp-os-shutdown -s; date
 ----
@@ -217,16 +243,11 @@ action while the remaining UPS battery runtime is under the
 threshold set with `shutdown_duration`, an emergency powerfail
 can be triggered by the `netxml-ups` driver as soon as IPP - Unix
 services are initialized, even if the battery state is "CHARGING".
+
 To avoid such shutdowns, an administrator can log in and quickly
-create the special file described above (temporarily). Recommended
-procedure is to wait for the hosts to boot up in due time, when
-the batteries are charged enough to survive another power failure.
+create the special file described above (temporarily).
 
-== Disclaimer of future backwards-compatibility
-
-Please note that this delivery was prepared outside the normal product
-development lifecycle and that this is a hotfix for a specific customer's
-usecase, and that the possible future releases of IPP - Unix may be not
-directly compatible with it if/when the feature is backported (e.g. some
-variables and files may be named differently, even if similar concepts 
-are adopted by the main line of development in the future).
+The recommended procedure is to wait for the hosts to boot up in
+due time, when the batteries are charged enough to survive another
+power failure (if one occurs) at least for as long as it takes to
+shut down the server gracefully.

@@ -35,7 +35,7 @@ cd ..
 
 NAME="ipp-hpux-$IPP_VERSION.parisc"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|solint|solari/'`"
+FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|solint|solari/|solcmn/'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"
@@ -44,7 +44,7 @@ cd ..
 
 NAME="ipp-aix-$IPP_VERSION.powerpc"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|hpux|solint|solari/'`"
+FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|hpux|solint|solari/|solcmn/'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"

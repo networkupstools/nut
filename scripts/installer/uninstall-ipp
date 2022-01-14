@@ -1,11 +1,10 @@
 #!/bin/sh
 #	uninstall.sh
-#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
-#	A shell script which installs IPP - Unix
-#	It installs the native package then runs NUT configuration tools
-#	to create an initial configuration and finally run the service.
+#	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
+#	A shell script which uninstalls IPP - Unix
+#	It stops daemons and removes the native package
 #
-PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin"
+PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/ccs/bin:/usr/xpg4/bin:/usr/xpg6/bin"
 export PATH
 
 
@@ -240,6 +239,8 @@ uninstall_files () {
 
 		restore_ttys
 
+		rm -rf "$instpath/share/man" >> "$LOG_FILE" 2>&1
+
 		rpm -e nut >> "$LOG_FILE" 2>&1
 		rpm -e nut-client >> "$LOG_FILE" 2>&1
 		#uninstall additional libraries
@@ -256,7 +257,7 @@ uninstall_files () {
 	rm -f "$instpath/init" >> "$LOG_FILE" 2>&1
 	rm -f "$instpath/shutdown" >> "$LOG_FILE" 2>&1
 	rm -f "$instpath/sbin/ipp-os-shutdown" >> "$LOG_FILE" 2>&1
-	rm -f "$instpath/sbin/AIX_Clusterware_shutdown" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/sbin/ipp-host-shutdown.sample" >> "$LOG_FILE" 2>&1
 
 	rm -f "$instpath/bin/ipp-notifier.sh" >> "$LOG_FILE" 2>&1
 	rm -f "$instpath/bin/ipp-status" >> "$LOG_FILE" 2>&1
@@ -264,7 +265,12 @@ uninstall_files () {
 	rm -f "$instpath/share/string.sh" >> "$LOG_FILE" 2>&1
 	rm -f "$instpath/share/install.res" >> "$LOG_FILE" 2>&1
 
+	rm -f "$instpath/etc/ipp.conf.sample" >> "$LOG_FILE" 2>&1
+
 	rm -Rf "$instpath/lib" >> "$LOG_FILE" 2>&1
+
+	rm -Rf "$instpath/xbin" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/bin/ipp-wrapper" >> "$LOG_FILE" 2>&1
 }
 
 remove_profile_settings () {
@@ -335,8 +341,11 @@ main () {
 		#work around in case no whoami is present
 		who="`id -u 2>/dev/null`"
 		if [ "$who" != '0' ]; then
-			echo "You must be root to uninstall IPP - Unix."
-			exit 1
+			who="`id 2>/dev/null | grep -w '0' | grep -w root`"
+			if [ -z "$who" ]; then
+				echo "You must be root to uninstall IPP - Unix."
+				exit 1
+			fi
 		fi
 	fi
 
