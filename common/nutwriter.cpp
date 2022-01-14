@@ -562,7 +562,7 @@ static std::string encodeValue(const std::string & val) {
 	for (size_t i = 0; i < val.size() && !quote; ++i) {
 		char ch = val[i];
 
-		quote = ' ' == ch || '=' == ch;
+		quote = ' ' == ch || '=' == ch || ':' == ch;
 	}
 
 	if (!quote)

@@ -1,4 +1,6 @@
-noinst_PROGRAMS = nutconf
+# Network UPS Tools: NUT configuration tool
+
+bin_PROGRAMS = nutconf
 nutconf_SOURCES = nutconf.cpp
 nutconf_CXXFLAGS = -I$(top_srcdir)/include
 nutconf_LDADD = ../../common/libcommon.la  \

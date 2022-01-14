@@ -96,7 +96,6 @@ $(top_builddir)/common/libcommon.la: dummy
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 CPPUNITTESTSRC += nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
-
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
@@ -122,7 +121,9 @@ endif
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
-cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
+cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
