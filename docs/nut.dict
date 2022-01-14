@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2827 utf-8
+personal_ws-1.1 en 2837 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -91,6 +91,7 @@ BCD
 BCHARGE
 BCM
 BD
+BMC
 BNT
 BOH
 BP
@@ -688,6 +689,7 @@ NOTIFYMSG
 NQA
 NTP
 NUT's
+NUTCONF
 NUTSRC
 NVA
 NX
@@ -911,6 +913,7 @@ REQSSL
 RETPCT
 RK
 RMCARD
+RMCPplus
 RMXL
 RNF
 RNG
@@ -1273,9 +1276,9 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
-Yifeng
 Yunto
 ZFS
 ZProject
@@ -1402,6 +1405,7 @@ backport
 backported
 backupspro
 badpassword
+bart
 batchable
 batt
 battcap
@@ -2170,7 +2174,9 @@ norating
 noro
 noscanlangid
 notAfter
+notifyflags
 notifyme
+notifymsg
 notifytype
 notransferoids
 novendor
@@ -2185,6 +2191,7 @@ numa
 numlogins
 numq
 nutclient
+nutconf
 nutdev
 nutdrv
 nutmon
@@ -2314,6 +2321,7 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+priv
 privPassword
 privProtocol
 probu
@@ -2455,6 +2463,7 @@ sfr
 sgml
 sgs
 shutdownArguments
+shutdowncmd
 shutdowndebounce
 shutdowndelay
 shutdownpolarity
@@ -2566,6 +2575,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+syslogd
 systemctl
 systemd
 systemdshutdowndir
