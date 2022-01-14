@@ -77,7 +77,7 @@ Arguments:
 '<ups_ID>' '<host>[:<port>]' '<power_value>' '<user>' '<passwd>' '(\"master\"|\"slave\")'
 
 *--set-listen* | *--add-listen* '<address>' '[<port>]'::
-Sets/adds 'nutd' daemon listen address
+Sets/adds 'upsd' daemon listen address
 
 *--set-device* | *--add-device* '<arguments>'::
 Sets/adds a device (typically a UPS).
@@ -112,7 +112,7 @@ Notification types are:
 Notification flags:
 
 - 'SYSLOG' (use syslogd to log the notification)
-- 'WALL' (push a message to usres' terminals)
+- 'WALL' (push a message to users' terminals)
 - 'EXEC' (execute a command)
 - 'IGNORE' (don't act)
 
@@ -130,10 +130,10 @@ Arguments:
 
 - '<username>' (specifies user name).
 For 'upsmon' user, it has a special form of
-'upsmon=(master|slave)' which specifies the moniutoring mode.
+'upsmon=(master|slave)' which specifies the monitoring mode.
 - 'password=<passwd>' sets password for the user
 - 'actions=<actions>' sets actions ('SET', 'FSD' are supported)
-- 'instcmds=<command>' sets instan commands allowed for the user
+- 'instcmds=<command>' sets instant commands allowed for the user
 (may be used multiple times)
 
 SCANNING OPTIONS
@@ -156,7 +156,7 @@ Known attributes are:
 - 'timeout' device scan timeout
 - 'community' SNMP community (default: *public*)
 - 'sec-level' security level (SNMPv3); one of *noAuthNoPriv* *authNoPriv*, *authPriv*
-- 'sec-name' security name (NMSPv3); mandatory companion of *sec-level*
+- 'sec-name' security name (SNMPv3); mandatory companion of *sec-level*
 - 'auth-password' authentication password (SNMPv3); mandatory for *authNoPriv* and *authPriv*
 - 'priv-password' privacy password (SNMPv3); mandatory for *authPriv*
 - 'auth-protocol' authentication protocol (SNMPv3): *MD5* or *SHA*, *MD5* is the default

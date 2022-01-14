@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3258 utf-8
+personal_ws-1.1 en 3268 utf-8
 AAC
 AAS
 ABI
@@ -100,6 +100,7 @@ BCD
 BCHARGE
 BCM
 BD
+BMC
 BNT
 BOH
 BP
@@ -785,6 +786,7 @@ NQA
 NTP
 NUT's
 NUTClient
+NUTCONF
 NUTSRC
 NUTServer
 NVA
@@ -1038,6 +1040,7 @@ RETPCT
 REXX
 RK
 RMCARD
+RMCPplus
 RMXL
 RNF
 RNG
@@ -1590,6 +1593,7 @@ backported
 backports
 backupspro
 badpassword
+bart
 baseurl
 bashrc
 batchable
@@ -2493,7 +2497,9 @@ norating
 noro
 noscanlangid
 notAfter
+notifyflags
 notifyme
+notifymsg
 notifytype
 notransferoids
 novendor
@@ -2509,6 +2515,7 @@ numlogins
 numq
 nutclient
 nutclientmem
+nutconf
 nutdev
 nutdrv
 nutmon
@@ -2658,6 +2665,7 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+priv
 privPassword
 privProtocol
 problemMatcher
@@ -2822,6 +2830,7 @@ sgs
 sha
 shm
 shutdownArguments
+shutdowncmd
 shutdowndebounce
 shutdowndelay
 shutdownpolarity
@@ -2953,6 +2962,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+syslogd
 systemctl
 systemd
 systemdshutdowndir
