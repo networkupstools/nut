@@ -1,0 +1,14 @@
+#!/sbin/sh
+
+NUT_DIR="/usr/local/ups"
+
+# get shutdown delay and admin password
+. $NUT_DIR/etc/ipp.conf
+
+upslist=`$NUT_DIR/bin/upsc -l`
+echo $upslist
+for u in $upslist;do
+	$NUT_DIR/bin/upsrw -s outlet.3.delay.shutdown=-1 -u admin -p $PASSWORD $u 
+	$NUT_DIR/bin/upsrw -s outlet.2.delay.shutdown=-1 -u admin -p $PASSWORD $u 
+	$NUT_DIR/bin/upsrw -s outlet.1.delay.shutdown=-1 -u admin -p $PASSWORD $u 
+done

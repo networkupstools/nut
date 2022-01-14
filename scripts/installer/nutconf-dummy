@@ -1,0 +1,101 @@
+#!/bin/sh
+# Script to fake nutconf, for integration purpose
+
+# FIXME: to be completed!
+
+# there must be at least 1 option!
+if [ $# -lt 1 ] ; then
+	echo "Error: no options provided!";
+	exit 1;
+fi
+
+case $1 in
+	--system)
+		;;
+	--mode)
+		#standalone,netserver,netclient,controlled,manual,none
+		;;
+	--is-configured)
+		# return "yes" / "no" + retval 0 / 1 if nut is configured or not
+		;;
+	# --scan-?options?)
+		# FIXME: call nutscan??
+	--scan-snmp)
+		echo "SNMP:driver=\"snmp-ups\",port=\"166.99.224.106\",desc=\"Evolution\",mibs=\"mge\",community=\"public\""
+		echo "SNMP:driver=\"snmp-ups\",port=\"166.99.224.155\",desc=\"Eaton ePDU AM 1P IN:IEC309 32A OUT:20xC13, 4xC19\",mibs=\"eaton_epdu\",community=\"public\""
+		echo "SNMP:driver=\"snmp-ups\",port=\"166.99.224.111\",desc=\"Eaton 5P\",mibs=\"mge\",community=\"public\""
+		echo "SNMP:driver=\"snmp-ups\",port=\"166.99.224.149\",desc=\"PW104MA0UC34\",mibs=\"aphel_revelation\",community=\"public\""
+		;;
+	--restart)
+		# FIXME: restart NUT services after configuration
+		;;
+	--reload)
+		# FIXME: reload NUT services after configuration
+		;;
+	--get-devices)
+		#get the list of devices name
+		;;
+	--get-device)
+		# FIXME: <device name>
+		;;
+    --set-device)
+		# FIXME: <device name> <field>[=<value>] [<field>[=<value>]]
+		;;
+	--new-device)
+		# FIXME: <device name> <driver> <port> [<desc>]
+		;;
+	--del-devices)
+		# FIXME: 
+		;;
+	--del-device)
+		# FIXME: <device name> [<field>]: either remove a field or the entire device entry
+		;;
+	--get-users)
+		# FIXME: 
+		;;
+	--get-user)
+		# FIXME: <user name>
+		;;
+	--set-user)
+		# FIXME: <user name> <field>[=<value>]
+		;;
+	--new-user)
+		# FIXME: ... needs completion with upsmon master slave/instcmd/set
+		;;
+	--del-user)
+		# FIXME: 
+		;;
+	# --?generic-{s,g}etter?
+		# FIXME: set or get a global or local param (need discussion)
+		# upsd.conf/maxage, statepath, listen, maxconn, certfile
+		# ups.conf/chroot, driverpath, maxstartdelay, pollinterval, user
+		# ups.conf/drivers specific (see scripts/augeas/)
+	# --?security-option?: I let M speak about the best way to configure NSS / OpenSSL
+
+	--get-monitors)
+		# FIXME:get the list of monitored systems (names only, but may also use a verbose flag to display details)
+		;;
+	--get-monitor)
+		# FIXME:<system>: details...
+		;;
+	--set-monitor)
+		# FIXME:TBD
+		;;
+	--new-monitor)
+		# FIXME:TBD
+		;;
+	--get-notifycmds)
+		# FIXME:
+		;;
+	--get-notifycmd)
+		# FIXME:
+		;;
+	*)
+		echo "nutconf Unknown option ($1)";
+		#exit 1;
+esac
+
+
+
+
+
