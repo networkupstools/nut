@@ -82,6 +82,9 @@
 #include <net-snmp/net-snmp-includes.h>
 
 /* Force numeric OIDs by disabling MIB loading */
+#ifdef DISABLE_MIB_LOADING
+# undef DISABLE_MIB_LOADING
+#endif
 #define DISABLE_MIB_LOADING 1
 
 /* Parameters default values */
