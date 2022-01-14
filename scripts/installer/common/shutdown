@@ -1,21 +1,64 @@
 #!/bin/sh
+#	shutdown
+#
+#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to command UPSes to power off and back on as part of
+#	the emergency shutdown driven by IPP - Unix (NUT); called from upsmon
+#
+# Requires configuration from ipp.conf, or otherwise default to the values below
+
+# TODO remaining per IPSSUNIX-25:
+#	* The script acts on ALL UPSes configured on this system (`upsc -l`),
+#	  rather than those MONITORed as feeding a non-zero amount
+#	  power-sources in `upsmon.conf`
+#	* Consider the KILLPOWER flag-file (maybe this host should not power
+#	  off any UPS at all?)
+#	* The username is hardcoded as `admin` rather than taken from config
+#	* Maybe we do not try every possible instcmd for UPS poweroff/reboot -
+#	  revise against upsrw and upscmd for NETXML and SNMP drivers at least
+#
 
 NUT_DIR="/usr/local/ups"
+NUT_UPSC="$NUT_DIR/bin/upsc"
+NUT_UPSCMD="$NUT_DIR/bin/upscmd"
+NUT_UPSRW="$NUT_DIR/bin/upsrw"
+
+LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
 
 # get shutdown delay and admin password
-. $NUT_DIR/etc/ipp.conf
+. "$NUT_DIR/etc/ipp.conf"
 
-((DELAYON=DELAY+10))
+if [ "$IPP_DEBUG" = yes ] ; then
+	exec >> /var/tmp/ipp-shutdown.log 2>&1
+	echo "`date`: Started: $0 $*" >&2
+	set >&2
+	set -x
+fi
 
-upslist=`$NUT_DIR/bin/upsc -l`
-echo $upslist
-for u in $upslist;do
-	$NUT_DIR/bin/upscmd -u admin -p $PASSWORD $u load.on.delay $DELAYON
-	$NUT_DIR/bin/upscmd -u admin -p $PASSWORD $u load.off.delay $DELAY
-	$NUT_DIR/bin/upsrw -s outlet.3.delay.start=$DELAYON -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.2.delay.start=$DELAYON -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.1.delay.start=$DELAYON -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.3.delay.shutdown=$DELAY -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.2.delay.shutdown=$DELAY -u admin -p $PASSWORD $u 
-	$NUT_DIR/bin/upsrw -s outlet.1.delay.shutdown=$DELAY -u admin -p $PASSWORD $u 
+# We need a number here, otherwise the UPS stays off
+# TODO: Consider "shutdown_duration" if netxml_ups is set up?
+# TODO: Do this per ups (move into the loop below then)?
+if test -n "$DELAY" && test "$DELAY" -ge 0 ; then true; else DELAY=120; fi
+
+DELAYON="`expr $DELAY + 10`"
+
+# TODO: Here we want to refine the list to only MONITORed UPSes that power us
+# and/or take into account the killpower flag-file (upsmon master vs slave)
+# Convert to parsing of "ipp-status -p" which reports all needed details
+upslist="`"$NUT_UPSC" -l`"
+echo "$upslist"
+# NOTE: not all UPSes and not all drivers support all possible instcmd's
+# so we try as many as possible
+for u in $upslist; do
+	echo "Configuring poweroff-poweron for UPS '$u' ..."
+	"$NUT_UPSCMD" -u admin -p "$PASSWORD" "$u" load.on.delay "$DELAYON"
+	"$NUT_UPSCMD" -u admin -p "$PASSWORD" "$u" load.off.delay "$DELAY"
+	for o in 3 2 1 ; do
+		"$NUT_UPSRW" -s "outlet.$o.delay.start"="$DELAYON" \
+			-u admin -p "$PASSWORD" "$u"
+		"$NUT_UPSRW" -s "outlet.$o.delay.shutdown"="$DELAY" \
+			-u admin -p "$PASSWORD" "$u"
+	done
 done

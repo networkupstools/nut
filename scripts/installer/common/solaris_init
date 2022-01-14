@@ -1,0 +1,73 @@
+#!/sbin/sh
+
+#init.d script to start nut services for IPP - Unix on Solaris
+#       Customizations copyright (c) 2015, by Eaton (R) Corporation. All rights reserved.
+
+NUT_DIR="/usr/local/ups"
+
+LD_LIBRARY_PATH="$NUT_DIR/lib"
+export LD_LIBRARY_PATH
+
+SHUTDOWN_TIMER=-1
+if [ -f ${NUT_DIR}/etc/ipp.conf ]; then
+        . ${NUT_DIR}/etc/ipp.conf
+fi
+
+ups_stop () {
+	pkill -n upsmon
+	pkill -n upsd
+	"$NUT_DIR"/bin/upsdrvctl stop > /dev/null 2>&1
+}
+
+ups_start () {
+	echo "in ups start function"
+	"$NUT_DIR"/bin/upsdrvctl start #> /dev/null 2>&1
+	"$NUT_DIR"/sbin/upsd #> /dev/null 2>&1
+	if [ "$SHUTDOWN_TIMER" -gt -1 ]; then
+		# This host wants early shutdown support, must be root
+		${NUT_DIR}/sbin/upsmon -p #> /dev/null 2>&1
+	else
+		${NUT_DIR}/sbin/upsmon #> /dev/null 2>&1
+	fi
+	"$NUT_DIR"/init  #> /dev/null 2>&1
+}
+
+case $1 in
+'start')
+	ups_start
+	;;
+
+'stop')
+	ups_stop
+	;;
+
+'restart')
+	ups_stop
+	while pgrep upsd > /dev/null
+	do
+		sleep 1
+	done
+	while pgrep upsmon > /dev/null
+	do
+		sleep 1
+	done
+	while pgrep netxml-ups > /dev/null
+	do
+		sleep 1
+	done
+	while pgrep snmp-ups > /dev/null
+	do
+		sleep 1
+	done
+	ups_start
+	;;
+
+*)
+	echo ""
+	echo "Usage: '$0' {start | stop | restart }"
+	echo ""
+	exit 64
+	;;
+
+esac
+exit $?

@@ -10,13 +10,15 @@ exit
 #       It needs ipp.conf file.
 #
 
-CONFIG=/usr/local/ups/etc/ipp.conf
-UPSC="/usr/local/ups/bin/upsc"
+NUT_DIR="/usr/local/ups"
+CONFIG="$NUT_DIR/etc/ipp.conf"
+NUT_UPSC="$NUT_DIR/bin/upsc"
 
-. $CONFIG
+. "$CONFIG"
 
-for dev in `$UPSC -l 2>/dev/null`; do
-        shutdown=`$UPSC $dev@localhost ups.timer.shutdown 2>/dev/null`
-        reboot=`$UPSC $dev@localhost ups.timer.reboot 2>/dev/null`
-done    
+# Convert to parsing of "ipp-status -p" which reports all needed details
+for dev in `$NUT_UPSC -l 2>/dev/null`; do
+        shutdown="`$NUT_UPSC "$dev"@localhost ups.timer.shutdown 2>/dev/null`"
+        reboot="`$NUT_UPSC "$dev"@localhost ups.timer.reboot 2>/dev/null`"
+done
 

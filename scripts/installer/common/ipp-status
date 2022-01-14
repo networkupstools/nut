@@ -1,11 +1,18 @@
 #!/bin/sh
 
 #
-# Global vaiables
+# Global variables
 #
 upsc="/usr/local/ups/bin/upsc"
 upsmon_conf="/usr/local/ups/etc/upsmon.conf"
+CONFIG="/usr/local/ups/etc/ipp.conf"
 
+SHUTDOWN_TIMER=-1
+
+# Include IPP ipp.conf (may overwrite the above default values!)
+if test -f $CONFIG ; then
+	. $CONFIG
+fi
 
 #
 # We need capable awk
@@ -66,9 +73,11 @@ get_pwr_value() {
 #
 overall_status() {
 	devices_info="$1"
+	onbattery_sdtimer="$2"	# set to yes to trigger a shutdown timer
+				# when UPS are on battery
 
 	# Get non-low battery UPSes (still protecting the system)
-	protectors=`echo "$devices_info" | $awk -F: '
+	protectors=`echo "$devices_info" | $awk -v ob_sdtimer="${onbattery_sdtimer}" -F: '
 	{
 		status = $2;
 
@@ -84,21 +93,56 @@ overall_status() {
 		else if (match(status, /^OB LB/))
 			;
 
-		# Other on-battery states are OK
+		# - NOK when onbattery_sdtimer = yes
+		# - OK otherwise
 		else if (match(status, /^OB/))
+			if (match(ob_sdtimer, /^yes/))
+				;
+			else
+				print $1;
+	}
+	' | sort | uniq`
+
+	protectors_unknown=`echo "$devices_info" | $awk -F: '
+	{
+		status = $2;
+
+		# Do not cause immediate shutdown if UPS is not accessible
+		# (driver or connection failure) when onbattery_sdtimer = yes
+		if (status == "")
+			print $1;
+		if (match(status, /WAIT/))
 			print $1;
 	}
-	'`
+	' | sort | uniq`
 
 	# Get total powervalue of protecting UPSes
 	protectors_pwr_value=0
+	protectors_unknown_pwr_value=0
+	not_protectors=0
 
 	for ups in $protectors; do
 		pwr_value=`get_pwr_value "$ups"`
 
 		test -n "$pwr_value" || pwr_value=1
 
-		protectors_pwr_value=`expr $protectors_pwr_value + $pwr_value`
+		if test "$pwr_value" -eq 0 ; then
+			not_protectors=`expr $not_protectors + 1`
+		else
+			protectors_pwr_value=`expr $protectors_pwr_value + $pwr_value`
+		fi
+	done
+
+	for ups in $protectors_unknown; do
+		pwr_value=`get_pwr_value "$ups"`
+
+		test -n "$pwr_value" || pwr_value=1
+
+		if test "$pwr_value" -eq 0 ; then
+			not_protectors=`expr $not_protectors + 1`
+		else
+			protectors_unknown_pwr_value=`expr $protectors_unknown_pwr_value + $pwr_value`
+		fi
 	done
 
 	# Resolve system protection status
@@ -108,7 +152,13 @@ overall_status() {
 
 	test -n "$min_supplies" || min_supplies=1
 
-	if test $protectors_pwr_value -lt $min_supplies; then
+	min_supplies_eff="$min_supplies"
+	if test "$protectors_unknown_pwr_value" -gt 0; then
+		min_supplies_eff=`expr $min_supplies - $protectors_unknown_pwr_value`
+		test "$min_supplies_eff" -ge 0 || min_supplies_eff=0
+	fi
+
+	if test $protectors_pwr_value -lt $min_supplies_eff; then
 		overall_status_str="unprotected"
 	fi
 
@@ -126,11 +176,25 @@ overall_status() {
 		cat <<HERE
 Your system IS NOT PROTECTED
 
-Only $protectors_pwr_value power backups are available (out of $min_supplies required)
+Only $protectors_pwr_value power backups are available (out of $min_supplies required with $protectors_unknown_pwr_value ignored)
 HERE
 	else
-		echo "Your system is protected"
+		echo "Your system is protected ($protectors_pwr_value power backups out of $min_supplies required with $protectors_unknown_pwr_value ignored are available)"
 	fi
+
+	if test "$not_protectors" -gt 0 2>/dev/null ; then
+		echo "Also, $not_protectors device(s) that do not feed this host are known and monitored"
+	fi
+
+	case "$onbattery_sdtimer" in
+	[Yy][Ee][Ss])
+		if test "$min_supplies_eff" != "$min_supplies" ; then
+			echo "WARNING: Some UPSes are not available, but we ignored them since onbattery_sdtimer=yes" >&2
+		fi ;;
+	esac
+
+	test "$overall_status_str" = "unprotected" && return 1
+	return 0
 }
 
 
@@ -213,6 +277,8 @@ HERE
 
 		# Resolve basic status
 		if (status == "")
+			status_str = "unknown";
+		else if (match(status, /WAIT/))
 			status_str = "unknown";
 		else if (match(status, /^OL BYPASS/))
 			status_str = "on bypass";
@@ -352,12 +418,17 @@ shift
 # Main
 #
 
+onbattery_sdtimer="no"
+if test $SHUTDOWN_TIMER -gt -1 2>/dev/null ; then
+	onbattery_sdtimer="yes"
+fi
+
 # Get devices info
 devices_info=`get_devices_info`
 
 # Overall status
 if test "$overall_status_enabled" = "yes"; then
-	overall_status "$devices_info"
+	overall_status "$devices_info" "$onbattery_sdtimer"
 fi
 
 # Devices status

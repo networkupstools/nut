@@ -1,7 +1,7 @@
 This directory contains scripts and data used for NUT packaging
 marketed earlier as Eaton IPSS Unix (or IPP for Unix, or UPP),
 a freely available download. Most of the work was done on behalf
-of Eaton by Frederic Bohe, Vaclav Krpec and Arnaud Quette.
+of Eaton by Frederic Bohe, Vaclav Krpec, Arnaud Quette and Jim Klimov.
 
 This includes the package (tarball) creation script which relies on
 presence of third-party library binaries in a $ARCH/libs directory,
