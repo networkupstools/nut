@@ -1297,8 +1297,6 @@ PATH=\$PATH:/usr/local/ups/bin
 export PATH
 LD_LIBRARY_PATH=/usr/local/ups/lib:\$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
-MANPATH=$MANPATH:/usr/local/ups/share/man
-export MANPATH
 # Again, do not remove nor change the line below
 ##### IPP - Unix settings end #####
 HERE
