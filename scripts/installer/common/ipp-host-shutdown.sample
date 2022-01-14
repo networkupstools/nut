@@ -1,19 +1,25 @@
 #!/bin/sh
 #
-# Script for custom emergency powerfail shutdown of an AIX cluster
-# Must run as root or with sufficient privileges to execute the clstop program
-# Can print shell lines that would be sourced by the main script to >&3
+# Script for custom emergency powerfail shutdown of a host to do actions that
+# were not implemented as part of normal OS shutdown routine for some reason.
+# Must run as root or with sufficient privileges to execute the actions.
+# Can print to >&3 some shell lines that would be sourced by the main script.
 #	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
 #
+# Note: This file (ipp-host-shutdown.sample) is delivered by the package and
+# will be overwritten in case of upgrades. It is an example implementation of
+# a host-specific shutdown routine; make a copy, preferably with a name unique
+# to a host-role in your deployment, and reference it from `ipp.conf` with the
+# `SHUTDOWNSCRIPT_CUSTOM` variable.
 
-# Notification configuration is normally exported by ipp-os-shutdown
+# Notification configuration is normally exported by `ipp-os-shutdown`
 #CONSOLE_NOTIF=1
 #SYSLOG_NOTIF=1
 #CMD_WALL="wall"
 #CMD_SYSLOG="logger"
 
 [ -z "${DefaultSubject-}" ] && \
-	DefaultSubject="Intelligent Power Protector (IPP) Alarms"
+	DefaultSubject="Intelligent Power Protector (IPP) Emergency Shutdown"
 [ -z "${MessageCustomShutdownStarting_s-}" ] && \
 	MessageCustomShutdownStarting_s="Initiating custom shutdown for %s..."
 [ -z "${MessageCustomShutdownCompleted_s-}" ] && \
@@ -42,14 +48,14 @@ logmsg() {
 }
 
 # The custom shutdown routine if clusterware is present
-if [ -x /usr/es/sbin/cluster/utilities/clstop ]; then
+if [ -x /etc/init.d/NONEXISTENT/clusterware ]; then
 	get_ldate
-	logmsg $(printf "$MessageCustomShutdownStarting_s" "AIX clusterware")
+	logmsg $(printf "$MessageCustomShutdownStarting_s" "clusterware")
 
 	trap 'echo "$MessageIrreversibleTrap">&2' 1 2 3 15
 
 	# Launch the cluster shutdown command
-	/usr/es/sbin/cluster/utilities/clstop -g -y -s -N
+	/etc/init.d/NONEXISTENT/clusterware stop
 
 	# Sleep after/during(?) cluster shutdown
 	# This cycle allows to keep ignoring CTRL+C and equivalents
@@ -66,7 +72,7 @@ if [ -x /usr/es/sbin/cluster/utilities/clstop ]; then
 		echo 'SDFLAG_COMMONOPTIONS="$SDFLAG_UNGRACEFUL"' >&3
 
 	get_ldate
-	logmsg $(printf "$MessageCustomShutdownCompleted_s" "AIX clusterware")
+	logmsg $(printf "$MessageCustomShutdownCompleted_s" "clusterware")
 
 	trap '-' 1 2 3 15
 fi
