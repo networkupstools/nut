@@ -693,14 +693,23 @@ class NutScanner {
 	}
 
 	/**
-	 *  \brief  Scan for XML/HTTP devices
+	 *  \brief  Scan for XML/HTTP devices (broadcast)
 	 *
 	 *  \param  us_timeout  Scan timeout
 	 *
 	 *  \return Device list
 	 */
 	inline static devices_t devicesXMLHTTP(long us_timeout) {
-		nutscan_device_t * dev = nutscan_scan_xml_http(us_timeout);
+		nutscan_xml_t xml_sec;
+		nutscan_device_t * dev;
+
+		memset(&xml_sec, 0, sizeof(xml_sec));
+		/* Set the default values for XML HTTP (run_xml()) */
+		xml_sec.port_http = 80;
+		xml_sec.port_udp = 4679;
+		xml_sec.usec_timeout = us_timeout;
+		xml_sec.peername = NULL;
+		dev = nutscan_scan_xml_http_range(NULL, NULL, us_timeout, &xml_sec);
 
 		return dev2list(dev);
 	}
