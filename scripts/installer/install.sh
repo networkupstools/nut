@@ -186,6 +186,10 @@ install_files () {
 	rm $LOG_FILE > /dev/null 2>&1
 	touch $LOG_FILE
 
+	# Log the progress of this script's interpretation
+	exec 2>$LOG_FILE
+	set -x
+
 	. ./uninstall-lsnw.sh
 	# Check if Lansafe is installed
 	detect_lansafe
@@ -1478,7 +1482,7 @@ ret=TRUE;
 
 	# Build initial configuration
 	if [ -z "$skip_config" ]; then
-		LD_LIBRARY_PATH=$instpath/lib:\$LD_LIBRARY_PATH
+		LD_LIBRARY_PATH=$instpath/lib:/usr/local/lib:$LD_LIBRARY_PATH
 		export LD_LIBRARY_PATH
 		initial_configure
 	fi
