@@ -3004,6 +3004,7 @@ AC_CONFIG_FILES([
  server/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
+ tools/nutconf/Makefile
  tests/Makefile
  Makefile
 ])

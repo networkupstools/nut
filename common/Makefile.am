@@ -2,8 +2,11 @@
 
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la libnutconf.la
 libparseconf_la_SOURCES = parseconf.c
+
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case

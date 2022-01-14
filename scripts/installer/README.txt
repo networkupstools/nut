@@ -11,6 +11,9 @@ the package on a target deployment covering package (re-)installation,
 initial device discovery, password setup, etc., and helper scripts
 for status overview and shutdown handling.
 
+The installer relied on "nutconf" tool (emulating dummy script for
+tests provided here), which was added to NUT sources.
+
 Note that heavy use of LD_LIBRARY_PATH in these scripts may become
 counterproductive when the package is installed on a system that is
 too many versions away from the intended target (e.g. mixing up the

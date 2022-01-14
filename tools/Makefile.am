@@ -9,7 +9,7 @@
 # to have nutscan-{usb,snmp}.h built before going into the nut-scanner
 # sub-directory. For good measure we also call this from nut-scanner's
 # make, to handle developer workflow (editing the *.c sources this uses).
-SUBDIRS = . nut-scanner
+SUBDIRS = . nut-scanner nutconf
 
 PYTHON = @PYTHON@
 
