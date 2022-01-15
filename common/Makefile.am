@@ -2,7 +2,13 @@
 
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la libnutconf.la
+noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+if WITH_NUTCONF
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+noinst_LTLIBRARIES += libnutconf.la
+endif
+
 libparseconf_la_SOURCES = parseconf.c
 
 AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
