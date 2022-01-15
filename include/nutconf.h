@@ -69,7 +69,7 @@ public:
 	const Type& operator *()const{return _value;}
 	Type& operator *(){return _value;}
 
-	Settable<Type>& operator=(const Type& val){_value = val; _set = true;}
+	Settable<Type>& operator=(const Type& val){_value = val; _set = true; return *this;}
 
 	bool operator==(const Settable<Type>& val)const
 	{

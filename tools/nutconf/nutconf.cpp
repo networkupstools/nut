@@ -1755,6 +1755,8 @@ class autodelete_ptr {
 		cleanup();
 
 		m_impl = ptr;
+
+		return *this;
 	}
 
 	/** Pointer accessor */
