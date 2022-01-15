@@ -5,7 +5,13 @@ AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 
-noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la libnutconf.la
+noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+if WITH_NUTCONF
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+noinst_LTLIBRARIES += libnutconf.la
+endif
+
 libparseconf_la_SOURCES = parseconf.c
 
 libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp

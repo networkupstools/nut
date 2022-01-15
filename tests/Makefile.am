@@ -36,9 +36,9 @@ nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
 	@chmod +x $@
 
 # NOTE: Keep the line above empty!
-else
+else !REQUIRE_NUT_STRARG
 TESTS += nutlogtest$(EXEEXT)
-endif
+endif !REQUIRE_NUT_STRARG
 
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
@@ -60,9 +60,9 @@ nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
-else
+else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
-endif
+endif !WITH_USB
 
 if WITH_GPIO
 TESTS += gpiotest
@@ -79,9 +79,9 @@ gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
 gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
 gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
-else
+else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
-endif
+endif !WITH_GPIO
 
 CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
@@ -95,7 +95,8 @@ $(top_builddir)/common/libcommon.la: dummy
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
-CPPUNITTESTSRC += nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
+# These are an optional part of cppunittest, if building WITH_NUTCONF
+CPPUNITTESTSRC_NUTCONF = nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
@@ -116,15 +117,21 @@ check_PROGRAMS += cppnit
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
 	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
-endif
+endif WITH_VALGRIND
 
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 ###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
 cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
-cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+
+# Currently nutconf and related codebase causes woes for static analysis
+# so we do not build it unless explicitly asked to.
+if WITH_NUTCONF
+cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
+cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
+endif WITH_NUTCONF
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
@@ -140,7 +147,7 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball if not building tests
 
-EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
 
 cppnit:
 	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
@@ -150,7 +157,7 @@ endif !HAVE_CPPUNIT
 else !HAVE_CXX11
 # Just redistribute test source into tarball if not building C++ at all
 
-EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
 
 cppnit:
 	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
