@@ -1136,7 +1136,11 @@ class NutConfOptions: public Options {
 	 *  BEWARE: throws an exception if options are valid.
 	 *  Check that using the \ref valid flag.
 	 */
-	void reportInvalid() const throw(std::logic_error);
+	void reportInvalid() const
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::logic_error)
+#endif
+		;
 
 	/**
 	 *  \brief  Get NUT mode
@@ -1172,7 +1176,11 @@ class NutConfOptions: public Options {
 		std::string & user,
 		std::string & passwd,
 		std::string & mode,
-		size_t        which = 0) const throw(std::range_error);
+		size_t        which = 0) const
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::range_error)
+#endif
+		;
 
 	private:
 
@@ -1669,7 +1677,11 @@ NutConfOptions::~NutConfOptions() {
 }
 
 
-void NutConfOptions::reportInvalid() const throw(std::logic_error) {
+void NutConfOptions::reportInvalid() const
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::logic_error)
+#endif
+{
 	if (valid)
 		throw std::logic_error("No invalid options to report");
 
@@ -1867,7 +1879,10 @@ void NutConfOptions::getMonitor(
 	std::string & user,
 	std::string & passwd,
 	std::string & mode,
-	size_t        which) const throw(std::range_error)
+	size_t        which) const
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::range_error)
+#endif
 {
 	if (which >= monitors.size() / 6)
 		throw std::range_error("INTERNAL ERROR: monitors index overflow");

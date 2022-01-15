@@ -208,7 +208,11 @@ NutFile::NutFile(const std::string & name, access_t mode):
 }
 
 
-std::string NutFile::tmpName() throw(std::runtime_error) {
+std::string NutFile::tmpName()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+{
 	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), NULL);
 
 	if (NULL == tmp_name)
@@ -446,7 +450,11 @@ NutSocket::Address::Address(
 }
 
 
-NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t port) throw(std::logic_error) {
+NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t port)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::logic_error)
+#endif
+{
 	switch (bytes.size()) {
 		case 4:
 			init_ipv4(*this, bytes, port);
@@ -609,7 +617,10 @@ bool NutSocket::accept(
 	NutSocket &       sock,
 	const NutSocket & listen_sock,
 	int &             err_code,
-	std::string &     err_msg) throw(std::logic_error)
+	std::string &     err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::logic_error)
+#endif
 {
 	assert(-1 == sock.m_impl);
 

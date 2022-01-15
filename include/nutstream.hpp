@@ -229,7 +229,11 @@ class NutFile: public NutStream {
 	 *
 	 *  \return Temporary file name
 	 */
-	std::string tmpName() throw(std::runtime_error);
+	std::string tmpName()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::runtime_error)
+#endif
+		;
 
 	public:
 
@@ -289,7 +293,11 @@ class NutFile: public NutStream {
 	 *  \retval true  iff the file exists
 	 *  \retval false otherwise
 	 */
-	inline bool existsx() const throw(std::runtime_error) {
+	inline bool existsx() const
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::runtime_error)
+#endif
+	 {
 		int ec;
 		std::string em;
 
@@ -340,7 +348,11 @@ class NutFile: public NutStream {
 	 *  \retval true  if open succeeded
 	 *  \retval false if open failed
 	 */
-	inline void openx(access_t mode = READ_ONLY) throw(std::runtime_error) {
+	inline void openx(access_t mode = READ_ONLY)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -378,7 +390,11 @@ class NutFile: public NutStream {
 	}
 
 	/** Close file (or throw exception) */
-	inline void closex() throw(std::runtime_error) {
+	inline void closex()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -416,7 +432,11 @@ class NutFile: public NutStream {
 	}
 
 	/** Remove file (or throw exception) */
-	inline void removex() throw(std::runtime_error) {
+	inline void removex()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -606,7 +626,11 @@ class NutSocket: public NutStream {
 		 *  \param  bytes 4 or 16 address bytes (MSB is at index 0)
 		 *  \param  port  Port number
 		 */
-		Address(const std::vector<unsigned char> & bytes, uint16_t port) throw(std::logic_error);
+		Address(const std::vector<unsigned char> & bytes, uint16_t port)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error)
+#endif
+			;
 
 		/**
 		 *  \brief  Copy constructor
@@ -663,7 +687,11 @@ class NutSocket: public NutStream {
 		NutSocket &       sock,
 		const NutSocket & listen_sock,
 		int &             err_code,
-		std::string &     err_msg) throw(std::logic_error);
+		std::string &     err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error)
+#endif
+			;
 
 	/**
 	 *  \brief  Accept client connection on a listen socket
@@ -676,7 +704,10 @@ class NutSocket: public NutStream {
 	 */
 	inline static bool accept(
 		NutSocket &       sock,
-		const NutSocket & listen_sock) throw(std::logic_error)
+		const NutSocket & listen_sock)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error)
+#endif
 	{
 		int ec;
 		std::string em;
@@ -692,7 +723,10 @@ class NutSocket: public NutStream {
 	 */
 	inline static void acceptx(
 		NutSocket &       sock,
-		const NutSocket & listen_sock) throw(std::logic_error, std::runtime_error)
+		const NutSocket & listen_sock)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error, std::runtime_error)
+#endif
 	{
 		int ec;
 		std::string em;
@@ -795,7 +829,11 @@ class NutSocket: public NutStream {
 	 *
 	 *  \param  addr  Socket address
 	 */
-	inline void bindx(const Address & addr) throw(std::runtime_error) {
+	inline void bindx(const Address & addr)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -842,7 +880,11 @@ class NutSocket: public NutStream {
 	 *
 	 *  \param[in]   backlog   Limit of pending connections
 	 */
-	inline void listenx(int backlog) throw(std::runtime_error) {
+	inline void listenx(int backlog)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -887,7 +929,11 @@ class NutSocket: public NutStream {
 	 *
 	 *  \param[in]  addr  Remote address
 	 */
-	inline void connectx(const Address & addr) throw(std::runtime_error) {
+	inline void connectx(const Address & addr)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
@@ -925,7 +971,11 @@ class NutSocket: public NutStream {
 	}
 
 	/** Close socket (or throw exception) */
-	inline void closex() throw(std::runtime_error) {
+	inline void closex()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	{
 		int ec;
 		std::string em;
 
