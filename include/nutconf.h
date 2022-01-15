@@ -558,7 +558,10 @@ protected:
 	 *  \return \c number casted to target type
 	 */
 	template <typename T>
-	static T range_cast(long long int number, long long int min, long long int max) throw(std::range_error)
+	static T range_cast(long long int number, long long int min, long long int max)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::range_error)
+#endif
 	{
 		if (number < min)
 		{

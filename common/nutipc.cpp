@@ -132,8 +132,12 @@ Process::Executor::Executor(const std::string & command) {
 }
 
 
-int Process::Executor::operator () () throw(std::runtime_error) {
-        const char ** args_c_str = new const char *[m_args.size() + 2];
+int Process::Executor::operator () ()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+{
+	const char ** args_c_str = new const char *[m_args.size() + 2];
 
 	const char * bin_c_str = m_bin.c_str();
 
@@ -164,7 +168,11 @@ int Process::Executor::operator () () throw(std::runtime_error) {
 }
 
 
-int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error) {
+int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+{
 	char * cmd_bytes = reinterpret_cast<char *>(cmd);
 
 	do {
@@ -182,7 +190,11 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size) throw(std::runtime_erro
 }
 
 
-int Signal::send(Signal::enum_t signame, pid_t pid) throw(std::logic_error) {
+int Signal::send(Signal::enum_t signame, pid_t pid)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::logic_error)
+#endif
+{
 	int sig = (int)signame;
 
 	int status = ::kill(pid, sig);

@@ -98,7 +98,11 @@ class Process {
 		 *
 		 *  \param  main  Child process main routine
 		 */
-		Child(M main) throw(std::runtime_error);
+		Child(M main)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::runtime_error)
+#endif
+			;
 
 		/** Child PID */
 		inline pid_t getPID() const { return m_pid; }
@@ -113,7 +117,11 @@ class Process {
 		 *
 		 *  \return Child process exit code
 		 */
-		int wait() throw(std::logic_error);
+		int wait()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error)
+#endif
+			;
 
 		/**
 		 *  \brief  Child exit code getter
@@ -183,7 +191,11 @@ class Process {
 		Executor(const std::string & command);
 
 		/** Execution of the binary */
-		int operator () () throw(std::runtime_error);
+		int operator () ()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::runtime_error)
+#endif
+			;
 
 	};  // end of class Executor
 
@@ -253,7 +265,11 @@ class Process {
 
 
 template <class M>
-Process::Child<M>::Child(M main) throw(std::runtime_error):
+Process::Child<M>::Child(M main)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+throw(std::runtime_error)
+#endif
+	:
 	m_pid(0),
 	m_exited(false),
 	m_exit_code(0)
@@ -266,7 +282,11 @@ Process::Child<M>::Child(M main) throw(std::runtime_error):
 
 
 template <class M>
-int Process::Child<M>::wait() throw(std::logic_error) {
+int Process::Child<M>::wait()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::logic_error)
+#endif
+{
 	if (m_exited)
 		return m_exit_code;
 
@@ -439,7 +459,11 @@ class Signal {
 		 *
 		 *  \param  siglist  List of signals that shall be handled by the thread
 		 */
-		HandlerThread(const Signal::List & siglist) throw(std::logic_error, std::runtime_error);
+		HandlerThread(const Signal::List & siglist)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::logic_error, std::runtime_error)
+#endif
+			;
 
 		/**
 		 *  \brief  Terminate the thread
@@ -448,14 +472,22 @@ class Signal {
 		 *  It blocks until the thread is joined.
 		 *  Closes the communication pipe write end.
 		 */
-		void quit() throw(std::runtime_error);
+		void quit()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::runtime_error)
+#endif
+			;
 
 		/**
 		 *  \brief  Destructor
 		 *
 		 *  Forces the signal handler thread termination (unless already down).
 		 */
-		~HandlerThread() throw(std::runtime_error);
+		~HandlerThread()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+			throw(std::runtime_error)
+#endif
+			;
 
 	};  // end of HandlerThread
 
@@ -471,7 +503,11 @@ class Signal {
 	 *  \retval EPERM if the process doesn't have permission to send the signal
 	 *  \retval ESRCH if the process (group) identified doesn't exist
 	 */
-	static int send(enum_t signame, pid_t pid) throw(std::logic_error);
+	static int send(enum_t signame, pid_t pid)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+		throw(std::logic_error)
+#endif
+		;
 
 	/**
 	 *  \brief  Send signal to a process identified via PID file
@@ -591,7 +627,11 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
  *  \retval 0     on success
  *  \retval errno on error
  */
-int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error);
+int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+	;
 
 
 template <class H>
@@ -610,7 +650,11 @@ void Signal::HandlerThread<H>::signalNotifier(int signal) {
 
 
 template <class H>
-Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std::logic_error, std::runtime_error) {
+Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::logic_error, std::runtime_error)
+#endif
+{
 	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
 		throw std::logic_error(
@@ -665,7 +709,11 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std:
 
 
 template <class H>
-void Signal::HandlerThread<H>::quit() throw(std::runtime_error) {
+void Signal::HandlerThread<H>::quit()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+{
 	static int quit = (int)Signal::HandlerThread<H>::QUIT;
 
 	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
@@ -693,7 +741,11 @@ void Signal::HandlerThread<H>::quit() throw(std::runtime_error) {
 
 
 template <class H>
-Signal::HandlerThread<H>::~HandlerThread() throw(std::runtime_error) {
+Signal::HandlerThread<H>::~HandlerThread()
+#if (defined __cplusplus) && (__cplusplus < 201700)
+	throw(std::runtime_error)
+#endif
+{
 	// Stop the thread unless already stopped
 	if (-1 != s_comm_pipe[1])
 		quit();
