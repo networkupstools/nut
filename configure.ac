@@ -2479,7 +2479,7 @@ if (strchr(s, c) != NULL) return 1
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-unreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <string.h>
@@ -2538,7 +2538,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS_SAVED} -Wno-shadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-shadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <arpa/inet.h>
