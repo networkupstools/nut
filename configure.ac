@@ -2516,7 +2516,7 @@ AC_CHECK_HEADER([arpa/inet.h],
     [AC_LANG_PUSH([C])
      CFLAGS_SAVED="${CFLAGS}"
      CFLAGS_BUILTIN_NTOHL="-fno-builtin-htonl -fno-builtin-ntohl"
-     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code -Wshadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
      AC_MSG_CHECKING([whether we should disable htonl/ntohl built-ins])
      dnl AC_DEFINE([HAVE_ARPA_INET_H], [1], [Define to 1 if you have <arpa/inet.h>.])
      AC_COMPILE_IFELSE(
@@ -2538,7 +2538,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS} -Wno-shadow"
+            [CFLAGS="${CFLAGS_SAVED} -Wno-shadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <arpa/inet.h>
