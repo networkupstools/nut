@@ -395,7 +395,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE)=' || true
+set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -530,7 +530,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
-    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
+    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib ${LDFLAGS}")
 
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
     SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
@@ -1312,9 +1312,17 @@ bindings)
     if [ -s Makefile ]; then
         ${MAKE} realclean -k || true
     fi
+
     ./autogen.sh
+
+    # NOTE: Default NUT "configure" actually insists on some features,
+    # like serial port support unless told otherwise, or docs if possible.
+    # Below we aim for really fast iterations of C/C++ development so
+    # enable whatever is auto-detectable (except docs), and highlight
+    # any warnings if we can:
     #./configure
     ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check

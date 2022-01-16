@@ -46,8 +46,7 @@
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
-	#include "nut_libusb.h"
-	#include "usb-common.h"
+	#include "nut_libusb.h" /* also includes "usb-common.h" */
 
 	#ifdef QX_SERIAL
 		#define DRIVER_NAME	"Generic Q* USB/Serial driver"
