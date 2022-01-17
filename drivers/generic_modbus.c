@@ -143,7 +143,8 @@ void upsdrv_initups(void)
 		 * but that is not guaranteed; for more details see
 		 * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html
 		 */
-		struct timeval to = (struct timeval){0};
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
 		to.tv_sec = mod_resp_to_s;
 		to.tv_usec = mod_resp_to_us;
 		/* void */ modbus_set_response_timeout(mbctx, &to);
@@ -162,7 +163,8 @@ void upsdrv_initups(void)
 	}
 #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
 	{   /* see comments above */
-		struct timeval to = (struct timeval){0};
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
 		to.tv_sec = mod_byte_to_s;
 		to.tv_usec = mod_byte_to_us;
 		/* void */ modbus_set_byte_timeout(mbctx, &to);
@@ -1068,7 +1070,8 @@ void modbus_reconnect(void)
 	}
 #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
 	{   /* see comments above */
-		struct timeval to = (struct timeval){0};
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
 		to.tv_sec = mod_resp_to_s;
 		to.tv_usec = mod_resp_to_us;
 		/* void */ modbus_set_response_timeout(mbctx, &to);
@@ -1085,7 +1088,8 @@ void modbus_reconnect(void)
 	}
 #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
 	{   /* see comments above */
-		struct timeval to = (struct timeval){0};
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
 		to.tv_sec = mod_byte_to_s;
 		to.tv_usec = mod_byte_to_us;
 		/* void */ modbus_set_byte_timeout(mbctx, &to);
