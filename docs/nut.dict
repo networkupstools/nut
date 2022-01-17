@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2838 utf-8
+personal_ws-1.1 en 2841 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -457,6 +457,8 @@ INVOLT
 IPAR
 IPBX
 IPC
+IPP
+IPSS
 IPs
 IPv
 IRIX
@@ -1167,6 +1169,7 @@ UNV
 UPGUARDS
 UPM
 UPOII
+UPP
 UPS's
 UPSCONN
 UPSDESC
