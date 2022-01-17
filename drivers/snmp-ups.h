@@ -234,7 +234,7 @@ typedef struct {
 #endif
 } snmp_info_t;
 
-/* "flags" bits 0..8 (and 9 reserved for DMF) */
+/* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
 										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
@@ -253,10 +253,8 @@ typedef struct {
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
-//#if WITH_DMF_FUNCTIONS
-//#define SU_FLAG_FUNCTION	(1 << 9)	/* TODO Pending to check if this flag have any incompatibility*/
-//#endif
-/* Reserved slot (1UL << 9) -- to import SU_FLAG_FUNCTION from DMF branch codebase */
+#define SU_FLAG_SEMI_STATIC	(1UL << 9) /* Refresh this entry once in several walks
+ * (for R/W values user can set on device, like descriptions or contacts) */
 
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -304,24 +302,25 @@ typedef struct {
 #define SU_TYPE_DAISY(t)	((t)->flags & (7UL << 21))	/* FIXME? Mask with 7 or 3 here? */
 #define SU_DAISY			(1UL << 23)	/* Daisychain template definition */
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2*/
+#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24) /* Only valid for daisychain master (device.1) */
 
-/* Definitions from DMF branch, 42ITy fork */
-//#define SU_AMBIENT_TEMPLATE	(1 << 6)	/* ambient template definition */
-//#define SU_FLAG_SEMI_STATIC	(1 << 22) /* Refresh this entry once in several walks
-// * (for R/W values user can set on device, like descriptions or contacts) */
-//#define SU_TYPE_DAISY_MASTER_ONLY	(1 << 23) /* Only valid for daisychain master (device.1) */
+#define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
+
+#if WITH_DMF_FUNCTIONS
+#define SU_FLAG_FUNCTION	(1UL << 27)	/* TODO Pending to check if this flag have any incompatibility*/
+#endif
 
 /* status string components
  * FIXME: these should be removed, since there is no added value.
  * Ie, this can be guessed from info->type! */
 
-/* "flags" bits 24..27 */
-#define SU_STATUS_PWR		(1UL << 24)	/* indicates power status element */
-#define SU_STATUS_BATT		(1UL << 25)	/* indicates battery status element */
-#define SU_STATUS_CAL		(1UL << 26)	/* indicates calibration status element */
-#define SU_STATUS_RB		(1UL << 27)	/* indicates replace battery status element */
+/* "flags" bits 28..31 */
+#define SU_STATUS_PWR		(1UL << 28)	/* indicates power status element */
+#define SU_STATUS_BATT		(1UL << 29)	/* indicates battery status element */
+#define SU_STATUS_CAL		(1UL << 30)	/* indicates calibration status element */
+#define SU_STATUS_RB		(1UL << 31)	/* indicates replace battery status element */
 #define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
-#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 24) & 15UL)
+#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 28) & 15UL)
 
 /* Despite similar names, definitons below are not among the bit-flags ;) */
 #define SU_VAR_COMMUNITY	"community"
