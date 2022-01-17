@@ -452,10 +452,13 @@ set | sort -n """
          // priority issues, and hundreds of lesser problems which may overlap
          // or not with those reported by other analysers. Having issues to
          // report does not mark the builds FAILED nor UNSTABLE however, so
-         // this should be safe to enable for all branches now.
-         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         // this should be safe to enable for all branches now. But it makes
+         // a lot of noise and (bug?) falls into common warnings category,
+         // not a separate analysis group as was intended by dynamatrix.
+         // So for now this applies only to fightwarn-related branches.
+         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
-         //branchRegexTarget: ~/fightwarn/,
+         branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
