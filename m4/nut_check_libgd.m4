@@ -12,6 +12,9 @@ if test -z "${nut_have_libgd_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LDFLAGS=""
+	LIBS=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for gd version via pkg-config)
@@ -38,7 +41,7 @@ if test -z "${nut_have_libgd_seen}"; then
 		 LIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
 		 dnl By default seek in PATH
-		 GDLIB_CONFIG=gdlib-config
+		 AC_PATH_PROGS([GDLIB_CONFIG], [gdlib-config], [none])
 		 AC_ARG_WITH(gdlib-config,
 			AS_HELP_STRING([@<:@--with-gdlib-config=/path/to/gdlib-config@:>@],
 				[path to program that reports GDLIB configuration]),
@@ -54,12 +57,15 @@ if test -z "${nut_have_libgd_seen}"; then
 			esac
 		 ])
 
-		 AC_MSG_CHECKING(for gd version via ${GDLIB_CONFIG})
-		 GD_VERSION="`${GDLIB_CONFIG} --version 2>/dev/null`"
-		 if test "$?" != "0" -o -z "${GD_VERSION}"; then
-			GD_VERSION="none"
-		 fi
-		 AC_MSG_RESULT(${GD_VERSION} found)
+		 AS_IF([test x"$GDLIB_CONFIG" != xnone],
+			[AC_MSG_CHECKING(for gd version via ${GDLIB_CONFIG})
+			 GD_VERSION="`${GDLIB_CONFIG} --version 2>/dev/null`"
+			 if test "$?" != "0" -o -z "${GD_VERSION}"; then
+				GD_VERSION="none"
+			 fi
+			 AC_MSG_RESULT(${GD_VERSION} found)
+			], [GD_VERSION="none"]
+		 )
 
 		 case "${GD_VERSION}" in
 		 none)

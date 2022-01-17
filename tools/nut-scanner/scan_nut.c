@@ -35,10 +35,10 @@ static const char *dl_error = NULL;
 static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
 static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
 					int flags, struct timeval * timeout);
-static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
+static int (*nut_upscli_list_start)(UPSCONN_t *ups, size_t numq,
 					const char **query);
-static int (*nut_upscli_list_next)(UPSCONN_t *ups, unsigned int numq,
-			const char **query, unsigned int *numa, char ***answer);
+static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
+			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 
 static nutscan_device_t * dev_ret = NULL;
@@ -55,7 +55,7 @@ typedef int bool_t;
 
 struct scan_nut_arg {
 	char * hostname;
-	long timeout;
+	useconds_t timeout;
 };
 
 /* return 0 on error; visible externally */
@@ -134,13 +134,13 @@ static void * list_nut_devices(void * arg)
 	char *target_hostname = nut_arg->hostname;
 	struct timeval tv;
 	int port;
-	unsigned int numq, numa;
+	size_t numq, numa;
 	const char *query[4];
 	char **answer;
 	char *hostname = NULL;
 	UPSCONN_t *ups = malloc(sizeof(*ups));
 	nutscan_device_t * dev = NULL;
-	int buf_size;
+	size_t buf_size;
 
 	tv.tv_sec = nut_arg->timeout / (1000*1000);
 	tv.tv_usec = nut_arg->timeout % (1000*1000);
@@ -212,7 +212,7 @@ static void * list_nut_devices(void * arg)
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, long usec_timeout)
+nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, useconds_t usec_timeout)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_ip_iter_t ip;
@@ -221,7 +221,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char buf[SMALLBUF];
 	struct sigaction oldact;
 	int change_action_handler = 0;
-	int i;
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -231,7 +230,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
@@ -239,8 +238,32 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
-	if (max_threads_scantype > 0)
-		sem_init(semaphore_scantype, 0, max_threads_scantype);
+	if (max_threads_scantype > 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		/* Different platforms, different sizes, none fits all... */
+		if (SIZE_MAX > UINT_MAX && max_threads_scantype > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+			upsdebugx(1,
+				"WARNING: %s: Limiting max_threads_scantype to range acceptable for sem_init()",
+				__func__);
+			max_threads_scantype = UINT_MAX - 1;
+		}
+		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+	}
 # endif /* HAVE_SEMAPHORE */
 
 #endif /* HAVE_PTHREAD */
@@ -308,7 +331,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 		) {
 			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %d), "
+				"(launched overall: %zu), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads
@@ -323,13 +346,13 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
-						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
-							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
+							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
-						case 0:         // thread exited
+						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -337,14 +360,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 							}
 							thread_array[i].active = FALSE;
 							break;
-						case EBUSY:     // actively running
-							upsdebugx(6, "%s: thread #%i still busy (%i)",
+						case EBUSY:     /* actively running */
+							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
-						case EDEADLK:   // Errors with thread interactions... bail out?
-						case EINVAL:    // Errors with thread interactions... bail out?
-						default:        // new pthreads abilities?
-							upsdebugx(5, "%s: thread #%i reported code %i",
+						case EDEADLK:   /* Errors with thread interactions... bail out? */
+						case EINVAL:    /* Errors with thread interactions... bail out? */
+						default:        /* new pthreads abilities? */
+							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -354,7 +377,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 				if (curr_threads >= max_threads
 				|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 				) {
-					usleep (10000); // microSec's, so 0.01s here
+					usleep (10000); /* microSec's, so 0.01s here */
 				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
@@ -430,7 +453,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						if (max_threads_scantype > 0)
@@ -463,7 +486,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #ifdef HAVE_PTHREAD
 	if (thread_array != NULL) {
 		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
-	for (i = 0; i < thread_count; i++) {
+		for (i = 0; i < thread_count; i++) {
 			int ret;
 
 			if (!thread_array[i].active) continue;
@@ -483,7 +506,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "

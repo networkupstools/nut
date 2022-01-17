@@ -8,7 +8,7 @@
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- * Copyright (C) 2016-2018 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2016-2021 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -200,10 +200,13 @@
 #define SNMP_FLAG_UNIQUE "unique"
 #define SNMP_FLAG_ZEROINVALID "zero_invalid"
 #define SNMP_FLAG_NAINVALID "na_invalid"
+#define SNMP_CMD_OFFSET "command_offset"
 #define SNMP_STATUS_PWR "power_status"
 #define SNMP_STATUS_BATT "battery_status"
 #define SNMP_STATUS_CAL "calibration"
 #define SNMP_STATUS_RB "replace_battery"
+#define SNMP_TYPE_INT "int_val"
+#define SNMP_TYPE_TIME "time_val"
 #define SNMP_TYPE_CMD "command"
 #define SNMP_OUTLET_GROUP "outlet_group"
 #define SNMP_OUTLET "outlet"

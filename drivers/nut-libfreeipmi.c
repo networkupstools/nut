@@ -39,6 +39,8 @@
 
  */
 
+#include "config.h" /* must be first */
+
 #include <stdlib.h>
 #include <string.h>
 #include "timehead.h"
@@ -70,11 +72,10 @@ static ipmi_monitoring_ctx_t mon_ctx = NULL;
   #define SDR_PARSE_CTX sdr_ctx
   #define NUT_IPMI_SDR_CACHE_DEFAULTS                              IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT
 #else
-  /* NOTE: Maybe declare the vars in lines below also as static? */
   static ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
-  ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
+  static ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
   #define SDR_PARSE_CTX sdr_parse_ctx
-  ipmi_fru_parse_ctx_t fru_ctx = NULL;
+  static ipmi_fru_parse_ctx_t fru_ctx = NULL;
   /* Functions remapping */
   #define ipmi_sdr_ctx_create                           ipmi_sdr_cache_ctx_create
   #define ipmi_sdr_ctx_destroy                          ipmi_sdr_cache_ctx_destroy
@@ -521,11 +522,34 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 
 	/* Without a standard TIME_MAX, signedness may suffer;
 	 * but we can at least check the number should fit */
-	if (sizeof(mfg_date_time) < sizeof(timetmp))
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Stay ahead of possible redefinitions... */
+	if (sizeof(mfg_date_time) > sizeof(timetmp))
 	{
 		libfreeipmi_cleanup();
-		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process");
+		fatalx(EXIT_FAILURE, "libfreeipmi_get_board_info: mfg_date_time type too large to process into a time_t");
 	}
+	/* NOTE: Code until the end of method would also be "unreachable"
+	 * for compilers or static analyzers that care about this, if the
+	 * sizeof() check above fails on some architecture; build warnings
+	 * should expose that so we look for a fix - so do not just blindly
+	 * move the closing pragmas to end of method ;)
+	 */
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	timetmp = (time_t)mfg_date_time;
 	localtime_r (&timetmp, &mfg_date_time_tm);

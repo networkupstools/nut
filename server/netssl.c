@@ -131,32 +131,36 @@ static void ssl_debug(void)
 	}
 }
 
-static int ssl_error(SSL *ssl, int ret)
+static int ssl_error(SSL *ssl, ssize_t ret)
 {
 	int	e;
 
-	e = SSL_get_error(ssl, ret);
+	if (ret >= INT_MAX) {
+		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		return -1;
+	}
+	e = SSL_get_error(ssl, (int)ret);
 
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_READ", ret);
+		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE", ret);
+		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upsdebugx(1, "ssl_error() EOF from client");
 		} else {
-			upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_SYSCALL", ret);
+			upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
+		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
@@ -193,7 +197,7 @@ static void nss_error(const char* text)
 	}
 }
 
-static int ssl_error(PRFileDesc *ssl, int ret)
+static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
 	char buffer[256];
 	PRInt32 length;

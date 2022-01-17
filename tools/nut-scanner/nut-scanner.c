@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
+#include "common.h"	/* Must be first include to pull "config.h" */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "common.h"
 #include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
@@ -134,7 +135,7 @@ static const struct option longopts[] = {
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
+static useconds_t timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
@@ -261,38 +262,43 @@ static void show_usage()
 
 		/* Construct help for AUTHPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (");
-#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+#if (defined WITH_SNMP) && (defined NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol)
+/* Note: NUT_HAVE_LIBNETSNMP_* macros are not AC_DEFINE'd when libsnmp was
+ * completely not detected at configure time, so "#if" is not a pedantically
+ * correct test (unknown macro may default to "0" but is not guaranteed to).
+ */
+# if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"MD5"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA256"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA384"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA512"
 			);
-#endif
+# endif
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for authenticated SNMPv3 messages (default=MD5 if available)\n"
@@ -303,34 +309,35 @@ static void show_usage()
 
 		/* Construct help for PRIVPROTO */
 		{ int comma = 0;
-		NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (");
-#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+# if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"DES"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES"
 			);
-#endif
-#if NETSNMP_DRAFT_BLUMENTHAL_AES_04
-# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
+#  if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES192"
 			);
-# endif
-# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+#  endif
+#  if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES256"
 			);
-# endif
-#endif /* NETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#  endif
+# endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* built WITH_SNMP */
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for encrypted SNMPv3 messages (default=DES if available)\n"
@@ -426,7 +433,7 @@ int main(int argc, char *argv[])
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;
 	xml_sec.port_udp = 4679;
-	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
+	xml_sec.usec_timeout = 0; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
 	/* Parse command line options -- First loop: only get debug level */
@@ -452,8 +459,8 @@ int main(int argc, char *argv[])
 
 		switch(opt_ret) {
 			case 't':
-				timeout = atol(optarg)*1000*1000; /*in usec*/
-				if (timeout == 0) {
+				timeout = (useconds_t)atol(optarg) * 1000 * 1000; /*in usec*/
+				if (timeout <= 0) {
 					fprintf(stderr,
 						"Illegal timeout value, using default %ds\n",
 						DEFAULT_NETWORK_TIMEOUT);
@@ -575,10 +582,10 @@ int main(int argc, char *argv[])
 				else if (!strcmp(optarg, "STRAIGHT_PASSWORD_KEY")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY;
 				}
-				else if (!strcmp(optarg, "MD2")) {
+				else if (!strncmp(optarg, "MD2", 3)) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD2;
 				}
-				else if (!strcmp(optarg, "MD5")) {
+				else if (!strncmp(optarg, "MD5", 3)) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {
@@ -738,7 +745,29 @@ display_help:
 	   on lib (need to be thread safe). */
 	sem_t *current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
-	sem_init(current_sem, 0, max_threads);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Different platforms, different sizes, none fits all... */
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+		fprintf(stderr, "\n\n"
+			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
+		max_threads = UINT_MAX - 1;
+	}
+	sem_init(current_sem, 0, (unsigned int)max_threads);
 # endif
 #endif /* HAVE_PTHREAD */
 

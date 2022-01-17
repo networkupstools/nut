@@ -25,6 +25,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "powervar-hid.h"
 #include "main.h"	/* for getval() */
@@ -42,7 +44,7 @@ static usb_device_id_t powervar_usb_device_table[] = {
 	{ USB_DEVICE(POWERVAR_VENDORID, 0x0002), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;

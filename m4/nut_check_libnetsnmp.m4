@@ -9,6 +9,7 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
 	NUT_CHECK_PKGCONFIG
+	AC_LANG_PUSH([C])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -21,12 +22,12 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	dnl By default seek in PATH, but which variant (if several are provided)?
 	AC_CHECK_SIZEOF([void *])
+	NET_SNMP_CONFIG="none"
 	AS_CASE(["${ac_cv_sizeof_void_p}"],
-		[4],[NET_SNMP_CONFIG=net-snmp-config-32],
-		[8],[NET_SNMP_CONFIG=net-snmp-config-64]
-		)
-	AS_IF([test -n "${NET_SNMP_CONFIG}" && test -n "`command -v "${NET_SNMP_CONFIG}"`"],
-		[], [NET_SNMP_CONFIG=net-snmp-config])
+		[4],[AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config-32 net-snmp-config], [none])],
+		[8],[AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config-64 net-snmp-config], [none])],
+		    [AC_PATH_PROGS([NET_SNMP_CONFIG], [net-snmp-config], [none])]
+	)
 
 	prefer_NET_SNMP_CONFIG=false
 	AC_ARG_WITH(net-snmp-config,
@@ -57,6 +58,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			AC_MSG_RESULT(none found)
 			prefer_NET_SNMP_CONFIG=true
 		fi
+	fi
+
+	if test "$NET_SNMP_CONFIG" = none ; then
+		prefer_NET_SNMP_CONFIG=false
 	fi
 
 	if "${prefer_NET_SNMP_CONFIG}" ; then
@@ -120,7 +125,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(init_snmp, [], [nut_have_libnetsnmp=no])
 
-	if test "${nut_have_libnetsnmp}" = "yes"; then
+	AS_IF([test "${nut_have_libnetsnmp}" = "yes"], [
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
 		LIBNETSNMP_LIBS="${LIBS}"
 
@@ -274,7 +279,23 @@ oid * pProto = usmHMACSHA1AuthProtocol;
 			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol, 0, [Variable or macro by this name is not resolvable])
 			])
 
-	fi
+		AC_MSG_CHECKING([for defined NETSNMP_DRAFT_BLUMENTHAL_AES_04])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUMENTHAL_AES_04 is 1 */
+],
+[]
+			)],
+			[AC_MSG_RESULT([yes])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 1, [Variable or macro by this name is resolvable])
+			],
+			[AC_MSG_RESULT([no])
+			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 0, [Variable or macro by this name is not resolvable])
+			])
+
+	])
+	AC_LANG_POP([C])
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

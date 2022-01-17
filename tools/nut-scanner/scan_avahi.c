@@ -218,7 +218,7 @@ err:
 
 static AvahiSimplePoll *simple_poll = NULL;
 static nutscan_device_t * dev_ret = NULL;
-static long avahi_usec_timeout = 0;
+static useconds_t avahi_usec_timeout = 0;
 
 static void update_device(const char * host_name, const char *ip, uint16_t port, char * text, int proto)
 {
@@ -234,7 +234,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 	char * device_saveptr = NULL;
 	int device_found = 0;
 	char buf[6];
-	int buf_size;
+	size_t buf_size;
 
 	if (text == NULL) {
 		return;
@@ -479,7 +479,10 @@ static void browse_callback(
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
 			(*nut_avahi_simple_poll_quit)(simple_poll);
+			goto fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED; /* be explicit */
+
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
+		fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED:
 /*			fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
 	}
@@ -499,7 +502,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * userd
 	}
 }
 
-nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
+nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 {
 	/* Example service publication
 	 * $ avahi-publish -s nut _upsd._tcp 3493 txtvers=1 protovers=1.0.0 device_list="dev1;dev2"
@@ -581,7 +584,7 @@ fail:
 }
 #else  /* WITH_AVAHI */
 /* stub function */
-nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
+nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 {
 	NUT_UNUSED_VARIABLE(usec_timeout);
 

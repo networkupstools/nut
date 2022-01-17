@@ -449,8 +449,6 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
-	int	ret;
-
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
@@ -462,20 +460,25 @@ static void doshutdown(void)
 	/* in the pipe model, we let the parent do this for us */
 	if (use_pipe) {
 		char	ch;
+		ssize_t	wret;
 
 		ch = 1;
-		ret = write(pipefd[1], &ch, 1);
+		wret = write(pipefd[1], &ch, 1);
+
+		if (wret < 1)
+			upslogx(LOG_ERR, "Unable to call parent pipe for shutdown");
 	} else {
 		/* one process model = we do all the work here */
+		int	sret;
 
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
 
 		set_pdflag();
 
-		ret = system(shutdowncmd);
+		sret = system(shutdowncmd);
 
-		if (ret != 0)
+		if (sret != 0)
 			upslogx(LOG_ERR, "Unable to call shutdown command: %s",
 				shutdowncmd);
 	}
@@ -487,7 +490,7 @@ static void doshutdown(void)
 static void setfsd(utype_t *ups)
 {
 	char	buf[SMALLBUF];
-	int	ret;
+	ssize_t	ret;
 
 	/* this shouldn't happen */
 	if (!ups->upsname) {
@@ -544,7 +547,7 @@ static void clear_alarm(void)
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -595,7 +598,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %d args, need at least %d)",
+			"(got %zu args, need at least %zu)",
 			var, numa, numq);
 		return -1;
 	}
@@ -613,7 +616,7 @@ static void sync_secondaries(void)
 	utype_t	*ups;
 	char	temp[SMALLBUF];
 	time_t	start, now;
-	int	maxlogins, logins;
+	long	maxlogins, logins;
 
 	time(&start);
 
@@ -967,7 +970,32 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	long lpv = strtol(pvs, (char **) NULL, 10);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	/* Different platforms, different sizes, none fits all... */
 	if (lpv < 0 || (sizeof(long) > sizeof(unsigned int) && lpv > (long)UINT_MAX)) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		upslogx(LOG_WARNING, "UPS [%s]: ignoring invalid power value [%s]",
 			sys, pvs);
 		return;
@@ -1591,19 +1619,19 @@ static void parse_status(utype_t *ups, char *status)
 
 		upsdebugx(3, "parsing: [%s]", statword);
 
-		if (!strcasecmp(statword, "OL"))
+		if (!strncasecmp(statword, "OL", 2))
 			ups_on_line(ups);
-		if (!strcasecmp(statword, "OB"))
+		if (!strncasecmp(statword, "OB", 2))
 			ups_on_batt(ups);
-		if (!strcasecmp(statword, "LB"))
+		if (!strncasecmp(statword, "LB", 2))
 			ups_low_batt(ups);
-		if (!strcasecmp(statword, "RB"))
+		if (!strncasecmp(statword, "RB", 2))
 			upsreplbatt(ups);
-		if (!strcasecmp(statword, "CAL"))
+		if (!strncasecmp(statword, "CAL", 3))
 			ups_cal(ups);
 
 		/* do it last to override any possible OL */
-		if (!strcasecmp(statword, "FSD"))
+		if (!strncasecmp(statword, "FSD", 3))
 			ups_fsd(ups);
 
 		update_crittimer(ups);
@@ -1777,7 +1805,8 @@ static void runparent(int fd)
 
 static void runparent(int fd)
 {
-	int	ret;
+	ssize_t	ret;
+	int	sret;
 	char	ch;
 
 	/* handling signals is the child's job */
@@ -1807,9 +1836,9 @@ static void runparent(int fd)
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
 
-	ret = system(shutdowncmd);
+	sret = system(shutdowncmd);
 
-	if (ret != 0)
+	if (sret != 0)
 		upslogx(LOG_ERR, "parent: Unable to call shutdown command: %s",
 			shutdowncmd);
 

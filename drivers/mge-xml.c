@@ -20,6 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"	/* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1252,7 +1254,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="upsprop.xml" or url="ws/summary.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strcasecmp(atts[i], "url")) {
+				if (!strncasecmp(atts[i], "url", 3)) {
 					free(mge_xml_subdriver.summary);
 					mge_xml_subdriver.summary = strdup(url_convert(atts[i+1]));
 				}
@@ -1264,7 +1266,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="config.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strcasecmp(atts[i], "url")) {
+				if (!strncasecmp(atts[i], "url", 3)) {
 					free(mge_xml_subdriver.configure);
 					mge_xml_subdriver.configure = strdup(url_convert(atts[i+1]));
 				}
@@ -1284,7 +1286,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="subscribe.cgi" security="basic" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strcasecmp(atts[i], "url")) {
+				if (!strncasecmp(atts[i], "url", 3)) {
 					free(mge_xml_subdriver.subscribe);
 					mge_xml_subdriver.subscribe = strdup(url_convert(atts[i+1]));
 				}
@@ -1322,7 +1324,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="getvalue.cgi" security="none" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strcasecmp(atts[i], "url")) {
+				if (!strncasecmp(atts[i], "url", 3)) {
 					free(mge_xml_subdriver.getobject);
 					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
 				}
@@ -1334,7 +1336,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="setvalue.cgi" security="ssl" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strcasecmp(atts[i], "url")) {
+				if (!strncasecmp(atts[i], "url", 3)) {
 					free(mge_xml_subdriver.setobject);
 					mge_xml_subdriver.setobject = strdup(url_convert(atts[i+1]));
 				}

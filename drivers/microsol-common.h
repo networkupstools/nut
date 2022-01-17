@@ -41,10 +41,12 @@ extern bool_t input_220v, output_220v;
 extern bool_t detected;
 extern bool_t line_unpowered, overheat, overload;
 extern bool_t critical_battery, inverter_working;
+/*extern bool_t recharging;*/ /* microsol-apc.c has its own copy */
 
 /* Input group */
 extern double input_voltage, input_current, input_frequency;
 extern double input_minimum_voltage, input_maximum_voltage, input_nominal_voltage;
+extern double input_low_limit, input_high_limit;
 
 /* Output group */
 extern double output_voltage, output_current, output_frequency;
@@ -52,6 +54,7 @@ extern double output_voltage, output_current, output_frequency;
 /* Battery group */
 extern int battery_extension;
 extern double battery_voltage, battery_charge;
+extern double temperature;
 
 /* Power group */
 extern double apparent_power, real_power, ups_load;
