@@ -179,7 +179,7 @@ static int upssend(const char *fmt,...) {
 	char buf[1024], *p;
 	va_list ap;
 	unsigned int	sent = 0;
-	int d_usec = UPSDELAY;
+	useconds_t d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -200,6 +200,7 @@ static int upssend(const char *fmt,...) {
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
 				"than %d bytes", (int)sizeof(buf));
+
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
@@ -212,7 +213,7 @@ static int upssend(const char *fmt,...) {
 		 * becomes modified, in later iterations.
 		 */
 		if (d_usec > 0)
-			usleep((useconds_t)d_usec);
+			usleep(d_usec);
 
 		sent++;
 		if (sent >= INT_MAX) {
@@ -223,13 +224,13 @@ static int upssend(const char *fmt,...) {
 	return (int)sent;
 }
 
-static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
+static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 {
 	return ser_get_line(upsfd, buf, bufsize - 1, ec, ic,
 	                    SER_WAIT_SEC, SER_WAIT_USEC);
 }
 
-static int upsflushin(int f, int verbose, const char *ignset)
+static ssize_t upsflushin(int f, int verbose, const char *ignset)
 {
 	NUT_UNUSED_VARIABLE(f);
 	return ser_flush_in(upsfd, ignset, verbose);
@@ -242,7 +243,7 @@ void upsdrv_updateinfo(void)
 	char *p = NULL;
 	int loadva;
 	size_t len = 0;
-	int recv;
+	ssize_t recv;
 	int retry;
 	char ch;
 	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
@@ -262,7 +263,7 @@ void upsdrv_updateinfo(void)
 			}
 		} while (temp[2] == 0);
 
-		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
+		upsdebugx(1, "upsdrv_updateinfo: received %zi bytes (try %i)", recv, retry);
 		upsdebug_hex(5, "buffer", temp, (size_t)recv);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */

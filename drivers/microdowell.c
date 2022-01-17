@@ -26,15 +26,14 @@
 	anything else is mandatory
 */
 
-#define	ENTERPRISE_PROTOCOL
-
-#include "microdowell.h"
-
 #include "main.h"
 #include "serial.h"
 #include <sys/ioctl.h>
 #include "timehead.h"
+#include "nut_stdint.h"
 
+#define	ENTERPRISE_PROTOCOL
+#include "microdowell.h"
 
 #define MAX_START_DELAY    999999
 #define MAX_SHUTDOWN_DELAY 32767
@@ -63,9 +62,9 @@ int setvar(const char *varname, const char *val);
 /* he knew... macros should evaluate their arguments only once */
 #define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
 
-static int CheckDataChecksum(unsigned char *Buff, int Len)
+static int CheckDataChecksum(unsigned char *Buff, size_t Len)
 {
-	int i, Idx ;
+	size_t i, Idx ;
 	unsigned char Xor ;
 
 	ups.FramePointer = Xor = 0 ;
@@ -189,7 +188,7 @@ static int CheckErrCode(unsigned char * Buff)
 }
 
 
-static void SendCmdToSerial(unsigned char *Buff, int Len)
+static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 {
 	int i;
 	unsigned char Tmp[20], Xor ;
@@ -210,14 +209,14 @@ static void SendCmdToSerial(unsigned char *Buff, int Len)
 	ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
 }
 
-static unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
+static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
 	#define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;
 	unsigned char *p ;
-	int BuffLen ;
+	size_t BuffLen ;
 
 	/* The default error code (no received character) */
 	ErrCode = ERR_COM_NO_CHARS ;
@@ -294,7 +293,7 @@ static int detect_hardware(void)
 			{
 			/* got UPS model */
 			for (i=0 ; i<8 ; i++)
-				ups.UpsModel[i] = p[i+5] ;
+				ups.UpsModel[i] = (char)p[i+5] ;
 			ups.UpsModel[8] = '\0' ;
 			upsdebugx(2, "get 'UPS model': %s", PrintErr(ups.ErrCode));
 			break ;	/* UPS identified: exit from ' for' LOOP */
@@ -319,7 +318,7 @@ static int detect_hardware(void)
 		{
 		/* got UPS serial # */
 		for (i=0 ; i<8 ; i++)
-			ups.SerialNumber[i] = p[i+5] ;
+			ups.SerialNumber[i] = (char)p[i+5] ;
 		ups.SerialNumber[8] = '\0' ;
 		upsdebugx(2, "get 'UPS Serial #': %s", PrintErr(ups.ErrCode));
 		}
@@ -500,9 +499,9 @@ static int detect_hardware(void)
 
 	OutBuff[0] = CMD_SET_TIMER ;	/* set UPS internal timer */
 	OutBuff[1] = (Time->tm_wday+6) % 7 ;	/* week day (0=monday) */
-	OutBuff[2] = Time->tm_hour ;	/* hours */
-	OutBuff[3] = Time->tm_min ;	/* minutes */
-	OutBuff[4] = Time->tm_sec;		/* seconds */
+	OutBuff[2] = (unsigned char)Time->tm_hour ;	/* hours */
+	OutBuff[3] = (unsigned char)Time->tm_min ;	/* minutes */
+	OutBuff[4] = (unsigned char)Time->tm_sec ;	/* seconds */
 	if ((p = CmdSerial(OutBuff, LEN_SET_TIMER, InpBuff)) != NULL)
 		{
 		upsdebugx(2, "set 'UPS internal clock': %s", PrintErr(ups.ErrCode));
@@ -536,10 +535,14 @@ void upsdrv_updateinfo(void)
 		status_init();	/* reset status flags */
 
 		/* store last UPS status */
-		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
-		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
-		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
+		ups.StatusUPS  =  (uint32_t)p[0] ;
+		ups.StatusUPS |= ((uint32_t)p[1]<<8) ;
+		ups.StatusUPS |= ((uint32_t)p[2]<<16) ;
+		ups.StatusUPS |= ((uint32_t)p[3]<<24) ;
+		ups.ShortStatus  =  (uint16_t)p[0];
+		ups.ShortStatus |= ((uint16_t)p[1]<<8) ;
+		upsdebugx(1, "ups.StatusUPS: %08" PRIX32, ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04" PRIX16, ups.ShortStatus);
 
 		/* on battery? */
 		if (p[0] & 0x01)
@@ -770,50 +773,115 @@ int instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
 int setvar(const char *varname, const char *val)
 {
-	int delay;
+	unsigned int delay;
 
-	if (sscanf(val, "%d", &delay) != 1)
+	if (sscanf(val, "%u", &delay) != 1)
 		{
 		return STAT_SET_UNKNOWN;
 		}
 
 	if (strcasecmp(varname, "ups.delay.start") == 0)
 		{
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		delay = CLAMP(delay, 0, MAX_START_DELAY);
-		upsdebugx(1, "set 'WUDELAY': %d/%d", delay, ups.WakeUpDelay);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(1, "set 'WUDELAY': %u/%u", delay, ups.WakeUpDelay);
 		ups.WakeUpDelay = delay ;
-		dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);
+		dstate_setinfo("ups.delay.start", "%u", ups.WakeUpDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
 		}
 
 	if (strcasecmp(varname, "ups.delay.shutdown") == 0)
 		{
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		delay = CLAMP(delay, 0, MAX_SHUTDOWN_DELAY);
-		upsdebugx(1, "set 'SDDELAY': %d/%d", delay, ups.ShutdownDelay);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(1, "set 'SDDELAY': %u/%u", delay, ups.ShutdownDelay);
 		ups.ShutdownDelay = delay;
-		dstate_setinfo("ups.delay.shutdown", "%d", ups.ShutdownDelay);
+		dstate_setinfo("ups.delay.shutdown", "%u", ups.ShutdownDelay);
 		dstate_dataok();
 		return STAT_SET_HANDLED;
 		}
 
 	return STAT_SET_UNKNOWN;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) || defined (HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 void upsdrv_initinfo(void)
 {
 	/* Get vars from ups.conf */
 	if (getval("ups.delay.shutdown")) {
-		ups.ShutdownDelay = CLAMP(atoi(getval("ups.delay.shutdown")), 0, MAX_SHUTDOWN_DELAY);
+		int ipv = atoi(getval("ups.delay.shutdown"));
+		ups.ShutdownDelay = (unsigned int) CLAMP(ipv, 0, MAX_SHUTDOWN_DELAY);
 	}
 	else {
 		ups.ShutdownDelay = 120;	/* Shutdown delay in seconds */
 	}
 
 	if (getval("ups.delay.start")) {
-		ups.WakeUpDelay = CLAMP(atoi(getval("ups.delay.start")), 0, MAX_START_DELAY);
+		int ipv = atoi(getval("ups.delay.start"));
+		ups.WakeUpDelay = (unsigned int) CLAMP(ipv, 0, MAX_START_DELAY);
 	}
 	else {
 		ups.WakeUpDelay = 10;	/* WakeUp delay in seconds */
@@ -887,10 +955,14 @@ void upsdrv_shutdown(void)
 		status_init();	/* reset status flags */
 
 		/* store last UPS status */
-		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
-		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
-		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
+		ups.StatusUPS  =  (uint32_t)p[0] ;
+		ups.StatusUPS |= ((uint32_t)p[1]<<8) ;
+		ups.StatusUPS |= ((uint32_t)p[2]<<16) ;
+		ups.StatusUPS |= ((uint32_t)p[3]<<24) ;
+		ups.ShortStatus  =  (uint16_t)p[0] ;
+		ups.ShortStatus |= ((uint16_t)p[1]<<8) ;
+		upsdebugx(1, "ups.StatusUPS: %08" PRIX32, ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04" PRIX16, ups.ShortStatus);
 
 		/* on battery? */
 		if (p[0] & 0x01)

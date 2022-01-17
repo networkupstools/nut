@@ -159,8 +159,8 @@ static unsigned char init_outlet(unsigned char len);
 static void init_system_test_capabilities(void);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
-static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
-static int decode_setvar_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
 static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
@@ -777,7 +777,8 @@ bool_t init_command(int size)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	unsigned char commandByte;
 	const char* nutvalue;
-	int res, iIndex = 0, ncounter, NumComms = 0, i;
+	ssize_t res;
+	int iIndex = 0, ncounter, NumComms = 0, i;
 
 	upsdebugx(1, "entering init_command(%i)", size);
 
@@ -793,11 +794,11 @@ bool_t init_command(int size)
 
 		res = answer[iIndex];
 		NumComms = (int)res; /* Number of commands implemented in this UPS */
-		upsdebugx(3, "Number of commands implemented in ups %d", res);
+		upsdebugx(3, "Number of commands implemented in ups %zd", res);
 		iIndex++;
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
-		upsdebugx(5, "bytes per command %d", res);
+		upsdebugx(5, "bytes per command %zd", res);
 
 		/* In case of debug - make explanation of values */
 		upsdebugx(2, "Index\tCmd byte\tDescription");
@@ -1031,7 +1032,8 @@ unsigned char init_outlet(unsigned char len)
 	 * Callers know it as "outlet_block_len" in their routines and it is greater than 8
 	 */
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int iIndex = 0, res;
+	int iIndex = 0;
+	ssize_t res;
 	unsigned char num_outlet, size_outlet, num;
 	unsigned char outlet_num, outlet_state;
 	uint16_t auto_dly_off, auto_dly_on;
@@ -1041,7 +1043,7 @@ unsigned char init_outlet(unsigned char len)
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	else
-		upsdebugx(1, "init_outlet(%i), res=%i", len, res);
+		upsdebugx(1, "init_outlet(%i), res=%zi", len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %u", num_outlet);
@@ -1084,7 +1086,8 @@ unsigned char init_outlet(unsigned char len)
 void init_ext_vars(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE], cbuf[5];
-	int length=0, index=0;
+	ssize_t length = 0;
+	int index = 0;
 
 	send_write_command(AUTHOR, 4);
 
@@ -1098,7 +1101,7 @@ void init_ext_vars(void)
 	length = command_write_sequence(cbuf, 4, answer);
 	if (length <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-	if (length < 4)  //UPS dont have configurable vars
+	if (length < 4)  /* UPS doesn't have configurable vars */
 		return;
 	for (index=3; index < length; index++) {
 		switch(answer[index]) {
@@ -1166,7 +1169,7 @@ void init_config(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	uint16_t voltage = 0, frequency = 0, tmp = 0;
-	int res;
+	ssize_t res;
 	char sValue[17];
 	char sPartNumber[17];
 
@@ -1220,7 +1223,7 @@ void init_limit(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	uint16_t value;
-	int res;
+	ssize_t res;
 
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0) {
@@ -1337,7 +1340,7 @@ void init_topology(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	const char* nutvalue;
 	uint16_t value;
-	int res;
+	ssize_t res;
 
 	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
 	if (res <= 0)
@@ -1354,7 +1357,8 @@ void init_system_test_capabilities(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE], cbuf[5];
 	const char* nutvalue;
-	int res, value, i;
+	ssize_t res;
+	int value, i;
 
 	/* Query what system test capabilities are supported */
 	send_write_command(AUTHOR, 4);
@@ -1390,7 +1394,7 @@ void upsdrv_initinfo(void)
 	char *pTmp;
 	char outlet_name[64];
 	char power_rating[10];
-	int res;
+	ssize_t res;
 	unsigned int ncpu = 0;
 	size_t buf;
 	uint16_t iRating = 0, iIndex = 0, len;
@@ -1560,11 +1564,11 @@ void upsdrv_initinfo(void)
 		len = init_outlet((unsigned char)outlet_block_len /* arg ignored */);
 
 		for (res = 1 ; (unsigned int)res <= (unsigned int)len ; res++) {
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%d.shutdown.return", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.shutdown.return", res);
 			dstate_addcmd(outlet_name);
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%d.load.on", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.load.on", res);
 			dstate_addcmd(outlet_name);
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%d.load.off", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.load.off", res);
 			dstate_addcmd(outlet_name);
 		}
 	}
@@ -1603,7 +1607,8 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	unsigned char status, topology;
 	char sValue[128];
-	int iIndex, res;
+	int iIndex;
+	ssize_t res;
 	uint16_t value;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
@@ -1968,7 +1973,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	char namebuf[MAX_NUT_NAME_LENGTH];
 	char varname[32];
 	const char *varvalue = NULL;
-	int res, sec, outlet_num;
+	ssize_t res;
+	int sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
 	upsdebugx(1, "entering instcmd(%s)(%s)", cmdname, extra);
@@ -2158,7 +2164,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
+static int decode_instcmd_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
 		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
@@ -2218,7 +2224,8 @@ int setvar (const char *varname, const char *val)
 	unsigned char answer[128], cbuf[5];
 	char namebuf[MAX_NUT_NAME_LENGTH];
 	char success_msg[SMALLBUF];
-	int res, sec, outlet_num, tmp;
+	ssize_t res;
+	int sec, outlet_num, tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
 	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
@@ -2505,7 +2512,7 @@ int setvar (const char *varname, const char *val)
 	return STAT_SET_INVALID;
 }
 
-static int decode_setvar_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
+static int decode_setvar_exec(const ssize_t res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
 	if (res <= 0) {
 		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);

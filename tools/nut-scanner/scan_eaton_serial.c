@@ -37,7 +37,12 @@
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-#include <signal.h>
+#ifdef HAVE_SYS_SIGNAL_H
+# include <sys/signal.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
@@ -205,7 +210,8 @@ static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int i, ret, devfd = -1;
+	int i, devfd = -1;
+	ssize_t ret;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
 
@@ -295,7 +301,8 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	struct termios tio;
-	int ret = 0, retry;
+	ssize_t ret = 0;
+	int retry;
 	int devfd = -1;
 	char buf[128];
 
@@ -397,14 +404,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
-	int i;
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
 # endif
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
-	int thread_count = 0;
+	size_t thread_count = 0, i;
 
 	pthread_mutex_init(&dev_mutex, NULL);
 #endif /* HAVE_PTHREAD */
@@ -469,7 +475,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		 */
 		if (curr_threads >= max_threads) {
 			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %d), "
+				"(launched overall: %zu), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads) {
@@ -482,13 +488,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
-						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
-							upsdebugx(5, "%s: Was thread #%i joined earlier?", __func__, i);
+						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
+							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
-						case 0:         // thread exited
+						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%i", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -496,14 +502,14 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 							}
 							thread_array[i].active = FALSE;
 							break;
-						case EBUSY:     // actively running
-							upsdebugx(6, "%s: thread #%i still busy (%i)",
+						case EBUSY:     /* actively running */
+							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
-						case EDEADLK:   // Errors with thread interactions... bail out?
-						case EINVAL:    // Errors with thread interactions... bail out?
-						default:        // new pthreads abilities?
-							upsdebugx(5, "%s: thread #%i reported code %i",
+						case EDEADLK:   /* Errors with thread interactions... bail out? */
+						case EINVAL:    /* Errors with thread interactions... bail out? */
+						default:        /* new pthreads abilities? */
+							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -511,7 +517,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 				}
 
 				if (curr_threads >= max_threads) {
-					usleep (10000); // microSec's, so 0.01s here
+					usleep (10000); /* microSec's, so 0.01s here */
 				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
@@ -566,7 +572,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %i to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						continue;
@@ -613,7 +619,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%i",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "

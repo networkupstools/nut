@@ -156,15 +156,22 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # upsmon calls this to send messages when things happen
 #
-# This command is called with the full text of the message as one argument.
+# This command is called with the full text of the message (from NOTIFYMSG)
+# as one argument.
+#
 # The environment string NOTIFYTYPE will contain the type string of
 # whatever caused this event to happen.
+#
+# The environment string UPSNAME will contain the name of the system/device
+# that generated the change.
 #
 # Note that this is only called for NOTIFY events that have EXEC set with
 # NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 #
-# Making this some sort of shell script might not be a bad idea.  For more
-# information and ideas, see docs/scheduling.txt
+# Making this some sort of shell script might not be a bad idea.
+# Alternately you can use the upssched program as your NOTIFYCMD for some
+# more complex setups (e.g. to ease handling of notification storms).
+# For more information and ideas, see docs/scheduling.txt
 #
 # Example:
 # NOTIFYCMD @BINDIR@/notifyme

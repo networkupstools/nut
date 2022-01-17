@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +26,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include "config.h"
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
@@ -225,10 +226,13 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		sigaction(SIGALRM, &sa, NULL);
 
 		/* Use the local maxstartdelay, if available */
-		if (ups->maxstartdelay != -1)
-			alarm(ups->maxstartdelay);
-		else /* Otherwise, use the global (or default) value */
-			alarm(maxstartdelay);
+		if (ups->maxstartdelay != -1) {
+			if (ups->maxstartdelay >= 0)
+				alarm((unsigned int)ups->maxstartdelay);
+		} else { /* Otherwise, use the global (or default) value */
+			if (maxstartdelay >= 0)
+				alarm((unsigned int)maxstartdelay);
+		}
 
 		ret = waitpid(pid, &wstat, 0);
 
@@ -326,7 +330,8 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				sleep (retrydelay);
+				if (retrydelay >= 0)
+					sleep ((unsigned int)retrydelay);
 		}
 	}
 }

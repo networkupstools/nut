@@ -243,10 +243,24 @@ info_lkp_new (int oid, const char *value
 #if WITH_SNMP_LKP_FUN
 // consider WITH_DMF_FUNCTIONS too?
 	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+/* ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+ * so we just don't compile this diags part if compiler might reject it
+ */
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
-			"so the provided value is effectively ignored: "
-			"fun_vp2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_vp2s='%p'",
-			(void*)fun_vp2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_vp2s);
+			"so the provided value is effectively ignored"
+			": fun_vp2s='%p' nuf_s2l='%p' fun_s2l='%p' nuf_vp2s='%p'",
+			(void*)fun_vp2s, (void*)nuf_s2l, (void*)fun_s2l, (void*)nuf_vp2s
+			);
+# pragma GCC diagnostic pop
+#else
+/* Must not have unfinished code right before #pragma below, so ifdef and else... */
+		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
+			"so the provided value is effectively ignored"
+			);
+#endif
 	}
 	self->fun_vp2s = NULL;
 	self->nuf_s2l = NULL;
@@ -1113,6 +1127,11 @@ compile_flags(const char **attrs)
 			flags = flags | SU_FLAG_UNIQUE;
 
 	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_CMD_OFFSET, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_CMD_OFFSET;
+
+	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_PWR;
@@ -1131,6 +1150,16 @@ compile_flags(const char **attrs)
 	aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_RB;
+
+	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_TYPE_INT, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_TYPE_INT;
+
+	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_TYPE_TIME, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_TYPE_TIME;
 
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
@@ -1185,11 +1214,11 @@ compile_flags(const char **attrs)
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(TYPE_DAISY, attrs);
 	if(aux_flags){
-		if(strcmp(aux_flags, "1") == 0)
+		if(strncmp(aux_flags, "1", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_1;
-		else if(strcmp(aux_flags, "2") == 0)
+		else if(strncmp(aux_flags, "2", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_2;
-		else if(strcmp(aux_flags, "3") == 0)
+		else if(strncmp(aux_flags, "3", 1) == 0)
 			flags = flags | SU_TYPE_DAISY_MASTER_ONLY;
 	}
 	if(aux_flags)free(aux_flags);

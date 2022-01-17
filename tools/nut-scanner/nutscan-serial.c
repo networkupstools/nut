@@ -22,6 +22,8 @@
     \author Arnaud Quette <arnaud.quette@free.fr>
 */
 
+#include "config.h"	/* must be the first header */
+
 #include "nutscan-serial.h"
 #include <stdio.h>
 #include <string.h>
@@ -88,7 +90,7 @@ static int is_serial_port_path(const char * port_name)
 static char ** add_port(char ** list, char * port)
 {
 	char ** res;
-	int count = 0;
+	size_t count = 0;
 
 	if (list == NULL) {
 		count = 0;

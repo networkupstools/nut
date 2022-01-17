@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2841 utf-8
+personal_ws-1.1 en 2874 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -176,6 +176,7 @@ COMMOK
 CONFILE
 CONTEXTs
 CPAN
+CPE
 CPM
 CPP
 CPPFLAGS
@@ -288,6 +289,7 @@ ENDFOR
 ENV
 EOF
 EOLed
+EPEL
 EPERM
 EPO
 EPS
@@ -491,12 +493,14 @@ JavaScript
 Javadoc
 Javascript
 Jenkinsfile
+JoinControllers
 Joon
 Jumpered
 KNutClient
 KNutSetting
 KOLFF
 KRT
+KRTS
 KTTS
 Kain
 Kaminski
@@ -580,6 +584,7 @@ MANPATH
 MAXAGE
 MAXCONN
 MAXLINEV
+MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
@@ -1188,6 +1193,7 @@ UPStation
 UPower
 URI
 USBDEVFS
+USBDevice
 USERADDed
 USV
 USVs
@@ -1409,6 +1415,7 @@ backported
 backupspro
 badpassword
 bart
+baseurl
 batchable
 batt
 battcap
@@ -1425,6 +1432,7 @@ baudrate
 baytech
 baz
 bbh
+bcdDevice
 bcmxcp
 bd
 beepertone
@@ -1481,6 +1489,7 @@ ccache
 cd
 cdc
 cef
+centos
 cerr
 certfile
 certname
@@ -1503,6 +1512,7 @@ cflags
 cgi
 cgipath
 cgroup
+cgroupsv
 chargedvbattery
 chargermode
 chargetime
@@ -1530,6 +1540,7 @@ clearlogs
 clearpassword
 clepple
 clicky
+cls
 clueful
 cmd
 cmdline
@@ -1649,6 +1660,7 @@ dmfify
 dmfnutscan
 dmfpath
 dmfsnmp
+dnf
 dnl
 dnsmasq
 docbook
@@ -1772,6 +1784,7 @@ fsd
 ftdi
 fuji
 fullload
+func
 functionset
 gamatronic
 gcc
@@ -1880,6 +1893,8 @@ inh
 init
 init's
 initctl
+initializer
+initializers
 initinfo
 initscripts
 initups
@@ -1910,6 +1925,8 @@ ip
 ipE
 ipF
 ipmi
+ipmidetectd
+ipmimonitoring
 ipmipsu
 ippon
 ipv
@@ -1926,6 +1943,7 @@ jessie
 journalctl
 jpg
 jpgraph
+jre
 json
 jsonify
 kVA
@@ -1945,6 +1963,7 @@ ktrace
 labcd
 lan
 langid
+largp
 lasaine
 ld
 le
@@ -1981,6 +2000,7 @@ libtool
 libupsclient
 libusb
 libusbugen
+libusbx
 libvirt
 libwrap
 libxml
@@ -2023,6 +2043,7 @@ lowvoltsout
 lposix
 lr
 lsusb
+ltdl
 lu
 lua
 luaOutlet
@@ -2030,6 +2051,7 @@ lv
 lvo
 lxc
 lxcbr
+lxccontainer
 lxml
 lxyz
 mA
@@ -2092,6 +2114,7 @@ minvalue
 minvi
 minvo
 mips
+mirrorlist
 mis
 misconfigured
 mkdir
@@ -2243,6 +2266,7 @@ ostream
 otherprotocols
 outliers
 pF
+pacman
 paramkeywords
 parsability
 parsable
@@ -2488,6 +2512,7 @@ slavesync
 slewrate
 sm
 smartups
+smbus
 sms
 sn
 snailmail
@@ -2516,6 +2541,7 @@ srv
 srw
 ss
 sshd
+ssize
 ssl
 stan
 startIP
@@ -2534,11 +2560,14 @@ strarr
 strcasecmp
 strcat
 strchr
+strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
+strncasecmp
+strncmp
 struct
 structs
 sts
@@ -2561,6 +2590,7 @@ subtree
 sudo
 suid
 superset
+suseconds
 sv
 svc
 svcadm
@@ -2659,6 +2689,7 @@ udev
 udevadm
 ufw
 ugen
+uint
 ukUNV
 ul
 un
@@ -2737,6 +2768,7 @@ usbups
 usbus
 usd
 usec
+useconds
 useradd
 userid
 usermap
@@ -2759,6 +2791,7 @@ var's
 varargs
 varhigh
 variable's
+variadic
 varlow
 varname
 varvalue

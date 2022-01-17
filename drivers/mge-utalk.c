@@ -52,6 +52,8 @@
  * from/to the UPS to re synchronise the communication.
  */
 
+#include "config.h" /* must be the first header */
+
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include "timehead.h"
@@ -125,11 +127,11 @@ static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
 static void extract_info(const char *buf, const mge_info_item_t *mge,
-			 char *infostr, int infolen);
+			 char *infostr, size_t infolen);
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
-static int mge_command(char *reply, int replylen, const char *fmt, ...);
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -181,7 +183,7 @@ void upsdrv_initups(void)
 		mge_ups.LowBatt = atoi (getval ("lowbatt"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Bl %d",  mge_ups.LowBatt);
-		if(!strcmp(buf, "OK"))
+		if(!strncmp(buf, "OK", 2))
 			upsdebugx(1, "Low Battery Level set to %d%%", mge_ups.LowBatt);
 		else
 			upsdebugx(1, "initups: Low Battery Level cannot be set");
@@ -193,7 +195,7 @@ void upsdrv_initups(void)
 		mge_ups.OnDelay = atoi (getval ("ondelay"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sm %d",  mge_ups.OnDelay);
-		if(!strcmp(buf, "OK"))
+		if(!strncmp(buf, "OK", 2))
 			upsdebugx(1, "ON delay set to %d min", mge_ups.OnDelay);
 		else
 			upsdebugx(1, "initups: OnDelay unavailable");
@@ -205,7 +207,7 @@ void upsdrv_initups(void)
 		mge_ups.OffDelay = atoi (getval ("offdelay"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sn %d",  mge_ups.OffDelay);
-		if(!strcmp(buf, "OK"))
+		if(!strncmp(buf, "OK", 2))
 			upsdebugx(1, "OFF delay set to %d sec", mge_ups.OffDelay);
 		else
 			upsdebugx(1, "initups: OffDelay unavailable");
@@ -224,14 +226,14 @@ void upsdrv_initinfo(void)
 	int  table;
 	int  tries;
 	int  status_ok = 0;
-	int  bytes_rcvd;
+	ssize_t  bytes_rcvd;
 	int  si_data1 = 0;
 	int  si_data2 = 0;
 	mge_info_item_t *item;
 	models_name_t *model_info;
 	mge_model_info_t *legacy_model;
 	char infostr[32];
-	int  chars_rcvd;
+	ssize_t  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
@@ -404,7 +406,7 @@ void upsdrv_updateinfo(void)
 	char buf[BUFFLEN];
 	char infostr[32];
 	int status_ok;
-	int bytes_rcvd;
+	ssize_t bytes_rcvd;
 	mge_info_item_t *item;
 
 	/* make sure that communication is enabled */
@@ -425,7 +427,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Don't overload old units (at startup) */
-	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + poll_interval) )
+	if ( time(NULL) <= (lastpoll + poll_interval) )
 		return;
 
 	/* update all other ok variables */
@@ -474,13 +476,13 @@ void upsdrv_shutdown(void)
 
 	/* Only call the effective shutoff if restart is ok */
 	/* or if we need only a stayoff... */
-	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
+	if (!strncmp(buf, "OK", 2) || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
 
 		upslogx(LOG_INFO, "UPS response to Shutdown was %s", buf);
 	}
-/*	if(strcmp(buf, "OK")) */
+/*	if(strncmp(buf, "OK", 2)) */
 
 	/* call the cleanup to disable/close the comm link */
 	upsdrv_cleanup();
@@ -507,7 +509,7 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-		if(strcmp(temp, "OK"))
+		if(strncmp(temp, "OK", 2))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 			return STAT_INSTCMD_HANDLED;
@@ -519,7 +521,7 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Sx 129");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-		if(strcmp(temp, "OK"))
+		if(strncmp(temp, "OK", 2))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 			return STAT_INSTCMD_HANDLED;
@@ -545,13 +547,13 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
-		if(strcmp(temp, "OK"))
+		if(strncmp(temp, "OK", 2))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 0");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-			if(strcmp(temp, "OK"))
+			if(strncmp(temp, "OK", 2))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
@@ -565,13 +567,13 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
-		if(strcmp(temp, "OK"))
+		if(strncmp(temp, "OK", 2))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 1");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-			if(strcmp(temp, "OK"))
+			if(strncmp(temp, "OK", 2))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
@@ -599,7 +601,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-			if(strcmp(temp, "OK"))
+			if(strncmp(temp, "OK", 2))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
@@ -675,7 +677,7 @@ static void enable_ups_comm(void)
          buf is changed inspite of const !!!!!
 */
 static void extract_info(const char *buf, const mge_info_item_t *item,
-			 char *infostr, int infolen)
+			 char *infostr, size_t infolen)
 {
 	/* initialize info string */
 	infostr[0] = '\0';
@@ -726,7 +728,7 @@ static int get_ups_status(void)
 	int over_set= FALSE;  /* has OVER flag been set ? */
 	int tries = 0;
 	int ok    = FALSE;
-	int bytes_rcvd = 0;
+	ssize_t bytes_rcvd = 0;
 
 	do {
 		/* Check if we are asked to stop (reactivity++) */
@@ -867,12 +869,12 @@ static const char *info_variable_cmd(const char *type)
 
    returns :  no of chars received, -1 if error
 */
-static int mge_command(char *reply, int replylen, const char *fmt, ...)
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 {
 	const char *p;
 	char command[BUFFLEN];
-	int bytes_sent = 0;
-	int bytes_rcvd = 0;
+	ssize_t bytes_sent = 0;
+	ssize_t bytes_rcvd = 0;
 	int ret;
 	va_list ap;
 
@@ -940,7 +942,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %d byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: received %zd byte(s)", bytes_rcvd);
 
 	return bytes_rcvd;
 }

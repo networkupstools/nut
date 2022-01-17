@@ -207,7 +207,7 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 	snprintf(refined, sizeof(refined), "%s", "#");
 
 	/* e.g.: item->answer = "#\x6C\x01 \x35 \x6C\x01 \x35 \x03 \x51\x9A \x28\x02\x12\xD0 \xE6 \x1E \x09\r" */
-	upsdebug_hex(4, "read", item->answer, len);
+	upsdebug_hex(4, "read", item->answer, (size_t)len);
 
 	for (i = 1, token = 1; i < len; i++) {
 
@@ -318,7 +318,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 		{ NULL,				0,		0 }
 	};
 
-	if (strcasecmp(item->value, "P") && strcasecmp(item->value, "T")) {
+	if (strncasecmp(item->value, "P", 1) && strncasecmp(item->value, "T", 1)) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 		return -1;
 	}
@@ -339,7 +339,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 
 	/* Unskip items supported only by devices that implement 'T' protocol */
 
-	if (!strcasecmp(item->value, "P"))
+	if (!strncasecmp(item->value, "P", 1))
 		return 0;
 
 	for (i = 0; items_to_be_unskipped[i].info_type; i++) {
@@ -356,7 +356,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 /* Input/Output voltage */
 static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 	double	ret;
 	char	*str_end;
 
@@ -447,7 +447,7 @@ static int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t va
 /* Battery voltage */
 static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const size_t valuelen)
 {
-	int	val1, val2;
+	long	val1, val2;
 	char	*str_end;
 
 	if (strspn(item->value, "0123456789ABCDEFabcdef ") != strlen(item->value)) {
@@ -478,7 +478,7 @@ static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const siz
 /* Ratings bits */
 static int	voltronic_qs_hex_process_ratings_bits(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 	double	ret;
 
 	if (strspn(item->value, "01") != strlen(item->value)) {

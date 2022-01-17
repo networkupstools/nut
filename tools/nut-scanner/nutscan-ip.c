@@ -21,6 +21,8 @@
     \author Frederic Bohe <fredericbohe@eaton.com>
 */
 
+#include "config.h" /* must be first */
+
 #include "nutscan-ip.h"
 #include <stdio.h>
 #include "common.h"
@@ -49,7 +51,7 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 	memcpy(addr2->s6_addr, addr.s6_addr,   sizeof(addr.s6_addr));
 }
 
-static int ntop(struct in_addr * ip, char * host, size_t host_size)
+static int ntop(struct in_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_size)
 {
 	struct sockaddr_in in;
 	memset(&in, 0, sizeof(struct sockaddr_in));
@@ -61,7 +63,7 @@ static int ntop(struct in_addr * ip, char * host, size_t host_size)
 		host, host_size, NULL, 0, NI_NUMERICHOST);
 }
 
-static int ntop6(struct in6_addr * ip, char * host, size_t host_size)
+static int ntop6(struct in6_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_size)
 {
 	struct sockaddr_in6 in6;
 	memset(&in6, 0, sizeof(struct sockaddr_in6));
@@ -76,7 +78,7 @@ static int ntop6(struct in6_addr * ip, char * host, size_t host_size)
 /* Return the first ip or NULL if error */
 char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const char * stopIP)
 {
-	int addr;
+	uint32_t addr; /* 32-bit IPv4 address */
 	int i;
 	struct addrinfo hints;
 	struct addrinfo *res;
@@ -255,7 +257,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	nutscan_ip_iter_t ip;
 	int mask_val;
 	int mask_byte;
-	unsigned long mask_bit;
+	uint32_t mask_bit; /* 32-bit IPv4 address bitmask */
 	char host[SMALLBUF];
 	struct addrinfo hints;
 	struct addrinfo *res;
@@ -394,9 +396,9 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		freeaddrinfo(res);
 
 		mask_byte = mask_val / 8;
-		if (mask_byte < 16) {
-			memset(&(ip.stop6.s6_addr[mask_byte + 1]), 0xFF, 15 - mask_byte);
-			memset(&(ip.start6.s6_addr[mask_byte + 1]), 0x00, 15 - mask_byte);
+		if (mask_byte < 16 && mask_byte >= 0) {
+			memset(&(ip.stop6.s6_addr[mask_byte + 1]), 0xFF, 15 - (uint8_t)mask_byte);
+			memset(&(ip.start6.s6_addr[mask_byte + 1]), 0x00, 15 - (uint8_t)mask_byte);
 
 			mask_bit = (0x100 >> mask_val%8) - 1;
 			ip.stop6.s6_addr[mask_byte] |= mask_bit;

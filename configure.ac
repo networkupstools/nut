@@ -17,9 +17,9 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
-dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
+dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
-m4_version_prereq(2.60, [
+m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
@@ -130,6 +130,10 @@ AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
+NUT_ARG_ENABLE([Wcolor],
+    [Request that compiler output is colorized (no = leave it up to compiler defaults)],
+    [no])
 NUT_COMPILER_FAMILY_FLAGS
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
@@ -154,8 +158,17 @@ AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
 
+AC_CHECK_HEADER([signal.h],
+    [AC_DEFINE([HAVE_SIGNAL_H], [1],
+        [Define to 1 if you have <signal.h>.])])
+
+AC_CHECK_HEADER([sys/signal.h],
+    [AC_DEFINE([HAVE_SYS_SIGNAL_H], [1],
+        [Define to 1 if you have <sys/signal.h>.])])
+
 AC_CHECK_HEADER([sys/resource.h],
     [AC_MSG_CHECKING([for struct rlimit and getrlimit()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/resource.h>
 ],
@@ -164,19 +177,22 @@ getrlimit(RLIMIT_NOFILE, &limit);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SYS_RESOURCE_H], [1],
             [Define to 1 if you have <sys/resource.h> with usable struct rlimit and getrlimit().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
      AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AC_LANG_PUSH([C])
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
@@ -186,13 +202,15 @@ sem_destroy(&semaphore);
 /* Do not care about actual return value in this test,
  * normally check for non-zero meaning to look in errno */
 ]
-    )],
+        )],
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
         ],
         [AC_MSG_RESULT([no])]
-    )]
+     )
+     AC_LANG_POP([C])
+    ]
 )
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
@@ -201,7 +219,10 @@ AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
-dnl compilation modes, only in GNU, POSIX or other extension modes:
+dnl compilation modes (not part of ANSI or later standard), only in GNU,
+dnl POSIX or other extension modes. Note that on modern systems they are
+dnl available, just hidden in headers - so AC_CHECK_FUNCS() finds them
+dnl by adding a declaration, while the "real" codebase can't use them.
 AC_MSG_NOTICE(
 [-----------------------------------------------------------------------
 The next few tests look for required C library routines; if something is
@@ -210,11 +231,91 @@ version. You may also have to configure without extreme warning levels
 since autotools tests fail those on their own and assume system lacks
 stuff (although note we try to not involve standard -W* flags here).
 -----------------------------------------------------------------------])
-AC_CHECK_FUNCS(strcasecmp strncasecmp,
-	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
+dnl# AC_CHECK_FUNCS(strcasecmp strncasecmp,
+dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
-AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+dnl# Methods below currently do not cause build errors for C99+ modes so are
+dnl# not tested as thoroughly as those further below:
+ AC_CHECK_FUNCS(strtok_r fileno localtime_r sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+AC_LANG_PUSH([C])
+
+AC_CHECK_HEADER([string.h],
+    [AC_DEFINE([HAVE_STRING_H], [1],
+        [Define to 1 if you have <string.h>.])])
+
+AC_CHECK_HEADER([strings.h],
+    [AC_DEFINE([HAVE_STRINGS_H], [1],
+        [Define to 1 if you have <strings.h>.])])
+
+CODE_STRINGINCL='#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif'
+
+AC_CACHE_CHECK([for strcasecmp(s1,s2)],
+    [ac_cv_func_strcasecmp],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strcasecmp("STR1", "str1") != 0) return 1])],
+        [ac_cv_func_strcasecmp=yes], [ac_cv_func_strcasecmp=no]
+    )])
+AS_IF([test x"${ac_cv_func_strcasecmp}" = xyes],
+    [AC_DEFINE([HAVE_STRCASECMP], 1, [defined if standard library has, and C standard allows, the strcasecmp(s1,s2) method])],
+    [AC_MSG_WARN([Required C library routine strcasecmp not found; try adding __EXTENSIONS__])]
+    )
+
+AC_CACHE_CHECK([for strncasecmp(s1,s2,n)],
+    [ac_cv_func_strncasecmp],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strncasecmp("STR1", "strX", 2) != 0) return 1])],
+        [ac_cv_func_strncasecmp=yes], [ac_cv_func_strncasecmp=no]
+    )])
+AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
+    [AC_DEFINE([HAVE_STRNCASECMP], 1, [defined if standard library has, and C standard allows, the strncasecmp(s1,s2,n) method])],
+    [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
+    )
+
+AC_CACHE_CHECK([for strdup(s)],
+    [ac_cv_func_strdup],
+    [AC_RUN_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [[int res = 0;
+char *t = "Test";
+char *s = strdup(t);
+if (!s || !(s[0]=='T'&&s[1]=='e'&&s[2]=='s'&&s[3]=='t'&&s[4]=='\0') || s == t) res = 1;
+if (s) free (s);
+if (res != 0) return res
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_strdup=yes], [ac_cv_func_strdup=no]
+    )])
+AS_IF([test x"${ac_cv_func_strdup}" = xyes],
+    [AC_DEFINE([HAVE_STRDUP], 1, [defined if standard library has, and C standard allows, the strdup(s) method])],
+    [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for usleep(us)],
+    [ac_cv_func_usleep],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <unistd.h>
+        ]],
+            [[useconds_t us = 1000;
+if (usleep(us) != 0) return 1 /* per doc, no erros are returned actually*/
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_usleep=yes], [ac_cv_func_usleep=no]
+    )])
+AS_IF([test x"${ac_cv_func_usleep}" = xyes],
+    [AC_DEFINE([HAVE_USLEEP], 1, [defined if standard library has, and C standard allows, the usleep(us) method])],
+    [AC_MSG_WARN([Required C library routine usleep not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_LANG_POP([C])
 
 dnl These routines' arg types differ in strict C standard mode
 dnl from what they use in the modes expected by NUT codebase:
@@ -389,7 +490,9 @@ dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 
 dnl ----------------------------------------------------------------------
 dnl declare a number of --with-FEATURE options. Do this early, so that
-dnl they are listed near the top by "./configure --help"
+dnl they are listed near the top by "./configure --help"; however,
+dnl note that options with further investigation methods are listed
+dnl a bit below to be grouped with their additional with/enable help.
 
 dnl While the contribution is being absorbed into the NUT codebase,
 dnl we don't want the CI farm to build it by default and so block NUT
@@ -399,8 +502,7 @@ NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has c
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
-NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
+
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
 dnl a second-class citizen (if both are set, the old option name wins).
@@ -409,8 +511,15 @@ dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
-NUT_ARG_ENABLE([warnings], [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')], [legacy])
-NUT_ARG_ENABLE([Werror], [fail the build if compiler emits any warnings (treat them as errors)], [no])
+
+dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
+NUT_ARG_ENABLE([warnings],
+    [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
+    [medium])
+NUT_ARG_ENABLE([Werror],
+    [fail the build if compiler emits any warnings (treat them as errors)],
+    [no])
+dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -419,39 +528,24 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
-NUT_CHECK_LIBNETSNMP
+NUT_ARG_WITH([usb], [build and install USB drivers, optionally require build with specified version of libusb library and API: (auto|libusb-0.1|libusb-1.0)], [auto])
+nut_usb_lib=""
 NUT_CHECK_LIBUSB
+
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
+
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
+
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
+
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
+
+NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
-
-dnl ----------------------------------------------------------------------
-dnl additional USB-related checks
-
-dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
-dnl HPUX, since v11, needs an explicit activation of pthreads
-case ${target_os} in
-   solaris2.1* )
-      AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
-      AC_SEARCH_LIBS(nanosleep, rt)
-      LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
-      dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
-      dnl and need to call libusb close upon reconnection
-      AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
-      SUN_LIBUSB=1
-      AC_MSG_RESULT([${LIBUSB_LIBS}])
-      ;;
-    hpux11*)
-      CFLAGS="${CFLAGS} -lpthread"
-      ;;
-esac
-
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
@@ -492,6 +586,7 @@ AS_IF([test "${nut_with_serial}" != "no"],
     dnl Don't mind the stupid code below, it just probes the tokens and
     dnl sails around compiler warnings
     AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
@@ -513,38 +608,35 @@ getspeed(&baudrate);
         ],
         [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
          nut_have_serial_types=no
+        ]
+     )
+     AC_LANG_POP([C])
+
+     dnl Restore common set-or-discovered CFLAGS
+     CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+     AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_IF([test "${nut_have_serial_types}" = yes],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+        [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+         AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
         ])
-
-        dnl Restore common set-or-discovered CFLAGS
-        CFLAGS="${CFLAGS_SAVED_SERIAL}"
-
-        AC_MSG_CHECKING([whether we can build serial drivers])
-        AS_IF([test "${nut_have_serial_types}" = yes],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
-            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
-             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
-            ])
-        AS_IF([test "${nut_with_serial}" = "yes"],
-            [AC_MSG_RESULT([yes])],
-            [AC_MSG_RESULT([no])])
-    ])
+     AS_IF([test "${nut_with_serial}" = "yes"],
+        [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no])])
+])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-usb
+dnl checks related to --with-usb are in its m4 file and NUT_CHECK_LIBUSB() called above
 
-dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR([USB drivers requested, but libusb not found.])
-fi
+dnl Note: there is no libusb-config script (and variable) for libusb-1.0
+AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
-if test "${nut_with_usb}" != "no"; then
-   nut_with_usb="${nut_have_libusb}"
-fi
-
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
 
 dnl ----------------------------------------------------------------------
@@ -946,7 +1038,7 @@ if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
 		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
-		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" || AC_MSG_ERROR([Can not detect 'srcdir']) ;;
 	esac
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
@@ -1842,8 +1934,16 @@ AC_ARG_WITH(augeas-lenses-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([augeas lenses directory requested but a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if ! test -s scripts/augeas/nutupsconf.aug.in ; then
+			AC_MSG_WARN([augeas lenses directory skipped because a non-trivial scripts/augeas/nutupsconf.aug.in was not provided by autogen.sh or dist archive])
+			auglensdir=""
+		fi
 		;;
 	no)
 		auglensdir=""
@@ -1914,8 +2014,16 @@ AC_ARG_WITH(udev-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/udev/nut-usbups.rules.in ; then
+			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+			udevdir=""
+		fi
 		;;
 	no)
 		udevdir=""
@@ -1944,8 +2052,16 @@ AC_ARG_WITH(devd-dir,
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
 		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([devd directory and USB driver support requested but non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+		fi
 		;;
 	auto)
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usbups.rules.in -a -s scripts/devd/nut-usb.conf.in ; then
+			AC_MSG_WARN([devd directory skipped because non-trivial scripts/devd/nut-usbups.rules.in and scripts/devd/nut-usb.conf.in were not provided by autogen.sh or dist archive])
+			devddir=""
+		fi
 		;;
 	no)
 		devddir=""
@@ -2773,6 +2889,15 @@ AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
+dnl On a related note to warning setup below, we limit the minimum C and C++
+dnl standard versions to ones we actively strive to support (C99 and C++11,
+dnl GNU dialects tend to work on more systems if supported by compiler there).
+dnl It is assumed that on very old systems whose compilers do not know these
+dnl standards (only support ANSI/C89/C90 or older), as well as for builds
+dnl that explicitly specify a CFLAGS="-std=..." (for GCC/CLANG toolkits),
+dnl nothing should get added to CFLAGS/CXXFLAGS by this method:
+NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD
+
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
@@ -2781,7 +2906,8 @@ dnl least-surprise default if caller did not specify any --enable-warnings.
 dnl Note: Currently the "gcc-minimal" mode below adapts to builds with
 dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
 dnl default "nut_warning_difficulty" and/or the case handling below.
-nut_warning_difficulty="minimal"
+dnl NOTE: Until X-Mas 2021, the default was "minimal" (now "medium")
+nut_warning_difficulty="medium"
 AC_MSG_CHECKING([whether to pre-set warnings])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
@@ -2825,6 +2951,11 @@ AC_MSG_RESULT(["${nut_enable_warnings}"])
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
 dnl # make a difference.
+dnl # Note that "medium" and "hard" settings tend to trigger warnings also
+dnl # from system headers, so we try to avoid them, using "-isystem path"
+dnl # pre-set in our `m4/nut_compiler_family.m4` script:
+dnl #    https://stackoverflow.com/questions/36355232/disable-certain-warnings-for-system-headers
+dnl # and "-Wno-system-headers" below.
 dnl # Some of the compiler flags (including those added by pkg-config of some
 dnl # third-party dependency packages) can upset older compiler releases which
 dnl # did not yet support those. Flags like "-Wno-unknown-warning" for GCC or
@@ -2851,24 +2982,35 @@ dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
 dnl #    float variables. Also variadic functions like printf() cast their
 dnl #    floating-point arguments into double (and small integer types into
 dnl #    "int") which then confuses pedantic checks of printf("%f", floatval).
+dnl # -Wno-conversion -- similarly for error: implicit conversion loses
+dnl #    floating-point precision: 'double' to 'float' [-Werror,-Wconversion]
+dnl #      max_output = atof(sValue);
 dnl # -Wno-cast-qual -- our code calls some library methods in ways which use
 dnl #    a "const char *" as a "char *" or vice-versa. Sometimes these method
 dnl #    signatures differ between dependency releases; sometimes they just
 dnl #    happened too hard to unravel cleanly and add more warnings.
 dnl #    This exclusion may be removed after common warnings are solved,
 dnl #    to allow progress on rectifying these cases next.
+dnl # -Wno-incompatible-pointer-types-discards-qualifiers -- our code often
+dnl #    defines (char*) as the type for struct fields and method arguments,
+dnl #    but initializes/passes (char[]) variables or fixed strings.
+dnl #    This makes at least clang-3.4 quite upset and noisy (seems newer
+dnl #    versions care less about this situation).
+dnl # -Wno-disabled-macro-expansion -- some system definitions of strncmp()
+dnl #    and other routines are in fact recursive macros. The -Weverything
+dnl #    mode of clang(-3.4) disables their handling, unless told otherwise.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
@@ -2878,6 +3020,8 @@ AS_CASE(["${nut_enable_warnings}"],
     [gcc-minimal], [
         dnl Builds with C89 (and aliases) are quite noisy for C99+ syntax used
         dnl in NUT. The minimal-warnings should not complain in these builds.
+        dnl To make matters worse, many modern OS and third-party library
+        dnl headers can not be used with "C90 + pedantic" mode of GCC, either.
         CFLAGS="${CFLAGS} -Wall -Wsign-compare"
         CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
         AS_CASE(["${CFLAGS}"],
@@ -2886,8 +3030,12 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ],
     [gcc-medium|gcc-hard], [
-        CFLAGS="${CFLAGS} -Wall -Wextra -Wsign-compare -pedantic"
-        CXXFLAGS="${CXXFLAGS} -Wall -Wextra"
+        CFLAGS="${CFLAGS} -Wno-system-headers -Wall -Wextra -Wsign-compare"
+        CXXFLAGS="${CXXFLAGS} -Wno-system-headers -Wall -Wextra"
+        AS_CASE(["${CFLAGS}"],
+            [*89*|*90*|*ansi*], [],
+            [CFLAGS="${CFLAGS} -pedantic"]
+        )
         ]
 )
 
@@ -2904,6 +3052,121 @@ AS_CASE(["${nut_enable_Werror}"],
 )
 AC_MSG_RESULT(["${nut_enable_Werror}"])
 
+dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
+dnl that are implemented as macros in system headers -- but only for some
+dnl sources like snmp-ups.c, nutscan-serial.c, scan_eaton_serial.c, serial.c,
+dnl scan_avahi.c, scan_xml_http.c, scan_snmp.c... (Seems they all refer to
+dnl -DNETSNMP_USE_INLINE among other options, and tends to happen more with
+dnl OpenSSL-enabled builds). Check if we like them?
+AC_CHECK_HEADER([string.h],
+    [AC_LANG_PUSH([C])
+     CFLAGS_SAVED="${CFLAGS}"
+     CFLAGS_BUILTIN_STR="-fno-builtin-strchr -fno-builtin-strcmp -fno-builtin-strncmp"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     AC_MSG_CHECKING([whether we should disable string built-ins])
+     dnl AC_DEFINE([HAVE_STRING_H], [1], [Define to 1 if you have <string.h>.])
+     AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[#include <string.h>
+            ]], [char *s = "v1", c = '%';
+if (strcmp(s, "v1") != 0) return 1;
+if (strchr(s, '1') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+            ])],
+        [CFLAGS="${CFLAGS_SAVED}"
+         AC_MSG_RESULT([no, they are not a problem])],
+        [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS}"
+         AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM(
+                [[#include <string.h>
+                ]], [char *s = "v1", c = '%';
+if (strcmp(s, "v1") != 0) return 1;
+if (strchr(s, '1') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+                ])],
+            [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS_SAVED}"
+             AC_MSG_RESULT([yes, this solves a problem])],
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-unreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+             AC_COMPILE_IFELSE(
+                [AC_LANG_PROGRAM(
+                    [[#include <string.h>
+                    ]], [char *s = "mibs", c = '%';
+/* Macro version of strcmp() has problems with strings shorter than
+ * 3 or 4 bytes, so to avoid nailing "-Warray-bounds" as well,
+ * here we just test for longer strings - existing NUT sources were
+ * fixed for this situation already */
+if (strcmp(s, "mibs") != 0) return 1;
+if (strchr(s, 'b') == NULL) return 1;
+if (strchr(s, c) != NULL) return 1
+/* no ";return 0;" here - autoconf adds one */
+                    ])],
+                [dnl CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code"
+                 dnl NOTE: Empirically, constrain to just LIBNETSNMP_CFLAGS
+                 CFLAGS="${CFLAGS_SAVED}"
+                 LIBLTDL_CFLAGS="${LIBLTDL_CFLAGS} -Wno-unreachable-code"
+                 LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-unreachable-code"
+                 AC_MSG_RESULT([no, but -Wno-unreachable-code solves the problem for this compiler])],
+                [CFLAGS="${CFLAGS_SAVED}"
+                 AC_MSG_RESULT([no, this does not solve the problem or is not supported])
+                ])
+            ])
+        ]
+     )
+     AC_LANG_POP([C])]
+)
+
+dnl Similar to above, for s_addr = htonl((ntohl(ip->start.s_addr) + 1));
+dnl which causes "shadowed local variable" as (re-)defined in nested macros.
+dnl Technically also needs to `#include <netinet/in.h>` for struct in_addr
+dnl but that should be pulled by inet.h anyway
+AC_CHECK_HEADER([arpa/inet.h],
+    [AC_LANG_PUSH([C])
+     CFLAGS_SAVED="${CFLAGS}"
+     CFLAGS_BUILTIN_NTOHL="-fno-builtin-htonl -fno-builtin-ntohl"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code -Wshadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     AC_MSG_CHECKING([whether we should disable htonl/ntohl built-ins])
+     dnl AC_DEFINE([HAVE_ARPA_INET_H], [1], [Define to 1 if you have <arpa/inet.h>.])
+     AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[#include <arpa/inet.h>
+            ]], [struct in_addr sin = {0};
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+/* no ";return 0;" here - autoconf adds one */
+            ])],
+        [CFLAGS="${CFLAGS_SAVED}"
+         AC_MSG_RESULT([no, they are not a problem])],
+        [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS}"
+         AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM(
+                [[#include <arpa/inet.h>
+                ]], [struct in_addr sin = {0};
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+/* no ";return 0;" here - autoconf adds one */
+                ])],
+            [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS_SAVED}"
+             AC_MSG_RESULT([yes, this solves a problem])],
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-shadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+             AC_COMPILE_IFELSE(
+                [AC_LANG_PROGRAM(
+                    [[#include <arpa/inet.h>
+                    ]], [struct in_addr sin = {0};
+sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
+                    ])],
+                [CFLAGS="${CFLAGS_SAVED}"
+                 LIBLTDL_CFLAGS="${LIBLTDL_CFLAGS} -Wno-shadow"
+                 LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-shadow"
+                 AC_MSG_RESULT([no, but -Wno-shadow solves the problem for this compiler])],
+                [CFLAGS="${CFLAGS_SAVED}"
+                 AC_MSG_RESULT([no, this does not solve the problem or is not supported])
+                ])
+            ])
+        ]
+     )
+     AC_LANG_POP([C])]
+)
+
 dnl Finally restore warnings settings that the caller might have provided in CFLAGS etc
 NUT_POP_WARNINGS
 
@@ -2916,10 +3179,14 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
     [AS_IF([test -n "${ac_pwd}" && test -d "${ac_pwd}"],
         [TOP_BUILDDIR="${ac_pwd}"],
         [TOP_BUILDDIR="`dirname "$0"`"
-         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`"]
+         TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
 AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+
+ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
+ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
+AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
@@ -2973,7 +3240,6 @@ AC_CONFIG_FILES([
  scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
- scripts/augeas/nutupsconf.aug
  scripts/augeas/nutupsdconf.aug
  scripts/augeas/nutupsdusers.aug
  scripts/augeas/nutupsmonconf.aug
@@ -2982,7 +3248,6 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
- scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -3010,7 +3275,6 @@ AC_CONFIG_FILES([
  scripts/Solaris/pkginfo
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
- scripts/udev/nut-usbups.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
@@ -3050,6 +3314,20 @@ m4_foreach_w([SCRIPTFILE], [
  dnl e.g. the brace below is empty and bracket gives verbatim varname
  dnl AC_MSG_NOTICE([Script: SCRIPTFILE brace:(${SCRIPTFILE}) bracket:([SCRIPTFILE])])
  AC_CONFIG_FILES(SCRIPTFILE, chmod +x "SCRIPTFILE")
+])
+
+AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
+m4_foreach_w([SCRIPTFILE], [
+ scripts/augeas/nutupsconf.aug
+ scripts/udev/nut-usbups.rules
+ scripts/devd/nut-usb.conf
+], [
+	AC_MSG_CHECKING([whether to generate SCRIPTFILE])
+	AS_IF([test -s SCRIPTFILE.in && ! test -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
+		[AC_MSG_RESULT(yes)
+		 AC_CONFIG_FILES(SCRIPTFILE)],
+		[AC_MSG_RESULT(no)]
+	)
 ])
 
 AC_OUTPUT
