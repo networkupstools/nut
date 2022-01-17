@@ -396,8 +396,8 @@ set | sort -n """
                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
@@ -519,8 +519,8 @@ set | sort -n """
                     'BUILD_TYPE': ['default-alldrv']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
@@ -557,8 +557,8 @@ set | sort -n """
                     'BUILD_TYPE': ['default-alldrv:no-distcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 // On some systems, pkg-config for net-snmp includes CFLAGS values not supported by gcc-4.9 and older
@@ -633,7 +633,7 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
@@ -671,7 +671,7 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
@@ -708,7 +708,7 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
@@ -744,7 +744,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
@@ -780,7 +780,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
                 allowedFailure: [
@@ -964,7 +964,11 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                     'BUILD_WARNFATAL=yes',
+                     // NOTE: "gcc-hard" warnings are still not as picky
+                     // as "clang-hard" and do not differ much from the
+                     // "gcc-medium" definition currently:
+                     'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
