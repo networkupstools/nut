@@ -57,6 +57,12 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.failFast = //true //
         false
+
+    // Note: this setting causes a lot of noise in build summary page and
+    // parent job definition (PR, branch...) overview page on Jenkins,
+    // by reporting dozens of lines for each analyzer ID ever published.
+    // Do not enable instant (non-delayed, "false" here) reports for the
+    // "master" and equivalent branch builds.
     dynacfgPipeline.delayedIssueAnalysis = //false //
         true
 
@@ -168,10 +174,16 @@ import org.nut.dynamatrix.*;
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
     }
 
-    if ( !( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) ) {
-        // else: For main branches we want all builds,
-        // to keep reference for warnings-ng up to date
+    if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
+        // For our main branches we want all builds in full,
+        // to keep reference for warnings-ng up to date, so do
+        // not limit ny appliesToChangedFilesRegex categories
 
+        // Be sure to not make noise in long-lived branches'
+        // overview pages by enabling quick analysis publishing
+        // (by default above, or in a Replay):
+        dynacfgPipeline.delayedIssueAnalysis = true
+    } else {
         // First list the building blocks as lists of files;
         // final regexes are arranged below:
         // TODO: Technically the slash should be the Path.Separator,
@@ -438,11 +450,12 @@ set | sort -n """
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          // NOTE: At the time of this posting, there are a handful of "high"
          // priority issues, and hundreds of lesser problems which may overlap
-         // or not with those reported by other analysers. So currently this
-         // source of unstable builds would be made part of "fightwarn" scope;
-         // it may make sense to separate the call into (making sure there are
-         // none) high-prop warnings as part of all builds, and checking for
-         // all still "expected" issues in fightwarn builds.
+         // or not with those reported by other analysers. Having issues to
+         // report does not mark the builds FAILED nor UNSTABLE however, so
+         // this should be safe to enable for all branches now. But it makes
+         // a lot of noise and (bug?) falls into common warnings category,
+         // not a separate analysis group as was intended by dynamatrix.
+         // So for now this applies only to fightwarn-related branches.
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
