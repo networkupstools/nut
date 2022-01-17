@@ -54,7 +54,7 @@ void get_config_vars(void);
 modbus_t *modbus_new(const char *port);
 
 /* reconnect upon communication error */
-void modbus_reconnect();
+void modbus_reconnect(void);
 
 /* modbus register read function */
 int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -1030,7 +1030,7 @@ modbus_t *modbus_new(const char *port)
 }
 
 /* reconnect to modbus server upon connection error */
-void modbus_reconnect()
+void modbus_reconnect(void)
 {
 	int rval;
 
