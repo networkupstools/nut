@@ -57,6 +57,12 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.failFast = //true //
         false
+
+    // Note: this setting causes a lot of noise in build summary page and
+    // parent job definition (PR, branch...) overview page on Jenkins,
+    // by reporting dozens of lines for each analyzer ID ever published.
+    // Do not enable instant (non-delayed, "false" here) reports for the
+    // "master" and equivalent branch builds.
     dynacfgPipeline.delayedIssueAnalysis = //false //
         true
 
@@ -168,10 +174,16 @@ import org.nut.dynamatrix.*;
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
     }
 
-    if ( !( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) ) {
-        // else: For main branches we want all builds,
-        // to keep reference for warnings-ng up to date
+    if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
+        // For our main branches we want all builds in full,
+        // to keep reference for warnings-ng up to date, so do
+        // not limit ny appliesToChangedFilesRegex categories
 
+        // Be sure to not make noise in long-lived branches'
+        // overview pages by enabling quick analysis publishing
+        // (by default above, or in a Replay):
+        dynacfgPipeline.delayedIssueAnalysis = true
+    } else {
         // First list the building blocks as lists of files;
         // final regexes are arranged below:
         // TODO: Technically the slash should be the Path.Separator,
