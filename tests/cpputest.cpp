@@ -30,7 +30,7 @@
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
     public:
-        virtual void startTest(CppUnit::Test *test);
+        virtual void startTest(CppUnit::Test *test) override;
 };
 
 // Implement out of class declaration to avoid

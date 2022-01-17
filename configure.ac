@@ -2280,6 +2280,15 @@ AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
+dnl On a related note to warning setup below, we limit the minimum C and C++
+dnl standard versions to ones we actively strive to support (C99 and C++11,
+dnl GNU dialects tend to work on more systems if supported by compiler there).
+dnl It is assumed that on very old systems whose compilers do not know these
+dnl standards (only support ANSI/C89/C90 or older), as well as for builds
+dnl that explicitly specify a CFLAGS="-std=..." (for GCC/CLANG toolkits),
+dnl nothing should get added to CFLAGS/CXXFLAGS by this method:
+NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD
+
 dnl Filter through known variants first, so automatic choices can be made.
 dnl Note that clang identifies as gcc-compatible so should be probed first.
 dnl TODO: Flip this default to "hard" when we clear existing codebase.
@@ -2444,7 +2453,7 @@ AC_CHECK_HEADER([string.h],
     [AC_LANG_PUSH([C])
      CFLAGS_SAVED="${CFLAGS}"
      CFLAGS_BUILTIN_STR="-fno-builtin-strchr -fno-builtin-strcmp -fno-builtin-strncmp"
-     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
      AC_MSG_CHECKING([whether we should disable string built-ins])
      dnl AC_DEFINE([HAVE_STRING_H], [1], [Define to 1 if you have <string.h>.])
      AC_COMPILE_IFELSE(
@@ -2470,7 +2479,7 @@ if (strchr(s, c) != NULL) return 1
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_STR} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS} -Wno-unreachable-code"
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-unreachable-code ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <string.h>
@@ -2487,6 +2496,7 @@ if (strchr(s, c) != NULL) return 1
                 [dnl CFLAGS="${CFLAGS_SAVED} -Wno-unreachable-code"
                  dnl NOTE: Empirically, constrain to just LIBNETSNMP_CFLAGS
                  CFLAGS="${CFLAGS_SAVED}"
+                 LIBLTDL_CFLAGS="${LIBLTDL_CFLAGS} -Wno-unreachable-code"
                  LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-unreachable-code"
                  AC_MSG_RESULT([no, but -Wno-unreachable-code solves the problem for this compiler])],
                 [CFLAGS="${CFLAGS_SAVED}"
@@ -2506,7 +2516,7 @@ AC_CHECK_HEADER([arpa/inet.h],
     [AC_LANG_PUSH([C])
      CFLAGS_SAVED="${CFLAGS}"
      CFLAGS_BUILTIN_NTOHL="-fno-builtin-htonl -fno-builtin-ntohl"
-     CFLAGS="${CFLAGS} ${LIBNETSNMP_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
+     CFLAGS="${CFLAGS} -Werror -Wunreachable-code -Wshadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
      AC_MSG_CHECKING([whether we should disable htonl/ntohl built-ins])
      dnl AC_DEFINE([HAVE_ARPA_INET_H], [1], [Define to 1 if you have <arpa/inet.h>.])
      AC_COMPILE_IFELSE(
@@ -2528,7 +2538,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                 ])],
             [CFLAGS="${CFLAGS_BUILTIN_NTOHL} ${CFLAGS_SAVED}"
              AC_MSG_RESULT([yes, this solves a problem])],
-            [CFLAGS="${CFLAGS} -Wno-shadow"
+            [CFLAGS="${CFLAGS_SAVED} -Werror -Wno-shadow ${LIBNETSNMP_CFLAGS} ${LIBLTDL_CFLAGS} ${LIBNEON_CFLAGS} ${LIBSSL_CFLAGS}"
              AC_COMPILE_IFELSE(
                 [AC_LANG_PROGRAM(
                     [[#include <arpa/inet.h>
@@ -2536,6 +2546,7 @@ sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
 sin.s_addr = htonl((ntohl(sin.s_addr) + 1))
                     ])],
                 [CFLAGS="${CFLAGS_SAVED}"
+                 LIBLTDL_CFLAGS="${LIBLTDL_CFLAGS} -Wno-shadow"
                  LIBNETSNMP_CFLAGS="${LIBNETSNMP_CFLAGS} -Wno-shadow"
                  AC_MSG_RESULT([no, but -Wno-shadow solves the problem for this compiler])],
                 [CFLAGS="${CFLAGS_SAVED}"

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2820 utf-8
+personal_ws-1.1 en 2821 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -2752,6 +2752,7 @@ vc
 vendorid
 verifySourceSig
 versa
+versioned
 victron
 victronups
 vid
