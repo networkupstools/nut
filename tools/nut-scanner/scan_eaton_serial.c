@@ -37,7 +37,12 @@
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
-#include <signal.h>
+#ifdef HAVE_SYS_SIGNAL_H
+# include <sys/signal.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
@@ -483,10 +488,10 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
-						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
 							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
-						case 0:         // thread exited
+						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
 								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
@@ -497,13 +502,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 							}
 							thread_array[i].active = FALSE;
 							break;
-						case EBUSY:     // actively running
+						case EBUSY:     /* actively running */
 							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
-						case EDEADLK:   // Errors with thread interactions... bail out?
-						case EINVAL:    // Errors with thread interactions... bail out?
-						default:        // new pthreads abilities?
+						case EDEADLK:   /* Errors with thread interactions... bail out? */
+						case EINVAL:    /* Errors with thread interactions... bail out? */
+						default:        /* new pthreads abilities? */
 							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
@@ -512,7 +517,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 				}
 
 				if (curr_threads >= max_threads) {
-					usleep (10000); // microSec's, so 0.01s here
+					usleep (10000); /* microSec's, so 0.01s here */
 				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);

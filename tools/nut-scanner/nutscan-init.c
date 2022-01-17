@@ -19,6 +19,7 @@
 /*! \file nutscan-init.c
     \brief init functions for nut scanner library
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <ArnaudQuette@Eaton.com>
 */
 
 #include "common.h"
@@ -75,7 +76,7 @@ size_t curr_threads = 0;
 
 size_t max_threads_netxml = 1021; /* experimental finding, see PR#1158 */
 size_t max_threads_oldnut = 1021;
-size_t max_threads_netsnmp = 0; // 10240;
+size_t max_threads_netsnmp = 0; /* 10240; */
 	/* per reports in PR#1158, some versions of net-snmp could be limited
 	 * to 1024 threads in the past; this was not found in practice.
 	 * Still, some practical limit can be useful (configurable?)
@@ -98,7 +99,24 @@ void nutscan_init(void)
 	 * after parsing command-line arguments. It calls nutscan_init() before
 	 * parsing CLI, to know about available libs and to set defaults below.
 	 */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Different platforms, different sizes, none fits all... */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 		upsdebugx(1,
 			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
 			__func__);
@@ -114,11 +132,15 @@ void nutscan_init(void)
 
 	char *libname = NULL;
 #ifdef WITH_USB
+ #if WITH_LIBUSB_1_0
+	libname = get_libname("libusb-1.0.so");
+ #else
 	libname = get_libname("libusb-0.1.so");
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
 		libname = get_libname("libusb.so");
 	}
+ #endif
 	if (libname) {
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);

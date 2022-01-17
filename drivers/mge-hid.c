@@ -768,10 +768,15 @@ static const char *nominal_output_voltage_fun(double value)
 			 * support both HV values */
 			if (country_code == COUNTRY_EUROPE_208)
 				break;
+			/* explicit fallthrough: */
+			goto fallthrough_value;
+
 		case 220:
 		case 230:
 		case 240:
+		fallthrough_value:
 			break;
+
 		default:
 			return NULL;
 		}

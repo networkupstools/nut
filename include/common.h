@@ -33,9 +33,23 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef HAVE_SYS_SIGNAL_H
+#include <sys/signal.h>
+#endif
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+
 #include <stdlib.h>
-#include <string.h>
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>	/* for strncasecmp() and strcasecmp() */
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>	/* for strdup() and many others */
+#endif
+
 #include <syslog.h>
 #include <unistd.h>
 #include <assert.h>

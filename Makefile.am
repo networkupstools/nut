@@ -239,10 +239,29 @@ CPPCHECK = @CPPCHECK@
 if HAVE_CPPCHECK
 cppcheck: cppcheck-cxx11.xml cppcheck-c99.xml
 
-cppcheck-cxx11.xml: $(top_srcdir)/*.cpp $(top_srcdir)/*/*.cpp $(top_srcdir)/*/*/*.cpp $(top_srcdir)/*.h $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.h
+# Let the analysis get regenerated due to any change in source;
+# but note that with our different make implementations to support,
+# we can not either $(shell find ...) nor blindly say e.g. *.cpp
+# for each FS structure layer because e.g. there are no ./*.cpp
+# in the root dir of the codebase (and so make complains there is
+# `No rule to make target `*.cpp', needed by `cppcheck-cxx11.xml'`)
+#
+# Note that the actual `cppcheck` scan finds all files it likes
+# (so if CPPCHECK_SRC_* misses something, it just won't trigger
+# automagically a rebuild of the XML in developer working cycles).
+CPPCHECK_SRC_H = $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.h
+# CPPCHECK_SRC_H += $(top_srcdir)/*.h
+
+CPPCHECK_SRC_C = $(top_srcdir)/*/*.c $(top_srcdir)/*/*/*.c
+# CPPCHECK_SRC_C += $(top_srcdir)/*.cpp
+
+CPPCHECK_SRC_CXX = $(top_srcdir)/*/*.cpp
+# CPPCHECK_SRC_CXX += $(top_srcdir)/*.cpp $(top_srcdir)/*/*/*.cpp
+
+cppcheck-cxx11.xml: $(CPPCHECK_SRC_CXX) $(CPPCHECK_SRC_H)
 	$(CPPCHECK) --std=c++11 --enable=all --inconclusive --xml --xml-version=2 . 2>$@
 
-cppcheck-c99.xml: $(top_srcdir)/*.c $(top_srcdir)/*/*.c $(top_srcdir)/*/*/*.c $(top_srcdir)/*.h $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.h
+cppcheck-c99.xml: $(CPPCHECK_SRC_C) $(CPPCHECK_SRC_H)
 	$(CPPCHECK) --std=c99 --enable=all --inconclusive --xml --xml-version=2 . 2>$@
 else !HAVE_CPPCHECK
 cppcheck:

@@ -20,10 +20,20 @@
  *
  */
 
+#include "config.h"	/* must be first */
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
+
+#ifdef HAVE_STRING_H
+#include <string.h>	/* for strdup() and many others */
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>	/* for strncasecmp() and strcasecmp() */
+#endif
+
 #include <stdarg.h>	/* get the va_* routines */
 
 #include "nut_stdint.h"
@@ -316,7 +326,7 @@ int	str_to_ushort_strict(const char *string, unsigned short *number, const int b
 
 int	str_to_int(const char *string, int *number, const int base)
 {
-	long	num; // long >= int, make sure we fit well
+	long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -337,7 +347,7 @@ int	str_to_int(const char *string, int *number, const int base)
 
 int	str_to_int_strict(const char *string, int *number, const int base)
 {
-	long	num; // long >= int, make sure we fit well
+	long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -358,7 +368,7 @@ int	str_to_int_strict(const char *string, int *number, const int base)
 
 int	str_to_uint(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num; // long >= int, make sure we fit well
+	unsigned long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -376,7 +386,7 @@ int	str_to_uint(const char *string, unsigned int *number, const int base)
 
 int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num; // long >= int, make sure we fit well
+	unsigned long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 

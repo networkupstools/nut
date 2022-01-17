@@ -232,8 +232,8 @@ static int device_template_offset = -1;
 /* Forward functions declarations */
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
-int extract_template_number(unsigned long template_type, const char* varname);
-unsigned long get_template_type(const char* varname);
+int extract_template_number(snmp_info_flags_t template_type, const char* varname);
+snmp_info_flags_t get_template_type(const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -256,8 +256,10 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
-// FIXME: daisychain commands support!
+
+			/* FIXME: daisychain commands support! */
 			su_addcmd(su_info_p);
+
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -414,7 +416,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -498,7 +500,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -1616,7 +1618,7 @@ static void disable_transfer_oids(void)
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
-	char info_type[128]; // We tweak incoming "su_info_p->info_type" value in some cases
+	char info_type[128]; /* We tweak incoming "su_info_p->info_type" value in some cases */
 
 /* FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?),
  *and same macro or sizeof(info_type) below? */
@@ -1936,7 +1938,7 @@ bool_t load_mib2nut(const char *mib)
 		"proper MIB for device [%s] (host %s)",
 		__func__, mib,
 		upsname ? upsname : device_name,
-		device_path // the "port" from config section is hostname/IP for networked drivers
+		device_path /* the "port" from config section is hostname/IP for networked drivers */
 		);
 
 	/* First, try to match against sysOID, if no MIB was provided.
@@ -2241,7 +2243,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 
 	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
-	unsigned long template_type = get_template_type(su_info_p->info_type);
+	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
 	if (!su_info_p->OID)
 		return base_index;
@@ -2265,9 +2267,9 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			break;
 		default:
 			/* we should never fall here! */
-			upsdebugx(3, "%s: unknown template type '%lu' for %s",
+			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
 				__func__, template_type, su_info_p->info_type);
-		}
+	}
 	base_index = template_index_base;
 
 	if (template_index_base == -1)
@@ -2517,7 +2519,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 							&tmp_buf[0], current_device_number, cur_nut_index);
 					}
 					else {
-						// FIXME: daisychain-whole, what to do?
+						/* FIXME: daisychain-whole, what to do? */
 						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
 					}
@@ -2579,8 +2581,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 					if (current_device_number > 0) {
 						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number + device_template_offset);
 					}
-					//else
-					// FIXME: daisychain-whole, what to do?
+					/*else
+					 * FIXME: daisychain-whole, what to do?
+					 */
 				}
 				else {
 					/* Special processing for daisychain:
@@ -2641,7 +2644,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 /* Return the type of template, according to a variable name.
  * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
-unsigned long get_template_type(const char* varname)
+snmp_info_flags_t get_template_type(const char* varname)
 {
 	if (!strncmp(varname, "outlet.group", 12)) {
 		upsdebugx(4, "outlet.group template");
@@ -2667,7 +2670,7 @@ unsigned long get_template_type(const char* varname)
 
 /* Extract the id number of an instantiated template.
  * Example: return '1' for type = 'outlet.1.desc', -1 if unknown */
-int extract_template_number(unsigned long template_type, const char* varname)
+int extract_template_number(snmp_info_flags_t template_type, const char* varname)
 {
 	const char* item_number_ptr = NULL;
 	int item_number = -1;
@@ -2877,7 +2880,7 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 	char tmpOID[SU_INFOSIZE];
 	char tmpInfo[SU_INFOSIZE];
 	long tmpValue;
-	unsigned long phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
+	snmp_info_flags_t phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
 
 	/* Phase specific data */
 	if (!strncmp(type, "input", 5)) {
@@ -3139,7 +3142,7 @@ bool_t snmp_ups_walk(int mode)
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
-					(current_device_number == 1)?"master":"slave"); // FIXME: daisychain
+					(current_device_number == 1)?"master":"slave"); /* FIXME: daisychain */
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
@@ -3205,7 +3208,7 @@ bool_t snmp_ups_walk(int mode)
 						{
 							if (current_device_number == 0)
 							{
-								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
+								su_setinfo(su_info_p, NULL); /* FIXME: daisychain-whole, what to do? */
 							} else {
 								status = process_template(mode, "device", su_info_p);
 							}
@@ -3275,16 +3278,14 @@ bool_t snmp_ups_walk(int mode)
 					status = process_template(mode, "ambient", su_info_p);
 			}
 			else {
-/*
-//				if (daisychain_enabled == TRUE) {
-//					status = process_template(mode, "device", su_info_p);
-//				}
-//				else {
-*/
-					/* get and process this data, including daisychain adaptation */
+/*				if (daisychain_enabled == TRUE) {
+					status = process_template(mode, "device", su_info_p);
+				}
+				else {
+*/					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
 /*
-//				}
+				}
 */
 			}
 		}	/* for (su_info_p... */
@@ -3566,7 +3567,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int cmd_offset = 0;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
-	unsigned long vartype = 0;
+	snmp_info_flags_t vartype = 0;
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
