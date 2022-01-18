@@ -330,6 +330,35 @@ ccache_stats() {
     return 0
 }
 
+check_gitignore() {
+    # Optional envvars from caller: FILE_DESCR FILE_REGEX GIT_ARGS
+    local BUILT_TARGETS="$@"
+
+    [ -n "${FILE_DESCR-}" ] || FILE_DESCR="some"
+    [ -n "${FILE_REGEX-}" ] || FILE_REGEX='.*'
+    [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
+    [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
+
+    echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
+    if [ ! -e .git ]; then
+        echo "WARNING: Skipping the GitIgnores check after '$BUILT_TARGETS' because there is no `pwd`/.git anymore" >&2
+        return 0
+    fi
+
+    # One invocation should report to log:
+    git status $GIT_ARGS -s | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}" || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    echo "==="
+
+    # Another invocation checks that there was nothing to complain about:
+    if [ -n "`git status --ignored -s | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}"`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+        git diff || true
+        echo "==="
+        return 1
+    fi
+    return 0
+}
+
 can_clean_check() {
     if [ "${DO_CLEAN_CHECK-}" = "no" ] ; then
         # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
@@ -360,20 +389,7 @@ optional_maintainer_clean_check() {
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
-        echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
-        if [ ! -e .git ]; then
-            echo "WARNING: Skipping maintainer-clean check because there is no `pwd`/.git anymore" >&2
-            return 0
-        fi
-        git status --ignored -s | egrep -v '^.. \.ci.*\.log.*' || echo "WARNING: Could not query git repo while in `pwd`" >&2
-        echo "==="
-
-        if [ -n "`git status --ignored -s | egrep -v '^.. \.ci.*\.log.*'`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-            git diff || true
-            echo "==="
-            return 1
-        fi
+        GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
     return 0
 }
@@ -397,20 +413,7 @@ optional_dist_clean_check() {
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
-        echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
-        if [ ! -e .git ]; then
-            echo "WARNING: Skipping distclean check because there is no `pwd`/.git anymore" >&2
-            return 0
-        fi
-        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
-        echo "==="
-
-        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-            git diff || true
-            echo "==="
-            return 1
-        fi
+        GIT_ARGS="--ignored" check_gitignore "distclean" || return
     fi
     return 0
 }
@@ -871,6 +874,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             export DISTCHECK_FLAGS
             $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
+            # TODO: Refactor with `SOME_ARGS=... check_gitignore() || exit` ?
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
             echo "==="
@@ -1282,15 +1286,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
-    echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
-    git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
-    echo "==="
-    if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-        echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
-        git diff || true
-        echo "==="
-        exit 1
-    fi
+    check_gitignore "all" || exit
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DESTDIR="$INST_PREFIX" install
@@ -1308,16 +1304,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         export DISTCHECK_FLAGS
         $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
-        echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
-        git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
-        echo "==="
-
-        if [ -n "`git status -s`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-            echo "FATAL: There are changes in some files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file!" >&2
-            git diff || true
-            echo "==="
-            exit 1
-        fi
+        check_gitignore "distcheck" || exit
         )
     fi
 
