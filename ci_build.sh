@@ -292,7 +292,9 @@ build_to_only_catch_errors_target() {
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can) for '$@' ..."; \
       ( case "${CI_PARMAKE_VERBOSITY}" in
         silent)
-          $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 ;;
+          # Note: stderr would still expose errors and warnings (needed for
+          # e.g. CI analysis of coding issues, even if not treated as fatal)
+          $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null ;;
         quiet)
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" ;;
         silent)
