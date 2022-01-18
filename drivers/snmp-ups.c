@@ -1823,15 +1823,28 @@ bool_t load_mib2nut(const char *mib)
 			upsdebugx(2, "%s: trying classic sysOID matching method with '%s' mib",
 				__func__, mib2nut[i]->mib_name);
 
+			/* Classic method: test an OID specific to this MIB */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
+
 			/* Device might not support this MIB, but we want to
 			 * track that the name string is valid for diags below
 			 */
 			if (!mibIsAuto) {
 				mibSeen = TRUE;
 			}
-
-			/* Classic method: test an OID specific to this MIB */
-			snmp_info = mib2nut[i]->snmp_info;
 
 			if (match_model_OID() != TRUE)
 			{
