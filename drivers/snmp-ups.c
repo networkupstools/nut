@@ -1813,10 +1813,12 @@ bool_t load_mib2nut(const char *mib)
 	{
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
+			upsdebugx(4, "%s: checking against mapping table entry #%d \"%s\"",
+				__func__, i, mib2nut[i]->mib_name);
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
 				upsdebugx(2, "%s: skip the \"%s\" entry which "
-					" is neither \"auto\" nor a name in the mapping table",
+					"is neither \"auto\" nor a name in the mapping table",
 					__func__, mib);
 				continue;
 			}
