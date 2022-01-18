@@ -221,36 +221,41 @@ static void show_usage()
 		{ int comma = 0;
 		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (");
-#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+#if (defined WITH_SNMP) && (defined NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol)
+/* Note: NUT_HAVE_LIBNETSNMP_* macros are not AC_DEFINE'd when libsnmp was
+ * completely not detected at configure time, so "#if" is not a pedantically
+ * correct test (unknown macro may default to "0" but is not guaranteed to).
+ */
+# if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"MD5"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA256"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA384"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"SHA512"
 			);
-#endif
+# endif
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for authenticated SNMPv3 messages (default=MD5 if available)\n"
@@ -263,32 +268,33 @@ static void show_usage()
 		{ int comma = 0;
 		NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (");
-#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+# if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"DES"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES"
 			);
-#endif
-#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
-# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+# endif
+# if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
+#  if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES192"
 			);
-# endif
-# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+#  endif
+#  if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
 		printf("%s%s",
 			(comma++ ? ", " : ""),
 			"AES256"
 			);
-# endif
-#endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#  endif
+# endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
+#endif /* built WITH_SNMP */
 		printf("%s%s",
 			(comma ? "" : "none supported"),
 			") used for encrypted SNMPv3 messages (default=DES if available)\n"

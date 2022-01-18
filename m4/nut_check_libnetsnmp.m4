@@ -125,7 +125,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(init_snmp, [], [nut_have_libnetsnmp=no])
 
-	if test "${nut_have_libnetsnmp}" = "yes"; then
+	AS_IF([test "${nut_have_libnetsnmp}" = "yes"], [
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
 		LIBNETSNMP_LIBS="${LIBS}"
 
@@ -294,7 +294,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 0, [Variable or macro by this name is not resolvable])
 			])
 
-	fi
+	])
 	AC_LANG_POP([C])
 
 	dnl restore original CFLAGS and LIBS

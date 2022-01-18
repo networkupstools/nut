@@ -43,40 +43,40 @@ public:
 	 * Construct a nut MemClientStub object.
 	 */
 	MemClientStub() {}
-	~MemClientStub() {}
+	~MemClientStub() override {}
 
-	virtual void authenticate(const std::string& user, const std::string& passwd) {
+	virtual void authenticate(const std::string& user, const std::string& passwd) override {
 		NUT_UNUSED_VARIABLE(user);
 		NUT_UNUSED_VARIABLE(passwd);
 	}
-	virtual void logout() {}
+	virtual void logout() override {}
 
-	virtual Device getDevice(const std::string& name);
-	virtual std::set<std::string> getDeviceNames();
-	virtual std::string getDeviceDescription(const std::string& name);
+	virtual Device getDevice(const std::string& name) override;
+	virtual std::set<std::string> getDeviceNames() override;
+	virtual std::string getDeviceDescription(const std::string& name) override;
 
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
-	virtual ListValue getDeviceVariableValue(const std::string& dev, const std::string& name);
-	virtual ListObject getDeviceVariableValues(const std::string& dev);
-	virtual ListDevice getDevicesVariableValues(const std::set<std::string>& devs);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values);
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev) override;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev) override;
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name) override;
+	virtual ListValue getDeviceVariableValue(const std::string& dev, const std::string& name) override;
+	virtual ListObject getDeviceVariableValues(const std::string& dev) override;
+	virtual ListDevice getDevicesVariableValues(const std::set<std::string>& devs) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values) override;
 
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
 
- 	virtual void deviceLogin(const std::string& dev);
-	virtual void deviceMaster(const std::string& dev);
-	virtual void deviceForcedShutdown(const std::string& dev);
-	virtual int deviceGetNumLogins(const std::string& dev);
+	virtual void deviceLogin(const std::string& dev) override;
+	virtual void deviceMaster(const std::string& dev) override;
+	virtual void deviceForcedShutdown(const std::string& dev) override;
+	virtual int deviceGetNumLogins(const std::string& dev) override;
 
-	virtual TrackingResult getTrackingResult(const TrackingID& id);
+	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
-	virtual bool isFeatureEnabled(const Feature& feature);
-	virtual void setFeature(const Feature& feature, bool status);
+	virtual bool isFeatureEnabled(const Feature& feature) override;
+	virtual void setFeature(const Feature& feature, bool status) override;
 
 private:
 	ListDevice _values;
