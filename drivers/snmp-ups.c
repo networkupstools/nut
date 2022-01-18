@@ -2041,10 +2041,19 @@ bool_t load_mib2nut(const char *mib)
 			snmp_info = mib2nut[i]->snmp_info;
 
 			if (snmp_info == NULL) {
+#if WITH_DMFMIB
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\""
+					", did you load DMF file(s) from correct directory? "
+					"(used '%s')",
+					__func__, i, mib2nut[i]->mib_name, dmf_dir
+					);
+#else /* not WITH_DMFMIB */
 				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
 					"for mapping table entry #%d \"%s\"",
 					__func__, i, mib2nut[i]->mib_name
 					);
+#endif
 				continue;
 			}
 			else if (snmp_info[0].info_type == NULL) {
