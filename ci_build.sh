@@ -842,13 +842,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # include all needed pre-generated files to rely less on OS facilities.
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
+        echo "=== Starting initial clean-up (from old build products)"
         ${MAKE} maintainer-clean -k -s || ${MAKE} distclean -k -s || true
+        echo "=== Finished initial clean-up"
     fi
+
     if [ "$CI_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
         $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
+
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
@@ -1324,7 +1328,9 @@ bindings)
     echo ""
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
+        echo "=== Starting initial clean-up (from old build products)"
         ${MAKE} realclean -k -s || true
+        echo "=== Finished initial clean-up"
     fi
 
     ./autogen.sh
