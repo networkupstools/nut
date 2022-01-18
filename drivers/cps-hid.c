@@ -273,7 +273,7 @@ static int cps_claim(HIDDevice_t *hd) {
  * are used for the Output Voltage Usage Item limits.
  * Additionally the Input Voltage LogMax is set incorrectly for EU models.
  * This corrects them by finding and applying fixed
- * voltage limits as being more appropriate. 
+ * voltage limits as being more appropriate.
  */
 
 static HIDData_t *FindReport(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t node)
@@ -323,7 +323,7 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		if ((pData=FindReport(pDesc_arg, 18, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
 			long output_logmin = pData->LogMin;
 			long output_logmax = pData->LogMax;
-			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld", 
+			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld",
 					output_logmin, output_logmax);
 
 			if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
@@ -334,12 +334,12 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				if ((pData=FindReport(pDesc_arg, 15, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
 					long input_logmin = pData->LogMin;
 					long input_logmax = pData->LogMax;
-					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld", 
+					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld",
 							input_logmin, input_logmax);
 					upsdebugx(3, "Fixing Report Descriptor. Set Input Voltage LogMin = %d, LogMax = %d",
 							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
 				}
-			
+
 				return 1;
 			}
 		}
