@@ -64,14 +64,26 @@ AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
 dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
 dnl the -Werror below is needed to detect "warnings" about unsupported options
     COMPILERFLAG="$1"
+
+dnl We also try to run an actual build since tools called from that might
+dnl complain if they are forwarded unknown flags accepted by the front-end.
+    SAVED_CFLAGS="$CFLAGS"
+    SAVED_CXXFLAGS="$CXXFLAGS"
+
     AC_LANG_PUSH([C])
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CFLAGS="$CFLAGS ${COMPILERFLAG}"], [], [-Werror])
+        [CFLAGS="$CFLAGS ${COMPILERFLAG}"
+         AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
+            [], [CFLAGS="$SAVED_CFLAGS"])
+        ], [], [-Werror])
     AC_LANG_POP([C])
 
     AC_LANG_PUSH([C++])
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
-        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"], [], [-Werror])
+        [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"
+         AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
+            [], [CXXFLAGS="$SAVED_CXXFLAGS"])
+        ], [], [-Werror])
     AC_LANG_POP([C++])
 ])
 
@@ -109,7 +121,11 @@ dnl    ])
         ])
     ], [AC_MSG_NOTICE([NOT checking for options to request colorized compiler output (pass --enable-Wcolor for that)])])
 
-    dnl Last check for this to avoid accepting anything regardless of support:
+    dnl Last check for this to avoid accepting anything regardless of support.
+    dnl NOTE that some toolkit versions accept this option blindly and without
+    dnl really supporting it (but not erroring out on it, either):
+    dnl    cc1: note: unrecognized command-line option '-Wno-unknown-warning-option'
+    dnl         may have been intended to silence earlier diagnostics
     NUT_CHECK_COMPILE_FLAG([-Wno-unknown-warning-option])
 
 dnl # Older "brute-forced" settings:
