@@ -1343,6 +1343,9 @@ bindings)
     #./configure
     ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
 
+    # NOTE: Currently parallel builds are expected to succeed (as far
+    # as recipes are concerned), and the builds without a BUILD_TYPE
+    # are aimed at developer iterations so not tweaking verbosity.
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
     $MAKE check
