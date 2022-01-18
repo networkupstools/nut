@@ -82,6 +82,17 @@ esac
 [ -n "$MAKE" ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
+[ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
+[ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
+
+# For two-phase builds (quick parallel make first, sequential retry if failed)
+# how verbose should that first phase be? Nothing, automake list of ops, CLIs?
+# See build_to_only_catch_errors_target() for a consumer of this setting.
+case "${CI_PARMAKE_VERBOSITY-}" in
+    silent|quiet|verbose|default) ;;
+    *) CI_PARMAKE_VERBOSITY=silent ;;
+esac
+
 # Set up the parallel make with reasonable limits, using several ways to
 # gather and calculate this information. Note that "psrinfo" count is not
 # an honest approach (there may be limits of current CPU set etc.) but is
@@ -277,10 +288,20 @@ build_to_only_catch_errors_target() {
         build_to_only_catch_errors_target all ; return $?
     fi
 
-    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-      $CI_TIME $MAKE VERBOSE=0 V=0 -s -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
-    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-      $CI_TIME $MAKE VERBOSE=1 "$@" -k ) || return $?
+    # Sub-shells to avoid crashing with "unhandled" faults in "set -e" mode:
+    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can) for '$@' ..."; \
+      ( case "${CI_PARMAKE_VERBOSITY}" in
+        silent)
+          $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null 2>&1 ;;
+        quiet)
+          $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" ;;
+        silent)
+          $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE -k $PARMAKE_FLAGS "$@" ;;
+        default)
+          $CI_TIME $MAKE -k $PARMAKE_FLAGS "$@" ;;
+      esac ) && echo "`date`: SUCCESS" ; ) || \
+    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration) for '$@'..."; \
+      $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE "$@" -k ) || return $?
     return 0
 }
 
@@ -288,7 +309,7 @@ build_to_only_catch_errors() {
     build_to_only_catch_errors_target all || return $?
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
-    $CI_TIME $MAKE VERBOSE=0 V=0 -s check \
+    $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
     && echo "`date`: SUCCESS" \
     || return $?
 
@@ -323,7 +344,7 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
         echo "=== Are GitIgnores good after '$MAKE maintainer-clean'? (should have no output below)"
         if [ ! -e .git ]; then
@@ -360,7 +381,7 @@ optional_dist_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
         echo "=== Are GitIgnores good after '$MAKE distclean'? (should have no output below)"
         if [ ! -e .git ]; then
@@ -806,7 +827,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
     if [ -s Makefile ]; then
-        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
+        # Let initial clean-up be at default verbosity
+        ${MAKE} maintainer-clean -k -s || ${MAKE} distclean -k -s || true
     fi
     if [ "$CI_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
@@ -836,7 +858,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+            $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
             git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
@@ -862,14 +884,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE -s VERBOSE=0 V=0 -s SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
+              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS spellcheck >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
-              $CI_TIME $MAKE -s VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE SPELLCHECK_ERROR_FATAL=yes spellcheck
               # Make end of log useful:
               echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
-              $CI_TIME $MAKE -s VERBOSE=0 V=0 SPELLCHECK_ERROR_FATAL=yes spellcheck
+              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes spellcheck
             )
             exit $?
             ;;
@@ -885,7 +907,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ### these scripts in production usage of the resulting packages.
             ### Note: no PARMAKE_FLAGS here - better have this output readably
             ### ordered in case of issues.
-            ( $CI_TIME $MAKE VERBOSE=1 shellcheck check-scripts-syntax )
+            ( $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE shellcheck check-scripts-syntax )
             exit $?
             ;;
         "default-all-errors")
@@ -1010,7 +1032,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # would just re-evaluate `configure` to update the
                 # Makefile to remove it and other generated data.
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE distclean -k || true
+                #$MAKE $MAKE_FLAGS_QUIET distclean -k || true
 
                 echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
@@ -1088,7 +1110,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1206,7 +1228,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1248,10 +1270,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ;;
     esac
 
-    ( echo "`date`: Starting the parallel build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 -k $PARMAKE_FLAGS all; ) || \
-    ( echo "`date`: Starting the sequential build attempt..."; \
-      $CI_TIME $MAKE VERBOSE=1 all )
+    # Quiet parallel make, redo loud sequential if that failed
+    build_to_only_catch_errors_target all
 
     echo "=== Are GitIgnores good after '$MAKE all'? (should have no output below)"
     git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
@@ -1264,7 +1284,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
-    $CI_TIME $MAKE VERBOSE=1 DESTDIR="$INST_PREFIX" install
+    $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DESTDIR="$INST_PREFIX" install
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
         find "$INST_PREFIX" -ls || true
 
@@ -1277,7 +1297,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
-        $CI_TIME $MAKE VERBOSE=1 DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
+        $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
         echo "=== Are GitIgnores good after '$MAKE distcheck'? (should have no output below)"
         git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
@@ -1310,7 +1330,8 @@ bindings)
     fi
     echo ""
     if [ -s Makefile ]; then
-        ${MAKE} realclean -k || true
+        # Let initial clean-up be at default verbosity
+        ${MAKE} realclean -k -s || true
     fi
 
     ./autogen.sh
