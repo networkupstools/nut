@@ -843,7 +843,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} maintainer-clean -k -s || ${MAKE} distclean -k -s || true
+        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
         echo "=== Finished initial clean-up"
     fi
 
@@ -1329,7 +1329,7 @@ bindings)
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} realclean -k -s || true
+        ${MAKE} realclean -k || true
         echo "=== Finished initial clean-up"
     fi
 
