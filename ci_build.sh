@@ -316,6 +316,20 @@ build_to_only_catch_errors() {
     return 0
 }
 
+ccache_stats() {
+    local WHEN="$1"
+    [ -n "$WHEN" ] || WHEN="some time around the"
+    if [ "$HAVE_CCACHE" = yes ]; then
+        if [ -d "$CCACHE_DIR" ]; then
+            echo "CCache stats $WHEN build:"
+            ccache -s || true
+        else
+            echo "WARNING: CCache stats $WHEN build: tool is enabled, but CCACHE_DIR='$CCACHE_DIR' was not found now" >&2
+        fi
+    fi
+    return 0
+}
+
 can_clean_check() {
     if [ "${DO_CLEAN_CHECK-}" = "no" ] ; then
         # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
@@ -461,10 +475,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
-    if [ "$HAVE_CCACHE" = yes ] && [ -d "$CCACHE_DIR" ]; then
-        echo "CCache stats before build:"
-        ccache -s || true
-    fi
+    ccache_stats "before"
 
     CONFIG_OPTS=()
     COMMON_CFLAGS=""
@@ -867,10 +878,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
                 exit 1
             fi
-            if [ "$HAVE_CCACHE" = yes ]; then
-                echo "CCache stats after build:"
-                ccache -s
-            fi
+
+            ccache_stats "after"
 
             optional_maintainer_clean_check || exit
 
@@ -1314,10 +1323,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     optional_maintainer_clean_check || exit
 
-    if [ "$HAVE_CCACHE" = yes ]; then
-        echo "CCache stats after build:"
-        ccache -s
-    fi
+    ccache_stats "after"
     ;;
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
