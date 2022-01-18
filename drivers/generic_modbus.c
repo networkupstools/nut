@@ -25,8 +25,8 @@
 #include <modbus.h>
 #include <timehead.h>
 
-#define DRIVER_NAME	"NUT Generic Modbus driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_NAME "NUT Generic Modbus driver"
+#define DRIVER_VERSION  "0.02"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -41,12 +41,20 @@ static int ser_data_bit = DATA_BIT;                        /* serial port data b
 static int ser_stop_bit = STOP_BIT;                        /* serial port stop bit */
 static int rio_slave_id = MODBUS_SLAVE_ID;                 /* set device ID to default value */
 static int FSD_pulse_duration = SHTDOWN_PULSE_DURATION;    /* set the FSD pulse duration */
+static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;         /* set the modbus response time out (s) */
+static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;       /* set the modbus response time out (us) */
+static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;         /* set the modbus byte time out (us) */
+static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;       /* set the modbus byte time out (us) */
+
 
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
 
 /* create a new modbus context based on connection type (serial or TCP) */
 modbus_t *modbus_new(const char *port);
+
+/* reconnect upon communication error */
+void modbus_reconnect(void);
 
 /* modbus register read function */
 int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -100,24 +108,69 @@ void upsdrv_initups(void)
 
 	get_config_vars();
 
-	/* open serial port */
+	/* open communication port */
 	mbctx = modbus_new(device_path);
 	if (mbctx == NULL) {
-		fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open serial port context");
+		fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open communication port context");
 	}
 
 	/* set slave ID */
-	rval = modbus_set_slave(mbctx, rio_slave_id);	/* slave ID */
+	rval = modbus_set_slave(mbctx, rio_slave_id);
 	if (rval < 0) {
 		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d\n", rio_slave_id);
+		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", rio_slave_id);
 	}
 
 	/* connect to modbus device  */
 	if (modbus_connect(mbctx) == -1) {
 		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s\n", modbus_strerror(errno));
+		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: error(%s)", modbus_strerror(errno));
 	}
+
+	/* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{
+		/* Older libmodbus API (with timeval), and we have
+		 * checked at configure time that we can put uint32_t
+		 * into its fields. They are probably "long" on many
+		 * systems as respectively time_t and suseconds_t -
+		 * but that is not guaranteed; for more details see
+		 * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html
+		 */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_resp_to_s;
+		to.tv_usec = mod_resp_to_us;
+		/* void */ modbus_set_response_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#else
+# error "Can not use libmodbus API for timeouts"
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	/* set modbus byte time out */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_byte_to_s;
+		to.tv_usec = mod_byte_to_us;
+		/* void */ modbus_set_byte_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 }
 
 /* update UPS signal state */
@@ -146,6 +199,7 @@ void upsdrv_updateinfo(void)
 		} else {
 			status_set("OB");
 			online = 0;
+
 			/* if DISCHRG state is not mapped to a contact and UPS is on
 			 * batteries set status to DISCHRG state */
 			if (sigar[DISCHRG_T].addr == NOTUSED) {
@@ -173,9 +227,9 @@ void upsdrv_updateinfo(void)
 	}
 
 	/*
-	* update UPS status regarding CHARGING state via HB. HB is usually
-	* mapped to "ready" contact when closed indicates a charging state > 85%
-	*/
+	 * update UPS status regarding CHARGING state via HB. HB is usually
+	 * mapped to "ready" contact when closed indicates a charging state > 85%
+	 */
 	if (sigar[HB_T].addr != NOTUSED) {
 		rval = get_signal_state(HB_T);
 		upsdebugx(2, "HB value: %d", rval);
@@ -305,6 +359,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "ser_data_bit", "serial port data bit");
 	addvar(VAR_VALUE, "ser_stop_bit", "serial port stop bit");
 	addvar(VAR_VALUE, "rio_slave_id", "RIO modbus slave ID");
+	addvar(VAR_VALUE, "mod_resp_to_s", "modbus response timeout (s)");
+	addvar(VAR_VALUE, "mod_resp_to_us", "modbus response timeout (us)");
+	addvar(VAR_VALUE, "mod_byte_to_s", "modbus byte timeout (s)");
+	addvar(VAR_VALUE, "mod_byte_to_us", "modbus byte timeout (us)");
 	addvar(VAR_VALUE, "OL_addr", "modbus address for OL state");
 	addvar(VAR_VALUE, "OB_addr", "modbus address for OB state");
 	addvar(VAR_VALUE, "LB_addr", "modbus address for LB state");
@@ -410,6 +468,12 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
 			device_path
 		);
+
+		/* on BROKEN PIPE error try to reconnect */
+		if (errno == EPIPE) {
+			upsdebugx(2, "register_read: error(%s)", modbus_strerror(errno));
+			modbus_reconnect();
+		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
 	return rval;
@@ -460,6 +524,12 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
 			device_path
 		);
+
+		/* on BROKEN PIPE error try to reconnect */
+		if (errno == EPIPE) {
+			upsdebugx(2, "register_write: error(%s)", modbus_strerror(errno));
+			modbus_reconnect();
+		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
 	return rval;
@@ -639,7 +709,7 @@ void get_config_vars()
 	/* initialize sigar table */
 	for (i = 0; i < NUMOF_SIG_STATES; i++) {
 		sigar[i].addr = NOTUSED;
-		sigar[i].noro = 0;          /* ON corresponds to 1 (closed contact) */
+		sigar[i].noro = 0;	/* ON corresponds to 1 (closed contact) */
 	}
 
 	/* check if device manufacturer is set ang get the value */
@@ -691,6 +761,36 @@ void get_config_vars()
 	}
 	upsdebugx(2, "rio_slave_id %d", rio_slave_id);
 
+	/* check if response time out (s) is set ang get the value */
+	if (testvar("mod_resp_to_s")) {
+		mod_resp_to_s = (uint32_t)strtol(getval("mod_resp_to_s"), NULL, 10);
+	}
+	upsdebugx(2, "mod_resp_to_s %d", mod_resp_to_s);
+
+	/* check if response time out (us) is set ang get the value */
+	if (testvar("mod_resp_to_us")) {
+		mod_resp_to_us = (uint32_t) strtol(getval("mod_resp_to_us"), NULL, 10);
+		if (mod_resp_to_us > 999999) {
+			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_resp_to_us %d", mod_resp_to_us);
+		}
+	}
+	upsdebugx(2, "mod_resp_to_us %d", mod_resp_to_us);
+
+	/* check if byte time out (s) is set ang get the value */
+	if (testvar("mod_byte_to_s")) {
+		mod_byte_to_s = (uint32_t)strtol(getval("mod_byte_to_s"), NULL, 10);
+	}
+	upsdebugx(2, "mod_byte_to_s %d", mod_byte_to_s);
+
+	/* check if byte time out (us) is set ang get the value */
+	if (testvar("mod_byte_to_us")) {
+		mod_byte_to_us = (uint32_t) strtol(getval("mod_byte_to_us"), NULL, 10);
+		if (mod_byte_to_us > 999999) {
+			fatalx(EXIT_FAILURE, "get_config_vars: Invalid mod_byte_to_us %d", mod_byte_to_us);
+		}
+	}
+	upsdebugx(2, "mod_byte_to_us %d", mod_byte_to_us);
+
 	/* check if OL address is set and get the value */
 	if (testvar("OL_addr")) {
 		sigar[OL_T].addr = (int)strtol(getval("OL_addr"), NULL, 0);
@@ -701,6 +801,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
 		sigar[OL_T].type = (unsigned int)strtol(getval("OL_regtype"), NULL, 10);
@@ -721,6 +822,7 @@ void get_config_vars()
 			sigar[OB_T].noro = 0;
 		}
 	}
+
 	/* check if OB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OB_regtype")) {
 		sigar[OB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
@@ -741,6 +843,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if LB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("LB_regtype")) {
 		sigar[LB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
@@ -761,6 +864,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if HB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("HB_regtype")) {
 		sigar[HB_T].type = (unsigned int)strtol(getval("HB_regtype"), NULL, 10);
@@ -781,6 +885,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if RB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("RB_regtype")) {
 		sigar[RB_T].type = (unsigned int)strtol(getval("RB_regtype"), NULL, 10);
@@ -801,6 +906,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if CHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("CHRG_regtype")) {
 		sigar[CHRG_T].type = (unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
@@ -821,6 +927,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if DISCHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("DISCHRG_regtype")) {
 		sigar[DISCHRG_T].type = (unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
@@ -841,6 +948,7 @@ void get_config_vars()
 			}
 		}
 	}
+
 	/* check if FSD register type is set and get the value otherwise set to COIL */
 	if (testvar("FSD_regtype")) {
 		sigar[FSD_T].type = (unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
@@ -921,4 +1029,71 @@ modbus_t *modbus_new(const char *port)
 		}
 	}
 	return mb;
+}
+
+/* reconnect to modbus server upon connection error */
+void modbus_reconnect(void)
+{
+	int rval;
+
+	upsdebugx(2, "modbus_reconnect, trying to reconnect to modbus server");
+
+	/* clear current modbus context */
+	modbus_close(mbctx);
+	modbus_free(mbctx);
+
+	/* open communication port */
+	mbctx = modbus_new(device_path);
+	if (mbctx == NULL) {
+		fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open communication port context");
+	}
+
+	/* set slave ID */
+	rval = modbus_set_slave(mbctx, rio_slave_id);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", rio_slave_id);
+	}
+
+	/* connect to modbus device  */
+	if (modbus_connect(mbctx) == -1) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+	}
+
+	/* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_resp_to_s;
+		to.tv_usec = mod_resp_to_us;
+		/* void */ modbus_set_response_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	/* set modbus byte timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_byte_to_s;
+		to.tv_usec = mod_byte_to_us;
+		/* void */ modbus_set_byte_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 }
