@@ -276,7 +276,7 @@ static int cps_claim(HIDDevice_t *hd) {
  * voltage limits as being more appropriate. 
  */
 
-HIDData_t *FindReport(HIDDesc_t *pDesc, uint8_t ReportID, HIDNode_t node)
+static HIDData_t *FindReport(HIDDesc_t *pDesc, uint8_t ReportID, HIDNode_t node)
 {
 	size_t	i;
 
