@@ -212,14 +212,14 @@ void upsdrv_initinfo(void)
 	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
 		if (su_info_p->flags == 0UL) {
-			upsdebugx(0,
+			upsdebugx(4,
 				"SNMP UPS driver: %s: MIB2NUT mapping '%s' (OID '%s') did not define flags bits. "
-				"Please report as a bug to the NUT maintainers.",
+				"Entry would be treated as SU_FLAG_OK if available in returned data.",
 				__func__,
 				(su_info_p->info_type ? su_info_p->info_type : "<null>"),
 				(su_info_p->OID ? su_info_p->OID : "<null>")
 				);
-			/* FIXME? Bail out of driver here? Ignore the entry? */
+			/* Treat as OK if avail, otherwise discarded */
 		}
 
 		su_info_p->flags |= SU_FLAG_OK;
