@@ -208,7 +208,7 @@ typedef struct {
 	const char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
 	const char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
 	const char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
-	int	(*fix_report_desc)(HIDDevice_t *pDev, HIDDesc_t *pDesc);		/* Function called to potentially remedy defects in the parsed Report Descriptor caused by buggy HID contents*/
+	int	(*fix_report_desc)(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);		/* Function called to potentially remedy defects in the parsed Report Descriptor caused by buggy HID contents*/
 } subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */
@@ -217,5 +217,5 @@ int setvar(const char *varname, const char *val);
 
 void possibly_supported(const char *mfr, HIDDevice_t *hd);
 
-int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc);
+int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);
 #endif /* USBHID_UPS_H */
