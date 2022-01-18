@@ -479,7 +479,13 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 #if WITH_DMFMIB
 	dev->driver = NULL;
 	if (dmfnutscan_snmp_dmp != NULL) {
-		/* DMF is loaded thus used, successfully */
+		/* DMF is loaded thus used, successfully (with at least a collection
+		 * of <mib2nut> tags - entries needed for supportability discovery).
+		 */
+		upsdebugx(4, "%s: using MIB '%s' loaded from DMF dir '%s'",
+			__func__, mib ? mib : "null",
+			dmfnutscan_snmp_dir ? dmfnutscan_snmp_dir : "null");
+
 		if (mib && strcmp(mib, "eaton_epdu") == 0) {
 			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
 			// in DMF is fixed, this clause has to be amended back, too.
