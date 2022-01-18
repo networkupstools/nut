@@ -290,17 +290,29 @@ nutscan_device_t * nutscan_scan_usb()
 				/* open the device */
 #if WITH_LIBUSB_1_0
 				ret = (*nut_usb_open)(dev, &udev);
-				if (!udev) {
-					fprintf(stderr,"Failed to open device, \
-						skipping. (%s)\n",
+				if (!udev || ret != LIBUSB_SUCCESS) {
+					fprintf(stderr,"Failed to open device "
+						"bus '%s', skipping: %s\n",
+						busname,
 						(*nut_usb_strerror)(ret));
+
+					/* Note: closing is not applicable
+					 * it seems, and can even segfault
+					 * (even though an udev is not NULL
+					 * when e.g. permissions problem)
+					 */
+
+					free (busname);
+
 					continue;
 				}
 #else  /* => WITH_LIBUSB_0_1 */
 				udev = (*nut_usb_open)(dev);
 				if (!udev) {
-					fprintf(stderr, "Failed to open device, \
-						skipping. (%s)\n",
+					/* TOTHINK: any errno or similar to test? */
+					fprintf(stderr, "Failed to open device "
+						"bus '%s',skipping: %s\n",
+						busname,
 						(*nut_usb_strerror)());
 					continue;
 				}
