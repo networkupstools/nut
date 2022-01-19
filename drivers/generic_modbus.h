@@ -33,6 +33,16 @@
 #define DATA_BIT 8
 #define STOP_BIT 1
 
+/*
+ * modbus response and byte timeouts
+ * us: 1 - 999999
+ */
+#define MODRESP_TIMEOUT_s 0
+#define MODRESP_TIMEOUT_us 200000
+#define MODBYTE_TIMEOUT_s 0
+#define MODBYTE_TIMEOUT_us 50000
+
+
 /* modbus access parameters */
 #define MODBUS_SLAVE_ID 5
 
@@ -98,4 +108,4 @@ typedef struct sigattr sigattr_t;
  */
 
 
-#endif //NUT_GENERIC_MODBUS_H
+#endif /* NUT_GENERIC_MODBUS_H */

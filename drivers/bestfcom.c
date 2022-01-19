@@ -251,7 +251,28 @@ void upsdrv_updateinfo(void)
 
 	if (! fc.valid) {
 		upsdebugx(1, "upsupdate run before ups_ident() read ups config");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		/* NOTE: This assert() always fails because of "0":
+		 * error: will never be executed [-Werror,-Wunreachable-code]
+		 *   ((0) ? (void) (0) : __assert_fail ("0", "bestfcom.c", 254, __PRETTY_FUNCTION__));
+		 *                  ^
+		 */
 		assert(0);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	if (execute("f\r", fstring, sizeof(fstring)) >= 80) {

@@ -52,6 +52,8 @@
  * from/to the UPS to re synchronise the communication.
  */
 
+#include "config.h" /* must be the first header */
+
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include "timehead.h"

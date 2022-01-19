@@ -671,6 +671,7 @@ driver: Internal driver information
 | driver.version.internal | Internal driver version      | 1.23.45
 | driver.version.data     | Version of the internal data
                             mapping, for generic drivers | Eaton HID 1.31
+| driver.version.usb      | USB library version          | libusb-1.0.21
 | driver.parameter.xxx    | Parameter xxx (ups.conf or
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or

@@ -83,6 +83,15 @@ deletes the directories after failure, it shows the pathname where it
 writes the log (also deleted). Before re-trying the container creation, this
 file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 
+NOTE: You can find the list of LXC "template" definitions on your system
+by looking at the contents of the `/usr/share/lxc/templates/` directory,
+e.g. a script named `lxc-debian` for the "debian" template. You can see
+further options for each "template" by invoking its help action, e.g.:
++
+------
+:; lxc-create -t debian -h
+------
+
 * Install containers like this:
 +
 ------
@@ -115,11 +124,35 @@ file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
 :; lxc-create -n jenkins-ubuntu1804-s390x -P /srv/libvirt/rootfs -t ubuntu -- \
     -r bionic -a s390x
 ------
-** See further options for the "template" with its help, e.g.:
+** For distributions with a different packaging mechanism from that on the
+   LXC host system, you may need to install corresponding tools (e.g. `yum4`,
+   `rpm` and `dnf` on Debian hosts for installing CentOS and related guests).
+   You may also need to pepper with symlinks to taste (e.g. `yum => yum4`),
+   or find a `pacman` build to install Arch Linux or derivative, etc.
+   Otherwise, you risk seeing something like this:
 +
 ------
-:; lxc-create -t debian -h
+root@debian:~# lxc-create -n jenkins-centos7-x86-64 -P /srv/libvirt/rootfs \
+    -t centos -- -R 7 -a x86_64
+Host CPE ID from /etc/os-release: 
+'yum' command is missing
+lxc-create: jenkins-centos7-x86-64: lxccontainer.c: create_run_template: 1616 Failed to create container from template
+lxc-create: jenkins-centos7-x86-64: tools/lxc_create.c: main: 319 Failed to create container jenkins-centos7-x86-64
 ------
++
+   Note also that with such "third-party" distributions you may face other
+   issues; for example, the CentOS helper did not generate some fields in
+   the `config` file that were needed for conversion into libvirt "domxml"
+   (as found by trial and error, and comparison to other `config` files):
++
+------
+lxc.uts.name = jenkins-centos7-x86-64
+lxc.arch = x86_64
+------
++
+   Also note the container/system naming without underscore in "x86_64" --
+   the deployed system discards the character when assigning its hostname.
+   Using "amd64" is another reasonable choice here.
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
   on the host, e.g.:
@@ -202,6 +235,14 @@ Shepherd the herd
    done
 ------
 
+* Verify that unique MAC addresses were defined (e.g. `00:16:3e:00:00:01`
+  tends to pop up often, while `52:54:00:xx:xx:xx` are assigned to other
+  containers); edit the domain definitions to randomize, if needed:
++
+------
+:; grep 'mac add' /etc/libvirt/lxc/*.xml | awk '{print $NF" "$1}' | sort
+------
+
 * Make sure at least one console device exists (end of file, under the
   network interface definition tags), e.g.:
 +
@@ -219,7 +260,6 @@ Shepherd the herd
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" >&2; \
-    chroot "$ALTROOT" apt-get install sudo bash ; \
     grep eth0 "$ALTROOT/etc/issue" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue" ) ; \
     grep eth0 "$ALTROOT/etc/issue.net" || ( echo '\S{NAME} \S{VERSION_ID} \n \l@\b ; Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' >> "$ALTROOT/etc/issue.net" ) ; \
     groupadd -R "$ALTROOT" -g 399 abuild ; \
@@ -277,9 +317,14 @@ may be not yet configured or still struggling to access the Internet):
 ------
 :; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
     echo "=== $ALTROOT :" ; \
-    chroot "$ALTROOT" apt-get install vim mc p7zip p7zip-full pigz pbzip2 git \
+    chroot "$ALTROOT" apt-get install \
+        sudo bash vim mc p7zip p7zip-full pigz pbzip2 git \
    ; done
 ------
+
+Similarly for `yum`-managed systems (CentOS and relatives), though specific
+package names can differ, and additional package repositories may need to
+be enabled first (see link:config-prereqs.txt for details).
 
 Note that technically `(sudo) chroot ...` can also be used from the CI worker
 account on the host system to build in the prepared filesystems without the
@@ -301,6 +346,24 @@ This can be achieved with e.g.:
 TODO: Test and document a working NAT and firewall setup for this, to allow
 SSH access to the containers via dedicated TCP ports exposed on the host.
 
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+Q: Container won't start, its `virsh console` says something like:
++
+------
+Failed to create symlink /sys/fs/cgroup/net_cls: Operation not permitted
+------
+
+A: According to https://bugzilla.redhat.com/show_bug.cgi?id=1770763
+(skip to the end for summary) this can happen when a newer Linux host system
+with cgroupsv2 runs an older guest distro that only knows about cgroupsv1,
+such as CentOS 7. One workaround is to ensure that the guest systemd does
+not try to join host facilities, by setting an explicit empty list:
++
+------
+:; echo 'JoinControllers=' >> "$ALTROOT/etc/systemd/system.conf"
+------
 
 Connecting Jenkins to the containers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

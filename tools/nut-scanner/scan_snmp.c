@@ -337,6 +337,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
 	return 1;
+
 err:
 	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
 		libname_path, dl_error);
@@ -475,7 +476,7 @@ static void try_all_oid(void * arg, const char * mib_found)
 	int index = 0;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
-	upsdebugx(2, "%s", __func__);
+	upsdebugx(2, "Entering %s for %s", __func__, sec->peername);
 
 	while (snmp_device_table[index].mib != NULL) {
 
@@ -779,7 +780,7 @@ static void * try_SysOID(void * arg)
 	int index = 0;
 	char *mib_found = NULL;
 
-	upsdebugx(2, "%s", __func__);
+	upsdebugx(2, "Entering %s for %s", __func__, sec->peername);
 
 	/* Initialize session */
 	if (!init_session(&snmp_sess, sec)) {
@@ -795,16 +796,17 @@ static void * try_SysOID(void * arg)
 	/* Open the session */
 	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
-		fprintf(stderr,
-			"Failed to open SNMP session for %s.\n",
+		upsdebugx(2,
+			"Failed to open SNMP session for %s",
 			sec->peername);
 		goto try_SysOID_free;
 	}
 
 	/* create and send request. */
 	if (!(*nut_snmp_parse_oid)(SysOID, name, &name_len)) {
-		fprintf(stderr,
-			"SNMP errors: %s\n",
+		upsdebugx(2,
+			"SNMP errors for %s: %s",
+			sec->peername,
 			(*nut_snmp_api_errstring)((*nut_snmp_errno)));
 		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;
@@ -1008,10 +1010,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
-						case ESRCH:     // No thread with the ID thread could be found - already "joined"?
+						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
 							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
 							break;
-						case 0:         // thread exited
+						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
 								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
@@ -1022,13 +1024,13 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 							}
 							thread_array[i].active = FALSE;
 							break;
-						case EBUSY:     // actively running
+						case EBUSY:     /* actively running */
 							upsdebugx(6, "%s: thread #%zu still busy (%i)",
 								__func__, i, ret);
 							break;
-						case EDEADLK:   // Errors with thread interactions... bail out?
-						case EINVAL:    // Errors with thread interactions... bail out?
-						default:        // new pthreads abilities?
+						case EDEADLK:   /* Errors with thread interactions... bail out? */
+						case EINVAL:    /* Errors with thread interactions... bail out? */
+						default:        /* new pthreads abilities? */
 							upsdebugx(5, "%s: thread #%zu reported code %i",
 								__func__, i, ret);
 							break;
@@ -1039,7 +1041,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 				if (curr_threads >= max_threads
 				|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 				) {
-					usleep (10000); // microSec's, so 0.01s here
+					usleep (10000); /* microSec's, so 0.01s here */
 				}
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);

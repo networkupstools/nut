@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2805 utf-8
+personal_ws-1.1 en 2825 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -175,6 +175,7 @@ COMMOK
 CONFILE
 CONTEXTs
 CPAN
+CPE
 CPM
 CPP
 CPPFLAGS
@@ -285,6 +286,7 @@ ENDFOR
 ENV
 EOF
 EOLed
+EPEL
 EPERM
 EPO
 EPS
@@ -487,6 +489,7 @@ JavaScript
 Javadoc
 Javascript
 Jenkinsfile
+JoinControllers
 Joon
 Jumpered
 KNutClient
@@ -1399,6 +1402,7 @@ backport
 backported
 backupspro
 badpassword
+baseurl
 batchable
 batt
 battcap
@@ -1470,6 +1474,7 @@ cblimit
 ccache
 cd
 cdc
+centos
 cerr
 certfile
 certname
@@ -1492,6 +1497,7 @@ cflags
 cgi
 cgipath
 cgroup
+cgroupsv
 chargedvbattery
 chargermode
 chargetime
@@ -1519,6 +1525,7 @@ clearlogs
 clearpassword
 clepple
 clicky
+cls
 clueful
 cmd
 cmdline
@@ -1627,6 +1634,7 @@ dl
 dll
 dlopen
 dmesg
+dnf
 dnl
 dnsmasq
 docbook
@@ -1858,6 +1866,8 @@ inh
 init
 init's
 initctl
+initializer
+initializers
 initinfo
 initscripts
 initups
@@ -1888,6 +1898,8 @@ ip
 ipE
 ipF
 ipmi
+ipmidetectd
+ipmimonitoring
 ipmipsu
 ippon
 ipv
@@ -1960,6 +1972,7 @@ libtool
 libupsclient
 libusb
 libusbugen
+libusbx
 libvirt
 libwrap
 libxslt
@@ -2000,12 +2013,14 @@ lowvoltsout
 lposix
 lr
 lsusb
+ltdl
 lu
 lua
 lv
 lvo
 lxc
 lxcbr
+lxccontainer
 lxml
 lxyz
 mA
@@ -2068,6 +2083,7 @@ minvalue
 minvi
 minvo
 mips
+mirrorlist
 mis
 misconfigured
 mkdir
@@ -2214,6 +2230,7 @@ ostream
 otherprotocols
 outliers
 pF
+pacman
 paramkeywords
 parsable
 parseconf
@@ -2453,6 +2470,7 @@ slavesync
 slewrate
 sm
 smartups
+smbus
 sms
 sn
 snailmail
@@ -2729,6 +2747,7 @@ var's
 varargs
 varhigh
 variable's
+variadic
 varlow
 varname
 varvalue
@@ -2737,6 +2756,7 @@ vc
 vendorid
 verifySourceSig
 versa
+versioned
 victron
 victronups
 vid
