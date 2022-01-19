@@ -334,7 +334,7 @@ ccache_stats() {
 
 check_gitignore() {
     # Optional envvars from caller: FILE_DESCR FILE_REGEX FILE_GLOB
-    # and GIT_ARGS
+    # and GIT_ARGS GIT_DIFF_SHOW
     local BUILT_TARGETS="$@"
 
     [ -n "${FILE_DESCR-}" ] || FILE_DESCR="some"
@@ -349,6 +349,9 @@ check_gitignore() {
     # reported by `git status -- '*'` and not hidden.
     [ -n "${FILE_GLOB-}" ] || FILE_GLOB='*'
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
+    # Display contents of the diff?
+    # (Helps copy-paste from CI logs to source to amend quickly)
+    [ -n "${GIT_DIFF_SHOW-}" ] || GIT_DIFF_SHOW=true
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
     echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
@@ -368,8 +371,10 @@ check_gitignore() {
     if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
-        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-        git diff -- "${FILE_GLOB}" || true
+        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+        if [ "$GIT_DIFF_SHOW" = true ]; then
+            git diff -- "${FILE_GLOB}" || true
+        fi
         echo "==="
         return 1
     fi
@@ -895,14 +900,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             export DISTCHECK_FLAGS
             $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
-            # TODO: Refactor with `SOME_ARGS=... check_gitignore() || exit` ?
-            echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
-            git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
-            echo "==="
-            if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
-                echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
-                exit 1
-            fi
+            # Can be noisy if regen is needed (DMF branch)
+            #GIT_DIFF_SHOW=false \
+            FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || exit
+            check_gitignore "$BUILD_TGT" || exit
 
             ccache_stats "after"
 
@@ -1307,6 +1308,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
+    # Can be noisy if regen is needed (DMF branch)
+    # Bail out due to DMF will (optionally) happen in the next check
+    GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+
+    # TODO (when merging DMF branch, not a problem before then):
+    # this one check should not-list the "*.dmf" files even if
+    # changed (listed as a special group above) but should still
+    # fail due to them:
     check_gitignore "all" || exit
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
@@ -1325,6 +1334,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         export DISTCHECK_FLAGS
         $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
+        FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
         )
     fi
