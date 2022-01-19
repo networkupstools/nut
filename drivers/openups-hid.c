@@ -395,4 +395,5 @@ subdriver_t openups_subdriver = {
 	openups_format_model,
 	openups_format_mfr,
 	openups_format_serial,
+	fix_report_desc,
 };

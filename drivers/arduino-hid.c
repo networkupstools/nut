@@ -144,4 +144,5 @@ subdriver_t arduino_subdriver = {
 	arduino_format_model,
 	arduino_format_mfr,
 	arduino_format_serial,
+	fix_report_desc,
 };
