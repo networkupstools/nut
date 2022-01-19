@@ -479,7 +479,10 @@ static void browse_callback(
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
 			(*nut_avahi_simple_poll_quit)(simple_poll);
+			goto fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED; /* be explicit */
+
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
+		fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED:
 /*			fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
 	}

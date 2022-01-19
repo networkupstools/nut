@@ -24,15 +24,21 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <string.h>
 #include <stdint.h>
 
-#include "config.h"
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+/*
+// The serial driver has no need for HID structures/code currently
+// (maybe there is/was a plan for sharing something between siblings).
+// Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
+*/
 #include "common.h" /* for upsdebugx() etc */
 #include "riello.h"
 

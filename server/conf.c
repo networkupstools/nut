@@ -163,7 +163,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* ALLOW_NO_DEVICE <seconds> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
 		if (isdigit(arg[1][0])) {
-			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
+			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
 			return 1;
 		}
 		if (parse_boolean(arg[1], &allow_no_device))

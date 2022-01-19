@@ -29,6 +29,8 @@
  *   * poll the "port" file for change
  */
 
+#include "config.h" /* must be the first header */
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

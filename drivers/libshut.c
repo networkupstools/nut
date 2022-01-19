@@ -29,6 +29,8 @@
  * - validate / complete commands and data table in mge-hid from mge-shut
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -180,16 +182,51 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
-static int shut_get_descriptor(int upsfd, unsigned char type,
-			unsigned char index, void *buf, int size);
-static int shut_get_string_simple(int upsfd, int index,
-			   char *buf, size_t buflen);
-static int libshut_get_report(int upsfd, int ReportId,
-			   unsigned char *raw_buf, int ReportSize );
-static int libshut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
-static int libshut_get_interrupt(int upsfd, unsigned char *buf,
-			   int bufsize, int timeout);
-static void libshut_close(int upsfd);
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_get_descriptor(int upsfd, unsigned char type,
+ *			   unsigned char index, void *buf, int size);
+ * static int shut_get_string_simple(int upsfd, int index,
+ *			   char *buf, size_t buflen);
+ * static int libshut_get_report(int upsfd, int ReportId,
+ *			   unsigned char *raw_buf, int ReportSize );
+ * static int libshut_set_report(int upsfd, int id, unsigned char *pkt,
+ *             int reportlen);
+ * static int libshut_get_interrupt(int upsfd, unsigned char *buf,
+ *			   int bufsize, int timeout);
+ * static void libshut_close(int upsfd);
+ */
+static int shut_get_descriptor(
+	usb_dev_handle upsfd,
+	usb_ctrl_requesttype type,
+	usb_ctrl_descindex index,
+	void *buf,
+	usb_ctrl_charbufsize size);
+
+static int shut_get_string_simple(
+	usb_dev_handle upsfd,
+	usb_ctrl_strindex index,
+	char *buf,
+	usb_ctrl_charbufsize buflen);
+
+static int libshut_get_report(
+	usb_dev_handle upsfd,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize);
+
+static int libshut_set_report(
+	usb_dev_handle upsfd,
+	usb_ctrl_repindex id,
+	usb_ctrl_charbuf pkt,
+	usb_ctrl_charbufsize reportlen);
+
+static int libshut_get_interrupt(
+	usb_dev_handle upsfd,
+	usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize,
+	usb_ctrl_timeout_msec timeout);
+
+static void libshut_close(usb_dev_handle upsfd);
 
 /* FIXME */
 static const char * shut_strerror(void) { return ""; }
@@ -261,6 +298,7 @@ typedef union device_desc_data_t {
 #endif
 
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
+/* Expected evaluated types for the API after typedefs:
 static void setline(int upsfd, int set);
 static int shut_synchronise(int upsfd);
 static int shut_wait_ack(int upsfd);
@@ -268,6 +306,31 @@ static int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes,
                         int size, int timeout);
 static int shut_control_msg(int upsfd, int requesttype, int request, int value,
                         int index, unsigned char *bytes, int size, int timeout);
+ */
+static void setline(
+	usb_dev_handle upsfd,
+	int set);
+
+static int shut_synchronise(usb_dev_handle upsfd);
+
+static int shut_wait_ack(usb_dev_handle upsfd);
+
+static int shut_interrupt_read(
+	usb_dev_handle upsfd,
+	usb_ctrl_endpoint ep,
+	usb_ctrl_charbuf bytes,
+	usb_ctrl_charbufsize size,
+	usb_ctrl_timeout_msec timeout);
+
+static int shut_control_msg(
+	usb_dev_handle upsfd,
+	usb_ctrl_requesttype requesttype,
+	usb_ctrl_request request,
+	usb_ctrl_msgvalue value,
+	usb_ctrl_repindex index,
+	usb_ctrl_charbuf bytes,
+	usb_ctrl_charbufsize size,
+	usb_ctrl_timeout_msec timeout);
 
 /* Data portability */
 /* realign packet data according to Endianess */
@@ -284,6 +347,12 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
 #endif
 }
 
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
  * Note: When callback is not NULL, the report descriptor will be
@@ -291,9 +360,17 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
-static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_device_path,
-                 int (*callback)(int arg_upsfd, SHUTDevice_t *hd,
-                 unsigned char *rdbuf, int rdlen))
+/* Expected evaluated types for the API after typedefs:
+ * static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_device_path,
+ *                  int (*callback)(int arg_upsfd, SHUTDevice_t *hd,
+ *                  unsigned char *rdbuf, int rdlen))
+ */
+static int libshut_open(
+	usb_dev_handle *arg_upsfd,
+	SHUTDevice_t *curDevice,
+	char *arg_device_path,
+	int (*callback)(usb_dev_handle arg_upsfd, SHUTDevice_t *hd,
+		            usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen))
 {
 	int ret, res;
 	/* Below we cast this buffer as sometimes containing entried of type
@@ -301,18 +378,18 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	 * Currently both of these are sized "2", and I don't see a way
 	 * to require a "max()" of such sizes to align for generally.
 	 */
-	unsigned char buf[20] __attribute__((aligned(4)));
+	usb_ctrl_char buf[20] __attribute__((aligned(4)));
 	char string[MAX_STRING_SIZE];
 	struct my_hid_descriptor *desc;
 	struct device_descriptor_s *dev_descriptor;
 
 	/* report descriptor */
-	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int		rdlen;
+	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
+	usb_ctrl_charbufsize			rdlen;
 	/* All devices use HID descriptor at index 0. However, some newer
 	 * Eaton units have a light HID descriptor at index 0, and the full
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
-	int hid_desc_index = 0;
+	usb_ctrl_descindex	hid_desc_index = 0;
 
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
@@ -342,7 +419,21 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 
 	/* Get DEVICE descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	dev_descriptor = (struct device_descriptor_s *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -423,7 +514,21 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 
 	/* Get HID descriptor */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcast-align"
+#endif
 	desc = (struct my_hid_descriptor *)buf;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
+# pragma GCC diagnostic pop
+#endif
 	res = shut_get_descriptor(*arg_upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -441,7 +546,8 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = buf[7] | (buf[8] << 8);
+	desc->wDescriptorLength = (uint16_t)(buf[7]);
+	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
@@ -453,8 +559,32 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 
 	rdlen = desc->wDescriptorLength;
 
-	if (rdlen > (int)sizeof(rdbuf)) {
-		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, (int)sizeof(rdbuf));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (rdlen > sizeof(rdbuf) || rdlen > INT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx(2,
+			"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+			" (max %zu)",
+			rdlen, sizeof(rdbuf));
 		return -1;
 	}
 
@@ -463,7 +593,28 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + 0, 0, ReportDesc,
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
-	if (res == rdlen)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (res >= 0 && (uintmax_t)res < (uintmax_t)SIZE_MAX && (size_t)res == rdlen)
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 	{
 		res = callback(*arg_upsfd, curDevice, rdbuf, rdlen);
 		if (res < 1) {
@@ -471,11 +622,13 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 			return -1;
 		}
 
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
+		upsdebugx(2,
+			"Report descriptor retrieved (Reportlen = %"
+			PRI_NUT_USB_CTRL_CHARBUFSIZE ")", rdlen);
 		upsdebugx(2, "Found HID device");
 		fflush(stdout);
 
-		return rdlen;
+		return (int)rdlen;
 	}
 
 	if (res < 0)
@@ -484,7 +637,10 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 	}
 	else
 	{
-		upsdebugx(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
+		upsdebugx(2,
+			"Report descriptor too short (expected %"
+			PRI_NUT_USB_CTRL_CHARBUFSIZE ", got %d)",
+			rdlen, res);
 	}
 
 	upsdebugx(2, "libshut: No appropriate HID device found");
@@ -492,8 +648,14 @@ static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_devic
 
 	return -1;
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
-static void libshut_close(int arg_upsfd)
+/* Expected evaluated types for the API after typedefs:
+ * static void libshut_close(int arg_upsfd)
+ */
+static void libshut_close(usb_dev_handle arg_upsfd)
 {
 	if (arg_upsfd < 1) {
 		return;
@@ -505,8 +667,15 @@ static void libshut_close(int arg_upsfd)
 /* return the report of ID=type in report
  * return -1 on failure, report length on success
  */
-static int libshut_get_report(int arg_upsfd, int ReportId,
-                       unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API after typedefs:
+ * static int libshut_get_report(int arg_upsfd, int ReportId,
+ *                      unsigned char *raw_buf, int ReportSize)
+ */
+static int libshut_get_report(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	if (arg_upsfd < 1) {
 		return 0;
@@ -523,8 +692,15 @@ static int libshut_get_report(int arg_upsfd, int ReportId,
 }
 
 /* return ReportSize upon success ; -1 otherwise */
-static int libshut_set_report(int arg_upsfd, int ReportId,
-                       unsigned char *raw_buf, int ReportSize )
+/* Expected evaluated types for the API after typedefs:
+ * static int libshut_set_report(int arg_upsfd, int ReportId,
+ *                     unsigned char *raw_buf, int ReportSize)
+ */
+static int libshut_set_report(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
 {
 	int ret;
 
@@ -532,8 +708,15 @@ static int libshut_set_report(int arg_upsfd, int ReportId,
 		return 0;
 	}
 
-	upsdebugx(1, "Entering libshut_set_report (report %x, len %i)",
+	upsdebugx(1,
+		"Entering libshut_set_report (report %x, "
+		"len %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
 		ReportId, ReportSize);
+
+	if ((uintmax_t)ReportSize > (uintmax_t)INT_MAX) {
+		upsdebugx(1, "%s: ReportSize exceeds INT_MAX", __func__);
+		return -1;
+	}
 
 	upsdebug_hex (4, "==> Report after set", raw_buf, ReportSize);
 
@@ -544,10 +727,18 @@ static int libshut_set_report(int arg_upsfd, int ReportId,
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, SHUT_TIMEOUT);
 
-	return ((ret == 0) ? ReportSize : ret);
+	return ((ret == 0) ? (int)ReportSize : ret);
 }
 
-static int libshut_get_string(int arg_upsfd, int StringIdx, char *buf, size_t buflen)
+/* Expected evaluated types for the API after typedefs:
+ * static int libshut_get_string(int arg_upsfd,
+ *                          int StringIdx, char *buf, size_t buflen)
+ */
+static int libshut_get_string(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_strindex StringIdx,
+	char *buf,
+	usb_ctrl_charbufsize buflen)
 {
 	int ret;
 
@@ -564,8 +755,15 @@ static int libshut_get_string(int arg_upsfd, int StringIdx, char *buf, size_t bu
 	return ret;
 }
 
-static int libshut_get_interrupt(int arg_upsfd, unsigned char *buf,
-                          int bufsize, int timeout)
+/* Expected evaluated types for the API after typedefs:
+ * static int libshut_get_interrupt(int arg_upsfd, unsigned char *buf,
+ *                        int bufsize, int timeout)
+ */
+static int libshut_get_interrupt(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize,
+	usb_ctrl_timeout_msec timeout)
 {
 	int ret;
 
@@ -604,7 +802,10 @@ shut_communication_subdriver_t shut_subdriver = {
  * set : 1 to set comm
  * set : 0 to stop commupsh.
  */
-void setline(int arg_upsfd, int set)
+/* Expected evaluated types for the API after typedefs:
+ * void setline(int arg_upsfd, int set)
+ */
+void setline(usb_dev_handle arg_upsfd, int set)
 {
 	if (arg_upsfd < 1) {
 		return;
@@ -629,7 +830,10 @@ void setline(int arg_upsfd, int set)
  * return TRUE on success, FALSE on failure
  *
  *****************************************************************************/
-int shut_synchronise(int arg_upsfd)
+/* Expected evaluated types for the API after typedefs:
+ * int shut_synchronise(int arg_upsfd)
+ */
+int shut_synchronise(usb_dev_handle arg_upsfd)
 {
 	int retCode = 0;
 	unsigned char c = SHUT_SYNC_OFF, reply;
@@ -678,9 +882,14 @@ int shut_synchronise(int arg_upsfd)
 /*!
  * Compute a SHUT checksum for the packet "buf"
  */
-static unsigned char shut_checksum(const unsigned char *buf, int bufsize)
+/* Expected evaluated types for the API after typedefs:
+ * static unsigned char shut_checksum(const unsigned char *buf, int bufsize)
+ */
+static unsigned char shut_checksum(
+	const usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize)
 {
-	int i;
+	usb_ctrl_charbufsize i;
 	unsigned char chk=0;
 
 	for(i=0; i<bufsize; i++)
@@ -690,8 +899,13 @@ static unsigned char shut_checksum(const unsigned char *buf, int bufsize)
 	return chk;
 }
 
-
-static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
+ */
+static int shut_packet_recv(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_charbuf Buf,
+	usb_ctrl_charbufsize datalen)
 {
 	unsigned char   Start[2];
 	unsigned char   Frame[8];
@@ -703,7 +917,9 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 	/* FIXME: use this
 	 * shut_data_t   sdata; */
 
-	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
+	upsdebugx (4,
+		"entering shut_packet_recv (%" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
+		datalen);
 
 	while(datalen>0 && Retry<3)
 	{
@@ -732,7 +948,9 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
 					if( Size > 8 ) {
-						upsdebugx (4, "shut_packet_recv: invalid frame size = %d", Size);
+						upsdebugx (4,
+							"shut_packet_recv: invalid frame size = %d",
+							Size);
 						ser_send_char(arg_upsfd, SHUT_NOK);
 						Retry++;
 						break;
@@ -771,11 +989,14 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 								datalen+=Pos;
 								Pos=0;
 							}
-							else
+							else {
 								return Pos;
+							}
 						}
 						else
-							upsdebugx (4, "need more data (%i)!", datalen);
+							upsdebugx (4,
+								"need more data (%" PRI_NUT_USB_CTRL_CHARBUFSIZE ")!",
+								datalen);
 					}
 					else
 					{
@@ -785,20 +1006,31 @@ static int shut_packet_recv(int arg_upsfd, unsigned char *Buf, int datalen)
 						Retry++;
 					}
 				}
-				else
+				else {
 					return 0;
+				}
 			}
 		}
-		else
+		else {
 			Retry++;
+		}
 	} /* while */
 
 	return 0;
 }
 
 /**********************************************************************/
-static int shut_interrupt_read(int arg_upsfd, int ep, unsigned char *bytes, int size,
-                        int timeout)
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_interrupt_read(int arg_upsfd, int ep,
+ *                      unsigned char *bytes, int size,
+ *                      int timeout)
+ */
+static int shut_interrupt_read(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_endpoint ep,
+	usb_ctrl_charbuf bytes,
+	usb_ctrl_charbufsize size,
+	usb_ctrl_timeout_msec timeout)
 {
 /*
 	usleep(timeout * 1000);
@@ -813,10 +1045,17 @@ static int shut_interrupt_read(int arg_upsfd, int ep, unsigned char *bytes, int 
 }
 
 /**********************************************************************/
-static int shut_get_string_simple(int arg_upsfd, int index,
-                           char *buf, size_t buflen)
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_get_string_simple(int arg_upsfd, int index,
+ *                          char *buf, size_t buflen)
+ */
+static int shut_get_string_simple(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_strindex index,
+	char *buf,
+	usb_ctrl_charbufsize buflen)
 {
-	unsigned char tbuf[255];       /* Some devices choke on size > 255 */
+	usb_ctrl_char tbuf[255];       /* Some devices choke on size > 255 */
 	int ret, si, di;
 
 	ret = shut_control_msg(arg_upsfd, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
@@ -839,7 +1078,7 @@ static int shut_get_string_simple(int arg_upsfd, int index,
 		if (tbuf[si + 1])   /* high byte */
 			buf[di++] = '?';
 		else
-			buf[di++] = tbuf[si];
+			buf[di++] = (char)tbuf[si];
 	}
 
 	buf[di] = 0;
@@ -851,7 +1090,7 @@ static int shut_get_string_simple(int arg_upsfd, int index,
  *********************************************************************/
 
 /**********************************************************************
- * shut_get_descriptor(int desctype, unsigned char *pkt)
+ * shut_get_descriptor(int desctype, usb_ctrl_charbuf pkt)
  *
  * get descriptor specified by DescType and return it in Buf
  *
@@ -861,24 +1100,46 @@ static int shut_get_string_simple(int arg_upsfd, int index,
  * return 0 on success, -1 on failure, -2 on NACK
  *
  *********************************************************************/
-static int shut_get_descriptor(int arg_upsfd, unsigned char type,
-                        unsigned char index, void *buf, int size)
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_get_descriptor(int arg_upsfd, unsigned char type,
+ *                        unsigned char index, void *buf, int size)
+ */
+static int shut_get_descriptor(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_requesttype type,
+	usb_ctrl_descindex index,
+	void *buf,
+	usb_ctrl_charbufsize size)
 {
 	memset(buf, 0, size);
 
-	upsdebugx (2, "entering shut_get_descriptor(n %02x, %i)", type, size);
+	upsdebugx (2,
+		"entering shut_get_descriptor(n %02x, %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
+		type, size);
 
 	return shut_control_msg(arg_upsfd, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
 				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, SHUT_TIMEOUT);
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */
-static int shut_control_msg(int arg_upsfd, int requesttype, int request,
-                     int value, int index, unsigned char *bytes, int size, int timeout)
+/* Expected evaluated types for the API after typedefs:
+ * static int shut_control_msg(int arg_upsfd, int requesttype, int request,
+ *                    int value, int index, unsigned char *bytes, int size,
+ *                    int timeout)
+ */
+static int shut_control_msg(
+	usb_dev_handle arg_upsfd,
+	usb_ctrl_requesttype requesttype,
+	usb_ctrl_request request,
+	usb_ctrl_msgvalue value,
+	usb_ctrl_repindex index,
+	usb_ctrl_charbuf bytes,
+	usb_ctrl_charbufsize size,
+	usb_ctrl_timeout_msec timeout)
 {
 	unsigned char shut_pkt[11];
 	short Retry=1, set_pass = -1;
-	short data_size, remaining_size = size;
+	usb_ctrl_charbufsize data_size, remaining_size = size;
 	int i;
 	struct shut_ctrltransfer_s ctrl;
 	int ret = 0;
@@ -893,14 +1154,43 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 		remaining_size+= 8;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	/* Note: checking against limits of protocol struct fields,
+	 * not against USB_CTRL_REQUEST_MAX et al, which are mostly int
+	 */
+	if (requesttype < 0 || (uintmax_t)requesttype > UINT8_MAX
+	||  request < 0 || (uintmax_t)request > UINT8_MAX
+	||  value < 0 || (uintmax_t)value > UINT16_MAX
+	||  index < 0 || (uintmax_t)index > UINT16_MAX
+	||  (uintmax_t)size > UINT16_MAX
+	||  (uintmax_t)timeout > UINT32_MAX
+	) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		upsdebugx (1, "%s: input values out of range", __func__);
+		return -1;
+	}
+
 	/* build the control request */
-	ctrl.bRequestType = requesttype;
-	ctrl.bRequest = request;
-	ctrl.wValue = value;
-	ctrl.wIndex = index;
-	ctrl.wLength = size;
+	ctrl.bRequestType = (uint8_t)requesttype;
+	ctrl.bRequest = (uint8_t)request;
+	ctrl.wValue = (uint16_t)value;
+	ctrl.wIndex = (uint16_t)index;
+	ctrl.wLength = (uint16_t)size;
 	ctrl.data = bytes;
-	ctrl.timeout = timeout;
+	ctrl.timeout = (uint32_t)timeout;	/* in milliseconds */
 
 	align_request(&ctrl);
 
@@ -924,12 +1214,50 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
-		shut_pkt[1] = (data_size<<4) + data_size;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		if (data_size < 0 || data_size > UCHAR_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+			upsdebugx(1, "%s: ERROR: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+				" is out of range for SHUT packet",
+				__func__, data_size);
+			return -1;
+		}
+		if (data_size > 0x0F) {
+			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+				" may be too large for SHUT packet?",
+				__func__, data_size);
+			/* Do not abort here - maybe there is intentional maths
+			 * in the protocol with overlapping/shifted-away numbers?
+			 */
+		}
+		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
 			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
-		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], data_size);
+		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);
 
 		/* Packets need only to be sent once
 		* NACK handling should take care of the rest */
@@ -951,6 +1279,7 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 
 				Retry=1;
 				break;
+
 			case -1:
 				if (Retry >= MAX_TRY)
 				{
@@ -969,14 +1298,18 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
 					Retry++;
 				}
 				break;
+
 			case -3:
 				/* FIXME: notification caught => to be processed */
 
 				/* Send a NACK for the moment, to get a resend from the UPS */
 				ser_send_char(arg_upsfd, SHUT_NOK);
 				Retry++;
+				goto fallthrough_default;
+
 			default:
-				;
+			fallthrough_default:
+				break;
 		}
 	}
 	if (remaining_size != 0)
@@ -997,7 +1330,10 @@ static int shut_control_msg(int arg_upsfd, int requesttype, int request,
  * returns 0 on success, -1 on error, -2 on NACK, -3 on NOTIFICATION
  *
  *********************************************************************/
-int shut_wait_ack(int arg_upsfd)
+/* Expected evaluated types for the API after typedefs:
+ * int shut_wait_ack(int arg_upsfd)
+ */
+int shut_wait_ack(usb_dev_handle arg_upsfd)
 {
 	int retCode = -1;
 	unsigned char c = '\0';
