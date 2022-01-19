@@ -119,9 +119,9 @@ static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path)
 {
-	if( dl_handle != NULL ) {
+	if (dl_handle != NULL) {
 		/* if previous init failed */
-		if( dl_handle == (void *)1 ) {
+		if (dl_handle == (void *)1) {
 			return 0;
 		}
 		/* init has already been done */
@@ -133,7 +133,7 @@ int nutscan_load_ipmi_library(const char *libname_path)
 		return 0;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
@@ -148,97 +148,97 @@ int nutscan_load_ipmi_library(const char *libname_path)
 	lt_dlerror();
 
 	*(void **) (&nut_ipmi_fru_close_device_id) = lt_dlsym(dl_handle, IPMI_FRU_CLOSE_DEVICE_ID);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_ctx_destroy) = lt_dlsym(dl_handle, IPMI_FRU_CTX_DESTROY);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 #ifdef HAVE_FREEIPMI_11X_12X
 
 	*(void **) (&nut_ipmi_sdr_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_ctx_destroy");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 #else /* HAVE_FREEIPMI_11X_12X */
 
 	*(void **) (&nut_ipmi_sdr_cache_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_cache_ctx_destroy");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_sdr_parse_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_parse_ctx_destroy");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 
 	*(void **) (&nut_ipmi_fru_ctx_create) = lt_dlsym(dl_handle, IPMI_FRU_CTX_CREATE);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_ctx_set_flags) = lt_dlsym(dl_handle, IPMI_FRU_CTX_SET_FLAGS);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_open_device_id) = lt_dlsym(dl_handle, IPMI_FRU_OPEN_DEVICE_ID);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_ctx_errormsg) = lt_dlsym(dl_handle, IPMI_FRU_CTX_ERRORMSG);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_read_data_area) = lt_dlsym(dl_handle, IPMI_FRU_READ_DATA_AREA);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_fru_next) = lt_dlsym(dl_handle, IPMI_FRU_PARSE_NEXT);
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_create) = lt_dlsym(dl_handle, "ipmi_ctx_create");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_find_inband) = lt_dlsym(dl_handle, "ipmi_ctx_find_inband");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_open_outofband) = lt_dlsym(dl_handle, "ipmi_ctx_open_outofband");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_errnum) = lt_dlsym(dl_handle, "ipmi_ctx_errnum");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_errormsg) = lt_dlsym(dl_handle, "ipmi_ctx_errormsg");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_close) = lt_dlsym(dl_handle, "ipmi_ctx_close");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
 	*(void **) (&nut_ipmi_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_ctx_destroy");
-	if ((dl_error = lt_dlerror()) != NULL)  {
+	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
@@ -291,7 +291,7 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	int ret = -1;
 	unsigned int area_type = 0;
 	unsigned int area_length = 0;
-	uint8_t areabuf[IPMI_FRU_AREA_SIZE_MAX+1];
+	uint8_t areabuf[IPMI_FRU_AREA_SIZE_MAX + 1];
 	ipmi_fru_parse_ctx_t fru_parse_ctx = NULL;
 #ifdef HAVE_FREEIPMI_11X_12X
 	ipmi_sdr_ctx_t sdr_ctx = NULL;
@@ -318,7 +318,11 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 		return 0;
 	}
 
-	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, ipmi_id) < 0)
+	if (ipmi_id < 0 || (unsigned int)ipmi_id > UINT8_MAX) {
+		fprintf(stderr, "is_ipmi_device_supported: ipmi_id=%d is out of range!\n", ipmi_id);
+		return 0;
+	}
+	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, (uint8_t)ipmi_id) < 0)
 	{
 #ifdef HAVE_FREEIPMI_11X_12X
 		nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
@@ -385,7 +389,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	int ipmi_id = 0;
 	char port_id[64];
 
-	if( !nutscan_avail_ipmi ) {
+	if (!nutscan_avail_ipmi) {
 		return NULL;
 	}
 
@@ -393,7 +397,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	if (!(ipmi_ctx = (*nut_ipmi_ctx_create) ()))
 	{
 		/* we have to force cleanup, since exit handler is not yet installed */
-		fprintf(stderr, "ipmi_ctx_create\n");
+		fprintf(stderr, "Failed to ipmi_ctx_create\n");
 		return NULL;
 	}
 
@@ -415,7 +419,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 					0  /* flags */
 					)) < 0)
 		{
-			fprintf(stderr, "ipmi_ctx_find_inband: %s\n",
+			upsdebugx(2, "ipmi_ctx_find_inband (local scan): %s",
 				(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
 			return NULL;
 		}
@@ -442,7 +446,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 															ipmi_sec->username,
 															ipmi_sec->password,
 															ipmi_sec->K_g_BMC_key,
-???															(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
+/*???*/														(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
 															ipmi_sec->privilege_level,
 															ipmi_sec->cipher_suite_id,
 															IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
@@ -450,7 +454,11 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 															ipmi_dev->workaround_flags,
 															flags) < 0)
 			{
-				IPMI_MONITORING_DEBUG (("ipmi_ctx_open_outofband_2_0: %s", ipmi_ctx_errormsg (c->ipmi_ctx)));
+				upsdebugx(2, "nut_ipmi_ctx_open_outofband_2_0 (%s): %s",
+					IPaddr, (*nut_ipmi_ctx_errormsg) (c->ipmi_ctx));
+				IPMI_MONITORING_DEBUG (("ipmi_ctx_open_outofband_2_0 (%s): %s",
+					IPaddr, ipmi_ctx_errormsg (c->ipmi_ctx)));
+
 				if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_USERNAME_INVALID)
 					c->errnum = IPMI_MONITORING_ERR_USERNAME_INVALID;
 				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PASSWORD_INVALID)
@@ -494,12 +502,28 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 #endif /* 0 */
 
 		/* Fall back to IPMI 1.5 */
+		if (ipmi_sec->authentication_type < 0
+		    || (unsigned int)ipmi_sec->authentication_type > UINT8_MAX
+		) {
+			upsdebugx(2, "nutscan_scan_ipmi_device (%s): "
+				"authentication_type=%d is out of range!",
+				IPaddr, ipmi_sec->authentication_type);
+			return 0;
+		}
+		if (ipmi_sec->privilege_level < 0
+		    || (unsigned int)ipmi_sec->privilege_level > UINT8_MAX
+		) {
+			upsdebugx(2, "nutscan_scan_ipmi_device (%s): "
+				"privilege_level=%d is out of range!",
+				IPaddr, ipmi_sec->privilege_level);
+			return 0;
+		}
 		if ((ret = (*nut_ipmi_ctx_open_outofband) (ipmi_ctx,
 						IPaddr,
 						ipmi_sec->username,
 						ipmi_sec->password,
-						ipmi_sec->authentication_type,
-						ipmi_sec->privilege_level,
+						(uint8_t)ipmi_sec->authentication_type,
+						(uint8_t)ipmi_sec->privilege_level,
 						IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
 						IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT,
 						ipmi_sec->workaround_flags,
@@ -517,8 +541,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT) { */
 
 				/* FIXME: don't log timeout errors */
-				fprintf(stderr, "nut_ipmi_ctx_open_outofband: %s\n",
-					(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
+				upsdebugx(2, "nut_ipmi_ctx_open_outofband (%s): %s",
+					IPaddr, (*nut_ipmi_ctx_errormsg) (ipmi_ctx));
 				return NULL;
 			/*}*/
 		}
@@ -529,8 +553,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 		if (is_ipmi_device_supported(ipmi_ctx, ipmi_id)) {
 
-			if ( (nut_dev = nutscan_new_device()) == NULL ) {
-				fprintf(stderr,"Memory allocation error\n");
+			if ((nut_dev = nutscan_new_device()) == NULL) {
+				fprintf(stderr, "Memory allocation error\n");
 				nutscan_free_device(current_nut_dev);
 				break;
 			}
@@ -555,6 +579,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 			memset (port_id, 0, sizeof(port_id));
 		}
+
 	}
 
 	/* Final cleanup */
@@ -577,7 +602,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-	if( !nutscan_avail_ipmi ) {
+	if (!nutscan_avail_ipmi) {
 		return NULL;
 	}
 
@@ -591,7 +616,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 	else {
 		ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
-		while(ip_str != NULL) {
+		while (ip_str != NULL) {
 			tmp_sec = malloc(sizeof(nutscan_ipmi_t));
 			memcpy(tmp_sec, sec, sizeof(nutscan_ipmi_t));
 

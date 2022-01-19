@@ -31,7 +31,7 @@ pw_baud_rate_t pw_baud_rates[] = {
 };
 
 /* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
+unsigned char BCMXCP_AUTHCMD[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
 static void send_command(unsigned char *command, size_t command_length)
 {
@@ -87,21 +87,23 @@ void send_write_command(unsigned char *command, size_t command_length)
 }
 
 /* get the answer of a command from the ups. And check that the answer is for this command */
-int get_answer(unsigned char *data, unsigned char command)
+ssize_t get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char	my_buf[128]; /* packet has a maximum length of 121+5 bytes */
-	int		res;
+	ssize_t		res;
 	size_t	length, end_length = 0, endblock = 0, start = 0;
 	unsigned char	block_number, sequence, pre_sequence = 0;
 
-	while (endblock != 1){
+	while (endblock != 1) {
 
 		do {
 			/* Read PW_COMMAND_START_BYTE byte */
 			res = ser_get_char(upsfd, my_buf, 1, 0);
 
 			if (res != 1) {
-				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d, cmd=%x!!!\n", res, command);
+				upsdebugx(1,
+					"Receive error (PW_COMMAND_START_BYTE): %zd, cmd=%x!!!\n",
+					res, command);
 				return -1;
 			}
 
@@ -115,39 +117,39 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read block number byte */
-		res = ser_get_char(upsfd, my_buf+1, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 1, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (Block number): %d!!!\n", res);
+			ser_comm_fail("Receive error (Block number): %zd!!!\n", res);
 			return -1;
 		}
 
 		block_number = (unsigned char)my_buf[1];
 
 		if (command <= 0x43) {
-			if ((command - 0x30) != block_number){
+			if ((command - 0x30) != block_number) {
 				ser_comm_fail("Receive error (Request command): %x!!!\n", block_number);
 				return -1;
 			}
 		}
 
 		if (command >= 0x89) {
-			if ((command == 0xA0) && (block_number != 0x01)){
+			if ((command == 0xA0) && (block_number != 0x01)) {
 				ser_comm_fail("Receive error (Requested only mode command): %x!!!\n", block_number);
 				return -1;
 			}
 
-			if ((command != 0xA0) && (block_number != 0x09)){
+			if ((command != 0xA0) && (block_number != 0x09)) {
 				ser_comm_fail("Receive error (Control command): %x!!!\n", block_number);
 				return -1;
 			}
 		}
 
 		/* Read data length byte */
-		res = ser_get_char(upsfd, my_buf+2, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 2, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (length): %d!!!\n", res);
+			ser_comm_fail("Receive error (length): %zd!!!\n", res);
 			return -1;
 		}
 
@@ -159,10 +161,10 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read sequence byte */
-		res = ser_get_char(upsfd, my_buf+3, 1, 0);
+		res = ser_get_char(upsfd, my_buf + 3, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (sequence): %d!!!\n", res);
+			ser_comm_fail("Receive error (sequence): %zd!!!\n", res);
 			return -1;
 		}
 
@@ -180,22 +182,22 @@ int get_answer(unsigned char *data, unsigned char command)
 		pre_sequence = sequence;
 
 		/* Try to read all the remaining bytes */
-		res = ser_get_buf_len(upsfd, my_buf+4, length, 1, 0);
+		res = ser_get_buf_len(upsfd, my_buf + 4, length, 1, 0);
 		if (res < 0) {
-			ser_comm_fail("%s(): ser_get_buf_len() returned error code %d", __func__, res);
+			ser_comm_fail("%s(): ser_get_buf_len() returned error code %zd", __func__, res);
 			return res;
 		}
 
 		if ((size_t)res != length) {
-			ser_comm_fail("Receive error (data): got %d bytes instead of %zu!!!\n", res, length);
+			ser_comm_fail("Receive error (data): got %zd bytes instead of %zu!!!\n", res, length);
 			return -1;
 		}
 
 		/* Get the checksum byte */
-		res = ser_get_char(upsfd, my_buf+(4+length), 1, 0);
+		res = ser_get_char(upsfd, my_buf + (4 + length), 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (checksum): %x!!!\n", res);
+			ser_comm_fail("Receive error (checksum): %zx!!!\n", res);
 			return -1;
 		}
 
@@ -205,7 +207,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			return -1;
 		}
 
-		memcpy(data+end_length, my_buf+4, length);
+		memcpy(data+end_length, my_buf + 4, length);
 		end_length += length;
 
 	}
@@ -213,13 +215,14 @@ int get_answer(unsigned char *data, unsigned char command)
 	upsdebug_hex (5, "get_answer", data, end_length);
 	ser_comm_good();
 
-	assert(end_length < INT_MAX);
-	return (int)end_length;
+	assert(end_length < SSIZE_MAX);
+	return (ssize_t)end_length;
 }
 
-static int command_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
+static ssize_t command_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
 {
-	int bytes_read, retry = 0;
+	ssize_t	bytes_read;
+	int	retry = 0;
 
 	while (retry++ < PW_MAX_TRY) {
 
@@ -240,9 +243,9 @@ static int command_sequence(unsigned char *command, size_t command_length, unsig
 }
 
 /* Sends a single command (length=1). and get the answer */
-int command_read_sequence(unsigned char command, unsigned char *answer)
+ssize_t command_read_sequence(unsigned char command, unsigned char *answer)
 {
-	int bytes_read;
+	ssize_t bytes_read;
 
 	bytes_read = command_sequence(&command, 1, answer);
 
@@ -254,9 +257,9 @@ int command_read_sequence(unsigned char command, unsigned char *answer)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, size_t command_length, unsigned	char *answer)
+ssize_t command_write_sequence(unsigned char *command, size_t command_length, unsigned	char *answer)
 {
-	int bytes_read;
+	ssize_t bytes_read;
 
 	bytes_read = command_sequence(command, command_length, answer);
 
@@ -287,7 +290,8 @@ static void pw_comm_setup(const char *port)
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
 	unsigned char id_command = PW_ID_BLOCK_REQ;
 	unsigned char answer[256];
-	int i = 0, ret = -1;
+	int i = 0;
+	ssize_t ret = -1;
 	speed_t mybaud = 0, baud;
 
 	if (getval("baud_rate") != NULL)
@@ -304,7 +308,7 @@ static void pw_comm_setup(const char *port)
 		 * termios.h happens to say that on some systems)...
 		 * But since we convert this setting from int, we assume...
 		 */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 /* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
  * means support of contexts both inside and outside function body, so the push
  * above and pop below (outside this finction) are not used.
@@ -317,8 +321,18 @@ static void pw_comm_setup(const char *port)
  */
 # pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
 		switch(sizeof(speed_t)) {
 			case 8:	assert (br < INT64_MAX); break;
@@ -326,12 +340,15 @@ static void pw_comm_setup(const char *port)
 			case 2:	assert (br < INT16_MAX); break;
 			default:	assert (br < INT_MAX);
 		}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 		baud = (speed_t)br;
 
-		for(i = 0; i < PW_MAX_BAUD; i++) {
+		for (i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
 				mybaud = pw_baud_rates[i].rate;
 				break;
@@ -345,7 +362,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, mybaud);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {
@@ -371,7 +388,7 @@ static void pw_comm_setup(const char *port)
 		ser_set_speed(upsfd, device_path, pw_baud_rates[i].rate);
 		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
-		send_write_command(AUT, 4);
+		send_write_command(BCMXCP_AUTHCMD, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
 		if (ret <= 0) {

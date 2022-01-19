@@ -18,6 +18,7 @@ if test -z "${nut_have_libwrap_seen}"; then
 	dnl The line below does not work on Solaris 10.
 	dnl AC_SEARCH_LIBS(request_init, wrap, [], [nut_have_libwrap=no])
 	AC_MSG_CHECKING(for library containing request_init)
+	AC_LANG_PUSH([C])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <tcpd.h>
 int allow_severity = 0, deny_severity = 0;
@@ -35,6 +36,7 @@ int allow_severity = 0, deny_severity = 0;
 			nut_have_libwrap=no
 		])
 	])
+	AC_LANG_POP([C])
 
 	if test "${nut_have_libwrap}" = "yes"; then
 		AC_DEFINE(HAVE_WRAP, 1, [Define to enable libwrap support])

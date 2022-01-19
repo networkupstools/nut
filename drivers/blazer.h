@@ -45,7 +45,7 @@
  * Returns < 0 on error, 0 on timeout and the number of bytes send/read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen);
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen);
 
 void blazer_makevartable(void);
 void blazer_initups(void);

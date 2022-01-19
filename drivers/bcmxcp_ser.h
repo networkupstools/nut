@@ -10,7 +10,7 @@
 /* This header is needed for this line, to avoid warnings about it not
  * being static in C file (can't hide, is also needed by nut-scanner)
  */
-extern unsigned char AUT[4];
+extern unsigned char BCMXCP_AUTHCMD[4];
 
 typedef struct {
 	speed_t rate;	/* Value like B19200 defined in termios.h; note: NOT the bitrate numerically */

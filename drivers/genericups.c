@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be first */
+
 #include <sys/ioctl.h>
 
 #include "main.h"
@@ -25,7 +27,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.36"
+#define DRIVER_VERSION	"1.37"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -81,6 +83,11 @@ static void parse_output_signals(const char *value, int *line)
 
 	if (strstr(value, "DSR")) {
 		fatalx(EXIT_FAILURE, "Can't override output with DSR (not an output)");
+	}
+
+	if (strstr(value, "NULL") || strstr(value, "none")) {
+		upsdebugx(3, "%s: disable", __func__);
+		*line = 0;
 	}
 
 	if(*line == old_line) {
@@ -156,6 +163,12 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
 	}
 
+	if (strstr(value, "NULL") || strstr(value, "none")) {
+		*line = 0;
+		*val = 0;
+		upsdebugx(3, "%s: disable", __func__);
+	}
+
 	if((*line == old_line) && (*val == old_val)) {
 		upslogx(LOG_NOTICE, "%s: input overrides specified, but no effective difference - check for typos?", __func__);
 	}
@@ -188,12 +201,22 @@ void upsdrv_initinfo(void)
 		parse_input_signals(v, &upstab[upstype].line_bl, &upstab[upstype].val_bl);
 		upsdebugx(2, "parse_input_signals: LB overridden with %s\n", v);
 	}
+
+	if ((v = getval("RB")) != NULL) {
+		parse_input_signals(v, &upstab[upstype].line_rb, &upstab[upstype].val_rb);
+		upsdebugx(2, "parse_input_signals: RB overridden with %s\n", v);
+	}
+
+	if ((v = getval("BYPASS")) != NULL) {
+		parse_input_signals(v, &upstab[upstype].line_bypass, &upstab[upstype].val_bypass);
+		upsdebugx(2, "parse_input_signals: BYPASS overridden with %s\n", v);
+	}
 }
 
 /* normal idle loop - keep up with the current state of the UPS */
 void upsdrv_updateinfo(void)
 {
-	int	flags, ol, bl, ret;
+	int	flags, ol, bl, rb, bypass, ret;
 
 	ret = ioctl(upsfd, TIOCMGET, &flags);
 
@@ -204,8 +227,13 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	/* Always online when OL is disabled */
 	ol = ((flags & upstab[upstype].line_ol) == upstab[upstype].val_ol);
-	bl = ((flags & upstab[upstype].line_bl) == upstab[upstype].val_bl);
+
+	/* Always have the flags cleared when other status flags are disabled */
+	bl = upstab[upstype].line_bl != 0 && ((flags & upstab[upstype].line_bl) == upstab[upstype].val_bl);
+	rb = upstab[upstype].line_rb != 0 && ((flags & upstab[upstype].line_rb) == upstab[upstype].val_rb);
+	bypass = upstab[upstype].line_bypass != 0 && ((flags & upstab[upstype].line_bypass) == upstab[upstype].val_bypass);
 
 	status_init();
 
@@ -219,9 +247,17 @@ void upsdrv_updateinfo(void)
 		status_set("OB");	/* on battery */
 	}
 
+	if (rb) {
+		status_set("RB");	/* replace battery */
+	}
+
+	if (bypass) {
+		status_set("BYPASS");	/* battery bypass */
+	}
+
 	status_commit();
 
-	upsdebugx(5, "ups.status: %s %s\n", ol ? "OL" : "OB", bl ? "BL" : "");
+	upsdebugx(5, "ups.status: %s %s %s %s\n", ol ? "OL" : "OB", bl ? "BL" : "", rb ? "RB" : "", bypass ? "BYPASS" : "");
 
 	ser_comm_good();
 	dstate_dataok();
@@ -308,7 +344,24 @@ void upsdrv_shutdown(void)
 			sdtime);
 
 		if (sdtime > 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+			/* Different platforms, different sizes, none fits all... */
 			if (sizeof(long) > sizeof(unsigned int) && sdtime < (long)UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 				sleep((unsigned int)sdtime);
 			} else {
 				sleep(UINT_MAX);
@@ -331,6 +384,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "CP", "Override cable power setting");
 	addvar(VAR_VALUE, "OL", "Override on line signal");
 	addvar(VAR_VALUE, "LB", "Override low battery signal");
+	addvar(VAR_VALUE, "RB", "Override replace battery signal");
+	addvar(VAR_VALUE, "BYPASS", "Override battery bypass signal");
 	addvar(VAR_VALUE, "SD", "Override shutdown setting");
 	addvar(VAR_VALUE, "sdtime", "Hold time for shutdown value (seconds)");
 }

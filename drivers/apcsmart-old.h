@@ -60,14 +60,14 @@
 
 /* status bits */
 
-#define APC_STAT_CAL	1	/* calibration */
-#define APC_STAT_TRIM	2	/* SmartTrim */
-#define APC_STAT_BOOST	4	/* SmartBoost */
-#define APC_STAT_OL	8	/* on line */
-#define APC_STAT_OB	16	/* on battery */
-#define APC_STAT_OVER	32	/* overload */
-#define APC_STAT_LB	64	/* low battery */
-#define APC_STAT_RB	128	/* replace battery */
+#define APC_STAT_CAL	1L	/* calibration */
+#define APC_STAT_TRIM	2L	/* SmartTrim */
+#define APC_STAT_BOOST	4L	/* SmartBoost */
+#define APC_STAT_OL	8L	/* on line */
+#define APC_STAT_OB	16L	/* on battery */
+#define APC_STAT_OVER	32L	/* overload */
+#define APC_STAT_LB	64L	/* low battery */
+#define APC_STAT_RB	128L	/* replace battery */
 
 /* serial protocol: special commands - initialization and such */
 #define APC_STATUS	'Q'
@@ -108,7 +108,7 @@
 typedef struct {
 	const	char	*name;		/* the variable name */
 	unsigned int	flags;	 	/* various flags		*/
-	char		cmd;		/* command character */
+	unsigned char	cmd;		/* command character */
 } apc_vartab_t;
 
 static apc_vartab_t	apc_vartab[] = {
@@ -218,7 +218,7 @@ static apc_vartab_t	apc_vartab[] = {
 typedef struct {
 	const	char	*name;
 	int	flags;
-	char	cmd;
+	unsigned char	cmd;
 } apc_cmdtab_t;
 
 static apc_cmdtab_t	apc_cmdtab[] =

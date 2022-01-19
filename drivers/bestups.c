@@ -53,57 +53,57 @@ static	int	inverted_bypass_bit = 0;
 
 static void model_set(const char *abbr, const char *rating)
 {
-	if (!strcmp(abbr, "FOR")) {
+	if (!strncmp(abbr, "FOR", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "FTC")) {
+	if (!strncmp(abbr, "FTC", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress Telecom %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "PRO")) {
+	if (!strncmp(abbr, "PRO", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strcmp(abbr, "PR2")) {
+	if (!strncmp(abbr, "PR2", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro II %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strcmp(abbr, "325")) {
+	if (!strncmp(abbr, "325", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 325 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "520")) {
+	if (!strncmp(abbr, "520", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 520 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "610")) {
+	if (!strncmp(abbr, "610", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "610 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "620")) {
+	if (!strncmp(abbr, "620", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 620 %s", rating);
 		return;
 	}
 
-	if (!strcmp(abbr, "AX1")) {
+	if (!strncmp(abbr, "AX1", 3)) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Axxium Rackmount %s", rating);
 		return;
@@ -133,7 +133,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int get_ident(char *buf, size_t bufsize)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	*ID;
 
 	ID = getval("ID");	/* user-supplied override from ups.conf */
@@ -245,7 +246,8 @@ static void ups_ident(void)
 static void ups_sync(void)
 {
 	char	buf[256];
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
@@ -282,7 +284,8 @@ void upsdrv_initinfo(void)
 
 static int ups_on_line(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	temp[256], pstat[32];
 
 	for (i = 0; i < MAXTRIES; i++) {
@@ -327,7 +330,7 @@ void upsdrv_updateinfo(void)
 	char	involt[16], outvolt[16], loadpct[16], acfreq[16],
 		battvolt[16], upstemp[16], pstat[16], buf[256];
 	float	bvoltp;
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
 
@@ -350,13 +353,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %zd bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %d bytes)",
+		ser_comm_fail("Poll failed: response too long (got %zd bytes)",
 			ret);
 		dstate_datastale();
 		return;
