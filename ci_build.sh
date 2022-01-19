@@ -415,7 +415,7 @@ optional_dist_clean_check() {
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
-        GIT_ARGS="--ignored" check_gitignore "distclean" || return
+        check_gitignore "distclean" || return
     fi
     return 0
 }
