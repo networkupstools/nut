@@ -22,6 +22,8 @@
 
 */
 
+#include "config.h" /* must be first */
+
 #include <ctype.h>
 #include <stdio.h>
 #include "main.h"

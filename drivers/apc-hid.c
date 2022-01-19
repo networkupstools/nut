@@ -95,7 +95,7 @@ static usb_device_id_t apc_usb_device_table[] = {
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before

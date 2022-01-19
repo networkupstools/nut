@@ -168,6 +168,9 @@ cat > "$CFILE" <<EOF
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *
+ *  TODO: Add year and name for new subdriver author (contributor)
+ *  Mention in docs/acknowledgements.txt if this is a vendor contribution
+ *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
  *
@@ -203,7 +206,7 @@ static usb_device_id_t ${LDRIVER}_usb_device_table[] = {
 	{ USB_DEVICE(${UDRIVER}_VENDORID, 0x${PRODUCTID}), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 
@@ -218,7 +221,7 @@ EOF
 cat "$SUBST" | sed 's/\(.*\) \(.*\)/\t{ "\2",\t0x\1 },/' >> "$CFILE"
 
 cat >> "$CFILE" <<EOF
-	{  NULL, 0 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t ${LDRIVER}_utab[] = {
@@ -238,14 +241,14 @@ EOF
 cat "$NEWUTABLE" | sort -u | while read U; do
     UL=`echo $U | tr A-Z a-z`
     cat >> "$CFILE" <<EOF
-  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
+	{ "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF
 done
 
 cat >> "$CFILE" <<EOF
 
-  /* end of structure. */
-  { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 static const char *${LDRIVER}_format_model(HIDDevice_t *hd) {

@@ -58,7 +58,7 @@ static void usage(const char *prog)
 static void printvar(const char *var)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -86,7 +86,7 @@ static void printvar(const char *var)
 	}
 
 	if (numa < numq) {
-		fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least %d)", numa, numq);
+		fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least %zu)", numa, numq);
 	}
 
 	printf("%s\n", answer[3]);
@@ -95,7 +95,7 @@ static void printvar(const char *var)
 static void list_vars(void)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -119,7 +119,7 @@ static void list_vars(void)
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
 		}
 
 		printf("%s: %s\n", answer[2], answer[3]);
@@ -129,7 +129,7 @@ static void list_vars(void)
 static void list_upses(int verbose)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -151,7 +151,7 @@ static void list_upses(int verbose)
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
 		}
 
 		if(verbose) {
@@ -165,7 +165,7 @@ static void list_upses(int verbose)
 static void list_clients(const char *devname)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -188,7 +188,7 @@ static void list_clients(const char *devname)
 
 		/* CLIENT <upsname> <address> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
 		}
 
 		printf("%s\n", answer[2]);
