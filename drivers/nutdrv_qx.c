@@ -1698,7 +1698,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 	if (ret <= 0) {
 		upsdebugx(1,
 			"send control: %s (%d)",
-			ret ? usb_strerror() : "timeout",
+			ret ? nut_usb_strerror(ret) : "timeout",
 			ret);
 		return ret;
 	}
@@ -1720,7 +1720,7 @@ int armac_command(const char *cmd, char *buf, size_t buflen)
 		if (ret != 6) {
 			upsdebugx(1,
 				"interrupt read error: %s (%d)",
-				ret ? usb_strerror() : "timeout",
+				ret ? nut_usb_strerror(ret) : "timeout",
 				ret);
 			return ret;
 		}
