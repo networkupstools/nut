@@ -1842,7 +1842,7 @@ bool_t load_mib2nut(const char *mib)
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
 				upsdebugx(2, "%s: skip the \"%s\" entry which "
-					"is neither \"auto\" nor a name in the mapping table",
+					"is neither \"auto\" nor a valid name in the mapping table",
 					__func__, mib);
 				continue;
 			}
