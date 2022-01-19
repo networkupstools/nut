@@ -509,7 +509,7 @@ static float output_voltage(void)
 		model=KINmodels[raw_data[MODELNUMBER]/16];
 		if (statINV == 0) {
 			if (statAVR == 0) {
-				// FIXME: miss test "if (iUPS == 1) {"
+				/* FIXME: miss test "if (iUPS == 1) {" */
 				if (linevoltage >= 200) {
 					if (model <= 625)
 						tmp = 1.79*raw_data[OUTPUT_VOLTAGE] + 3.35;
@@ -527,7 +527,7 @@ static float output_voltage(void)
 				}
 			}
 			else if (statAVR == 1) {
-				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				/* FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {" */
 				if (linevoltage >= 200) {
 					if (model <= 525)
 						tmp = 2.07 * raw_data[OUTPUT_VOLTAGE];
@@ -546,7 +546,7 @@ static float output_voltage(void)
 						tmp = 1.875 * raw_data[OUTPUT_VOLTAGE] / 2.0;
 				}
 			} else {
-				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				/* FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {" */
 				if (linevoltage >= 200) {
 					if (model == 625)
 						tmp = 1.571 * raw_data[OUTPUT_VOLTAGE];
@@ -564,7 +564,7 @@ static float output_voltage(void)
 				}
 			}
 		} else {
-			// FIXME: miss test "if ((iUPS == 1) && (T != 0))"
+			/* FIXME: miss test "if ((iUPS == 1) && (T != 0))" */
 			if (linevoltage < 200) {
 				rdatax = datax1[raw_data[MODELNUMBER]/16];
 				rdatay = datay1[raw_data[MODELNUMBER]/16];
@@ -592,7 +592,7 @@ static float output_voltage(void)
 				if (tmp>0)
 					tmp=sqrt(tmp)*rdatay;
 			}
-			// FIXME: may miss a last processing with ErrorVal = 5 | 10
+			/* FIXME: may miss a last processing with ErrorVal = 5 | 10 */
 		}
 	} else if ( !strncmp(types[type].name, "IMP", 3) || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
@@ -1089,8 +1089,8 @@ void upsdrv_initups(void)
 /* display help */
 void upsdrv_help(void)
 {
-	//               1         2         3         4         5         6         7         8
-	//      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+	/*               1         2         3         4         5         6         7         8 */
+	/*      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
 	printf("\n");
 	printf("Specify UPS information in the ups.conf file.\n");
 	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
@@ -1173,8 +1173,8 @@ void upsdrv_initinfo(void)
 /* define possible arguments */
 void upsdrv_makevartable(void)
 {
-		//        1         2         3         4         5         6         7         8
-		//2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+		/*        1         2         3         4         5         6         7         8 */
+		/*2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
 	addvar(VAR_VALUE, "type",
 		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other','OPTI'\n"
 		" (default: 'Trust')");

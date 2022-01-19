@@ -21,6 +21,8 @@
     \author Frederic Bohe <fredericbohe@eaton.com>
 */
 
+#include "config.h" /* must be first */
+
 #include "nutscan-ip.h"
 #include <stdio.h>
 #include "common.h"

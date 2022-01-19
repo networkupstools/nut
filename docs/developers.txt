@@ -134,7 +134,7 @@ miserably for anyone on an older system.  That means you must not use
 it.  gcc only warns about this with -pedantic.
 
 Another feature that does not work on some compilers (e.g. conforming
-to ANSI C / C89 standard) is initial variable declaration inside a
+to "ANSI C"/C89/C90 standard) is initial variable declaration inside a
 'for loop' block, like this:
 --------------------------------------------------------------------------------
 function do_stuff(void)
@@ -152,17 +152,24 @@ C99 (or rather GNU99 on many systems) or newer standard.
 
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
+By the end of 2021, NUT codebase has been revised to pass GNU and strict-C
+mode builds with C89 standard with the GCC toolkit (and on systems that do
+have the newer features in libraries, just hide them in standard headers);
+however CLANG toolkit is more restrictive about the C99+ syntax used.
 If somebody in the community requires to build and run NUT on systems
 that old, pull requests to fix the offending coding issues are welcome.
 
 Note also that the NUT codebase currently relies on certain features,
-such as the printf format modifiers for `(s)size_t`, that a pedantic C90
-mode compilation warns is not part of the standard but a GNU extension
-(and part of C99 and newer standard revisions).
+such as the printf format modifiers for `(s)size_t`, use of `long long`,
+some nuances about structure/array initializers, variadic macros for
+debugging, etc. that a pedantic C90 mode compilation warns is not part
+of the standard but a GNU extension (and part of C99 and newer standard
+revisions). Many of the "offences" against the older standard actually
+come from system and third-party header files.
 
 That said, the NUT CI farm does run non-regression builds with GNU C89
-standard revision and minimal warnings level, to ensure that codebase
-remains at least basically compliant.
+and strict C89 standard revisions and minimal passing warnings level,
+to ensure that codebase is and remains at least basically compliant.
 
 Continuous Integration and Automated Builds
 -------------------------------------------
@@ -735,9 +742,15 @@ skeletal man page that will probably miss many of the finer points of
 the driver and hardware.
 
 The same remark goes for device entries: if you add support for new models,
-remember to also complete the hardware compatibility list, present
+please remember to also complete the hardware compatibility list, present
 in data/driver.list.in. This will be used to generate both textual, static
 HTML and dynamic searchable HTML for the website.
+
+Finally, don't forget about fame and glory: if you added or substantially
+updated a driver, your copyright belongs in the heading comment (along
+with existing ones). For vendor backed (or sponsored) contributions we
+welcome an entry in the docs/acknowledgements.txt file as well, to track
+and know the industry players who help make NUT better and more useful.
 
 Source code management
 ----------------------

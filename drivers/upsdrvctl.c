@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +26,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include "config.h"
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
