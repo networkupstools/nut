@@ -494,6 +494,12 @@ dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
+dnl While the contribution is being absorbed into the NUT codebase,
+dnl we don't want the CI farm to build it by default and so block NUT
+dnl packaging. This toggle may be removed or switched to "yes" later.
+dnl Until then, also this is not activated by --with-all flag.
+NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [no])
+
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 
@@ -1306,6 +1312,13 @@ fi
 AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
 NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}], [],
 					[WITH_DEV], [Define to enable development files support])
+
+dnl ----------------------------------------------------------------------
+
+AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
+NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, has compiler/coverage warnings)],
+					[${nut_with_nutconf}], [],
+					[WITH_NUTCONF], [Define to enable nutconf tool support])
 
 dnl ----------------------------------------------------------------------
 
@@ -3268,6 +3281,7 @@ AC_CONFIG_FILES([
  server/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
+ tools/nutconf/Makefile
  tests/Makefile
  Makefile
 ])

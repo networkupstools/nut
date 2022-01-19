@@ -34,12 +34,15 @@ getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 endif
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libnutconf.la \
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
+# These are an optional part of cppunittest, if building WITH_NUTCONF
+CPPUNITTESTSRC_NUTCONF = nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
@@ -59,8 +62,16 @@ endif
 
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
-cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  = $(top_builddir)/clients/libnutclient.la
+cppunittest_LDADD += $(top_builddir)/clients/libnutclientstub.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+
+# Currently nutconf and related codebase causes woes for static analysis
+# so we do not build it unless explicitly asked to.
+if WITH_NUTCONF
+cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
+cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
+endif
 
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building
 # only some parts of NUT):
@@ -71,7 +82,7 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball
 
-EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
 
 endif !HAVE_CPPUNIT
 

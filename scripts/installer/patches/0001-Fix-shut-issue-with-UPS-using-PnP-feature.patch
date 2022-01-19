@@ -1,0 +1,47 @@
+From 9571dc26003b9cc9f67635ae333af157c2f48f56 Mon Sep 17 00:00:00 2001
+From: Frederic Bohe <FredericBohe@Eaton.com>
+Date: Fri, 6 Sep 2013 12:06:13 +0000
+Subject: [PATCH] Fix shut issue with UPS using PnP feature
+
+git-svn-id: https://mango-tux.mbt.lab.etn.com/svn/soft/ipss_unix/trunk@280 dcbe65f9-efb6-4238-8214-d54b5f69a2a4
+---
+ drivers/libshut.c                     | 2 +-
+ tools/nut-scanner/scan_eaton_serial.c | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/libshut.c b/drivers/libshut.c
+index 3c33668..8236b95 100644
+--- a/drivers/libshut.c
++++ b/drivers/libshut.c
+@@ -312,7 +312,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
+ 	/* FIXME: add variable baudrate detection */
+ 	*upsfd = ser_open(device_path);
+ 	ser_set_speed(*upsfd, device_path, B2400);
+-	setline(*upsfd, 1);
++	setline(*upsfd, 0);
+ 
+ 	/* initialise communication */
+ 	if (!shut_synchronise(*upsfd))
+diff --git a/tools/nut-scanner/scan_eaton_serial.c b/tools/nut-scanner/scan_eaton_serial.c
+index 82fba6c..ecfbe14 100644
+--- a/tools/nut-scanner/scan_eaton_serial.c
++++ b/tools/nut-scanner/scan_eaton_serial.c
+@@ -139,11 +139,11 @@ nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
+ 	int devfd = -1;
+ 
+ 	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
+-		/* set RTS to on and DTR to off first, as these are not fatal
+-		 * and allow to test the port */
+-		if (ser_set_dtr(devfd, 0) != -1) {
++		/* set RTS to off and DTR to on to allow correct behavior
++		 * with UPS using PnP feature */
++		if (ser_set_dtr(devfd, 1) != -1) {
+ 
+-			ser_set_rts(devfd, 1);
++			ser_set_rts(devfd, 0);
+ 			ser_set_speed_nf(devfd, port_name, B2400);
+ 
+ 			if (shut_synchronise(devfd)) {
+-- 
+2.33.1
+

@@ -1,0 +1,49 @@
+#!/bin/sh
+#   ipp-wrapper
+#
+#   Copyright (c) 2017, by Eaton (R) Corporation. All rights reserved.
+#
+#   A shell script to manipulate the environment variables needed for
+#   IPP-Unix programs to dynamically link with their bundled libraries.
+
+#
+# Global variables
+#
+NUT_DIR="/usr/local/ups"
+NUT_BIN_DIR="$NUT_DIR/bin"
+NUT_SBIN_DIR="$NUT_DIR/sbin"
+NUT_LIB_DIR="$NUT_DIR/lib"
+
+PROGNAME="`basename $0`"
+
+if [ "$PROGNAME" = "ipp-wrapper" ]; then
+    echo "This is a wrapper to call other programs; do not call it directly!" >&2
+    exit 0
+fi
+
+# Use potentially external /bin/test (/bin/[) for the last time...
+PROGTYPE=""
+if [ -x "$NUT_BIN_DIR/$PROGNAME" ]; then
+    PROGTYPE="bin"
+else
+    if [ -x "$NUT_SBIN_DIR/$PROGNAME" ]; then
+        PROGTYPE="sbin"
+    fi
+fi
+
+# Do not run any other external program after this point, as it may
+# fail expecting different shared libraries.
+LD_LIBRARY_PATH="$NUT_LIB_DIR:/usr/lib:/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
+
+case "$PROGTYPE" in
+bin)
+    exec "$NUT_BIN_DIR/$PROGNAME" "$@"
+    ;;
+sbin)
+    exec "$NUT_SBIN_DIR/$PROGNAME" "$@"
+    ;;
+esac
+
+echo "FATAL: Program named '$PROGNAME' not found among IPP-Unix binaries" >&2
+exit 1

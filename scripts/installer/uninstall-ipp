@@ -1,0 +1,363 @@
+#!/bin/sh
+#	uninstall.sh
+#	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
+#	A shell script which uninstalls IPP - Unix
+#	It stops daemons and removes the native package
+#
+PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/ccs/bin:/usr/xpg4/bin:/usr/xpg6/bin"
+export PATH
+
+
+NUT_PACKAGE_SOLARI="NUT_solaris_sparc_package2.6.5.local"
+NUT_PACKAGE_SOLINT="NUT_solaris_i386_package2.6.5.local"
+
+cd "`dirname "$0"`"
+
+#configuration data
+C_MODE="standalone"
+C_HOSTNAME="localhost"
+C_CONNECTIVITY="serial"
+C_DEVICE=""
+C_PASSWORD=""
+
+# /dev/tty user & group used on the supported systems
+case "`uname -s`" in
+	"SunOS")
+		TTY_OWNER="root:root"
+		;;
+	"AIX")
+		TTY_OWNER="root:system"
+		;;
+	"HP-UX")
+		TTY_OWNER="bin:bin"
+		;;
+	*)
+		# Safe fallback for unsupported systems
+		TTY_OWNER="root:root"
+		;;
+esac
+
+DO_UNINSTALL=""
+
+ADMIN_FILE="/tmp/ipp_admin_file"
+
+UNINSTALL_TMP="/tmp"
+LOG_FILE="$UNINSTALL_TMP/uninstall.log"
+
+get_parameters() {
+	case "$1" in
+	English)
+		lang=EN
+		;;
+#	Japanese)
+#		lang=JP
+#		;;
+	SOLARI)
+		SYSTEM="$1"
+		;;
+	SOLINT)
+		SYSTEM="$1"
+		;;
+	HPUX)
+		SYSTEM="$1"
+		;;
+	AIX)
+		SYSTEM="$1"
+		;;
+	DO_UNINSTALL)
+		DO_UNINSTALL="OK"
+		;;
+	esac
+}
+
+check_locale_language() {
+	set `locale` >/dev/null 2>&1
+	case "$1" in
+	LANG=en_US)
+		lang=EN
+		;;
+	LANG=C)
+		lang=EN
+		;;
+	esac
+}
+
+compute_SYSTEM () {
+	set `uname -a`
+	case "$1" in
+	SunOS)
+		case "$3" in
+		5.*)
+			case "$5" in
+			i86pc)
+				SYSTEM=SOLINT
+				;;
+			*)
+				SYSTEM=SOLARI
+				;;
+			esac
+		;;
+		*)
+			SYSTEM="Unknown System"
+			;;
+		esac
+		;;
+	HP-UX)
+		SYSTEM=HPUX
+		;;
+	AIX)
+		case "$4" in
+		6)
+			SYSTEM=AIX
+			;;
+		7)
+			SYSTEM=AIX
+			;;
+		*)
+			SYSTEM="This AIX version is not supported"
+			;;
+		esac
+		;;
+	*)	
+		SYSTEM="Unknown System"
+		;;
+	esac
+
+	compute_system
+}
+
+compute_system () {
+	case "$SYSTEM" in
+	SOLINT)
+		system=solint
+		;;
+	SOLARI)
+		system=solari
+		;;
+	HPUX)
+		system=hpux
+		;;
+	AIX)
+		system=aix
+		;;
+	*)
+		echo
+		echo "Please specify your system like './install.sh <SYSTEM>'"
+		echo "Valid systems are SOLINT SOLARI HPUX AIX"
+		echo
+		exit 1
+		;;
+	esac
+}
+
+create_admin_file () {
+        echo basedir=default > "$ADMIN_FILE"
+        echo runlevel=quit >> "$ADMIN_FILE"
+        echo conflict=nocheck >> "$ADMIN_FILE"
+        echo setuid=nocheck >> "$ADMIN_FILE"
+        echo action=nocheck >> "$ADMIN_FILE"
+        echo partial=nocheck >> "$ADMIN_FILE"
+        echo instance=unique >> "$ADMIN_FILE"
+        echo idepend=quit >> "$ADMIN_FILE"
+        echo rdepend=quit >> "$ADMIN_FILE"
+        echo space=quit >> "$ADMIN_FILE"
+}
+
+restore_ttys () {
+	for tty in `find /dev/tty* -user ipp`; do
+		chown "$TTY_OWNER" "$tty"
+		chmod 622 "$tty"
+	done
+}
+
+killall_ps () {
+	kill -9 `ps -e | awk "/ $1\$/ { print \$1; }"`
+}
+
+killall_nut () {
+	killall_ps upsd     >/dev/null 2>/dev/null
+	killall_ps upsmon   >/dev/null 2>/dev/null
+	killall_ps bcmxcp   >/dev/null 2>/dev/null
+	killall_ps mge-shut >/dev/null 2>/dev/null
+	killall_ps snmp-ups >/dev/null 2>/dev/null
+}
+
+uninstall_files () {
+	rm -f "$LOG_FILE" > /dev/null 2>&1
+	touch "$LOG_FILE"
+
+	echo
+	echo "`date`: Uninstalling IPP - Unix" | tee -a "$LOG_FILE"
+	echo
+
+	case "$system" in
+	solari)
+		/etc/init.d/nut stop >> "$LOG_FILE" 2>&1
+
+		sleep 5
+		killall_nut
+
+		create_admin_file
+		restore_ttys
+
+		pkgrm -n -a "$ADMIN_FILE" NUT >> "$LOG_FILE" 2>&1
+		rm -f "$ADMIN_FILE"
+		#uninstall additional libraries
+	;;
+	solint)
+		/etc/init.d/nut stop >> "$LOG_FILE" 2>&1
+
+		sleep 5
+		killall_nut
+
+		create_admin_file
+		restore_ttys
+
+		pkgrm -n -a "$ADMIN_FILE" NUT >> "$LOG_FILE" 2>&1
+		rm -f "$ADMIN_FILE"
+		#uninstall additional libraries
+
+	;;
+	hpux)
+		/sbin/init.d/nut-drvctl stop >> "$LOG_FILE" 2>&1
+		/sbin/init.d/nut-upsd stop >> "$LOG_FILE" 2>&1
+		/sbin/init.d/nut-upsmon stop >> "$LOG_FILE" 2>&1
+
+		sleep 5
+		killall_nut
+
+		restore_ttys
+
+		swremove NUT >> "$LOG_FILE" 2>&1
+		#uninstall additional libraries
+	;;
+	aix)
+		/etc/rc.d/init.d/ups stop >> "$LOG_FILE" 2>&1
+
+		sleep 5
+		killall_nut
+
+		restore_ttys
+
+		rm -rf "$instpath/share/man" >> "$LOG_FILE" 2>&1
+
+		rpm -e nut >> "$LOG_FILE" 2>&1
+		rpm -e nut-client >> "$LOG_FILE" 2>&1
+		#uninstall additional libraries
+	;;
+
+	*)
+		echo "Installation error, please see $LOG_FILE."
+		exit 1
+	;;
+	esac
+
+	rm -f "$instpath/bin/uninstall"* >> "$LOG_FILE" 2>&1
+
+	rm -f "$instpath/init" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/shutdown" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/sbin/ipp-os-shutdown" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/sbin/ipp-host-shutdown.sample" >> "$LOG_FILE" 2>&1
+
+	rm -f "$instpath/bin/ipp-notifier.sh" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/bin/ipp-status" >> "$LOG_FILE" 2>&1
+
+	rm -f "$instpath/share/string.sh" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/share/install.res" >> "$LOG_FILE" 2>&1
+
+	rm -f "$instpath/etc/ipp.conf.sample" >> "$LOG_FILE" 2>&1
+
+	rm -Rf "$instpath/lib" >> "$LOG_FILE" 2>&1
+
+	rm -Rf "$instpath/xbin" >> "$LOG_FILE" 2>&1
+	rm -f "$instpath/bin/ipp-wrapper" >> "$LOG_FILE" 2>&1
+}
+
+remove_profile_settings () {
+	if /usr/bin/test -e /etc/profile; then
+		awk '
+		BEGIN {
+			echo = 1;
+		}
+
+		/^##### IPP - Unix settings begin #####$/ {
+			echo = 0;
+		}
+
+		/^##### IPP - Unix settings end #####$/ {
+			echo = 1;
+			next;
+		}
+
+		{
+			if (echo) print $0;
+		}
+		' /etc/profile > /tmp/profile.tmp.$$
+
+		mv /tmp/profile.tmp.$$ /etc/profile
+	fi
+}
+
+main () {
+# Setup some globals
+	instpath=/usr/local/ups
+	ret=TRUE
+
+# Must check parameters
+	SYSTEM=""
+	lang=""
+
+	if [ "$1" != "" ] ; then
+		get_parameters $1
+	fi
+
+	if [ "$2" != "" ] ; then
+		get_parameters $2
+	fi
+
+	if [ "$3" != "" ] ; then
+		get_parameters $3
+	fi
+
+	if [ ! "$DO_UNINSTALL" = "OK" ];then
+		cp -f "$instpath/bin/uninstall-ipp" "$UNINSTALL_TMP"
+		chmod 744 "$UNINSTALL_TMP/uninstall-ipp"
+		exec "$UNINSTALL_TMP/uninstall-ipp" DO_UNINSTALL $1 $2 $3
+		exit
+	fi
+
+	compute_SYSTEM
+
+# Get language locale
+	if [ "$lang" = "" ]; then
+		check_locale_language
+		if [ -z "$lang" ]; then
+			lang=EN
+		fi
+	fi
+
+	who="`whoami 2>/dev/null`"
+	if [ "$who" != 'root' ]; then
+		#work around in case no whoami is present
+		who="`id -u 2>/dev/null`"
+		if [ "$who" != '0' ]; then
+			who="`id 2>/dev/null | grep -w '0' | grep -w root`"
+			if [ -z "$who" ]; then
+				echo "You must be root to uninstall IPP - Unix."
+				exit 1
+			fi
+		fi
+	fi
+
+	uninstall_files
+	remove_profile_settings
+
+# Say goodbye
+	echo "---------------------------------------------------------------"
+	echo "   IPP - Unix was successfully uninstalled from your system."
+	echo "---------------------------------------------------------------"
+
+}
+
+main $1 $2 $3
+
