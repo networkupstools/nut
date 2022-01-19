@@ -1768,6 +1768,19 @@ static mib2nut_info_t *match_sysoid()
 				/* Counter verify, using {ups,device}.model */
 				snmp_info = mib2nut[i]->snmp_info;
 
+				if (snmp_info == NULL) {
+					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name
+						);
+					continue;
+				}
+				else if (snmp_info[0].info_type == NULL) {
+					upsdebugx(1, "%s: WARNING: snmp_info is empty "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name);
+				}
+
 				if (match_model_OID() != TRUE)
 				{
 					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
