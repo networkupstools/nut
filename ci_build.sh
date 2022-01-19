@@ -333,11 +333,21 @@ ccache_stats() {
 }
 
 check_gitignore() {
-    # Optional envvars from caller: FILE_DESCR FILE_REGEX GIT_ARGS
+    # Optional envvars from caller: FILE_DESCR FILE_REGEX FILE_GLOB
+    # and GIT_ARGS
     local BUILT_TARGETS="$@"
 
     [ -n "${FILE_DESCR-}" ] || FILE_DESCR="some"
+    # Note: regex actually used starts with catching Git markup, so
+    # FILE_REGEX should not include that nor "^" line-start marker.
+    # We also rule out files made by CI routines and this script.
+    # NOTEL: In particular, we need build results of `make cppcheck`
+    # later, so its recipe does not clean nor care for gitignore.
     [ -n "${FILE_REGEX-}" ] || FILE_REGEX='.*'
+    # Shell-glob filename pattern for points of interest to git status
+    # and git diff; note that filenames starting with a dot should be
+    # reported by `git status -- '*'` and not hidden.
+    [ -n "${FILE_GLOB-}" ] || FILE_GLOB='*'
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
@@ -348,13 +358,13 @@ check_gitignore() {
     fi
 
     # One invocation should report to log:
-    git status $GIT_ARGS -s | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}" || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    git status $GIT_ARGS -s -- "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}" || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-        git diff || true
+        git diff -- "${FILE_GLOB}" || true
         echo "==="
         return 1
     fi
