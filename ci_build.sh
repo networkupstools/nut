@@ -358,11 +358,16 @@ check_gitignore() {
     fi
 
     # One invocation should report to log:
-    git status $GIT_ARGS -s -- "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}" || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    git status $GIT_ARGS -s -- "${FILE_GLOB}" \
+    | egrep -v '^.. \.ci.*\.log.*' \
+    | egrep "${FILE_REGEX}" \
+    || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
+    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] \
+    && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
+    ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
         git diff -- "${FILE_GLOB}" || true
         echo "==="
