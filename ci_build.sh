@@ -389,7 +389,7 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
@@ -413,7 +413,7 @@ optional_dist_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
         GIT_ARGS="--ignored" check_gitignore "distclean" || return
     fi
@@ -1051,7 +1051,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # would just re-evaluate `configure` to update the
                 # Makefile to remove it and other generated data.
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE $MAKE_FLAGS_QUIET distclean -k || true
+                #$MAKE distclean -k || true
 
                 echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
@@ -1129,7 +1129,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1247,7 +1247,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
