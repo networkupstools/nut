@@ -507,4 +507,5 @@ subdriver_t apc_subdriver = {
 	apc_format_model,
 	apc_format_mfr,
 	apc_format_serial,
+	fix_report_desc,
 };
