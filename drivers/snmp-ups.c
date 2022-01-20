@@ -246,9 +246,17 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s MIB %s", mibname, mibvers);
 
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
 	/* add instant commands to the info database.
 	 * outlet (and groups) commands are processed later, during initial walk */
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -1608,7 +1616,15 @@ static void disable_transfer_oids(void)
 
 	upslogx(LOG_INFO, "Disabling transfer OIDs");
 
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 		if (!strcasecmp(su_info_p->info_type, "input.transfer.low")) {
 			su_info_p->flags &= ~SU_FLAG_OK;
 			continue;
@@ -1782,7 +1798,15 @@ snmp_info_t *su_find_info(const char *type)
 {
 	snmp_info_t *su_info_p;
 
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 		if (!strcasecmp(su_info_p->info_type, type)) {
 			upsdebugx(3, "%s: \"%s\" found", __func__, type);
 			return su_info_p;
@@ -1908,6 +1932,19 @@ static mib2nut_info_t *match_sysoid()
 				/* Counter verify, using {ups,device}.model */
 				snmp_info = mib2nut[i]->snmp_info;
 
+				if (snmp_info == NULL) {
+					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name
+						);
+					continue;
+				}
+				else if (snmp_info[0].info_type == NULL) {
+					upsdebugx(1, "%s: WARNING: snmp_info is empty "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name);
+				}
+
 				if (match_model_OID() != TRUE)
 				{
 					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
@@ -1977,15 +2014,33 @@ bool_t load_mib2nut(const char *mib)
 	{
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
+			upsdebugx(4, "%s: checking against mapping table entry #%d \"%s\"",
+				__func__, i, mib2nut[i]->mib_name);
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
 				upsdebugx(2, "%s: skip the \"%s\" entry which "
-					" is neither \"auto\" nor a name in the mapping table",
+					"is neither \"auto\" nor a valid name in the mapping table",
 					__func__, mib);
 				continue;
 			}
 			upsdebugx(2, "%s: trying classic sysOID matching method with '%s' mib",
 				__func__, mib2nut[i]->mib_name);
+
+			/* Classic method: test an OID specific to this MIB */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
 
 			/* Device might not support this MIB, but we want to
 			 * track that the name string is valid for diags below
@@ -1993,9 +2048,6 @@ bool_t load_mib2nut(const char *mib)
 			if (!mibIsAuto) {
 				mibSeen = TRUE;
 			}
-
-			/* Classic method: test an OID specific to this MIB */
-			snmp_info = mib2nut[i]->snmp_info;
 
 			if (match_model_OID() != TRUE)
 			{
@@ -2123,7 +2175,15 @@ static void disable_competition(snmp_info_t *entry)
 {
 	snmp_info_t	*p;
 
-	for(p=snmp_info; p->info_type!=NULL; p++) {
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for(p = snmp_info; (p != NULL && p->info_type != NULL) ; p++) {
 		if(p!=entry && !strcmp(p->info_type, entry->info_type)) {
 			upsdebugx(2, "%s: disabling %s %s",
 					__func__, p->info_type, p->OID);
@@ -3086,8 +3146,17 @@ bool_t snmp_ups_walk(int mode)
 		if (devices_count > 1)
 			device_alarm_init();
 
+		/* better safe than sorry, check sanity on every loop cycle */
+		if (snmp_info == NULL) {
+			fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+		}
+
+		if (snmp_info[0].info_type == NULL) {
+			upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+		}
+
 		/* Loop through all mapping entries for the current_device_number */
-		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+		for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 #if WITH_DMF_FUNCTIONS
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
 				if(su_info_p->function_code) {

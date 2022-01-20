@@ -210,6 +210,8 @@ static void show_usage()
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
 		printf("  -U, --usb_scan: Scan USB devices.\n");
+	} else {
+		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_snmp) {
 		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
@@ -226,16 +228,24 @@ static void show_usage()
 		printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
 		printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
 #endif /* WITH_DMFMIB */
+	} else {
+		printf("* Options for SNMP devices scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_xml_http) {
 		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
+	} else {
+		printf("* Options for XML/HTTP devices scan not enabled: library not detected.\n");
 	}
 	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
 	if (nutscan_avail_avahi) {
 		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+	} else {
+		printf("* Options for NUT devices (avahi method) scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
+	} else {
+		printf("* Options for IPMI devices scan not enabled: library not detected.\n");
 	}
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");

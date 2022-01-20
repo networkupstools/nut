@@ -617,6 +617,16 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (i && memchr(buf, '\r', i) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (i < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[i++] = '\r';
+			buf[i] = 0;
+		}
+	}
+
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
@@ -806,6 +816,16 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	memset(buf, 0, buflen);
 	memcpy(buf, tmp, len);
 
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (len && memchr(buf, '\r', len) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (len < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[len++] = '\r';
+			buf[len] = 0;
+		}
+	}
+
 	if (len > INT_MAX) {
 		upsdebugx(3, "%s: read too much (%zu)", __func__, len);
 		return -1;
@@ -960,6 +980,16 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 				ret = (int)di;
 			}
 
+			/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+			if (ret && memchr(buf, '\r', ret) == NULL) {
+				upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+				if ((size_t)ret < buflen - 1) {
+					upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+					buf[ret++] = '\r';
+					buf[ret] = 0;
+				}
+			}
+
 			/* "UPS No Ack" has a special meaning */
 			if (
 				strcspn(buf, "\r") == 10 &&
@@ -1074,6 +1104,16 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 		upsdebugx(3, "read: %s (%d)",
 			ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
+	}
+
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (memchr(buf, '\r', ret) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if ((size_t)ret < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[ret++] = '\r';
+			buf[ret] = 0;
+		}
 	}
 
 	upsdebug_hex(5, "read", buf, (size_t)ret);
@@ -1696,6 +1736,7 @@ typedef struct {
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
