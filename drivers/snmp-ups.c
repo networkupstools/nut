@@ -199,9 +199,17 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s MIB %s", mibname, mibvers);
 
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
 	/* add instant commands to the info database.
 	 * outlet (and groups) commands are processed later, during initial walk */
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -209,7 +217,7 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
-// FIXME: daisychain commands support!
+/* FIXME: daisychain commands support! */
 su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
@@ -358,7 +366,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -442,7 +450,7 @@ void upsdrv_makevartable(void)
 	char *pn; /* proto name to add */
 	size_t remain = sizeof(tmp_buf) - 1;
 	int ret;
-	NUT_UNUSED_VARIABLE(comma); // potentially, if no protocols are available
+	NUT_UNUSED_VARIABLE(comma); /* potentially, if no protocols are available */
 
 	tmp_buf[0] = '\0';
 
@@ -1444,7 +1452,15 @@ static void disable_transfer_oids(void)
 
 	upslogx(LOG_INFO, "Disabling transfer OIDs");
 
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 		if (!strcasecmp(su_info_p->info_type, "input.transfer.low")) {
 			su_info_p->flags &= ~SU_FLAG_OK;
 			continue;
@@ -1462,7 +1478,7 @@ static void disable_transfer_oids(void)
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
-	char info_type[128]; // We tweak incoming "su_info_p->info_type" value in some cases
+	char info_type[128]; /* We tweak incoming "su_info_p->info_type" value in some cases */
 
 /* FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?),
  *and same macro or sizeof(info_type) below? */
@@ -1618,7 +1634,15 @@ snmp_info_t *su_find_info(const char *type)
 {
 	snmp_info_t *su_info_p;
 
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 		if (!strcasecmp(su_info_p->info_type, type)) {
 			upsdebugx(3, "%s: \"%s\" found", __func__, type);
 			return su_info_p;
@@ -1744,6 +1768,19 @@ static mib2nut_info_t *match_sysoid()
 				/* Counter verify, using {ups,device}.model */
 				snmp_info = mib2nut[i]->snmp_info;
 
+				if (snmp_info == NULL) {
+					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name
+						);
+					continue;
+				}
+				else if (snmp_info[0].info_type == NULL) {
+					upsdebugx(1, "%s: WARNING: snmp_info is empty "
+						"for mapping table entry #%d \"%s\"",
+						__func__, i, mib2nut[i]->mib_name);
+				}
+
 				if (match_model_OID() != TRUE)
 				{
 					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
@@ -1782,7 +1819,7 @@ bool_t load_mib2nut(const char *mib)
 		"proper MIB for device [%s] (host %s)",
 		__func__, mib,
 		upsname ? upsname : device_name,
-		device_path // the "port" from config section is hostname/IP for networked drivers
+		device_path /* the "port" from config section is hostname/IP for networked drivers */
 		);
 
 	/* First, try to match against sysOID, if no MIB was provided.
@@ -1813,15 +1850,33 @@ bool_t load_mib2nut(const char *mib)
 	{
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
+			upsdebugx(4, "%s: checking against mapping table entry #%d \"%s\"",
+				__func__, i, mib2nut[i]->mib_name);
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
 				upsdebugx(2, "%s: skip the \"%s\" entry which "
-					" is neither \"auto\" nor a name in the mapping table",
+					"is neither \"auto\" nor a valid name in the mapping table",
 					__func__, mib);
 				continue;
 			}
 			upsdebugx(2, "%s: trying classic sysOID matching method with '%s' mib",
 				__func__, mib2nut[i]->mib_name);
+
+			/* Classic method: test an OID specific to this MIB */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
 
 			/* Device might not support this MIB, but we want to
 			 * track that the name string is valid for diags below
@@ -1829,9 +1884,6 @@ bool_t load_mib2nut(const char *mib)
 			if (!mibIsAuto) {
 				mibSeen = TRUE;
 			}
-
-			/* Classic method: test an OID specific to this MIB */
-			snmp_info = mib2nut[i]->snmp_info;
 
 			if (match_model_OID() != TRUE)
 			{
@@ -1952,7 +2004,15 @@ static void disable_competition(snmp_info_t *entry)
 {
 	snmp_info_t	*p;
 
-	for(p=snmp_info; p->info_type!=NULL; p++) {
+	if (snmp_info == NULL) {
+		fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+	}
+
+	if (snmp_info[0].info_type == NULL) {
+		upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+	}
+
+	for(p = snmp_info; (p != NULL && p->info_type != NULL) ; p++) {
 		if(p!=entry && !strcmp(p->info_type, entry->info_type)) {
 			upsdebugx(2, "%s: disabling %s %s",
 					__func__, p->info_type, p->OID);
@@ -2349,7 +2409,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 							&tmp_buf[0], current_device_number, cur_nut_index);
 					}
 					else {
-						// FIXME: daisychain-whole, what to do?
+						/* FIXME: daisychain-whole, what to do? */
 						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
 					}
@@ -2373,8 +2433,9 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 					if (current_device_number > 0) {
 						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number + device_template_offset);
 					}
-					//else
-					// FIXME: daisychain-whole, what to do?
+					/*else
+					 * FIXME: daisychain-whole, what to do?
+					 */
 				}
 				else {
 					/* Special processing for daisychain:
@@ -2802,8 +2863,17 @@ bool_t snmp_ups_walk(int mode)
 		if (devices_count > 1)
 			device_alarm_init();
 
+		/* better safe than sorry, check sanity on every loop cycle */
+		if (snmp_info == NULL) {
+			fatalx(EXIT_FAILURE, "%s: snmp_info is not initialized", __func__);
+		}
+
+		if (snmp_info[0].info_type == NULL) {
+			upsdebugx(1, "%s: WARNING: snmp_info is empty", __func__);
+		}
+
 		/* Loop through all mapping entries for the current_device_number */
-		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+		for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 
 			/* FIXME:
 			 * switch(current_device_number) {
@@ -2814,7 +2884,7 @@ bool_t snmp_ups_walk(int mode)
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
-					(current_device_number == 1)?"master":"slave"); // FIXME: daisychain
+					(current_device_number == 1)?"master":"slave"); /* FIXME: daisychain */
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
@@ -2872,7 +2942,7 @@ bool_t snmp_ups_walk(int mode)
 						{
 							if (current_device_number == 0)
 							{
-								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
+								su_setinfo(su_info_p, NULL); /* FIXME: daisychain-whole, what to do? */
 							} else {
 								status = process_template(mode, "device", su_info_p);
 							}
@@ -2941,7 +3011,9 @@ bool_t snmp_ups_walk(int mode)
 				else {
 */					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
-//				}
+/*
+				}
+*/
 			}
 		}	/* for (su_info_p... */
 

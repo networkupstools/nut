@@ -55,8 +55,8 @@ class NutClientTest : public CppUnit::TestFixture
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp();
-	void tearDown();
+	void setUp() override;
+	void tearDown() override;
 
 	void test_strarr_alloc();
 	void test_stringset_to_strarr();

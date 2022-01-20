@@ -23,6 +23,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "idowell-hid.h"
 #include "main.h"	/* for getval() */
@@ -166,4 +168,5 @@ subdriver_t idowell_subdriver = {
 	idowell_format_model,
 	idowell_format_mfr,
 	idowell_format_serial,
+	fix_report_desc,
 };

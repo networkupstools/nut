@@ -23,6 +23,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "delta_ups-hid.h"
 #include "main.h"	/* for getval() */
@@ -317,4 +319,5 @@ subdriver_t delta_ups_subdriver = {
 	delta_ups_format_model,
 	delta_ups_format_mfr,
 	delta_ups_format_serial,
+	fix_report_desc,
 };

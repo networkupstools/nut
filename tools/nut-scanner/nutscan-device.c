@@ -20,6 +20,7 @@
     \brief manipulation of a container describing a NUT device
     \author Frederic Bohe <fredericbohe@eaton.com>
 */
+#include "config.h"	/* must be the first header */
 
 #include "nutscan-device.h"
 #include <stdlib.h>

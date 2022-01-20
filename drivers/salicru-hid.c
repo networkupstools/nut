@@ -25,12 +25,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "salicru-hid.h"
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define SALICRU_HID_VERSION	"Salicru HID 0.1"
+#define SALICRU_HID_VERSION	"Salicru HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Salicru */
@@ -38,8 +40,14 @@
 
 /* USB IDs device table */
 static usb_device_id_t salicru_usb_device_table[] = {
-	/* Salicru SPS 850 HOME */
-        /* https://www.salicru.com/sps-home.html */
+	/* TWINPRO3/TWINRT3 (SLC-1500-TWIN PRO3) per https://github.com/networkupstools/nut/issues/1142 */
+	/* SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450 */
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0201), NULL },
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0202), NULL },
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0203), NULL },
+
+	/* Salicru SPS 850 HOME per https://github.com/networkupstools/nut/pull/1199 */
+	/* https://www.salicru.com/sps-home.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
 
 	/* Terminating entry */
@@ -245,4 +253,5 @@ subdriver_t salicru_subdriver = {
 	salicru_format_model,
 	salicru_format_mfr,
 	salicru_format_serial,
+	fix_report_desc,
 };
