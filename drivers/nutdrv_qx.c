@@ -1652,7 +1652,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
  */
-int armac_command(const char *cmd, char *buf, size_t buflen)
+static int	armac_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmpbuf[6];
 	int	ret = 0;
