@@ -84,6 +84,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      [PR #1135]
    * Legrand HID defined and handled by "krauler_subdriver" by default
      [PR #1075, issue #616]
+   * add new "armac" subdriver, tested with Armac R/2000I/PSW, but should
+     support other UPSes that work with "PowerManagerII" software from
+     Richcomm Technologies from around 2004-2005 [PR #1239, issue #1238]
 
  - microsol-apc (starting at version 0.68 as derived from solis 0.67):
    adding support for newer APC Back-UPS BR hardware, such as
