@@ -2,6 +2,9 @@ dnl Check for current compiler support of specific pragmas we use,
 dnl e.g. diagnostics management to keep warnings quiet sometimes
 
 AC_DEFUN([AX_C_PRAGMAS], [
+if test -z "${nut_have_ax_c_pragmas_seen}"; then
+  nut_have_ax_c_pragmas_seen="yes"
+
   CFLAGS_SAVED="${CFLAGS}"
   CXXFLAGS_SAVED="${CXXFLAGS}"
 
@@ -455,6 +458,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsign-compare" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wsign-conversion"],
+    [ax_cv__pragma__gcc__diags_ignored_sign_conversion],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_sign_conversion=yes],
+      [ax_cv__pragma__gcc__diags_ignored_sign_conversion=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_sign_conversion" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsign-conversion"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wsign-conversion" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_sign_conversion_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wsign-conversion"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_sign_conversion_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_sign_conversion_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_sign_conversion_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsign-conversion" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunreachable-code-break"],
     [ax_cv__pragma__gcc__diags_ignored_unreachable_code_break],
     [AC_COMPILE_IFELSE(
@@ -902,9 +932,13 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
 
   CFLAGS="${CFLAGS_SAVED}"
   CXXFLAGS="${CXXFLAGS_SAVED}"
+fi
 ])
 
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
+  nut_have_ax_c_printf_string_null_seen="yes"
+
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
@@ -944,4 +978,5 @@ exit 0;
   ])
 
   AC_LANG_POP([C])
+fi
 ])

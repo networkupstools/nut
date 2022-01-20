@@ -48,6 +48,7 @@
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
 	#include "idowell-hid.h"
+	#include "legrand-hid.h"
 	#include "liebert-hid.h"
 	#include "openups-hid.h"
 	#include "powercom-hid.h"
@@ -69,6 +70,7 @@ static subdriver_t *subdriver_list[] = {
 	&cps_subdriver,
 	&delta_ups_subdriver,
 	&idowell_subdriver,
+	&legrand_subdriver,
 	&liebert_subdriver,
 	&openups_subdriver,
 	&powercom_subdriver,
@@ -1232,6 +1234,9 @@ static int callback(
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
+	if (subdriver->fix_report_desc(arghd, pDesc)) {
+		upsdebugx(2, "Report Descriptor Fixed");
+	}
 	HIDDumpTree(udev, arghd, subdriver->utab);
 
 #ifndef SHUT_MODE
@@ -1290,6 +1295,15 @@ static double interval(void)
 	return ret;
 }
 #endif
+
+/* default subdriver function which doesn't attempt to fix
+ * any issues in the parsed HID Report Descriptor */
+int fix_report_desc(HIDDevice_t *arg_pDev, HIDDesc_t *arg_pDesc) {
+	NUT_UNUSED_VARIABLE(arg_pDev);
+	NUT_UNUSED_VARIABLE(arg_pDesc);
+
+	return 0;
+}
 
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(walkmode_t mode)

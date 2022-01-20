@@ -52,16 +52,16 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 /*
  * Free_ReportDesc
  * -------------------------------------------------------------------------- */
-void Free_ReportDesc(HIDDesc_t *pDesc);
+void Free_ReportDesc(HIDDesc_t *pDesc_arg);
 
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc_t *pDesc, HIDData_t *pData);
+int FindObject(HIDDesc_t *pDesc_arg, HIDData_t *pData);
 
-HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type);
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc_arg, HIDPath_t *Path, uint8_t Type);
 
-HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type);
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Offset, uint8_t Type);
 
 /*
  * GetValue
