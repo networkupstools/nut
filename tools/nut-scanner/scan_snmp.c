@@ -736,8 +736,14 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #endif
 
 		if (sec->authProtocol) {
+			/* Note: start with strcmp of the longer strings,
+			 * or explicitly check string lengths (null char),
+			 * to avoid matching everything as e.g. "SHA" by
+			 * strncmp() below - that was needed for platforms
+			 * where strcmp() is a built-in/macro which offends
+			 * alignment checks with short strings... */
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-			if (strncmp(sec->authProtocol, "SHA", 3) == 0) {
+			if (strncmp(sec->authProtocol, "SHA", 3) == 0 && sec->authProtocol[3] == '\0') {
 				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
 					sizeof(usmHMACSHA1AuthProtocol)/
@@ -830,8 +836,10 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #endif
 
 		if (sec->privProtocol) {
+			/* Note: start with strcmp of the longer strings, or check
+			 * lengths, to avoid matching everything as e.g. "AES"! */
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-			if (strncmp(sec->privProtocol, "AES", 3) == 0) {
+			if (strncmp(sec->privProtocol, "AES", 3) == 0 && sec->privProtocol[3] == '\0') {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
