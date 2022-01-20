@@ -1691,7 +1691,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev,
 			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
 			0x09, 0x200, 0,
-			tmpbuf, 4, 5000);
+			(usb_ctrl_charbuf)tmpbuf, 4, 5000);
 		i += bytes_to_send;
 	}
 
@@ -1712,7 +1712,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		/* Read data in 6-byte chunks */
 		ret = usb_interrupt_read(udev,
 			0x81,
-			tmpbuf, 6, 1000);
+			(usb_ctrl_charbuf)tmpbuf, 6, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
