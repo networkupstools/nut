@@ -1670,18 +1670,25 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 		tmp[0] = 0x05;
 		tmp[1] = 0;
 		tmp[2] = 1 + (char)strcspn(cmd, "\r");
+
 		for (iii = 0 ; iii < tmp[2] ; iii++)
 		{
 			tmp[3+iii] = cmd[iii];
 		}
-		ret = usb_control_msg(udev, 0x21, 0x09, 0x305, 0, tmp, 47, 1000);
 
+		ret = usb_control_msg(udev,
+			0x21,
+			0x09, 0x305, 0,
+			(usb_ctrl_charbuf)tmp, 47, 1000);
 
 		upsdebugx(3, "R11 read: %s", ret ? nut_usb_strerror(ret) : "timeout");
 
 		usleep(500000);
 		tmpryy[0] = 0x05;
-		ret = usb_control_msg(udev, 0xA1, 0x01, 0x305, 0, tmpryy, 47, 1000);
+		ret = usb_control_msg(udev,
+			0xA1,
+			0x01, 0x305, 0,
+			(usb_ctrl_charbuf)tmpryy, 47, 1000);
 		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
 
 		len = 0;
