@@ -13,6 +13,9 @@ set -e
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
+# or to quickly hit the first-found errors in a larger matrix
+# (and then easily `make` to iterate fixes), like this:
+#   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-gcc)
