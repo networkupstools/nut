@@ -901,7 +901,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+
+            # Tell the sub-makes (distcheck) to hush down
+            # NOTE: Parameter pass-through was tested with:
+            #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
+            MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
             # Can be noisy if regen is needed (DMF branch)
             #GIT_DIFF_SHOW=false \
@@ -1335,7 +1340,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
-        $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
+
+        # Tell the sub-makes (distcheck) to hush down
+        MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
         FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
