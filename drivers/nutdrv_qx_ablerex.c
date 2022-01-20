@@ -259,7 +259,7 @@ static int ablerex_TR(item_t *item, char *value, const size_t valuelen) {
 	return 0;
 }
 
-int	ablerex_process_status_bits(item_t *item, char *value, const size_t valuelen)
+static int	ablerex_process_status_bits(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "";
 
