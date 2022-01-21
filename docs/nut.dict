@@ -845,6 +845,7 @@ PowerKinetics
 PowerMIB
 PowerMac
 PowerMan
+PowerManagerII
 PowerMust
 PowerNet
 PowerOff
@@ -1275,9 +1276,9 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
-Yifeng
 Yunto
 ZFS
 ZProject
@@ -1352,6 +1353,7 @@ arg
 argc
 args
 argv
+armac
 armel
 armhf
 asapm
@@ -2757,6 +2759,7 @@ varvalue
 vbatt
 vc
 vendorid
+ver
 verifySourceSig
 versa
 versioned
