@@ -7,13 +7,6 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
-PLANNED: Changes from 2.7.5 to 2.7.6
-------------------------------------
-
-- (expected) libusb-1.0: NUT now defaults to building against libusb-1.0
-  if the configure script finds the development headers, falling back to
-  libusb-0.1 if not. Please report any regressions.
-
 Changes from 2.7.4 to 2.7.5
 ---------------------------
 
@@ -26,6 +19,10 @@ Changes from 2.7.4 to 2.7.5
   `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
   At the very least, binaries for those consumers should be rebuilt to remain
   stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+
+- libusb-1.0: NUT now defaults to building against libusb-1.0 API version
+  if the configure script finds the development headers, falling back to
+  libusb-0.1 if not. Please report any regressions.
 
 - apcupsd-ups: When monitoring a remote apcupsd server, interpret "SHUTTING
   DOWN" as a NUT "LB" status. If you were relying on the previous behavior
