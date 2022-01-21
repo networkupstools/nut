@@ -5,6 +5,27 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.7.7 - what's new since 2.7.6:
+
+ - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
+   the driver binaries to be built once and data mappings to be loaded
+   and modernized on the fly [Ported from 42ITy project]
+
+---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.7.6 - what's new since 2.7.5:
+
+ - (expected) clean-up of libusb API variants support [#300 and follow-ups]
+
+ - (expected) CI automation for coding style
+
+ - (expected) CI automation for use of data points in drivers that conform
+   to patterns defined in docs/nut-names.txt
+
+ - (expected) Porting of performance and bug fixes from 42ITy project
+
+ - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.7.5
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
