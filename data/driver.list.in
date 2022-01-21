@@ -99,6 +99,8 @@
 "ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
 "ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
 
+"Armac"	"ups"	"2"	"R/2000I/PSW"	"(USB ID 0925:1234)" "nutdrv_qx"
+
 "ASEM SPA"	"ups"	"5"	"PB1300 UPS"	"i2c"	"asem"
 
 "Asium"	"ups"	"3"	"P700"	"USB"	"blazer_usb"	# http://www.asiumpower.com/Asium-ASIUM-P700-650VA-360W/dp/B009SMEQ10

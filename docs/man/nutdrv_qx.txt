@@ -17,12 +17,21 @@ For information about the core driver, see linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
+The *nutdrv_qx* driver is known to work with various UPSes from
+'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
+'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power'
+(rebranded by many, many - have I said many? - others...
+Long story short: if your UPS came with a software called 'Viewpower',
+chances are high that it works with this driver with one of the
+<<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>),
+and many others.
 
-The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
-Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
+The <<_internet_resources,NUT compatibility table>> lists all the known
+supported models. Keep in mind, however, that other models not listed
+there may also be supported, but haven't been tested or reported back.
 
-All devices with a serial interface and many with a USB interface are supported.
+All devices with a serial interface and many with a USB interface are
+supported.
 
 
 EXTRA ARGUMENTS
@@ -338,7 +347,7 @@ Note that device numbers are not guaranteed by the OS to be stable across re-boo
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
+You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr* and *armac*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
@@ -352,6 +361,13 @@ If this flag is set, don't autoscan valid range for langid.
 
 IMPLEMENTATION NOTES
 ^^^^^^^^^^^^^^^^^^^^
+
+*'armac' subdriver*::
+The Armac communication subdriver reproduces a communication protocol used by
+an old release of "PowerManagerII" software, which doesn't seem to be Armac
+specific: its banner is "2004 Richcomm Technologies, Inc. Dec 27 2005 ver 1.1."
+Maybe other Richcomm UPSes would work with this -- maybe better than with
+the older standalone `richcomm_usb` driver.
 
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
