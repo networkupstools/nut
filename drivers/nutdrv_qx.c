@@ -80,6 +80,7 @@
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
 #include "nutdrv_qx_masterguard.h"
+#include "nutdrv_qx_ablerex.h"
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -94,6 +95,7 @@ static subdriver_t	*subdriver_list[] = {
 	&zinto_subdriver,
 	&masterguard_subdriver,
 	&hunnox_subdriver,
+	&ablerex_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -1645,6 +1647,103 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	return snprintf(buf, buflen, "%s", cmd);
 }
 
+static int ablerex_command(const char *cmd, char *buf, size_t buflen)
+{
+	int iii;
+	int	len;
+	int idx;
+	char	tmp[64];
+	char	tmpryy[64];
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+	
+	int	retry;
+
+	for (retry = 0; retry < 3; retry++) {
+		int	ret;
+
+		memset(buf, 0, buflen);
+		tmp[0] = 0x05;
+		tmp[1] = 0;
+		tmp[2] = 1 + (char)strcspn(cmd, "\r");
+
+		for (iii = 0 ; iii < tmp[2] ; iii++)
+		{
+			tmp[3+iii] = cmd[iii];
+		}
+
+		ret = usb_control_msg(udev,
+			0x21,
+			0x09, 0x305, 0,
+			(usb_ctrl_charbuf)tmp, 47, 1000);
+
+		upsdebugx(3, "R11 read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+
+		usleep(500000);
+		tmpryy[0] = 0x05;
+		ret = usb_control_msg(udev,
+			0xA1,
+			0x01, 0x305, 0,
+			(usb_ctrl_charbuf)tmpryy, 47, 1000);
+		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
+
+		len = 0;
+		for (idx = 0 ; idx < 47 ; idx++)
+		{
+			buf[idx] = tmpryy[idx];
+			if (tmpryy[idx] == '\r')
+			{
+				len = idx;
+				break;
+			}
+		}
+		upsdebugx(3, "R3 read%d: %.*s", len, len, tmpryy);
+
+		if (len > 0) {
+			len ++;
+		}
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+			return ret;
+		}
+
+		upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+		if ((!strcasecmp(cmd, "Q1\r")) && len != 47) continue;
+		if ((!strcasecmp(cmd, "I\r")) && len != 39) continue;
+		if ((!strcasecmp(cmd, "F\r")) && len != 22) continue;
+		if ((!strcasecmp(cmd, "Q5\r")) && len != 22)
+		{
+			buf[0] = '(';
+			for (idx = 1 ; idx < 47 ; idx++)
+			{
+				buf[idx] = 0;
+			}
+			upsdebugx(3, "read Q5 Fail...");
+			return 22;
+		}
+
+		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+		return len;
+	}
+
+	return 0;
+}
+
+static void	*ablerex_subdriver_fun(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &ablerex_command;
+	return NULL;
+}
+
 /* Armac communication subdriver
  *
  * This reproduces a communication protocol used by an old PowerManagerII
@@ -1861,7 +1960,7 @@ typedef struct {
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
 	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
@@ -2499,6 +2598,7 @@ void	upsdrv_shutdown(void)
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
 			{ "snr", &snr_command },
+			{ "ablerex", &ablerex_command },
 			{ "armac", &armac_command },
 			{ NULL, NULL }
 		};
