@@ -19,6 +19,8 @@
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
  *  Masterguard additions
  *    2020-2021 Edgar Fuß, Mathematisches Institut der Universität Bonn <ef@math.uni-bonn.de>
+ *  Armac (Richcomm-variant) additions
+ *    2021      Tomasz Fortuna <bla@thera.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,8 +80,9 @@
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
 #include "nutdrv_qx_masterguard.h"
+#include "nutdrv_qx_ablerex.h"
 
-/* Reference list of available subdrivers */
+/* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
 	&voltronic_qs_subdriver,
@@ -92,6 +95,7 @@ static subdriver_t	*subdriver_list[] = {
 	&zinto_subdriver,
 	&masterguard_subdriver,
 	&hunnox_subdriver,
+	&ablerex_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -1643,6 +1647,218 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	return snprintf(buf, buflen, "%s", cmd);
 }
 
+static int ablerex_command(const char *cmd, char *buf, size_t buflen)
+{
+	int iii;
+	int	len;
+	int idx;
+	char	tmp[64];
+	char	tmpryy[64];
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+	
+	int	retry;
+
+	for (retry = 0; retry < 3; retry++) {
+		int	ret;
+
+		memset(buf, 0, buflen);
+		tmp[0] = 0x05;
+		tmp[1] = 0;
+		tmp[2] = 1 + (char)strcspn(cmd, "\r");
+
+		for (iii = 0 ; iii < tmp[2] ; iii++)
+		{
+			tmp[3+iii] = cmd[iii];
+		}
+
+		ret = usb_control_msg(udev,
+			0x21,
+			0x09, 0x305, 0,
+			(usb_ctrl_charbuf)tmp, 47, 1000);
+
+		upsdebugx(3, "R11 read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+
+		usleep(500000);
+		tmpryy[0] = 0x05;
+		ret = usb_control_msg(udev,
+			0xA1,
+			0x01, 0x305, 0,
+			(usb_ctrl_charbuf)tmpryy, 47, 1000);
+		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
+
+		len = 0;
+		for (idx = 0 ; idx < 47 ; idx++)
+		{
+			buf[idx] = tmpryy[idx];
+			if (tmpryy[idx] == '\r')
+			{
+				len = idx;
+				break;
+			}
+		}
+		upsdebugx(3, "R3 read%d: %.*s", len, len, tmpryy);
+
+		if (len > 0) {
+			len ++;
+		}
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+			return ret;
+		}
+
+		upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+		if ((!strcasecmp(cmd, "Q1\r")) && len != 47) continue;
+		if ((!strcasecmp(cmd, "I\r")) && len != 39) continue;
+		if ((!strcasecmp(cmd, "F\r")) && len != 22) continue;
+		if ((!strcasecmp(cmd, "Q5\r")) && len != 22)
+		{
+			buf[0] = '(';
+			for (idx = 1 ; idx < 47 ; idx++)
+			{
+				buf[idx] = 0;
+			}
+			upsdebugx(3, "read Q5 Fail...");
+			return 22;
+		}
+
+		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+		return len;
+	}
+
+	return 0;
+}
+
+static void	*ablerex_subdriver_fun(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &ablerex_command;
+	return NULL;
+}
+
+/* Armac communication subdriver
+ *
+ * This reproduces a communication protocol used by an old PowerManagerII
+ * software, which doesn't seem to be Armac specific. The banner is: "2004
+ * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
+ * would work with this - better than with the richcomm_usb driver.
+ */
+static int	armac_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmpbuf[6];
+	int	ret = 0;
+	size_t	i, bufpos;
+	const size_t cmdlen = strlen(cmd);
+
+	/* UPS ignores (doesn't echo back) unsupported commands which makes
+	 * the initialization long. List commands tested to be unsupported:
+	 */
+	const char *unsupported[] = {
+		"QGS\r",
+		"QS\r",
+		"QPI\r",
+		"M\r",
+		"D\r",
+		NULL
+	};
+
+	for (i = 0; unsupported[i] != NULL; i++) {
+		if (strcmp(cmd, unsupported[i]) == 0) {
+			upsdebugx(2,
+				"armac: unsupported cmd: %.*s",
+				(int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+		}
+	}
+	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
+	 * parameterized tests. */
+	for (i = 0; i < cmdlen;) {
+		const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		tmpbuf[0] = 0xa0 + bytes_to_send;
+		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0,
+			(usb_ctrl_charbuf)tmpbuf, 4, 5000);
+		i += bytes_to_send;
+	}
+
+	if (ret <= 0) {
+		upsdebugx(1,
+			"send control: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout",
+			ret);
+		return ret;
+	}
+
+	memset(buf, 0, buflen);
+
+	bufpos = 0;
+	while (bufpos + 6 < buflen) {
+		size_t bytes_available;
+
+		/* Read data in 6-byte chunks */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)tmpbuf, 6, 1000);
+
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret != 6) {
+			upsdebugx(1,
+				"interrupt read error: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		upsdebugx(4,
+			"read: ret %d buf %02hhx: %02hhx %02hhx %02hhx %02hhx %02hhx  >%c%c%c%c%c<",
+			ret,
+			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
+			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
+
+		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
+		if (bytes_available == 0) {
+			/* End of transfer */
+			break;
+		}
+
+		memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
+		bufpos += bytes_available;
+
+		if (bytes_available <= 2) {
+			/* Slow down, let the UPS buffer more bytes */
+			usleep(15000);
+		}
+	}
+
+	if (bufpos + 6 >= buflen) {
+		upsdebugx(2, "Protocol error, too much data read.");
+		return -1;
+	}
+
+	upsdebugx(3, "armac command %.*s response read: '%.*s'",
+		(int)strcspn(cmd, "\r"), cmd,
+		(int)strcspn(buf, "\r"), buf
+		);
+
+	return (int)bufpos;
+}
+
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -1724,6 +1940,14 @@ static void	*snr_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*armac_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &armac_command;
+	return NULL;
+}
+
 /* USB device match structure */
 typedef struct {
 	const int	vendorID;		/* USB device's VendorID */
@@ -1736,7 +1960,7 @@ typedef struct {
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
 	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
@@ -1754,6 +1978,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
+	{ USB_DEVICE(0x0925, 0x1234),	NULL,		NULL,					&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
@@ -2373,6 +2598,8 @@ void	upsdrv_shutdown(void)
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
 			{ "snr", &snr_command },
+			{ "ablerex", &ablerex_command },
+			{ "armac", &armac_command },
 			{ NULL, NULL }
 		};
 	#endif

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2856 utf-8
+personal_ws-1.1 en 2862 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -372,6 +372,7 @@ GKrellM
 GND
 GPL
 GPSER
+GRs
 GTK
 GUIs
 GWD
@@ -604,6 +605,8 @@ MOXA
 MPSU
 MQ
 MSI
+MSII
+MSIII
 MacKenzie's
 MacOS
 Maccelari
@@ -854,6 +857,7 @@ PowerKinetics
 PowerMIB
 PowerMac
 PowerMan
+PowerManagerII
 PowerMust
 PowerNet
 PowerOff
@@ -1290,9 +1294,9 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
-Yifeng
 Yunto
 ZFS
 ZProject
@@ -1368,6 +1372,7 @@ arg
 argc
 args
 argv
+armac
 armel
 armhf
 asapm
@@ -2785,6 +2790,7 @@ varvalue
 vbatt
 vc
 vendorid
+ver
 verifySourceSig
 versa
 versioned
