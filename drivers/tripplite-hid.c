@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.82"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.83"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -73,6 +73,9 @@ static void *smart1500lcdt_scale(USBDevice_t *device)
 
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
+
+/* Delta/Minuteman */
+#define DELTA_VENDORID 0x05dd
 
 /* USB IDs device table */
 static usb_device_id_t tripplite_usb_device_table[] = {
@@ -149,8 +152,11 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 
+	/* Delta/Minuteman Enterprise Plus E1500RM2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa011), battery_scale_1dot0 },
+
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -556,4 +562,5 @@ subdriver_t tripplite_subdriver = {
 	tripplite_format_model,
 	tripplite_format_mfr,
 	tripplite_format_serial,
+	fix_report_desc,
 };

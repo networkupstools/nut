@@ -34,9 +34,6 @@
 #define CTRL_RETRIES 50
 #define CTRL_TIMEOUT 100
 
-#define USB_ENDPOINT_IN 0x80
-#define USB_ENDPOINT_OUT 0x00
-
 #define MAX_READ_WRITE (16 * 1024)
 
 #define USB_WRITE_DELAY 200

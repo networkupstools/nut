@@ -1,4 +1,4 @@
-DISTCLEANFILES =
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
@@ -21,7 +21,8 @@ IMAGE_FILES = images/asciidoc.png \
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
-USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt config-prereqs.txt	\
+USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
+ config-prereqs.txt ci-farm-lxc-setup.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
@@ -78,9 +79,19 @@ SUFFIXES = .txt .html .pdf -spellchecked
 
 all: doc
 
+# This list is defined by configure script choices and options:
 check-local: @DOC_CHECK_LIST@
 
+# This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
+
+# This target can be called by developers to go around the configure
+# script choices at their risk (e.g. missing tools are possible):
+docs: pdf html-single html-chunked man
+
+all-docs: docs
+
+check-docs: check-pdf check-html-single check-html-chunked check-man
 
 pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
@@ -122,9 +133,14 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 check-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
+man:
+	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
+
+CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
+
+# Dirs to clean
 clean-local:
-	rm -f *.pdf *.html *-spellchecked docbook-xsl.css
-	rm -rf *.chunked *.bak
+	rm -rf *.chunked *.bak tmp
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
@@ -152,9 +168,11 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute=badges \
     --attribute=external_title \
     --attribute tree_version=@TREE_VERSION@ \
-    -a toc -a numbered --destination-dir=.
+    -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
-# As of version 8.6.9 it lies, and the argument is required for our distcheck.
+# As of version 8.6.9 it lies, and the argument is required for our distcheck
+# (and does affect PDF builds, as found during work on collision-avoidance -
+# true with at least asciidoc/a2x versions 9.0.0rc2).
 # For more details see issues https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
@@ -169,6 +187,35 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# Note we only remove the original target (if present), if it is a directory -
+# e.g. created by "html-chunked" targets.
+DOCBUILD_BEGIN = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        rm -rf "./$${A2X_OUTDIR}" || true ; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+    else A2X_OUTDIR='.' ; fi; \
+    if test -s "${builddir}/docbook-xsl.css" \
+    && test -r "${builddir}/docbook-xsl.css" \
+    && ! test -w "${builddir}/docbook-xsl.css" \
+    ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
+    chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+}
+
+# When moving "*" hope a2x did not make any "hidden" files
+# like ".*" that would be required for resulting documents.
+# Leave the "images/" dir there, though.
+# Otherwise, we would have to `find` them all.
+DOCBUILD_END = { \
+    if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
+        chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+        test -d "$@" && rm -rf "$@" || true ; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
+        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
+        rm -rf "./$${A2X_OUTDIR}" ; \
+    fi ; \
+}
+
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
@@ -182,21 +229,28 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # not toxic.
 *.html: common.xsl xhtml.xsl
 .txt.html:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
+	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	 echo "  DOC-HTML Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 *.chunked: common.xsl chunked.xsl
 .txt.chunked:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
+# Note: non-HTML a2x modes may ignore the destination directory
 *.pdf: docinfo.xml
 .txt.pdf:
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
-	@chmod -R u+w .
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
+	 echo "  DOC-PDF  Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
+	 $(DOCBUILD_END) ; exit $$RES
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -316,7 +370,7 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 
-DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
@@ -345,4 +399,4 @@ spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
 
-.PHONY: html html-single pdf
+.PHONY: html html-chunked html-single pdf man

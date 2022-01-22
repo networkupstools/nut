@@ -22,6 +22,7 @@
 
 #include "common.h"
 #include "main.h"
+#include "nut_stdint.h"
 #include "dstate.h"
 #include "attribute.h"
 
@@ -45,7 +46,7 @@ static	int	upsname_found = 0;
 static vartab_t	*vartab_h = NULL;
 
 /* variables possibly set by the global part of ups.conf */
-unsigned int	poll_interval = 2;
+time_t	poll_interval = 2;
 static char	*chroot_path = NULL, *user = NULL;
 
 /* signal handling */
@@ -305,10 +306,10 @@ static int main_arg(char *var, char *val)
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 
 		return 1;	/* handled */
 	}
@@ -328,8 +329,11 @@ static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
 		int ipv = atoi(val);
-		if (ipv >= 0)
-			poll_interval = (unsigned int)ipv;
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		}
 		return;
 	}
 
@@ -344,10 +348,10 @@ static void do_global_args(const char *var, const char *val)
 	}
 
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
+		if (!strncmp(val, "yes", 3))
+			do_synchronous = 1;
 		else
-			do_synchronous=0;
+			do_synchronous = 0;
 	}
 
 
@@ -395,8 +399,12 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
 		int ipv = atoi(val);
-		if (ipv >= 0)
-			poll_interval = (unsigned int)ipv;
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+				confupsname, ipv);
+		}
 		return;
 	}
 
@@ -564,10 +572,14 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
-			case 'i': {
-				int ipv = atoi(optarg);
-				if (ipv >= 0)
-					poll_interval = (unsigned int)ipv;
+			case 'i': { /* scope */
+					int ipv = atoi(optarg);
+					if (ipv > 0) {
+						poll_interval = (time_t)ipv;
+					} else {
+						fatalx(EXIT_FAILURE, "Error: command-line: invalid pollinterval: %d",
+							ipv);
+					}
 				}
 				break;
 			case 'k':
@@ -741,7 +753,7 @@ int main(int argc, char **argv)
 		dstate_init(progname, upsname);
 
 	/* The poll_interval may have been changed from the default */
-	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",

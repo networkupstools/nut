@@ -131,9 +131,9 @@ static char cksum(const char *buf, const size_t len)
 	return sum;
 }
 
-static int do_command(const unsigned char *command, char *reply, size_t cmd_len)
+static ssize_t do_command(const unsigned char *command, char *reply, size_t cmd_len)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_send_buf(upsfd, command, cmd_len);
 	if (ret < 0) {
@@ -176,7 +176,8 @@ void upsdrv_initinfo(void)
 	};
 
 	char	buf[LARGEBUF];
-	int	i, bitn, vari, ret=0, offset=4, readok=0;
+	int	i, bitn, vari, offset=4, readok=0;
+	ssize_t	ret=0;
 	char	command[6], reply[8];
 	unsigned int	value;
 
@@ -200,7 +201,7 @@ void upsdrv_initinfo(void)
 		}
 
 		buf[i<<1] = 0;
-		upsdebugx(1, "return: %d (8=success)", ret);
+		upsdebugx(1, "return: %zd (8=success)", ret);
 
 		if (ret == 8) { /* last command successful */
 			dstate_setinfo(vartab[vari].var,"%s",buf);
@@ -386,7 +387,8 @@ void upsdrv_updateinfo(void)
 
 	const char	*val;
 	char	reply[8];
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	for (i = 0; vartab[i].var; i++) {
 		int16_t	intval;

@@ -11,7 +11,7 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
+ int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query)
 
 DESCRIPTION
 -----------
@@ -47,7 +47,7 @@ To see the list of variables on a UPS called 'su700', the protocol command
 would be `LIST VAR su700`.  To start that list with this function, you
 would populate query and numq as follows:
 
-	unsigned int numq;
+	size_t numq;
 	const char *query[2];
 
 	query[0] = "VAR";

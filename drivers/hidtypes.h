@@ -91,6 +91,12 @@ extern "C" {
 #define ATTR_DATA_CST			0x01
 #define ATTR_NVOL_VOL			0x80
 
+/* Usage Pages */
+#define PAGE_POWER_DEVICE		0x84
+
+/* Usages */
+#define USAGE_HIGHVOLTAGETRANSFER	0x54
+#define USAGE_VOLTAGE			0x30
 /*
  * HIDNode_t struct
  *
@@ -140,9 +146,9 @@ typedef struct {
  * Holds a parsed report descriptor
  * -------------------------------------------------------------------------- */
 typedef struct {
-	int		nitems;				/* number of items in descriptor */
+	size_t		nitems;				/* number of items in descriptor */
 	HIDData_t	*item;				/* list of items			*/
-	int		replen[256];			/* list of report lengths, in byte */
+	size_t		replen[256];		/* list of report lengths, in byte */
 } HIDDesc_t;
 
 #ifdef __cplusplus

@@ -254,7 +254,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
-	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, &su_convert_to_iso_date_info[0] },
+	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, &su_convert_to_iso_date_info[FUNMAP_USDATE_TO_ISODATE] },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL },

@@ -34,7 +34,10 @@ static const unsigned int MODELS[MODEL_COUNT] = {
 	191			/* APC Back-UPS BZ2200BI-BR */
 };
 
-static const unsigned int NOMINAL_POWER[MODEL_COUNT] = {
+/* Note: int type here is aligned with the "nominal_power"
+ * variable in microsol-common.h and many related drivers.
+ */
+static const int NOMINAL_POWER[MODEL_COUNT] = {
 	2200 /* Model 183 */ ,
 	1500 /* Model 190 */ ,
 	2200			/* Model 191 */
@@ -212,14 +215,14 @@ static const float REAL_POWER_MULTIPLIER_B3[MODEL_COUNT][8] = {
  * Second index: Recharging battery flag: charging (1) or charged/discharging (0)
  */
 static const float MAX_BATTERY_VOLTAGE[MODEL_COUNT][2] = {
-  { 27.0, 29.5 } /* Model 183 */ ,
+	{ 27.0, 29.5 } /* Model 183 */ ,
 	{ 27.0, 29.5 } /* Model 190 */ ,
 	{ 27.0, 29.5 }	/* Model 191 */
 };
 
 /** Minimum battery voltage, used to estimate battery charge */
 static const float MIN_BATTERY_VOLTAGE[MODEL_COUNT] = {
-  20 /* Model 183 */ ,
+	20 /* Model 183 */ ,
 	20 /* Model 190 */ ,
 	20 /* Model 191 */
 };

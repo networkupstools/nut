@@ -25,6 +25,7 @@
 
 #include "main.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_blazer-common.h"
 #include "nutdrv_qx_bestups.h"
@@ -393,7 +394,7 @@ static int	bestups_process_setvar(item_t *item, char *value, const size_t valuel
 static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_t valuelen)
 {
 	/* Bypass/Boost/Buck bit is not reliable when a battery test, shutdown or on battery condition occurs: always ignore it in these cases */
-	if (!(qx_status() & STATUS(OL)) || (qx_status() & (STATUS(CAL) | STATUS(FSD)))) {
+	if (!((unsigned int)(qx_status()) & STATUS(OL)) || ((unsigned int)(qx_status()) & (STATUS(CAL) | STATUS(FSD)))) {
 
 		if (item->value[0] == '1')
 			item->value[0] = '0';
@@ -431,11 +432,11 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 
 	/* Best Power devices */
 	if (
-		!strcmp(item->value, "AX1") ||
-		!strcmp(item->value, "FOR") ||
-		!strcmp(item->value, "FTC") ||
-		!strcmp(item->value, "PR2") ||
-		!strcmp(item->value, "PRO")
+		!strncmp(item->value, "AX1", 3) ||
+		!strncmp(item->value, "FOR", 3) ||
+		!strncmp(item->value, "FTC", 3) ||
+		!strncmp(item->value, "PR2", 3) ||
+		!strncmp(item->value, "PRO", 3)
 	) {
 		snprintf(value, valuelen, item->dfl, "Best Power");
 		return 0;
@@ -443,9 +444,9 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 
 	/* Sola Australia devices */
 	if (
-		!strcmp(item->value, "325") ||
-		!strcmp(item->value, "520") ||
-		!strcmp(item->value, "620")
+		!strncmp(item->value, "325", 3) ||
+		!strncmp(item->value, "520", 3) ||
+		!strncmp(item->value, "620", 3)
 	) {
 		snprintf(value, valuelen, item->dfl, "Sola Australia");
 		return 0;
@@ -478,35 +479,35 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 
 	/* Best Power devices */
 
-	if (!strcmp(item->value, "AX1")) {
+	if (!strncmp(item->value, "AX1", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Axxium Rackmount");
 
-	} else if (!strcmp(item->value, "FOR")) {
+	} else if (!strncmp(item->value, "FOR", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Fortress");
 
-	} else if (!strcmp(item->value, "FTC")) {
+	} else if (!strncmp(item->value, "FTC", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Fortress Telecom");
 
-	} else if (!strcmp(item->value, "PR2")) {
+	} else if (!strncmp(item->value, "PR2", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Patriot Pro II");
 		inverted_bbb_bit = 1;
 
-	} else if (!strcmp(item->value, "PRO")) {
+	} else if (!strncmp(item->value, "PRO", 3)) {
 
 		snprintf(value, valuelen, item->dfl, "Patriot Pro");
 		inverted_bbb_bit = 1;
 
 	/* Sola Australia devices */
 	} else if (
-		!strcmp(item->value, "320") ||
-		!strcmp(item->value, "325") ||
-		!strcmp(item->value, "520") ||
-		!strcmp(item->value, "525") ||
-		!strcmp(item->value, "620")
+		!strncmp(item->value, "320", 3) ||
+		!strncmp(item->value, "325", 3) ||
+		!strncmp(item->value, "520", 3) ||
+		!strncmp(item->value, "525", 3) ||
+		!strncmp(item->value, "620", 3)
 	) {
 
 		snprintf(value, valuelen, "Sola %s", item->value);
@@ -522,7 +523,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	/* Unskip qx2nut table's items according to the UPS model */
 
 	/* battery.runtime var is not available on the Patriot Pro/Sola 320 model series: leave it skipped in these cases, otherwise unskip it */
-	if (strcmp(item->value, "PRO") && strcmp(item->value, "320")) {
+	if (strncmp(item->value, "PRO", 3) && strncmp(item->value, "320", 3)) {
 
 		unskip = find_nut_info("battery.runtime", 0, 0);
 
@@ -535,7 +536,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* battery.packs var is available only on the Axxium/Sola 620 model series: unskip it in these cases */
-	if (!strcmp(item->value, "AX1") || !strcmp(item->value, "620")) {
+	if (!strncmp(item->value, "AX1", 3) || !strncmp(item->value, "620", 3)) {
 
 		unskip = find_nut_info("battery.packs", 0, QX_FLAG_SETVAR);
 
@@ -624,13 +625,20 @@ static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+	long	l;
 
 	if (strspn(item->value, "0123456789") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
-	pins_shutdown_mode = strtol(item->value, NULL, 10);
+	l = strtol(item->value, NULL, 10);
+	if (l > INT_MAX) {
+		upsdebugx(2, "%s: pins_shutdown_mode out of range [%s: %s]",
+			__func__, item->info_type, item->value);
+		return -1;
+	}
+	pins_shutdown_mode = (int)l;
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -665,7 +673,8 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_
 /* Voltage settings */
 static int	bestups_voltage_settings(item_t *item, char *value, const size_t valuelen)
 {
-	int		index, val;
+	long		index;
+	int			val;
 	const char	*nominal_voltage;
 	const struct {
 		const int	low;		/* Low voltage		->	input.transfer.low / input.transfer.boost.low */
@@ -715,7 +724,7 @@ static int	bestups_voltage_settings(item_t *item, char *value, const size_t valu
 	index = strtol(item->value, NULL, 10);
 
 	if (index < 0 || index > 9) {
-		upsdebugx(2, "%s: value '%d' out of range [0..9]", __func__, index);
+		upsdebugx(2, "%s: value '%ld' out of range [0..9]", __func__, index);
 		return -1;
 	}
 
