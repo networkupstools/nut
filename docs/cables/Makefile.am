@@ -1,2 +1,2 @@
-clean-local:
-	rm -f *-spellchecked
+CLEANFILES = *-spellchecked
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

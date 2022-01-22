@@ -70,12 +70,12 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* The maximum number of consecutive polls in which the UPS does not provide any data: */
-static int max_polls_without_data;
+static unsigned int max_polls_without_data;
 /* The current number: */
-static int nr_polls_without_data;
+static unsigned int nr_polls_without_data;
 /* receive buffer */
 static char rx_buffer[RX_BUFFER_SIZE];
-static int rx_count;
+static size_t rx_count;
 
 static struct {
 	int battery_alarm;
@@ -85,7 +85,7 @@ static struct {
 } current_ups_status;
 
 /* remove n bytes from the head of rx_buffer, shift the remaining bytes to the start */
-static void rm_buffer_head(int n) {
+static void rm_buffer_head(unsigned int n) {
 	if (rx_count <= n) {
 		/* nothing left */
 		rx_count = 0;
@@ -101,7 +101,7 @@ static void rm_buffer_head(int n) {
 static int check_for_new_data() {
 	int new_data_received = 0;
 	int done = 0;
-	int num_received;
+	ssize_t num_received;
 
 	while (!done) {
 		/* Get new data from the serial port.
@@ -110,7 +110,7 @@ static int check_for_new_data() {
 		num_received = ser_get_buf(upsfd, rx_buffer + rx_count, RX_BUFFER_SIZE - rx_count, 0, 0);
 		if (num_received < 0) {
 			/* comm error */
-			ser_comm_fail("error %d while reading", num_received);
+			ser_comm_fail("error %zd while reading", num_received);
 			/* discard any remaining old data from the receive buffer: */
 			rx_count = 0;
 			/* try to re-open the serial port: */
@@ -125,7 +125,7 @@ static int check_for_new_data() {
 			/* no (more) new data */
 			done = 1;
 		} else {
-			rx_count += num_received;
+			rx_count += (unsigned int)num_received;
 
 			/* parse received input data: */
 			while (rx_count >= 5) { /* all valid input messages are strings of 5 characters */
@@ -216,7 +216,8 @@ void upsdrv_updateinfo(void) {
 		nr_polls_without_data = 0;
 	} else {
 		nr_polls_without_data++;
-		if (nr_polls_without_data < 0)
+		/* With unsigned int type, we can limit half-way like this: */
+		if (nr_polls_without_data > INT_MAX)
 			nr_polls_without_data = INT_MAX;
 	}
 
@@ -275,7 +276,9 @@ void upsdrv_initups(void) {
 	 *    (< 10sec runtime), so every second might count.
 	 */
 	if (poll_interval > 5) {
-		upslogx(LOG_NOTICE, "Option poll_interval is recommended to be lower than 5 (found: %d)", poll_interval);
+		upslogx(LOG_NOTICE,
+			"Option poll_interval is recommended to be lower than 5 (found: %jd)",
+			(intmax_t)poll_interval);
 	}
 
 	/* option max_polls_without_data: */

@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.43"
+#define DRIVER_VERSION		"0.44"
 
 #include "main.h"
 #include "libhid.h"
@@ -43,14 +43,17 @@
 	/* explore stub goes first, others alphabetically */
 	#include "explore-hid.h"
 	#include "apc-hid.h"
+	#include "arduino-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
 	#include "idowell-hid.h"
+	#include "legrand-hid.h"
 	#include "liebert-hid.h"
 	#include "openups-hid.h"
 	#include "powercom-hid.h"
 	#include "powervar-hid.h"
+	#include "salicru-hid.h"
 	#include "tripplite-hid.h"
 #endif
 
@@ -62,14 +65,17 @@ static subdriver_t *subdriver_list[] = {
 	&mge_subdriver,
 #ifndef SHUT_MODE
 	&apc_subdriver,
+	&arduino_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
 	&idowell_subdriver,
+	&legrand_subdriver,
 	&liebert_subdriver,
 	&openups_subdriver,
 	&powercom_subdriver,
 	&powervar_subdriver,
+	&salicru_subdriver,
 	&tripplite_subdriver,
 #endif
 	NULL
@@ -98,6 +104,27 @@ typedef enum {
 	HU_WALKMODE_FULL_UPDATE
 } walkmode_t;
 
+/* Compatibility layer between libusb 0.1 and 1.0, for errno/return codes */
+#if WITH_LIBUSB_0_1 || (defined SHUT_MODE)
+ #define ERROR_BUSY	-EBUSY
+ #define ERROR_NO_DEVICE -ENODEV
+ #define ERROR_ACCESS -EACCES
+ #define ERROR_IO -EIO
+ #define ERROR_NOT_FOUND -ENOENT
+ #define ERROR_TIMEOUT -ETIMEDOUT
+ #define ERROR_OVERFLOW -EOVERFLOW
+ #define ERROR_PIPE -EPIPE
+#else /* for libusb 1.0 */
+ #define ERROR_BUSY	LIBUSB_ERROR_BUSY
+ #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
+ #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
+ #define ERROR_IO LIBUSB_ERROR_IO
+ #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
+ #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
+ #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
+ #define ERROR_PIPE LIBUSB_ERROR_PIPE
+#endif
+
 /* pointer to the active subdriver object (changed in callback() function) */
 static subdriver_t *subdriver = NULL;
 
@@ -110,7 +137,7 @@ static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 #endif
 static int pollfreq = DEFAULT_POLLFREQ;
-static int ups_status = 0;
+static unsigned ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 #ifndef SUN_LIBUSB
 bool_t use_interrupt_pipe = TRUE;
@@ -138,7 +165,8 @@ static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
-static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen);
+static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd,
+					usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
 #ifdef DEBUG
 static double interval(void);
 #endif
@@ -156,8 +184,8 @@ reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
    collected from the hardware; not yet converted to official NUT
    status or alarms */
 typedef struct {
-	const char	*status_str;	/* ups status string */
-	const int	status_mask;	/* ups status mask */
+	const char	*status_str;			/* ups status string */
+	const unsigned int	status_mask;	/* ups status mask */
 } status_lkp_t;
 
 static status_lkp_t status_info[] = {
@@ -393,18 +421,22 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
-	static char buf[20];
-	int year, month, day;
+	static char buf[32];
+	long year, month, day;
 
 	if ((long)value == 0) {
 		return "not set";
 	}
 
-	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */
+	/* TOTHINK: About the comment below...
+	 * Does bit-shift keep the negativeness on all architectures?
+	 */
+	/* negative value represents pre-1980 date: */
+	year = 1980 + ((long)value >> 9);
 	month = ((long)value >> 5) & 0x0f;
 	day = (long)value & 0x1f;
 
-	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+	snprintf(buf, sizeof(buf), "%04ld/%02ld/%02ld", year, month, day);
 
 	return buf;
 }
@@ -504,7 +536,9 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 		}
 	}
 
-	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver to vendor and/or product ID", __func__);
+	upsdebugx(2, "%s (non-SHUT mode): failed to match a subdriver "
+		"to vendor and/or product ID",
+		__func__);
 	return 0;
 }
 
@@ -543,10 +577,12 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
+	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
-		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives", __func__, cmdname);
+		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives",
+			__func__, cmdname);
 
 		if (!strcasecmp(cmdname, "load.on")) {
 			return instcmd("load.on.delay", "0");
@@ -569,6 +605,11 @@ int instcmd(const char *cmdname, const char *extradata)
 				return ret;
 			}
 
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
+
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
@@ -584,6 +625,11 @@ int instcmd(const char *cmdname, const char *extradata)
 			if (ret != STAT_INSTCMD_HANDLED) {
 				return ret;
 			}
+
+			/* Some UPS's (e.g. TrippLive AVR750U w/ 3024 protocol) don't accept
+			 * commands that arrive too rapidly, so add this arbitary wait,
+			 * which has proven to be long enough to avoid this problem in practice */
+			usleep(125000);
 
 			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
@@ -712,16 +758,23 @@ void upsdrv_makevartable(void)
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
+	snprintf(temp, sizeof(temp),
+		"Set low battery level, in %% (default=%s)",
+		DEFAULT_LOWBATT);
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set shutdown delay, in seconds (default=%s)",
+		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
-	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set startup delay, in seconds (default=%s)",
+		DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
+	snprintf(temp, sizeof(temp),
+		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
@@ -735,12 +788,17 @@ void upsdrv_makevartable(void)
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
-	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
-	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
-	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
-	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
+	addvar(VAR_FLAG, "explore",
+		"Diagnostic matching of unsupported UPS");
+	addvar(VAR_FLAG, "maxreport",
+		"Activate tweak for buggy APC Back-UPS firmware");
+	addvar(VAR_FLAG, "interruptonly",
+		"Don't use polling, only use interrupt pipe");
+	addvar(VAR_VALUE, "interruptsize",
+		"Number of bytes to read from interrupt pipe");
 #else
-	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
+	addvar(VAR_VALUE, "notification",
+		"Set notification type, (ignored, only for backward compatibility)");
 #endif
 }
 
@@ -761,7 +819,7 @@ void upsdrv_updateinfo(void)
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
 		/* don't flood reconnection attempts */
-		if (now < (int)(lastpoll + poll_interval)) {
+		if (now < (lastpoll + poll_interval)) {
 			return;
 		}
 
@@ -788,15 +846,19 @@ void upsdrv_updateinfo(void)
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		switch (evtCount)
 		{
-		case -EBUSY:		/* Device or resource busy */
+		case ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
-		case -ENODEV:		/* No such device */
-		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+#endif
+		case ERROR_NO_DEVICE: /* No such device */
+		case ERROR_ACCESS:    /* Permission denied */
+		case ERROR_IO:        /* I/O error */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
-		case -ENOENT:		/* No such file or directory */
+#endif
+		case ERROR_NOT_FOUND: /* No such file or directory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
@@ -817,7 +879,9 @@ void upsdrv_updateinfo(void)
 			continue;
 
 		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
+			upsdebugx(2,
+				"Path: %s, Type: %s, ReportID: 0x%02x, "
+				"Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(event[i], subdriver->utab),
 				HIDDataType(event[i]), event[i]->ReportID,
 				event[i]->Offset, event[i]->Size, value);
@@ -825,7 +889,7 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-                if(!found_data && !interrupt_only) {
+		if(!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
 		if(!found_data) {
@@ -841,12 +905,14 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
+		interval());
 #endif
 	/* clear status buffer before begining */
 	status_init();
 
-	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
+	/* Do a full update (polling) every pollfreq
+	 * or upon data change (ie setvar/instcmd) */
 	if ((now > (lastpoll + pollfreq)) || (data_has_changed == TRUE)) {
 		upsdebugx(1, "Full update...");
 
@@ -873,7 +939,8 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling feature reports...\n",
+		interval());
 #endif
 }
 
@@ -957,12 +1024,16 @@ void upsdrv_initups(void)
 	case -1:
 		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
 #ifndef HAVE___ATTRIBUTE__NORETURN
-		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+		exit(EXIT_FAILURE);
+		/* Should not get here in practice, but
+		 * compiler is afraid we can fall through */
 #endif
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 #ifndef HAVE___ATTRIBUTE__NORETURN
-		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+		exit(EXIT_FAILURE);
+		/* Should not get here in practice, but
+		 * compiler is afraid we can fall through */
 #endif
 	}
 
@@ -978,7 +1049,8 @@ void upsdrv_initups(void)
 
 	hd = &curDevice;
 
-	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
+	upsdebugx(1, "Detected a UPS: %s/%s",
+		hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
 
 	/* Activate Powercom tweaks */
@@ -987,7 +1059,12 @@ void upsdrv_initups(void)
 	}
 	val = getval("interruptsize");
 	if (val) {
-		interrupt_size = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
@@ -1100,15 +1177,37 @@ static void process_boolean_info(const char *nutvalue)
 	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
-static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen)
+static int callback(
+	hid_dev_handle_t argudev,
+	HIDDevice_t *arghd,
+	usb_ctrl_charbuf rdbuf,
+	usb_ctrl_charbufsize rdlen)
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
 #ifndef SHUT_MODE
 	int ret;
 #endif
-	upsdebugx(2, "Report Descriptor size = %d", rdlen);
-	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+	upsdebugx(2, "Report Descriptor size = %" PRI_NUT_USB_CTRL_CHARBUFSIZE, rdlen);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+	if ((uintmax_t)rdlen < (uintmax_t)SIZE_MAX) {
+		upsdebug_hex(3, "Report Descriptor", rdbuf, (size_t)rdlen);
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 
 	/* Save the global "hd" for this driver instance */
 	hd = arghd;
@@ -1146,7 +1245,10 @@ static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd, unsigned char 
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	HIDDumpTree(udev, subdriver->utab);
+	if (subdriver->fix_report_desc(arghd, pDesc)) {
+		upsdebugx(2, "Report Descriptor Fixed");
+	}
+	HIDDumpTree(udev, arghd, subdriver->utab);
 
 #ifndef SHUT_MODE
 	/* create a new matcher for later matching */
@@ -1205,6 +1307,15 @@ static double interval(void)
 }
 #endif
 
+/* default subdriver function which doesn't attempt to fix
+ * any issues in the parsed HID Report Descriptor */
+int fix_report_desc(HIDDevice_t *arg_pDev, HIDDesc_t *arg_pDesc) {
+	NUT_UNUSED_VARIABLE(arg_pDev);
+	NUT_UNUSED_VARIABLE(arg_pDesc);
+
+	return 0;
+}
+
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(walkmode_t mode)
 {
@@ -1214,11 +1325,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
-	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
-	int productID = usb_device((struct usb_dev_handle *)udev)->descriptor.idProduct;
+	int vendorID = curDevice.VendorID;
+	int productID = curDevice.ProductID;
 #endif
 
-	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
+	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE
+	 * and HU_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
@@ -1294,9 +1406,20 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 			break;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+# pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
 			/* All enum cases defined as of the time of coding
 			 * have been covered above. Handle later definitions,
@@ -1305,7 +1428,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 
@@ -1322,15 +1448,19 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
-		case -EBUSY:		/* Device or resource busy */
+		case ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
-		case -ENODEV:		/* No such device */
-		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+#endif
+		case ERROR_NO_DEVICE: /* No such device */
+		case ERROR_ACCESS:    /* Permission denied */
+		case ERROR_IO:        /* I/O error */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
-		case -ENOENT:		/* No such file or directory */
+#endif
+		case ERROR_NOT_FOUND: /* No such file or directory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
@@ -1342,19 +1472,22 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
-		case -ETIMEDOUT:	/* Connection timed out */
-		case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+		case ERROR_TIMEOUT:   /* Connection timed out */
+		case ERROR_OVERFLOW:  /* Value too large for defined data type */
+#if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
 #endif
-		case -EPIPE:		/* Broken pipe */
+		case ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
 			continue;
 		}
 
-		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
-			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
+		upsdebugx(2,
+			"Path: %s, Type: %s, ReportID: 0x%02x, "
+			"Offset: %i, Size: %i, Value: %g",
+			item->hidpath, HIDDataType(item->hiddata),
+			item->hiddata->ReportID,
 			item->hiddata->Offset, item->hiddata->Size, value);
 
 		if (item->hidflags & HU_TYPE_CMD) {
@@ -1458,7 +1591,7 @@ static void ups_alarm_set(void)
 }
 
 /* Return the current value of ups_status */
-int ups_status_get(void)
+unsigned ups_status_get(void)
 {
 	return ups_status;
 }
@@ -1590,12 +1723,16 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 		if (!(strcmp(info_lkp->nut_value, value))) {
-			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)", info_lkp->nut_value, info_lkp->hid_value);
+			upsdebugx(5,
+				"hu_find_valinfo: found %s (value: %ld)",
+				info_lkp->nut_value, info_lkp->hid_value);
 			return info_lkp->hid_value;
 		}
 	}
 
-	upsdebugx(3, "hu_find_valinfo: no matching HID value for this INFO_* value (%s)", value);
+	upsdebugx(3,
+		"hu_find_valinfo: no matching HID value for this INFO_* value (%s)",
+		value);
 	return -1;
 }
 
@@ -1612,12 +1749,16 @@ static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	/* use 'value' as an index for a lookup in an array */
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 		if (info_lkp->hid_value == (long)value) {
-			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)", info_lkp->nut_value, (long)value);
+			upsdebugx(5,
+				"hu_find_infoval: found %s (value: %ld)",
+				info_lkp->nut_value, (long)value);
 			return info_lkp->nut_value;
 		}
 	}
 
-	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%g)", value);
+	upsdebugx(3,
+		"hu_find_infoval: no matching INFO_* value for this HID value (%g)",
+		value);
 	return NULL;
 }
 

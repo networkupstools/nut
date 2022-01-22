@@ -120,6 +120,10 @@ archives].
 * link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov, 
 has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
 
+* link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed
+the ablerex subdriver for blazer_usb, handling Ablerex MP, ARES Plus, MSII
+MSIII, GRs and GRs Plus models.
+
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1522,6 +1522,11 @@ extern "C" {
 strarr strarr_alloc(size_t count)
 {
 	strarr arr = static_cast<strarr>(xcalloc(count+1, sizeof(char*)));
+
+	if (arr == nullptr) {
+		throw nut::NutException("Out of memory");
+	}
+
 	arr[count] = nullptr;
 	return arr;
 }

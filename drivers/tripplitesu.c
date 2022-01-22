@@ -615,17 +615,29 @@ void upsdrv_initinfo(void)
 			dstate_setinfo("battery.voltage.nominal", "%d",
 			               atoi(ptr));
 		ptr = field(response, 10);
-		if (ptr)
-			min_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 9);
-		if (ptr)
-			max_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 12);
-		if (ptr)
-			min_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_high_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 11);
-		if (ptr)
-			max_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_high_transfer = (unsigned int)ipv;
+		}
 	}
 	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0)
 		ups.outlet_banks = atoi(response);
