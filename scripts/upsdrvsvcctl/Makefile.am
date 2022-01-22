@@ -10,4 +10,4 @@ endif
 
 EXTRA_DIST += nut-driver-enumerator.sh.in upsdrvsvcctl.in
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

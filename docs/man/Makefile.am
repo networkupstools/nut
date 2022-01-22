@@ -619,10 +619,12 @@ endif
 HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
-	generic_modbus.txt
+	generic_modbus.txt \
+	huawei-ups2000.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
-	generic_modbus.8
+	generic_modbus.8 \
+	huawei-ups2000.8
 endif
 
 if WITH_MODBUS
@@ -630,7 +632,8 @@ man8_MANS += $(MAN_MODBUS_PAGES)
 endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
-	generic_modbus.html
+	generic_modbus.html \
+	huawei-ups2000.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -949,7 +952,7 @@ endif !HAVE_ASCIIDOC
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
 	rm -rf tmp

@@ -82,6 +82,9 @@
 #include <net-snmp/net-snmp-includes.h>
 
 /* Force numeric OIDs by disabling MIB loading */
+#ifdef DISABLE_MIB_LOADING
+# undef DISABLE_MIB_LOADING
+#endif
 #define DISABLE_MIB_LOADING 1
 
 /* Parameters default values */
@@ -128,81 +131,109 @@ typedef struct {
    use sprintf with given format string.  If unit is not NONE, values
    are converted according to the multiplier table
 */
+typedef uint32_t snmp_info_flags_t; /* To extend when 32 bits become too congested */
+#define PRI_SU_FLAGS	PRIu32
+
 typedef struct {
 	char         *info_type;  /* INFO_ or CMD_ element */
-	int           info_flags; /* flags to set in addinfo */
-	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
+	int           info_flags; /* flags to set in addinfo: see ST_FLAG_*
+	                           * defined in include/extstate.h */
+	double        info_len;   /* length of strings if ST_FLAG_STRING,
+	                           * multiplier otherwise. */
 	char         *OID;        /* SNMP OID or NULL */
 	char         *dfl;        /* default value */
-	unsigned long flags;      /* snmp-ups internal flags */
+	snmp_info_flags_t flags;  /* snmp-ups internal flags: see SU_* bit-shifts
+	                           * defined below (SU_FLAG*, SU_TYPE*, SU_STATUS*
+	                           * and others for outlets, phases, daisy-chains,
+	                           * etc.)
+	                           * NOTE that some *-mib.c mappings can specify
+	                           * a zero in this field... better fix that in
+	                           * favor of explicit values with a meaning!
+	                           * NOTE: With C99+ a "long" is guaranteed to be
+	                           * at least 4 bytes; consider "unsigned long long"
+	                           * when/if we get more than 32 flag values.
+	                           */
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#define SU_FLAG_OK		(1 << 0)	/* show element to upsd - internal to snmp driver */
-#define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
-#define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
+/* "flags" bits 0..8 (and 9 reserved for DMF) */
+#define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
+										 * internal to snmp driver */
+#define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
+#define SU_FLAG_ABSENT		(1UL << 2)	/* data is absent in the device,
 										 * use default value. */
-#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often - internal to snmp driver */
-#define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
-#define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
+#define SU_FLAG_STALE		(1UL << 3)	/* data stale, don't try too often -
+										 * internal to snmp driver */
+#define SU_FLAG_NEGINVALID	(1UL << 4)	/* Invalid if negative value */
+#define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
 /* Free slot
- * #define SU_FLAG_SETINT	(1 << 6)*/	/* save value */
-#define SU_OUTLET		(1 << 7)	/* outlet template definition */
-#define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
+ * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
+#define SU_OUTLET			(1UL << 7)	/* outlet template definition */
+#define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
  * Otherwise, the driver will try to determine it by itself...
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
+/* Reserved slot (1UL << 9) -- to import from DMF branch codebase */
 
 /* status string components
  * FIXME: these should be removed, since there is no added value.
  * Ie, this can be guessed from info->type! */
 
-#define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
-#define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
-#define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
-#define SU_STATUS_RB		(3 << 8)	/* indicates replace battery status element */
-#define SU_STATUS_NUM_ELEM	4
-#define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
+/* "flags" value 0, or bits 8..9, or "8 and 9" */
+#define SU_STATUS_PWR		(0UL << 8)	/* indicates power status element */
+#define SU_STATUS_BATT		(1UL << 8)	/* indicates battery status element */
+#define SU_STATUS_CAL		(2UL << 8)	/* indicates calibration status element */
+#define SU_STATUS_RB		(3UL << 8)	/* indicates replace battery status element */
+#define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
+#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 8) & 7UL)
 
-#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
+/* "flags" bit 10 */
+#define SU_OUTLET_GROUP		(1UL << 10)	/* outlet group template definition */
 
 /* Phase specific data */
-#define SU_PHASES		(0x3F << 12)
-#define SU_INPHASES		(0x3 << 12)
-#define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
-#define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
-#define SU_OUTPHASES	(0x3 << 14)
-#define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
-#define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
-#define SU_BYPPHASES	(0x3 << 16)
-#define SU_BYPASS_1		(1 << 16)	/* only if 1 bypass phase */
-#define SU_BYPASS_3		(1 << 17)	/* only if 3 bypass phases */
+/* "flags" bits 12..17 */
+#define SU_PHASES		(0x0000003F << 12)
+#define SU_INPHASES		(0x00000003 << 12)
+#define SU_INPUT_1		(1UL << 12)	/* only if 1 input phase */
+#define SU_INPUT_3		(1UL << 13)	/* only if 3 input phases */
+#define SU_OUTPHASES	(0x00000003 << 14)
+#define SU_OUTPUT_1		(1UL << 14)	/* only if 1 output phase */
+#define SU_OUTPUT_3		(1UL << 15)	/* only if 3 output phases */
+#define SU_BYPPHASES	(0x00000003 << 16)
+#define SU_BYPASS_1		(1UL << 16)	/* only if 1 bypass phase */
+#define SU_BYPASS_3		(1UL << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
-
 /* hints for su_ups_set, applicable only to rw vars */
-#define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
-/* Free slot                (1 << 18) */
-#define SU_TYPE_TIME		(2 << 18)	/* cast to int */
-#define SU_TYPE_CMD			(3 << 18)	/* instant command */
-#define SU_TYPE(t)			((t)->flags & (7 << 18))
+/* "flags" value 0, or bits 18..19, or "18 and 19" */
+#define SU_TYPE_INT			(0UL << 18)	/* cast to int when setting value */
+/* Free slot                (1UL << 18) */
+#define SU_TYPE_TIME		(2UL << 18)	/* cast to int */
+#define SU_TYPE_CMD			(3UL << 18)	/* instant command */
+/* The following helper macro is used like:
+ *   if (SU_TYPE(su_info_p) == SU_TYPE_CMD) { ... }
+ */
+#define SU_TYPE(t)			((t)->flags & (7UL << 18))
 
 /* Daisychain template definition */
 /* the following 2 flags specify the position of the daisychain device index
  * in the formatting string. This is useful when considering daisychain with
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
-#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
-#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY		((t)->flags & (7 << 19))
-#define SU_DAISY			(2 << 19) /* Daisychain template definition */
-#define SU_FLAG_ZEROINVALID    (1 << 20)       /* Invalid if "0" value */
-#define SU_FLAG_NAINVALID      (1 << 21)       /* Invalid if "N/A" value */
+/* "flags" bits 19..20, and 20 again */
+#define SU_TYPE_DAISY_1		(1UL << 19)	/* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2UL << 19)	/* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY(t)	((t)->flags & (7UL << 19))
+#define SU_DAISY			(2UL << 19)	/* Daisychain template definition */
+
+/* "flags" bits 20..21 */
+#define SU_FLAG_ZEROINVALID	(1UL << 20)	/* Invalid if "0" value */
+#define SU_FLAG_NAINVALID	(1UL << 21)	/* Invalid if "N/A" value */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -217,6 +248,9 @@ typedef struct {
 #define SU_VAR_PRIVPASSWD	"privPassword"
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
+
+#define SU_VAR_ONDELAY		"ondelay"
+#define SU_VAR_OFFDELAY		"offdelay"
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
@@ -306,6 +340,8 @@ extern info_lkp_t su_convert_to_iso_date_info[];
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
 void su_shutdown_ups(void);
+
+void set_delays(void);
 
 void read_mibconf(char *mib);
 

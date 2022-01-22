@@ -1,6 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,6 +47,39 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #  undef BUILD_64
 # endif
 #endif
+
+/* https://stackoverflow.com/a/12844426/4715872 */
+#include <sys/types.h>
+#include <limits.h>
+#include <stdlib.h>
+pid_t get_max_pid_t()
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
+	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
+	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */
+# if defined(LLONG_MAX)  /* since C99 */
+	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
+# endif
+#endif
+	abort();
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+}
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -179,7 +213,31 @@ struct passwd *get_user_pwent(const char *name)
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 
-	return NULL;  /* to make the compiler happy */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+#pragma GCC diagnostic ignored "-Wunreachable-code-return"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+#  pragma clang diagnostic ignored "-Wunreachable-code-return"
+# endif
+#endif
+	/* Oh joy, adding unreachable "return" to make one compiler happy,
+	 * and pragmas around to make other compilers happy, all at once! */
+	return NULL;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
+#pragma GCC diagnostic pop
+#endif
 }
 
 /* change to the user defined in the struct */
@@ -249,7 +307,7 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	long	pid;
+	pid_t	pid = -1;
 	int	ret;
 
 	pidf = fopen(pidfn, "r");
@@ -264,10 +322,17 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	pid = strtol(buf, (char **)NULL, 10);
+	{ /* scoping */
+		intmax_t _pid = strtol(buf, (char **)NULL, 10); /* assuming 10 digits for a long */
+		if (_pid <= get_max_pid_t()) {
+			pid = (pid_t)_pid;
+		} else {
+			upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+		}
+	}
 
 	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %ld", pid);
+		upslogx(LOG_NOTICE, "Ignoring invalid pid number %" PRIdMAX, (intmax_t) pid);
 		fclose(pidf);
 		return -1;
 	}
@@ -376,7 +441,15 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -507,6 +580,7 @@ void upslogx(int priority, const char *fmt, ...)
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	/* Note: Thanks to macro wrapping, we do not quite need this
 	 * test now, but we still need the "level" value to report
@@ -520,7 +594,6 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
  * of logging info he needs to see at the moment. Using '-DDDDD' all the time
  * is too brutal and needed high-level overview can be lost. This [D#] prefix
  * can help limit this debug stream quicker, than experimentally picking ;) */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -552,12 +625,12 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	if (nut_debug_level < level)
 		return;
 
 /* See comments above in upsdebug_with_errno() - they apply here too. */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -797,7 +870,7 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -821,7 +894,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_s
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;

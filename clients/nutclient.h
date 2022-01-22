@@ -57,9 +57,9 @@ class NutException : public std::exception
 public:
 	NutException(const std::string& msg):_msg(msg){}
 	NutException(const NutException&) = default;
-    NutException& operator=(NutException& rhs) = default;
-	virtual ~NutException();
-	virtual const char * what() const noexcept {return this->_msg.c_str();}
+	NutException& operator=(NutException& rhs) = default;
+	virtual ~NutException() override;
+	virtual const char * what() const noexcept override {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
 	std::string _msg;
@@ -73,8 +73,8 @@ class SystemException : public NutException
 public:
 	SystemException();
 	SystemException(const SystemException&) = default;
-    SystemException& operator=(SystemException& rhs) = default;
-	virtual ~SystemException();
+	SystemException& operator=(SystemException& rhs) = default;
+	virtual ~SystemException() override;
 private:
 	static std::string err();
 };
@@ -88,8 +88,8 @@ class IOException : public NutException
 public:
 	IOException(const std::string& msg):NutException(msg){}
 	IOException(const IOException&) = default;
-    IOException& operator=(IOException& rhs) = default;
-	virtual ~IOException();
+	IOException& operator=(IOException& rhs) = default;
+	virtual ~IOException() override;
 };
 
 /**
@@ -100,8 +100,8 @@ class UnknownHostException : public IOException
 public:
 	UnknownHostException():IOException("Unknown host"){}
 	UnknownHostException(const UnknownHostException&) = default;
-    UnknownHostException& operator=(UnknownHostException& rhs) = default;
-	virtual ~UnknownHostException();
+	UnknownHostException& operator=(UnknownHostException& rhs) = default;
+	virtual ~UnknownHostException() override;
 };
 
 /**
@@ -112,8 +112,8 @@ class NotConnectedException : public IOException
 public:
 	NotConnectedException():IOException("Not connected"){}
 	NotConnectedException(const NotConnectedException&) = default;
-    NotConnectedException& operator=(NotConnectedException& rhs) = default;
-	virtual ~NotConnectedException();
+	NotConnectedException& operator=(NotConnectedException& rhs) = default;
+	virtual ~NotConnectedException() override;
 };
 
 /**
@@ -124,8 +124,8 @@ class TimeoutException : public IOException
 public:
 	TimeoutException():IOException("Timeout"){}
 	TimeoutException(const TimeoutException&) = default;
-    TimeoutException& operator=(TimeoutException& rhs) = default;
-	virtual ~TimeoutException();
+	TimeoutException& operator=(TimeoutException& rhs) = default;
+	virtual ~TimeoutException() override;
 };
 
 /**
@@ -368,7 +368,7 @@ public:
 	 * \param port Server port.
 	 */
 	TcpClient(const std::string& host, int port = 3493);
-	~TcpClient();
+	~TcpClient() override;
 
 	/**
 	 * Connect it to the specified server.
@@ -416,38 +416,38 @@ public:
 	 */
 	int getPort()const;
 
-	virtual void authenticate(const std::string& user, const std::string& passwd);
-	virtual void logout();
+	virtual void authenticate(const std::string& user, const std::string& passwd) override;
+	virtual void logout() override;
 
-	virtual Device getDevice(const std::string& name);
-	virtual std::set<std::string> getDeviceNames();
-	virtual std::string getDeviceDescription(const std::string& name);
+	virtual Device getDevice(const std::string& name) override;
+	virtual std::set<std::string> getDeviceNames() override;
+	virtual std::string getDeviceDescription(const std::string& name) override;
 
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name);
-	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
-	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values);
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev) override;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev) override;
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name) override;
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name) override;
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev) override;
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) override;
 
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
 
-	virtual void deviceLogin(const std::string& dev);
+	virtual void deviceLogin(const std::string& dev) override;
 	/* FIXME: Protocol update needed to handle master/primary alias
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
-	virtual void deviceMaster(const std::string& dev);
-	virtual void deviceForcedShutdown(const std::string& dev);
-	virtual int deviceGetNumLogins(const std::string& dev);
+	virtual void deviceMaster(const std::string& dev) override;
+	virtual void deviceForcedShutdown(const std::string& dev) override;
+	virtual int deviceGetNumLogins(const std::string& dev) override;
 
-	virtual TrackingResult getTrackingResult(const TrackingID& id);
+	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
-	virtual bool isFeatureEnabled(const Feature& feature);
-	virtual void setFeature(const Feature& feature, bool status);
+	virtual bool isFeatureEnabled(const Feature& feature) override;
+	virtual void setFeature(const Feature& feature, bool status) override;
 
 protected:
 	std::string sendQuery(const std::string& req);

@@ -22,10 +22,11 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h" /* must be first */
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "hidparser.h"
 #include "nut_stdint.h"  /* for int8_t, int16_t, int32_t */
 #include "common.h"      /* for fatalx() */
@@ -35,9 +36,12 @@ static const uint8_t ItemSize[4] = { 0, 1, 2, 4 };
 /*
  * HIDParser struct
  * -------------------------------------------------------------------------- */
+/* FIXME? Should this structure remain with reasonable fixed int types,
+ * or changed to align with libusb API version and usb_ctrl_* typedefs?
+ */
 typedef struct {
 	const unsigned char	*ReportDesc;		/* Report Descriptor		*/
-	int			ReportDescSize;		/* Size of Report Descriptor	*/
+	size_t			ReportDescSize;		/* Size of Report Descriptor	*/
 
 	uint16_t	Pos;				/* Store current pos in descriptor	*/
 	uint8_t		Item;				/* Store current Item		*/
@@ -135,7 +139,7 @@ static long FormatValue(uint32_t Value, uint8_t Size)
 	case 4:
 		return (long)(int32_t)Value;
 	default:
-		return Value;
+		return (long)Value;
 	}
 }
 
@@ -158,7 +162,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
 			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
-				pParser->Value += pParser->ReportDesc[(pParser->Pos)+i] << (8*i);
+				pParser->Value += (uint32_t)(pParser->ReportDesc[(pParser->Pos)+i]) << (8*i);
 			}
 			/* Pos on next item */
 			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
@@ -176,7 +180,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			if ((pParser->Item & SIZE_MASK) > 2) {
 				pParser->UsageTab[pParser->UsageSize] = pParser->Value;
 			} else {
-				pParser->UsageTab[pParser->UsageSize] = (pParser->UPage << 16) | (pParser->Value & 0xFFFF);
+				pParser->UsageTab[pParser->UsageSize] = ((HIDNode_t)(pParser->UPage) << 16) | (pParser->Value & 0xFFFF);
 			}
 
 			/* Increment Usage stack size */
@@ -190,10 +194,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if (pParser->UsageSize > 0) {
-				int	i;
+				int	j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
 
 				/* Remove Usage */
@@ -242,11 +246,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if(pParser->UsageSize > 0) {
-				int i;
+				int j;
 
-				for (i = 0; i < pParser->UsageSize; i++) {
-					pParser->UsageTab[i] = pParser->UsageTab[i+1];
+				for (j = 0; j < pParser->UsageSize; j++) {
+					pParser->UsageTab[j] = pParser->UsageTab[j+1];
 				}
+
 				/* Remove Usage */
 				pParser->UsageSize--;
 			}
@@ -299,7 +304,10 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_UNIT :
-			pParser->Data.Unit = pParser->Value;
+			/* TOTHINK: Are there cases where Unit is not-signed,
+			 * but a Value too big becomes signed after casting --
+			 * and unintentionally so? */
+			pParser->Data.Unit = (long)pParser->Value;
 			break;
 
 		case ITEM_LOG_MIN :
@@ -308,6 +316,24 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_LOG_MAX :
 			pParser->Data.LogMax = FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
+			/* HACK: If treating the value as signed (FormatValue(...)) results in a LogMax that is
+			 * less than the LogMin value then it is likely that the LogMax value has been
+			 * incorrectly encoded by the UPS firmware (field too short and overflowed into sign
+			 * bit).  In that case, reinterpret it as an unsigned number and log the problem.
+			 * This hack is not correct in the sense that it only looks at the LogMin value for
+			 * this item, whereas the HID spec says that Logical values persist in global state.
+			 */
+			if (pParser->Data.LogMax < pParser->Data.LogMin) {
+				upslogx(LOG_WARNING,
+					"%s: LogMax is less than LogMin. "
+					"Vendor HID report descriptor may be incorrect; "
+					"interpreting LogMax %ld as %u in ReportID: 0x%02x",
+					__func__,
+					pParser->Data.LogMax,
+					pParser->Value,
+					pParser->Data.ReportID);
+				pParser->Data.LogMax = (long) pParser->Value;
+			}
 			break;
 
 		case ITEM_PHY_MIN :
@@ -349,9 +375,9 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
  * Get pData characteristics from pData->Path
  * Return TRUE if object was found
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
+int FindObject(HIDDesc_t *pDesc_arg, HIDData_t *pData)
 {
-	HIDData_t	*pFoundData = FindObject_with_Path(pDesc, &pData->Path, pData->Type);
+	HIDData_t	*pFoundData = FindObject_with_Path(pDesc_arg, &pData->Path, pData->Type);
 
 	if (!pFoundData) {
 		return 0;
@@ -365,12 +391,12 @@ int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
  * FindObject_with_Path
  * Get pData item with given Path and Type. Return NULL if not found.
  * -------------------------------------------------------------------------- */
-HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc_arg, HIDPath_t *Path, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
-	for (i = 0; i < pDesc->nitems; i++) {
-		HIDData_t *pData = &pDesc->item[i];
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t *pData = &pDesc_arg->item[i];
 
 		if (pData->Type != Type) {
 			continue;
@@ -391,12 +417,12 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
  * Get pData item with given ReportID, Offset, and Type. Return NULL
  * if not found.
  * -------------------------------------------------------------------------- */
-HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type)
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Offset, uint8_t Type)
 {
-	int	i;
+	size_t	i;
 
-	for (i = 0; i < pDesc->nitems; i++) {
-		HIDData_t *pData = &pDesc->item[i];
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t *pData = &pDesc_arg->item[i];
 
 		if (pData->ReportID != ReportID) {
 			continue;
@@ -434,7 +460,7 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 
 	int	Weight, Bit;
 	unsigned long mask, signbit, magMax, magMin;
-	long	value = 0, range;
+	long	value = 0;
 
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
@@ -442,19 +468,8 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 		int	State = Buf[Bit >> 3] & (1 << (Bit & 7));
 
 		if(State) {
-			value += (1 << Weight);
+			value += (1L << Weight);
 		}
-	}
-
-	range = pData->LogMax - pData->LogMin + 1;
-	if (range <= 0) {
-		/* makes no sense, give up */
-		*pValue = value;
-		/* Discussion: https://github.com/networkupstools/nut/pull/1138 */
-		upslogx(LOG_ERR, "ERROR in %s: LogMin is greater than LogMax, "
-			"possibly vendor HID is incorrect on device side; "
-			"skipping evaluation of these constraints", __func__);
-		return;
 	}
 
 	/* translate Value into a signed/unsigned value in the range
@@ -480,8 +495,8 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	something sensible. -PS */
 
 	/* determine representation without sign bit */
-	magMax = pData->LogMax >= 0 ? pData->LogMax : -(pData->LogMax + 1);
-	magMin = pData->LogMin >= 0 ? pData->LogMin : -(pData->LogMin + 1);
+	magMax = pData->LogMax >= 0 ? (unsigned long)(pData->LogMax) : (unsigned long)(-(pData->LogMax + 1));
+	magMin = pData->LogMin >= 0 ? (unsigned long)(pData->LogMin) : (unsigned long)(-(pData->LogMin + 1));
 
 	/* calculate where the sign bit will be if needed */
 	signbit = 1L << hibit(magMax > magMin ? magMax : magMin);
@@ -490,10 +505,10 @@ void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 	mask = (signbit - 1) | ((pData->LogMin < 0) ? signbit : 0);
 
 	/* throw away excess high order bits (which may contain garbage) */
-	value = value & mask;
+	value = (long)((unsigned long)(value) & mask);
 
 	/* sign-extend it, if appropriate */
-	if (pData->LogMin < 0 && (value & signbit) != 0) {
+	if (pData->LogMin < 0 && ((unsigned long)(value) & signbit) != 0) {
 		value |= ~mask;
 	}
 
@@ -520,7 +535,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
 	Bit = pData->Offset + 8;	/* First byte of report is report ID */
 
 	for (Weight = 0; Weight < pData->Size; Weight++, Bit++) {
-		int	State = Value & (1 << Weight);
+		long	State = Value & (1L << Weight);
 
 		if (State) {
 			Buf[Bit >> 3] |= (1 << (Bit & 7));
@@ -536,78 +551,109 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
+HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_charbufsize n)
 {
-	int		ret;
-	HIDDesc_t	*pDesc;
+	int		ret = 0;
+	HIDDesc_t	*pDesc_var;
 	HIDParser_t	*parser;
 
-	pDesc = calloc(1, sizeof(*pDesc));
-	if (!pDesc) {
+	pDesc_var = calloc(1, sizeof(*pDesc_var));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (!pDesc_var
+	|| n < 0 || (uintmax_t)n > SIZE_MAX
+	) {
 		return NULL;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 
-	pDesc->item = calloc(MAX_REPORT, sizeof(*pDesc->item));
-	if (!pDesc->item) {
-		Free_ReportDesc(pDesc);
+	pDesc_var->item = calloc(MAX_REPORT, sizeof(*pDesc_var->item));
+	if (!pDesc_var->item) {
+		Free_ReportDesc(pDesc_var);
 		return NULL;
 	}
 
 	parser = calloc(1, sizeof(*parser));
 	if (!parser) {
-		Free_ReportDesc(pDesc);
+		Free_ReportDesc(pDesc_var);
 		return NULL;
 	}
 
-	parser->ReportDesc = ReportDesc;
-	parser->ReportDescSize = n;
+	parser->ReportDesc = (const unsigned char *)ReportDesc;
+	parser->ReportDescSize = (const size_t)n;
 
-	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += ret) {
-		int	id, max;
+	for (pDesc_var->nitems = 0; pDesc_var->nitems < MAX_REPORT; pDesc_var->nitems += (size_t)ret) {
+		uint8_t	id;
+		size_t	max;
 
-		ret = HIDParse(parser, &pDesc->item[pDesc->nitems]);
+		ret = HIDParse(parser, &pDesc_var->item[pDesc_var->nitems]);
 		if (ret < 0) {
 			break;
 		}
 
-		id = pDesc->item[pDesc->nitems].ReportID;
+		id = pDesc_var->item[pDesc_var->nitems].ReportID;
 
 		/* calculate bit range of this item within report */
-		max = pDesc->item[pDesc->nitems].Offset + pDesc->item[pDesc->nitems].Size;
+		max = pDesc_var->item[pDesc_var->nitems].Offset + pDesc_var->item[pDesc_var->nitems].Size;
 
 		/* convert to bytes */
 		max = (max + 7) >> 3;
 
 		/* update report length */
-		if (max > pDesc->replen[id]) {
-			pDesc->replen[id] = max;
+		if (max > pDesc_var->replen[id]) {
+			pDesc_var->replen[id] = max;
 		}
 	}
 
 	/* Sanity check: are there remaining HID objects that can't
 	 * be processed? */
-	if ((pDesc->nitems == MAX_REPORT) && (parser->Pos < parser->ReportDescSize))
+	if ((pDesc_var->nitems == MAX_REPORT) && (parser->Pos < parser->ReportDescSize))
 		upslogx(LOG_ERR, "ERROR in %s: Too many HID objects", __func__);
 
 	free(parser);
 
-	if (pDesc->nitems == 0) {
-		Free_ReportDesc(pDesc);
+	if (pDesc_var->nitems == 0) {
+		Free_ReportDesc(pDesc_var);
 		return NULL;
 	}
 
-	pDesc->item = realloc(pDesc->item, pDesc->nitems * sizeof(*pDesc->item));
+	pDesc_var->item = realloc(pDesc_var->item, pDesc_var->nitems * sizeof(*pDesc_var->item));
 
-	return pDesc;
+	return pDesc_var;
 }
 
 /* free a parsed report descriptor, as allocated by Parse_ReportDesc() */
-void Free_ReportDesc(HIDDesc_t *pDesc)
+void Free_ReportDesc(HIDDesc_t *pDesc_arg)
 {
-	if (!pDesc) {
+	if (!pDesc_arg) {
 		return;
 	}
 
-	free(pDesc->item);
-	free(pDesc);
+	free(pDesc_arg->item);
+	free(pDesc_arg);
 }

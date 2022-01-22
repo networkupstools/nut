@@ -2,7 +2,7 @@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
-$(top_builddir)/common/libparseconf.la:
+$(top_builddir)/common/libparseconf.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
@@ -34,7 +34,9 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
 
 sockdebug_SOURCES = sockdebug.c
 
-MAINTAINERCLEANFILES = Makefile.in
+dummy:
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

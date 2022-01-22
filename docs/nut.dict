@@ -1,8 +1,9 @@
-personal_ws-1.1 en 2772 utf-8
+personal_ws-1.1 en 2834 utf-8
 AAS
 ACFAIL
 ACFREQ
 ACK
+ACM
 ACPI
 ACPresent
 ACrms
@@ -152,6 +153,7 @@ CAs
 CBLimit
 CCC
 CCCC
+CDC
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -173,6 +175,7 @@ COMMOK
 CONFILE
 CONTEXTs
 CPAN
+CPE
 CPM
 CPP
 CPPFLAGS
@@ -278,10 +281,12 @@ EEPROM
 EG
 EL
 ELCD
+EMI
 ENDFOR
 ENV
 EOF
 EOLed
+EPEL
 EPERM
 EPO
 EPS
@@ -313,6 +318,7 @@ EqlzTm
 Erikson
 Eriksson
 Evgeny
+Exar
 FEMEA
 FFF
 FH
@@ -361,6 +367,7 @@ GKrellM
 GND
 GPL
 GPSER
+GRs
 GTK
 GUIs
 GWD
@@ -482,12 +489,15 @@ JavaScript
 Javadoc
 Javascript
 Jenkinsfile
+JoinControllers
 Joon
 Jumpered
 KNutClient
 KNutSetting
 KOLFF
 KRT
+KRTS
+KTTS
 Kain
 Kaminski
 Kanji
@@ -568,6 +578,7 @@ MANPATH
 MAXAGE
 MAXCONN
 MAXLINEV
+MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
@@ -586,6 +597,8 @@ MOXA
 MPSU
 MQ
 MSI
+MSII
+MSIII
 MacKenzie's
 MacOS
 Maccelari
@@ -608,6 +621,7 @@ Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
+MaxLinear
 McKinnon
 Megaline
 Metheringham
@@ -833,6 +847,7 @@ PowerKinetics
 PowerMIB
 PowerMac
 PowerMan
+PowerManagerII
 PowerMust
 PowerNet
 PowerOff
@@ -942,6 +957,7 @@ RntmK
 Rocketfish
 Rodrigues
 Rodríguez
+Rouben
 Rozman
 Rucelf
 RxD
@@ -996,6 +1012,7 @@ SOFF
 SOLA
 SOLA's
 SOV
+SPC
 SPECs
 SPLY
 SPS
@@ -1111,6 +1128,7 @@ TXV
 TXVxx
 TapSwDly
 TapSwPh
+Tchakhmakhtchian
 TcpClient
 Technic
 Technorama
@@ -1169,6 +1187,7 @@ UPStation
 UPower
 URI
 USBDEVFS
+USBDevice
 USERADDed
 USV
 USVs
@@ -1259,6 +1278,7 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
 Yunto
@@ -1270,6 +1290,7 @@ Zampieri
 Zawadzki
 ZeroMQ
 abcd
+ablerex
 abuild
 acVoltsIn
 acVoltsout
@@ -1277,6 +1298,7 @@ acampsiOut
 acampsiout
 accessmode
 acl
+acm
 acpi
 acquisited
 acvoltsin
@@ -1333,6 +1355,7 @@ arg
 argc
 args
 argv
+armac
 armel
 armhf
 asapm
@@ -1385,6 +1408,7 @@ backport
 backported
 backupspro
 badpassword
+baseurl
 batchable
 batt
 battcap
@@ -1401,6 +1425,7 @@ baudrate
 baytech
 baz
 bbh
+bcdDevice
 bcmxcp
 bd
 beepertone
@@ -1454,6 +1479,8 @@ cbl
 cblimit
 ccache
 cd
+cdc
+centos
 cerr
 certfile
 certname
@@ -1476,6 +1503,7 @@ cflags
 cgi
 cgipath
 cgroup
+cgroupsv
 chargedvbattery
 chargermode
 chargetime
@@ -1503,6 +1531,7 @@ clearlogs
 clearpassword
 clepple
 clicky
+cls
 clueful
 cmd
 cmdline
@@ -1611,6 +1640,7 @@ dl
 dll
 dlopen
 dmesg
+dnf
 dnl
 dnsmasq
 docbook
@@ -1734,6 +1764,7 @@ fsd
 ftdi
 fuji
 fullload
+func
 gamatronic
 gcc
 gcpp
@@ -1841,6 +1872,8 @@ inh
 init
 init's
 initctl
+initializer
+initializers
 initinfo
 initscripts
 initups
@@ -1871,11 +1904,14 @@ ip
 ipE
 ipF
 ipmi
+ipmidetectd
+ipmimonitoring
 ipmipsu
 ippon
 ipv
 isbmex
 iso
+isolator
 ivtscd
 jNUT
 jNut
@@ -1886,6 +1922,7 @@ jessie
 journalctl
 jpg
 jpgraph
+jre
 json
 kVA
 kadets
@@ -1904,6 +1941,7 @@ ktrace
 labcd
 lan
 langid
+largp
 lasaine
 ld
 le
@@ -1935,10 +1973,12 @@ libpowerman
 libre
 libs
 libsnmp
+libssl
 libtool
 libupsclient
 libusb
 libusbugen
+libusbx
 libvirt
 libwrap
 libxslt
@@ -1979,12 +2019,14 @@ lowvoltsout
 lposix
 lr
 lsusb
+ltdl
 lu
 lua
 lv
 lvo
 lxc
 lxcbr
+lxccontainer
 lxml
 lxyz
 mA
@@ -2047,6 +2089,7 @@ minvalue
 minvi
 minvo
 mips
+mirrorlist
 mis
 misconfigured
 mkdir
@@ -2115,6 +2158,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobt
 nodtk
 noflag
 nohang
@@ -2193,6 +2237,7 @@ ostream
 otherprotocols
 outliers
 pF
+pacman
 paramkeywords
 parsable
 parseconf
@@ -2282,6 +2327,7 @@ productid
 prog
 prtconf
 psu
+pty
 pw
 pwl
 pwmib
@@ -2431,6 +2477,7 @@ slavesync
 slewrate
 sm
 smartups
+smbus
 sms
 sn
 snailmail
@@ -2459,6 +2506,7 @@ srv
 srw
 ss
 sshd
+ssize
 ssl
 stan
 startIP
@@ -2477,11 +2525,14 @@ strarr
 strcasecmp
 strcat
 strchr
+strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
+strncasecmp
+strncmp
 struct
 structs
 sts
@@ -2504,6 +2555,7 @@ subtree
 sudo
 suid
 superset
+suseconds
 sv
 svc
 svcadm
@@ -2572,8 +2624,10 @@ tripplitesu
 troff
 tsd
 tty
+ttyACM
 ttyS
 ttySx
+ttyU
 ttyUPS
 ttyUSB
 ttya
@@ -2598,6 +2652,7 @@ udev
 udevadm
 ufw
 ugen
+uint
 ukUNV
 ul
 un
@@ -2617,6 +2672,7 @@ unpowered
 unshutup
 updateinfo
 upexia
+upower
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage
@@ -2675,6 +2731,7 @@ usbups
 usbus
 usd
 usec
+useconds
 useradd
 userid
 usermap
@@ -2697,6 +2754,7 @@ var's
 varargs
 varhigh
 variable's
+variadic
 varlow
 varname
 varvalue
@@ -2704,8 +2762,10 @@ vbatt
 ve
 vc
 vendorid
+ver
 verifySourceSig
 versa
+versioned
 victron
 victronups
 vid

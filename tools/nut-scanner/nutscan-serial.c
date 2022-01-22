@@ -22,6 +22,8 @@
     \author Arnaud Quette <arnaud.quette@free.fr>
 */
 
+#include "config.h"	/* must be the first header */
+
 #include "nutscan-serial.h"
 #include <stdio.h>
 #include <string.h>
@@ -88,7 +90,7 @@ static int is_serial_port_path(const char * port_name)
 static char ** add_port(char ** list, char * port)
 {
 	char ** res;
-	int count = 0;
+	size_t count = 0;
 
 	if (list == NULL) {
 		count = 0;
@@ -101,7 +103,7 @@ static char ** add_port(char ** list, char * port)
 
 	/*+1 to get the number of port from the index nb_ports*/
 	/*+1 for the terminal NULL */
-	res = realloc(list, (count+1+1)*sizeof(char*));
+	res = realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
 		upsdebugx(1, "%s: Failed to realloc port list", __func__);
 		return list;

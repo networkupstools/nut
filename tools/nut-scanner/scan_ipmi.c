@@ -397,7 +397,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	if (!(ipmi_ctx = (*nut_ipmi_ctx_create) ()))
 	{
 		/* we have to force cleanup, since exit handler is not yet installed */
-		fprintf(stderr, "ipmi_ctx_create\n");
+		fprintf(stderr, "Failed to ipmi_ctx_create\n");
 		return NULL;
 	}
 
@@ -419,7 +419,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 					0  /* flags */
 					)) < 0)
 		{
-			fprintf(stderr, "ipmi_ctx_find_inband: %s\n",
+			upsdebugx(2, "ipmi_ctx_find_inband (local scan): %s",
 				(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
 			return NULL;
 		}
@@ -446,7 +446,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 															ipmi_sec->username,
 															ipmi_sec->password,
 															ipmi_sec->K_g_BMC_key,
-???															(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
+/*???*/														(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
 															ipmi_sec->privilege_level,
 															ipmi_sec->cipher_suite_id,
 															IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
@@ -454,7 +454,11 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 															ipmi_dev->workaround_flags,
 															flags) < 0)
 			{
-				IPMI_MONITORING_DEBUG (("ipmi_ctx_open_outofband_2_0: %s", ipmi_ctx_errormsg (c->ipmi_ctx)));
+				upsdebugx(2, "nut_ipmi_ctx_open_outofband_2_0 (%s): %s",
+					IPaddr, (*nut_ipmi_ctx_errormsg) (c->ipmi_ctx));
+				IPMI_MONITORING_DEBUG (("ipmi_ctx_open_outofband_2_0 (%s): %s",
+					IPaddr, ipmi_ctx_errormsg (c->ipmi_ctx)));
+
 				if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_USERNAME_INVALID)
 					c->errnum = IPMI_MONITORING_ERR_USERNAME_INVALID;
 				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PASSWORD_INVALID)
@@ -501,17 +505,17 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 		if (ipmi_sec->authentication_type < 0
 		    || (unsigned int)ipmi_sec->authentication_type > UINT8_MAX
 		) {
-			fprintf(stderr,
-				"nutscan_scan_ipmi_device: authentication_type=%d is out of range!\n",
-				ipmi_sec->authentication_type);
+			upsdebugx(2, "nutscan_scan_ipmi_device (%s): "
+				"authentication_type=%d is out of range!",
+				IPaddr, ipmi_sec->authentication_type);
 			return 0;
 		}
 		if (ipmi_sec->privilege_level < 0
 		    || (unsigned int)ipmi_sec->privilege_level > UINT8_MAX
 		) {
-			fprintf(stderr,
-				"nutscan_scan_ipmi_device: privilege_level=%d is out of range!\n",
-				ipmi_sec->privilege_level);
+			upsdebugx(2, "nutscan_scan_ipmi_device (%s): "
+				"privilege_level=%d is out of range!",
+				IPaddr, ipmi_sec->privilege_level);
 			return 0;
 		}
 		if ((ret = (*nut_ipmi_ctx_open_outofband) (ipmi_ctx,
@@ -537,8 +541,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT) { */
 
 				/* FIXME: don't log timeout errors */
-				fprintf(stderr, "nut_ipmi_ctx_open_outofband: %s\n",
-					(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
+				upsdebugx(2, "nut_ipmi_ctx_open_outofband (%s): %s",
+					IPaddr, (*nut_ipmi_ctx_errormsg) (ipmi_ctx));
 				return NULL;
 			/*}*/
 		}

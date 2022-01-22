@@ -9,7 +9,7 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
-$(top_builddir)/common/libparseconf.la:
+$(top_builddir)/common/libparseconf.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.a
@@ -95,7 +95,9 @@ else
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif
 
-MAINTAINERCLEANFILES = Makefile.in
+dummy:
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!

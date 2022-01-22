@@ -58,7 +58,7 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 int state_setaux(st_tree_t *root, const char *var, const char *auxs);
 const char *state_getinfo(st_tree_t *root, const char *var);
 int state_getflags(st_tree_t *root, const char *var);
-int state_getaux(st_tree_t *root, const char *var);
+long state_getaux(st_tree_t *root, const char *var);
 const enum_t *state_getenumlist(st_tree_t *root, const char *var);
 const range_t *state_getrangelist(st_tree_t *root, const char *var);
 void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flags);

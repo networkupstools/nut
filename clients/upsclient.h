@@ -78,13 +78,13 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 
 /* --- functions that only use the new names --- */
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer);
+int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer);
 
-int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query);
+int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query);
 
-int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer);
+int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer);
 
 ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout);
 ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
