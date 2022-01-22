@@ -136,12 +136,16 @@ Set the authentication pass phrase used for authenticated SNMPv3 messages
 Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)
 
 *authProtocol*='value'::
-Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3
-messages (default=MD5)
+Set the authentication protocol (MD5, SHA, SHA256, SHA384 or SHA512) used for
+authenticated SNMPv3 messages (default=MD5). Note that the exact protocol list
+depends on Net-SNMP library capabilities; check help of the `snmp-ups` binary
+program for the run-time supported list.
 
 *privProtocol*='value'::
-Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
-(default=DES)
+Set the privacy protocol (DES, AES, AES192 or AES256) used for encrypted SNMPv3
+messages (default=DES). Note that the exact protocol list depends on Net-SNMP
+library capabilities; check help of the `snmp-ups` binary program for the
+run-time supported list.
 
 REQUIREMENTS
 ------------

@@ -40,7 +40,7 @@ void sstate_disconnect(upstype_t *ups);
 void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
-int sstate_getaux(const upstype_t *ups, const char *var);
+long sstate_getaux(const upstype_t *ups, const char *var);
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
 const range_t *sstate_getrangelist(const upstype_t *ups, const char *var);
 const cmdlist_t *sstate_getcmdlist(const upstype_t *ups);

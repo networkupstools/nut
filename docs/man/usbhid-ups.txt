@@ -34,7 +34,7 @@ At the present time, usbhid-ups supports:
  - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
-available in the source distribution as data/drivers.list, or on the
+available in the source distribution as data/driver.list, or on the
 NUT website. You may use the "explore" driver option to gather
 information from HID UPSes which are not yet supported; see below for
 details.

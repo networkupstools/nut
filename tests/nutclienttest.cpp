@@ -1,7 +1,7 @@
 /* nutclienttest - CppUnit nutclient unit test
 
    Copyright (C) 2016  Emilien Kia <emilien.kia@gmail.com>
-   Copyright (C) 2020  Jim Klimov <jimklimov@gmail.com>
+   Copyright (C) 2020 - 2021  Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ namespace nut {
 class NutClientTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE( NutClientTest );
+		CPPUNIT_TEST( test_strarr_alloc );
 		CPPUNIT_TEST( test_stringset_to_strarr );
 		CPPUNIT_TEST( test_stringvector_to_strarr );
 
@@ -54,9 +55,10 @@ class NutClientTest : public CppUnit::TestFixture
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp();
-	void tearDown();
+	void setUp() override;
+	void tearDown() override;
 
+	void test_strarr_alloc();
 	void test_stringset_to_strarr();
 	void test_stringvector_to_strarr();
 
@@ -99,6 +101,31 @@ void NutClientTest::tearDown()
 {
 }
 
+void NutClientTest::test_strarr_alloc()
+{
+	bool noException = true;
+
+	strarr arr = nullptr;
+
+	try {
+		arr = strarr_alloc(5);
+	}
+	catch(nut::NutException& ex)
+	{
+		NUT_UNUSED_VARIABLE(ex);
+		noException = false;
+	}
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed strarr_alloc(...): throw exception",
+		noException);
+
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed strarr_alloc(...): result is null",
+		arr != nullptr);
+
+	strarr_free(arr);
+}
+
 void NutClientTest::test_stringset_to_strarr()
 {
 	std::set<std::string> strset;
@@ -107,7 +134,9 @@ void NutClientTest::test_stringset_to_strarr()
 	strset.insert("world");
 
 	strarr arr = stringset_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result is null", arr != nullptr);
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringset_to_strarr(...) result is null",
+		arr != nullptr);
 
 	std::set<std::string> res;
 
@@ -118,10 +147,18 @@ void NutClientTest::test_stringset_to_strarr()
 		ptr++;
 	}
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringset_to_strarr(...) result has not 3 items", static_cast<size_t>(3), res.size());
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"test\"", res.find("test")!=res.end());
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"hello\"", res.find("hello")!=res.end());
-	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"world\"", res.find("world")!=res.end());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"stringset_to_strarr(...) result has not 3 items",
+		static_cast<size_t>(3), res.size());
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringset_to_strarr(...) result has not item \"test\"",
+		res.find("test")  != res.end());
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringset_to_strarr(...) result has not item \"hello\"",
+		res.find("hello") != res.end());
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringset_to_strarr(...) result has not item \"world\"",
+		res.find("world") != res.end());
 
 	strarr_free(arr);
 }
@@ -134,21 +171,31 @@ void NutClientTest::test_stringvector_to_strarr()
 	strset.push_back("world");
 
 	strarr arr = stringvector_to_strarr(strset);
-	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result is null", arr != nullptr);
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringvector_to_strarr(...) result is null",
+		arr != nullptr);
 
 	char** ptr = arr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 0==\"test\"", std::string("test"), std::string(*ptr));
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"stringvector_to_strarr(...) result has not item 0==\"test\"",
+		std::string("test"), std::string(*ptr));
 	++ptr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 1==\"hello\"", std::string("hello"), std::string(*ptr));
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"stringvector_to_strarr(...) result has not item 1==\"hello\"",
+		std::string("hello"), std::string(*ptr));
 	++ptr;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 2==\"world\"", std::string("world"), std::string(*ptr));
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"stringvector_to_strarr(...) result has not item 2==\"world\"",
+		std::string("world"), std::string(*ptr));
 	++ptr;
 
 	/* https://stackoverflow.com/a/12565009/4715872
 	 * Can not compare nullptr_t and another data type (char*)
 	 * with CPPUNIT template assertEquals()
 	 */
-	CPPUNIT_ASSERT_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", nullptr == *ptr);
+	CPPUNIT_ASSERT_MESSAGE(
+		"stringvector_to_strarr(...) result has not only 3 items",
+		nullptr == *ptr);
 
 	strarr_free(arr);
 }
@@ -158,7 +205,9 @@ void NutClientTest::test_copy_constructor_dev() {
 	nut::Device i(&c, "ups1");
 	nut::Device j(i);
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Device variable j by initializing from i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Device variable j by initializing from i",
+		i, j);
 }
 
 void NutClientTest::test_copy_assignment_dev() {
@@ -166,11 +215,15 @@ void NutClientTest::test_copy_assignment_dev() {
 	nut::Device i(&c, "ups1");
 	nut::Device j(nullptr, "ups2");
 
-	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Device variables i and j were initialized differently but claim to be equal",
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE(
+		"Device variables i and j were initialized differently "
+		"but claim to be equal",
 		CPPUNIT_ASSERT_EQUAL(i, j) );
 
 	j = i;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Device Command j by equating to i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Device Command j by equating to i",
+		i, j);
 }
 
 void NutClientTest::test_copy_constructor_cmd() {
@@ -180,7 +233,9 @@ void NutClientTest::test_copy_constructor_cmd() {
 	nut::Command i(&d, "cmd1");
 	nut::Command j(i);
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Command variable j by initializing from i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Command variable j by initializing from i",
+		i, j);
 }
 
 void NutClientTest::test_copy_assignment_cmd() {
@@ -190,11 +245,15 @@ void NutClientTest::test_copy_assignment_cmd() {
 	nut::Command i(&d, "var1");
 	nut::Command j(nullptr, "var2");
 
-	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Command variables i and j were initialized differently but claim to be equal",
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE(
+		"Command variables i and j were initialized differently "
+		"but claim to be equal",
 		CPPUNIT_ASSERT_EQUAL(i, j) );
 
 	j = i;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Command variable j by equating to i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Command variable j by equating to i",
+		i, j);
 }
 
 void NutClientTest::test_copy_constructor_var() {
@@ -204,7 +263,9 @@ void NutClientTest::test_copy_constructor_var() {
 	nut::Variable i(&d, "var1");
 	nut::Variable j(i);
 
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Variable variable j by initializing from i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Variable variable j by initializing from i",
+		i, j);
 }
 
 void NutClientTest::test_copy_assignment_var() {
@@ -214,11 +275,15 @@ void NutClientTest::test_copy_assignment_var() {
 	nut::Variable i(&d, "var1");
 	nut::Variable j(nullptr, "var2");
 
-	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Variable variables i and j were initialized differently but claim to be equal",
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE(
+		"Variable variables i and j were initialized differently "
+		"but claim to be equal",
 		CPPUNIT_ASSERT_EQUAL(i, j) );
 
 	j = i;
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to assign value of Variable variable j by equating to i", i, j);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE(
+		"Failed to assign value of Variable variable j by equating to i",
+		i, j);
 }
 
 void NutClientTest::test_nutclientstub_dev() {
@@ -232,73 +297,128 @@ void NutClientTest::test_nutclientstub_dev() {
 		c.setDeviceVariable("ups_1", "name_1", "value_1");
 		// get mono value
 		ListValue values = c.getDeviceVariableValue("ups_1", "name_1");
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: mono wrong values number", values.size() == 1);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: mono bad value", values[0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: mono wrong values number",
+			values.size() == 1);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: mono bad value",
+			values[0] == std::string("value_1"));
+
 		// set multi value
 		ListValue values_multi = { "multi_1", "multi_2" };
 		c.setDeviceVariable("ups_1", "name_multi_1", values_multi);
 		// get multi value
 		values = c.getDeviceVariableValue("ups_1", "name_multi_1");
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi wrong values number", values.size() == 2);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi first bad value", values[0] == std::string("multi_1"));
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: multi second bad value", values[1] == std::string("multi_2"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: multi wrong values number",
+			values.size() == 2);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: multi first bad value",
+			values[0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: multi second bad value",
+			values[1] == std::string("multi_2"));
+
 		// get object values
 		ListObject objects = c.getDeviceVariableValues("ups_1");
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects wrong values number", objects.size() == 2);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono wrong values number", objects["name_1"].size() == 1);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_1"][0] == std::string("value_1"));
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects multi wrong values number", objects["name_multi_1"].size() == 2);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_multi_1"][0] == std::string("multi_1"));
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: objects mono bad value", objects["name_multi_1"][1] == std::string("multi_2"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects wrong values number",
+			objects.size() == 2);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects mono wrong values number",
+			objects["name_1"].size() == 1);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects mono bad value",
+			objects["name_1"][0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects multi wrong values number",
+			objects["name_multi_1"].size() == 2);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects mono bad value",
+			objects["name_multi_1"][0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: objects mono bad value",
+			objects["name_multi_1"][1] == std::string("multi_2"));
+
 		// get device values
 		std::set<std::string> devices_name = { "ups_1" };
 		ListDevice devices = c.getDevicesVariableValues(devices_name);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices wrong values number", devices.size() == 1);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono wrong values number", devices["ups_1"]["name_1"].size() == 1);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_1"][0] == std::string("value_1"));
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices multi wrong values number", devices["ups_1"]["name_multi_1"].size() == 2);
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_multi_1"][0] == std::string("multi_1"));
-		CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: devices mono bad value", devices["ups_1"]["name_multi_1"][1] == std::string("multi_2"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices wrong values number",
+			devices.size() == 1);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices mono wrong values number",
+			devices["ups_1"]["name_1"].size() == 1);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices mono bad value",
+			devices["ups_1"]["name_1"][0] == std::string("value_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices multi wrong values number",
+			devices["ups_1"]["name_multi_1"].size() == 2);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices mono bad value",
+			devices["ups_1"]["name_multi_1"][0] == std::string("multi_1"));
+		CPPUNIT_ASSERT_MESSAGE(
+			"Failed stub tcp client: devices mono bad value",
+			devices["ups_1"]["name_multi_1"][1] == std::string("multi_2"));
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw exception", noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw exception",
+		noException);
 
 	// List of functions not implemented (should return exception)
 	noException = true;
 	try {
 		std::set<std::string> cmd = c.getDeviceCommandNames("ups-1");
-		CPPUNIT_ASSERT_MESSAGE("Variable not use", cmd.size() == 0);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Variable not use",
+			cmd.size() == 0);
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
 		std::string desc = c.getDeviceCommandDescription("ups-1", "cmd-1");
-		CPPUNIT_ASSERT_MESSAGE("Variable not use", desc.empty());
+		CPPUNIT_ASSERT_MESSAGE(
+			"Variable not use",
+			desc.empty());
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
 		TrackingID id = c.executeDeviceCommand("ups-1", "cmd-1", "param-1");
-		CPPUNIT_ASSERT_MESSAGE("Variable not use", id.empty());
+		CPPUNIT_ASSERT_MESSAGE(
+			"Variable not use",
+			id.empty());
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
@@ -306,9 +426,12 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
@@ -316,9 +439,12 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
@@ -326,9 +452,12 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
@@ -336,31 +465,44 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
 		TrackingResult result = c.getTrackingResult("track-1");
-		CPPUNIT_ASSERT_MESSAGE("Variable not use", result == TrackingResult::SUCCESS);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Variable not use",
+			result == TrackingResult::SUCCESS);
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
 		bool status = c.isFeatureEnabled(Feature("feature-1"));
-		CPPUNIT_ASSERT_MESSAGE("Variable not use", !status);
+		CPPUNIT_ASSERT_MESSAGE(
+			"Variable not use",
+			!status);
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 
 	noException = true;
 	try {
@@ -368,9 +510,12 @@ void NutClientTest::test_nutclientstub_dev() {
 	}
 	catch(nut::NutException& ex)
 	{
+		NUT_UNUSED_VARIABLE(ex);
 		noException = false;
 	}
-	CPPUNIT_ASSERT_MESSAGE("Failed stub tcp client: throw no exception", !noException);
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed stub tcp client: throw no exception",
+		!noException);
 }
 
 } // namespace nut {}

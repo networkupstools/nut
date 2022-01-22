@@ -57,8 +57,10 @@ negative offsets):
 * by appending the complete "hours:minutes" positive or negative time
   offsets from UTC (e.g. "YYYY-MM-DDThh:mm+03:00").
 
-For more details see examples at link:https://en.wikipedia.org/wiki/ISO_8601
-and the publicly available RFC at link:http://tools.ietf.org/html/rfc3339
+For more details see examples at
+link:https://en.wikipedia.org/wiki/ISO_8601[Wikipedia page on ISO 8601]
+and the publicly available RFC at
+link:http://tools.ietf.org/html/rfc3339[RFC 3339].
 
 Other representations from those specifications are not necessarily supported.
 
@@ -669,6 +671,7 @@ driver: Internal driver information
 | driver.version.internal | Internal driver version      | 1.23.45
 | driver.version.data     | Version of the internal data
                             mapping, for generic drivers | Eaton HID 1.31
+| driver.version.usb      | USB library version          | libusb-1.0.21
 | driver.parameter.xxx    | Parameter xxx (ups.conf or
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or

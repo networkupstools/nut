@@ -26,3 +26,5 @@ EXTRA_DIST = README \
     Windows/Makefile
 
 SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris upsdrvsvcctl
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

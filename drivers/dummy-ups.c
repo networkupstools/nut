@@ -29,6 +29,8 @@
  *   * poll the "port" file for change
  */
 
+#include "config.h" /* must be the first header */
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -328,7 +330,7 @@ static int setvar(const char *varname, const char *val)
 static int upsclient_update_vars(void)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -349,7 +351,7 @@ static int upsclient_update_vars(void)
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4)
 		{
-			upsdebugx(1, "Error: insufficient data (got %d args, need at least 4)", numa);
+			upsdebugx(1, "Error: insufficient data (got %zu args, need at least 4)", numa);
 		}
 
 		upsdebugx(5, "Received: %s %s %s %s",
