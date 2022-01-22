@@ -143,4 +143,5 @@ subdriver_t powervar_subdriver = {
 	powervar_format_model,
 	powervar_format_mfr,
 	powervar_format_serial,
+	fix_report_desc,
 };

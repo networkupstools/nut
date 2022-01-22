@@ -148,4 +148,5 @@ subdriver_t liebert_subdriver = {
 	liebert_format_model,
 	liebert_format_mfr,
 	liebert_format_serial,
+	fix_report_desc,
 };
