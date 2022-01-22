@@ -93,7 +93,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 #endif
 
@@ -768,10 +768,15 @@ static const char *nominal_output_voltage_fun(double value)
 			 * support both HV values */
 			if (country_code == COUNTRY_EUROPE_208)
 				break;
+			/* explicit fallthrough: */
+			goto fallthrough_value;
+
 		case 220:
 		case 230:
 		case 240:
+		fallthrough_value:
 			break;
+
 		default:
 			return NULL;
 		}
@@ -807,12 +812,12 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /* Limit reporting "online / !online" to when "!off" */
 static const char *eaton_converter_online_fun(double value)
 {
-	int ups_status = ups_status_get();
+	unsigned ups_status = ups_status_get();
 
-	if (!(ups_status & STATUS(OFF)))
-		return (d_equal(value, 0)) ? "!online" : "online";
-	else
+	if (ups_status & STATUS(OFF))
 		return NULL;
+	else
+		return (d_equal(value, 0)) ? "!online" : "online";
 }
 
 static info_lkp_t eaton_converter_online_info[] = {
@@ -1479,7 +1484,31 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * model name by concatenation of iProduct and iModel
 		 */
 		char	buf[SMALLBUF];
-		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+		/* NOTE: We intentionally limit the amount of bytes reported */
+		int len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+
+		if (len < 0) {
+			upsdebugx(1, "%s: got an error while extracting iProduct+iModel value", __func__);
+		}
+
+		/* NOTE: SMALLBUF here comes from mge_format_model()
+		 * buffer definitions below
+		 */
+		if ((intmax_t)len > (intmax_t)sizeof(buf)
+		|| (intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1)
+		    > (intmax_t)sizeof(buf)
+		) {
+			upsdebugx(1, "%s: extracted iProduct+iModel value was truncated", __func__);
+		}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 		return strdup(buf);
 	}
 
@@ -1577,4 +1606,5 @@ subdriver_t mge_subdriver = {
 	mge_format_model,
 	mge_format_mfr,
 	mge_format_serial,
+	fix_report_desc,
 };

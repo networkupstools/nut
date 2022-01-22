@@ -84,7 +84,7 @@ static int test_in_progress = VICTRON_NO_TEST;
 
 static int get_data (const char *out_string, char *in_string)
 {
-	int ret_code;
+	ssize_t ret_code;
 	ser_send(upsfd, "%s%c", out_string, ENDCHAR);
 	usleep (UPS_DELAY);
 	ret_code = ser_get_line(upsfd, in_string, LENGTH_TEMP, ENDCHAR,
@@ -239,36 +239,36 @@ void upsdrv_updateinfo(void)
 	int flags;
 	char temp[ LENGTH_TEMP ];
 	char test_result[ LENGTH_TEMP ];
-	int runtime_sec = -1;
+	long runtime_sec = -1;
 
 	if (start_is_datastale)
 	{
 		if (get_data("vDS?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_ups_serial=1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_ups_temperature =1;
 
 		if (get_data("vO0I?",temp)) return;
-		if (strcmp(temp+4,"NA"))
+		if (strncmp(temp+4, "NA", 2))
 			exist_output_current =1;
 
 		if (get_data("vBC?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_charge = 1;
 
 		if (get_data("vBI?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_charge = 1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_temperature = 1;
 
 		if (get_data("vBt?",temp)) return;
-		if (strcmp(temp+3,"NA"))
+		if (strncmp(temp+3, "NA", 2))
 			exist_battery_runtime = 1;
 
 		start_is_datastale = 0;
@@ -488,10 +488,10 @@ void upsdrv_updateinfo(void)
 	{
 		if (get_data("vBt?",temp)) return;
 		runtime_sec = strtol(temp+3, NULL, 10)*60;
-		snprintf(temp, sizeof(temp), "%d", runtime_sec);
+		snprintf(temp, sizeof(temp), "%ld", runtime_sec);
 		dstate_setinfo("battery.runtime", "%s", temp);
 	}
-	upsdebugx(1, "battery.runtime >%s<>%d<\n",temp,runtime_sec);
+	upsdebugx(1, "battery.runtime >%s<>%ld<\n",temp,runtime_sec);
 
 	dstate_dataok();
 }

@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -54,7 +56,7 @@ static void conf_args(size_t numargs, char **arg)
 		return;
 
 	/* handle 'foo = bar', 'foo=bar', 'foo =bar' or 'foo= bar' forms */
-	if (!strcmp(arg[1], "=")) {
+	if (!strncmp(arg[1], "=", 1)) {
 		do_upsconf_args(ups_section, arg[0], arg[2]);
 		return;
 	}

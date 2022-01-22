@@ -43,7 +43,7 @@ static usb_device_id_t liebert_usb_device_table[] = {
 	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -148,4 +148,5 @@ subdriver_t liebert_subdriver = {
 	liebert_format_model,
 	liebert_format_mfr,
 	liebert_format_serial,
+	fix_report_desc,
 };

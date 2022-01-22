@@ -49,10 +49,10 @@ upsdrv_info_t upsdrv_info = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen)
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -95,10 +95,11 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		return snprintf(buf, buflen, "%s", testing[i].answer);
+		/* TODO: Range-check int vs ssize_t values */
+		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
-	return snprintf(buf, buflen, "%s", testing[i].cmd);
+	return (ssize_t)snprintf(buf, buflen, "%s", testing[i].cmd);
 #endif
 }
 

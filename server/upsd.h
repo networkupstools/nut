@@ -38,6 +38,7 @@
 #include "timehead.h"
 
 #include <sys/file.h>
+#include <poll.h> /* nfds_t */
 
 #include "parseconf.h"
 #include "nut_ctype.h"
@@ -91,7 +92,7 @@ int tracking_is_enabled(void);
 
 /* declarations from upsd.c */
 extern int		maxage, tracking_delay, allow_no_device;
-extern long		maxconn;
+extern nfds_t		maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;

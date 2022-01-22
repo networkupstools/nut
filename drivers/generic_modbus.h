@@ -33,6 +33,16 @@
 #define DATA_BIT 8
 #define STOP_BIT 1
 
+/*
+ * modbus response and byte timeouts
+ * us: 1 - 999999
+ */
+#define MODRESP_TIMEOUT_s 0
+#define MODRESP_TIMEOUT_us 200000
+#define MODBYTE_TIMEOUT_s 0
+#define MODBYTE_TIMEOUT_us 50000
+
+
 /* modbus access parameters */
 #define MODBUS_SLAVE_ID 5
 
@@ -44,38 +54,38 @@
 
 /* definition of register type */
 enum regtype {
-    COIL = 0,
-    INPUT_B,
-    INPUT_R,
-    HOLDING
+	COIL = 0,
+	INPUT_B,
+	INPUT_R,
+	HOLDING
 };
 typedef enum regtype regtype_t;
 
 /* UPS device state enum */
 enum devstate {
-    OL_T = 0,
-    OB_T,
-    LB_T,
-    HB_T,
-    RB_T,
-    CHRG_T,
-    DISCHRG_T,
-    BYPASS_T,
-    CAL_T,
-    OFF_T,
-    OVER_T,
-    TRIM_T,
-    BOOST_T,
-    FSD_T
+	OL_T = 0,
+	OB_T,
+	LB_T,
+	HB_T,
+	RB_T,
+	CHRG_T,
+	DISCHRG_T,
+	BYPASS_T,
+	CAL_T,
+	OFF_T,
+	OVER_T,
+	TRIM_T,
+	BOOST_T,
+	FSD_T
 };
 typedef enum devstate devstate_t;
 
 /* UPS state signal attributes */
 struct sigattr {
-    int addr;           /* register address */
-    regtype_t type;     /* register type */
-    int noro;           /* 1: normally open contact 0: normally closed contact.
-                           noro is used to indicate the logical ON or OFF in regard
+	int addr;           /* register address */
+	regtype_t type;     /* register type */
+	int noro;           /* 1: normally open contact 0: normally closed contact. */
+                        /* noro is used to indicate the logical ON or OFF in regard
                            of the contact state. if noro is set to 1 then ON corresponds
                            to an open contact */
 };
@@ -98,4 +108,4 @@ typedef struct sigattr sigattr_t;
  */
 
 
-#endif //NUT_GENERIC_MODBUS_H
+#endif /* NUT_GENERIC_MODBUS_H */

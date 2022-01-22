@@ -87,10 +87,17 @@ void upsdrv_initinfo(void)
 	if (ipmi_dev.overall_capacity != -1)
 		dstate_setinfo("ups.realpower.nominal", "%i", ipmi_dev.overall_capacity);
 
+	/* FIXME: Did older FreeIPMI with "unsigned int" voltage ranges
+	 * have a way to report invalid readings?
+	 */
+#ifdef HAVE_FREEIPMI_11X_12X
 	if (ipmi_dev.input_minvoltage != -1)
+#endif
 		dstate_setinfo("input.voltage.minimum", "%i", ipmi_dev.input_minvoltage);
 
+#ifdef HAVE_FREEIPMI_11X_12X
 	if (ipmi_dev.input_maxvoltage != -1)
+#endif
 		dstate_setinfo("input.voltage.maximum", "%i", ipmi_dev.input_maxvoltage);
 
 	if (ipmi_dev.input_minfreq != -1)

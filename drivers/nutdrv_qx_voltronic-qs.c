@@ -191,7 +191,7 @@ static void	voltronic_qs_initups(void)
 /* Protocol used by the UPS */
 static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	if (strcasecmp(item->value, "V")) {
+	if (strncasecmp(item->value, "V", 1)) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 		return -1;
 	}

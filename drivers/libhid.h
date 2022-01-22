@@ -32,21 +32,22 @@
 #include "config.h"
 
 #include <sys/types.h>
+#include "nut_stdint.h"
 #include "hidtypes.h"
 
 #include "timehead.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
-	typedef SHUTDevice_t			HIDDevice_t;
-	typedef char				HIDDeviceMatcher_t;
-	typedef int				hid_dev_handle_t;
-	typedef shut_communication_subdriver_t	communication_subdriver_t;
+	typedef SHUTDevice_t                   HIDDevice_t;
+	typedef char                           HIDDeviceMatcher_t;
+	typedef usb_dev_handle                 hid_dev_handle_t;
+	typedef shut_communication_subdriver_t communication_subdriver_t;
 #else
-	#include "libusb.h"
-	typedef USBDevice_t			HIDDevice_t;
-	typedef USBDeviceMatcher_t		HIDDeviceMatcher_t;
-	typedef usb_dev_handle *		hid_dev_handle_t;
-	typedef usb_communication_subdriver_t	communication_subdriver_t;
+	#include "nut_libusb.h" /* includes usb-common.h */
+	typedef USBDevice_t                   HIDDevice_t;
+	typedef USBDeviceMatcher_t            HIDDeviceMatcher_t;
+	typedef usb_dev_handle *              hid_dev_handle_t;
+	typedef usb_communication_subdriver_t communication_subdriver_t;
 #endif
 
 /* use explicit booleans */
@@ -82,16 +83,16 @@ extern HIDDesc_t	*pDesc;	/* parsed Report Descriptor */
 /* report buffer structure: holds data about most recent report for
    each given report id */
 typedef struct reportbuf_s {
-       time_t	ts[256];			/* timestamp when report was retrieved */
-       int	len[256];			/* size of report data */
-       unsigned char	*data[256];		/* report data (allocated) */
+	time_t	ts[256];			/* timestamp when report was retrieved */
+	size_t	len[256];			/* size of report data */
+	unsigned char	*data[256];		/* report data (allocated) */
 } reportbuf_t;
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
-extern int max_report_size;
+extern size_t max_report_size;
 extern int interrupt_only;
-extern unsigned int interrupt_size;
+extern size_t interrupt_size;
 
 /* ---------------------------------------------------------------------- */
 
@@ -123,7 +124,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab);
 /*
  * HIDGetDataValue
  * -------------------------------------------------------------------------- */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age);
+int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, time_t age);
 
 /*
  * HIDSetDataValue
@@ -143,7 +144,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventlen);
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab);
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab);
 const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
