@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2823 utf-8
+personal_ws-1.1 en 2833 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -368,6 +368,7 @@ GKrellM
 GND
 GPL
 GPSER
+GRs
 GTK
 GUIs
 GWD
@@ -596,6 +597,8 @@ MOXA
 MPSU
 MQ
 MSI
+MSII
+MSIII
 MacKenzie's
 MacOS
 Maccelari
@@ -843,6 +846,7 @@ PowerKinetics
 PowerMIB
 PowerMac
 PowerMan
+PowerManagerII
 PowerMust
 PowerNet
 PowerOff
@@ -952,6 +956,7 @@ RntmK
 Rocketfish
 Rodrigues
 Rodríguez
+Rouben
 Rozman
 Rucelf
 RxD
@@ -1123,6 +1128,7 @@ TXV
 TXVxx
 TapSwDly
 TapSwPh
+Tchakhmakhtchian
 TcpClient
 Technic
 Technorama
@@ -1272,9 +1278,9 @@ YYYY
 YYYYMMDD
 YZ
 Ygor
+Yifeng
 Yoyodyne
 Yukai
-Yifeng
 Yunto
 ZFS
 ZProject
@@ -1284,6 +1290,7 @@ Zampieri
 Zawadzki
 ZeroMQ
 abcd
+ablerex
 abuild
 acVoltsIn
 acVoltsout
@@ -1348,6 +1355,7 @@ arg
 argc
 args
 argv
+armac
 armel
 armhf
 asapm
@@ -2150,6 +2158,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobt
 nodtk
 noflag
 nohang
@@ -2752,6 +2761,7 @@ varvalue
 vbatt
 vc
 vendorid
+ver
 verifySourceSig
 versa
 versioned

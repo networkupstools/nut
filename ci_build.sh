@@ -13,6 +13,9 @@ set -e
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
+# or to quickly hit the first-found errors in a larger matrix
+# (and then easily `make` to iterate fixes), like this:
+#   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-gcc)
@@ -333,12 +336,25 @@ ccache_stats() {
 }
 
 check_gitignore() {
-    # Optional envvars from caller: FILE_DESCR FILE_REGEX GIT_ARGS
+    # Optional envvars from caller: FILE_DESCR FILE_REGEX FILE_GLOB
+    # and GIT_ARGS GIT_DIFF_SHOW
     local BUILT_TARGETS="$@"
 
     [ -n "${FILE_DESCR-}" ] || FILE_DESCR="some"
+    # Note: regex actually used starts with catching Git markup, so
+    # FILE_REGEX should not include that nor "^" line-start marker.
+    # We also rule out files made by CI routines and this script.
+    # NOTEL: In particular, we need build results of `make cppcheck`
+    # later, so its recipe does not clean nor care for gitignore.
     [ -n "${FILE_REGEX-}" ] || FILE_REGEX='.*'
+    # Shell-glob filename pattern for points of interest to git status
+    # and git diff; note that filenames starting with a dot should be
+    # reported by `git status -- '*'` and not hidden.
+    [ -n "${FILE_GLOB-}" ] || FILE_GLOB='*'
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
+    # Display contents of the diff?
+    # (Helps copy-paste from CI logs to source to amend quickly)
+    [ -n "${GIT_DIFF_SHOW-}" ] || GIT_DIFF_SHOW=true
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
     echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
@@ -348,13 +364,20 @@ check_gitignore() {
     fi
 
     # One invocation should report to log:
-    git status $GIT_ARGS -s | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}" || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    git status $GIT_ARGS -s -- "${FILE_GLOB}" \
+    | egrep -v '^.. \.ci.*\.log.*' \
+    | egrep "${FILE_REGEX}" \
+    || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status --ignored -s | egrep -v '^.. \.ci.*\.log.*' | egrep "${FILE_REGEX}"`" ] && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ]; then
-        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR, and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
-        git diff || true
+    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] \
+    && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
+    ; then
+        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+        if [ "$GIT_DIFF_SHOW" = true ]; then
+            git diff -- "${FILE_GLOB}" || true
+        fi
         echo "==="
         return 1
     fi
@@ -389,7 +412,7 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
@@ -413,9 +436,9 @@ optional_dist_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE $MAKE_FLAGS_QUIET DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
 
-        GIT_ARGS="--ignored" check_gitignore "distclean" || return
+        check_gitignore "distclean" || return
     fi
     return 0
 }
@@ -878,16 +901,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # that include DISTCHECK_FLAGS if provided
             DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
-            $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
 
-            # TODO: Refactor with `SOME_ARGS=... check_gitignore() || exit` ?
-            echo "=== Are GitIgnores good after '$MAKE $BUILD_TGT'? (should have no output below)"
-            git status -s || echo "WARNING: Could not query git repo while in `pwd`" >&2
-            echo "==="
-            if git status -s | egrep '\.dmf$' && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] ; then
-                echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
-                exit 1
-            fi
+            # Tell the sub-makes (distcheck) to hush down
+            # NOTE: Parameter pass-through was tested with:
+            #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
+            MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+
+            # Can be noisy if regen is needed (DMF branch)
+            #GIT_DIFF_SHOW=false \
+            FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || exit
+            check_gitignore "$BUILD_TGT" || exit
 
             ccache_stats "after"
 
@@ -1051,7 +1075,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # would just re-evaluate `configure` to update the
                 # Makefile to remove it and other generated data.
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE $MAKE_FLAGS_QUIET distclean -k || true
+                #$MAKE distclean -k || true
 
                 echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
@@ -1129,7 +1153,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1247,7 +1271,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE $MAKE_FLAGS_QUIET distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1292,6 +1316,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
+    # Can be noisy if regen is needed (DMF branch)
+    # Bail out due to DMF will (optionally) happen in the next check
+    GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+
+    # TODO (when merging DMF branch, not a problem before then):
+    # this one check should not-list the "*.dmf" files even if
+    # changed (listed as a special group above) but should still
+    # fail due to them:
     check_gitignore "all" || exit
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
@@ -1308,8 +1340,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # that include DISTCHECK_FLAGS if provided
         DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
-        $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
+        # Tell the sub-makes (distcheck) to hush down
+        MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
+
+        FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
         )
     fi
