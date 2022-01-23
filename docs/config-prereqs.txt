@@ -105,11 +105,11 @@ source versions on both Debian 8 Jessie and Debian 11 Buster).
     asciidoc source-highlight python3-pygments dblatex aspell \
     libgd-dev
 
-# NOTE: Some Debian-like distributions, e.g. Ubuntu, ship
-# a "libssl-dev" instead of "openssl-dev" by name
+# NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
+# and/or "openssl-dev" instead of "libssl-dev" by its modern name
 :; apt-get install \
     libcppunit-dev \
-    openssl-dev libnss3-dev \
+    libssl-dev libnss3-dev \
     augeas-tools libaugeas-dev augeas-lenses \
     libusb-dev libusb-1.0-0-dev \
     libi2c-dev \

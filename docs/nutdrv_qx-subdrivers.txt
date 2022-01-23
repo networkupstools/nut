@@ -984,4 +984,5 @@ For more details, have a look at the currently available subdrivers:
 - +nutdrv_qx_voltronic-qs.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs-hex.+{+c+,+h+}
 - +nutdrv_qx_zinto.+{+c+,+h+}
+- +nutdrv_qx_ablerex.+{+c+,+h+}
 
