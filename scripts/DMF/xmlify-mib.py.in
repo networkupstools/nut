@@ -25,50 +25,68 @@ ST_FLAG_STRING = 0x0002
 ST_FLAG_IMMUTABLE = 0x0004
 
 # snmp-ups.h
-SU_FLAG_OK = (1 << 0)		#/* show element to upsd - internal to snmp driver */
-SU_FLAG_STATIC = (1 << 1)	#/* retrieve info only once. */
-SU_FLAG_ABSENT = (1 << 2)	#/* data is absent in the device,
+SU_FLAG_OK =           (1 << 0)	#/* show element to upsd - internal to snmp driver */
+SU_FLAG_STATIC =       (1 << 1)	#/* retrieve info only once. */
+SU_FLAG_ABSENT =       (1 << 2)	#/* data is absent in the device,
 				# * use default value. */
-SU_FLAG_STALE = (1 << 3)	#/* data stale, don't try too often - internal to snmp driver */
-SU_FLAG_NEGINVALID = (1 << 4)	#/* Invalid if negative value */
-SU_FLAG_UNIQUE = (1 << 5)	#/* There can be only be one
+SU_FLAG_STALE =        (1 << 3)	#/* data stale, don't try too often - internal to snmp driver */
+SU_FLAG_NEGINVALID =   (1 << 4)	#/* Invalid if negative value */
+SU_FLAG_UNIQUE =       (1 << 5)	#/* There can be only be one
 				# * provider of this info,
 				# * disable the other providers */
-SU_AMBIENT_TEMPLATE = (1 << 6)	#/* ambient template definition */
-SU_OUTLET = (1 << 7)	        #/* outlet template definition */
-SU_CMD_OFFSET = (1 << 8)	#/* Add +1 to the OID index */
+SU_FLAG_ZEROINVALID =  (1 << 6)	#/* Invalid if "0" value */
+SU_FLAG_NAINVALID =    (1 << 7)	#/* Invalid if "N/A" value */
+SU_CMD_OFFSET =        (1 << 8)	#/* Add +1 to the OID index */
 
-SU_STATUS_PWR = (0 << 8)	#/* indicates power status element */
-SU_STATUS_BATT = (1 << 8)	#/* indicates battery status element */
-SU_STATUS_CAL = (2 << 8)	#/* indicates calibration status element */
-SU_STATUS_RB = (3 << 8)		#/* indicates replace battery status element */
-SU_STATUS_NUM_ELEM = 4
-SU_OUTLET_GROUP = (1 << 10)	#/* outlet group template definition */
+SU_FLAG_SEMI_STATIC =  (1 << 9)	#/* retrieve info every few update walks. */
+
+#/* Notes on outlet templates usage:
+# * - outlet.count MUST exist and MUST be declared before any outlet template
+# * Otherwise, the driver will try to determine it by itself...
+# * - the first outlet template MUST NOT be a server side variable (ie MUST have
+# *   a valid OID) in order to detect the base SNMP index (0 or 1)
+# */
+SU_OUTLET_GROUP =      (1 << 10)	#/* outlet group template definition */
+SU_OUTLET =            (1 << 11)	#/* outlet template definition */
 
 #/* Phase specific data */
-SU_PHASES = (0x3F << 12)
-SU_INPHASES = (0x3 << 12)
-SU_INPUT_1 = (1 << 12)		#/* only if 1 input phase */
-SU_INPUT_3 = (1 << 13)		#/* only if 3 input phases */
-SU_OUTPHASES = (0x3 << 14)
-SU_OUTPUT_1 = (1 << 14)		#/* only if 1 output phase */
-SU_OUTPUT_3 = (1 << 15)		#/* only if 3 output phases */
-SU_BYPPHASES = (0x3 << 16)
-SU_BYPASS_1 = (1 << 16)		#/* only if 1 bypass phase */
-SU_BYPASS_3 = (1 << 17)		#/* only if 3 bypass phases */
+SU_PHASES =         (0x3F << 12)
+SU_INPHASES =       (0x03 << 12)
+SU_INPUT_1 =           (1 << 12)	#/* only if 1 input phase */
+SU_INPUT_3 =           (1 << 13)	#/* only if 3 input phases */
+SU_OUTPHASES =      (0x03 << 14)
+SU_OUTPUT_1 =          (1 << 14)	#/* only if 1 output phase */
+SU_OUTPUT_3 =          (1 << 15)	#/* only if 3 output phases */
+SU_BYPPHASES =      (0x03 << 16)
+SU_BYPASS_1 =          (1 << 16)	#/* only if 1 bypass phase */
+SU_BYPASS_3 =          (1 << 17)	#/* only if 3 bypass phases */
 
 #/* hints for su_ups_set, applicable only to rw vars */
-SU_TYPE_INT = (0 << 18)		#/* cast to int when setting value */
-SU_TYPE_STRING = (1 << 18)	#/* cast to string. FIXME: redundant with ST_FLAG_STRING */
-SU_TYPE_TIME = (2 << 18)	#/* cast to int */
-SU_TYPE_CMD = (3 << 18)		#/* instant command */
-SU_TYPE_DAISY_1 = (1 << 19)
-SU_TYPE_DAISY_2 = (2 << 19)
-SU_FLAG_ZEROINVALID = (1 << 20)	#/* Invalid if "0" value */
-SU_FLAG_NAINVALID = (1 << 21)	#/* Invalid if "N/A" value */
+SU_TYPE_INT =          (1 << 18)	#/* cast to int when setting value */
+SU_TYPE_TIME =         (1 << 19)	#/* cast to int */
+SU_TYPE_CMD =          (1 << 20)	#/* instant command */
 
-SU_FLAG_SEMI_STATIC = (1 << 22)	#/* retrieve info every few update walks. */
-SU_TYPE_DAISY_MASTER_ONLY = (1 << 23) #/* Only valid for daisychain master (device.1) */
+#/* Daisychain template definition */
+#/* the following 2 flags specify the position of the daisychain device index
+# * in the formatting string. This is useful when considering daisychain with
+# * templates, such as outlets / outlets groups, which already have a format
+# * string specifier */
+SU_TYPE_DAISY_1 =      (1 << 21)	#/* Daisychain index is the 1st specifier */
+SU_TYPE_DAISY_2 =      (1 << 22)	#/* Daisychain index is the 2nd specifier */
+SU_DAISY =             (1 << 23)	#/* Daisychain template definition */
+SU_TYPE_DAISY_MASTER_ONLY = (1 << 24) #/* Only valid for daisychain master (device.1) */
+
+#/* no (1 << 25) yet */
+
+SU_AMBIENT_TEMPLATE =  (1 << 26)	#/* ambient template definition */
+
+SU_FLAG_FUNCTION =     (1 << 27)	#/* #if WITH_DMF_FUNCTIONS */
+
+SU_STATUS_PWR =        (1 << 28)	#/* indicates power status element */
+SU_STATUS_BATT =       (1 << 29)	#/* indicates battery status element */
+SU_STATUS_CAL =        (1 << 30)	#/* indicates calibration status element */
+SU_STATUS_RB =         (1 << 31)	#/* indicates replace battery status element */
+SU_STATUS_NUM_ELEM = 4
 
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
@@ -186,32 +204,38 @@ def mk_snmp (inp, root):
 
             ### process flags
             for name, flag, value in (
-                    ("flag_ok", SU_FLAG_OK, "yes"),
-                    ("static", SU_FLAG_STATIC, "yes"),
-                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),
-                    ("absent", SU_FLAG_ABSENT, "yes"),
-                    ("stale", SU_FLAG_STALE, "yes"),
-                    ("positive", SU_FLAG_NEGINVALID, "yes"),
-                    ("unique", SU_FLAG_UNIQUE, "yes"),
-                    ("power_status", SU_STATUS_PWR, "yes"),
-                    ("battery_status", SU_STATUS_BATT, "yes"),
-                    ("calibration", SU_STATUS_CAL, "yes"),
-                    ("replace_battery", SU_STATUS_RB, "yes"),
-                    ("command", SU_TYPE_CMD, "yes"),
-                    ("outlet_group", SU_OUTLET_GROUP, "yes"),
-                    ("outlet", SU_OUTLET, "yes"),
-                    ("ambient", SU_AMBIENT_TEMPLATE, "yes"),
-                    ("output_1_phase", SU_OUTPUT_1, "yes"),
-                    ("output_3_phase", SU_OUTPUT_3, "yes"),
-                    ("input_1_phase", SU_INPUT_1, "yes"),
-                    ("input_3_phase", SU_INPUT_3, "yes"),
-                    ("bypass_1_phase", SU_BYPASS_1, "yes"),
-                    ("bypass_3_phase", SU_BYPASS_3, "yes"),
-                    ("type_daisy", SU_TYPE_DAISY_1, "1"),
-                    ("type_daisy", SU_TYPE_DAISY_2, "2"),
-                    ("type_daisy", SU_TYPE_DAISY_MASTER_ONLY, "3"),
-                    ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),
-                    ("na_invalid", SU_FLAG_NAINVALID, "yes"),
+                    ("flag_ok", SU_FLAG_OK, "yes"),                 # (1 << 0)
+                    ("static", SU_FLAG_STATIC, "yes"),              # (1 << 1)
+                    ("absent", SU_FLAG_ABSENT, "yes"),              # (1 << 2)
+                    ("stale", SU_FLAG_STALE, "yes"),                # (1 << 3)
+                    ("positive", SU_FLAG_NEGINVALID, "yes"),        # (1 << 4)
+                    ("unique", SU_FLAG_UNIQUE, "yes"),              # (1 << 5)
+                    ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),   # (1 << 6)
+                    ("na_invalid", SU_FLAG_NAINVALID, "yes"),       # (1 << 7)
+                    ("command_offset", SU_CMD_OFFSET, "yes"),       # (1 << 8)
+                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),     # (1 << 9)
+                    ("outlet_group", SU_OUTLET_GROUP, "yes"),       # (1 << 10)
+                    ("outlet", SU_OUTLET, "yes"),                   # (1 << 11)
+                    ("input_1_phase", SU_INPUT_1, "yes"),           # (1 << 12)
+                    ("input_3_phase", SU_INPUT_3, "yes"),           # (1 << 13)
+                    ("output_1_phase", SU_OUTPUT_1, "yes"),         # (1 << 14)
+                    ("output_3_phase", SU_OUTPUT_3, "yes"),         # (1 << 15)
+                    ("bypass_1_phase", SU_BYPASS_1, "yes"),         # (1 << 16)
+                    ("bypass_3_phase", SU_BYPASS_3, "yes"),         # (1 << 17)
+                    ("int_val", SU_TYPE_INT, "yes"),                # (1 << 18) #/* cast to int when setting value */
+                    ("time_val", SU_TYPE_TIME, "yes"),              # (1 << 19)
+                    ("command", SU_TYPE_CMD, "yes"),                # (1 << 20)
+                    ("type_daisy", SU_TYPE_DAISY_1, "1"),           # (1 << 21)
+                    ("type_daisy", SU_TYPE_DAISY_2, "2"),           # (1 << 22)
+                                                    #???# SU_DAISY  # (1 << 23)
+                    ("type_daisy", SU_TYPE_DAISY_MASTER_ONLY, "3"), # (1 << 24)
+                                                    # NOT USED YET  # (1 << 25)
+                    ("ambient", SU_AMBIENT_TEMPLATE, "yes"),        # (1 << 26)
+                    # Should not be set by MIB2NUT mappings: SU_FLAG_FUNCTION # (1 << 27)
+                    ("power_status", SU_STATUS_PWR, "yes"),         # (1 << 28)
+                    ("battery_status", SU_STATUS_BATT, "yes"),      # (1 << 29)
+                    ("calibration", SU_STATUS_CAL, "yes"),          # (1 << 30)
+                    ("replace_battery", SU_STATUS_RB, "yes"),       # (1 << 31)
                     ):
                 if not flag in info ["flags"]:
                     continue
@@ -219,7 +243,7 @@ def mk_snmp (inp, root):
                 info ["flags"].remove (flag)
 
             # ignore flags not relevant to XML generations
-            for flag in (SU_FLAG_OK, SU_TYPE_STRING, SU_TYPE_INT):
+            for flag in (SU_FLAG_OK, SU_TYPE_INT):
                 if flag in info ["flags"]:
                     info ["flags"].remove (flag)
 

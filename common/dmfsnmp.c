@@ -90,7 +90,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 		}
 	}
 	upsdebugx(5, "*-*-*-->Info_flags %d", self->info_flags);
-	upsdebugx(5, "*-*-*-->Flags %lu", self->flags);
+	upsdebugx(5, "*-*-*-->Flags %" PRI_SU_FLAGS, self->flags);
 
 #if WITH_DMF_FUNCTIONS
 	if(self->function_code){

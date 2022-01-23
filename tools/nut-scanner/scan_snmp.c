@@ -479,7 +479,55 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 #if WITH_DMFMIB
 	dev->driver = NULL;
 	if (dmfnutscan_snmp_dmp != NULL) {
-		/* DMF is loaded thus used, successfully */
+		size_t mib2nut_count_total = 0;
+		size_t mib2nut_count_useful = 0;
+		bool_t mib2nut_has_data = FALSE;
+
+		/* DMF is loaded thus used, successfully (with at least a collection
+		 * of <mib2nut> tags - entries needed for supportability discovery).
+		 */
+		upsdebugx(4, "%s: using MIB '%s' loaded from DMF dir '%s'",
+			__func__, mib ? mib : "null",
+			dmfnutscan_snmp_dir ? dmfnutscan_snmp_dir : "null");
+
+		/* Check if we have actual data mappings here (is the DMFDIR used
+		 * for scanning a good one to hardcode into driver configuration,
+		 * or just an excerpt with lots of <mib2nut> tags for quicker load
+		 * during nut-scanning?)
+		 */
+		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmfnutscan_snmp_dmp);
+		if (mib2nut == NULL) {
+			upsdebugx(4, "%s: WARNING: Could not access the mib2nut index table",
+				__func__);
+		} else {
+			size_t i;
+			for (i = 0; mib2nut[i] != NULL; i++) {
+				bool_t isUseful = (mib2nut[i]->snmp_info
+					&&  mib2nut[i]->snmp_info[0].info_type != NULL);
+				if (isUseful) mib2nut_count_useful++;
+
+				if (mib && mib2nut[i]->mib_name
+				&&  strcmp(mib, mib2nut[i]->mib_name) == 0
+				) {
+					if (isUseful) {
+						upsdebugx(4, "%s: Have mib2nut data for \"%s\" "
+							"OID mappings",
+							__func__, mib);
+						mib2nut_has_data = true;
+					} else {
+						upsdebugx(4, "%s: Have mib2nut index entry for \"%s\", "
+							"but no data for OID mappings",
+							__func__, mib);
+					}
+				}
+			}
+			mib2nut_count_total = i;
+		}
+		upsdebugx(3, "%s: Inspected the mib2nut index table, "
+			"saw a total of %zu mappings and "
+			"%zu useful for snmp-ups driver",
+			__func__, mib2nut_count_total, mib2nut_count_useful);
+
 		if (mib && strcmp(mib, "eaton_epdu") == 0) {
 			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
 			// in DMF is fixed, this clause has to be amended back, too.
@@ -490,9 +538,23 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 			upslogx(1, "This device mapping uses lookup functions which is not yet supported by DMF driver");
 		} else {
 			dev->driver = strdup("snmp-ups-dmf");
-			if (dmfnutscan_snmp_dir != NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
-				nutscan_add_option_to_device(dev, SU_VAR_DMFDIR,
-					dmfnutscan_snmp_dir);
+			/* Actually, DMFNUTSCAN dir is quick for nut-scanner
+			 * but useless for snmp-ups(-dmf) driver
+			 */
+			if (dmfnutscan_snmp_dir != NULL
+			&& (strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0
+			 || strcmp(DEFAULT_DMFSNMP_DIR, dmfnutscan_snmp_dir) != 0)
+			) {
+				/* Using non-default directory */
+				if (mib2nut_has_data) {
+					nutscan_add_option_to_device(dev, SU_VAR_DMFDIR,
+						dmfnutscan_snmp_dir);
+				} else {
+					upslogx(0, "WARNING: This device scan was done with a "
+						"DMF mapping data directory '%s' that did not contain "
+						"complete data useful for the '%s' driver with MIB '%s'",
+						dmfnutscan_snmp_dir, dev->driver, mib);
+				}
 			}
 		}
 	}

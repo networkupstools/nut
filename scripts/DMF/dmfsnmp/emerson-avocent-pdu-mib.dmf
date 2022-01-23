@@ -22,8 +22,8 @@
 		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.macaddr" oid=".1.3.6.1.2.1.2.2.1.6.1" static="yes" string="yes"/>
 		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
 		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
-		<snmp_info default="0" flag_ok="yes" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.10418.17.2.5.3.1.8.1.%i" static="yes" type_daisy="2"/>
-		<snmp_info lookup="avocent_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.10418.17.2.5.5.1.5.1.%i.%i" outlet="yes" string="yes" type_daisy="2"/>
+		<snmp_info default="0" flag_ok="yes" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.10418.17.2.5.3.1.8.1.%i" static="yes" zero_invalid="yes"/>
+		<snmp_info lookup="avocent_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.10418.17.2.5.5.1.5.1.%i.%i" outlet="yes" string="yes" type_daisy="1" zero_invalid="yes"/>
 		<snmp_info absent="yes" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid=".1.3.6.1.4.1.10418.17.2.5.5.1.3.1.%i.%i" outlet="yes" static="yes" type_daisy="1"/>
 		<snmp_info multiplier="128.0" na_invalid="yes" name="outlet.%i.desc" oid=".1.3.6.1.4.1.10418.17.2.5.5.1.4.1.%i.%i" outlet="yes" string="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.%i.current" oid=".1.3.6.1.4.1.10418.17.2.5.5.1.50.1.%i.%i" outlet="yes" type_daisy="1"/>
