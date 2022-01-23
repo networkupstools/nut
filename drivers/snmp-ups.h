@@ -149,6 +149,8 @@ typedef struct {
 	                           * NOTE that some *-mib.c mappings can specify
 	                           * a zero in this field... better fix that in
 	                           * favor of explicit values with a meaning!
+	                           * Current code treats such zero values as
+	                           * "OK if avail, otherwise discarded".
 	                           * NOTE: With C99+ a "long" is guaranteed to be
 	                           * at least 4 bytes; consider "unsigned long long"
 	                           * when/if we get more than 32 flag values.
