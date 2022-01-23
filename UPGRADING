@@ -62,6 +62,12 @@ Changes from 2.7.4 to 2.7.5
   preference of the detected script over `pkg-config` information, if both
   are available, and `--with-netsnmp-config=/path/name` would as well.
 
+- snmp-ups: bit mask values for flags in earlier codebase were defined in a
+  way that caused logically different items to have same numeric values.
+  This was fixed to surely use different definitions (so changing numbers
+  behind some of those macro symbols), and testing with UPS, ePDU and ATS
+  hardware which was available did not expose any practical differences.
+
 - usbhid-ups: numeric data conversion from wire protocol to CPU representation
   in GetValue() was completely reworked, aiming to be correct on all CPU types.
   That said, regressions are possible and feedback is welcome.
