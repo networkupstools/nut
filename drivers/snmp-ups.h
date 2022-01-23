@@ -248,15 +248,15 @@ typedef struct {
 #define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-/* Free slot (used by SU_AMBIENT_TEMPLATE in DMF branch)
- * Note: older releases defined the following flag, but removed it by 2.7.5:
+/* Note: older releases defined the following flag, but removed it by 2.7.5:
  * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
 #define SU_FLAG_ZEROINVALID	(1UL << 6)	/* Invalid if "0" value */
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
-#define SU_FLAG_SEMI_STATIC	(1UL << 9) /* Refresh this entry once in several walks
- * (for R/W values user can set on device, like descriptions or contacts) */
+#define SU_FLAG_SEMI_STATIC	(1UL << 9)	/* Refresh this entry once in several walks
+						 				 * (for R/W values user can set on device,
+						 				 * like descriptions or contacts) */
 
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -298,18 +298,20 @@ typedef struct {
  * in the formatting string. This is useful when considering daisychain with
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
-/* "flags" bits 21..23 */
+/* "flags" bits 21..23 (and 24 reserved for DMF) */
 #define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
 #define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the 3 SU_TYPE_DAISY_* but not SU_DAISY */
 #define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2*/
-#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24) /* Only valid for daisychain master (device.1) */
+#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
+
+/* Free slot: (1UL << 25) */
 
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 #if WITH_DMF_FUNCTIONS
-#define SU_FLAG_FUNCTION	(1UL << 27)	/* TODO Pending to check if this flag have any incompatibility*/
+#define SU_FLAG_FUNCTION	(1UL << 27)	/* TODO Pending to check if this flag have any incompatibility */
 #endif
 
 /* status string components
