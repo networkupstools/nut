@@ -810,21 +810,15 @@ void nut_snmp_init(const char *type, const char *hostname)
 		g_snmp_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
 		authProtocol = testvar(SU_VAR_AUTHPROT) ? getval(SU_VAR_AUTHPROT) : "MD5";
 
-		/* Note: start with strcmp of the longer strings,
-		 * or explicitly check the length (end of string),
-		 * to avoid matching everything as e.g. "SHA" by
-		 * strncmp() below - that was needed for platforms
-		 * where strcmp() is a built-in/macro which offends
-		 * alignment checks with short strings... */
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
-		if (strncmp(authProtocol, "MD5", 3) == 0 && authProtocol[3] == '\0') {
+		if (strncmp(authProtocol, "MD5", 3) == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACMD5AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-		if (strncmp(authProtocol, "SHA", 3) == 0 && authProtocol[3] == '\0') {
+		if (strncmp(authProtocol, "SHA", 3) == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
 		}
@@ -893,17 +887,15 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 
 		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
 
-		/* Note: start with strcmp of the longer strings, or check string
-		 * lengths explicitly, to avoid matching everything as e.g. "AES"! */
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
-		if (strncmp(privProtocol, "DES", 3) == 0 && privProtocol[3] == '\0') {
+		if (strncmp(privProtocol, "DES", 3) == 0) {
 			g_snmp_sess.securityPrivProto = usmDESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen =  sizeof(usmDESPrivProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-		if (strncmp(privProtocol, "AES", 3) == 0 && privProtocol[3] == '\0') {
+		if (strncmp(privProtocol, "AES", 3) == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
