@@ -747,13 +747,13 @@ void nut_snmp_init(const char *type, const char *hostname)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Warray-bounds"
 #endif
-	if ((strncmp(version, "v1", 2) == 0) || (strncmp(version, "v2c", 3) == 0)) {
-		g_snmp_sess.version = (strncmp(version, "v1", 2) == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
+		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 		g_snmp_sess.community = (unsigned char *)xstrdup(community);
 		g_snmp_sess.community_len = strlen(community);
 	}
-	else if (strncmp(version, "v3", 2) == 0) {
+	else if (strcmp(version, "v3") == 0) {
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -810,21 +810,15 @@ void nut_snmp_init(const char *type, const char *hostname)
 		g_snmp_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
 		authProtocol = testvar(SU_VAR_AUTHPROT) ? getval(SU_VAR_AUTHPROT) : "MD5";
 
-		/* Note: start with strcmp of the longer strings,
-		 * or explicitly check the length (end of string),
-		 * to avoid matching everything as e.g. "SHA" by
-		 * strncmp() below - that was needed for platforms
-		 * where strcmp() is a built-in/macro which offends
-		 * alignment checks with short strings... */
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
-		if (strncmp(authProtocol, "MD5", 3) == 0 && authProtocol[3] == '\0') {
+		if (strcmp(authProtocol, "MD5") == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACMD5AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-		if (strncmp(authProtocol, "SHA", 3) == 0 && authProtocol[3] == '\0') {
+		if (strcmp(authProtocol, "SHA") == 0) {
 			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
 			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
 		}
@@ -893,17 +887,15 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 
 		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
 
-		/* Note: start with strcmp of the longer strings, or check string
-		 * lengths explicitly, to avoid matching everything as e.g. "AES"! */
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
-		if (strncmp(privProtocol, "DES", 3) == 0 && privProtocol[3] == '\0') {
+		if (strcmp(privProtocol, "DES") == 0) {
 			g_snmp_sess.securityPrivProto = usmDESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen =  sizeof(usmDESPrivProtocol)/sizeof(oid);
 		}
 		else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-		if (strncmp(privProtocol, "AES", 3) == 0 && privProtocol[3] == '\0') {
+		if (strcmp(privProtocol, "AES") == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
 			g_snmp_sess.securityPrivProtoLen = NUT_securityPrivProtoLen;
 		}
@@ -3628,7 +3620,7 @@ static int parse_mibconf_args(size_t numargs, char **arg)
 	/* special case for setting some OIDs value at driver startup */
 	if (!strcmp(arg[0], "init")) {
 		/* set value. */
-		if (!strncmp(arg[1], "str", 3)) {
+		if (!strcmp(arg[1], "str")) {
 			ret = nut_snmp_set_str(arg[3], arg[4]);
 		} else {
 			ret = nut_snmp_set_int(arg[3], strtol(arg[4], NULL, 0));

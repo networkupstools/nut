@@ -258,7 +258,7 @@ void net_get(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	/* GET VAR UPS VARNAME */
-	if (!strncasecmp(arg[0], "VAR", 3)) {
+	if (!strcasecmp(arg[0], "VAR")) {
 		get_var(client, arg[1], arg[2]);
 		return;
 	}

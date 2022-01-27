@@ -21,13 +21,6 @@ Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
 string and all the usual string length checking of `snprintf()` routine.
 
-Some systems define `strcmp()` and `strcasecmp()` as macros or inline
-functions optimized for aligned memory access in a way that some compilers
-complain about array out-of-bounds access when comparing fixed short strings.
-For this reason, we compare strings with length 3 chars and less ("", "x",
-"on", "VAL") with fixed-length methods `strncmp()` and `strncasecmp()`,
-e.g. `strncmp(buf, "VAL", 3)`.
-
 Error reporting
 ~~~~~~~~~~~~~~~
 

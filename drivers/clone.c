@@ -358,11 +358,11 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	val = dstate_getinfo(getval("load.status"));
 	if (val) {
-		if (!strncasecmp(val, "off", 3) || !strncasecmp(val, "no", 2)) {
+		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
 			outlet = 0;
 		}
 
-		if (!strncasecmp(val, "on", 2) || !strncasecmp(val, "yes", 3)) {
+		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
 			outlet = 1;
 		}
 	}
