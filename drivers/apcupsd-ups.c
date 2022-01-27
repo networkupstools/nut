@@ -64,7 +64,7 @@ static void process(char *item,char *data)
 		else if(!strcmp(data,"SELFTEST"))status_set("OB");
 		else for(;(data=strtok(data," "));data=NULL)
 		{
-			if(!strncmp(data, "CAL", 3))status_set("CAL");
+			if(!strcmp(data,"CAL"))status_set("CAL");
 			else if(!strcmp(data,"TRIM"))status_set("TRIM");
 			else if(!strcmp(data,"BOOST"))status_set("BOOST");
 			else if(!strcmp(data,"ONLINE"))status_set("OL");

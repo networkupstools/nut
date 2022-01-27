@@ -493,7 +493,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	}
 
 	/* SET <var> <value> [TRACKING <id>] */
-	if (!strncasecmp(arg[0], "SET", 3)) {
+	if (!strcasecmp(arg[0], "SET")) {
 		int ret;
 		char *setid = NULL;
 
@@ -1022,7 +1022,7 @@ void status_init(void)
 /* add a status element */
 void status_set(const char *buf)
 {
-	if (ignorelb && !strncasecmp(buf, "LB", 2)) {
+	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
 		return;
 	}
