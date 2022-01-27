@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2834 utf-8
+personal_ws-1.1 en 2864 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -54,7 +54,9 @@ AllowOverride
 Alm
 AlmCPol
 AlmEnbl
+Amplon
 Ampère
+Amplon
 Andreas
 Andreassen
 Andrzej
@@ -78,6 +80,7 @@ AutoRst
 Autobook
 Autoconfigure
 Autostartup
+Avocent
 Axxium
 BATGNn
 BATNn
@@ -288,6 +291,7 @@ EOF
 EOLed
 EPEL
 EPERM
+EPFCLCD
 EPO
 EPS
 ESC
@@ -333,6 +337,7 @@ FREEADDRINFO
 FREHn
 FRELn
 FRU
+FSP
 FTS
 FTTx
 FTUPS
@@ -351,7 +356,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
-FossHost
+Fosshost
 Frama
 FreeBSD
 FreeDesktop
@@ -410,9 +415,11 @@ HFILE
 HIDIOCINITREPORT
 HITRANS
 HMAC
+HNX
 HOSTLINK
 HOSTSYNC
 HOWTO
+HPE
 HPS
 HPUX
 HREF
@@ -524,12 +531,14 @@ Kx
 LASTXFER
 LBT
 LCDRM
+LCDRT
 LCDRTXL
 LDADD
 LDFLAGS
 LDLC
 LDRIVER
 LEDs
+LGTM
 LH
 LIBGD
 LIBNEON
@@ -624,6 +633,7 @@ MaxDCV
 MaxLinear
 McKinnon
 Megaline
+MemClientStub
 Metheringham
 Michal
 Michalkiewicz
@@ -719,6 +729,7 @@ NrLoBatt
 NutException
 Nxx
 OAH
+OBSOLETION
 OC
 ODH
 OEM
@@ -797,6 +808,7 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR
 PR'ed
 PROGS
 PRs
@@ -807,6 +819,7 @@ PSGPSER
 PSKxn
 PSSENTR
 PSUs
+PSW
 PSX
 PULS
 PV
@@ -871,6 +884,7 @@ Powerwell
 Prachi
 Prereqs
 PresentStatus
+Priv
 Procomm
 ProductID
 Prynych
@@ -973,6 +987,7 @@ SDR
 SDRnnnnn
 SDT
 SELFTEST
+SELinux
 SENTR
 SERIALNO
 SERVER's
@@ -1012,6 +1027,7 @@ SOFF
 SOLA
 SOLA's
 SOV
+SPARC
 SPC
 SPECs
 SPLY
@@ -1033,6 +1049,7 @@ SX
 SXI
 SXL
 SafeNet
+Salicru
 Salvia
 Santinoli
 Savia
@@ -1099,6 +1116,7 @@ Symmetras
 Synology
 SysHrs
 Sysgration
+SyslogIdentifier
 SystemIO
 Systeme
 Szady
@@ -1160,6 +1178,7 @@ UB
 UBD
 UBR
 UDP
+UHV
 UI
 UID
 UIDA
@@ -1351,6 +1370,7 @@ apctest
 apcupsd
 aphel
 ar
+arduino
 arg
 argc
 args
@@ -1445,6 +1465,7 @@ bindir
 binfmt
 binutils
 bitmapped
+bitmask
 bitness
 bitnesses
 bitwise
@@ -1779,6 +1800,7 @@ gentoo
 gestion
 getDescription
 getDevice
+getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
@@ -1952,6 +1974,7 @@ libavahi
 libc
 libcommon
 libcppunit
+libcrypto
 libdir
 libexec
 libfreeipmi
@@ -2108,6 +2131,7 @@ morbo
 mozilla
 msec
 multi
+multicommands
 multilib
 multilink
 multimeter
@@ -2140,6 +2164,7 @@ nearlowbattery
 netcat
 netclient
 netserver
+netsnmp
 netvision
 networkupstools
 netxml
@@ -2191,6 +2216,7 @@ numa
 numlogins
 numq
 nutclient
+nutclientmem
 nutdev
 nutdrv
 nutmon
@@ -2308,6 +2334,8 @@ powerware
 ppc
 pprint
 ppro
+pragma
+pragmas
 pre
 prepend
 prepended
@@ -2368,6 +2396,7 @@ receivexhs
 reconnection
 redistributors
 reentrancy
+refactored
 refactoring
 referencenominal
 regex
@@ -2412,6 +2441,7 @@ rva
 rw
 réseau
 safenet
+salicru
 sbin
 sbindir
 scd
@@ -2466,6 +2496,7 @@ si
 siemens
 sigaction
 sigmask
+signedness
 simplejson
 simu
 sio
@@ -2475,6 +2506,7 @@ sizeof
 skel
 slavesync
 slewrate
+slibtool
 sm
 smartups
 smbus
@@ -2525,14 +2557,11 @@ strarr
 strcasecmp
 strcat
 strchr
-strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
-strncasecmp
-strncmp
 struct
 structs
 sts
@@ -2610,6 +2639,7 @@ th
 timehead
 timeline
 timername
+timeticks
 tiocm
 tios
 tmp

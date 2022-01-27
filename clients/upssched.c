@@ -823,7 +823,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 
 	/* check upsname: does this apply to us? */
 	if (strcmp(upsname, un) != 0)
-		if (strncmp(un, "*", 1) != 0)
+		if (strcmp(un, "*") != 0)
 			return;		/* not for us, and not the wildcard */
 
 	/* see if the current notify type matches the one from the .conf */
@@ -885,7 +885,7 @@ static int conf_arg(size_t numargs, char **arg)
 		return 0;
 
 	/* AT <notifytype> <upsname> <command> <cmdarg1> [<cmdarg2>] */
-	if (!strncmp(arg[0], "AT", 2)) {
+	if (!strcmp(arg[0], "AT")) {
 
 		/* don't use arg[5] unless we have it... */
 		if (numargs > 5)

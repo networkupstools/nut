@@ -525,10 +525,10 @@ int main(int argc, char *argv[])
 				else if (!strcmp(optarg, "STRAIGHT_PASSWORD_KEY")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY;
 				}
-				else if (!strncmp(optarg, "MD2", 3)) {
+				else if (!strcmp(optarg, "MD2")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD2;
 				}
-				else if (!strncmp(optarg, "MD5", 3)) {
+				else if (!strcmp(optarg, "MD5")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {

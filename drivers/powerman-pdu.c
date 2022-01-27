@@ -73,13 +73,13 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/* Power on the outlet */
-	if (!strncasecmp(cmdsuffix, "on", 2)) {
+	if (!strcasecmp(cmdsuffix, "on")) {
 		rv = pm_node_on(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}
 
 	/* Power off the outlet */
-	if (!strncasecmp(cmdsuffix, "off", 3)) {
+	if (!strcasecmp(cmdsuffix, "off")) {
 		rv = pm_node_off(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}

@@ -293,7 +293,7 @@ void net_list(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	/* LIST UPS */
-	if (!strncasecmp(arg[0], "UPS", 3)) {
+	if (!strcasecmp(arg[0], "UPS")) {
 		list_ups(client);
 		return;
 	}
@@ -304,19 +304,19 @@ void net_list(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	/* LIST VAR UPS */
-	if (!strncasecmp(arg[0], "VAR", 3)) {
+	if (!strcasecmp(arg[0], "VAR")) {
 		list_var(client, arg[1]);
 		return;
 	}
 
 	/* LIST RW UPS */
-	if (!strncasecmp(arg[0], "RW", 2)) {
+	if (!strcasecmp(arg[0], "RW")) {
 		list_rw(client, arg[1]);
 		return;
 	}
 
 	/* LIST CMD UPS */
-	if (!strncasecmp(arg[0], "CMD", 3)) {
+	if (!strcasecmp(arg[0], "CMD")) {
 		list_cmd(client, arg[1]);
 		return;
 	}
