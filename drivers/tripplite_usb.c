@@ -949,7 +949,7 @@ static int setvar(const char *varname, const char *val)
 		index = atoi(index_str);
 		upslogx(LOG_DEBUG, "outlet.%d.switch = %s", index, val);
 
-		if(!strncasecmp(val, "on", 2) || !strncmp(val, "1", 1)) {
+		if(!strcasecmp(val, "on") || !strcmp(val, "1")) {
 			state = 1;
 		} else {
 			state = 0;

@@ -1334,17 +1334,17 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				dstate_setinfo(sp->desc, "%s", val);
 				break;
 			case t_status:
-				if (strncmp(val, "00", 2) == 0)
+				if (strcmp(val, "00") == 0)
 					;
-				else if (strncmp(val, "11", 2) == 0)
+				else if (strcmp(val, "11") == 0)
 					status |= sp->status;
 				else
 					upslogx(LOG_ERR, "Unknown status value: '%s' '%s'", var, val);
 				break;
 			case t_alarm:
-				if (strncmp(val, "00", 2) == 0)
+				if (strcmp(val, "00") == 0)
 					;
-				else if (strncmp(val, "11", 2) == 0)
+				else if (strcmp(val, "11") == 0)
 					status |= sp->status;
 				else
 					upslogx(LOG_ERR, "Unknown alarm value: '%s' '%s'", var, val);
