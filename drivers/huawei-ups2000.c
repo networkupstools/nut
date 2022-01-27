@@ -1267,9 +1267,9 @@ static int ups2000_autostart_set(const uint16_t reg, const char *string)
 	uint16_t val;
 	int r;
 
-	if (!strncasecmp(string, "yes", 3))
+	if (!strcasecmp(string, "yes"))
 		val = 1;
-	else if (!strncasecmp(string, "no", 2))
+	else if (!strcasecmp(string, "no"))
 		val = 0;
 	else
 		return STAT_SET_INVALID;

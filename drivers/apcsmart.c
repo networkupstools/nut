@@ -308,7 +308,7 @@ static void apc_ser_set(void)
 	 * compatibility measure for windows systems and perhaps some
 	 * problematic serial cards/converters
 	 */
-	if ((val = getval("ttymode")) && !strncmp(val, "raw", 3))
+	if ((val = getval("ttymode")) && !strcmp(val, "raw"))
 		return;
 
 	memset(&tio, 0, sizeof(tio));
@@ -779,7 +779,7 @@ static const char *preread_data(apc_vartab_t *vt)
 
 	ret = apc_read(temp, sizeof(temp), SER_TO);
 
-	if (ret < 1 || !strncmp(temp, "NA", 2)) {
+	if (ret < 1 || !strcmp(temp, "NA")) {
 		if (ret >= 0)
 			upslogx(LOG_ERR, "%s: %s [%s] timed out or not supported", __func__, vt->name, prtchr(vt->cmd));
 		return 0;
@@ -804,7 +804,7 @@ static int poll_data(apc_vartab_t *vt)
 		return 0;
 
 	/* automagically no longer supported by the hardware somehow */
-	if (!strncmp(temp, "NA", 2)) {
+	if (!strcmp(temp, "NA")) {
 		upslogx(LOG_WARNING, "%s: verified variable %s [%s] returned NA, removing", __func__, vt->name, prtchr(vt->cmd));
 		vt->flags &= ~(unsigned int)APC_PRESENT;
 		apc_dstate_delinfo(vt, 0);
@@ -826,7 +826,7 @@ static int update_status(void)
 		return 0;
 	ret = apc_read(buf, sizeof(buf), SER_AA);
 
-	if ((ret < 1) || (!strncmp(buf, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		if (ret >= 0)
 			upslogx(LOG_WARNING, "%s: %s", __func__, "failed");
 		return 0;
@@ -973,7 +973,7 @@ static void apc_getcaps(int qco)
 	 */
 	ret = apc_read(temp, sizeof(temp), SER_CC|SER_TO);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
 		/*
 		 * Early Smart-UPS not as smart as the later ones ...
@@ -1193,7 +1193,7 @@ static int firmware_table_lookup(void)
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
 	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
-	if (!ret || !strncmp(buf, "NA", 2)) {
+	if (!ret || !strcmp(buf, "NA")) {
 		upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_NEW));
 
 		if (apc_write(APC_FW_NEW) != 1)
@@ -1274,7 +1274,7 @@ static int getbaseinfo(void)
 	if ((ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO)) < 0)
 		return 0;
 
-	if (!ret || !strncmp(temp, "NA", 2) || !rexhlp(APC_CMDSET_FMT, temp)) {
+	if (!ret || !strcmp(temp, "NA") || !rexhlp(APC_CMDSET_FMT, temp)) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		upslogx(LOG_NOTICE, "very old or unknown APC model, support will be limited");
 		oldapcsetup();
@@ -1323,7 +1323,7 @@ static int do_cal(int start)
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	/* if we can't check the current calibration status, bail out */
-	if ((ret < 1) || (!strncmp(temp, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 		upslogx(LOG_WARNING, "%s", "runtime calibration state undeterminable");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
@@ -1349,7 +1349,7 @@ static int do_cal(int start)
 
 		ret = apc_read(temp, sizeof(temp), SER_AA);
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)) || (!strncmp(temp, "NO", 2))) {
+		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 			upslogx(LOG_WARNING, "stop calibration failed, cmd returned: %s", temp);
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
@@ -1374,7 +1374,7 @@ static int do_cal(int start)
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)) || (!strncmp(temp, "NO", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_WARNING, "start calibration failed, cmd returned: %s", temp);
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
@@ -1396,7 +1396,7 @@ static int smartmode(void)
 	}
 	ret = apc_read(temp, sizeof(temp), 0);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)) || (!strncmp(temp, "NO", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_CRIT, "%s", "enabling smartmode failed !");
 		return 0;
 	}
@@ -1425,7 +1425,7 @@ static int smartmode(int cnt)
 
 		/* timeout here is intented */
 		ret = apc_read(temp, sizeof(temp), SER_TO|SER_D1);
-		if (ret > 0 && !strncmp(temp, "SM", 2))
+		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
 		if (ret < 0)
 			/* error, so we didn't timeout - wait a bit before retry */
@@ -1462,7 +1462,7 @@ static int sdok(int ign)
 
 	upsdebugx(1, "%s: got \"%s\"", __func__, temp);
 
-	if ((!ret && ign) || !strncmp(temp, "OK", 2)) {
+	if ((!ret && ign) || !strcmp(temp, "OK")) {
 		upsdebugx(1, "%s: %s", __func__, "last shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1751,7 +1751,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	ret = apc_read(orig, sizeof(orig), SER_AA);
 
-	if ((ret < 1) || (!strncmp(orig, "NA", 2)))
+	if ((ret < 1) || (!strcmp(orig, "NA")))
 		return STAT_SET_FAILED;
 
 	ptr = convert_data(vt, orig);
@@ -1771,13 +1771,13 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		/* this should return either OK (if rotated) or NO (if not) */
 		ret = apc_read(temp, sizeof(temp), SER_AA);
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_FAILED;
 
 		/* sanity checks */
-		if (!strncmp(temp, "NO", 2))
+		if (!strcmp(temp, "NO"))
 			return STAT_SET_FAILED;
-		if (strncmp(temp, "OK", 2))
+		if (strcmp(temp, "OK"))
 			return STAT_SET_FAILED;
 
 		/* see what it rotated onto */
@@ -1786,7 +1786,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		ret = apc_read(temp, sizeof(temp), SER_AA);
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_FAILED;
 
 		ptr = convert_data(vt, temp);
@@ -1836,7 +1836,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_FAILED;
 
 	/* suppress redundant changes - easier on the eeprom */
@@ -1865,7 +1865,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
-	if (!strncmp(temp, "NO", 2)) {
+	if (!strcmp(temp, "NO")) {
 		upslogx(LOG_ERR, "%s: %s", __func__, "got NO at final read");
 		return STAT_SET_FAILED;
 	}
@@ -1947,7 +1947,7 @@ static int do_cmd(const apc_cmdtab_t *ct)
 	if (ret < 1)
 		return STAT_INSTCMD_FAILED;
 
-	if (strncmp(temp, "OK", 2)) {
+	if (strcmp(temp, "OK")) {
 		upslogx(LOG_WARNING, "%s: got [%s] after command [%s]",
 			__func__, temp, ct->name);
 
