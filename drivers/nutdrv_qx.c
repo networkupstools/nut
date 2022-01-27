@@ -4001,7 +4001,7 @@ int	ups_infoval_set(item_t *item)
 		if (item->qxflags & QX_FLAG_TRIM)
 			str_trim_m(value, "# ");
 
-		if (strncasecmp(item->dfl, "%s", 2)) {
+		if (strcasecmp(item->dfl, "%s")) {
 
 			if (strspn(value, "0123456789 .") != strlen(value)) {
 				upsdebugx(2, "%s: non numerical value [%s: %s]",

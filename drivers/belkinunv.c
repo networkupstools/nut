@@ -1270,10 +1270,10 @@ static int setvar(const char *varname, const char *val)
 	} else if (!strcasecmp(varname, "ups.beeper.status")) {
 		if (!strcasecmp(val, "disabled")) {
 			i=1;
-		} else if (!strncasecmp(val, "on", 2) ||
+		} else if (!strcasecmp(val, "on") ||
 			   !strcasecmp(val, "enabled")) {
 			i=2;
-		} else if (!strncasecmp(val, "off", 3) ||
+		} else if (!strcasecmp(val, "off") ||
 			   !strcasecmp(val, "muted")) {
 			i=3;
 		} else {

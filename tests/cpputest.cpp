@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 {
   bool verbose = false;
   if (argc > 1) {
-    if (strncmp("-v", argv[1], 2) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
+    if (strcmp("-v", argv[1]) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
       verbose = true;
     }
   }
