@@ -1,7 +1,7 @@
 #!/bin/sh
 #	ipp-notifier
 #
-#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
 #
 #	A shell script to send e-mail from IPP - Unix (NUT)
 #	Sends an email messages to one user to notify of a power event.
@@ -21,9 +21,28 @@
 #	  There is no codepath for delivery to remote account via local relay.
 
 NUT_DIR="/usr/local/ups"
-CONFIG="$NUT_DIR/etc/ipp.conf"
-PATH="$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+
+PATH="$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/ucb:/usr/ccs/bin:/usr/xpg4/bin:/usr/xpg6/bin"
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+# Use them first!
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
 export PATH
+
+# Search for binaries under current PATH normally, no hardcoding. Scripts:
+NUT_IPP_OS_SHUTDOWN="ipp-os-shutdown"
+NUT_IPPSTATUS="ipp-status"
+#NUT_IPP_OS_SHUTDOWN="$NUT_DIR/sbin/ipp-os-shutdown"
+#NUT_IPPSTATUS="$NUT_DIR/bin/ipp-status"
 
 # Set default values
 # Notification configuration
@@ -36,7 +55,7 @@ To_User="root"
 # NOTE: for systems with role-based access and equivalents, or
 # group-suid for /sbin/shutdown, etc. it may also be possible
 # to allow "ipp" directly to use the command - in this case
-# set SHUTDOWN_NEEDS_ROOT=0 in the $CONFIG file.
+# set SHUTDOWN_NEEDS_ROOT=0 in the $CONFIG_IPP file.
 SHUTDOWN_NEEDS_ROOT=1
 SHUTDOWN_TIMER=-1
 
@@ -54,8 +73,8 @@ NeedRootMessage="WARNING: ipp-notifier.sh must run as root to request/cancel OS 
 #...or change upsmon.conf to contain "RUN_AS_USER root"
 
 # Include IPP ipp.conf (may overwrite the above default values!)
-if [ -f "$CONFIG" ] ; then
-	. "$CONFIG"
+if [ -f "$CONFIG_IPP" ] ; then
+	. "$CONFIG_IPP"
 fi
 
 if [ "$SHUTDOWN_NEEDS_ROOT" = 1 ] && [ "$SHUTDOWN_TIMER" -gt -1 ] 2>/dev/null ;
@@ -65,7 +84,10 @@ then
 #work around in case no whoami is present
 		who="`id -u 2>/dev/null`"
 		if [ "$who" != '0' ]; then
-			DefaultMessage="$DefaultMessage\n$NeedRootMessage"
+			who="`id 2>/dev/null | grep -w '0' | grep -w root`"
+			if [ -z "$who" ]; then
+				DefaultMessage="$DefaultMessage\n$NeedRootMessage"
+			fi
 		fi
 	fi
 fi
@@ -121,14 +143,14 @@ fi
 # the UPS state (amount of ONLINE sources under the MINSUPPLIES or not?)
 if [ "$SHUTDOWN_TIMER" -gt -1 ] 2>/dev/null; then
 	# Note this status check clears any invalid PIDfiles
-	SD_STATUS="`/usr/local/ups/sbin/ipp-os-shutdown status`"
+	SD_STATUS="`${NUT_IPP_OS_SHUTDOWN} status`"
 	SD_STATE=$?
-	/usr/local/ups/bin/ipp-status -q
+	${NUT_IPPSTATUS} -q
 	if [ $? -eq 1 ] ; then
 		if [ "$SD_STATE" = 0 ]; then
-			/usr/local/ups/sbin/ipp-os-shutdown &
+			${NUT_IPP_OS_SHUTDOWN} &
 			sleep 5 # Let the script begin its work and PIDfiles
-			/usr/local/ups/sbin/ipp-os-shutdown status
+			${NUT_IPP_OS_SHUTDOWN} status
 			SD_STATE=$?
 			if [ "$SD_STATE" -gt 0  ]; then
 				echo "Shutdown delayed by ${SHUTDOWN_TIMER}m was requested at ${ldate}"
@@ -143,7 +165,7 @@ if [ "$SHUTDOWN_TIMER" -gt -1 ] 2>/dev/null; then
 	else
 		if [ "$SD_STATE" = 1 ]; then
 			# Cancel any pending not-irreversible shutdown
-			if /usr/local/ups/sbin/ipp-os-shutdown -c ; then
+			if ${NUT_IPP_OS_SHUTDOWN} -c ; then
 				echo "Shutdown request canceled"
 				echo "${DefaultSubject}\nPowerfail-shutdown request canceled at ${ldate}" | $CMD_WALL 2>/dev/null
 			else
