@@ -92,6 +92,7 @@ CS_START_SERVICE="$i";i="`expr $i + 1`"
 #LanSafe installation detected. Proceeding to uninstallation.
 CS_REMOVE_LS="$i";i="`expr $i + 1`"
 CS_REMOVE_NS="$i";i="`expr $i + 1`"
+CS_REMOVE_OLDIPP="$i";i="`expr $i + 1`"
 CS_SHUTOFF_ENABLE_1="$i";i="`expr $i + 1`"
 CS_SHUTOFF_ENABLE_2="$i";i="`expr $i + 1`"
 CS_SHUTOFF_DELAY_1="$i";i="`expr $i + 1`"
