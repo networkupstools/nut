@@ -47,7 +47,7 @@ static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;        /* set the modbus by
 
 
 /* initialize register start address and hex address from register number */
-void reginit();
+void reginit(void);
 
 /* read registers' memory region */
 int read_all_regs(modbus_t *mb, uint16_t *data);
@@ -62,7 +62,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate);
 modbus_t *modbus_new(const char *port);
 
 /* reconnect upon communication error */
-void modbus_reconnect();
+void modbus_reconnect(void);
 
 /* modbus register read function */
 int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -120,19 +120,51 @@ void upsdrv_initups(void)
         fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: error(%s)", modbus_strerror(errno));
     }
 
-    /* set modbus response timeout */
-    rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
-    if (rval < 0) {
-        modbus_free(mbctx);
-        fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-    }
+	/* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{
+		/* Older libmodbus API (with timeval), and we have
+		 * checked at configure time that we can put uint32_t
+		 * into its fields. They are probably "long" on many
+		 * systems as respectively time_t and suseconds_t -
+		 * but that is not guaranteed; for more details see
+		 * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html
+		 */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_resp_to_s;
+		to.tv_usec = mod_resp_to_us;
+		/* void */ modbus_set_response_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#else
+# error "Can not use libmodbus API for timeouts"
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
-    /* set modbus response time out to 200ms */
-    rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
-    if (rval < 0) {
-        modbus_free(mbctx);
-        fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
-    }
+	/* set modbus byte time out */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_byte_to_s;
+		to.tv_usec = mod_byte_to_us;
+		/* void */ modbus_set_byte_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
 }
 
 /* initialize ups driver information */
@@ -488,7 +520,7 @@ void upsdrv_cleanup(void)
  */
 
 /* initialize register start address and hex address from register number */
-void reginit()
+void reginit(void)
 {
     int i; /* local index */
 
@@ -515,14 +547,23 @@ void reginit()
                 regs[i].xaddr = 0x40000 + rnum - 1;
                 break;
             default:
-                upslogx(LOG_ERR, "Invalid register type %d for register %d", regs[i].type, regs[i].num);
-                upsdebugx(3, "Invalid register type %d for register %d", regs[i].type, regs[i].num);
+                upslogx(LOG_ERR, 
+                        "Invalid register type %d for register %d", 
+                        regs[i].type, 
+                        regs[i].num
+                );
+                upsdebugx(3, 
+                          "Invalid register type %d for register %d", 
+                          regs[i].type, 
+                          regs[i].num
+                );
         }
-        upsdebugx(3, "reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
-                                                         regs[i].num,
-                                                        regs[i].type,
-                                                        regs[i].saddr,
-                                                        regs[i].xaddr
+        upsdebugx(3, 
+                  "reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
+                  regs[i].num,
+                  regs[i].type,
+                  regs[i].saddr,
+                  regs[i].xaddr
         );
     }
 }
@@ -535,11 +576,12 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
     /* read all HOLDING registers */
     rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, regs_data);
     if (rval == -1) {
-        upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
-            modbus_strerror(errno),
-            regs[H_REG_STARTIDX].xaddr,
-            MAX_H_REGS,
-            device_path
+        upslogx(LOG_ERR,
+                "ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
+                modbus_strerror(errno),
+                regs[H_REG_STARTIDX].xaddr,
+                MAX_H_REGS,
+                device_path
         );
 
         /* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
@@ -580,30 +622,44 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
             rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
             *(uint *)data = *(uint *)data & mask16;
             break;
-
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
-        /* All enum cases defined as of the time of coding
-         * have been covered above. Handle later definitions,
-         * memory corruptions and buggy inputs below...
-         */
-        default:
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
+		default:
+			upsdebugx(2,"ERROR: register_read: invalid register type %d\n", type);
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
-            upsdebugx(2, "ERROR: register_read: invalid register type %d\n", type);
-            break;
     }
     if (rval == -1) {
-        upslogx(LOG_ERR,"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
-            modbus_strerror(errno),
-            addr,
-            (type == COIL) ? "COIL" :
-            (type == INPUT_B) ? "INPUT_B" :
-            (type == INPUT_R) ? "INPUT_R" : "HOLDING",
-            device_path
+        upslogx(LOG_ERR,
+                "ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
+                modbus_strerror(errno),
+                addr,
+                (type == COIL) ? "COIL" :
+                (type == INPUT_B) ? "INPUT_B" :
+                (type == INPUT_R) ? "INPUT_R" : "HOLDING",
+                device_path
         );
 
         /* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
@@ -653,13 +709,14 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
             break;
     }
     if (rval == -1) {
-        upslogx(LOG_ERR,"ERROR:(%s) modbus_write: addr:0x%x, type:%8s, path:%s\n",
-            modbus_strerror(errno),
-            addr,
-            (type == COIL) ? "COIL" :
-            (type == INPUT_B) ? "INPUT_B" :
-            (type == INPUT_R) ? "INPUT_R" : "HOLDING",
-            device_path
+        upslogx(LOG_ERR,
+                "ERROR:(%s) modbus_write: addr:0x%x, type:%8s, path:%s\n",
+                modbus_strerror(errno),
+                addr,
+                (type == COIL) ? "COIL" :
+                (type == INPUT_B) ? "INPUT_B" :
+                (type == INPUT_R) ? "INPUT_R" : "HOLDING",
+                device_path
         );
 
         /* on BROKEN PIPE error try to reconnect */
@@ -707,7 +764,8 @@ int upscmd(const char *cmd, const char *arg)
         data = 1;
         rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
         if (rval == -1) {
-            upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+            upslogx(2, 
+                    "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
                     modbus_strerror(errno),
                     regs[FSD].xaddr,
                     regs[FSD].type,
@@ -754,11 +812,12 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
     if (rval == -1) {
         return rval;
     }
-    upsdebugx(3, "get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %d",
-                                                                         num,
-                                                                         addr,
-                                                                         rtype,
-                                                                         reg_val
+    upsdebugx(3, 
+              "get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %d",
+              num,
+              addr,
+              rtype,
+              reg_val
     );
 #endif
     /* process register data */
@@ -1026,9 +1085,6 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
          * memory corruptions and buggy inputs below...
          */
         default:
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
-# pragma GCC diagnostic pop
-#endif
             state->reg.val16 = reg_val;
             n = snprintf(NULL, 0, "%d", reg_val);
             if (ptr != NULL) {
@@ -1037,8 +1093,11 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
             char *reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
             ptr = reg_val_s;
             sprintf(reg_val_s, "%d", reg_val);
-            state->reg.strval = reg_val_s;
+            state->reg.strval = reg_val_s;        
             break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
     }
 
     return rval;
@@ -1156,7 +1215,7 @@ modbus_t *modbus_new(const char *port)
 }
 
 /* reconnect to modbus server upon connection error */
-void modbus_reconnect()
+void modbus_reconnect(void)
 {
     int rval;
 
@@ -1185,17 +1244,39 @@ void modbus_reconnect()
         fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
     }
 
-    /* set modbus response timeout */
-    rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
-    if (rval < 0) {
-        modbus_free(mbctx);
-        fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-    }
+	/* set modbus response timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_resp_to_s;
+		to.tv_usec = mod_resp_to_us;
+		/* void */ modbus_set_response_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
-    /* set modbus response timeout */
-    rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
-    if (rval < 0) {
-        modbus_free(mbctx);
-        fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
-    }
+	/* set modbus byte timeout */
+#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
+	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
+	if (rval < 0) {
+		modbus_free(mbctx);
+		fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
+	}
+#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
+	{   /* see comments above */
+		struct timeval to;
+		memset(&to, 0, sizeof(struct timeval));
+		to.tv_sec = mod_byte_to_s;
+		to.tv_usec = mod_byte_to_us;
+		/* void */ modbus_set_byte_timeout(mbctx, &to);
+	}
+/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
+#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 }
