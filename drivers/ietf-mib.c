@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.52"
+#define IETF_MIB_VERSION	"1.53"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."

@@ -66,7 +66,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 
 /* driver description structure */

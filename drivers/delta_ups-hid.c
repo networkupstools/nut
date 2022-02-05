@@ -30,7 +30,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.5"
+#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.6"
 
 /* Delta UPS */
 #define DELTA_UPS_VENDORID	0x05dd

@@ -31,7 +31,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.17"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.18"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d

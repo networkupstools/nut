@@ -61,7 +61,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
