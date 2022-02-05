@@ -37,7 +37,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_VERSION	"0.52"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

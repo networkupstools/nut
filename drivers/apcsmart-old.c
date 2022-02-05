@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.1"
+#define DRIVER_VERSION	"2.2"
 
 static upsdrv_info_t table_info = {
 	"APC command table",

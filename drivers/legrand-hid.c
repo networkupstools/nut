@@ -28,7 +28,7 @@
 #include "main.h"
 #include "usb-common.h"
 
-#define LEGRAND_HID_VERSION	"Legrand HID 0.1"
+#define LEGRAND_HID_VERSION	"Legrand HID 0.2"
 
 /* Legrand VendorID and ProductID */
 #define LEGRAND_VID	0x1cb0	/* Legrand */

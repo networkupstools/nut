@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.06"
+#define DRIVER_VERSION	"1.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

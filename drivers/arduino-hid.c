@@ -32,7 +32,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ARDUINO_HID_VERSION	"Arduino HID 0.1"
+#define ARDUINO_HID_VERSION	"Arduino HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Arduino */

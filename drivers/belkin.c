@@ -28,7 +28,7 @@
 #include "belkin.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);

@@ -43,7 +43,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.89"
+#define DRIVER_VERSION	"0.90"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

@@ -29,7 +29,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.5"
+#define CPS_HID_VERSION      "CyberPower HID 0.6"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764

@@ -24,7 +24,7 @@
 #define NUT_APCSMART_H_SEEN 1
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.1"
+#define DRIVER_VERSION	"3.2"
 
 #define ALT_CABLE_1 "940-0095B"
 
