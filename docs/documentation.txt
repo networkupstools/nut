@@ -92,6 +92,7 @@ These are writeups by users of the software.
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 - link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
+- link:https://www.jamesridgway.co.uk/monitoring-eaton-5sc-ups-scripts-and-integration-network-tools-home-assistant/amp/[USB UPS, notifications, and Home Assistant] '(James Ridgway)'
 
 Video articles are also available:
 
