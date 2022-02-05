@@ -93,6 +93,10 @@ These are writeups by users of the software.
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 - link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
 
+Video articles are also available:
+
+- link:https://www.youtube.com/watch?v=vyBP7wpN72c[Network UPS Tools (NUT Server) Ultimate Guide] '(Techno Tim)'
+
 News articles and Press releases
 --------------------------------
 
