@@ -10,6 +10,13 @@ check this file to see if you need to make changes to your system.
 Changes from 2.7.4 to 2.7.5
 ---------------------------
 
+- Note to distribution packagers: this version hopefully learns from many
+  past mistakes, so many custom patches may be no longer needed. If some
+  remain, please consider making pull requests for upstream NUT codebase
+  to share the fixes consistently across the ecosystem. Also note that
+  some new types of drivers (so package groups with unique dependencies)
+  could have appeared since your packaging was written (e.g. with modbus).
+
 - Due to changes needed to resolve build warnings, mostly about mismatching
   data types for some variables, some structure definitions and API signatures
   of several routines had to be changed for argument types, return types,
