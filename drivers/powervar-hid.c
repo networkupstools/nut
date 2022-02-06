@@ -32,7 +32,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define POWERVAR_HID_VERSION	"Powervar HID 0.19"
+#define POWERVAR_HID_VERSION	"Powervar HID 0.20"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Powervar */
@@ -143,4 +143,5 @@ subdriver_t powervar_subdriver = {
 	powervar_format_model,
 	powervar_format_mfr,
 	powervar_format_serial,
+	fix_report_desc,
 };

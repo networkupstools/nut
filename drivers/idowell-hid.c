@@ -30,7 +30,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.1"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* iDowell */
@@ -168,4 +168,5 @@ subdriver_t idowell_subdriver = {
 	idowell_format_model,
 	idowell_format_mfr,
 	idowell_format_serial,
+	fix_report_desc,
 };

@@ -35,7 +35,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.31"
+#define MGE_XML_VERSION		"MGEXML/0.32"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -961,15 +961,15 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", 0, 0, NULL },
-	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL },
-	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, ignore_if_zero },
-	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, ignore_if_zero },
-	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, ignore_if_zero },
 	{ "ups.power.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
+	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL },
+	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, NULL },
+	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, NULL },
+	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", 0, 0, NULL },
-	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, ignore_if_zero },
-	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, ignore_if_zero },
-	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, ignore_if_zero },
+	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, NULL },
+	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, NULL },
+	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, NULL },
 	{ "ups.realpower.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
 	{ "ups.start.auto", 0, 0, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
 	{ "ups.start.battery", 0, 0, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
@@ -1231,7 +1231,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="upsprop.xml" or url="ws/summary.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.summary);
 					mge_xml_subdriver.summary = strdup(url_convert(atts[i+1]));
 				}
@@ -1243,7 +1243,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="config.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.configure);
 					mge_xml_subdriver.configure = strdup(url_convert(atts[i+1]));
 				}
@@ -1263,7 +1263,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="subscribe.cgi" security="basic" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.subscribe);
 					mge_xml_subdriver.subscribe = strdup(url_convert(atts[i+1]));
 				}
@@ -1301,7 +1301,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="getvalue.cgi" security="none" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.getobject);
 					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
 				}
@@ -1313,7 +1313,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="setvalue.cgi" security="ssl" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.setobject);
 					mge_xml_subdriver.setobject = strdup(url_convert(atts[i+1]));
 				}

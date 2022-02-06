@@ -180,19 +180,29 @@ static void show_usage()
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
 		printf("  -U, --usb_scan: Scan USB devices.\n");
+	} else {
+		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_snmp) {
 		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
+	} else {
+		printf("* Options for SNMP devices scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_xml_http) {
 		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
+	} else {
+		printf("* Options for XML/HTTP devices scan not enabled: library not detected.\n");
 	}
 	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
 	if (nutscan_avail_avahi) {
 		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+	} else {
+		printf("* Options for NUT devices (avahi method) scan not enabled: library not detected.\n");
 	}
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
+	} else {
+		printf("* Options for IPMI devices scan not enabled: library not detected.\n");
 	}
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
@@ -515,10 +525,10 @@ int main(int argc, char *argv[])
 				else if (!strcmp(optarg, "STRAIGHT_PASSWORD_KEY")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY;
 				}
-				else if (!strncmp(optarg, "MD2", 3)) {
+				else if (!strcmp(optarg, "MD2")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD2;
 				}
-				else if (!strncmp(optarg, "MD5", 3)) {
+				else if (!strcmp(optarg, "MD5")) {
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {

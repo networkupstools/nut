@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.35"
+#define USB_DRIVER_VERSION	"0.42"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {

@@ -25,7 +25,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.5"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.6"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -550,4 +550,5 @@ subdriver_t powercom_subdriver = {
 	powercom_format_model,
 	powercom_format_mfr,
 	powercom_format_serial,
+	fix_report_desc,
 };

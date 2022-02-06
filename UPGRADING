@@ -7,6 +7,102 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.7.4 to 2.7.5
+---------------------------
+
+- Note to distribution packagers: this version hopefully learns from many
+  past mistakes, so many custom patches may be no longer needed. If some
+  remain, please consider making pull requests for upstream NUT codebase
+  to share the fixes consistently across the ecosystem. Also note that
+  some new types of drivers (so package groups with unique dependencies)
+  could have appeared since your packaging was written (e.g. with modbus).
+
+- Due to changes needed to resolve build warnings, mostly about mismatching
+  data types for some variables, some structure definitions and API signatures
+  of several routines had to be changed for argument types, return types,
+  or both. Primarily this change concerns internal implementation details
+  (may impact update of NUT forks with custom drivers using those), but a
+  few changes also happened in header files installed for builds configured
+  `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
+  At the very least, binaries for those consumers should be rebuilt to remain
+  stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+
+- libusb-1.0: NUT now defaults to building against libusb-1.0 API version
+  if the configure script finds the development headers, falling back to
+  libusb-0.1 if not. Please report any regressions.
+
+- apcupsd-ups: When monitoring a remote apcupsd server, interpret "SHUTTING
+  DOWN" as a NUT "LB" status. If you were relying on the previous behavior
+  (for instance, in a monitor-only situation), please adjust your upsmon
+  settings. Reference: https://github.com/networkupstools/nut/issues/460
+
+- Packagers: the AsciiDoc detection has been reworked to allow NUT to be built
+  from source without requiring asciidoc/a2x (using pre-built man pages from
+  the distribution tarball, for instance). Please double-check that we did not
+  break anything (see docs/configure.txt for options).
+
+- Driver core: options added for standalone mode (scanning for devices without
+  requiring ups.conf) - see docs/man/nutupsdrv.txt for details.
+
+- oldmge-shut has been removed, and replaced by mge-shut.
+
+- New drivers for devices with "Qx" family of protocols should be developed
+  as sub-drivers in the `nutdrv_qx` framework for USB and Serial connected
+  devices, not as updates/clones of older e.g. `blazer` family and `bestups`.
+  Sources of such older drivers were marked with "OBSOLETION WARNING".
+
+- liebert-esp2: some multi-phase variable names have been updated to match the
+  rest of NUT.
+
+- netxml-ups: if you have old firmware, or were relying on values being off by
+  a factor of 10, consider the `do_convert_deci` flag. See
+  docs/man/netxml-ups.txt for details.
+
+- snmp-ups: detection of Net-SNMP has been updated to use `pkg-config` by
+  default (if present), rather than `net-snmp-config(-32|-64)` script(s) as
+  the only option available previously. The scripts tend to specify a lot
+  of options (sometimes platform-specific) in suggested `CFLAGS` and `LIBS`
+  compared to the packaged `pkg-config` information which also works and is
+  more portable. If this change bites your distribution, please bring it up
+  in https://github.com/networkupstools/nut/issues or better yet, post a PR.
+  Also note that `./configure --with-netsnmp-config(=yes)` should set up the
+  preference of the detected script over `pkg-config` information, if both
+  are available, and `--with-netsnmp-config=/path/name` would as well.
+
+- snmp-ups: bit mask values for flags in earlier codebase were defined in a
+  way that caused logically different items to have same numeric values.
+  This was fixed to surely use different definitions (so changing numbers
+  behind some of those macro symbols), and testing with UPS, ePDU and ATS
+  hardware which was available did not expose any practical differences.
+
+- usbhid-ups: numeric data conversion from wire protocol to CPU representation
+  in GetValue() was completely reworked, aiming to be correct on all CPU types.
+  That said, regressions are possible and feedback is welcome.
+
+- nut-scanner: Packagers, take note of the changes to the library
+  search code in common/common.c. Please file an issue if this does not work
+  with your platform.
+
+- Python: scripts have been updated to work with Python 3 as well as 2.
+
+- apcsmart: updates to CS "hack" (see docs/man/apcsmart.txt for details)
+
+- upsdebugx(): added `[D#]` prefix to log entries with level > 0
+  so if any scripts or other tools relied on parsing those messages
+  making some assumptions, they should be updated
+
+- upsdebugx() and related methods are now macros, optionally calling similarly
+  named implementations like s_upsdebugx() as a slight optimization; this may
+  show up in linking of binaries for some customized build scenarios
+
+- libraries, tools and protocol now support a `TRACKING` ID to be used with
+  an `INSTCMD` or `SET VAR` requests; for details see docs/net-protocol.txt
+  and docs/sock-protocol.txt
+
+- upsrw: display the variable type beside ENUM / RANGE
+
+- Augeas: new `--with-augeas-lenses-dir` configure option.
+
 Changes from 2.7.3 to 2.7.4
 ---------------------------
 

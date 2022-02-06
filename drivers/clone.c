@@ -28,7 +28,7 @@
 #include <sys/un.h>
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -358,11 +358,11 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	val = dstate_getinfo(getval("load.status"));
 	if (val) {
-		if (!strncasecmp(val, "off", 3) || !strncasecmp(val, "no", 2)) {
+		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
 			outlet = 0;
 		}
 
-		if (!strncasecmp(val, "on", 2) || !strncasecmp(val, "yes", 3)) {
+		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
 			outlet = 1;
 		}
 	}
