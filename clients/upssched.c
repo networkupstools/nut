@@ -497,14 +497,14 @@ static int sock_read(conn_t *conn)
 			if ((ret == -1) && (errno == EAGAIN))
 				return 0;
 
+			if (ret == 0)		/* nothing to parse yet */
+			continue;
+
 			/* some other problem */
 			return -1;	/* error */
 		}
 
 		ret = pconf_char(&conn->ctx, ch);
-
-		if (ret == 0)		/* nothing to parse yet */
-			continue;
 
 		if (ret == -1) {
 			upslogx(LOG_NOTICE, "Parse error on sock: %s",
@@ -691,32 +691,16 @@ static int check_parent(const char *cmd, const char *arg2)
 	exit(EXIT_FAILURE);
 }
 
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* ignore this */
-	return;
-}
-
-static void setup_sigalrm(void)
-{
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
-
-	sigemptyset(&nut_upssched_sigmask);
-	sa.sa_mask = nut_upssched_sigmask;
-	sa.sa_flags = 0;
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-}
-
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i, pipefd;
 	ssize_t	ret;
 	size_t enclen;
 	char	buf[SMALLBUF], enc[SMALLBUF + 8];
+	int	ret_s;	 
+	struct  timeval tv;
+	fd_set  fdread;
+
 
 	/* insanity */
 	if (!arg1)
@@ -757,30 +741,39 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, enc, enclen);
+		ret = write(pipefd, enc, sizeof(enc));
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (ssize_t) enclen)) {
+		if ((ret < 1) || (ret != sizeof(enc))) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
 		}
 
-		/* ugh - probably should use select here... */
-		setup_sigalrm();
+		/* select on child's pipe fd */
+		do {
+    			/* set timeout every time before call select() */
+    			tv.tv_sec = 1;
+    			tv.tv_usec = 0;
 
-		alarm(2);
-		ret = read(pipefd, buf, sizeof(buf));
-		alarm(0);
+    			FD_ZERO(&fdread);
+    			FD_SET(pipefd, &fdread);
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#endif
-		signal(SIGALRM, SIG_IGN);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic pop
-#endif
+    			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+				switch(ret_s) {
+					/* select error */
+					case -1:
+						upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+						break;
+					/* nothing to read */
+					case 0:
+						break;
+					/* available data to read */
+					default:
+						ret = read(pipefd, buf, sizeof(buf));
+						break;
+    			}
+		} while (ret_s <= 0);
 
 		close(pipefd);
 
