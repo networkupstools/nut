@@ -442,6 +442,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t) buflen)) {
 		upsdebugx(2, "write failed on socket %d, disconnecting", conn->fd);
+
 		close(conn->fd);
 		conn_del(conn);
 
@@ -454,6 +455,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0) {
 		upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
+
 		/* FIXME not sure this is the right way to close a connection */
 		if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 			CloseHandle(conn->read_overlapped.hEvent);
@@ -462,9 +464,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		DisconnectNamedPipe(conn->fd);
 		CloseHandle(conn->fd);
 		conn_del(conn);
+
 		return 0;
 	}
-	else  {
+	else {
 		ret = (ssize_t)bytesWritten;
 	}
 
@@ -1075,27 +1078,6 @@ static HANDLE check_parent(const char *cmd, const char *arg2)
 }
 #endif
 
-#ifndef WIN32
-static void read_timeout(int sig)
-{
-	/* ignore this */
-	NUT_UNUSED_VARIABLE(sig);
-	return;
-}
-
-static void setup_sigalrm(void)
-{
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
-
-	sigemptyset(&nut_upssched_sigmask);
-	sa.sa_mask = nut_upssched_sigmask;
-	sa.sa_flags = 0;
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-}
-#endif
-
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i;
@@ -1188,22 +1170,6 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 					break;
 			}
 		} while (ret_s <= 0);
-
-		/* ugh - probably should use select here... */
-		setup_sigalrm();
-
-		alarm(2);
-		ret = read(pipefd, buf, sizeof(buf));
-		alarm(0);
-
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#endif
-		signal(SIGALRM, SIG_IGN);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic pop
-#endif
 
 		close(pipefd);
 
