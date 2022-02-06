@@ -497,14 +497,20 @@ static int sock_read(conn_t *conn)
 			if ((ret == -1) && (errno == EAGAIN))
 				return 0;
 
-			if (ret == 0)		/* nothing to parse yet */
-			continue;
+			/* O_NDELAY with zero bytes means nothing to read but
+			   since read() follows a succesful select() with
+			   ready file descriptor, ret shouldn't be 0. */
+			if (ret == 0)
+				continue;
 
 			/* some other problem */
 			return -1;	/* error */
 		}
 
 		ret = pconf_char(&conn->ctx, ch);
+
+		if (ret == 0) 	/* nothing to parse yet */
+			continue;
 
 		if (ret == -1) {
 			upslogx(LOG_NOTICE, "Parse error on sock: %s",
