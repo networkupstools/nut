@@ -702,7 +702,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	i, pipefd;
 	ssize_t	ret;
 	size_t enclen;
-	char	buf[SMALLBUF], enc[SMALLBUF + 8];
+	char buf[SMALLBUF], enc[SMALLBUF + 8];
 	int	ret_s;	 
 	struct  timeval tv;
 	fd_set  fdread;
@@ -750,7 +750,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		ret = write(pipefd, enc, sizeof(enc));
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != sizeof(enc))) {
+		if ((ret < 1) || (ret != (ssize_t )sizeof(enc))) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
@@ -758,27 +758,27 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* select on child's pipe fd */
 		do {
-    			/* set timeout every time before call select() */
-    			tv.tv_sec = 1;
-    			tv.tv_usec = 0;
+			/* set timeout every time before call select() */
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
 
-    			FD_ZERO(&fdread);
-    			FD_SET(pipefd, &fdread);
+			FD_ZERO(&fdread);
+			FD_SET(pipefd, &fdread);
 
-    			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
-				switch(ret_s) {
-					/* select error */
-					case -1:
-						upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
-						break;
-					/* nothing to read */
-					case 0:
-						break;
-					/* available data to read */
-					default:
-						ret = read(pipefd, buf, sizeof(buf));
-						break;
-    			}
+			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			switch(ret_s) {
+				/* select error */
+				case -1:
+					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					break;
+				/* nothing to read */
+				case 0:
+					break;
+				/* available data to read */
+				default:
+					ret = read(pipefd, buf, sizeof(buf));
+					break;
+   			}
 		} while (ret_s <= 0);
 
 		close(pipefd);
