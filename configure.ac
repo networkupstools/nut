@@ -487,7 +487,34 @@ dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
-NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
+
+dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
+dnl so the help string depends on the version used
+AC_MSG_CHECKING(which drivers to build)
+AC_ARG_WITH(drivers,
+	AS_HELP_STRING([m4_version_prereq(2.62,
+		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
+		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
+	[Only build specific drivers (all)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
+		;;
+	*)
+		DRIVER_BUILD_LIST="`echo ${withval} | sed "s/,/ /g"`"
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+		;;
+	esac
+], [
+	DRIVER_BUILD_LIST="all"
+	AC_MSG_RESULT(all available)
+])
+AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
+
+if test "${DRIVER_BUILD_LIST}" != "all"; then
+	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
+fi
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -509,6 +536,8 @@ dnl To help find warning/error details in a wall of text, see --enable-Wcolor ha
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
+
+NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 
 dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
@@ -1476,34 +1505,6 @@ AC_ARG_WITH(logfacility,
 ])
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
-
-dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
-dnl so the help string depends on the version used
-AC_MSG_CHECKING(which drivers to build)
-AC_ARG_WITH(drivers,
-	AS_HELP_STRING([m4_version_prereq(2.62,
-		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
-		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
-	[Only build specific drivers (all)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
-		;;
-	*)
-		DRIVER_BUILD_LIST=`echo ${withval} | sed "s/,/ /g"`
-		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
-		;;
-	esac
-], [
-	DRIVER_BUILD_LIST="all"
-	AC_MSG_RESULT(all available)
-])
-AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
-
-if test "${DRIVER_BUILD_LIST}" != "all"; then
-	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
-fi
 
 AC_MSG_CHECKING(which driver man pages to install)
 if test "${WITH_MANS}" = "yes"; then
