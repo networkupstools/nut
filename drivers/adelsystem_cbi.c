@@ -322,7 +322,11 @@ void upsdrv_updateinfo(void)
                 upsdebugx(3, "%s is active", ds->alrm->alrm[i].descr);
             }
         }
-        rval = get_dev_state(VAC, &ds);
+    }
+    rval = get_dev_state(VAC, &ds);
+    if (rval == -1) {
+        errcnt++;
+    } else {
         dstate_setinfo("input.voltage", "%s", ds->reg.strval);
         upslogx(LOG_DEBUG, "input.voltage = %s", ds->reg.strval);
     }
