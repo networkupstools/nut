@@ -701,7 +701,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i, pipefd;
 	ssize_t	ret;
-	size_t enclen;
+	size_t	enclen, buflen;
 	char buf[SMALLBUF], enc[SMALLBUF + 8];
 	int	ret_s;
 	struct	timeval tv;
@@ -722,8 +722,9 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
 	/* Sanity checks, for static analyzers to sleep well */
-	enclen = strlen(buf);
-	if (enclen >= SSIZE_MAX) {
+	enclen = strlen(enc);
+	buflen = strlen(buf);
+	if (enclen >= SSIZE_MAX || buflen >= SSIZE_MAX) {
 		/* Can't compare enclen to ret below */
 		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
 	}
@@ -746,10 +747,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, enc, sizeof(enc));
+		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (ssize_t )sizeof(enc))) {
+		if ((ret < 1) || (ret != (ssize_t)enclen)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
