@@ -498,8 +498,8 @@ static int sock_read(conn_t *conn)
 				return 0;
 
 			/* O_NDELAY with zero bytes means nothing to read but
-			   since read() follows a succesful select() with
-			   ready file descriptor, ret shouldn't be 0. */
+			 * since read() follows a succesful select() with
+			 * ready file descriptor, ret shouldn't be 0. */
 			if (ret == 0)
 				continue;
 
@@ -509,7 +509,7 @@ static int sock_read(conn_t *conn)
 
 		ret = pconf_char(&conn->ctx, ch);
 
-		if (ret == 0) 	/* nothing to parse yet */
+		if (ret == 0)	/* nothing to parse yet */
 			continue;
 
 		if (ret == -1) {
@@ -703,10 +703,9 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	ssize_t	ret;
 	size_t enclen;
 	char buf[SMALLBUF], enc[SMALLBUF + 8];
-	int	ret_s;	 
-	struct  timeval tv;
-	fd_set  fdread;
-
+	int	ret_s;
+	struct	timeval tv;
+	fd_set	fdread;
 
 	/* insanity */
 	if (!arg1)
@@ -722,6 +721,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
+	/* Sanity checks, for static analyzers to sleep well */
 	enclen = strlen(buf);
 	if (enclen >= SSIZE_MAX) {
 		/* Can't compare enclen to ret below */
@@ -735,7 +735,6 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		pipefd = check_parent(cmd, arg2);
 
 		if (pipefd == PARENT_STARTED) {
-
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
@@ -771,14 +770,16 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 				case -1:
 					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
 					break;
+
 				/* nothing to read */
 				case 0:
 					break;
+
 				/* available data to read */
 				default:
 					ret = read(pipefd, buf, sizeof(buf));
 					break;
-   			}
+			}
 		} while (ret_s <= 0);
 
 		close(pipefd);
@@ -795,7 +796,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
 		/* try again ... */
-	}
+	}	/* loop until MAX_TRIES if no success above */
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
