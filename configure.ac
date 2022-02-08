@@ -452,6 +452,192 @@ NUT_CHECK_PYTHON2
 NUT_CHECK_PYTHON3
 
 dnl ----------------------------------------------------------------------
+dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
+
+dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs
+dnl (square brackets), so the help string depends on the version used
+AC_MSG_CHECKING(which drivers to build)
+AC_ARG_WITH(drivers,
+	AS_HELP_STRING([m4_version_prereq(2.62,
+		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
+		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
+	[Only build specific drivers (all)]),
+[
+	case "${withval}" in
+	yes|no|'')
+		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
+		;;
+	all)
+		dnl Explicit request to build all drivers (unless specified), or fail
+		DRIVER_BUILD_LIST="all"
+		if test -z "${with_serial}"; then with_serial="yes"; fi
+		if test -z "${with_usb}"; then with_usb="yes"; fi
+		if test -z "${with_snmp}"; then with_snmp="yes"; fi
+		if test -z "${with_neon}"; then with_neon="yes"; fi
+		if test -z "${with_powerman}"; then with_powerman="yes"; fi
+		if test -z "${with_modbus}"; then with_modbus="yes"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
+		if test -z "${with_linux_i2c}"; then with_linux_i2c="yes"; fi
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+		;;
+	auto)
+		dnl Explicit request to build all drivers that we can
+		DRIVER_BUILD_LIST="all"
+		if test -z "${with_serial}"; then with_serial="${withval}"; fi
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
+		if test -z "${with_neon}"; then with_neon="${withval}"; fi
+		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
+		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+		;;
+	*)
+		DRIVER_BUILD_LIST="`echo ${withval} | sed 's/,/ /g'`"
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+
+		AS_IF([test -n "$DRIVER_BUILD_LIST"],
+			[dnl DRVLIST is occasionally synced with drivers/Makefile.am
+			 dnl NOTE: Currently "USB_DRIVERLIST" is not used standalone:
+			DRVLIST_NAMES="
+				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
+				SNMP_DRIVERLIST NEONXML_DRIVERLIST
+				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST"
+
+			get_drvlist() (
+				dnl Note escaped brackets - "against" m4 parser
+				m4_version_prereq(2.62,
+					[LB="@<:@"; RB="@:>@"],
+					[LB="[["; RB="]]"]
+				)
+				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACES="${SPACE}*"
+				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
+				    -e "s/^${SPACES}//" < drivers/Makefile.am \
+				| {
+					C=false; V=false
+					while read LINE ; do
+						case "$LINE" in
+							*'\') C=true; if $V ; then echo "$LINE" ; fi ;;
+							*) C=false; V=false ;;
+						esac
+						case "$LINE" in
+							"$1"=*)
+								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,' -e 's,\$,,'
+								V=$C
+								;;
+						esac
+					done
+				} | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+			)
+
+			for DRVLIST_NAME in $DRVLIST_NAMES; do
+				OUT="`get_drvlist "$DRVLIST_NAME"`" \
+				&& test -n "$OUT" || OUT=""
+				eval $DRVLIST_NAME="\$OUT"
+				AC_MSG_NOTICE([Will check custom driver selection against $DRVLIST_NAME="$OUT"])
+			done
+
+			dnl Note: do not quote the expansion below to keep it multi-token:
+			for DRV in $DRIVER_BUILD_LIST ; do
+
+				dnl #DEVEL-DEBUG# AC_MSG_NOTICE([= Checking DRV="$DRV"])
+				for DRVLIST_NAME in $DRVLIST_NAMES; do
+					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Checking DRVLIST_NAME="$DRVLIST_NAME"])
+					eval DRVLIST="\${$DRVLIST_NAME}"
+					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Contents DRVLIST="$DRVLIST"])
+
+					for DN in $DRVLIST ; do
+						dnl #DEVEL-DEBUG# AC_MSG_NOTICE([=== Checking DN="$DN"])
+						AS_IF([test x"$DN" = x"$DRV"], [
+							AS_CASE(["$DRVLIST_NAME"],
+
+								[SERIAL_DRIVERLIST], [
+									AS_IF([test -z "${with_serial}"],
+										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])
+										with_serial=yes]
+									)],
+								[USB_LIBUSB_DRIVERLIST], [
+									AS_IF([test -z "${with_usb}"],
+										[AC_MSG_NOTICE([Requiring --with-usb=yes for driver "$DRV"])
+										with_usb=yes]
+									)],
+								[SERIAL_USB_DRIVERLIST], [
+									dnl e.g. nutdrv_qx that can do both
+									AS_IF([test -z "${with_usb}"],
+										[AC_MSG_NOTICE([Requiring --with-usb=yes for driver "$DRV"])
+										with_usb=yes]
+									)
+									AS_IF([test -z "${with_serial}"],
+										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])
+										with_serial=yes]
+									)],
+								[SNMP_DRIVERLIST], [
+									AS_IF([test -z "${with_snmp}"],
+										[AC_MSG_NOTICE([Requiring --with-snmp=yes for driver "$DRV"])
+										with_snmp=yes]
+									)],
+								[NEONXML_DRIVERLIST], [
+									AS_IF([test -z "${with_neon}"],
+										[AC_MSG_NOTICE([Requiring --with-neon=yes for driver "$DRV"])
+										with_neon=yes]
+									)],
+								[MACOSX_DRIVERLIST], [
+									dnl NOTE: This one is a bit special,
+									dnl just one certain driver so far
+									AS_IF([test -z "${with_macosx_ups}"],
+										[AC_MSG_NOTICE([Requiring --with-macosx-ups=yes for driver "$DRV"])
+										with_macosx_ups=yes]
+									)],
+								[MODBUS_DRIVERLIST], [
+									AS_IF([test -z "${with_modbus}"],
+										[AC_MSG_NOTICE([Requiring --with-modbus=yes for driver "$DRV"])
+										with_modbus=yes]
+									)],
+								[LINUX_I2C_DRIVERLIST], [
+									AS_IF([test -z "${with_linux_i2c}"],
+										[AC_MSG_NOTICE([Requiring --with-linux-i2c=yes for driver "$DRV"])
+										with_linux_i2c=yes]
+									)],
+								[POWERMAN_DRIVERLIST], [
+									AS_IF([test -z "${with_powerman}"],
+										[AC_MSG_NOTICE([Requiring --with-powerman=yes for driver "$DRV"])
+										with_powerman=yes]
+									)],
+								[IPMI_DRIVERLIST], [
+									AS_IF([test -z "${with_ipmi}"],
+										[AC_MSG_NOTICE([Requiring --with-ipmi=yes for driver "$DRV"])
+										with_ipmi=yes]
+									)],
+
+								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
+							)
+							break
+							dnl Break once, maybe a driver hits several categories
+						])
+					done
+				done
+
+			done
+			])
+
+		;;
+	esac
+], [
+	dnl Implicit request to build whatever is enabled;
+	dnl do not force --with-all here:
+	DRIVER_BUILD_LIST="all"
+	AC_MSG_RESULT(all available)
+])
+AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
+
+if test "${DRIVER_BUILD_LIST}" != "all"; then
+	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
+fi
+
+dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
@@ -487,34 +673,6 @@ dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
-
-dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
-dnl so the help string depends on the version used
-AC_MSG_CHECKING(which drivers to build)
-AC_ARG_WITH(drivers,
-	AS_HELP_STRING([m4_version_prereq(2.62,
-		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
-		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
-	[Only build specific drivers (all)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
-		;;
-	*)
-		DRIVER_BUILD_LIST="`echo ${withval} | sed "s/,/ /g"`"
-		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
-		;;
-	esac
-], [
-	DRIVER_BUILD_LIST="all"
-	AC_MSG_RESULT(all available)
-])
-AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
-
-if test "${DRIVER_BUILD_LIST}" != "all"; then
-	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
-fi
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
