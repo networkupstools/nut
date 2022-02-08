@@ -558,6 +558,7 @@ AC_ARG_WITH(drivers,
 			dnl Note: do not quote the expansion below to keep it multi-token:
 			for DRV in $DRIVER_BUILD_LIST ; do
 
+				DRV_HITS=""
 				dnl #DEVEL-DEBUG# AC_MSG_NOTICE([= Checking DRV="$DRV"])
 				for DRVLIST_NAME in $DRVLIST_NAMES; do
 					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Checking DRVLIST_NAME="$DRVLIST_NAME"])
@@ -567,6 +568,7 @@ AC_ARG_WITH(drivers,
 					for DN in $DRVLIST ; do
 						dnl #DEVEL-DEBUG# AC_MSG_NOTICE([=== Checking DN="$DN"])
 						AS_IF([test x"$DN" = x"$DRV"], [
+							DRV_HITS="$DRV_HITS $DRVLIST_NAME"
 							AS_CASE(["$DRVLIST_NAME"],
 
 								[SERIAL_DRIVERLIST], [
@@ -633,6 +635,8 @@ AC_ARG_WITH(drivers,
 							dnl Break once, maybe a driver hits several categories
 						])
 					done
+					AS_IF([test -z "${DRV_HITS}"],
+						[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 				done
 
 			done
