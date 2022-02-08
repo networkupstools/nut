@@ -46,6 +46,9 @@ static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;          /* set the modbus by
 static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;        /* set the modbus byte time out (us) */
 
 
+/* initialize alarm structs */
+void alrminit(void);
+
 /* initialize register start address and hex address from register number */
 void reginit(void);
 
@@ -95,9 +98,9 @@ void upsdrv_initups(void)
 {
     int rval;
     upsdebugx(2, "upsdrv_initups");
-
-
+    
     dstate = (devstate_t *)xmalloc(sizeof(devstate_t));
+    alrminit();
     reginit();
     get_config_vars();
 
@@ -220,7 +223,7 @@ void upsdrv_updateinfo(void)
     } else {
         if (ds->alrm->alrm[MAINS_AVAIL_I].actv) {
             status_set("OB");
-            alarm_set(mains.alrm[MAINS_AVAIL_I].descr);
+            alarm_set(mains->alrm[MAINS_AVAIL_I].descr);
             upslogx(LOG_INFO, "ups.status = OB");
         } else {
             status_set("OL");
@@ -228,7 +231,7 @@ void upsdrv_updateinfo(void)
         }
         if (ds->alrm->alrm[SHUTD_REQST_I].actv) {
             status_set("FSD");
-            alarm_set(mains.alrm[SHUTD_REQST_I].descr);
+            alarm_set(mains->alrm[SHUTD_REQST_I].descr);
             upslogx(LOG_INFO, "ups.status = FSD");
         }
     }
@@ -242,16 +245,16 @@ void upsdrv_updateinfo(void)
     } else {
         if (ds->alrm->alrm[BVAL_LOALRM_I].actv) {
             status_set("LB");
-            alarm_set(bval.alrm[BVAL_LOALRM_I].descr);
+            alarm_set(bval->alrm[BVAL_LOALRM_I].descr);
             upslogx(LOG_INFO, "ups.status = LB");
         }
         if (ds->alrm->alrm[BVAL_HIALRM_I].actv) {
             status_set("HB");
-            alarm_set(bval.alrm[BVAL_HIALRM_I].descr);
+            alarm_set(bval->alrm[BVAL_HIALRM_I].descr);
             upslogx(LOG_INFO, "ups.status = HB");
         }
         if (ds->alrm->alrm[BVAL_BSTSFL_I].actv) {
-            alarm_set(bval.alrm[BVAL_BSTSFL_I].descr);
+            alarm_set(bval->alrm[BVAL_BSTSFL_I].descr);
             upslogx(LOG_INFO, "battery start with battery flat");
         }
     }
@@ -519,6 +522,27 @@ void upsdrv_cleanup(void)
  * driver support functions
  */
 
+/* initialize alarm structs */
+void alrminit(void)
+{
+    mains = alloc_alrm_ar(mains_c, sizeof(mains_ar));
+    alrm_ar_init(mains, mains_ar, mains_c);
+    vaca = alloc_alrm_ar(vaca_c, sizeof(vaca_ar));
+    alrm_ar_init(vaca, vaca_ar, vaca_c);
+    devf = alloc_alrm_ar(devf_c, sizeof(devf_ar));
+    alrm_ar_init(devf, devf_ar, devf_c);
+    btsf = alloc_alrm_ar(btsf_c, sizeof(btsf_ar));
+    alrm_ar_init(btsf, btsf_ar, btsf_c);
+    bval = alloc_alrm_ar(bval_c, sizeof(bval_ar));
+    alrm_ar_init(bval, bval_ar, bval_c);
+    shsc = alloc_alrm_ar(shsc_c, sizeof(shsc_ar));
+    alrm_ar_init(shsc, shsc_ar, shsc_c);
+    bsta = alloc_alrm_ar(bsta_c, sizeof(bsta_ar));
+    alrm_ar_init(bsta, bsta_ar, bsta_c);
+    obta = alloc_alrm_ar(obta_c, sizeof(obta_ar));
+    alrm_ar_init(obta, obta_ar, obta_c);
+}
+
 /* initialize register start address and hex address from register number */
 void reginit(void)
 {
@@ -574,7 +598,7 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
     int rval; 
 
     /* read all HOLDING registers */
-    rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, regs_data);
+    rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, data);
     if (rval == -1) {
         upslogx(LOG_ERR,
                 "ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
@@ -845,7 +869,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
         case LVDC:                  /* "output.voltage" */
         case LCUR:                  /* "output.current" */
             if (reg_val != 0) {
-                state->reg.val16 = reg_val;
+                state->reg.val.ui16 = reg_val;
                 double fval = reg_val / 1000.00; /* convert mV to V, mA to A */
                 n = snprintf(NULL, 0, "%.2f", fval);
                 if (ptr != NULL) {
@@ -856,7 +880,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
                 sprintf(fval_s, "%.2f", fval);
                 state->reg.strval = fval_s;
             } else {
-                state->reg.val16 = 0;
+                state->reg.val.ui16 = 0;
                 state->reg.strval = "0.00";
             }
             upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
@@ -866,7 +890,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
         case BCEF:
         case VAC:                   /* "input.voltage" */
             if (reg_val != 0) {
-                state->reg.val16 = reg_val;
+                state->reg.val.ui16 = reg_val;
                 n = snprintf(NULL, 0, "%d", reg_val);
                 if (ptr != NULL) {
                     free(ptr);
@@ -876,14 +900,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
                 sprintf(reg_val_s, "%d", reg_val);
                 state->reg.strval = reg_val_s;
             } else {
-                state->reg.val16 = 0;
+                state->reg.val.ui16 = 0;
                 state->reg.strval = "0";
             }
             upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
             break;
         case BSOC:                  /* "battery.charge" */
             if (reg_val != 0) {
-                state->reg.val16 = reg_val;
+                state->reg.val.ui16 = reg_val;
                 double fval = (double )reg_val * regs[BSOC].scale;
                 n = snprintf(NULL, 0, "%.2f", fval);
                 if (ptr != NULL) {
@@ -894,14 +918,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
                 sprintf(fval_s, "%.2f", fval);
                 state->reg.strval = fval_s;
             } else {
-                state->reg.val16 = 0;
+                state->reg.val.ui16 = 0;
                 state->reg.strval = "0.00";
             }
             upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
             break;
         case BTMP:                  /* "battery.temperature" */
         case OTMP:                  /* "ups.temperature" */
-            state->reg.val16 = reg_val;
+            state->reg.val.ui16 = reg_val;
             double fval = reg_val - 273.15;
             n = snprintf(NULL, 0, "%.2f", fval);
             char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
@@ -941,140 +965,140 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
             break;
         case BSTA:
             if (reg_val & BSTA_REVPOL_M) {
-                bsta.alrm[BSTA_REVPOL_I].actv = 1;
+                bsta->alrm[BSTA_REVPOL_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_REVPOL_I].actv = 0;
+                bsta->alrm[BSTA_REVPOL_I].actv = 0;
             }
             if (reg_val & BSTA_NOCNND_M) {
-                bsta.alrm[BSTA_NOCNND_I].actv = 1;
+                bsta->alrm[BSTA_NOCNND_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_NOCNND_I].actv = 0;
+                bsta->alrm[BSTA_NOCNND_I].actv = 0;
             }
             if (reg_val & BSTA_CLSHCR_M) {
-                bsta.alrm[BSTA_CLSHCR_I].actv = 1;
+                bsta->alrm[BSTA_CLSHCR_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_CLSHCR_I].actv = 0;
+                bsta->alrm[BSTA_CLSHCR_I].actv = 0;
             }
             if (reg_val & BSTA_SULPHD_M) {
-                bsta.alrm[BSTA_SULPHD_I].actv = 1;
+                bsta->alrm[BSTA_SULPHD_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_SULPHD_I].actv = 0;
+                bsta->alrm[BSTA_SULPHD_I].actv = 0;
             }
             if (reg_val & BSTA_CHEMNS_M) {
-                bsta.alrm[BSTA_CHEMNS_I].actv = 1;
+                bsta->alrm[BSTA_CHEMNS_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_CHEMNS_I].actv = 0;
+                bsta->alrm[BSTA_CHEMNS_I].actv = 0;
             }
             if (reg_val & BSTA_CNNFLT_M) {
-                bsta.alrm[BSTA_CNNFLT_I].actv = 1;
+                bsta->alrm[BSTA_CNNFLT_I].actv = 1;
             } else {
-                bsta.alrm[BSTA_CNNFLT_I].actv = 0;
+                bsta->alrm[BSTA_CNNFLT_I].actv = 0;
             }
-            state->alrm = &bsta;
+            state->alrm = bsta;
             break;
         case SCSH:
             if (reg_val & SHSC_HIRESI_M) {
-                shsc.alrm[SHSC_HIRESI_I].actv = 1;
+                shsc->alrm[SHSC_HIRESI_I].actv = 1;
             } else {
-                shsc.alrm[SHSC_HIRESI_I].actv = 0;
+                shsc->alrm[SHSC_HIRESI_I].actv = 0;
             }
             if (reg_val & SHSC_LOCHEF_M) {
-                shsc.alrm[SHSC_LOCHEF_I].actv = 1;
+                shsc->alrm[SHSC_LOCHEF_I].actv = 1;
             } else {
-                shsc.alrm[SHSC_LOCHEF_I].actv = 0;
+                shsc->alrm[SHSC_LOCHEF_I].actv = 0;
             }
             if (reg_val & SHSC_LOEFCP_M) {
-                shsc.alrm[SHSC_LOEFCP_I].actv = 1;
+                shsc->alrm[SHSC_LOEFCP_I].actv = 1;
             } else {
-                shsc.alrm[SHSC_LOEFCP_I].actv = 0;
+                shsc->alrm[SHSC_LOEFCP_I].actv = 0;
             }
             if (reg_val & SHSC_LOWSOC_M) {
-                shsc.alrm[SHSC_LOWSOC_I].actv = 1;
+                shsc->alrm[SHSC_LOWSOC_I].actv = 1;
             } else {
-                shsc.alrm[SHSC_LOWSOC_I].actv = 0;
+                shsc->alrm[SHSC_LOWSOC_I].actv = 0;
             }
-            state->alrm = &shsc;
+            state->alrm = shsc;
             break;
         case BVAL:
             if (reg_val & BVAL_HIALRM_M) {
-                bval.alrm[BVAL_HIALRM_I].actv = 1;
+                bval->alrm[BVAL_HIALRM_I].actv = 1;
             } else {
-                bval.alrm[BVAL_HIALRM_I].actv = 0;
+                bval->alrm[BVAL_HIALRM_I].actv = 0;
             }
             if (reg_val & BVAL_LOALRM_M) {
-                bval.alrm[BVAL_LOALRM_I].actv = 1;
+                bval->alrm[BVAL_LOALRM_I].actv = 1;
             } else {
-                bval.alrm[BVAL_LOALRM_I].actv = 0;
+                bval->alrm[BVAL_LOALRM_I].actv = 0;
             }
             if (reg_val & BVAL_BSTSFL_M) {
-                bval.alrm[BVAL_BSTSFL_I].actv = 1;
+                bval->alrm[BVAL_BSTSFL_I].actv = 1;
             } else {
-                bval.alrm[BVAL_BSTSFL_I].actv = 0;
+                bval->alrm[BVAL_BSTSFL_I].actv = 0;
             }
-            state->alrm = &bval;
+            state->alrm = bval;
             break;
         case BTSF:
             if (reg_val & BTSF_FCND_M) {
-                btsf.alrm[BTSF_FCND_I].actv = 1;
+                btsf->alrm[BTSF_FCND_I].actv = 1;
             } else {
-                btsf.alrm[BTSF_FCND_I].actv = 0;
+                btsf->alrm[BTSF_FCND_I].actv = 0;
             }
             if (reg_val & BTSF_NCND_M) {
-                btsf.alrm[BTSF_NCND_I].actv = 1;
+                btsf->alrm[BTSF_NCND_I].actv = 1;
             } else {
-                btsf.alrm[BTSF_NCND_I].actv = 0;
+                btsf->alrm[BTSF_NCND_I].actv = 0;
             }
-            state->alrm = &btsf;
+            state->alrm = btsf;
             break;
         case DEVF:
             if (reg_val & DEVF_RCALRM_M) {
-                devf.alrm[DEVF_RCALRM_I].actv = 1;
+                devf->alrm[DEVF_RCALRM_I].actv = 1;
             } else {
-                devf.alrm[DEVF_RCALRM_I].actv = 0;
+                devf->alrm[DEVF_RCALRM_I].actv = 0;
             }
             if (reg_val & DEVF_INALRM_M) {
-                devf.alrm[DEVF_INALRM_I].actv = 1;
+                devf->alrm[DEVF_INALRM_I].actv = 1;
             } else {
-                devf.alrm[DEVF_INALRM_I].actv = 0;
+                devf->alrm[DEVF_INALRM_I].actv = 0;
             }
             if (reg_val & DEVF_LFNAVL_M) {
-                devf.alrm[DEVF_LFNAVL_I].actv = 1;
+                devf->alrm[DEVF_LFNAVL_I].actv = 1;
             } else {
-                devf.alrm[DEVF_LFNAVL_I].actv = 0;
+                devf->alrm[DEVF_LFNAVL_I].actv = 0;
             }
-            state->alrm = &devf;
+            state->alrm = devf;
             break;
         case VACA:
             if (reg_val & VACA_HIALRM_M) {
-                vaca.alrm[VACA_HIALRM_I].actv = 1;
+                vaca->alrm[VACA_HIALRM_I].actv = 1;
             } else {
-                vaca.alrm[VACA_HIALRM_I].actv = 0;
+                vaca->alrm[VACA_HIALRM_I].actv = 0;
             }
             if (reg_val == VACA_LOALRM_M) {
-                vaca.alrm[VACA_LOALRM_I].actv = 1;
+                vaca->alrm[VACA_LOALRM_I].actv = 1;
             } else {
-                vaca.alrm[VACA_LOALRM_I].actv = 0;
+                vaca->alrm[VACA_LOALRM_I].actv = 0;
             }
-            state->alrm = &vaca;
+            state->alrm = vaca;
             break;
         case MAIN:
             if (reg_val & MAINS_AVAIL_M) {
-                mains.alrm[MAINS_AVAIL_I].actv = 1;
+                mains->alrm[MAINS_AVAIL_I].actv = 1;
             } else {
-                mains.alrm[MAINS_AVAIL_I].actv = 0;
+                mains->alrm[MAINS_AVAIL_I].actv = 0;
             }
             if (reg_val == SHUTD_REQST_M) {
-                mains.alrm[SHUTD_REQST_I].actv = 1;
+                mains->alrm[SHUTD_REQST_I].actv = 1;
             } else {
-                mains.alrm[SHUTD_REQST_I].actv = 0;
+                mains->alrm[SHUTD_REQST_I].actv = 0;
             }
-            state->alrm = &mains;
+            state->alrm = mains;
             break;
         case OBTA:
             if (reg_val == OBTA_HIALRM_V) {
-                obta.alrm[OBTA_HIALRM_I].actv = 1;
+                obta->alrm[OBTA_HIALRM_I].actv = 1;
             }
-            state->alrm = &obta;
+            state->alrm = obta;
             break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
@@ -1085,7 +1109,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
          * memory corruptions and buggy inputs below...
          */
         default:
-            state->reg.val16 = reg_val;
+            state->reg.val.ui16 = reg_val;
             n = snprintf(NULL, 0, "%d", reg_val);
             if (ptr != NULL) {
                 free(ptr);

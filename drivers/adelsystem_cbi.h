@@ -127,10 +127,10 @@ typedef struct pwrmng pwrmng_t;
 
 /* general modbus register value */
 struct reg {
-    union {
-        uint16_t val16;
-        uint8_t val8;
-    };
+    union val {
+        uint16_t ui16;
+        uint8_t ui8;
+    } val;
     char *strval;
 };
 typedef struct reg reg_t;
@@ -145,7 +145,7 @@ typedef struct alrm alrm_t;
 /* general alarm array */
 struct alrm_ar {
     int alrm_c;             /* alarm count */
-    alrm_t alrm[];          /* alarm array */
+    alrm_t *alrm;          /* alarm array */
 };
 typedef struct alrm_ar alrm_ar_t;
 
@@ -247,84 +247,100 @@ typedef struct alrm_ar alrm_ar_t;
 #define BSTA_CHEMNS_I 4         /* chemistry not supported */
 #define BSTA_CNNFLT_I 5         /* connection fault */
 
-/* input mains and shutdown alarms */
-static alrm_ar_t mains = {
-        2,
-        {
-                {0, "input voltage not available"},
-                {0, "ups shutdown requested"}
+/* Allocate alarm arrays */
+inline
+alrm_ar_t *alloc_alrm_ar(int as, size_t n) 
+{
+        alrm_ar_t *ret = xcalloc(sizeof(alrm_t) + n, 1);
+        if (ret) {
+                memcpy(ret,
+                       &(alrm_ar_t const) {
+                               .alrm_c = as
+                       },
+                       sizeof(alrm_ar_t)
+                );
         }
+        return ret;
+}
+
+/* Initialize alarm arrays */
+inline
+void alrm_ar_init(alrm_ar_t *ar_ptr, alrm_t *a_ptr, int as) 
+{
+        ar_ptr->alrm_c = as;
+        ar_ptr->alrm = a_ptr;
+}
+
+/* input mains and shutdown alarms */
+static alrm_t mains_ar[] = {
+        {0, "input voltage not available"},
+        {0, "ups shutdown requested"}
 };
+static int mains_c = 2;
+static alrm_ar_t *mains;
 
 /* AC input voltage alarms */
-static alrm_ar_t vaca = {
-        2,
-        {
-                {0, "input voltage high alarm"},
-                {0, "input voltage low alarm"}
-        }
+static alrm_t vaca_ar[] = {
+        {0, "input voltage high alarm"},
+        {0, "input voltage low alarm"}
 };
+static int vaca_c = 2;
+static alrm_ar_t *vaca;
 
 /* device failure alarms */
-static alrm_ar_t devf = {
-        3,
-        {
-                {0, "UPS rectifier failure"},
-                {0, "UPS internal failure"},
-                {0, "UPS lifetest not available"}
-        }
+static alrm_t devf_ar[] = {
+        {0, "UPS rectifier failure"},
+        {0, "UPS internal failure"},
+        {0, "UPS lifetest not available"}
 };
+static int devf_c = 3;
+static alrm_ar_t *devf;
 
 /* battery sensor failure alarms */
-static alrm_ar_t btsf = {
-        2,
-        {
-                {0, "battery temp sensor connection fault"},
-                {0, "battery temp sensor not connected"}
-        }
+static alrm_t btsf_ar[] = {
+        {0, "battery temp sensor connection fault"},
+        {0, "battery temp sensor not connected"}
 };
+static int btsf_c = 2;
+static alrm_ar_t *btsf;
 
 /* battery voltage alarms */
-static alrm_ar_t bval = {
-        3,
-        {
-                {0, "battery high voltage"},
-                {0, "battery low voltage"},
-                {0, "battery start with battery flat"}
-        }
+static alrm_t bval_ar[] = {
+        {0, "battery high voltage"},
+        {0, "battery low voltage"},
+        {0, "battery start with battery flat"}
 };
+static int bval_c = 3;
+static alrm_ar_t *bval;
 
 /* battery SoH and SoC alarms */
-static alrm_ar_t shsc = {
-        4,
-        {
-                {0, "battery high internal resistance"},
-                {0, "battery low charge efficiency"},
-                {0, "battery low effective capacity"},
-                {0, "battery low state of charge"}
-        }
+static alrm_t shsc_ar[] = {
+        {0, "battery high internal resistance"},
+        {0, "battery low charge efficiency"},
+        {0, "battery low effective capacity"},
+        {0, "battery low state of charge"}
 };
+static int shsc_c = 4;
+static alrm_ar_t *shsc;
 
 /* battery status alarm */
-static alrm_ar_t bsta = {
-        6,
-        {
-                {0, "battery reversed polarity"},
-                {0, "battery not connected"},
-                {0, "battery cell short circuit"},
-                {0, "battery sulphated"},
-                {0, "battery chemistry not supported"},
-                {0, "battery connection fault"}
-        }
+static alrm_t bsta_ar[] = {
+        {0, "battery reversed polarity"},
+        {0, "battery not connected"},
+        {0, "battery cell short circuit"},
+        {0, "battery sulphated"},
+        {0, "battery chemistry not supported"},
+        {0, "battery connection fault"}
 };
+static int bsta_c = 4;
+static alrm_ar_t *bsta;
 
 /* onboard temperature alarm */
-static alrm_ar_t obta = {
-        1,
-        {
-                {0, "onboard temperature high"}
-        }
+static alrm_t obta_ar[] = {
+        {0, "onboard temperature high"}
 };
+static int obta_c = 4;
+static alrm_ar_t *obta;
 
 /* UPS device reg enum */
 enum devreg {
