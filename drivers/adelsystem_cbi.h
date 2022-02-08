@@ -58,7 +58,9 @@
 #define H_REG_STARTIDX 0
 
 /* read all regs preprocessor flag */
+#ifndef READALL_REGS
 #define READALL_REGS 1
+#endif
 
 /* number of device models */
 #define DEV_NUMOF_MODELS 10
