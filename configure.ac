@@ -477,7 +477,21 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="yes"; fi
 		if test -z "${with_modbus}"; then with_modbus="yes"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
-		if test -z "${with_linux_i2c}"; then with_linux_i2c="yes"; fi
+
+		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_linux_i2c}"; then
+			case ${target_os} in
+				linux*) with_linux_i2c="yes";;
+				*) with_linux_i2c="auto";;
+			esac
+		fi
+		if test -z "${with_macosx_ups}"; then
+			if test -d /System/Library/Frameworks/IOKit.framework/ ; then
+				with_macosx_ups="yes"
+			else
+				with_macosx_ups="auto"
+			fi
+		fi
 		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
 		;;
 	auto)
@@ -491,6 +505,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
+		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
 		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
 		;;
 	*)
@@ -647,17 +662,36 @@ AC_ARG_WITH(all,
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
+		dnl Note: these settings do not touch generation of
+		dnl "--with-docs=...", that is handled separately
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+
+		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_linux_i2c}"; then
+			with_linux_i2c="${withval}"
+			case ${target_os} in
+				linux*) ;;
+				*) test x"${withval}" = xno || with_linux_i2c="auto" ;;
+			esac
+		fi
+		if test -z "${with_macosx_ups}"; then
+			with_macosx_ups="${withval}"
+			if ! test -d /System/Library/Frameworks/IOKit.framework/ ; then
+				test x"${withval}" = xno || with_macosx_ups="auto"
+			fi
+		fi
+
+		dnl These are not driver families, but other features:
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
-		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
-		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
+
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -952,6 +986,9 @@ if test "${nut_with_macosx_ups}" != no; then
    if test -d /System/Library/Frameworks/IOKit.framework/ ; then
       nut_with_macosx_ups="yes"
    else
+      if test "${nut_with_macosx_ups}" = yes; then
+          AC_MSG_ERROR([macosx-ups was required but can not be fulfilled for this build: not MacOS])
+      fi
       nut_with_macosx_ups="no"
    fi
 fi
@@ -1005,6 +1042,9 @@ if test "${nut_with_linux_i2c}" != no; then
                 ])
             ;;
         * )
+            if test "${nut_with_linux_i2c}" = yes; then
+                AC_MSG_ERROR([i2c was required but can not be fulfilled for this build: not linux])
+            fi
             nut_with_linux_i2c="no"
             ;;
     esac
