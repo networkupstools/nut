@@ -19,6 +19,8 @@ Build-Depends: debhelper (>= 8.1.3),
                python (>= 2.6.6-3~) | python-is-python2 | python-is-python3, python2 | python3, dh-python | dh-python2 | dh-python3 | dh-pypy,
                libfreeipmi-dev (>= 0.8.5) [!hurd-i386],
                libipmimonitoring-dev (>= 1.1.5-2) [!hurd-i386],
+               libmodbus-dev (>= 3.1.6),
+               libi2c-dev (>= 4.0),
                libnss3-dev, libtool, libltdl-dev,
                liblua5.1-0-dev,
                lua5.1,
@@ -51,7 +53,7 @@ Description: network UPS tools - metapackage
 Package: nut-common
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
-Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
+Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-modbus, nut-linux-i2c, nut-xml
 Replaces: nut (<< 2.7.4-11~)
 Breaks: nut (<< 2.6.1-2~)
 Description: network UPS tools - core system
@@ -66,7 +68,7 @@ Description: network UPS tools - core system
 Package: nut-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6), ${udev}, nut-common (= ${binary:Version})
-Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
+Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-modbus, nut-linux-i2c, nut-xml
 Conflicts: nut-hal-drivers
 Replaces: nut (<< 2.7.4-11~)
 Breaks: nut (<< 2.6.1-2~)
@@ -144,6 +146,31 @@ Description: network UPS tools - IPMI driver
  to monitor IPMI power supply units (PSU) found in servers of
  popular brands, such as Dell, HP, IBM. It adds an IPMI interface
  to the core NUT system.
+
+Package: nut-modbus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, nut-server (= ${binary:Version}), libmodbus (>= 3.1.6)
+Description: network UPS tools - Modbus drivers
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status
+ changes.
+ .
+ This package currently provides several drivers that can monitor
+ modbus devices (phoenixcontact_modbus generic_modbus huawei-ups2000).
+
+Package: nut-linux-i2c
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}, nut-server (= ${binary:Version}), libi2c0 (>= 4.0)
+Description: network UPS tools - Linux I2C drivers
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status
+ changes.
+ .
+ This package currently provides asem and pijuice drivers for I2C bus.
 
 Package: nut-xml
 Architecture: any
