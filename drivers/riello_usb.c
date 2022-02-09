@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

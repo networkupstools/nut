@@ -26,7 +26,7 @@
 #include "liebert-hid.h"
 #include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.3"
+#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.4"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
