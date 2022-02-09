@@ -685,7 +685,7 @@ static item_t masterguard_qx2nut[] = {
 	{ "ups.firmware",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	4,	8,	"%s",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
 	{ "ups.firmware.aux",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	10,	14,	"%s",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
 	/* several values are deduced from the T field */
-	{ "series",			0,		NULL,			"WH\r",	"",	113,	'(',	"",	16,	16,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_series },
+	{ "experimental.series",			0,		NULL,			"WH\r",	"",	113,	'(',	"",	16,	16,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_series },
 	{ "device.model",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	16,	45,	"%s",	QX_FLAG_STATIC,				NULL,	NULL,	masterguard_model },
 	{ "ups.power.nominal",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	16,	45,	"%s",	QX_FLAG_STATIC,				NULL,	NULL,	masterguard_power },
 /* not used, use GS instead because the value is settable
@@ -693,12 +693,12 @@ static item_t masterguard_qx2nut[] = {
 */
 	{ "input.voltage.nominal",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	49,	51,	"%.0f",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
 	{ "input.frequency.nominal",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	53,	57,	"%.2f",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
-	{ "number_of_battery_cells",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	59,	61,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_numcells },
-	{ "nominal_cell_voltage",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	63,	67,	"%.2f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	NULL },
+	{ "experimental.number_of_battery_cells",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	59,	61,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_numcells },
+	{ "experimental.nominal_cell_voltage",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	63,	67,	"%.2f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	NULL },
 	{ "battery.voltage.nominal",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	63,	67,	"%.2f",	QX_FLAG_STATIC,				NULL,	NULL,	masterguard_battvolt},
-	{ "runtime_half",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	69,	74,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_mmm_ss },
-	{ "runtime_full",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	76,	81,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_mmm_ss },
-	{ "recharge_time",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	83,	85,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_hhh },
+	{ "experimental.runtime_half",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	69,	74,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_mmm_ss },
+	{ "experimental.runtime_full",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	76,	81,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_mmm_ss },
+	{ "experimental.recharge_time",		0,		NULL,			"WH\r",	"",	113,	'(',	"",	83,	85,	"%.0f",	QX_FLAG_STATIC | QX_FLAG_NONUT,		NULL,	NULL,	masterguard_hhh },
 /*!! what's the difference between low/high and low.critical/high.critical?? */
 	{ "ambient.0.temperature.low",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	87,	88,	"%.0f",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
 	{ "ambient.0.temperature.high",	0,		NULL,			"WH\r",	"",	113,	'(',	"",	90,	91,	"%.0f",	QX_FLAG_STATIC,				NULL,	NULL,	NULL },
@@ -718,7 +718,7 @@ static item_t masterguard_qx2nut[] = {
 	 */
 	/* type				flags	rw	command	answer	len	leading	value	from	to	dfl	qxflags			precmd	preans	preproc */
 	{ "input.voltage",		0,	NULL,	"Q3\r",	"",	71,	'(',	"",	4,	8,	"%.1f",	0,			NULL,	NULL,	NULL },
-	{ "input_fault_voltage",	0,	NULL,	"Q3\r",	"",	71,	'(',	"",	10,	14,	"%.1f",	QX_FLAG_NONUT,		NULL,	NULL,	NULL },
+	{ "experimental.input_fault_voltage",	0,	NULL,	"Q3\r",	"",	71,	'(',	"",	10,	14,	"%.1f",	QX_FLAG_NONUT,		NULL,	NULL,	NULL },
 	{ "output.voltage",		0,	NULL,	"Q3\r",	"",	71,	'(',	"",	16,	20,	"%.1f",	0,			NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"Q3\r",	"",	71,	'(',	"",	22,	24,	"%.0f",	0,			NULL,	NULL,	NULL },
 	{ "ups.power",			0,	NULL,	"Q3\r",	"",	71,	'(',	"",	22,	24,	"%.0f",	0,			NULL,	NULL,	masterguard_ups_power },
@@ -814,7 +814,7 @@ static item_t masterguard_qx2nut[] = {
 	 *    (220 230 240
 	 */
 	/* type			flags	rw	command		answer	len	leading	value	from	to	dfl	qxflags				precmd	preans	preproc */
-	{ "output_voltages",	0,	NULL,	"MSO\r",	"",	5,	'(',	"",	1,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT,	NULL,	NULL,	masterguard_output_voltages },
+	{ "experimental.output_voltages",	0,	NULL,	"MSO\r",	"",	5,	'(',	"",	1,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT,	NULL,	NULL,	masterguard_output_voltages },
 
 	/*
 	 * > [PNV\r]
@@ -837,11 +837,11 @@ static item_t masterguard_qx2nut[] = {
 	 *    (01,9 0010 1780:14:57:19 7 0046 0000:21:14:41 0 0000 0000:00:00:00 0 0000 0000:00:00:00 0 0000 0000:00:00:00
 	 */
 	/* type		flags	rw	command		answer	len	leading	value	from	to	dfl	qxflags		precmd				preans	preproc */
-	{ "fault_1",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	4,	23,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
-	{ "fault_2",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	25,	44,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
-	{ "fault_3",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	46,	65,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
-	{ "fault_4",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	67,	86,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
-	{ "fault_5",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	88,	107,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
+	{ "experimental.fault_1",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	4,	23,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
+	{ "experimental.fault_2",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	25,	44,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
+	{ "experimental.fault_3",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	46,	65,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
+	{ "experimental.fault_4",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	67,	86,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
+	{ "experimental.fault_5",	0,	NULL,	"FLT,XX\r",	"",	108,	'(',	"",	88,	107,	"%s",	QX_FLAG_NONUT,	masterguard_add_slaveaddr,	NULL,	masterguard_fault },
 
 
 	/* instant commands */
