@@ -495,123 +495,213 @@ static usage_tables_t ever_utab[] = {
 
 static hid_info_t ever_hid2nut[] = {
 
-  { "battery.batteryid", 0, 0, "UPS.BatterySystem.Battery.BatteryID", NULL, "%.0f", 0, NULL },
-  { "battery.systemid", 0, 0, "UPS.BatterySystem.BatterySystemID", NULL, "%.0f", 0, NULL },
-  { "battery.chargerid", 0, 0, "UPS.BatterySystem.Charger.ChargerID", NULL, "%.0f", 0, NULL },
-  { "battery.input_flowid", 0, 0, "UPS.BatterySystem.Input.FlowID", NULL, "%.0f", 0, NULL },
-  { "battery.input_id", 0, 0, "UPS.BatterySystem.Input.InputID", NULL, "%.0f", 0, NULL },
-  { "battery.output_flowid", 0, 0, "UPS.BatterySystem.Output.FlowID", NULL, "%.0f", 0, NULL },
-  { "battery.output_id", 0, 0, "UPS.BatterySystem.Output.OutputID", NULL, "%.0f", 0, NULL },
+  /* Note: fields marked with "experimental." prefix were proposed without
+   * an exact match vs. docs/nut-names.txt definitions. PRs are welcome to
+   * analyze and map those values into standard NUT variable names, or to
+   * raise discussion on mailing lists and define new names via consensus.
+   * There is a lot of interesting info listed below.
+   *
+   * Note: mappings that were applied below (as committed 2022-02-09) may
+   * be wrong and are based mostly on cursory reading of original names.
+   * In particular, not sure if the skipped "id.*" fields were identifiers
+   * or some "internal device" etc.
+   */
+
+  /* experimental: "NUT variable names" do not currently have
+   * any battery.*id data points: */
+  { "experimental.battery.batteryid", 0, 0, "UPS.BatterySystem.Battery.BatteryID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.systemid", 0, 0, "UPS.BatterySystem.BatterySystemID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.chargerid", 0, 0, "UPS.BatterySystem.Charger.ChargerID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.input_flowid", 0, 0, "UPS.BatterySystem.Input.FlowID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.input_id", 0, 0, "UPS.BatterySystem.Input.InputID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.output_flowid", 0, 0, "UPS.BatterySystem.Output.FlowID", NULL, "%.0f", 0, NULL },
+  { "experimental.battery.output_id", 0, 0, "UPS.BatterySystem.Output.OutputID", NULL, "%.0f", 0, NULL },
+
+  /* experimental: "NUT variable names" do not currently have
+   * any id (nor version) data points for FW/HW of components: */
   /* not implemented*/
-  /* { "id.ups_type", 0, 0, "UPS.EVER1.EVER12", NULL, "%s", 0, ever_format_model }, */
-  { "id.firmware_version_inverter", 0, 0, "UPS.EVER1.EVER13", NULL, "%s", 0, ever_format_version },
-  { "id.firmware_version_interfaces", 0, 0, "UPS.EVER1.EVER14", NULL, "%s", 0, ever_format_version },
-  { "id.hardware_version", 0, 0, "UPS.EVER1.EVER15", NULL, "%s", 0, ever_format_hardware },
-  { "id.protocol_version_inverter", 0, 0, "UPS.EVER1.EVER16", NULL, "%s", 0, ever_format_version },
-  { "id.protocol_version_interfaces", 0, 0, "UPS.EVER1.EVER17", NULL, "%s", 0, ever_format_version },
-  { "inverter_info.heatsink_temperature", 0, 0, "UPS.EVER1.EVER42", NULL, "%s", 0, kelvin_celsius_conversion },
-  { "inverter_info.battery_temperature", 0, 0, "UPS.EVER1.EVER43", NULL, "%s", 0, kelvin_celsius_conversion },
-  { "ups_info.output_powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
-  { "control.ups_on", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER46", NULL, "%.0f", 0, NULL },
-  { "control.clear_fault", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER47", NULL, "%.0f", 0, NULL },
-  { "control.clear_battery_fault", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER48", NULL, "%.0f", 0, NULL },
-  { "control.epo_blocked", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER50", NULL, "%.0f", 0, NULL },
-  { "control.green_mode", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER51", NULL, "%.0f", 0, NULL },
-  { "control.button_sound", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER52", NULL, "%.0f", 0, NULL },
-  { "control.audible_alarm", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER53", NULL, "%.0f", 0, NULL },
-  { "config.output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER54", NULL, "%.0f", 0, NULL },
+  /* { "experimental.id.ups_type", 0, 0, "UPS.EVER1.EVER12", NULL, "%s", 0, ever_format_model }, */
+  { "experimental.id.firmware_version_inverter", 0, 0, "UPS.EVER1.EVER13", NULL, "%s", 0, ever_format_version },
+  { "experimental.id.firmware_version_interfaces", 0, 0, "UPS.EVER1.EVER14", NULL, "%s", 0, ever_format_version },
+  { "experimental.id.hardware_version", 0, 0, "UPS.EVER1.EVER15", NULL, "%s", 0, ever_format_hardware },
+  { "experimental.id.protocol_version_inverter", 0, 0, "UPS.EVER1.EVER16", NULL, "%s", 0, ever_format_version },
+  { "experimental.id.protocol_version_interfaces", 0, 0, "UPS.EVER1.EVER17", NULL, "%s", 0, ever_format_version },
+
+  /* WAS: "experimental.inverter_info.heatsink_temperature" */
+  { "ups.temperature", 0, 0, "UPS.EVER1.EVER42", NULL, "%s", 0, kelvin_celsius_conversion },
+  /* WAS: "experimental.inverter_info.battery_temperature" */
+  { "battery.temperature", 0, 0, "UPS.EVER1.EVER43", NULL, "%s", 0, kelvin_celsius_conversion },
+  /* WAS: "experimental.ups_info.output_powerfactor" */
+  { "powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
+
+  /* experimental: Should these be HU_TYPE_CMD entries?
+   * Or are they really settings? */
+  { "experimental.control.ups_on", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER46", NULL, "%.0f", 0, NULL },
+  { "experimental.control.clear_fault", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER47", NULL, "%.0f", 0, NULL },
+  { "experimental.control.clear_battery_fault", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER45.EVER48", NULL, "%.0f", 0, NULL },
+  { "experimental.control.epo_blocked", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER50", NULL, "%.0f", 0, NULL },
+  { "experimental.control.green_mode", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER51", NULL, "%.0f", 0, NULL },
+  { "experimental.control.button_sound", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER52", NULL, "%.0f", 0, NULL },
+  { "experimental.control.audible_alarm", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER53", NULL, "%.0f", 0, NULL },
+
+  /* WAS: "experimental.config.output_voltage" */
+  { "output.voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER54", NULL, "%.0f", 0, NULL },
+
   /* not implemented*/
   /*
-  { "config.min_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER55", NULL, "%.0f", 0, NULL },
-  { "config.max_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER56", NULL, "%.0f", 0, NULL },
-  { "config.min_output_frequency", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER57", NULL, "%.1f", 0, NULL },
-  { "config.max_output_frequency", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER58", NULL, "%.1f", 0, NULL },
+  { "experimental.config.min_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER55", NULL, "%.0f", 0, NULL },
+  { "experimental.config.max_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER56", NULL, "%.0f", 0, NULL },
+  { "experimental.config.min_output_frequency", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER57", NULL, "%.1f", 0, NULL },
+  { "experimental.config.max_output_frequency", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER58", NULL, "%.1f", 0, NULL },
   */
-  { "config.overload_clearance_threshold", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.EVER1.EVER59", NULL, "%.0f", 0, NULL },
-  { "config.stb_charge", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.EVER1.EVER60", NULL, "%.0f", 0, NULL },
-  { "config.number_of_ebms", ST_FLAG_RW | ST_FLAG_STRING, 1, "UPS.EVER1.EVER61", NULL, "%.0f", 0, NULL },
-  { "statistics.mains_loss_counter", 0, 0, "UPS.EVER1.EVER62", NULL, "%.0f", 0, NULL },
-  { "statistics.lowering_AVR_trigger_counter", 0, 0, "UPS.EVER1.EVER63", NULL, "%.0f", 0, NULL },
-  { "statistics.rising_AVR_trigger_counter", 0, 0, "UPS.EVER1.EVER64", NULL, "%.0f", 0, NULL },
-  { "statistics.overload_counter", 0, 0, "UPS.EVER1.EVER65", NULL, "%.0f", 0, NULL },
-  { "statistics.short_circuit_counter", 0, 0, "UPS.EVER1.EVER66", NULL, "%.0f", 0, NULL },
-  { "statistics.discharge_counter", 0, 0, "UPS.EVER1.EVER67", NULL, "%.0f", 0, NULL },
-  { "statistics.overheat_counter", 0, 0, "UPS.EVER1.EVER68", NULL, "%.0f", 0, NULL },
-  { "statistics.mains_operation_time", 0, 0, "UPS.EVER1.EVER69", NULL, "%.0f", 0, NULL },
-  { "statistics.autonomous_operation_time", 0, 0, "UPS.EVER1.EVER70", NULL, "%.0f", 0, NULL },
-  { "statistics.overload_operation_time", 0, 0, "UPS.EVER1.EVER71", NULL, "%.0f", 0, NULL },
-  { "networkcard.mac_address", 0, 0, "UPS.EVER1.EVER72", NULL, "%s", 0, ever_mac_address },
-  { "networkcard.notification_destination_ip", 0, 0, "UPS.EVER1.EVER73", NULL, "%s", 0, ever_ip_address },
-  { "networkcard.send_packets", 0, 0, "UPS.EVER1.EVER77", NULL, "%s", 0, ever_packets },
-  { "networkcard.received_packets", 0, 0, "UPS.EVER1.EVER78", NULL, "%s", 0, ever_packets },
-  { "networkcard.send_packets_err", 0, 0, "UPS.EVER1.EVER79", NULL, "%s", 0, ever_packets },
-  { "networkcard.received_packets_err", 0, 0, "UPS.EVER1.EVER80", NULL, "%s", 0, ever_packets },
-  { "networkcard.config_dhcp_enabled", 0, 0, "UPS.EVER1.EVER85.EVER86", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_ethernet_enabled", 0, 0, "UPS.EVER1.EVER85.EVER87", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_http_enabled", 0, 0, "UPS.EVER1.EVER85.EVER88", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_snmp_enabled", 0, 0, "UPS.EVER1.EVER85.EVER89", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_snmp_trap_enabled", 0, 0, "UPS.EVER1.EVER85.EVER90", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_readonly", 0, 0, "UPS.EVER1.EVER85.EVER91", NULL, "%.0f", 0, NULL },
-  { "networkcard.config_restart_eth", 0, 0, "UPS.EVER1.EVER85.EVER96", NULL, "%.0f", 0, NULL },
-  { "networkcard.ip_address", 0, 0, "UPS.EVER1.EVER93", NULL, "%s", 0, ever_ip_address },
-  { "networkcard.network_mask", 0, 0, "UPS.EVER1.EVER94", NULL, "%s", 0, ever_ip_address },
-  { "networkcard.default_gateway", 0, 0, "UPS.EVER1.EVER95", NULL, "%s", 0, ever_ip_address },
-  { "id.config_active_power", 0, 0, "UPS.Flow.ConfigActivePower", NULL, "%.0f", 0, NULL },
-  { "id.config_apparent_power", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", 0, NULL },
-  { "ups.config_frequency", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.0f", 0, NULL },
-  { "ups.config_voltage", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "ups.flow_id", 0, 0, "UPS.Flow.FlowID", NULL, "%.0f", 0, NULL },
-  { "outlet.outlet_id", 0, 0, "UPS.OutletSystem.Outlet.OutletID", NULL, "%.0f", 0, NULL },
-  { "outlet.present", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Present", NULL, "%.0f", 0, yes_no_info },
-  { "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Switchable", NULL, "%.0f", 0, yes_no_info },
-  { "outlet.switch_on_off", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.SwitchOn/Off", NULL, "%.0f", 0, NULL },
-  { "outlet.undefined", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Undefined", NULL, "%.0f", 0, NULL },
-  { "outlet.switch_off_control", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.OutletSystem.Outlet.SwitchOffControl", NULL, "%.0f", 0, NULL },
-  { "outlet.switch_on_control", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.OutletSystem.Outlet.SwitchOnControl", NULL, "%.0f", 0, NULL },
-  { "outlet.system_id", 0, 0, "UPS.OutletSystem.OutletSystemID", NULL, "%.0f", 0, NULL },
-  { "powerconverter.input_flow_id", 0, 0, "UPS.PowerConverter.Input.FlowID", NULL, "%.0f", 0, NULL },
-  { "powerconverter.input_frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%.0f", 0, NULL },
-  { "powerconverter.input_id", 0, 0, "UPS.PowerConverter.Input.InputID", NULL, "%.0f", 0, NULL },
-  { "powerconverter.input_voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_active_power", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_apparent_power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_flowid", 0, 0, "UPS.PowerConverter.Output.FlowID", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_id", 0, 0, "UPS.PowerConverter.Output.OutputID", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_percent_load", 0, 0, "UPS.PowerConverter.Output.PercentLoad", NULL, "%.0f", 0, NULL },
-  { "powerconverter.output_voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.0f", 0, NULL },
-  { "powerconverter.powerconverterid", 0, 0, "UPS.PowerConverter.PowerConverterID", NULL, "%.0f", 0, NULL },
-  { "powersummary.capacity_granularity_1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
-  { "powersummary.capacity_granularity_2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
-  { "powersummary.capacity_mode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL },
-  { "powersummary.delay_before_shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
-  { "powersummary.design_capacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
-  { "powersummary.flow_id", 0, 0, "UPS.PowerSummary.FlowID", NULL, "%.0f", 0, NULL },
-  { "powersummary.full_charge_capacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
-  { "powersummary.idevice_chemistry", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%.0f", 0, NULL },
-  { "powersummary.percent_load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
-  { "powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
-  { "powersummary.remaining_capacity", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
-  { "powersummary.remaining_time_limit", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
-  { "powersummary.run_time_to_empty", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-  { "powersummary.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
-  { "powersummary.delay_before_shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
+  /* experimental: what units is this counted in?
+   * is "ups.load.high" a suitable mapping here? or "battery.voltage.high"?
+   */
+  { "experimental.config.overload_clearance_threshold", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.EVER1.EVER59", NULL, "%.0f", 0, NULL },
+  { "experimental.config.stb_charge", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.EVER1.EVER60", NULL, "%.0f", 0, NULL },
+  /* WAS: "experimental.config.number_of_ebms"
+   * Should this be a string? rw?
+   */
+  { "battery.packs.external", ST_FLAG_RW | ST_FLAG_STRING, 1, "UPS.EVER1.EVER61", NULL, "%.0f", 0, NULL },
+
+  { "experimental.statistics.mains_loss_counter", 0, 0, "UPS.EVER1.EVER62", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.lowering_AVR_trigger_counter", 0, 0, "UPS.EVER1.EVER63", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.rising_AVR_trigger_counter", 0, 0, "UPS.EVER1.EVER64", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.overload_counter", 0, 0, "UPS.EVER1.EVER65", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.short_circuit_counter", 0, 0, "UPS.EVER1.EVER66", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.discharge_counter", 0, 0, "UPS.EVER1.EVER67", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.overheat_counter", 0, 0, "UPS.EVER1.EVER68", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.mains_operation_time", 0, 0, "UPS.EVER1.EVER69", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.autonomous_operation_time", 0, 0, "UPS.EVER1.EVER70", NULL, "%.0f", 0, NULL },
+  { "experimental.statistics.overload_operation_time", 0, 0, "UPS.EVER1.EVER71", NULL, "%.0f", 0, NULL },
+
+  { "experimental.networkcard.mac_address", 0, 0, "UPS.EVER1.EVER72", NULL, "%s", 0, ever_mac_address },
+  { "experimental.networkcard.notification_destination_ip", 0, 0, "UPS.EVER1.EVER73", NULL, "%s", 0, ever_ip_address },
+  { "experimental.networkcard.send_packets", 0, 0, "UPS.EVER1.EVER77", NULL, "%s", 0, ever_packets },
+  { "experimental.networkcard.received_packets", 0, 0, "UPS.EVER1.EVER78", NULL, "%s", 0, ever_packets },
+  { "experimental.networkcard.send_packets_err", 0, 0, "UPS.EVER1.EVER79", NULL, "%s", 0, ever_packets },
+  { "experimental.networkcard.received_packets_err", 0, 0, "UPS.EVER1.EVER80", NULL, "%s", 0, ever_packets },
+  { "experimental.networkcard.config_dhcp_enabled", 0, 0, "UPS.EVER1.EVER85.EVER86", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_ethernet_enabled", 0, 0, "UPS.EVER1.EVER85.EVER87", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_http_enabled", 0, 0, "UPS.EVER1.EVER85.EVER88", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_snmp_enabled", 0, 0, "UPS.EVER1.EVER85.EVER89", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_snmp_trap_enabled", 0, 0, "UPS.EVER1.EVER85.EVER90", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_readonly", 0, 0, "UPS.EVER1.EVER85.EVER91", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.config_restart_eth", 0, 0, "UPS.EVER1.EVER85.EVER96", NULL, "%.0f", 0, NULL },
+  { "experimental.networkcard.ip_address", 0, 0, "UPS.EVER1.EVER93", NULL, "%s", 0, ever_ip_address },
+  { "experimental.networkcard.network_mask", 0, 0, "UPS.EVER1.EVER94", NULL, "%s", 0, ever_ip_address },
+  { "experimental.networkcard.default_gateway", 0, 0, "UPS.EVER1.EVER95", NULL, "%s", 0, ever_ip_address },
+
+  /* WAS: "experimental.id.config_active_power" */
+  { "ups.realpower.nominal", 0, 0, "UPS.Flow.ConfigActivePower", NULL, "%.0f", 0, NULL },
+  /* WAS: "experimental.id.config_apparent_power"
+   * Other HID subdrivers use "ups.power.nominal" mostly (often HU_FLAG_STATIC);
+   * once of each: "ups.realpower.nominal", "ups.realpower".
+   * Is this even a run-time value or a hardware property?
+   */
+  { "ups.power.nominal", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", 0, NULL },
+
+  /* WAS: "experimental.ups.config_frequency"
+   * Here and next: is this about input or output?..
+   * Other drivers have "input.frequency.nominal" on numbered Flows
+   * As a "nominal", should it be HU_FLAG_SEMI_STATIC or HU_FLAG_STATIC maybe?
+   * Note there are non-nominal values in "powerconverter" below,
+   * so the questions here may be somewhat irrelevant...
+   */
+  { "output.frequency.nominal", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.0f", 0, NULL },
+  /* WAS: "experimental.ups.config_voltage" */
+  { "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "experimental.ups.flow_id", 0, 0, "UPS.Flow.FlowID", NULL, "%.0f", 0, NULL },
+
+  /* NOTE: NUT variable names define "outlet.n.*" names for numbering all
+   * separately manageable outlets; the numberless value (or outlet.0.*)
+   * is reserved to represent common properties of all outlets, if there
+   * are more than one outlet (group).
+   * Mapping below arbitrarily assigns n=1 but really this should be tied
+   * to actual outlet counts (see %i mappings in other drivers).
+   */
+  /* WAS: experimental.outlet.outlet_id */
+  { "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.OutletID", NULL, "%.0f", 0, NULL },
+  /* WAS:  */
+  { "experimental.outlet.1.present", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Present", NULL, "%.0f", 0, yes_no_info },
+  { "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Switchable", NULL, "%.0f", 0, yes_no_info },
+  /* WAS: experimental.outlet.switch_on_off  */
+  { "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.SwitchOn/Off", NULL, "%.0f", 0, NULL },
+  { "experimental.outlet.1.undefined", 0, 0, "UPS.OutletSystem.Outlet.PresentStatus.Undefined", NULL, "%.0f", 0, NULL },
+  { "experimental.outlet.1.system_id", 0, 0, "UPS.OutletSystem.OutletSystemID", NULL, "%.0f", 0, NULL },
+  /* experimental: Should these be HU_TYPE_CMD entries?
+   * Or are they really settings? */
+  { "experimental.outlet.1.switch_off_control", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.OutletSystem.Outlet.SwitchOffControl", NULL, "%.0f", 0, NULL },
+  { "experimental.outlet.1.switch_on_control", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.OutletSystem.Outlet.SwitchOnControl", NULL, "%.0f", 0, NULL },
+
+  { "experimental.powerconverter.input_flow_id", 0, 0, "UPS.PowerConverter.Input.FlowID", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.input_frequency */
+  { "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%.0f", 0, NULL },
+  { "experimental.powerconverter.input_id", 0, 0, "UPS.PowerConverter.Input.InputID", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.input_voltage */
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_active_power */
+  { "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_apparent_power */
+  { "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_current */
+  { "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.0f", 0, NULL },
+  { "experimental.powerconverter.output_flowid", 0, 0, "UPS.PowerConverter.Output.FlowID", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_frequency */
+  { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.0f", 0, NULL },
+  { "experimental.powerconverter.output_id", 0, 0, "UPS.PowerConverter.Output.OutputID", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_percent_load
+   * Note: several original readings map into "ups.load", first served wins
+   */
+  { "ups.load", 0, 0, "UPS.PowerConverter.Output.PercentLoad", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powerconverter.output_voltage */
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.0f", 0, NULL },
+  { "experimental.powerconverter.powerconverterid", 0, 0, "UPS.PowerConverter.PowerConverterID", NULL, "%.0f", 0, NULL },
+  { "experimental.powersummary.capacity_granularity_1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
+  { "experimental.powersummary.capacity_granularity_2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
+  /* WAS:  */
+  { "experimental.powersummary.capacity_mode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.delay_before_shutdown */
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
+  /* WAS: experimental.powersummary.design_capacity */
+  { "battery.capacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
+  { "experimental.powersummary.flow_id", 0, 0, "UPS.PowerSummary.FlowID", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.full_charge_capacity */
+  { "battery.capacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.idevice_chemistry */
+  { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.percent_load
+   * Note: several original readings map into "ups.load", first served wins
+   */
+  { "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
+  { "experimental.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.remaining_capacity */
+  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.remaining_time_limit */
+  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.run_time_to_empty */
+  { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.voltage */
+  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
+  /* WAS: experimental.powersummary.delay_before_shutdown */
+  { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
+
   /* not implemented*/
   /* { "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL }, */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.AwaitingPower", NULL, NULL, HU_FLAG_QUICK_POLL, awaitingpower_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
+
   /* not implemented*/
-  /* { "ups.presentstatus.belowremainingcapacitylimit", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", 0, NULL }, */
+  /* { "experimental.ups.presentstatus.belowremainingcapacitylimit", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", 0, NULL }, */
   /* { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Boost", NULL, NULL, 0, boost_info }, */
   /* { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Buck", NULL, NULL, 0, trim_info }, */
   /* { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging",  NULL, NULL, HU_FLAG_QUICK_POLL, charging_info }, */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", NULL, NULL, 0, commfault_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
   /* not implemented*/
-  /* { "ups.powersummary.presentstatus.good", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, "%.0f", 0, NULL }, */
-  /* { "ups.powersummary.presentstatus.internalfailure", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, "%.0f", 0, NULL }, */
+  /* { "experimental.ups.powersummary.presentstatus.good", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, "%.0f", 0, NULL }, */
+  /* { "experimental.ups.powersummary.presentstatus.internalfailure", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, "%.0f", 0, NULL }, */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, HU_FLAG_QUICK_POLL, overload_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
@@ -630,11 +720,17 @@ static hid_info_t ever_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.EVER1.EVER97.EVER102", NULL, "%s", 0, ever_on_off_info },
 
   /* ever workmodes, messages & alarms */
-  { "status.workmode", 0, 0, "UPS.EVER1.EVER97.EVER98", NULL, "%s", 0, ever_workmode },
-  { "status.messages", 0, 0, "UPS.EVER1.EVER18.EVER28", NULL, NULL, 0, ever_messages },
-  { "status.alarms", 0, 0, "UPS.EVER1.EVER32.EVER33", NULL, NULL, 0, ever_alarms },
+  { "experimental.status.workmode", 0, 0, "UPS.EVER1.EVER97.EVER98", NULL, "%s", 0, ever_workmode },
+  { "experimental.status.messages", 0, 0, "UPS.EVER1.EVER18.EVER28", NULL, NULL, 0, ever_messages },
+  { "experimental.status.alarms", 0, 0, "UPS.EVER1.EVER32.EVER33", NULL, NULL, 0, ever_alarms },
 
   /* instant commands */
+  /* experimental: With the same fields here, are the commands different?
+   * Per NUT command names, should be: documented load.off stays off, like
+   * shutdown.stayoff, but shutdown.return may return if wall power comes back!
+   * In many drivers, similar command with "-1" instead of DEFAULT_OFFDELAY
+   * serves as a shutdown.stop (to abort a pending shutdown).
+   */
   { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
 
