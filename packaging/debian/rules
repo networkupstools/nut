@@ -22,17 +22,16 @@ DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
 systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
 systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
-systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
 
 # Newer systems have just /run (and yet newer systemd noisily suggests it)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `grep 'version-info' **/Makefile.am` ?
-SO_MAJOR_LIBUPSCLIENT=6
-SO_MAJOR_LIBNUTCLIENT=2
+SO_MAJOR_LIBUPSCLIENT=5
+SO_MAJOR_LIBNUTCLIENT=1
 SO_MAJOR_LIBNUTCLIENTSTUB=1
-SO_MAJOR_LIBNUTSCAN=2
+SO_MAJOR_LIBNUTSCAN=1
 
 # List any files which are not installed
 include /usr/share/cdbs/1/rules/utils.mk
@@ -45,14 +44,12 @@ DEB_CONFIGURE_PREFIX      :=
 DEB_CONFIGURE_SYSCONFDIR  := /etc/nut
 DEB_CONFIGURE_INCLUDEDIR  := /usr/include
 DEB_CONFIGURE_MANDIR      := /usr/share/man
-# Include into DEB_CONFIGURE_EXTRA_FLAGS later
-DEB_CONFIGURE_EXTRA_FLAGS_NUT_DMF := \
-			     --with-snmp_dmf_lua=yes \
-			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-ssl --with-openssl --with-libltdl=yes \
 			     --with-cgi=auto --with-powerman=auto \
 			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
+			     --with-snmp_dmf_lua=yes \
+			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
 			     --with-dev \
 			     --disable-static \
 			     --with-statepath=$(runbasedir)/nut \
@@ -71,7 +68,6 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 ###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=/lib/systemd/system
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=$(systemdsystemunitdir)
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdshutdowndir=$(systemdshutdowndir)
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdtmpfilesdir=$(systemdtmpfilesdir)
 endif
 
 # only build documentation if asciidoc is installed
@@ -82,13 +78,11 @@ endif
 #endif
 
 # Try to use dist'ed docs if available, fall back to auto in other cases
-#DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
-DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man
+DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
 
 configure: configure.ac
-	#(cd tools; python nut-snmpinfo.py)
+	(cd tools; python nut-snmpinfo.py)
 	sh autogen.sh
-	echo "PKG_CONFIG_PATH default:" ; pkg-config --variable pc_path pkg-config || true
 
 pre-build:: debian/compat configure
 
@@ -102,7 +96,7 @@ common-install-arch::
 	mkdir -p $(CURDIR)/debian
 	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common.tmpfiles ; do \
 		echo "  SED    $F.in => $F" ; \
-		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/packaging/debian/$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
+		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
 	done
 
 	# install the bash completion script
@@ -166,7 +160,7 @@ common-install-arch::
 
 	# Install tmpfiles config file to create /run/nut directory
 	install -m 644 -D $(CURDIR)/debian/nut-common.tmpfiles \
-		$(CURDIR)/debian/nut-common$(systemdtmpfilesdir)/nut-common.conf
+		$(CURDIR)/debian/nut-common/usr/lib/tmpfiles.d/nut-common.conf
 
 	# Install gen-snmp-subdriver.sh for nut-snmp
 	install -m 755 -D $(CURDIR)/scripts/subdriver/gen-snmp-subdriver.sh \

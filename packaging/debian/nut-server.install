@@ -58,5 +58,3 @@ debian/tmp/lib/nut/nutdrv_atcl_usb
 debian/tmp/lib/nut/nutdrv_qx
 debian/tmp/lib/nut/riello_ser
 debian/tmp/lib/nut/riello_usb
-debian/tmp/lib/nut/microsol-apc
-debian/tmp/lib/nut/nutdrv_siemens-sitop
