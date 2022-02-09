@@ -24,6 +24,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"	/* must be first */
+
 #include "usbhid-ups.h"
 #include "ever-hid.h"
 #include "main.h"	/* for getval() */
@@ -44,9 +46,8 @@ static usb_device_id_t ever_usb_device_table[] = {
 	{ USB_DEVICE(STMICRO_VENDORID, 0xa113), NULL },
 	{ USB_DEVICE(EVER_VENDORID, 0xffff), NULL},
 
-
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -649,4 +650,5 @@ subdriver_t ever_subdriver = {
 	ever_format_model,
 	ever_format_mfr,
 	ever_format_serial,
+	fix_report_desc,
 };
