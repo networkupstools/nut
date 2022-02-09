@@ -49,7 +49,7 @@ static info_rw_t masterguard_r_slaveaddr[] = {
 
 static info_rw_t masterguard_r_batpacks[] = {
 	{ "0", NULL },	/* actually 1 for most models, see masterguard_model() */
-	{ "9", NULL },  /* varies across models, see masterguard_model() */
+	{ "9", NULL },	/* varies across models, see masterguard_model() */
 	{ "" , NULL }
 };
 
@@ -73,7 +73,7 @@ static info_rw_t *masterguard_e_outvolts = NULL; /* set in masterguard_output_vo
 
 /* preprocess functions */
 
-/* set masterguard_my_slaveaddr (for masterguard_add_slaveaddr */
+/* set masterguard_my_slaveaddr (for masterguard_add_slaveaddr) */
 static int masterguard_slaveaddr(item_t *item, char *value, const size_t valuelen) {
 	if (strlen(item->value) != 2) {
 		upsdebugx(2, "slaveaddr length not 2");
@@ -102,8 +102,9 @@ static int masterguard_series(item_t *item, char *value, const size_t valuelen) 
 	return 0;
 }
 
-/* convert strangely formatted model name in WH output (spaces, -19 only after battery packs) to something readable */
-/* also set min/max battery packs according to model */
+/* Convert strangely formatted model name in WH output
+ * (spaces, -19 only after battery packs) to something readable
+ * Also set min/max battery packs according to model */
 static int masterguard_model(item_t *item, char *value, const size_t valuelen) {
 	char *model;
 	int rack;
@@ -495,7 +496,8 @@ static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen
 	}
 	return 0;
 
-ill:	upsdebugx(2, "shutdown: illegal %s %s", name, val);
+ill:
+	upsdebugx(2, "shutdown: illegal %s %s", name, val);
 	return -1;
 }
 
@@ -926,7 +928,9 @@ static char *masterguard_commands_e[] = {
 	"Q", "Q1", "Q3", "PSR", "T", "TL", "S", "C", "CT", "WH", "DRC", "SRC", "FLT", "FCLR", "SS", "GS", "MSO", "PNV", "FOFF", "FON", "TUD", "GBS", "SSN", "GSN", "BUS", "V", "INVDC", "BUSP", "BUSN", NULL
 };
 
-/* claim function. fetch some mandatory values, disable unsupported commands, set enum for supported output voltages */
+/* claim function. fetch some mandatory values,
+ * disable unsupported commands,
+ * set enum for supported output voltages */
 static int masterguard_claim(void) {
 	item_t *item;
 	/* mandatory values */
@@ -968,12 +972,16 @@ static int masterguard_claim(void) {
 			upsdebugx(2, "claim: cannot find %s", *sp);
 			return 0;
 		}
-		/* since qx_process_answer() is not exported, there's no way to avoid sending the same command to the UPS again */
+		/* since qx_process_answer() is not exported, there's no way
+		 * to avoid sending the same command to the UPS again */
 		if (qx_process(item, NULL) < 0) {
 			upsdebugx(2, "claim: cannot process %s", *sp);
 			return 0;
 		}
-		/* only call the preprocess function; don't call ups_infoval_set() because that does a dstate_setinfo() before dstate_setflags() is called (via qx_set_var() in qx_ups_walk() with QX_WALKMODE_INIT); that leads to r/w vars ending up r/o. */
+		/* only call the preprocess function; don't call ups_infoval_set()
+		 * because that does a dstate_setinfo() before dstate_setflags()
+		 * is called (via qx_set_var() in qx_ups_walk() with QX_WALKMODE_INIT);
+		 * that leads to r/w vars ending up r/o. */
 		if (item->preprocess == NULL ) {
 			upsdebugx(2, "claim: no preprocess function for %s", *sp);
 			return 0;
