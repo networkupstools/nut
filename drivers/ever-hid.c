@@ -171,6 +171,7 @@ static const char *ever_packets_fun(double value)
 static const char* ever_workmode_fun(double value)
 {
 	int workmode_report_id = 74;
+	int workmode = -1;
 	const unsigned char *buf = reportbuf->data[workmode_report_id];
 
 	static char line[100];
@@ -179,8 +180,7 @@ static const char* ever_workmode_fun(double value)
 	/*skip first element which is a report id */
 	snprintfcat(line, sizeof(line), "%d", buf[1]);
 
-
-	int workmode = atoi(line);
+	workmode = atoi(line);
 
 	switch(workmode)
 	{
@@ -295,6 +295,7 @@ static const char* ever_alarms_fun(double value)
 static const char* ever_on_off_fun(double value)
 {
 	int workmode_report_id = 74;
+	int workmode = -1;
 	const unsigned char *buf = reportbuf->data[workmode_report_id];
 
 	static char line[100];
@@ -303,7 +304,7 @@ static const char* ever_on_off_fun(double value)
 	/*skip first element which is a report id */
 	snprintfcat(line, sizeof(line), "%d", buf[1]);
 
-	int workmode = atoi(line);	
+	workmode = atoi(line);
 
 	if(workmode != 0x04 && workmode != 0x08)
 		return "off";
