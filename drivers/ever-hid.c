@@ -312,40 +312,49 @@ static const char* ever_on_off_fun(double value)
 	return "!off";
 }
 
-info_lkp_t ever_format_hardware[] = {
-	{ 0, NULL, ever_format_hardware_fun}
+static info_lkp_t ever_format_hardware[] = {
+	{ 0, NULL, ever_format_hardware_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_format_version[] = {
-	{ 0, NULL, ever_format_version_fun}
+static info_lkp_t ever_format_version[] = {
+	{ 0, NULL, ever_format_version_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_mac_address[] = {
-	{ 0, NULL, ever_mac_address_fun}
+static info_lkp_t ever_mac_address[] = {
+	{ 0, NULL, ever_mac_address_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_ip_address[] = {
-	{ 0, NULL, ever_ip_address_fun}
+static info_lkp_t ever_ip_address[] = {
+	{ 0, NULL, ever_ip_address_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_packets[] = {
-	{ 0, NULL, ever_packets_fun}
+static info_lkp_t ever_packets[] = {
+	{ 0, NULL, ever_packets_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_workmode[] = {
-	{ 0, NULL, ever_workmode_fun}
+static info_lkp_t ever_workmode[] = {
+	{ 0, NULL, ever_workmode_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_messages[] = {
-	{ 0, NULL, ever_messages_fun}
+static info_lkp_t ever_messages[] = {
+	{ 0, NULL, ever_messages_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_alarms[] = {
-	{ 0, NULL, ever_alarms_fun}
+static info_lkp_t ever_alarms[] = {
+	{ 0, NULL, ever_alarms_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t ever_on_off_info[] = {
-	{ 0, NULL, ever_on_off_fun}
+static info_lkp_t ever_on_off_info[] = {
+	{ 0, NULL, ever_on_off_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 
