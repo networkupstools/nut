@@ -25,7 +25,7 @@
 #include "nutdrv_qx_masterguard.h"
 #include <stddef.h>
 
-#define MASTERGUARD_VERSION "Masterguard 0.01"
+#define MASTERGUARD_VERSION "Masterguard 0.02"
 
 /* series (for un-SKIP) */
 static char masterguard_my_series = '?';
@@ -489,7 +489,7 @@ static int masterguard_shutdown(item_t *item, char *value, const size_t valuelen
 	} else {
 		long ondelay;
 
-		ondelay = strtol((val = dstate_getinfo(name = "ups.delay.return")), &p, 10);
+		ondelay = strtol((val = dstate_getinfo(name = "ups.delay.start")), &p, 10);
 		if (*p != '\0') goto ill;
 		if (ondelay < 0 || ondelay > 9999*60) goto ill;
 		snprintf(value, valuelen, "S%sR%04ld\r", offstr, ondelay);
