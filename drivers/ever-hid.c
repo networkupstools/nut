@@ -59,7 +59,7 @@ static const char *ever_format_hardware_fun(double value)
 	/*TODO - add exception handling for v1.0b0B */
 	const char* hard_rev[27] = {"0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 	static char model[10];
-	snprintf(model, sizeof(model), "rev.%sv%02d",
+	snprintf(model, sizeof(model), "rev.%sv%02u",
 		(&hard_rev[ ((unsigned int)value & 0xFF00)>>8 ])[0],
 		(unsigned int)value & 0xFF );
 	return model;
