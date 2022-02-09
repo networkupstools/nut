@@ -22,7 +22,7 @@
 
 #include "bestpower-mib.h"
 
-#define BESTPOWER_MIB_VERSION		"0.2"
+#define BESTPOWER_MIB_VERSION		"0.3"
 #define BESTPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.2947.1.1.2.0"
 
 /*

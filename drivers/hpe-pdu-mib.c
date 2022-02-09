@@ -24,7 +24,7 @@
 #include "hpe-pdu-mib.h"
 #include "dstate.h"
 
-#define HPE_EPDU_MIB_VERSION      "0.31"
+#define HPE_EPDU_MIB_VERSION      "0.32"
 #define HPE_EPDU_MIB_SYSOID       ".1.3.6.1.4.1.232.165.7"
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 

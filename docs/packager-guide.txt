@@ -171,6 +171,8 @@ FIXME: make a dependency graph
 - <<pkg-nut-powerman-pdu,nut-powerman-pdu>>
 - <<pkg-nut-snmp,nut-snmp>>
 - <<pkg-nut-xml,nut-xml>>
+- <<pkg-nut-ipmi,nut-ipmi>>
+- <<pkg-nut-modbus,nut-modbus>>
 
 - <<pkg-nut-clients,nut-clients>>
 - <<pkg-python-pynut,python-pynut>>
@@ -255,6 +257,22 @@ nut-snmp
 
 [[pkg-nut-xml]]
 nut-xml
+^^^^^^^
+- Desc:
+- Files:
+- Size:
+- Deps:
+
+[[pkg-nut-ipmi]]
+nut-ipmi
+^^^^^^^
+- Desc:
+- Files:
+- Size:
+- Deps:
+
+[[pkg-nut-modbus]]
+nut-modbus
 ^^^^^^^
 - Desc:
 - Files:

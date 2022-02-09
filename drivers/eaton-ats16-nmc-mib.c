@@ -25,7 +25,7 @@
 
 #include "eaton-ats16-nmc-mib.h"
 
-#define EATON_ATS16_NMC_MIB_VERSION  "0.18"
+#define EATON_ATS16_NMC_MIB_VERSION  "0.19"
 
 #define EATON_ATS16_NMC_SYSOID  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
 #define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"

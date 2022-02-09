@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.4"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.5"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
