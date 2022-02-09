@@ -56,12 +56,12 @@ int process_text_buffer()
 	char *v_value;
 
 	upsdebugx (3, "%s: buf '%s'", __func__, line);
-	// find checksum, verify checksum
+	/* find checksum, verify checksum */
 	char *checksum = strstr(line, "Checksum\t");
 	if (checksum == NULL || checksum + 9 >= line + r_start)
 		return -1;
 
-	// calculate checksum
+	/* calculate checksum */
 	char ch = 0;
 	for (v_name = line; v_name <= checksum + 8; v_name++)
 		ch += *v_name;
@@ -75,7 +75,7 @@ int process_text_buffer()
 
 	checksum[9] = '\0';
 
-	// parse what is in buffer
+	/* parse what is in buffer */
 	v_name = line;
 	while (v_name < checksum)
 	{
@@ -108,7 +108,7 @@ int process_text_buffer()
 	return 0;
 }
 
-// calculates checksum for VE.Direct HEX command/reply
+/* calculates checksum for VE.Direct HEX command/reply */
 unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 {
 	unsigned char ch = ve_cmd - '0';
@@ -148,19 +148,19 @@ int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t 
 		if (ret < 0)
 			return STAT_INSTCMD_FAILED;
 		r_start += ret;
-		// check if we read full line with the reply..
+		/* check if we read full line with the reply... */
 		reply = strchr(line, ':');
 		endl = NULL;
 		if (reply != NULL)
 			endl = strchr(reply, '\n');
-		// already seen start of command reply
+		/* already seen start of command reply */
 		if (reply != NULL && endl != NULL)
 			break;
 
 		process_text_buffer();
 	}
 
-	// process what's left
+	/* process what's left */
 	while (line[0] != ':')
 	{
 		if (process_text_buffer() < 0)
@@ -222,7 +222,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	upsdebugx(1, "instcmd: unknown command: %s", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
-	
+
 void upsdrv_initinfo(void)
 {
 	dstate_addcmd("ve-direct.ping");
@@ -237,7 +237,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	/* ups.status */ 
+	/* ups.status */
 	status_init();
 	status_set("OL");
 	status_commit();
