@@ -186,18 +186,25 @@ static const char* ever_workmode_fun(double value)
 	{
 		case 1:
 			return "UNKNOWN";
+
 		case 2:
 			return "STOP";
+
 		case 4:
 			return "ONLINE";
+
 		case 8:
 			return "ONBATTERY";
+
 		case 16:
 			return "WATCH";
+
 		case 32:
 			return "WAITING";
+
 		case 64:
 			return "EMERGENCY";
+
 		default:
 			return "UNKNOWN";
 	}
@@ -629,20 +636,20 @@ static int ever_claim(HIDDevice_t *hd)
 
 	switch (status)
 	{
-	case POSSIBLY_SUPPORTED:
-		/* by default, reject, unless the productid option is given */
-		if (getval("productid")) {
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Ever", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("Ever", hd);
-		return 0;
 
-	case SUPPORTED:
-		return 1;
-
-	case NOT_SUPPORTED:
-	default:
-		return 0;
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 
