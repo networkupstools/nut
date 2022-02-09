@@ -210,7 +210,6 @@ sh autogen.sh
 	--with-usb\
 	--with-snmp\
 	--with-neon\
-	--with-snmp_dmf_lua\
 	--with-dev\
 	--with-ipmi \
 	--with-powerman=auto\
@@ -225,7 +224,8 @@ sh autogen.sh
 	--enable-option-checking=fatal\
 	--with-systemdsystemunitdir --with-systemdshutdowndir \
 	--with-augeas-lenses-dir=/usr/share/augeas/lenses/dist \
-	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+#	--with-snmp_dmf_lua\
+#	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 
 (cd tools; python nut-snmpinfo.py)
 
@@ -346,19 +346,19 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %defattr(-,root,root)
 %{MODELPATH}/snmp-ups
 %{MODELPATH}/netxml-ups
-%{_bindir}/nut-scanner-reindex-dmfsnmp
+#%{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
-%dir %{_datadir}/nut/dmfnutscan
-%dir %{_datadir}/nut/dmfsnmp
-%{_datadir}/nut/dmfnutscan/*.dmf
-%{_datadir}/nut/dmfsnmp/*.dmf
-%{_datadir}/nut/dmfnutscan/*.xsd
-%{_datadir}/nut/dmfsnmp/*.xsd
-%dir %{_datadir}/nut/dmfnutscan.d
-%dir %{_datadir}/nut/dmfsnmp.d
-%{_datadir}/nut/dmfnutscan.d/*.dmf
-%{_datadir}/nut/dmfsnmp.d/*.dmf
+#%dir %{_datadir}/nut/dmfnutscan
+#%dir %{_datadir}/nut/dmfsnmp
+#%{_datadir}/nut/dmfnutscan/*.dmf
+#%{_datadir}/nut/dmfsnmp/*.dmf
+#%{_datadir}/nut/dmfnutscan/*.xsd
+#%{_datadir}/nut/dmfsnmp/*.xsd
+#%dir %{_datadir}/nut/dmfnutscan.d
+#%dir %{_datadir}/nut/dmfsnmp.d
+#%{_datadir}/nut/dmfnutscan.d/*.dmf
+#%{_datadir}/nut/dmfsnmp.d/*.dmf
 %{_sbindir}/gen-snmp-subdriver.sh
 
 %files -n libupsclient1
