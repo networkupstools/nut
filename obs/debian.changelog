@@ -1,3 +1,9 @@
+nut (2.7.4-14) UNRELEASED; urgency=high
+
+  * Ported packaging recipes over upstream NUT, commented away DMF
+
+ -- Jim Klimov <EvgenyKlimov@Eaton.com>  Wed, 9 Feb 2022 14:00:00 +0200
+
 nut (2.7.4-13) UNRELEASED; urgency=high
 
   * Base on daisychain+DMF branch from vyskocilm fork @ github

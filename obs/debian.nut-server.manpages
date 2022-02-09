@@ -51,3 +51,5 @@ debian/tmp/usr/share/man/man8/nutdrv_atcl_usb.8
 debian/tmp/usr/share/man/man8/nutdrv_qx.8
 debian/tmp/usr/share/man/man8/riello_ser.8
 debian/tmp/usr/share/man/man8/riello_usb.8
+debian/tmp/usr/share/man/man8/microsol-apc.8
+debian/tmp/usr/share/man/man8/nutdrv_siemens-sitop.8
