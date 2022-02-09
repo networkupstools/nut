@@ -59,7 +59,9 @@ static const char *ever_format_hardware_fun(double value)
 	/*TODO - add exception handling for v1.0b0B */
 	const char* hard_rev[27] = {"0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};	
 	static char model[10];
-	snprintf(model, sizeof(model), "rev.%sv%02d", (&hard_rev[ ((unsigned int)value & 0xFF00)>>8 ])[0], (unsigned int)value & 0xFF );  
+	snprintf(model, sizeof(model), "rev.%sv%02d",
+		(&hard_rev[ ((unsigned int)value & 0xFF00)>>8 ])[0],
+		(unsigned int)value & 0xFF );
 	return model;
 }
 
@@ -67,7 +69,10 @@ static const char *ever_format_version_fun(double value)
 {
 	/*upsdebugx(1, "UPS ups_firmware_conversion_fun VALUE: %d", (long)value  ); */
 	static char model[10];
-	snprintf(model, sizeof(model), "v%X.%Xb%02d", ((unsigned int)value & 0xF000)>>12, ((unsigned int)value & 0xF00)>>8, ((int)value & 0xFF) );
+	snprintf(model, sizeof(model), "v%X.%Xb%02d",
+		((unsigned int)value & 0xF000)>>12,
+		((unsigned int)value & 0xF00)>>8,
+		((int)value & 0xFF) );
 	return model;
 }
 
@@ -119,7 +124,8 @@ static const char *ever_ip_address_fun(double value)
 	/*skip first element which is a report id */
 	for (i = 1; i < len; i++) 
 	{
-		n = snprintfcat(line, sizeof(line), n ? ".%d" : "%d", ((unsigned char *)buf)[i]);
+		n = snprintfcat(line, sizeof(line), n ? ".%d" : "%d",
+			((unsigned char *)buf)[i]);
 	}
 
 	return line;
