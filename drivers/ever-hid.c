@@ -57,7 +57,7 @@ static usb_device_id_t ever_usb_device_table[] = {
 static const char *ever_format_hardware_fun(double value)
 {
 	/*TODO - add exception handling for v1.0b0B */
-	const char* hard_rev[27] = {"0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};	
+	const char* hard_rev[27] = {"0", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 	static char model[10];
 	snprintf(model, sizeof(model), "rev.%sv%02d",
 		(&hard_rev[ ((unsigned int)value & 0xFF00)>>8 ])[0],
@@ -102,7 +102,7 @@ static const char *ever_ip_address_fun(double value)
 	static int report_counter = 1;
 	int report_id = 211;
 
-	if(report_counter == 1) 
+	if(report_counter == 1)
 		report_id = 211; /* notification dest ip */
 	else if(report_counter == 2)
 		report_id = 230; /* ip address */
@@ -111,7 +111,7 @@ static const char *ever_ip_address_fun(double value)
 	else if(report_counter == 4)
 		report_id = 232;	/* default gateway */
 
-	report_counter== 4 ? report_counter=1 : report_counter++; 
+	report_counter== 4 ? report_counter=1 : report_counter++;
 
 	int len = reportbuf->len[report_id];
 	const void *buf = reportbuf->data[report_id];
@@ -122,7 +122,7 @@ static const char *ever_ip_address_fun(double value)
 	int i;	/* number of bytes output from buffer */
 
 	/*skip first element which is a report id */
-	for (i = 1; i < len; i++) 
+	for (i = 1; i < len; i++)
 	{
 		n = snprintfcat(line, sizeof(line), n ? ".%d" : "%d",
 			((unsigned char *)buf)[i]);
@@ -145,7 +145,7 @@ static const char *ever_packets_fun(double value)
 	else if(report_counter == 4 )
 		report_id = 218;
 
-	report_counter== 4 ? report_counter=1 : report_counter++; 
+	report_counter== 4 ? report_counter=1 : report_counter++;
 
 	int len = reportbuf->len[report_id];
 	const unsigned char *buf = reportbuf->data[report_id];
@@ -178,7 +178,6 @@ static const char* ever_workmode_fun(double value)
 
 	/*skip first element which is a report id */
 	snprintfcat(line, sizeof(line), "%d", buf[1]);
-	
 
 
 	int workmode = atoi(line);
@@ -201,9 +200,8 @@ static const char* ever_workmode_fun(double value)
 			return "EMERGENCY";
 		default:
 			return "UNKNOWN";
-
 	}
-	
+
 }
 
 static const char* ever_messages_fun(double value)
@@ -235,13 +233,13 @@ static const char* ever_messages_fun(double value)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BOOST_BLOCKED");
 	if(messages & 0x20)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BUCK_BLOCKED");
-	if(messages & 0x40)	
+	if(messages & 0x40)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "CHARGING");
-	if(messages & 0x80)	
+	if(messages & 0x80)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "FAN_ON");
-	if(messages & 0x100)	
+	if(messages & 0x100)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "EPO_BLOCKED");
-	if(messages & 0x200)	
+	if(messages & 0x200)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "NEED_REPLACMENT");
 	if(messages & 0x400 || messages & 0x800)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "OVERHEAT");
@@ -277,11 +275,11 @@ static const char* ever_alarms_fun(double value)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "EPO");
 	if(alarms & 0x20)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "INERNAL_ERROR");
-	if(alarms & 0x40)	
+	if(alarms & 0x40)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "REVERSE_POWER_SUPPLY");
-	if(alarms & 0x80)	
+	if(alarms & 0x80)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "NO_INETERNAL_COMM");
-	if(alarms & 0x100)	
+	if(alarms & 0x100)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "CRITICAL_BATT_VOLTAGE");
 
 	return line;
@@ -300,7 +298,7 @@ static const char* ever_on_off_fun(double value)
 
 	int workmode = atoi(line);	
 
-	if(workmode != 0x04 && workmode != 0x08) 
+	if(workmode != 0x04 && workmode != 0x08)
 		return "off";
 
 	return "!off";
@@ -601,8 +599,8 @@ static hid_info_t ever_hid2nut[] = {
 
   /* ever workmodes, messages & alarms */
   { "status.workmode", 0, 0, "UPS.EVER1.EVER97.EVER98", NULL, "%s", 0, ever_workmode },
-  { "status.messages", 0, 0, "UPS.EVER1.EVER18.EVER28", NULL, NULL, 0, ever_messages }, 
-  { "status.alarms", 0, 0, "UPS.EVER1.EVER32.EVER33", NULL, NULL, 0, ever_alarms }, 
+  { "status.messages", 0, 0, "UPS.EVER1.EVER18.EVER28", NULL, NULL, 0, ever_messages },
+  { "status.alarms", 0, 0, "UPS.EVER1.EVER32.EVER33", NULL, NULL, 0, ever_alarms },
 
   /* instant commands */
   { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
