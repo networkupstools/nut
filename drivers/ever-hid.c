@@ -78,6 +78,7 @@ static const char *ever_format_version_fun(double value)
 
 static const char *ever_mac_address_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
 
 	int mac_adress_report_id = 210;
 	int len = reportbuf->len[mac_adress_report_id];
@@ -99,6 +100,8 @@ static const char *ever_mac_address_fun(double value)
 
 static const char *ever_ip_address_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	static int report_counter = 1;
 	int report_id = 211;
 
@@ -133,6 +136,8 @@ static const char *ever_ip_address_fun(double value)
 
 static const char *ever_packets_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	static int report_counter = 1;
 	int report_id = 215;
 
@@ -170,6 +175,8 @@ static const char *ever_packets_fun(double value)
 
 static const char* ever_workmode_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	int workmode_report_id = 74;
 	int workmode = -1;
 	const unsigned char *buf = reportbuf->data[workmode_report_id];
@@ -213,6 +220,8 @@ static const char* ever_workmode_fun(double value)
 
 static const char* ever_messages_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	int messages_report_id = 75;
 	const unsigned char *buf = reportbuf->data[messages_report_id];
 
@@ -259,6 +268,8 @@ static const char* ever_messages_fun(double value)
 
 static const char* ever_alarms_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	int alarms_report_id = 76;
 
 	const unsigned char *buf = reportbuf->data[alarms_report_id];
@@ -294,6 +305,8 @@ static const char* ever_alarms_fun(double value)
 
 static const char* ever_on_off_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
+
 	int workmode_report_id = 74;
 	int workmode = -1;
 	const unsigned char *buf = reportbuf->data[workmode_report_id];
