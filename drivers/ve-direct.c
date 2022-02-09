@@ -36,10 +36,12 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-char line[500];
-size_t r_start = 0;
+/* FIXME: Does the protocol dictate a certain size here?
+ * Or can SMALLBUF etc. suffice? */
+static char line[500];
+static size_t r_start = 0;
 
-void ve_copy(const char *endl)
+static void ve_copy(const char *endl)
 {
 	size_t left = (line + r_start) - endl;
 	if (left > 0)
@@ -48,7 +50,7 @@ void ve_copy(const char *endl)
 	r_start = left;
 }
 
-int process_text_buffer()
+static int ve_process_text_buffer()
 {
 	char vn[50];
 
@@ -96,7 +98,7 @@ int process_text_buffer()
 			break;
 		*end = '\0';
 
-		snprintf(vn, sizeof(vn), "ve-direct.%s", v_name);
+		snprintf(vn, sizeof(vn), "experimental.ve-direct.%s", v_name);
 		upsdebugx(1, "name %s value %s", vn, v_value);
 		dstate_setinfo(vn, "%s", v_value);
 
@@ -109,7 +111,7 @@ int process_text_buffer()
 }
 
 /* calculates checksum for VE.Direct HEX command/reply */
-unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
+static unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 {
 	unsigned char ch = ve_cmd - '0';
 	if (ve_extra != NULL)
@@ -130,7 +132,7 @@ unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 	return ch;
 }
 
-int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_length)
+static int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_length)
 {
 	int ret;
 
@@ -157,13 +159,13 @@ int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t 
 		if (reply != NULL && endl != NULL)
 			break;
 
-		process_text_buffer();
+		ve_process_text_buffer();
 	}
 
 	/* process what's left */
 	while (line[0] != ':')
 	{
-		if (process_text_buffer() < 0)
+		if (ve_process_text_buffer() < 0)
 			break;
 	}
 
@@ -209,11 +211,14 @@ int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t 
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	if (!strcasecmp(cmdname, "ve-direct.ping"))
+	/* experimental: many of the names below are not among
+	 * standard docs/nut-names.txt
+	 */
+	if (!strcasecmp(cmdname, "experimental.ve-direct.ping"))
 		return ve_command('1',NULL,NULL,0);
-	if (!strcasecmp(cmdname, "ve-direct.get"))
+	if (!strcasecmp(cmdname, "experimental.ve-direct.get"))
 		return ve_command(VE_GET,extra,NULL,0);
-	if (!strcasecmp(cmdname, "ve-direct.set"))
+	if (!strcasecmp(cmdname, "experimental.ve-direct.set"))
 		return ve_command(VE_SET,extra,NULL,0);
 	if (!strcasecmp(cmdname, "beeper.disable"))
 		return ve_command(VE_SET,"FCEE0000",NULL,0);
@@ -225,9 +230,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	dstate_addcmd("ve-direct.ping");
-	dstate_addcmd("ve-direct.set");
-	dstate_addcmd("ve-direct.get");
+	/* experimental: the names below are not among
+	 * standard docs/nut-names.txt
+	 */
+	dstate_addcmd("experimental.ve-direct.ping");
+	dstate_addcmd("experimental.ve-direct.set");
+	dstate_addcmd("experimental.ve-direct.get");
 
 	dstate_addcmd("beeper.disable");
 	dstate_addcmd("beeper.enable");
@@ -257,7 +265,7 @@ void upsdrv_updateinfo(void)
 			continue;
 		r_start += nred;
 
-		while (process_text_buffer() >= 0)
+		while (ve_process_text_buffer() >= 0)
 		{
 		}
 
