@@ -273,7 +273,7 @@ nut-ipmi
 
 [[pkg-nut-modbus]]
 nut-modbus
-^^^^^^^
+^^^^^^^^^^
 - Desc:
 - Files:
 - Size:
