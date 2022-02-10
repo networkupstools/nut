@@ -52,6 +52,8 @@ NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 adelsystem_cbi
 LINUX_I2C_DRIVERLIST = asem pijuice
+POWERMAN_DRIVERLIST = powerman-pdu
+IPMI_DRIVERLIST = nut-ipmipsu
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
@@ -80,10 +82,10 @@ if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
 endif
 if WITH_LIBPOWERMAN
-   driverexec_PROGRAMS += powerman-pdu
+   driverexec_PROGRAMS += $(POWERMAN_DRIVERLIST)
 endif
 if WITH_IPMI
-   driverexec_PROGRAMS += nut-ipmipsu
+   driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
 endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
