@@ -1688,16 +1688,15 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-dnl Note: Currently there is no automatic detection enabled -
-dnl users have to ask they want systemd units installed.
-dnl It may be changed based on popular demand to just always
-dnl run the "case" below for ${systemdsystemunitdir} values,
-dnl like we do for systemdtmpfilesdir further below.
+dnl Note: Currently there is no reliable automatic detection -
+dnl users have to ask they want systemd units installed, or
+dnl risk auto-detection like seen below.
 AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-[
-	case "${withval}" in
+	[systemdsystemunitdir="${withval}"],
+	[systemdsystemunitdir="auto"])
+case "${withval}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
 			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd`"],
@@ -1712,8 +1711,7 @@ AC_ARG_WITH([systemdsystemunitdir],
 	*)
 		systemdsystemunitdir="${withval}"
 		;;
-	esac
-], [])
+esac
 if test -n "${systemdsystemunitdir}"; then
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
@@ -1727,7 +1725,8 @@ dnl given
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
-	[systemdshutdowndir=${withval}])
+	[systemdshutdowndir="${withval}"],
+	[systemdshutdowndir="auto"])
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
@@ -1754,11 +1753,12 @@ else
 fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
-dnl daemons starting not as systemd units
+dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir=${withval}])
+	[systemdtmpfilesdir="${withval}"],
+	[systemdtmpfilesdir="auto"])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],

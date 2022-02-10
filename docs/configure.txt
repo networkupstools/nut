@@ -350,7 +350,11 @@ Where to install Linux systemd unit definitions. Useless and harmless
 on other OSes, including Linux distributions without systemd, just adding
 a little noise to configure script output.
 
-Use --with-systemdsystemunitdir to detect the settings using pkg-config.
+Use --with-systemdsystemunitdir=auto (default) to detect the settings
+using pkg-config if possible.
+
+Use --with-systemdsystemunitdir(=yes) to require detection of these
+settings with pkg-config, or fail configuration if not possible.
 
 Use --with-systemdsystemunitdir=no to disable this feature altogether.
 
