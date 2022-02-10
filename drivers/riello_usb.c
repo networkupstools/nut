@@ -979,10 +979,10 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.panel.start");
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
-	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 
@@ -1076,6 +1076,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
 		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
 	}
+
 	if (DevData.Tsystem < 0xFF)
 		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
 
