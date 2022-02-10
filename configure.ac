@@ -1696,7 +1696,7 @@ AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 	[systemdsystemunitdir="${withval}"],
 	[systemdsystemunitdir="auto"])
-case "${withval}" in
+case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
 			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd`"],
@@ -1712,6 +1712,7 @@ case "${withval}" in
 		systemdsystemunitdir="${withval}"
 		;;
 esac
+if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
@@ -1746,6 +1747,7 @@ if test -n "${systemdsystemunitdir}"; then
 		;;
 	esac
 fi
+if test "${systemdshutdowndir}" = "auto" ; then systemdshutdowndir=""; fi
 if test -n "${systemdshutdowndir}"; then
 	AC_MSG_RESULT(using ${systemdshutdowndir})
 else
@@ -1775,6 +1777,7 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir="${withval}"
 		;;
 esac
+if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
 if test -n "${systemdtmpfilesdir}"; then
 	AC_MSG_RESULT(using ${systemdtmpfilesdir})
 else
