@@ -22,6 +22,7 @@ DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
 systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
 systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
+systemdtmpfilesdir := $(shell pkg-config --variable=systemdtmpfilesdir systemd || echo /usr/lib/tmpfiles.d)
 
 # Newer systems have just /run (and yet newer systemd noisily suggests it)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
@@ -68,6 +69,7 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 ###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=/lib/systemd/system
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=$(systemdsystemunitdir)
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdshutdowndir=$(systemdshutdowndir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdtmpfilesdir=$(systemdtmpfilesdir)
 endif
 
 # only build documentation if asciidoc is installed
@@ -161,7 +163,7 @@ common-install-arch::
 
 	# Install tmpfiles config file to create /run/nut directory
 	install -m 644 -D $(CURDIR)/debian/nut-common.tmpfiles \
-		$(CURDIR)/debian/nut-common/usr/lib/tmpfiles.d/nut-common.conf
+		$(CURDIR)/debian/nut-common$(systemdtmpfilesdir)/nut-common.conf
 
 	# Install gen-snmp-subdriver.sh for nut-snmp
 	install -m 755 -D $(CURDIR)/scripts/subdriver/gen-snmp-subdriver.sh \
