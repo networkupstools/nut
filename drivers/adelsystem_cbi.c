@@ -59,7 +59,7 @@ int read_all_regs(modbus_t *mb, uint16_t *data);
 void get_config_vars(void);
 
 /* get device state */
-int get_dev_state(devreg_t regindx, devstate_t **dstate);
+int get_dev_state(devreg_t regindx, devstate_t **dvstat);
 
 /* create a new modbus context based on connection type (serial or TCP) */
 modbus_t *modbus_new(const char *port);
@@ -814,7 +814,7 @@ int upscmd(const char *cmd, const char *arg)
 
 /* read device state, returns 0 on success or -1 on communication error
    it formats state depending on register semantics */
-int get_dev_state(devreg_t regindx, devstate_t **dstate)
+int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 {
     int i;                          /* local index */
     int n;
@@ -828,7 +828,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dstate)
 #endif
     devstate_t *state;              /* device state */
 
-    state = *dstate;
+    state = *dvstat;
 #if READALL_REGS == 1
     reg_val = regs_data[regindx];
     rval = 0;
