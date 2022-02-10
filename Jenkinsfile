@@ -1,5 +1,8 @@
 @Library('etn-ipm2-jenkins') _
 
+// Would be populated below with configure options for DMF if enabled
+String configureOptionalDMF = ""
+
 pipeline {
     agent {
         label infra.getAgentLabels()
@@ -47,7 +50,7 @@ pipeline {
             description: 'Attempt "make distcheck" in this run?',
             name: 'DO_TEST_DISTCHECK')
         booleanParam (
-            defaultValue: true,
+            defaultValue: false,
             description: 'Attempt "make distcheck-dmf-all-yes" in this run?',
             name: 'DO_TEST_DISTCHECK_DMF_ALL_YES')
         booleanParam (
@@ -139,7 +142,11 @@ pipeline {
 
         stage ('configure') {
                     steps {
-                        sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes'
+                        script {
+                            if (params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                                configureOptionalDMF = ' --with-lua=yes --with-snmp_dmf_lua=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes'
+                        }
+                        sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' + configureOptionalDMF
                     }
         }
 
@@ -346,7 +353,8 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                               dir("tmp/test-distcheck") {
                                 unstash 'built'
                                 timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
-                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes" distcheck'
+                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' +
+                                        configureOptionalDMF + ' distcheck'
                                 }
                                 sh """ set +x
 echo "Are GitIgnores good after make distcheck? (should have no output below)"
@@ -369,7 +377,8 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                               }
                             } else {
                                 timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
-                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes" distcheck'
+                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' +
+                                        configureOptionalDMF + ' distcheck'
                                 }
                                 sh """ set +x
 echo "Are GitIgnores good after make distcheck? (should have no output below)"
