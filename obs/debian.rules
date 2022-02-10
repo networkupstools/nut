@@ -83,6 +83,7 @@ DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
 configure: configure.ac
 	(cd tools; python nut-snmpinfo.py)
 	sh autogen.sh
+	echo "PKG_CONFIG_PATH default:" ; pkg-config --variable pc_path pkg-config || true
 
 pre-build:: debian/compat configure
 
