@@ -149,6 +149,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * add Arduino HID device support with new arduino-hid subdriver [PR #1044]
    * add new salicru-hid subdriver, tested with Salicru SPS Home 850 VA
      [PR #1199, issue #732]
+   * add new ever-hid subdriver to support EVER UPS devices (Sinline RT Series,
+     Sinline RT XL Series, ECO PRO AVR CDS Series) [PR #431]
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
