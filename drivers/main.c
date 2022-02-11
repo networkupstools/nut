@@ -721,8 +721,9 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
-	/* This avoid case where ie /var is umounted */
+	/* Only switch to statepath if we're not powering off
+	 * or not just dumping data (for discovery) */
+	/* This avoids case where ie /var is unmounted already */
 	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
