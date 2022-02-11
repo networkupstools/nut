@@ -18,7 +18,8 @@ PartOf=nut.target
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=@SBINDIR@/upsmon
+ExecStart=@SBINDIR@/upsmon -F
+ExecReload=@SBINDIR@/upsmon -c reload
 PIDFile=@PIDPATH@/upsmon.pid
 Type=forking
 

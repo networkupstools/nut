@@ -53,13 +53,13 @@ static char	*chroot_path = NULL, *user = NULL;
 int	exit_flag = 0;
 
 /* should this driver instance go to background (default)
- * or stay foregrounded (default if -D options are set on
+ * or stay foregrounded (default if -D/-d options are set on
  * command line)?
  * Value is tri-state:
  * -1 (default) Background the driver process
  *  0 User required to not background explicitly,
- *    or passed -D and current value was -1
- *  1 User required to background even if with -D
+ *    or passed -D (or -d) and current value was -1
+ *  1 User required to background even if with -D or dump_mode
  */
 static int background_flag = -1;
 
@@ -135,8 +135,8 @@ static void help_msg(void)
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level (and stay foreground by default)\n");
 	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
-	printf("  -f             - stay foregrounded even if no debugging is enabled\n");
-	printf("  -b             - stay backgrounded even if debugging is bumped\n");
+	printf("  -F             - stay foregrounded even if no debugging is enabled\n");
+	printf("  -B             - stay backgrounded even if debugging is bumped\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -593,7 +593,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kfbDd:hx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -608,18 +608,14 @@ int main(int argc, char **argv)
 				upsname = optarg;
 				upsname_found = 1;
 				break;
-			case 'f':
+			case 'F':
 				background_flag = 0;
 				break;
-			case 'b':
+			case 'B':
 				background_flag = 1;
 				break;
 			case 'D':
 				nut_debug_level++;
-				if ( background_flag < 0 ) {
-					/* Only flop from default - stay foreground with debug on */
-					background_flag = 0;
-				}
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
@@ -665,6 +661,21 @@ int main(int argc, char **argv)
 					"Error: unknown option -%c. Try -h for help.", i);
 		}
 	}
+
+	if (nut_debug_level > 0 || dump_data) {
+		if ( background_flag < 0 ) {
+			/* Only flop from default - stay foreground with debug on */
+			background_flag = 0;
+		} else {
+			upsdebugx (0,
+				"Debug level is %d, dump data count is %s, "
+				"but backgrounding mode requested as %s",
+				nut_debug_level,
+				dump_data ? "on" : "off",
+				background_flag ? "on" : "off"
+				);
+		}
+	} /* else: default remains `background_flag==-1` where nonzero is true */
 
 	argc -= optind;
 	argv += optind;
@@ -831,7 +842,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if ( (background_flag != 0) && (!dump_data) ) {
+	if (background_flag != 0) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
