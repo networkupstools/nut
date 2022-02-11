@@ -1789,8 +1789,9 @@ static void help(const char *arg_progname)
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
 	printf("		 - stop: stop monitoring and exit\n");
-	printf("  -D		raise debugging level\n");
-	printf("  -F		run in foreground\n");
+	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -F		stay foregrounded even if no debugging is enabled\n");
+	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
@@ -2021,7 +2022,7 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, checking_flag = 0, foreground = 0;
+	int	i, cmd = 0, checking_flag = 0, foreground = -1;
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -2032,7 +2033,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFhic:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -2048,10 +2049,12 @@ int main(int argc, char *argv[])
 				break;
 			case 'D':
 				nut_debug_level++;
-				foreground = 1;
 				break;
 			case 'F':
 				foreground = 1;
+				break;
+			case 'B':
+				foreground = 0;
 				break;
 			case 'f':
 				free(configfile);
@@ -2086,6 +2089,14 @@ int main(int argc, char *argv[])
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
+		}
+	}
+
+	if (foreground < 0) {
+		if (nut_debug_level > 0) {
+			foreground = 1;
+		} else {
+			foreground = 0;
 		}
 	}
 
