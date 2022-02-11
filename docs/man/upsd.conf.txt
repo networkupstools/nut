@@ -121,6 +121,13 @@ Possible values are :
 - '1' to require to all clients a certificate
 - '2' to require to all clients a valid certificate
 
+"DEBUG_MIN 'INTEGER'"::
+
+Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly. Command-line option `-D` can only increase this
+verbosity level.
+
 SEE ALSO
 --------
 
