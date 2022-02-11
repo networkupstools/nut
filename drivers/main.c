@@ -67,8 +67,8 @@ static int background_flag = -1;
  * For the service tracing purposes, also the ups.conf
  * can define a debug_min value in the global or device
  * section, to set the minimal debug level (CLI provided
- * value less than that would not have effect, can have
- * more.
+ * value less than that would not have effect, can only
+ * have more).
  */
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
@@ -699,7 +699,8 @@ int main(int argc, char **argv)
 
 	/* CLI debug level can not be smaller than debug_min specified
 	 * in ups.conf, and value specified for a driver config section
-	 * overrides the global one.
+	 * overrides the global one. Note that non-zero debug_min does
+	 * not impact foreground running mode.
 	 */
 	{
 		int nut_debug_level_upsconf = -1 ;
