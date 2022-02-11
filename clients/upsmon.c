@@ -89,6 +89,14 @@ static int 	opt_af = AF_UNSPEC;
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the upsmon.conf
+ * can define a debug_min value in the global section,
+ * to set the minimal debug level (CLI provided value less
+ * than that would not have effect, can only have more).
+ */
+static int nut_debug_level_global = -1;
+
 static void setflag(int *val, int flag)
 {
 	*val |= flag;
@@ -1296,6 +1304,18 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
+	/* DEBUG_MIN (NUM) */
+	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
+	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid DEBUG_MIN value found in upsmon.conf global settings");
+		}
+		return 1;
+	}
+
 	/* using up to arg[2] below */
 	if (numargs < 3)
 		return 0;
@@ -2121,6 +2141,14 @@ int main(int argc, char *argv[])
 
 	loadconfig();
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in upsmon.conf. Note that non-zero debug_min does not impact
+	 * foreground running mode.
+	 */
+	if (nut_debug_level_global > nut_debug_level)
+		nut_debug_level = nut_debug_level_global;
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+
 	if (checking_flag)
 		exit(check_pdflag());
 
@@ -2147,7 +2175,7 @@ int main(int argc, char *argv[])
 		background();
 	}
 
-	if(nut_debug_level >= 1) {
+	if (nut_debug_level >= 1) {
 		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
 
