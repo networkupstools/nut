@@ -22,6 +22,11 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    server initially without any device configurations and reloading it later
    to apply config changes on the fly [PR #766]
 
+ - Add support for `debug_min=NUM` setting (ups.conf, upsd.conf, upsmon.conf)
+   to specify the minimum debug verbosity for daemons. This allows "in-vivo"
+   troubleshooting of service daemons without editing init scripts or service
+   unit definitions.
+
  - Improve support for upsdrvctl for managing of numerous device configs,
    including default "maxretry=3" and a "nowait" option to complete the
    "start of everything" mode after triggering the drivers and not waiting
