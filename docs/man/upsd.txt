@@ -44,10 +44,15 @@ are:
 	*stop*;; stop process and exit
 
 *-D*::
-Raise the debug level.  Use this multiple times for additional details.
+Raise the debugging level.  upsd will run in the foreground by default,
+and will print information on stdout about the monitoring process.
+Use this option multiple times for more details.
 
 *-F*::
-Run in foreground.
+upsd will run in the foreground, regardless of debugging settings.
+
+*-B*::
+upsd will run in the background, regardless of debugging settings.
 
 *-h*::
 Display the help text.
