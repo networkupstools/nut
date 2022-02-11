@@ -1377,6 +1377,14 @@ int main(int argc, char **argv)
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in upsd.conf. Note that non-zero debug_min does not impact
+	 * foreground running mode.
+	 */
+	if (nut_debug_level_global > nut_debug_level)
+		nut_debug_level = nut_debug_level_global;
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+
 	{ /* scope */
 	/* As documented above, the ALLOW_NO_DEVICE can be provided via
 	 * envvars and then has higher priority than an upsd.conf setting
