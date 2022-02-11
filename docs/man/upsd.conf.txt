@@ -121,6 +121,14 @@ Possible values are :
 - '1' to require to all clients a certificate
 - '2' to require to all clients a valid certificate
 
+"DISABLE_WEAK_SSL 'BOOLEAN'"::
+
+Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+With relatively recent versions of OpenSSL or NSS it will be restricted
+to TLSv1.2 or better.
+Unless you have really ancient clients, you probably want to enable this.
+Currently disabled by default to ensure compatibility with existing setups.
+
 "DEBUG_MIN 'INTEGER'"::
 
 Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
