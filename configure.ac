@@ -1850,19 +1850,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-dnl Note: Currently there is no automatic detection enabled -
-dnl users have to ask they want systemd units installed.
-dnl It may be changed based on popular demand to just always
-dnl run the "case" below for ${systemdsystemunitdir} values,
-dnl like we do for systemdtmpfilesdir further below.
+dnl Note: Currently there is no reliable automatic detection -
+dnl users have to ask they want systemd units installed, or
+dnl risk auto-detection like seen below.
 AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-[
-	case "${withval}" in
+	[systemdsystemunitdir="${withval}"],
+	[systemdsystemunitdir="auto"])
+case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${withval}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdsystemunitdir=""
@@ -1874,8 +1873,8 @@ AC_ARG_WITH([systemdsystemunitdir],
 	*)
 		systemdsystemunitdir="${withval}"
 		;;
-	esac
-], [])
+esac
+if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
@@ -1889,13 +1888,14 @@ dnl given
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
-	[systemdshutdowndir=${withval}])
+	[systemdshutdowndir="${withval}"],
+	[systemdshutdowndir="auto"])
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdshutdowndir=""
@@ -1909,6 +1909,7 @@ if test -n "${systemdsystemunitdir}"; then
 		;;
 	esac
 fi
+if test "${systemdshutdowndir}" = "auto" ; then systemdshutdowndir=""; fi
 if test -n "${systemdshutdowndir}"; then
 	AC_MSG_RESULT(using ${systemdshutdowndir})
 else
@@ -1916,15 +1917,16 @@ else
 fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
-dnl daemons starting not as systemd units
+dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir=${withval}])
+	[systemdtmpfilesdir="${withval}"],
+	[systemdtmpfilesdir="auto"])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdtmpfilesdir=""
@@ -1937,6 +1939,7 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir="${withval}"
 		;;
 esac
+if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
 if test -n "${systemdtmpfilesdir}"; then
 	AC_MSG_RESULT(using ${systemdtmpfilesdir})
 else

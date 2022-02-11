@@ -43,7 +43,10 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.07"
+
+#define DEFAULT_OFFDELAY   5
+#define DEFAULT_BOOTDELAY  5
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -62,6 +65,9 @@ static uint8_t typeRielloProtocol;
 
 static uint8_t input_monophase;
 static uint8_t output_monophase;
+
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
 static TRielloData DevData;
 
@@ -761,6 +767,14 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("test.battery.start");
 
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", 3);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
+	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.reboot", 3);
+
+
 	if (typeRielloProtocol == DEV_RIELLOGPSER)
 		dstate_addcmd("test.panel.start");
 
@@ -813,9 +827,14 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+
+	if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
+		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	}
+
+	if (DevData.Tsystem < 0xFF)
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
