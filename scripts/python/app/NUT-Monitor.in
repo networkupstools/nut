@@ -37,7 +37,7 @@ import platform
 import time
 import threading
 import optparse
-import ConfigParser
+import configparser
 import locale
 import gettext
 import PyNUT
@@ -48,7 +48,7 @@ gobject.threads_init()
 
 class interface :
 
-    DESIRED_FAVORITES_DIRECTORY_MODE = 0700
+    DESIRED_FAVORITES_DIRECTORY_MODE = 0o700
 
     __widgets                        = {}
     __callbacks                      = {}
@@ -211,7 +211,7 @@ class interface :
         self.gui_status_message( _("Welcome to NUT Monitor") )
 
         if ( cmd_opts.favorite != None ) :
-            if ( self.__favorites.has_key( cmd_opts.favorite ) ) :
+            if ( cmd_opts.favorite in self.__favorites ) :
                 self.__gui_load_favorite( fav_name=cmd_opts.favorite )
                 self.connect_to_ups()
         else :
@@ -293,7 +293,7 @@ class interface :
             nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
             upses = nut_handler.GetUPSList()
 
-            ups_list = upses.keys()
+            ups_list = list(upses.keys())
             ups_list.sort()
 
             # If UPS list contains something, clear it
@@ -368,7 +368,7 @@ class interface :
         # Remove the dummy combobox entry on list
         dialog_interface.get_widget("combobox2").remove_text( 0 )
 
-        favs = self.__favorites.keys()
+        favs = list(self.__favorites.keys())
         favs.sort()
         for current in favs :
             dialog_interface.get_widget("combobox2").append_text( current )
@@ -397,7 +397,7 @@ class interface :
     # Method called when user selects a favorite from the favorites menu
     def __gui_load_favorite( self, fav_name="" ) :
 
-        if ( self.__favorites.has_key( fav_name ) ) :
+        if ( fav_name in self.__favorites ) :
             # If auth is activated, process it before other fields to avoir weird
             # reactions with the 'check_gui_fields' function.
             if ( self.__favorites[fav_name].get("auth", False ) ) :
@@ -497,7 +497,7 @@ class interface :
 
         self.__fav_menu_items = list()
 
-        items = self.__favorites.keys()
+        items = list(self.__favorites.keys())
         items.sort()
 
         for current in items :
@@ -520,7 +520,7 @@ class interface :
     # to avoid creating entries with the same name.
     def __gui_add_favorite_check_gui_fields( self, widget=None ) :
         fav_name = widget.get_text()
-        if ( len( fav_name ) > 0 ) and ( fav_name not in self.__favorites.keys() ) :
+        if ( len( fav_name ) > 0 ) and ( fav_name not in list(self.__favorites.keys()) ) :
             self.__widgets["favorites_dialog_button_add"].set_sensitive( True )
         else :
             self.__widgets["favorites_dialog_button_add"].set_sensitive( False )
@@ -537,7 +537,7 @@ class interface :
             if ( not stat.S_IMODE( os.stat( self.__favorites_path ).st_mode ) == self.DESIRED_FAVORITES_DIRECTORY_MODE ) : # unsafe pre-1.2 directory found
                 os.chmod( self.__favorites_path, self.DESIRED_FAVORITES_DIRECTORY_MODE )
 
-            conf = ConfigParser.ConfigParser()
+            conf = configparser.ConfigParser()
             conf.read( self.__favorites_file )
             for current in conf.sections() :
                 # Check if mandatory fields are present
@@ -564,7 +564,7 @@ class interface :
 
                             except :
                                 # If the password is not in base64, let the field empty
-                                print( _("Error parsing favorites, password for '%s' is not in base64\nSkipping password for this entry") % current )
+                                print(( _("Error parsing favorites, password for '%s' is not in base64\nSkipping password for this entry") % current ))
                                 fav_data["password"] = ""
                     else :
                         fav_data["auth"] = False
@@ -586,10 +586,10 @@ class interface :
             except :
                 self.gui_status_message( _("Error while creating configuration folder (%s)") % sys.exc_info()[1] )
 
-        save_conf = ConfigParser.ConfigParser()
-        for current in self.__favorites.keys() :
+        save_conf = configparser.ConfigParser()
+        for current in list(self.__favorites.keys()) :
             save_conf.add_section( current )
-            for k, v in self.__favorites[ current ].iteritems() :
+            for k, v in self.__favorites[ current ].items() :
                 save_conf.set( current, k, v )
 
         try :
@@ -678,7 +678,7 @@ class interface :
         srv_upses          = self.__ups_handler.GetUPSList()
         self.__current_ups = self.__widgets["ups_list_combo"].get_active_text()
 
-        if not srv_upses.has_key( self.__current_ups ) :
+        if self.__current_ups not in srv_upses :
             self.gui_status_message( _("Device '%s' not found on server") % self.__current_ups )
             self.gui_status_notification( _("Device '%s' not found on server") % self.__current_ups, "warning.png" )
             return
@@ -692,7 +692,7 @@ class interface :
         self.__widgets["ups_params_box"].hide()
 
         commands = self.__ups_handler.GetUPSCommands( self.__current_ups )
-        self.__ups_commands = commands.keys()
+        self.__ups_commands = list(commands.keys())
         self.__ups_commands.sort()
 
         # Refresh UPS commands combo box
@@ -726,8 +726,8 @@ class interface :
 
             self.__widgets["ups_vars_tree_store"].clear()
 
-            for k,v in vars.iteritems() :
-                if ( rwvars.has_key( k ) ) :
+            for k,v in vars.items() :
+                if ( k in rwvars ) :
                     icon_file = os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "var-rw.png" )
                 else :
                     icon_file = os.path.join( os.path.dirname( sys.argv[0] ), "pixmaps", "var-ro.png" )
@@ -814,7 +814,7 @@ class gui_updater( threading.Thread ) :
                         was_online = False
 
                 # Check for additionnal information
-                for k,v in status_mapper.iteritems() :
+                for k,v in status_mapper.items() :
                     if vars.get("ups.status").find(k) != -1 :
                         if ( text_right != "" ) :
                             text_right += " - %s" % v
@@ -830,15 +830,15 @@ class gui_updater( threading.Thread ) :
                 status_text += text_right
                 text_right += "\n"
 
-                if ( vars.has_key( "ups.mfr" ) ) :
+                if ( "ups.mfr" in vars ) :
                     text_left  += "<b>%s</b>\n\n" % _("Model :")
                     text_right += "%s\n%s\n" % ( vars.get("ups.mfr",""), vars.get("ups.model","") )
 
-                if ( vars.has_key( "ups.temperature" ) ) :
+                if ( "ups.temperature" in vars ) :
                     text_left  += "<b>%s</b>\n" % _("Temperature :")
                     text_right += "%s\n" % int( float( vars.get( "ups.temperature", 0 ) ) )
 
-                if ( vars.has_key( "battery.voltage" ) ) :
+                if ( "battery.voltage" in vars ) :
                     text_left  += "<b>%s</b>\n" % _("Battery voltage :")
                     text_right += "%sv\n" % vars.get( "battery.voltage", 0 )
 
@@ -846,7 +846,7 @@ class gui_updater( threading.Thread ) :
                 self.__parent_class._interface__widgets["ups_status_right"].set_markup( text_right[:-1] )
 
                 # UPS load and battery charge progress bars
-                if ( vars.has_key( "battery.charge" ) ) :
+                if ( "battery.charge" in vars ) :
                     charge = vars.get( "battery.charge", "0" )
                     self.__parent_class._interface__widgets["progress_battery_charge"].set_fraction( float( charge ) / 100.0 )
                     self.__parent_class._interface__widgets["progress_battery_charge"].set_text( "%s %%" % int( float( charge ) ) )
@@ -855,7 +855,7 @@ class gui_updater( threading.Thread ) :
                     self.__parent_class._interface__widgets["progress_battery_charge"].set_fraction( 0.0 )
                     self.__parent_class._interface__widgets["progress_battery_charge"].set_text( _("Not available") )
 
-                if ( vars.has_key( "ups.load" ) ) :
+                if ( "ups.load" in vars ) :
                     load = vars.get( "ups.load", "0" )
                     self.__parent_class._interface__widgets["progress_battery_load"].set_fraction( float( load ) / 100.0 )
                     self.__parent_class._interface__widgets["progress_battery_load"].set_text( "%s %%" % int( float( load ) ) )
@@ -864,7 +864,7 @@ class gui_updater( threading.Thread ) :
                     self.__parent_class._interface__widgets["progress_battery_load"].set_fraction( 0.0 )
                     self.__parent_class._interface__widgets["progress_battery_load"].set_text( _("Not available") )
 
-                if ( vars.has_key( "battery.runtime" ) ) :
+                if ( "battery.runtime" in vars ) :
                     autonomy = int( float( vars.get( "battery.runtime", 0 ) ) )
 
                     if ( autonomy >= 3600 ) :
