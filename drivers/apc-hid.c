@@ -27,6 +27,7 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "hidparser.h" /* for FindObject_with_ID_Node() */
 #include "usbhid-ups.h"
 #include "apc-hid.h"
 #include "usb-common.h"
@@ -499,6 +500,71 @@ static int apc_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* apc_fix_report_desc
+ *
+ * The Back-UPS XS 1400U reports incorrect logical min/max values for the
+ * UPS.Input.ConfigVoltage and UPS.Input.Voltage when operating in a
+ * 220-240V region.  Detect this and fix it.
+ * This same fix may be applicable to other APC UPS units as well, though
+ * the report IDs may be different.
+ */
+static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
+	HIDData_t *pData;
+
+	int vendorID = pDev->VendorID;
+	int productID = pDev->ProductID;
+	if (vendorID != APC_VENDORID || productID != 0x0002) {
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+
+	/* Look at the High Voltage Transfer logical max value:
+	 * If the HVT logmax is greater than the configured or input voltage limit
+	 * then the configured/input voltage limits are probably incorrect.
+         * Arbitrarily set the input voltage logical min/max to 0 .. 2*HVT logmax and the
+         * configured (nominal) input voltage logical max to 255 (it's a single byte value)
+
+         * Path: UPS.Input.ConfigVoltage, Type: Feature, ReportID: 0x30, Offset: 0, Size: 8
+         * Path: UPS.Input.Voltage, Type: Feature, ReportID: 0x31, Offset: 0, Size: 16
+         * Path: UPS.Input.HighVoltageTransfer, Type: Feature, ReportID: 0x33, Offset: 0, Size: 16
+	 */
+
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x33, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
+		long hvt_logmin = pData->LogMin;
+		long hvt_logmax = pData->LogMax;
+		upsdebugx(4, "Report Descriptor: highVoltageTransfer LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x31, USAGE_POW_VOLTAGE))) {
+			long voltage_logmin = pData->LogMin;
+			long voltage_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: voltage LogMin: %ld LogMax: %ld",
+					voltage_logmin, voltage_logmax);
+
+			if (hvt_logmax > voltage_logmax) {
+                                pData->LogMin = 0; /* a reasonable lower limit for voltage */
+				pData->LogMax = hvt_logmax * 2; /* it may be smoking at this point */
+				upsdebugx(3, "Fixing Report Descriptor. Set voltage LogMin = %ld, LogMax = %ld",
+							pData->LogMin , pData->LogMax);
+                        }
+                }
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x30, USAGE_POW_CONFIG_VOLTAGE))) {
+			long cvoltage_logmin = pData->LogMin;
+			long cvoltage_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: configVoltage LogMin: %ld LogMax: %ld",
+					cvoltage_logmin, cvoltage_logmax);
+
+			if (hvt_logmax > cvoltage_logmax) {
+				pData->LogMax = 255;
+				upsdebugx(3, "Fixing Report Descriptor. Set configVoltage LogMin = %ld, LogMax = %ld",
+							pData->LogMin , pData->LogMax);
+                        }
+                }
+                return 1;
+	}
+	return 0;
+}
+
 subdriver_t apc_subdriver = {
 	APC_HID_VERSION,
 	apc_claim,
@@ -507,5 +573,5 @@ subdriver_t apc_subdriver = {
 	apc_format_model,
 	apc_format_mfr,
 	apc_format_serial,
-	fix_report_desc,
+	apc_fix_report_desc,
 };
