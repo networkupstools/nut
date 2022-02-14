@@ -30,6 +30,7 @@
 #include "common.h"
 #include "upsconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 typedef struct {
 	char	*upsname;
@@ -61,6 +62,9 @@ static char	*driverpath = NULL;
 
 	/* passthrough to the drivers: chroot path and new user name */
 static char	*pt_root = NULL, *pt_user = NULL;
+
+	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
+static int	nut_debug_level_passthrough = 0;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -278,8 +282,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 static void start_driver(const ups_t *ups)
 {
-	char	*argv[8];
-	char	dfn[SMALLBUF];
+	char	*argv[9];
+	char	dfn[SMALLBUF], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -293,6 +297,63 @@ static void start_driver(const ups_t *ups)
 		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
 	argv[arg++] = dfn;
+
+	if (nut_debug_level_passthrough > 0
+	&&  nut_debug_level > 0
+	&&  sizeof(dbg) > 3
+	) {
+		size_t d, m;
+
+		/* cut-off point: buffer size or requested debug level */
+		m = sizeof(dbg) - 1;	/* leave a place for '\0' */
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* Different platforms, different sizes, none fits all... */
+		/* can we fit this many 'D's? */
+		if ((uintmax_t)SIZE_MAX > (uintmax_t)nut_debug_level /* else can't assign, requested debug level is huge */
+		&&  (size_t)nut_debug_level + 1 < m
+		) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+			/* need even fewer (leave a place for '-'): */
+			m = (size_t)nut_debug_level + 1;
+		} else {
+			upsdebugx(1, "Requested debugging level %d is too "
+				"high for pass-through args, truncated to %zu",
+				nut_debug_level,
+				(m - 1)	/* count off '-' (and '\0' already) chars */
+				);
+		}
+
+		dbg[0] = '-';
+		for (d = 1; d < m ; d++) {
+			dbg[d] = 'D';
+		}
+		dbg[d] = '\0';
+		argv[arg++] = dbg;
+	}
+
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
 
@@ -349,6 +410,7 @@ static void help(const char *progname)
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
 	printf("  -D            	raise debugging level\n");
+	printf("  -d            	pass debugging level from upsdrvctl to driver\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
@@ -476,7 +538,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -495,6 +557,10 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				break;
+
+			case 'd':
+				nut_debug_level_passthrough = 1;
 				break;
 
 			case 'h':
