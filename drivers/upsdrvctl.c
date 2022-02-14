@@ -582,14 +582,16 @@ int main(int argc, char **argv)
 			nut_debug_level = 2;
 	}
 
-	upsdebugx(2, "\n"
-		   "If you're not a NUT core developer, chances are that you're told to enable debugging\n"
-		   "to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
-		   "the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
-		   "Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
-		   "path to the driver binary and some command line option. This is what the driver\n"
-		   "starts and you need to copy and paste that line and append the debug flags to that\n"
-		   "line (less the 'exec:' prefix).\n");
+	if (nut_debug_level_passthrough == 0) {
+		upsdebugx(2, "\n"
+			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
+			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
+			"the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
+			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
+			"path to the driver binary and some command line option. This is what the driver\n"
+			"starts and you need to copy and paste that line and append the debug flags to that\n"
+			"line (less the 'exec:' prefix).\n");
+	}
 
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;
