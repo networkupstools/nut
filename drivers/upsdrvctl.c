@@ -590,7 +590,9 @@ int main(int argc, char **argv)
 			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
 			"path to the driver binary and some command line option. This is what the driver\n"
 			"starts and you need to copy and paste that line and append the debug flags to that\n"
-			"line (less the 'exec:' prefix).\n");
+			"line (less the 'exec:' prefix).\n\n"
+			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
+			"pass its current debug level to the launched driver.\n");
 	}
 
 	if (!strcmp(argv[0], "start"))
