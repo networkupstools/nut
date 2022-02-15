@@ -296,6 +296,7 @@ subdriver_t ${LDRIVER}_subdriver = {
 	${LDRIVER}_format_model,
 	${LDRIVER}_format_mfr,
 	${LDRIVER}_format_serial,
+	fix_report_desc,	/* may optionally be customized, see cps-hid.c for example */
 };
 EOF
 

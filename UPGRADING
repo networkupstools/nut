@@ -10,6 +10,13 @@ check this file to see if you need to make changes to your system.
 Changes from 2.7.4 to 2.7.5
 ---------------------------
 
+- Note to distribution packagers: this version hopefully learns from many
+  past mistakes, so many custom patches may be no longer needed. If some
+  remain, please consider making pull requests for upstream NUT codebase
+  to share the fixes consistently across the ecosystem. Also note that
+  some new types of drivers (so package groups with unique dependencies)
+  could have appeared since your packaging was written (e.g. with modbus).
+
 - Due to changes needed to resolve build warnings, mostly about mismatching
   data types for some variables, some structure definitions and API signatures
   of several routines had to be changed for argument types, return types,
@@ -61,6 +68,12 @@ Changes from 2.7.4 to 2.7.5
   Also note that `./configure --with-netsnmp-config(=yes)` should set up the
   preference of the detected script over `pkg-config` information, if both
   are available, and `--with-netsnmp-config=/path/name` would as well.
+
+- snmp-ups: bit mask values for flags in earlier codebase were defined in a
+  way that caused logically different items to have same numeric values.
+  This was fixed to surely use different definitions (so changing numbers
+  behind some of those macro symbols), and testing with UPS, ePDU and ATS
+  hardware which was available did not expose any practical differences.
 
 - usbhid-ups: numeric data conversion from wire protocol to CPU representation
   in GetValue() was completely reworked, aiming to be correct on all CPU types.

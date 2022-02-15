@@ -31,7 +31,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.96"
+#define APC_HID_VERSION "APC HID 0.97"
 
 /* APC */
 #define APC_VENDORID 0x051d

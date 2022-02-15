@@ -25,7 +25,7 @@
 
 #include "emerson-avocent-pdu-mib.h"
 
-#define EMERSON_AVOCENT_MIB_VERSION		"1.1"
+#define EMERSON_AVOCENT_MIB_VERSION		"1.2"
 #define EMERSON_AVOCENT_SYSOID			".1.3.6.1.4.1.10418.17.1.7"
 #define EMERSON_AVOCENT_OID_MODEL_NAME	".1.3.6.1.4.1.10418.17.2.1.2.0"
 

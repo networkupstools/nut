@@ -798,14 +798,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #endif
 
 		if (sec->authProtocol) {
-			/* Note: start with strcmp of the longer strings,
-			 * or explicitly check string lengths (null char),
-			 * to avoid matching everything as e.g. "SHA" by
-			 * strncmp() below - that was needed for platforms
-			 * where strcmp() is a built-in/macro which offends
-			 * alignment checks with short strings... */
 #if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
-			if (strncmp(sec->authProtocol, "SHA", 3) == 0 && sec->authProtocol[3] == '\0') {
+			if (strcmp(sec->authProtocol, "SHA") == 0) {
 				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
 					sizeof(usmHMACSHA1AuthProtocol)/
@@ -841,7 +835,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			else
 #endif
 #if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
-			if (strncmp(sec->authProtocol, "MD5", 3) != 0) {
+			if (strcmp(sec->authProtocol, "MD5") != 0) {
 #else
 			{
 #endif
@@ -898,10 +892,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #endif
 
 		if (sec->privProtocol) {
-			/* Note: start with strcmp of the longer strings, or check
-			 * lengths, to avoid matching everything as e.g. "AES"! */
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
-			if (strncmp(sec->privProtocol, "AES", 3) == 0 && sec->privProtocol[3] == '\0') {
+			if (strcmp(sec->privProtocol, "AES") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
@@ -930,7 +922,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 # endif
 #endif /* NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04 */
 #if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
-			if (strncmp(sec->privProtocol, "DES", 3) != 0) {
+			if (strcmp(sec->privProtocol, "DES") != 0) {
 #else
 			{
 #endif

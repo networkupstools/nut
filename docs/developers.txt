@@ -21,13 +21,6 @@ Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
 string and all the usual string length checking of `snprintf()` routine.
 
-Some systems define `strcmp()` and `strcasecmp()` as macros or inline
-functions optimized for aligned memory access in a way that some compilers
-complain about array out-of-bounds access when comparing fixed short strings.
-For this reason, we compare strings with length 3 chars and less ("", "x",
-"on", "VAL") with fixed-length methods `strncmp()` and `strncasecmp()`,
-e.g. `strncmp(buf, "VAL", 3)`.
-
 Error reporting
 ~~~~~~~~~~~~~~~
 
@@ -755,10 +748,10 @@ and know the industry players who help make NUT better and more useful.
 Source code management
 ----------------------
 
-We currently use a Git repository hosted at GitHub (with a mirror at
-Alioth) to track changes to the NUT source code. This allows you to
-clone the repository (or fork, in GitHub parlance), make changes, and
-post them online for review prior to integration.
+We currently use a Git repository hosted at GitHub to track changes to
+the NUT source code. This allows you to clone the repository (or fork,
+in GitHub parlance), make changes, and post them online for peer review
+prior to integration.
 
 To obtain permission to commit directly to the common upstream NUT repository,
 you must be prepared to spend a fair amount of time contributing to the
@@ -808,14 +801,6 @@ For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
 	git clone --depth 1 git://github.com/networkupstools/nut.git
-
-In case the GitHub repository is temporarily unavailable for any reason,
-we also plan to push to Alioth's
-link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well.
-You can add a remote reference to your local repository:
-
-	cd path/to/nut
-	git remote add -f alioth git://anonscm.debian.org/nut/nut.git
 
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~

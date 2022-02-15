@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.64"
+#define CPQPOWER_MIB_VERSION	"1.65"
 
 #define DEFAULT_ONDELAY		"30"
 #define DEFAULT_OFFDELAY	"20"

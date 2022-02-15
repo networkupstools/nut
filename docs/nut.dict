@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2917 utf-8
+personal_ws-1.1 en 2918 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -158,6 +158,7 @@ CBLimit
 CCC
 CCCC
 CDC
+CDS
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -471,6 +472,7 @@ IPP
 IPSS
 IPs
 IPv
+IRC
 IRIX
 ITEMP
 ITy
@@ -973,6 +975,7 @@ Repotec's
 Repoteck
 Richthof
 Rickard
+Ridgway
 Riihikallio
 Rik
 RntmK
@@ -1085,6 +1088,7 @@ Sicon
 Sidorov
 Signetic
 Silvino
+Sinline
 Sistem
 Sistemas
 Slackware
@@ -2601,14 +2605,11 @@ strarr
 strcasecmp
 strcat
 strchr
-strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
-strncasecmp
-strncmp
 struct
 structs
 sts

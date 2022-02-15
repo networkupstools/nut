@@ -2438,12 +2438,12 @@ static int	voltronic_capability_set(item_t *item, char *value, const size_t valu
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	if (!strncasecmp(value, "yes", 3)) {
+	if (!strcasecmp(value, "yes")) {
 		snprintf(value, valuelen, item->command, "E");
 		return 0;
 	}
 
-	if (!strncasecmp(value, "no", 2)) {
+	if (!strcasecmp(value, "no")) {
 		snprintf(value, valuelen, item->command, "D");
 		return 0;
 	}
@@ -2980,7 +2980,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 
 	upslogx(LOG_INFO, "Checking for faults..");
 
-	if (!strncasecmp(item->value, "OK", 2)) {
+	if (!strcasecmp(item->value, "OK")) {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif

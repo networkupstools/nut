@@ -42,7 +42,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

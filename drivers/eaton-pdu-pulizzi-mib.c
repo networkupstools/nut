@@ -42,7 +42,7 @@
 
 /* Pulizzi Switched ePDU */
 
-#define EATON_PULIZZI_SW_MIB_VERSION	"0.3"
+#define EATON_PULIZZI_SW_MIB_VERSION	"0.4"
 
 #define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
 #define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"

@@ -29,7 +29,7 @@
 
 #include "eaton-pdu-revelation-mib.h"
 
-#define EATON_APHEL_REVELATION_MIB_VERSION	"0.50"
+#define EATON_APHEL_REVELATION_MIB_VERSION	"0.51"
 
 /* APHEL PDU-MIB - Revelation MIB (Managed ePDU)
  * ********************************************* */

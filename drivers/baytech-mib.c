@@ -23,8 +23,8 @@
 
 #include "baytech-mib.h"
 
-/* FIXME: should be "X.Y[Z]"! */
-#define BAYTECH_MIB_VERSION	"4032"
+/* NOTE: last badly versioned release was "4032" but should be "X.Y[Z]"! */
+#define BAYTECH_MIB_VERSION	"0.4033"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"

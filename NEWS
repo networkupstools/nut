@@ -149,6 +149,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * add Arduino HID device support with new arduino-hid subdriver [PR #1044]
    * add new salicru-hid subdriver, tested with Salicru SPS Home 850 VA
      [PR #1199, issue #732]
+   * add new ever-hid subdriver to support EVER UPS devices (Sinline RT Series,
+     Sinline RT XL Series, ECO PRO AVR CDS Series) [PR #431]
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
@@ -174,6 +176,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      for CyberPower, as well as shutdown and other instant commands
    * several rounds of updates for Eaton devices, including new ATS and ePDU
      hardware families
+   * fixed bit mask values for flags to surely use different numbers behind
+     logical items (inevitably changing some of those macro symbols) [PR #1180]
 
  - snmp-ups and nut-scanner should now support more SNMPv3 Auth and Priv
    protocols, as available at NUT build time [PRs #1165, #1172]

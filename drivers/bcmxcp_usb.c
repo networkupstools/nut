@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.26"
+#define SUBDRIVER_VERSION "0.27"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
