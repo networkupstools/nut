@@ -510,7 +510,7 @@ static int apc_claim(HIDDevice_t *hd) {
  */
 static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
-        int res = 0;
+	int res = 0;
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
@@ -523,12 +523,12 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	/* Look at the High Voltage Transfer logical max value:
 	 * If the HVT logmax is greater than the configured or input voltage limit
 	 * then the configured/input voltage limits are probably incorrect.
-         * Arbitrarily set the input voltage logical min/max to 0 .. 2*HVT logmax and the
-         * configured (nominal) input voltage logical max to 255 (it's a single byte value)
+	 * Arbitrarily set the input voltage logical min/max to 0 .. 2*HVT logmax and the
+	 * configured (nominal) input voltage logical max to 255 (it's a single byte value)
 
-         * Path: UPS.Input.ConfigVoltage, Type: Feature, ReportID: 0x30, Offset: 0, Size: 8
-         * Path: UPS.Input.Voltage, Type: Feature, ReportID: 0x31, Offset: 0, Size: 16
-         * Path: UPS.Input.HighVoltageTransfer, Type: Feature, ReportID: 0x33, Offset: 0, Size: 16
+	 * Path: UPS.Input.ConfigVoltage, Type: Feature, ReportID: 0x30, Offset: 0, Size: 8
+	 * Path: UPS.Input.Voltage, Type: Feature, ReportID: 0x31, Offset: 0, Size: 16
+	 * Path: UPS.Input.HighVoltageTransfer, Type: Feature, ReportID: 0x33, Offset: 0, Size: 16
 	 */
 
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x33, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
@@ -543,13 +543,13 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					voltage_logmin, voltage_logmax);
 
 			if (hvt_logmax > voltage_logmax) {
-                                pData->LogMin = 0; /* a reasonable lower limit for voltage */
+				pData->LogMin = 0; /* a reasonable lower limit for voltage */
 				pData->LogMax = hvt_logmax * 2; /* it may be smoking at this point */
 				upsdebugx(3, "Fixing Report Descriptor. Set voltage LogMin = %ld, LogMax = %ld",
 							pData->LogMin , pData->LogMax);
-                                res = 1;
-                        }
-                }
+				res = 1;
+			}
+		}
 		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x30, USAGE_POW_CONFIG_VOLTAGE))) {
 			long cvoltage_logmin = pData->LogMin;
 			long cvoltage_logmax = pData->LogMax;
@@ -560,9 +560,9 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				pData->LogMax = 255;
 				upsdebugx(3, "Fixing Report Descriptor. Set configVoltage LogMin = %ld, LogMax = %ld",
 							pData->LogMin , pData->LogMax);
-                                res = 1;
-                        }
-                }
+				res = 1;
+			}
+		}
 	}
 	return res;
 }
