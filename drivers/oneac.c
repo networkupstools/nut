@@ -47,7 +47,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.80"
+#define DRIVER_VERSION	"0.81"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1030,13 +1030,13 @@ int setcmd(const char* varname, const char* setvalue)
 
 	if (!strcasecmp(varname, "ups.start.auto"))
 	{
-		if (!strncasecmp(setvalue, "yes", 3))
+		if (!strcasecmp(setvalue, "yes"))
 		{
 			ser_send(upsfd,"%c0%s",SETX_AUTO_START, COMMAND_END);
 			dstate_setinfo("ups.start.auto", "yes");
 			return STAT_SET_HANDLED;
 		}
-		else if (!strncasecmp(setvalue, "no", 2))
+		else if (!strcasecmp(setvalue, "no"))
 		{
 			ser_send(upsfd,"%c1%s",SETX_AUTO_START, COMMAND_END);
 			dstate_setinfo("ups.start.auto", "no");

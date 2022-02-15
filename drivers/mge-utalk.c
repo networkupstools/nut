@@ -66,7 +66,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 
 /* driver description structure */
@@ -183,7 +183,7 @@ void upsdrv_initups(void)
 		mge_ups.LowBatt = atoi (getval ("lowbatt"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Bl %d",  mge_ups.LowBatt);
-		if(!strncmp(buf, "OK", 2))
+		if(!strcmp(buf, "OK"))
 			upsdebugx(1, "Low Battery Level set to %d%%", mge_ups.LowBatt);
 		else
 			upsdebugx(1, "initups: Low Battery Level cannot be set");
@@ -195,7 +195,7 @@ void upsdrv_initups(void)
 		mge_ups.OnDelay = atoi (getval ("ondelay"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sm %d",  mge_ups.OnDelay);
-		if(!strncmp(buf, "OK", 2))
+		if(!strcmp(buf, "OK"))
 			upsdebugx(1, "ON delay set to %d min", mge_ups.OnDelay);
 		else
 			upsdebugx(1, "initups: OnDelay unavailable");
@@ -207,7 +207,7 @@ void upsdrv_initups(void)
 		mge_ups.OffDelay = atoi (getval ("offdelay"));
 		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sn %d",  mge_ups.OffDelay);
-		if(!strncmp(buf, "OK", 2))
+		if(!strcmp(buf, "OK"))
 			upsdebugx(1, "OFF delay set to %d sec", mge_ups.OffDelay);
 		else
 			upsdebugx(1, "initups: OffDelay unavailable");
@@ -476,13 +476,13 @@ void upsdrv_shutdown(void)
 
 	/* Only call the effective shutoff if restart is ok */
 	/* or if we need only a stayoff... */
-	if (!strncmp(buf, "OK", 2) || (sdtype == SD_STAYOFF)) {
+	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
 
 		upslogx(LOG_INFO, "UPS response to Shutdown was %s", buf);
 	}
-/*	if(strncmp(buf, "OK", 2)) */
+/*	if(strcmp(buf, "OK")) */
 
 	/* call the cleanup to disable/close the comm link */
 	upsdrv_cleanup();
@@ -509,7 +509,7 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-		if(strncmp(temp, "OK", 2))
+		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 			return STAT_INSTCMD_HANDLED;
@@ -521,7 +521,7 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Sx 129");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-		if(strncmp(temp, "OK", 2))
+		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 			return STAT_INSTCMD_HANDLED;
@@ -547,13 +547,13 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
-		if(strncmp(temp, "OK", 2))
+		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 0");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-			if(strncmp(temp, "OK", 2))
+			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
@@ -567,13 +567,13 @@ int instcmd(const char *cmdname, const char *extra)
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
-		if(strncmp(temp, "OK", 2))
+		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 1");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-			if(strncmp(temp, "OK", 2))
+			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
@@ -601,7 +601,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 
-			if(strncmp(temp, "OK", 2))
+			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;

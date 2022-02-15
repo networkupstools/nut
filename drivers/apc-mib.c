@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.4"
+#define APCC_MIB_VERSION	"1.5"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs sysOID for this one? */

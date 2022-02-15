@@ -45,7 +45,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups/Fortress driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

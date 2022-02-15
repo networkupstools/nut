@@ -318,7 +318,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 		{ NULL,				0,		0 }
 	};
 
-	if (strncasecmp(item->value, "P", 1) && strncasecmp(item->value, "T", 1)) {
+	if (strcasecmp(item->value, "P") && strcasecmp(item->value, "T")) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 		return -1;
 	}
@@ -339,7 +339,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 
 	/* Unskip items supported only by devices that implement 'T' protocol */
 
-	if (!strncasecmp(item->value, "P", 1))
+	if (!strcasecmp(item->value, "P"))
 		return 0;
 
 	for (i = 0; items_to_be_unskipped[i].info_type; i++) {

@@ -32,7 +32,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"GE/IMV/Victron UPS driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -244,31 +244,31 @@ void upsdrv_updateinfo(void)
 	if (start_is_datastale)
 	{
 		if (get_data("vDS?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_ups_serial=1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_ups_temperature =1;
 
 		if (get_data("vO0I?",temp)) return;
-		if (strncmp(temp+4, "NA", 2))
+		if (strcmp(temp+4,"NA"))
 			exist_output_current =1;
 
 		if (get_data("vBC?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_battery_charge = 1;
 
 		if (get_data("vBI?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_battery_charge = 1;
 
 		if (get_data("vBT?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_battery_temperature = 1;
 
 		if (get_data("vBt?",temp)) return;
-		if (strncmp(temp+3, "NA", 2))
+		if (strcmp(temp+3,"NA"))
 			exist_battery_runtime = 1;
 
 		start_is_datastale = 0;

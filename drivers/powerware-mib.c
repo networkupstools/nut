@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "1.00"
+#define PW_MIB_VERSION "1.01"
 
 /* TODO: more sysOID and MIBs support:
  *

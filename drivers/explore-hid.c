@@ -25,7 +25,7 @@
 #include "usbhid-ups.h"
 #include "explore-hid.h"
 
-#define EXPLORE_HID_VERSION	"EXPLORE HID 0.1"
+#define EXPLORE_HID_VERSION	"EXPLORE HID 0.2"
 
 static usage_tables_t explore_utab[] = {
 	hid_usage_lkp,

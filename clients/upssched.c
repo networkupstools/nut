@@ -497,13 +497,19 @@ static int sock_read(conn_t *conn)
 			if ((ret == -1) && (errno == EAGAIN))
 				return 0;
 
+			/* O_NDELAY with zero bytes means nothing to read but
+			 * since read() follows a succesful select() with
+			 * ready file descriptor, ret shouldn't be 0. */
+			if (ret == 0)
+				continue;
+
 			/* some other problem */
 			return -1;	/* error */
 		}
 
 		ret = pconf_char(&conn->ctx, ch);
 
-		if (ret == 0)		/* nothing to parse yet */
+		if (ret == 0)	/* nothing to parse yet */
 			continue;
 
 		if (ret == -1) {
@@ -691,32 +697,15 @@ static int check_parent(const char *cmd, const char *arg2)
 	exit(EXIT_FAILURE);
 }
 
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* ignore this */
-	return;
-}
-
-static void setup_sigalrm(void)
-{
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
-
-	sigemptyset(&nut_upssched_sigmask);
-	sa.sa_mask = nut_upssched_sigmask;
-	sa.sa_flags = 0;
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-}
-
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i, pipefd;
 	ssize_t	ret;
-	size_t enclen;
-	char	buf[SMALLBUF], enc[SMALLBUF + 8];
+	size_t	enclen, buflen;
+	char buf[SMALLBUF], enc[SMALLBUF + 8];
+	int	ret_s;
+	struct	timeval tv;
+	fd_set	fdread;
 
 	/* insanity */
 	if (!arg1)
@@ -732,8 +721,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
-	enclen = strlen(buf);
-	if (enclen >= SSIZE_MAX) {
+	/* Sanity checks, for static analyzers to sleep well */
+	enclen = strlen(enc);
+	buflen = strlen(buf);
+	if (enclen >= SSIZE_MAX || buflen >= SSIZE_MAX) {
 		/* Can't compare enclen to ret below */
 		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
 	}
@@ -745,7 +736,6 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		pipefd = check_parent(cmd, arg2);
 
 		if (pipefd == PARENT_STARTED) {
-
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
@@ -760,27 +750,38 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (ssize_t) enclen)) {
+		if ((ret < 1) || (ret != (ssize_t)enclen)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
 		}
 
-		/* ugh - probably should use select here... */
-		setup_sigalrm();
+		/* select on child's pipe fd */
+		do {
+			/* set timeout every time before call select() */
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
 
-		alarm(2);
-		ret = read(pipefd, buf, sizeof(buf));
-		alarm(0);
+			FD_ZERO(&fdread);
+			FD_SET(pipefd, &fdread);
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#endif
-		signal(SIGALRM, SIG_IGN);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic pop
-#endif
+			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			switch(ret_s) {
+				/* select error */
+				case -1:
+					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					break;
+
+				/* nothing to read */
+				case 0:
+					break;
+
+				/* available data to read */
+				default:
+					ret = read(pipefd, buf, sizeof(buf));
+					break;
+			}
+		} while (ret_s <= 0);
 
 		close(pipefd);
 
@@ -796,7 +797,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
 		/* try again ... */
-	}
+	}	/* loop until MAX_TRIES if no success above */
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
@@ -823,7 +824,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 
 	/* check upsname: does this apply to us? */
 	if (strcmp(upsname, un) != 0)
-		if (strncmp(un, "*", 1) != 0)
+		if (strcmp(un, "*") != 0)
 			return;		/* not for us, and not the wildcard */
 
 	/* see if the current notify type matches the one from the .conf */
@@ -885,7 +886,7 @@ static int conf_arg(size_t numargs, char **arg)
 		return 0;
 
 	/* AT <notifytype> <upsname> <command> <cmdarg1> [<cmdarg2>] */
-	if (!strncmp(arg[0], "AT", 2)) {
+	if (!strcmp(arg[0], "AT")) {
 
 		/* don't use arg[5] unless we have it... */
 		if (numargs > 5)

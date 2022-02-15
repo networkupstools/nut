@@ -23,7 +23,7 @@
 
 #include "apc-pdu-mib.h"
 
-#define APC_PDU_MIB_VERSION  "0.3"
+#define APC_PDU_MIB_VERSION  "0.4"
 
 #define APC_PDU_MIB_SYSOID_RPDU      ".1.3.6.1.4.1.318.1.3.4.4"
 #define APC_PDU_MIB_SYSOID_RPDU2     ".1.3.6.1.4.1.318.1.3.4.5"

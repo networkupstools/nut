@@ -30,7 +30,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.1"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* iDowell */

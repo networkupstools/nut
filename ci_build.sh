@@ -1140,6 +1140,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
@@ -1260,6 +1264,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }

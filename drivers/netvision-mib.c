@@ -25,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.42"
+#define NETVISION_MIB_VERSION			"0.43"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
