@@ -4,6 +4,7 @@
    1999			Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
    2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
+   2017 - 2022	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -791,8 +792,10 @@ int main(int argc, char **argv)
 
 	/* now we can start servicing requests */
 	/* Only write pid if we're not just dumping data, for discovery */
-	if (!dump_data)
-		dstate_init(progname, upsname);
+	if (!dump_data) {
+		char * sockname = dstate_init(progname, upsname);
+		free(sockname);
+	}
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
