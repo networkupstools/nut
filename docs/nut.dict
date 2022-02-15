@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2863 utf-8
+personal_ws-1.1 en 2864 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1843,6 +1843,7 @@ hh
 hibernate's
 hiddev
 hidparser
+hidtypes
 hidups
 highbattery
 highfrequency

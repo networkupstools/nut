@@ -92,6 +92,7 @@ extern "C" {
 #define ATTR_NVOL_VOL			0x80
 
 /* Usage Pages */
+/* For more details, please see docs/hid-subdrivers.txt */
 #define PAGE_POWER_DEVICE		0x84
 #define PAGE_BATTERY_SYSTEM 		0x85
 
