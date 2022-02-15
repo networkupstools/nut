@@ -43,6 +43,6 @@
 		<snmp_info command="yes" default="1" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
 		<snmp_info command="yes" default="2" multiplier="1.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" name="raritan" oid=".1.3.6.1.4.1.13742" snmp_info="raritan_mib" version="0.6"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" name="raritan" oid=".1.3.6.1.4.1.13742" snmp_info="raritan_mib" version="0.7"/>
 </nut>
 
