@@ -225,6 +225,25 @@ subdrivers are written:
 - tripplite-hid.c/h
 
 
+Fixing report descriptors
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is a fact of life that fellow developers make mistakes, and firmware
+authors do too. In some cases there are inconsistencies about bytes seen
+on the wire vs. their logical values, such value range and signedness if
+interpreting them according to standard.
+
+NUT drivers now include a way to detect and fix up known issues in such
+flawed USB report descriptors, side-stepping the standard similarly where
+deemed needed. A pointer to such hook method is part of the `subdriver_t`
+structure detailing each `usbhid-ups` subdriver nuances, defaulting to
+a `fix_report_desc()` trivial implementation.
+
+For some practical examples, see e.g. `apc_fix_report_desc()` method in the
+`drivers/apc-hid.c` file, and `cps_fix_report_desc()` in `drivers/cps-hid.c`
+file.
+
+
 Shutting down the UPS
 ~~~~~~~~~~~~~~~~~~~~~
 
