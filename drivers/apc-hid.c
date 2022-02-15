@@ -510,6 +510,7 @@ static int apc_claim(HIDDevice_t *hd) {
  */
 static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
+        int res = 0;
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
@@ -546,6 +547,7 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				pData->LogMax = hvt_logmax * 2; /* it may be smoking at this point */
 				upsdebugx(3, "Fixing Report Descriptor. Set voltage LogMin = %ld, LogMax = %ld",
 							pData->LogMin , pData->LogMax);
+                                res = 1;
                         }
                 }
 		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x30, USAGE_POW_CONFIG_VOLTAGE))) {
@@ -558,11 +560,11 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				pData->LogMax = 255;
 				upsdebugx(3, "Fixing Report Descriptor. Set configVoltage LogMin = %ld, LogMax = %ld",
 							pData->LogMin , pData->LogMax);
+                                res = 1;
                         }
                 }
-                return 1;
 	}
-	return 0;
+	return res;
 }
 
 subdriver_t apc_subdriver = {
