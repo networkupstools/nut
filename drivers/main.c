@@ -635,8 +635,9 @@ int main(int argc, char **argv)
 						" (again?)",
 						user, optarg);
 				} else {
-					upsdebugx(1, "Built-in default user for drivers '%s' "
-						"was ignored due to '%s' specified on command line",
+					upsdebugx(1, "Built-in default or configured user "
+						"for drivers '%s' was ignored due to '%s' "
+						"specified on command line",
 						user, optarg);
 				}
 				free(user);
