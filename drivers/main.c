@@ -27,6 +27,11 @@
 #include "dstate.h"
 #include "attribute.h"
 
+#include <grp.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 /* data which may be useful to the drivers */
 int		upsfd = -1;
 char		*device_path = NULL;
@@ -46,10 +51,12 @@ static	int	upsname_found = 0;
 
 static vartab_t	*vartab_h = NULL;
 
-/* variables possibly set by the global part of ups.conf */
+/* variables possibly set by the global part of ups.conf
+ * user and group may be set globally or per-driver
+ */
 time_t	poll_interval = 2;
-static char	*chroot_path = NULL, *user = NULL;
-static int	user_from_cmdline = 0;
+static char	*chroot_path = NULL, *user = NULL, *group = NULL;
+static int	user_from_cmdline = 0, group_from_cmdline = 0;
 
 /* signal handling */
 int	exit_flag = 0;
@@ -122,6 +129,7 @@ static void help_msg(void)
 	printf("  -i <int>       - poll interval\n");
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
+	printf("  -g <group>     - set pipe access to <group> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
 	printf("                 - example: -x cable=940-0095B\n\n");
 
@@ -323,6 +331,21 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	if (!strcmp(var, "group")) {
+		if (group_from_cmdline) {
+			upsdebugx(0, "Group '%s' specified in driver section "
+				"was ignored due to '%s' specified on command line",
+				val, group);
+		} else {
+			upsdebugx(1, "Overriding previously specified group '%s' "
+				"with '%s' specified for driver section",
+				group, val);
+			free(group);
+			group = xstrdup(val);
+		}
+		return 1;	/* handled */
+	}
+
 	if (!strcmp(var, "sddelay")) {
 		upslogx(LOG_INFO, "Obsolete value sddelay found in ups.conf");
 		return 1;	/* handled */
@@ -382,6 +405,20 @@ static void do_global_args(const char *var, const char *val)
 				user, val);
 			free(user);
 			user = xstrdup(val);
+		}
+	}
+
+	if (!strcmp(var, "group")) {
+		if (group_from_cmdline) {
+			upsdebugx(0, "Group specified in global section '%s' "
+				"was ignored due to '%s' specified on command line",
+				val, group);
+		} else {
+			upsdebugx(1, "Overriding previously specified group '%s' "
+				"with '%s' specified in global section",
+				group, val);
+			free(group);
+			group = xstrdup(val);
 		}
 	}
 
@@ -522,6 +559,7 @@ static void exit_cleanup(void)
 	free(chroot_path);
 	free(device_path);
 	free(user);
+	free(group);
 
 	if (pidfn) {
 		unlink(pidfn);
@@ -572,6 +610,9 @@ int main(int argc, char **argv)
 	/* pick up a default from configure --with-user */
 	user = xstrdup(RUN_AS_USER);	/* xstrdup: this gets freed at exit */
 
+	/* pick up a default from configure --with-group */
+	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
+
 	progname = xbasename(argv[0]);
 	open_syslog(progname);
 
@@ -585,7 +626,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:g:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -644,6 +685,22 @@ int main(int argc, char **argv)
 				free(user);
 				user = xstrdup(optarg);
 				user_from_cmdline = 1;
+				break;
+			case 'g':
+				if (group_from_cmdline) {
+					upsdebugx(1, "Previously specified group for drivers '%s' "
+						"was ignored due to '%s' specified on command line"
+						" (again?)",
+						group, optarg);
+				} else {
+					upsdebugx(1, "Built-in default or configured group "
+						"for drivers '%s' was ignored due to '%s' "
+						"specified on command line",
+						group, optarg);
+				}
+				free(group);
+				group = xstrdup(optarg);
+				group_from_cmdline = 1;
 				break;
 			case 'V':
 				/* already printed the banner, so exit */
@@ -794,6 +851,57 @@ int main(int argc, char **argv)
 	/* Only write pid if we're not just dumping data, for discovery */
 	if (!dump_data) {
 		char * sockname = dstate_init(progname, upsname);
+		/* Normally we stick to the built-in account info,
+		 * so if they were not over-ridden - no-op here:
+		 */
+		if (strcmp(group, RUN_AS_GROUP)
+		||  strcmp(user,  RUN_AS_USER)
+		) {
+			/* Tune group access permission to the pipe,
+			 * so that upsd can access it (using the
+			 * specified or retained default group):
+			 */
+			struct group *grp = getgrnam(group);
+			upsdebugx(1, "Group and/or user account for this driver "
+				"was customized ('%s/%s') compared to built-in "
+				"defaults. Fixing socket '%s' ownership/access.",
+				user, group, sockname);
+
+			if (grp == NULL) {
+				upsdebugx(1, "WARNING: could not resolve "
+					"group name '%s': %s",
+					group, strerror(errno)
+				);
+			} else {
+				struct stat statbuf;
+				mode_t mode;
+				if (chown(sockname, -1, grp->gr_gid)) {
+					upsdebugx(1, "WARNING: chown failed: %s",
+						strerror(errno)
+					);
+				}
+
+				if (stat(sockname, &statbuf)) {
+					/* Logically we'd fail chown above if file
+					 * does not exist or is not accessible, but
+					 * practically we only need stat for chmod
+					 */
+					upsdebugx(1, "WARNING: stat failed: %s",
+						strerror(errno)
+					);
+				} else {
+					/* chmod g+rw sockname */
+					mode = statbuf.st_mode;
+					mode |= S_IWGRP;
+					mode |= S_IRGRP;
+					if (chmod(sockname, mode)) {
+						upsdebugx(1, "WARNING: chmod failed: %s",
+							strerror(errno)
+						);
+					}
+				}
+			}
+		}
 		free(sockname);
 	}
 

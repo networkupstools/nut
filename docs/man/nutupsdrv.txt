@@ -132,6 +132,11 @@ USB-based drivers. However, you will want to remove this option later in order
 to avoid permission conflicts between the driver and the unprivileged copy of
 linkman:upsd[8].
 
+*-g* 'groupname'::
+Override the unprivileged group name that the driver may use after startup
+to set permissions for the filesystem socket so `upsd` may still access it
+if the run-time `user` of the driver normally would deny that access.
+
 *-x* 'var'='val'::
 Define a variable called 'var' with the value of 'var' in the
 driver.  This varies from driver to driver - see the specific man pages
