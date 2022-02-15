@@ -864,7 +864,7 @@ int main(int argc, char **argv)
 			 */
 			struct group *grp = getgrnam(group);
 			upsdebugx(1, "Group and/or user account for this driver "
-				"was customized ('%s/%s') compared to built-in "
+				"was customized ('%s:%s') compared to built-in "
 				"defaults. Fixing socket '%s' ownership/access.",
 				user, group, sockname);
 
