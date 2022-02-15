@@ -857,6 +857,7 @@ int main(int argc, char **argv)
 		if (strcmp(group, RUN_AS_GROUP)
 		||  strcmp(user,  RUN_AS_USER)
 		) {
+			int allOk = 1;
 			/* Tune group access permission to the pipe,
 			 * so that upsd can access it (using the
 			 * specified or retained default group):
@@ -872,6 +873,7 @@ int main(int argc, char **argv)
 					"group name '%s': %s",
 					group, strerror(errno)
 				);
+				allOk = 0;
 			} else {
 				struct stat statbuf;
 				mode_t mode;
@@ -879,6 +881,7 @@ int main(int argc, char **argv)
 					upsdebugx(1, "WARNING: chown failed: %s",
 						strerror(errno)
 					);
+					allOk = 0;
 				}
 
 				if (stat(sockname, &statbuf)) {
@@ -889,6 +892,7 @@ int main(int argc, char **argv)
 					upsdebugx(1, "WARNING: stat failed: %s",
 						strerror(errno)
 					);
+					allOk = 0;
 				} else {
 					/* chmod g+rw sockname */
 					mode = statbuf.st_mode;
@@ -898,9 +902,23 @@ int main(int argc, char **argv)
 						upsdebugx(1, "WARNING: chmod failed: %s",
 							strerror(errno)
 						);
+						allOk = 0;
 					}
 				}
 			}
+
+			if (allOk) {
+				upsdebugx(1, "Group access for this driver successfully fixed");
+			} else {
+				upsdebugx(0, "WARNING: Needed to fix group access "
+					"to filesystem socket of this driver, but failed; "
+					"run the driver with more debugging to see how exactly.\n"
+					"Consumers of the socket, such as upsd data server, "
+					"can fail to interact with the driver and represent "
+					"the device: %s",
+					sockname);
+			}
+
 		}
 		free(sockname);
 	}
