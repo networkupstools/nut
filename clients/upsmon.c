@@ -1809,6 +1809,7 @@ static void help(const char *arg_progname)
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
 	printf("		 - stop: stop monitoring and exit\n");
+	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
@@ -2042,7 +2043,8 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, checking_flag = 0, foreground = -1;
+	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
+	pid_t	oldpid = -1;
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -2053,7 +2055,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -2067,6 +2069,12 @@ int main(int argc, char *argv[])
 				if (cmd == 0)
 					help(argv[0]);
 				break;
+
+			case 'P':
+				if ((oldpid = parsepid(optarg)) < 0)
+					help(argv[0]);
+				break;
+
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -2121,17 +2129,41 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
-		sendsignal(prog, cmd);
-		exit(EXIT_SUCCESS);
+		if (oldpid < 0) {
+			cmdret = sendsignal(prog, cmd);
+		} else {
+			cmdret = sendsignalpid(oldpid, cmd);
+		}
+		/* exit(EXIT_SUCCESS); */
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
-	if (sendsignal(prog, 0) == 0) {
+	if (oldpid < 0) {
+		cmdret = sendsignal(prog, 0);
+	} else {
+		cmdret = sendsignalpid(oldpid, 0);
+	}
+	switch (cmdret) {
+	case 0:
 		printf("Fatal error: A previous upsmon instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
+
+	case -3:
+	case -2:
+		upslogx(LOG_WARNING, "Could not %s PID file "
+			"to see if previous upsmon instance is "
+			"already running!\n",
+			(cmdret == -3 ? "find" : "parse"));
+		break;
+
+	case -1:
+	default:
+		/* Just failed to send signal, no competitor running */
+		break;
 	}
 
 	argc -= optind;
