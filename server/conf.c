@@ -333,6 +333,13 @@ void load_upsdconf(int reloading)
 		return;
 	}
 
+	if (reloading) {
+		/* if upsd.conf added or changed
+		 * (or commented away) the debug_min
+		 * setting, detect that */
+		nut_debug_level_global = -1;
+	}
+
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
@@ -357,6 +364,15 @@ void load_upsdconf(int reloading)
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 
+	}
+
+	if (reloading) {
+		if (nut_debug_level_global > -1) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from upsd.conf",
+				nut_debug_level_global);
+			nut_debug_level = nut_debug_level_global;
+		}
 	}
 
 	pconf_finish(&ctx);
