@@ -1176,6 +1176,7 @@ static void help(const char *arg_progname)
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
+	printf("  -FF		stay foregrounded and still save the PID file\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
@@ -1312,7 +1313,12 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 			case 'F':
-				foreground = 1;
+				if (foreground > 0) {
+					/* specified twice to save PID file anyway */
+					foreground = 2;
+				} else {
+					foreground = 1;
+				}
 				break;
 			case 'B':
 				foreground = 0;
@@ -1473,8 +1479,13 @@ int main(int argc, char **argv)
 		background();
 		writepid(pidfn);
 	} else {
-		upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
-		memset(pidfn, 0, sizeof(pidfn));
+		if (foreground == 2) {
+			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
+			writepid(pidfn);
+		} else {
+			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
+			memset(pidfn, 0, sizeof(pidfn));
+		}
 	}
 
 	/* initialize SSL (keyfile must be readable by nut user) */

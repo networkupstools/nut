@@ -47,6 +47,7 @@ are:
 Send the command signal above using specified PID number, rather than
 consulting the PID file.  This can help define service units which
 start `upsd` as a foreground process so it does not create a PID file.
+See also `-FF` option as an alternative.
 
 *-D*::
 Raise the debugging level.  upsd will run in the foreground by default,
@@ -55,6 +56,7 @@ Use this option multiple times for more details.
 
 *-F*::
 upsd will run in the foreground, regardless of debugging settings.
+Specify twice (`-FF` or `-F -F`) to save the PID file even in this mode.
 
 *-B*::
 upsd will run in the background, regardless of debugging settings.

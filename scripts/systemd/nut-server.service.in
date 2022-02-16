@@ -20,7 +20,7 @@ PartOf=nut.target
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=@SBINDIR@/upsd -F
+ExecStart=@SBINDIR@/upsd -FF
 ExecReload=@SBINDIR@/upsd -c reload
 
 [Install]
