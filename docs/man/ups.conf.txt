@@ -116,6 +116,13 @@ of the driver behavior.
 Optional.  Overrides the compiled-in default unprivileged username. See the
 discussion of the `-u` option in linkman:nutupsdrv[8] for details.
 
+*debug_min* 'INTEGER'::
+
+Optional.  Specify a minimum debug level for all driver daemons, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly. Command-line option `-D` can only increase this
+verbosity level.
+
 UPS FIELDS
 ----------
 *driver*::
@@ -224,6 +231,14 @@ the outside world, internally in the UPS the original value is used.
 
 All other fields are passed through to the hardware-specific part of the
 driver.  See those manuals for the list of what is allowed.
+
+*debug_min* 'INTEGER'::
+
+Optional.  Specify a minimum debug level for this driver daemon, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly.  If the global `debug_min` is also set, this
+driver-level setting overrides it.  Command-line option `-D` can only
+increase this verbosity level.
 
 INTEGRATION
 -----------

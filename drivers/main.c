@@ -52,6 +52,27 @@ static char	*chroot_path = NULL, *user = NULL;
 /* signal handling */
 int	exit_flag = 0;
 
+/* should this driver instance go to background (default)
+ * or stay foregrounded (default if -D/-d options are set on
+ * command line)?
+ * Value is tri-state:
+ * -1 (default) Background the driver process
+ *  0 User required to not background explicitly,
+ *    or passed -D (or -d) and current value was -1
+ *  1 User required to background even if with -D or dump_mode
+ */
+static int background_flag = -1;
+
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the ups.conf
+ * can define a debug_min value in the global or device
+ * section, to set the minimal debug level (CLI provided
+ * value less than that would not have effect, can only
+ * have more).
+ */
+static int nut_debug_level_global = -1;
+static int nut_debug_level_driver = -1;
+
 /* everything else */
 static char	*pidfn = NULL;
 static int	dump_data = 0; /* Store the update_count requested */
@@ -112,8 +133,10 @@ static void help_msg(void)
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
-	printf("  -D             - raise debugging level\n");
+	printf("  -D             - raise debugging level (and stay foreground by default)\n");
 	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
+	printf("  -F             - stay foregrounded even if no debugging is enabled\n");
+	printf("  -B             - stay backgrounded even if debugging is bumped\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -321,6 +344,19 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */
 
+	/* Allow each driver to specify its minimal debugging level -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_driver = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf for the driver");
+		}
+		return 1;	/* handled */
+	}
+
 	return 0;	/* unhandled, pass it through to the driver */
 }
 
@@ -353,6 +389,17 @@ static void do_global_args(const char *var, const char *val)
 			do_synchronous=0;
 	}
 
+	/* Allow to specify its minimal debugging level for all drivers -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
+		}
+	}
 
 	/* unrecognized */
 }
@@ -546,7 +593,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -560,6 +607,12 @@ int main(int argc, char **argv)
 			case 's':
 				upsname = optarg;
 				upsname_found = 1;
+				break;
+			case 'F':
+				background_flag = 0;
+				break;
+			case 'B':
+				background_flag = 1;
 				break;
 			case 'D':
 				nut_debug_level++;
@@ -609,6 +662,21 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (nut_debug_level > 0 || dump_data) {
+		if ( background_flag < 0 ) {
+			/* Only flop from default - stay foreground with debug on */
+			background_flag = 0;
+		} else {
+			upsdebugx (0,
+				"Debug level is %d, dump data count is %s, "
+				"but backgrounding mode requested as %s",
+				nut_debug_level,
+				dump_data ? "on" : "off",
+				background_flag ? "on" : "off"
+				);
+		}
+	} /* else: default remains `background_flag==-1` where nonzero is true */
+
 	argc -= optind;
 	argv += optind;
 
@@ -629,6 +697,22 @@ int main(int argc, char **argv)
 			"Try -h for help.");
 	}
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and value specified for a driver config section
+	 * overrides the global one. Note that non-zero debug_min does
+	 * not impact foreground running mode.
+	 */
+	{
+		int nut_debug_level_upsconf = -1 ;
+		if ( nut_debug_level_global >= 0 && nut_debug_level_driver >= 0 ) {
+			nut_debug_level_upsconf = nut_debug_level_driver;
+		} else {
+			if ( nut_debug_level_global >= 0 ) nut_debug_level_upsconf = nut_debug_level_global;
+			if ( nut_debug_level_driver >= 0 ) nut_debug_level_upsconf = nut_debug_level_driver;
+		}
+		if ( nut_debug_level_upsconf > nut_debug_level )
+			nut_debug_level = nut_debug_level_upsconf;
+	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
@@ -638,13 +722,14 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
-	/* This avoid case where ie /var is umounted */
+	/* Only switch to statepath if we're not powering off
+	 * or not just dumping data (for discovery) */
+	/* This avoids case where ie /var is unmounted already */
 	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
-	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
+	if ((background_flag != 0) && (!do_forceshutdown)) {
 		char	buffer[SMALLBUF];
 
 		setup_signals();
@@ -759,7 +844,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if ( (nut_debug_level == 0) && (!dump_data) ) {
+	if (background_flag != 0) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
