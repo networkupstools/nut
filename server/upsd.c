@@ -1458,6 +1458,7 @@ int main(int argc, char **argv)
 		background();
 		writepid(pidfn);
 	} else {
+		upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
 		memset(pidfn, 0, sizeof(pidfn));
 	}
 
