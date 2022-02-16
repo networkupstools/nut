@@ -302,6 +302,59 @@ void writepid(const char *name)
 	umask(mask);
 }
 
+/* send sig to pid, returns -1 for error, or
+ * zero for a successfully sent signal
+ */
+int sendsignalpid(pid_t pid, int sig)
+{
+	int	ret;
+
+	if (pid < 2 || pid > get_max_pid_t()) {
+		upslogx(LOG_NOTICE,
+			"Ignoring invalid pid number %" PRIdMAX,
+			(intmax_t) pid);
+		return -1;
+	}
+
+	/* see if this is going to work first */
+	ret = kill(pid, 0);
+
+	if (ret < 0) {
+		perror("kill");
+		return -1;
+	}
+
+	if (sig != 0) {
+		/* now actually send it */
+		ret = kill(pid, sig);
+
+		if (ret < 0) {
+			perror("kill");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+/* parses string buffer into a pid_t if it passes
+ * a few sanity checks; returns -1 on error
+ */
+pid_t parsepid(const char *buf)
+{
+	pid_t	pid = -1;
+
+	/* assuming 10 digits for a long */
+	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	if (_pid <= get_max_pid_t()) {
+		pid = (pid_t)_pid;
+	} else {
+		upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+	}
+
+	return pid;
+}
+
 /* open pidfn, get the pid, then send it sig
  * returns negative codes for errors, or
  * zero for a successfully sent signal
@@ -311,7 +364,7 @@ int sendsignalfn(const char *pidfn, int sig)
 	char	buf[SMALLBUF];
 	FILE	*pidf;
 	pid_t	pid = -1;
-	int	ret;
+	int	ret = -1;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -324,44 +377,22 @@ int sendsignalfn(const char *pidfn, int sig)
 		fclose(pidf);
 		return -2;
 	}
+	/* TOTHINK: Original code only closed pidf before
+	 * exiting the method, on error or "normally".
+	 * Why not here? Do we want an (exclusive?) hold
+	 * on it while being active in the method?
+	 */
 
-	{ /* scoping */
-		intmax_t _pid = strtol(buf, (char **)NULL, 10); /* assuming 10 digits for a long */
-		if (_pid <= get_max_pid_t()) {
-			pid = (pid_t)_pid;
-		} else {
-			upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
-		}
-	}
+	/* this method actively reports errors, if any */
+	pid = parsepid(buf);
 
-	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %" PRIdMAX, (intmax_t) pid);
-		fclose(pidf);
-		return -1;
-	}
-
-	/* see if this is going to work first */
-	ret = kill(pid, 0);
-
-	if (ret < 0) {
-		perror("kill");
-		fclose(pidf);
-		return -1;
-	}
-
-	if (sig != 0) {
-		/* now actually send it */
-		ret = kill(pid, sig);
-
-		if (ret < 0) {
-			perror("kill");
-			fclose(pidf);
-			return -1;
-		}
+	if (pid >= 0) {
+		/* this method actively reports errors, if any */
+		ret = sendsignalpid(pid, sig);
 	}
 
 	fclose(pidf);
-	return 0;
+	return ret;
 }
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)

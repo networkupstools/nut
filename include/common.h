@@ -103,6 +103,10 @@ void chroot_start(const char *path);
 /* write a pid file - <name> is a full pathname *or* just the program name */
 void writepid(const char *name);
 
+/* parses string buffer into a pid_t if it passes
+ * a few sanity checks; returns -1 on error */
+pid_t parsepid(const char *buf);
+
 /* send a signal to another running process */
 int sendsignal(const char *progname, int sig);
 
@@ -111,6 +115,10 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
+
+/* send sig to pid after some sanity checks, returns
+ * -1 for error, or zero for a successfully sent signal */
+int sendsignalpid(pid_t pid, int sig);
 
 /* open <pidfn>, get the pid, then send it <sig>
  * returns zero for successfully sent signal,
