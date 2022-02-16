@@ -1279,7 +1279,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	}
 
 	/* RUN_AS_USER <userid> */
- 	if (!strcmp(arg[0], "RUN_AS_USER")) {
+	if (!strcmp(arg[0], "RUN_AS_USER")) {
 		free(run_as_user);
 		run_as_user = xstrdup(arg[1]);
 		return 1;
