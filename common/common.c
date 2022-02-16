@@ -349,13 +349,15 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	/* now actually send it */
-	ret = kill(pid, sig);
+	if (sig != 0) {
+		/* now actually send it */
+		ret = kill(pid, sig);
 
-	if (ret < 0) {
-		perror("kill");
-		fclose(pidf);
-		return -1;
+		if (ret < 0) {
+			perror("kill");
+			fclose(pidf);
+			return -1;
+		}
 	}
 
 	fclose(pidf);
