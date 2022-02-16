@@ -393,6 +393,13 @@ support SSL, so don't use it unless all of them have it running.
 When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
+*DEBUG_MIN* 'INTEGER'::
+
+Optionally specify a minimum debug level for `upsmon` daemon, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly. Command-line option `-D` can only increase this
+verbosity level.
+
 SEE ALSO
 --------
 linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].

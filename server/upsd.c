@@ -1173,7 +1173,9 @@ static void help(const char *arg_progname)
 	printf("		commands:\n");
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
-	printf("  -D		raise debugging level\n");
+	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -F		stay foregrounded even if no debugging is enabled\n");
+	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -q		raise log level threshold\n");
@@ -1245,7 +1247,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0, cmdret = 0;
+	int	i, cmd = 0, cmdret = 0, foreground = -1;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1261,7 +1263,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DFB")) != -1) {
 		switch (i) {
 			case 'p':
 			case 'i':
@@ -1302,6 +1304,12 @@ int main(int argc, char **argv)
 			case 'D':
 				nut_debug_level++;
 				break;
+			case 'F':
+				foreground = 1;
+				break;
+			case 'B':
+				foreground = 0;
+				break;
 
 			case '4':
 				opt_af = AF_INET;
@@ -1314,6 +1322,14 @@ int main(int argc, char **argv)
 			case 'h':
 			default:
 				help(progname);
+		}
+	}
+
+	if (foreground < 0) {
+		if (nut_debug_level > 0) {
+			foreground = 1;
+		} else {
+			foreground = 0;
 		}
 	}
 
@@ -1360,6 +1376,14 @@ int main(int argc, char **argv)
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
+
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in upsd.conf. Note that non-zero debug_min does not impact
+	 * foreground running mode.
+	 */
+	if (nut_debug_level_global > nut_debug_level)
+		nut_debug_level = nut_debug_level_global;
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	{ /* scope */
 	/* As documented above, the ALLOW_NO_DEVICE can be provided via
@@ -1414,7 +1438,7 @@ int main(int argc, char **argv)
 	/* handle upsd.users */
 	user_load();
 
-	if (!nut_debug_level) {
+	if (!foreground) {
 		background();
 		writepid(pidfn);
 	} else {

@@ -145,3 +145,13 @@
 #
 # Unless you have really ancient clients, you probably want to enable this.
 # Currently disabled by default to ensure compatibility with existing setups.
+
+# =======================================================================
+# DEBUG_MIN <Integer>
+# DEBUG_MIN 2
+#
+# Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
+# troubleshooting a deployment, without impacting foreground or background
+# running mode directly, and without need to edit init-scripts or service
+# unit definitions. Note that command-line option `-D` can only increase
+# this verbosity level.
