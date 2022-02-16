@@ -57,6 +57,9 @@ This may be set in ups.conf with "user" in the global section.
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
 
+*-d*::
+Pass the selected debug level from `upsdrvctl` to launched drivers.
+
 COMMANDS
 --------
 

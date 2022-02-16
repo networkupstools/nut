@@ -28,6 +28,14 @@
 static ups_t	*upstable = NULL;
 int	num_ups = 0;
 
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the upsd.conf
+ * can define a debug_min value in the global section,
+ * to set the minimal debug level (CLI provided value less
+ * than that would not have effect, can only have more).
+ */
+int	nut_debug_level_global = -1;
+
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
 {
@@ -135,6 +143,18 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
 		return 0;
+
+	/* DEBUG_MIN (NUM) */
+	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
+	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "DEBUG_MIN has non numeric or negative value in upsd.conf");
+		}
+		return 1;
+	}
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {

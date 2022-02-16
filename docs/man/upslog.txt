@@ -65,7 +65,14 @@ the linkman:upsclient[3] library.
 
 Store the results in this file.
 +
-You can use "-" for stdout, but upslog will remain in the foreground.
+You can use "-" for stdout, but upslog will remain in the foreground
+by default.
+
+*-F*::
+upslog will run in the foreground, regardless of logging target.
+
+*-B*::
+upslog will run in the background, regardless of logging target.
 
 *-s* 'ups'::
 Monitor this UPS.  The format for this option is
@@ -73,7 +80,7 @@ Monitor this UPS.  The format for this option is
 
 *-u* 'username'::
 
-If started as root, upsmon will *setuid*(2) to the user id
+If started as root, upslog will *setuid*(2) to the user id
 associated with 'username' for security.
 +
 If 'username' is not defined, it will use the value that was compiled into the

@@ -13,7 +13,7 @@ SYNOPSIS
 
 *upsmon* -c 'command'
 
-*upsmon* [-D] [-K] [-p] [-u 'user']
+*upsmon* [-D] [-F | -B] [-K] [-p] [-u 'user']
 
 DESCRIPTION
 -----------
@@ -45,9 +45,15 @@ commands are:
 "reloading nuances" below if this doesn't work.
 
 *-D*::
-Raise the debugging level.  upsmon will run in the foreground and prints
-information on stdout about the monitoring process.  Use this multiple
-times for more details.
+Raise the debugging level.  upsmon will run in the foreground by default,
+and will print information on stdout about the monitoring process.
+Use this option multiple times for more details.
+
+*-F*::
+upsmon will run in the foreground, regardless of debugging settings.
+
+*-B*::
+upsmon will run in the background, regardless of debugging settings.
 
 *-K*::
 Test for the shutdown flag.  If it exists and contains the magic string

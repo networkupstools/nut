@@ -430,3 +430,13 @@ FINALDELAY 5
 # support SSL, so don't use it unless all of them have it running.
 # When compiled with NSS support of SSL, can be overridden for host
 # specified with a CERTHOST directive.
+
+# --------------------------------------------------------------------------
+# DEBUG_MIN - specify minimal debugging level for upsmon daemon
+# e.g. DEBUG_MIN 6
+#
+# Optionally specify a minimum debug level for `upsmon` daemon, e.g. for
+# troubleshooting a deployment, without impacting foreground or background
+# running mode directly, and without need to edit init-scripts or service
+# unit definitions. Note that command-line option `-D` can only increase
+# this verbosity level.
