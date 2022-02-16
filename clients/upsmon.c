@@ -1393,6 +1393,13 @@ static void loadconfig(void)
 		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
+	if (reload_flag == 1) {
+		/* if upsmon.conf added or changed
+		 * (or commented away) the debug_min
+		 * setting, detect that */
+		nut_debug_level_global = -1;
+	}
+
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
@@ -1416,6 +1423,15 @@ static void loadconfig(void)
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
+		}
+	}
+
+	if (reload_flag == 1) {
+		if (nut_debug_level_global > -1) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from upsmon.conf",
+				nut_debug_level_global);
+			nut_debug_level = nut_debug_level_global;
 		}
 	}
 
@@ -1977,20 +1993,8 @@ static void reload_conf(void)
 	/* reset paranoia checker */
 	totalpv = 0;
 
-	/* if upsmon.conf added or changed
-	 * (or commented away) the debug_min
-	 * setting, detect that */
-	nut_debug_level_global = -1;
-
 	/* reread upsmon.conf */
 	loadconfig();
-
-	if (nut_debug_level_global > -1) {
-		upslogx(LOG_INFO,
-			"Applying debug_min=%d from upsmon.conf",
-			nut_debug_level_global);
-		nut_debug_level = nut_debug_level_global;
-	}
 
 	/* go through the utype_t struct again */
 	tmp = firstups;
