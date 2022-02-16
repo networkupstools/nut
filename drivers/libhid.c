@@ -915,7 +915,8 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			continue;
 		} else {
 			/* hid_lookup_usage() logs for itself: ... -> not found in lookup table */
-			/*upsdebugx(5, "string_to_path: badvalue (usage): %ld negative", usage);*/
+			upsdebugx(5, "string_to_path: hid_lookup_usage failed, "
+				"checking if token %s is a raw value", token);
 		}
 
 		/* translate unnamed path components such as "ff860024" */
