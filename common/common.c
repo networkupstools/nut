@@ -302,7 +302,10 @@ void writepid(const char *name)
 	umask(mask);
 }
 
-/* open pidfn, get the pid, then send it sig */
+/* open pidfn, get the pid, then send it sig
+ * returns negative codes for errors, or
+ * zero for a successfully sent signal
+ */
 int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
@@ -313,13 +316,13 @@ int sendsignalfn(const char *pidfn, int sig)
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
 		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
-		return -1;
+		return -3;
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
-		return -1;
+		return -2;
 	}
 
 	{ /* scoping */

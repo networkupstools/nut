@@ -112,7 +112,13 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
-/* open <pidfn>, get the pid, then send it <sig> */
+/* open <pidfn>, get the pid, then send it <sig>
+ * returns zero for successfully sent signal,
+ * negative for errors:
+ * -3   PID file not found
+ * -2   PID file not parsable
+ * -1   Error sending signal
+ */
 int sendsignalfn(const char *pidfn, int sig);
 
 const char *xbasename(const char *file);
