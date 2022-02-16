@@ -1341,10 +1341,26 @@ int main(int argc, char **argv)
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
-	if (sendsignalfn(pidfn, 0) == 0) {
+	cmdret = sendsignalfn(pidfn, 0);
+	switch (cmdret) {
+	case 0:
 		printf("Fatal error: A previous upsd instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
+
+	case -3:
+	case -2:
+		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
+			"to see if previous upsd instance is "
+			"already running!\n",
+			(cmdret == -3 ? "find" : "parse"),
+			pidfn);
+		break;
+
+	case -1:
+	default:
+		/* Just failed to send signal, no competitor running */
+		break;
 	}
 
 	argc -= optind;
