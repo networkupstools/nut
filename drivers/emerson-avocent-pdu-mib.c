@@ -25,16 +25,16 @@
 
 #include "emerson-avocent-pdu-mib.h"
 
-#define EMERSON_AVOCENT_MIB_VERSION		"1.2"
+#define EMERSON_AVOCENT_MIB_VERSION		"1.3"
 #define EMERSON_AVOCENT_SYSOID			".1.3.6.1.4.1.10418.17.1.7"
 #define EMERSON_AVOCENT_OID_MODEL_NAME	".1.3.6.1.4.1.10418.17.2.1.2.0"
 
 /* FIXME: Avocent PM's seem to have 3 temperature sensors (index 1, 2, 3)
  * for the embedded temperature (equivalent to ups.temperature) */
-#define AVOCENT_OID_UNIT_TEMPERATURE ".1.3.6.1.4.1.10418.17.2.5.3.1.17.1.1"
+#define AVOCENT_OID_UNIT_TEMPERATURE	".1.3.6.1.4.1.10418.17.2.5.3.1.17.1.1"
 
 /* Same as above for humidity... */
-#define AVOCENT_OID_UNIT_HUMIDITY ".1.3.6.1.4.1.10418.17.2.5.3.1.24.1"
+#define AVOCENT_OID_UNIT_HUMIDITY	".1.3.6.1.4.1.10418.17.2.5.3.1.24.1"
 
 #define AVOCENT_OID_OUTLET_COUNT	".1.3.6.1.4.1.10418.17.2.5.3.1.8.%i.%i"
 
@@ -42,7 +42,7 @@
 #define AVOCENT_OID_UNIT_CURRENT	".1.3.6.1.4.1.10418.17.2.5.3.1.10.1.1"
 /* FIXME: This is actually pmPowerMgmtPDUTableVoltage1Value */
 #define AVOCENT_OID_UNIT_VOLTAGE	".1.3.6.1.4.1.10418.17.2.5.3.1.31.1.1"
-#define AVOCENT_OID_UNIT_MACADDR        ".1.3.6.1.2.1.2.2.1.6.1"
+#define AVOCENT_OID_UNIT_MACADDR	".1.3.6.1.2.1.2.2.1.6.1"
 
 #ifdef OPENGEAR_MULTIPLE_BANKS
 #define AVOCENT_OID_OUTLET_ID		".1.3.6.1.4.1.10418.17.2.5.5.1.3"
