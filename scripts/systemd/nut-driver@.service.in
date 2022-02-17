@@ -29,6 +29,14 @@ EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
 ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl start "$NUTDEV"'
 ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl stop "$NUTDEV"'
+Restart=always
+# Protract the "hold-off" interval, so if the device connection is
+# lost, the driver does not reapidly restart and fail too many times,
+# and then systemd would keep the unit failed without further retries.
+# Notably, this helps start "dummy-ups" drivers retranslating local
+# devices (so getting a chicken-and-egg problem for driver-upsd-driver
+# orderly series of initializations). More details in NUT issue #779.
+RestartSec=15s
 Type=forking
 # Note: If you customize the "maxstartdelay" in ups.conf or in your
 # NUT compilation defaults, so it exceeds the default systemd unit
