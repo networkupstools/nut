@@ -25,7 +25,7 @@
 
 #include "eaton-ats16-nmc-mib.h"
 
-#define EATON_ATS16_NMC_MIB_VERSION  "0.19"
+#define EATON_ATS16_NMC_MIB_VERSION  "0.20"
 
 #define EATON_ATS16_NMC_SYSOID  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
 #define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -80,6 +80,11 @@ static info_lkp_t eaton_ats16_nmc_output_status_info[] = {
 
 /* EATON_ATS_NMC Snmp2NUT lookup table */
 static snmp_info_t eaton_ats16_nmc_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

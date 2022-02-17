@@ -24,7 +24,7 @@
 
 #include "xppc-mib.h"
 
-#define XPPC_MIB_VERSION  "0.3"
+#define XPPC_MIB_VERSION  "0.4"
 
 #define XPPC_SYSOID       ".1.3.6.1.4.1.935"
 
@@ -98,6 +98,12 @@ static snmp_info_t xppc_mib[] = {
 	 * 	{ 0, NULL }
 	 * };
 	 */
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
         { "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",
                 SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 
