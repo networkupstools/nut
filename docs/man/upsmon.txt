@@ -11,7 +11,7 @@ SYNOPSIS
 
 *upsmon* -h
 
-*upsmon* -c 'command'
+*upsmon* -c 'command' [-P 'pid']
 
 *upsmon* [-D] [-F | -B] [-K] [-p] [-u 'user']
 
@@ -43,6 +43,12 @@ commands are:
 
 *reload*;; reread linkman:upsmon.conf[5] configuration file.  See
 "reloading nuances" below if this doesn't work.
+
+*-P* 'pid'::
+Send the command signal above using specified PID number, rather than
+consulting the PID file.  This can help define service units which
+start main `upsmon` as a foreground process so it does not have to
+rely on a PID file.
 
 *-D*::
 Raise the debugging level.  upsmon will run in the foreground by default,

@@ -1173,8 +1173,10 @@ static void help(const char *arg_progname)
 	printf("		commands:\n");
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
+	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
+	printf("  -FF		stay foregrounded and still save the PID file\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
@@ -1251,6 +1253,7 @@ int main(int argc, char **argv)
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
+	pid_t	oldpid = -1;
 
 	progname = xbasename(argv[0]);
 
@@ -1263,7 +1266,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DFB")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {
 			case 'p':
 			case 'i':
@@ -1301,11 +1304,21 @@ int main(int argc, char **argv)
 					help(progname);
 				break;
 
+			case 'P':
+				if ((oldpid = parsepid(optarg)) < 0)
+					help(progname);
+				break;
+
 			case 'D':
 				nut_debug_level++;
 				break;
 			case 'F':
-				foreground = 1;
+				if (foreground > 0) {
+					/* specified twice to save PID file anyway */
+					foreground = 2;
+				} else {
+					foreground = 1;
+				}
 				break;
 			case 'B':
 				foreground = 0;
@@ -1334,17 +1347,41 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
-		cmdret = sendsignalfn(pidfn, cmd);
+		if (oldpid < 0) {
+			cmdret = sendsignalfn(pidfn, cmd);
+		} else {
+			cmdret = sendsignalpid(oldpid, cmd);
+		}
 		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
-	if (sendsignalfn(pidfn, 0) == 0) {
+	if (oldpid < 0) {
+		cmdret = sendsignalfn(pidfn, 0);
+	} else {
+		cmdret = sendsignalpid(oldpid, 0);
+	}
+	switch (cmdret) {
+	case 0:
 		printf("Fatal error: A previous upsd instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
+
+	case -3:
+	case -2:
+		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
+			"to see if previous upsd instance is "
+			"already running!\n",
+			(cmdret == -3 ? "find" : "parse"),
+			pidfn);
+		break;
+
+	case -1:
+	default:
+		/* Just failed to send signal, no competitor running */
+		break;
 	}
 
 	argc -= optind;
@@ -1442,7 +1479,13 @@ int main(int argc, char **argv)
 		background();
 		writepid(pidfn);
 	} else {
-		memset(pidfn, 0, sizeof(pidfn));
+		if (foreground == 2) {
+			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
+			writepid(pidfn);
+		} else {
+			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
+			memset(pidfn, 0, sizeof(pidfn));
+		}
 	}
 
 	/* initialize SSL (keyfile must be readable by nut user) */
