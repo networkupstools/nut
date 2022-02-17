@@ -127,6 +127,36 @@ shutdown.restart), and conversions of manufacturer specific data
 formats.
 
 
+Usage macros in drivers/hidtypes.h
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `drivers/hidtypes.h` header provides a number of macro names
+for entries in the standard usage tables for Power Device
+`USAGE_POW_<SOMETHING>` and Battery System `USAGE_BAT_<SOMETHING>`
+data pages.
+
+If NUT codebase would ever need to refresh those macros, here is
+some background information (based on NUT issue #1189 and PR #1290):
+
+These data were parsed from (a very slightly updated version of)
+https://github.com/abend0c1/hidrdd/blob/master/rd.conf file, which
+incorporates the complete USB-IF usage definitions for Power Device
+and Battery System pages (among many others), so we didn't have to
+extract the names and values from the USB-IF standards documents
+(did check it all by eye though).
+
+The file was processed with the following chain of commands:
+
+------
+:; grep -e '^0084' -e '^0085' rd.conf \
+   | sed 's/,.*$//;s/ *$//' \
+   | sed 's/ /_/g;s/_/ /' \
+   | tr '[:lower:]' '[:upper:]' \
+   | sed 's/\(0085.... \)/\1USAGE_BAT_/;s/\(0084.... \)/\1USAGE_POW_/;s/\([A-Z_]*\)_PAGE/PAGE_\1/' \
+   | awk '{print "#define "$2" 0x"$1}'
+------
+
+
 Writing a subdriver
 ~~~~~~~~~~~~~~~~~~~
 
@@ -193,6 +223,25 @@ subdrivers are written:
 - mge-hid.c/h
 - powercom-hid.c/h
 - tripplite-hid.c/h
+
+
+Fixing report descriptors
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is a fact of life that fellow developers make mistakes, and firmware
+authors do too. In some cases there are inconsistencies about bytes seen
+on the wire vs. their logical values, such value range and signedness if
+interpreting them according to standard.
+
+NUT drivers now include a way to detect and fix up known issues in such
+flawed USB report descriptors, side-stepping the standard similarly where
+deemed needed. A pointer to such hook method is part of the `subdriver_t`
+structure detailing each `usbhid-ups` subdriver nuances, defaulting to
+a `fix_report_desc()` trivial implementation.
+
+For some practical examples, see e.g. `apc_fix_report_desc()` method in the
+`drivers/apc-hid.c` file, and `cps_fix_report_desc()` in `drivers/cps-hid.c`
+file.
 
 
 Shutting down the UPS

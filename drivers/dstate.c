@@ -602,7 +602,7 @@ static void sock_close(void)
 
 /* interface */
 
-void dstate_init(const char *prog, const char *devname)
+char * dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
@@ -625,6 +625,9 @@ void dstate_init(const char *prog, const char *devname)
 	sockfd = sock_open(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+
+	/* NOTE: Caller must free this string */
+	return xstrdup(sockname);
 }
 
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
