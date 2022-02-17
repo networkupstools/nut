@@ -1,7 +1,20 @@
 [Unit]
 Description=Network UPS Tools - device driver for %I
 After=local-fs.target
+
+# Note: If the "Before" line below is uncommented, the target unit
+# would only become initialized after the driver units are all in
+# a final state (active, failed, ...) and would allow nut-server
+# (upsd) to start up and represent those devices on the network.
+# With this constraint commented away, the nut-server should start
+# earlier, but may initially report some devices as Not connected
+# (they should appear when drivers complete their initialization -
+# e.g. snmp walks of large MIBs can take a while):
+#Before=nut-driver.target
+
+# Propagate stopping of the target:
 PartOf=nut-driver.target
+
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the
 # subsequent `upsd` will have a `0.0.0.0` or a `localhost` to bind
