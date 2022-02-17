@@ -675,10 +675,20 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.stayoff");
 	}
 
-	/* Publish sysContact and sysLocation (from IETF standard paths)
+	/* Publish sysDescr, sysContact and sysLocation (from IETF standard paths)
 	 * for all subdrivers that do not have one defined in their mapping
 	 * tables (note: for lack of better knowledge, defined as read-only
 	 * entries here) */
+
+	if (NULL == dstate_getinfo("device.description")) {
+		/* sysDescr.0 */
+		if (nut_snmp_get_str(".1.3.6.1.2.1.1.1.0", model, sizeof(model), NULL) == TRUE) {
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysDescr for device.description");
+			dstate_setinfo("device.description", "%s", model);
+		} else {
+			upsdebugx(2, "Can't get and publish sysDescr for device.description");
+		}
+	}
 
 	if (NULL == dstate_getinfo("device.contact")) {
 		/* sysContact.0 */
