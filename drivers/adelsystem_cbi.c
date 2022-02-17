@@ -43,7 +43,7 @@ static int ser_baud_rate = BAUD_RATE;					/* serial port baud rate */
 static char ser_parity = PARITY;						/* serial port parity */
 static int ser_data_bit = DATA_BIT;						/* serial port data bit */
 static int ser_stop_bit = STOP_BIT;						/* serial port stop bit */
-static int rio_slave_id = MODBUS_SLAVE_ID;				/* set device ID to default value */
+static int dev_slave_id = MODBUS_SLAVE_ID;				/* set device ID to default value */
 static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;		/* set the modbus response time out (s) */
 static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;	/* set the modbus response time out (us) */
 static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;		/* set the modbus byte time out (us) */
@@ -115,10 +115,10 @@ void upsdrv_initups(void)
 	}
 
 	/* set slave ID */
-	rval = modbus_set_slave(mbctx, rio_slave_id);
+	rval = modbus_set_slave(mbctx, dev_slave_id);
 	if (rval < 0) {
 		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", rio_slave_id);
+		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", dev_slave_id);
 	}
 
 	/* connect to modbus device  */
@@ -501,13 +501,11 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "device_mfr", "device manufacturer");
-	addvar(VAR_VALUE, "device_model", "device model");
 	addvar(VAR_VALUE, "ser_baud_rate", "serial port baud rate");
 	addvar(VAR_VALUE, "ser_parity", "serial port parity");
 	addvar(VAR_VALUE, "ser_data_bit", "serial port data bit");
 	addvar(VAR_VALUE, "ser_stop_bit", "serial port stop bit");
-	addvar(VAR_VALUE, "rio_slave_id", "RIO modbus slave ID");
+	addvar(VAR_VALUE, "dev_slave_id", "device modbus slave ID");
 	addvar(VAR_VALUE, "mod_resp_to_s", "modbus response timeout (s)");
 	addvar(VAR_VALUE, "mod_resp_to_us", "modbus response timeout (us)");
 	addvar(VAR_VALUE, "mod_byte_to_s", "modbus byte timeout (s)");
@@ -1138,17 +1136,6 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 /* get driver configuration parameters */
 void get_config_vars(void)
 {
-	/* check if device manufacturer is set and get the value */
-	if (testvar("device_mfr")) {
-		device_mfr = getval("device_mfr");
-	}
-	upsdebugx(2, "device_mfr %s", device_mfr);
-
-	/* check if device model is set and get the value */
-	if (testvar("device_model")) {
-		device_model = getval("device_model");
-	}
-	upsdebugx(2, "device_model %s", device_model);
 
 	/* check if serial baud rate is set and get the value */
 	if (testvar("ser_baud_rate")) {
@@ -1182,10 +1169,10 @@ void get_config_vars(void)
 	upsdebugx(2, "ser_stop_bit %d", ser_stop_bit);
 
 	/* check if device ID is set and get the value */
-	if (testvar("rio_slave_id")) {
-		rio_slave_id = (int)strtol(getval("rio_slave_id"), NULL, 10);
+	if (testvar("dev_slave_id")) {
+		dev_slave_id = (int)strtol(getval("dev_slave_id"), NULL, 10);
 	}
-	upsdebugx(2, "rio_slave_id %d", rio_slave_id);
+	upsdebugx(2, "dev_slave_id %d", dev_slave_id);
 
 	/* check if response time out (s) is set and get the value */
 	if (testvar("mod_resp_to_s")) {
@@ -1264,10 +1251,10 @@ void modbus_reconnect(void)
 	}
 
 	/* set slave ID */
-	rval = modbus_set_slave(mbctx, rio_slave_id);
+	rval = modbus_set_slave(mbctx, dev_slave_id);
 	if (rval < 0) {
 		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", rio_slave_id);
+		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", dev_slave_id);
 	}
 
 	/* connect to modbus device  */
