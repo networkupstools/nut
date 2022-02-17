@@ -576,6 +576,14 @@ void reginit(void)
 				regs[i].saddr = rnum - 1;
 				regs[i].xaddr = 0x40000 + rnum - 1;
 				break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upslogx(LOG_ERR,
 						"Invalid register type %d for register %d",
@@ -586,7 +594,10 @@ void reginit(void)
 						  "Invalid register type %d for register %d",
 						  regs[i].type,
 						  regs[i].num
-				);
+				);			
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif				
 		}
 		upsdebugx(3,
 				  "reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
@@ -1106,6 +1117,9 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			}
 			state->alrm = obta;
 			break;
+		case BINH:
+		case FSD:
+			break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
@@ -1129,7 +1143,6 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 # pragma GCC diagnostic pop
 #endif
 	}
-
 	return rval;
 }
 
