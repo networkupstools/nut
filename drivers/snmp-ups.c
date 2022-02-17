@@ -3349,9 +3349,15 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
 
-	/* Check if it's a daisychain setting */
-	if (!strncmp(varname, "device", 6)) {
-		/* Extract the device number */
+	/* Check if it's a daisychain setting (device.x.varname) */
+	if (!strncmp(varname, "device", 6)
+	&&  varname[7] >= '0'
+	&&  varname[7] <= '9'
+	) {
+		/* Extract the (single-digit) device number
+		 * TODO: use strtol() or similar to support multi-digit
+		 * chains and offset tmp_varname inside varname properly
+		 */
 		daisychain_device_number = atoi(&varname[7]);
 		/* Point at the command, without the "device.x" prefix */
 		tmp_varname = strdup(&varname[9]);
