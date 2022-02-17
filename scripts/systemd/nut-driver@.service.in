@@ -42,6 +42,8 @@ EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
 ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl start "$NUTDEV"'
 ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl stop "$NUTDEV"'
+# Restart really always, do not stop trying:
+StartLimitInterval=0
 Restart=always
 # Protract the "hold-off" interval, so if the device connection is
 # lost, the driver does not reapidly restart and fail too many times,
