@@ -123,7 +123,9 @@ static void help(const char *prog)
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
-	printf("  -l <logfile>	- Log file name, or - for stdout\n");
+	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
+	printf("  -F		- stay foregrounded even if logging into a file\n");
+	printf("  -B		- stay backgrounded even if logging to stdout\n");
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
@@ -391,7 +393,7 @@ static void run_flist(void)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i;
+	int	interval = 30, i, foreground = -1;
 	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
@@ -403,7 +405,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:")) != -1) {
+	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FB")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -436,6 +438,14 @@ int main(int argc, char **argv)
 
 			case 'p':
 				pidfilebase = optarg;
+				break;
+
+			case 'F':
+				foreground = 1;
+				break;
+
+			case 'B':
+				foreground = 0;
 				break;
 		}
 	}
@@ -501,8 +511,17 @@ int main(int argc, char **argv)
 
 	open_syslog(prog);
 
-	if (logfile != stdout)
+	if (foreground < 0) {
+		if (logfile == stdout) {
+			foreground = 1;
+		} else {
+			foreground = 0;
+		}
+	}
+
+	if (!foreground) {
 		background();
+	}
 
 	setup_signals();
 

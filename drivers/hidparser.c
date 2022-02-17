@@ -443,6 +443,33 @@ HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Of
 }
 
 /*
+ * FindObject_with_ID_Node
+ * Get pData item with given ReportID and Node. Return NULL if not found.
+ * -------------------------------------------------------------------------- */
+HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t Node)
+{
+	size_t	i;
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t *pData = &pDesc_arg->item[i];
+
+		if (pData->ReportID != ReportID) {
+			continue;
+		}
+
+		HIDPath_t * pPath = &pData->Path;
+		uint8_t size = pPath->Size;
+		if (size == 0 || pPath->Node[size-1] != Node) {
+			continue;
+		}
+
+		return pData;
+	}
+
+	return NULL;
+}
+
+/*
  * GetValue
  * Extract data from a report stored in Buf.
  * Use Offset, Size, LogMin, and LogMax of pData.
