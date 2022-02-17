@@ -217,7 +217,7 @@ static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 			snprintf(marlin_scratch_buf, sizeof(marlin_scratch_buf), "L%i", phases_nb);
 			if (phases_nb < 1 || phases_nb > 3)
 				upsdebugx(3, "WARNING: %s got %i phases which is an unexpected amount",
-				        __func__, phases_nb);
+					__func__, phases_nb);
 
 			return marlin_scratch_buf;
 		}
