@@ -638,9 +638,9 @@ AC_ARG_WITH(drivers,
 							dnl Break once, maybe a driver hits several categories
 						])
 					done
-					AS_IF([test -z "${DRV_HITS}"],
-						[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 				done
+				AS_IF([test -z "${DRV_HITS}"],
+					[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 
 			done
 			])
