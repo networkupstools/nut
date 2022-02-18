@@ -23,6 +23,11 @@ fi
 DATA1="`sort -n < "$1"`"
 DATA2="`sort -n < "$2"`"
 
+# Strip away same-context lines,
+# and lines with values that are decimal numbers,
+# and lines with multi-digit numbers without a decimal point
+# (assuming differences in shorter counters may be important)
 diff -bu <(echo "$DATA1") <(echo "$DATA2") \
 | grep -E '^[+-][^+-]' \
-| grep -vE '^[^:]*: [0-9][0-9.]*$'
+| grep -vE '^[^:]*: [0-9][0-9]*\.[0-9][0-9]*$' \
+| grep -vE '^[^:]*: [0-9][0-9]*$'
