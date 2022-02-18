@@ -1536,7 +1536,15 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	/* pre-fill with the device name for checking */
 	snprintf(info_type, 128, "device.%i", current_device_number);
 
-	if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
+	/* Daisy-chain template magic should only apply to defaulted
+	 * entries (oid==null) or templated entries (contains .%i)
+	 * NOTE: For setting the values (or commands) from clients
+	 * like `upsrw`, see su_setOID() method. Here we change our
+	 * device state records based on readings from a device.
+	 */
+	if ((daisychain_enabled == TRUE) && (devices_count > 1)
+	&&  (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
+	) {
 		/* Only append "device.X" for master and slaves, if not already done! */
 		if ((current_device_number > 0) && (strstr(su_info_p->info_type, info_type) == NULL)) {
 			/* Special case: we remove "device" from the device collection not to
@@ -3349,27 +3357,48 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
 
-	/* Check if it's a daisychain setting (device.x.varname) */
-	if (!strncmp(varname, "device", 6)
-	&&  varname[7] >= '0'
-	&&  varname[7] <= '9'
-	) {
-		/* Extract the (single-digit) device number
-		 * TODO: use strtol() or similar to support multi-digit
-		 * chains and offset tmp_varname inside varname properly
-		 */
-		daisychain_device_number = atoi(&varname[7]);
-		/* Point at the command, without the "device.x" prefix */
-		tmp_varname = strdup(&varname[9]);
-		snprintf(template_count_var, 10, "%s", varname);
+	/* Check if it's a daisychain setting (device.x.varname),
+	 * or a non-daisy setting/value/cmd for the "master" unit
+	 * (as un-numbered device.varname), or something else?
+	 */
+	if (!strncmp(varname, "device", 6)) {
+		if (varname[7] >= '0' && varname[7] <= '9') {
+			/* Extract the (single-digit) device number
+			 * TODO: use strtol() or similar to support multi-digit
+			 * chains and offset tmp_varname inside varname properly
+			 */
+			daisychain_device_number = atoi(&varname[7]);
+			/* Point at the command, without the "device.x" prefix */
+			tmp_varname = strdup(&varname[9]);
+			snprintf(template_count_var, 10, "%s", varname);
 
-		upsdebugx(2, "%s: got a daisychain %s (%s) for device %i",
-			__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
-			tmp_varname, daisychain_device_number);
+			upsdebugx(2, "%s: got a daisychain %s (%s) for device %i",
+				__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
+				tmp_varname, daisychain_device_number);
 
-		if (daisychain_device_number > devices_count)
-			upsdebugx(2, "%s: item is out of bound (%i / %ld)",
-				__func__, daisychain_device_number, devices_count);
+			if (daisychain_device_number > devices_count)
+				upsdebugx(2, "%s: item is out of bound (%i / %ld)",
+					__func__, daisychain_device_number, devices_count);
+		}
+		else {
+			/* TODO: Ideally, check if "OID" contains ".%i" template text like:
+			 *   (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
+			 * like we do in su_setinfo(); eventually we might get vendor
+			 * MIBs that do expose device.contact/location/description
+			 * for each link in the chain...
+			 */
+			if (daisychain_enabled == TRUE) {
+				daisychain_device_number = 1;
+				upsdebugx(2, "%s: got an un-numbered daisychain %s (%s), "
+					"directing it to 'master' device %i",
+					__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
+					varname, daisychain_device_number);
+			} else {
+				/* No daisy, no poppy */
+				daisychain_device_number = 0;
+			}
+			tmp_varname = strdup(varname);
+		}
 	}
 	else {
 		daisychain_device_number = 0;
