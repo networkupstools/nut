@@ -29,7 +29,7 @@ DATA2="`sort -n < "$2"`"
 # differences in shorter numbers or counters may be important)
 diff -bu <(echo "$DATA1") <(echo "$DATA2") \
 | grep -E '^[+-][^+-]' \
-| grep -vE '^[^:]*(power|load|voltage|current|temperature|humidity): ([0-9][0-9]*|[0-9][0-9]*\.[0-9][0-9]*)$'
+| grep -vE '^[^:]*(power|load|voltage|current|frequency|temperature|humidity): ([0-9][0-9]*|[0-9][0-9]*\.[0-9][0-9]*)$'
 
 # Note: up to user to post-filter, "^driver.version.*:"
 # may be deemed irrelevant as well
