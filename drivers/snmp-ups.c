@@ -3382,18 +3382,32 @@ static int su_setOID(int mode, const char *varname, const char *val)
 					__func__, daisychain_device_number, devices_count);
 		}
 		else {
-			/* TODO: Ideally, check if "OID" contains ".%i" template text like:
-			 *   (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
+			/* Note: below we check if "OID" contains ".%i" template text
 			 * like we do in su_setinfo(); eventually we might get vendor
 			 * MIBs that do expose device.contact/location/description
 			 * for each link in the chain...
 			 */
 			if (daisychain_enabled == TRUE) {
-				daisychain_device_number = 1;
+				/* Is the original "device.varname" backed by a templated
+				 * OID string, so we can commonly set e.g. device.contact
+				 * for everything in the chain?
+				 */
+				su_info_p = su_find_info(varname);
+				if (su_info_p
+				&&  (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
+				) {
+					/* is templated or defaulted */
+					daisychain_device_number = 0;
+				} else {
+					daisychain_device_number = 1;
+				}
+
 				upsdebugx(2, "%s: got an un-numbered daisychain %s (%s), "
-					"directing it to 'master' device %i",
+					"directing it to %s",
 					__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
-					varname, daisychain_device_number);
+					varname,
+					(daisychain_device_number==1)?"'master' device":"all devices"
+					);
 			} else {
 				/* No daisy, no poppy */
 				daisychain_device_number = 0;
