@@ -1527,7 +1527,8 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	char info_type[128]; /* We tweak incoming "su_info_p->info_type" value in some cases */
 
 /* FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?),
- *and same macro or sizeof(info_type) below? */
+ * and same macro or sizeof(info_type) below (also more 128 cases below)?
+ */
 
 	upsdebugx(1, "entering %s(%s, %s)", __func__, su_info_p->info_type, (value)?value:"");
 
