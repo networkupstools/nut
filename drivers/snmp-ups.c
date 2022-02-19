@@ -680,7 +680,9 @@ void upsdrv_initups(void)
 	 * tables (note: for lack of better knowledge, defined as read-only
 	 * entries here, and also read-once - not updated during driver uptime) */
 
-	if (NULL == dstate_getinfo("device.description")) {
+	if (NULL == dstate_getinfo("device.description")
+	&&  NULL == dstate_getinfo("device.1.description")
+	) {
 		/* sysDescr.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.1.0", model, sizeof(model), NULL) == TRUE) {
 			upsdebugx(2, "Using IETF-MIB default to get and publish sysDescr for device.description (once)");
@@ -690,7 +692,9 @@ void upsdrv_initups(void)
 		}
 	}
 
-	if (NULL == dstate_getinfo("device.contact")) {
+	if (NULL == dstate_getinfo("device.contact")
+	&&  NULL == dstate_getinfo("device.1.contact")
+	) {
 		/* sysContact.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.4.0", model, sizeof(model), NULL) == TRUE) {
 			upsdebugx(2, "Using IETF-MIB default to get and publish sysContact for device.contact (once)");
@@ -700,7 +704,9 @@ void upsdrv_initups(void)
 		}
 	}
 
-	if (NULL == dstate_getinfo("device.location")) {
+	if (NULL == dstate_getinfo("device.location")
+	&&  NULL == dstate_getinfo("device.1.location")
+	) {
 		/* sysLocation.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.6.0", model, sizeof(model), NULL) == TRUE) {
 			upsdebugx(2, "Using IETF-MIB default to get and publish sysLocation for device.location (once)");
