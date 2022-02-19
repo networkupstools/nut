@@ -1565,19 +1565,39 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 			/* Special case: we remove "device" from the device collection not to
 			 * get "device.X.device.<something>", but "device.X.<something>" */
 			if (!strncmp(su_info_p->info_type, "device.", 7)) {
+				upsdebugx(6, "%s: in a daisy-chained device, "
+					"OID %s: TRIM 'device.' from type %s (value %s)",
+					__func__, su_info_p->OID,
+					su_info_p->info_type, (value)?value:"");
 				snprintf(info_type, 128, "device.%i.%s",
 					current_device_number, su_info_p->info_type + 7);
 			}
 			else {
+				upsdebugx(6, "%s: in a daisy-chained device, "
+					"OID %s is templated: for type %s (value %s)",
+					__func__, su_info_p->OID,
+					su_info_p->info_type, (value)?value:"");
 				snprintf(info_type, 128, "device.%i.%s",
 					current_device_number, su_info_p->info_type);
 			}
 		}
-		else
+		else {
+			upsdebugx(6, "%s: in a daisy-chained device, "
+				"OID %s: for type %s (value %s) "
+				"device %d is not positive or type already "
+				"contains the prepared expectation: %s",
+				__func__, su_info_p->OID,
+				su_info_p->info_type, (value)?value:"",
+				current_device_number,
+				info_type
+				);
 			snprintf(info_type, 128, "%s", su_info_p->info_type);
+		}
 	}
-	else
+	else {
+		upsdebugx(6, "%s: NOT in a daisy-chained device", __func__);
 		snprintf(info_type, 128, "%s", su_info_p->info_type);
+	}
 
 	upsdebugx(1, "%s: using info_type '%s'", __func__, info_type);
 
