@@ -678,12 +678,12 @@ void upsdrv_initups(void)
 	/* Publish sysDescr, sysContact and sysLocation (from IETF standard paths)
 	 * for all subdrivers that do not have one defined in their mapping
 	 * tables (note: for lack of better knowledge, defined as read-only
-	 * entries here) */
+	 * entries here, and also read-once - not updated during driver uptime) */
 
 	if (NULL == dstate_getinfo("device.description")) {
 		/* sysDescr.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.1.0", model, sizeof(model), NULL) == TRUE) {
-			upsdebugx(2, "Using IETF-MIB default to get and publish sysDescr for device.description");
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysDescr for device.description (once)");
 			dstate_setinfo("device.description", "%s", model);
 		} else {
 			upsdebugx(2, "Can't get and publish sysDescr for device.description");
@@ -693,7 +693,7 @@ void upsdrv_initups(void)
 	if (NULL == dstate_getinfo("device.contact")) {
 		/* sysContact.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.4.0", model, sizeof(model), NULL) == TRUE) {
-			upsdebugx(2, "Using IETF-MIB default to get and publish sysContact for device.contact");
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysContact for device.contact (once)");
 			dstate_setinfo("device.contact", "%s", model);
 		} else {
 			upsdebugx(2, "Can't get and publish sysContact for device.contact");
@@ -703,7 +703,7 @@ void upsdrv_initups(void)
 	if (NULL == dstate_getinfo("device.location")) {
 		/* sysLocation.0 */
 		if (nut_snmp_get_str(".1.3.6.1.2.1.1.6.0", model, sizeof(model), NULL) == TRUE) {
-			upsdebugx(2, "Using IETF-MIB default to get and publish sysLocation for device.location");
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysLocation for device.location (once)");
 			dstate_setinfo("device.location", "%s", model);
 		} else {
 			upsdebugx(2, "Can't get and publish sysLocation for device.location");
