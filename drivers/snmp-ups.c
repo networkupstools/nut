@@ -2095,7 +2095,8 @@ static bool_t is_multiple_template(const char *OID_template)
  * Note: remember to adapt info_type, OID and optionaly dfl */
 static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
-	upsdebugx(1, "%s(%s)", __func__, info_template ? info_template->info_type : "n/a");
+	upsdebugx(1, "%s(%s)", __func__,
+		info_template ? info_template->info_type : "n/a");
 
 	/* sanity check */
 	if (info_template == NULL)
@@ -2103,6 +2104,8 @@ static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *ne
 
 	if (new_instance == NULL)
 		new_instance = (snmp_info_t *)xmalloc(sizeof(snmp_info_t));
+	/* TOTHINK: Should there be an "else" to free()
+	 * the fields which we (re-)allocate below? */
 
 	new_instance->info_type = (char *)xmalloc(SU_INFOSIZE);
 	if (new_instance->info_type)
@@ -2112,8 +2115,10 @@ static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *ne
 		if (new_instance->OID)
 			memset((char *)new_instance->OID, 0, SU_INFOSIZE);
 	}
-	else
+	else {
 		new_instance->OID = NULL;
+	}
+
 	new_instance->info_flags = info_template->info_flags;
 	new_instance->info_len = info_template->info_len;
 	/* FIXME: check if we need to adapt this one... */
@@ -2558,7 +2563,8 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 {
 	bool_t status = FALSE;
 
-	upsdebugx(1, "%s: %s (%s)", __func__, su_info_p->info_type, su_info_p->OID);
+	upsdebugx(1, "%s: %s (%s)", __func__,
+		su_info_p->info_type, su_info_p->OID);
 
 	/* ok, update this element. */
 	status = su_ups_get(su_info_p);
@@ -3084,7 +3090,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 			/* adapt info_type */
 			if (su_info_p->info_type != NULL) {
-				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
+				snprintf((char *)tmp_info_p->info_type,
+					SU_INFOSIZE, "%s",
+					su_info_p->info_type);
 			}
 			else {
 				free_info(tmp_info_p);
@@ -3221,7 +3229,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
+		status = nut_snmp_get_str(su_info_p->OID, buf,
+			sizeof(buf), su_info_p->oid2info);
 		if (status == TRUE) {
 			if (quirk_symmetra_threephase) {
 				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
@@ -3273,8 +3282,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		su_setinfo(su_info_p, buf);
 		upsdebugx(2, "=> value: %s", buf);
 	}
-	else
+	else {
 		upsdebugx(2, "=> Failed");
+	}
 
 	free_info(tmp_info_p);
 	return status;
