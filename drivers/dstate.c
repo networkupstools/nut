@@ -261,7 +261,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret <= INT_MAX)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
-	ret = write(conn->fd, buf, strlen(buf));
+	ret = write(conn->fd, buf, buflen);
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 		upsdebugx(1, "%s: write %zd bytes to socket %d failed "
