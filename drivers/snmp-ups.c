@@ -3555,16 +3555,36 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	if (strncmp(tmp_varname, "outlet", 6)) {
 		su_info_p = su_find_info(tmp_varname);
 		/* what if e.g. "device.x.contact" is not found as a "contact"? */
-/*
 		if (!su_info_p && strcmp(tmp_varname, varname)) {
 			upsdebugx(2,
 				"%s: did not find info for daisychained entry %s, "
 				"retrying with original varname %s",
 				__func__, tmp_varname, varname);
 			su_info_p = su_find_info(varname);
+
+			/* Still nothing? Try to revert from "device.1."
+			 * as a daisychain master? */
+			if (!su_info_p
+			&&  daisychain_enabled == TRUE
+			&&  devices_count > 1
+			&&  daisychain_device_number == 1
+			&&  !strncmp(varname, "device.1.", 9)
+			) {
+				char tmp_buf[SU_INFOSIZE];
+				snprintf(tmp_buf, sizeof(tmp_buf),
+					"device.%s", (varname + 9));
+				su_info_p = su_find_info(tmp_buf);
+				if (su_info_p) {
+					upsdebugx(2, "%s: finally found "
+						"as daisy master revert %s",
+						__func__, tmp_buf);
+					free(tmp_varname);
+					tmp_varname = strdup(tmp_buf);
+				}
+			}
 		}
-*/
 	} else {
+		/* is indeed an outlet.* or device.x.outlet.* */
 		snmp_info_t *tmp_info_p;
 		/* Point the outlet or outlet group number in the string */
 		const char *item_number_ptr = NULL;
