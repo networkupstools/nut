@@ -2646,6 +2646,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 
 	/* ok, update this element. */
 	status = su_ups_get(su_info_p);
+	upsdebugx(4, "%s: su_ups_get returned %d", __func__, status);
 
 	/* set stale flag if data is stale, clear if not. */
 	if (status == TRUE) {
@@ -2656,6 +2657,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 		}
 		if(su_info_p->flags & SU_FLAG_UNIQUE) {
 			/* We should be the only provider of this */
+			upsdebugx(4, "%s: unique flag", __func__);
 			disable_competition(su_info_p);
 			su_info_p->flags &= ~SU_FLAG_UNIQUE;
 		}
@@ -3142,8 +3144,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 	/* Check if this is a daisychain template */
 	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+		upsdebugx(3, "%s: calling instantiate_info() for "
+			"daisy-chain template", __func__);
 		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
 		if (tmp_info_p != NULL) {
+			upsdebugx(3, "%s: instantiate_info() returned "
+				"non-null OID: %s",
+				__func__, tmp_info_p->OID);
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -3160,6 +3167,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
+				upsdebugx(3, "%s: OID %s adapted into %s",
+					__func__, su_info_p->OID,
+					tmp_info_p->OID);
 			}
 			else {
 				free_info(tmp_info_p);
@@ -3187,6 +3197,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 /* FIXME: daisychain status support! */
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ups.status, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -3207,6 +3220,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
 
 /* FIXME: daisychain alarms support! */
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"some alarm, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -3224,6 +3240,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	 * present, this means that the alarm condition is TRUE.
 	 * Only present in powerware-mib.c for now */
 	if (!strcasecmp(su_info_p->info_type, "ups.alarms")) {
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ups.alarms, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			upsdebugx(2, "=> %ld alarms present", value);
@@ -3275,6 +3294,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcasecmp(su_info_p->info_type, "ambient.temperature")) {
 		float temp=0;
 
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ambient.temperature, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 
 		if(status != TRUE) {
@@ -3307,6 +3329,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
+		upsdebugx(2, "%s: requesting nut_snmp_get_str(), "
+			"with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_str(su_info_p->OID, buf,
 			sizeof(buf), su_info_p->oid2info);
 		if (status == TRUE) {
@@ -3326,6 +3351,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			}
 		}
 	} else {
+		upsdebugx(2, "%s: requesting nut_snmp_get_int(), "
+			"with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			if ((su_info_p->flags&SU_FLAG_NEGINVALID && value<0)
