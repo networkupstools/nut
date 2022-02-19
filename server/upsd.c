@@ -669,6 +669,9 @@ static void driver_free(void)
 	upstype_t	*ups, *unext;
 
 	for (ups = firstups; ups; ups = unext) {
+		upsdebugx(1, "%s: forgetting UPS [%s] (FD %d)",
+			__func__, ups->name, ups->sock_fd);
+
 		unext = ups->next;
 
 		if (ups->sock_fd != -1) {
@@ -985,7 +988,11 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (ups->sock_fd < 0) {
+			upsdebugx(1, "%s: UPS [%s] is not currently connected",
+				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
+			upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+				__func__, ups->name, ups->sock_fd);
 			continue;
 		}
 

@@ -273,9 +273,11 @@ void upsdrv_updateinfo(void)
 
 		/* update all dynamic info fields */
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
+			upsdebugx(1, "%s: pollfreq: Data OK", __func__);
 			dstate_dataok();
 		}
 		else {
+			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
 			dstate_datastale();
 		}
 
