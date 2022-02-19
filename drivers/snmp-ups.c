@@ -3138,6 +3138,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	alarms_info_t * alarms;
 	int index = 0;
 	char *format_char = NULL;
+	int saved_current_device_number = -1;
 	snmp_info_t *tmp_info_p = NULL;
 
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
@@ -3192,6 +3193,41 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		else {
 			upsdebugx(2, "%s: can't instantiate template", __func__);
 			return FALSE;
+		}
+	}
+	else {
+		/* Non-templated OID, still may be aimed at a
+		 * daisy-chained device (master of the chain
+		 * makes sense for IETF device.contact etc.).
+		 * BUT: It could be a direct request for earlier
+		 * resolved OID. So check for "device.N." too.
+		 */
+		if (daisychain_enabled == TRUE
+		&&  devices_count > 1
+		&&  current_device_number > 0
+		) {
+			/* So we had a literal OID string, originally
+			 * Check for "device.N." in the string: */
+			char * varname = su_info_p->info_type;
+			if (!strncmp(varname, "device.", 7)
+			&&  (varname[7] >= '0' && varname[7] <= '9')
+			) {
+				upsdebugx(2, "%s: keeping original "
+					"current device == %d for "
+					"non-templated daisy value",
+					__func__, current_device_number);
+			} else {
+				upsdebugx(2, "%s: would fake "
+					"current device == 1 for "
+					"non-templated daisy value "
+					"instead of %d",
+					__func__, current_device_number);
+				saved_current_device_number = current_device_number;
+			}
+			/* At this point we applied no hacks yet,
+			 * just stashed a non-negative value into
+			 * saved_current_device_number
+			 */
 		}
 	}
 
@@ -3385,7 +3421,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (status == TRUE) {
+		if (saved_current_device_number >= 0) {
+			current_device_number = 1;
+		}
 		su_setinfo(su_info_p, buf);
+		if (saved_current_device_number >= 0) {
+			current_device_number = saved_current_device_number;
+		}
 		upsdebugx(2, "=> value: %s", buf);
 	}
 	else {
