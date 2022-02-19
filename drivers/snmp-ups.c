@@ -1538,14 +1538,28 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	snprintf(info_type, 128, "device.%i", current_device_number);
 
 	/* Daisy-chain template magic should only apply to defaulted
-	 * entries (oid==null) or templated entries (contains .%i)
+	 * entries (oid==null) or templated entries (contains .%i);
+	 * however at this point we see exact OIDs handed down from
+	 * su_ups_get() which instantiates a template (if needed -
+	 * and knows it was a template) and calls su_setinfo().
 	 * NOTE: For setting the values (or commands) from clients
 	 * like `upsrw`, see su_setOID() method. Here we change our
 	 * device state records based on readings from a device.
 	 */
-	if ((daisychain_enabled == TRUE) && (devices_count > 1)
-	&&  (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
-	) {
+	if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
+		if (su_info_p->OID != NULL
+		&&  strstr(su_info_p->OID, ".%i") != NULL
+		) {
+			/* Only inform, do not react so far,
+			 * need more understanding if and when
+			 * such situation might happen at all:
+			 */
+			upsdebugx(5, "%s: in a daisy-chained device, "
+				"got a templated OID %s for type %s",
+				__func__, su_info_p->OID,
+				su_info_p->info_type);
+		}
+
 		/* Only append "device.X" for master and slaves, if not already done! */
 		if ((current_device_number > 0) && (strstr(su_info_p->info_type, info_type) == NULL)) {
 			/* Special case: we remove "device" from the device collection not to
