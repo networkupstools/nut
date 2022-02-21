@@ -27,6 +27,6 @@ PyNUT class, along with its resources.
 
 To install it, you will either need to keep the files together, or to install:
 - NUT-Monitor to /usr/bin, /usr/X11R6/bin/ or something like that,
-- gui.glade to /usr/share/nut-monitor/,
+- *.ui to /usr/share/nut-monitor/,
 - nut-monitor.png to something like /usr/share/pixmaps/
 - and nut-monitor.desktop to /usr/share/applications
