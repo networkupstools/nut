@@ -5,7 +5,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2021	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -2894,16 +2894,23 @@ bool_t snmp_ups_walk(int mode)
 		/* Loop through all mapping entries for the current_device_number */
 		for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 
-			/* FIXME:
+			/* NOTE: Effectively below we do this:
 			 * switch(current_device_number) {
-			 * case 0: devtype = "daisychain whole"
-			 * case 1: devtype = "daisychain master"
-			 * default: devtype = "daisychain slave"
+			 *  case 0: devtype = "daisychain whole"
+			 *  case 1: devtype = "daisychain master"
+			 *  default: devtype = "daisychain slave"
+			 * }
+			 * with a consideration for directly-addressable
+			 * slave devices (can be seen in chain via master,
+			 * but also queryable alone with an IP connection)
 			 */
 			if (daisychain_enabled == TRUE) {
-				upsdebugx(1, "%s: processing device %i (%s)", __func__,
-					current_device_number,
-					(current_device_number == 1)?"master":"slave"); /* FIXME: daisychain */
+				upsdebugx(1, "%s: processing daisy-chain device %i (%s)",
+					__func__, current_device_number,
+					(current_device_number == 1)
+						? (devices_count > 1 ? "master" : "single")
+						: (current_device_number > 1 ? "slave" : "whole")
+					);
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
