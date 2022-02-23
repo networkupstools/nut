@@ -135,10 +135,23 @@ int g_pwr_battery;
 int pollfreq; /* polling frequency */
 static int quirk_symmetra_threephase = 0;
 
-/* Number of device(s): standard is "1", but daisychain means more than 1 */
+/* Number of device(s): standard is "1", but talking
+ * to a daisychain (master device) means more than 1
+ * (a directly addressable member of a daisy chain
+ * would be seen as a single-device chain though)
+ */
 static long devices_count = 1;
-static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd(); may be 0 for addressing certain values across all chain devices via master (1) */
-static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
+/* global var to handle daisychain iterations -
+ * changed by loops in snmp_ups_walk() and su_addcmd();
+ * may be 0 for addressing certain values/commands
+ * across all chain devices via master (1);
+ * also may be 0 for non-daisychained devices
+ */
+static int current_device_number = 0;
+/* global var to handle daisychain iterations -
+ * made TRUE if we resolved a "device.count" value
+ */
+static bool_t daisychain_enabled = FALSE;
 static daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
