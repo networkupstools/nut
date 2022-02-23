@@ -137,7 +137,7 @@ static int quirk_symmetra_threephase = 0;
 
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 static long devices_count = 1;
-static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd(); may be 0 for addressing certain values across all chain devices via master (1) */
 static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
 static daisychain_info_t **daisychain_info = NULL;
 
