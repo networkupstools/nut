@@ -2924,6 +2924,9 @@ bool_t snmp_ups_walk(int mode)
 						? (devices_count > 1 ? "master" : "single")
 						: (current_device_number > 1 ? "slave" : "whole")
 					);
+			} else {
+				upsdebugx(1, "%s: processing unitary device (%i)",
+					__func__, current_device_number);
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
