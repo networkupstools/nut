@@ -2889,8 +2889,12 @@ bool_t snmp_ups_walk(int mode)
 	 * for the whole (#0) virtual device, so it *seems* similar to unitary.
 	 */
 
-	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
+	for (current_device_number = (daisychain_enabled == FALSE && devices_count == 1 ? 1 : 0) ;
+		current_device_number <= devices_count; current_device_number++)
 	{
+
+		upsdebugx(0, "%s: walking device.%d", __func__, current_device_number);
+
 		/* reinit the alarm buffer, before */
 		if (devices_count > 1)
 			device_alarm_init();
@@ -2949,12 +2953,8 @@ bool_t snmp_ups_walk(int mode)
  * then we'd skip it still (unitary device is at current_device_number == 1)...
  */
 			/* skip the whole-daisychain for now */
-			if (current_device_number == 0) {
-				/* for a standalone device, we walk <= device_count
-				 * above, so hitting both .0 and .1 queries
-				 */
-				if (daisychain_enabled == TRUE)
-					upsdebugx(1, "Skipping daisychain device.0 for now...");
+			if (current_device_number == 0 && daisychain_enabled == TRUE) {
+				upsdebugx(1, "Skipping daisychain device.0 for now...");
 				continue;
 			}
 
