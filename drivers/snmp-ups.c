@@ -2946,8 +2946,12 @@ bool_t snmp_ups_walk(int mode)
  * then we'd skip it still (unitary device is at current_device_number == 1)...
  */
 			/* skip the whole-daisychain for now */
-			if (daisychain_enabled == TRUE && current_device_number == 0) {
-				upsdebugx(1, "Skipping daisychain device.0 for now...");
+			if (current_device_number == 0) {
+				/* for a standalone device, we walk <= device_count
+				 * above, so hitting both .0 and .1 queries
+				 */
+				if (daisychain_enabled == TRUE)
+					upsdebugx(1, "Skipping daisychain device.0 for now...");
 				continue;
 			}
 
