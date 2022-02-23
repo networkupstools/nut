@@ -2920,6 +2920,13 @@ bool_t snmp_ups_walk(int mode)
 			 * with a consideration for directly-addressable
 			 * slave devices (can be seen in chain via master,
 			 * but also queryable alone with an IP connection)
+			 * NOTE: until proven otherwise, "single" may mean
+			 * both (either) a daisy-chain enabled master device
+			 * without further connected "slave" devices, and
+			 * a directly addressable (IP-connected) "slave".
+			 * Possibly also an ePDU etc. that serves a MIB
+			 * which resolves "device.count" with the selected
+			 * subdriver.
 			 */
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing daisy-chain device %i (%s)",
