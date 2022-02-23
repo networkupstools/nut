@@ -214,7 +214,7 @@ static void send_to_all(const char *fmt, ...)
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 			upsdebugx(1, "%s: write %zd bytes to socket %d failed "
-				"(ret=%zd): %s",
+				"(ret=%zd), disconnecting: %s",
 				__func__, buflen, conn->fd, ret, strerror(errno));
 			upsdebugx(6, "failed write: %s", buf);
 			sock_disconnect(conn);
@@ -265,7 +265,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 		upsdebugx(1, "%s: write %zd bytes to socket %d failed "
-			"(ret=%zd): %s",
+			"(ret=%zd), disconnecting: %s",
 			__func__, buflen, conn->fd, ret, strerror(errno));
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
