@@ -261,7 +261,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret <= INT_MAX)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
+/*
+	upsdebugx(0, "%s: writing %zd bytes to socket %d: %s",
+		__func__, buflen, conn->fd, buf);
+*/
 	ret = write(conn->fd, buf, buflen);
+	if (ret < 0) {
+		/* Hacky bugfix: throttle down for upsd to read that */
+		upsdebugx(1, "%s: had to throttle down to retry "
+			"writing %zd bytes to socket %d: %s",
+			__func__, buflen, conn->fd, buf);
+		usleep(200);
+		ret = write(conn->fd, buf, buflen);
+	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 		upsdebugx(1, "%s: write %zd bytes to socket %d failed "
@@ -270,6 +282,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
 		return 0;	/* failed */
+	} else {
+		upsdebugx(1, "%s: write %zd bytes to socket %d succeeded "
+			"(ret=%zd): %s",
+			__func__, buflen, conn->fd, ret, buf);
 	}
 
 	return 1;	/* OK */
