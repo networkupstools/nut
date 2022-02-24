@@ -269,10 +269,16 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %zd bytes to socket %d: %s",
-			__func__, buflen, conn->fd, buf);
+			"writing %zd bytes to socket %d "
+			"(ret=%zd, errno=%d, strerror=%s): %s",
+			__func__, buflen, conn->fd,
+			ret, errno, strerror(errno),
+			buf);
 		usleep(200);
 		ret = write(conn->fd, buf, buflen);
+		if (ret == (ssize_t)buflen) {
+			upsdebugx(1, "%s: throttling down helped", __func__);
+		}
 	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
