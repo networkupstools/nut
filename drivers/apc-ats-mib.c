@@ -24,7 +24,7 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.5"
+#define APC_ATS_MIB_VERSION  "0.6"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
@@ -58,6 +58,11 @@ static info_lkp_t apc_ats_outletgroups_status_info[] = {
 
 /* APC ATS Snmp2NUT lookup table */
 static snmp_info_t apc_ats_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

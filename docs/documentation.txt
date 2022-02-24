@@ -63,6 +63,17 @@ or as a pull request against the
 link:https://github.com/networkupstools/nut-ddl[NUT Devices Dumps Library]
 following the naming and other rules described in the DDL documentation page.
 
+Data dumps collected by the tools above, or by `upsc` client, or by drivers
+in exploratory data-dumping mode (with `-d 1` argument), can be compared by
+ifdef::website[]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-dumpdiff.sh[`tools/nut-dumpdiff.sh`]
+endif::website[]
+ifndef::website[]
+`./tools/nut-dumpdiff.sh`
+endif::website[]
+script from the main NUT codebase, which strips away lines with only numeric
+values (aiming to minimize the risk of losing meaningful changes like counters).
+
 Offsite Links
 -------------
 

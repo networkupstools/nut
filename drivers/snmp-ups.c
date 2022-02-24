@@ -163,7 +163,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.18"
+#define DRIVER_VERSION		"1.19"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -688,6 +688,47 @@ void upsdrv_initups(void)
 		/* Add composite instcmds (require setting multiple OID values) */
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
+	}
+
+	/* Publish sysDescr, sysContact and sysLocation (from IETF standard paths)
+	 * for all subdrivers that do not have one defined in their mapping
+	 * tables (note: for lack of better knowledge, defined as read-only
+	 * entries here, and also read-once - not updated during driver uptime) */
+
+	if (NULL == dstate_getinfo("device.description")
+	&&  NULL == dstate_getinfo("device.1.description")
+	) {
+		/* sysDescr.0 */
+		if (nut_snmp_get_str(".1.3.6.1.2.1.1.1.0", model, sizeof(model), NULL) == TRUE) {
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysDescr for device.description (once)");
+			dstate_setinfo("device.description", "%s", model);
+		} else {
+			upsdebugx(2, "Can't get and publish sysDescr for device.description");
+		}
+	}
+
+	if (NULL == dstate_getinfo("device.contact")
+	&&  NULL == dstate_getinfo("device.1.contact")
+	) {
+		/* sysContact.0 */
+		if (nut_snmp_get_str(".1.3.6.1.2.1.1.4.0", model, sizeof(model), NULL) == TRUE) {
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysContact for device.contact (once)");
+			dstate_setinfo("device.contact", "%s", model);
+		} else {
+			upsdebugx(2, "Can't get and publish sysContact for device.contact");
+		}
+	}
+
+	if (NULL == dstate_getinfo("device.location")
+	&&  NULL == dstate_getinfo("device.1.location")
+	) {
+		/* sysLocation.0 */
+		if (nut_snmp_get_str(".1.3.6.1.2.1.1.6.0", model, sizeof(model), NULL) == TRUE) {
+			upsdebugx(2, "Using IETF-MIB default to get and publish sysLocation for device.location (once)");
+			dstate_setinfo("device.location", "%s", model);
+		} else {
+			upsdebugx(2, "Can't get and publish sysLocation for device.location");
+		}
 	}
 
 	/* set shutdown and autostart delay */
@@ -1507,7 +1548,8 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	char info_type[128]; /* We tweak incoming "su_info_p->info_type" value in some cases */
 
 /* FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?),
- *and same macro or sizeof(info_type) below? */
+ * and same macro or sizeof(info_type) below (also more 128 cases below)?
+ */
 
 	upsdebugx(1, "entering %s(%s, %s)", __func__, su_info_p->info_type, (value)?value:"");
 
@@ -1516,25 +1558,67 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	/* pre-fill with the device name for checking */
 	snprintf(info_type, 128, "device.%i", current_device_number);
 
+	/* Daisy-chain template magic should only apply to defaulted
+	 * entries (oid==null) or templated entries (contains .%i);
+	 * however at this point we see exact OIDs handed down from
+	 * su_ups_get() which instantiates a template (if needed -
+	 * and knows it was a template) and calls su_setinfo().
+	 * NOTE: For setting the values (or commands) from clients
+	 * like `upsrw`, see su_setOID() method. Here we change our
+	 * device state records based on readings from a device.
+	 */
 	if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
+		if (su_info_p->OID != NULL
+		&&  strstr(su_info_p->OID, ".%i") != NULL
+		) {
+			/* Only inform, do not react so far,
+			 * need more understanding if and when
+			 * such situation might happen at all:
+			 */
+			upsdebugx(5, "%s: in a daisy-chained device, "
+				"got a templated OID %s for type %s",
+				__func__, su_info_p->OID,
+				su_info_p->info_type);
+		}
+
 		/* Only append "device.X" for master and slaves, if not already done! */
 		if ((current_device_number > 0) && (strstr(su_info_p->info_type, info_type) == NULL)) {
 			/* Special case: we remove "device" from the device collection not to
 			 * get "device.X.device.<something>", but "device.X.<something>" */
 			if (!strncmp(su_info_p->info_type, "device.", 7)) {
+				upsdebugx(6, "%s: in a daisy-chained device, "
+					"OID %s: TRIM 'device.' from type %s (value %s)",
+					__func__, su_info_p->OID,
+					su_info_p->info_type, (value)?value:"");
 				snprintf(info_type, 128, "device.%i.%s",
 					current_device_number, su_info_p->info_type + 7);
 			}
 			else {
+				upsdebugx(6, "%s: in a daisy-chained device, "
+					"OID %s is templated: for type %s (value %s)",
+					__func__, su_info_p->OID,
+					su_info_p->info_type, (value)?value:"");
 				snprintf(info_type, 128, "device.%i.%s",
 					current_device_number, su_info_p->info_type);
 			}
 		}
-		else
+		else {
+			upsdebugx(6, "%s: in a daisy-chained device, "
+				"OID %s: for type %s (value %s) "
+				"device %d is not positive or type already "
+				"contains the prepared expectation: %s",
+				__func__, su_info_p->OID,
+				su_info_p->info_type, (value)?value:"",
+				current_device_number,
+				info_type
+				);
 			snprintf(info_type, 128, "%s", su_info_p->info_type);
+		}
 	}
-	else
+	else {
+		upsdebugx(6, "%s: NOT in a daisy-chained device", __func__);
 		snprintf(info_type, 128, "%s", su_info_p->info_type);
+	}
 
 	upsdebugx(1, "%s: using info_type '%s'", __func__, info_type);
 
@@ -2583,6 +2667,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 
 	/* ok, update this element. */
 	status = su_ups_get(su_info_p);
+	upsdebugx(4, "%s: su_ups_get returned %d", __func__, status);
 
 	/* set stale flag if data is stale, clear if not. */
 	if (status == TRUE) {
@@ -2593,6 +2678,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 		}
 		if(su_info_p->flags & SU_FLAG_UNIQUE) {
 			/* We should be the only provider of this */
+			upsdebugx(4, "%s: unique flag", __func__);
 			disable_competition(su_info_p);
 			su_info_p->flags &= ~SU_FLAG_UNIQUE;
 		}
@@ -3095,14 +3181,20 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	alarms_info_t * alarms;
 	int index = 0;
 	char *format_char = NULL;
+	int saved_current_device_number = -1;
 	snmp_info_t *tmp_info_p = NULL;
 
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
 
 	/* Check if this is a daisychain template */
 	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+		upsdebugx(3, "%s: calling instantiate_info() for "
+			"daisy-chain template", __func__);
 		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
 		if (tmp_info_p != NULL) {
+			upsdebugx(3, "%s: instantiate_info() returned "
+				"non-null OID: %s",
+				__func__, tmp_info_p->OID);
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -3119,6 +3211,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
+				upsdebugx(3, "%s: OID %s adapted into %s",
+					__func__, su_info_p->OID,
+					tmp_info_p->OID);
 			}
 			else {
 				free_info(tmp_info_p);
@@ -3143,9 +3238,47 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			return FALSE;
 		}
 	}
+	else {
+		/* Non-templated OID, still may be aimed at a
+		 * daisy-chained device (master of the chain
+		 * makes sense for IETF device.contact etc.).
+		 * BUT: It could be a direct request for earlier
+		 * resolved OID. So check for "device.N." too.
+		 */
+		if (daisychain_enabled == TRUE
+		&&  devices_count > 1
+		&&  current_device_number > 0
+		) {
+			/* So we had a literal OID string, originally
+			 * Check for "device.N." in the string: */
+			char * varname = su_info_p->info_type;
+			if (!strncmp(varname, "device.", 7)
+			&&  (varname[7] >= '0' && varname[7] <= '9')
+			) {
+				upsdebugx(2, "%s: keeping original "
+					"current device == %d for "
+					"non-templated daisy value",
+					__func__, current_device_number);
+			} else {
+				upsdebugx(2, "%s: would fake "
+					"current device == 1 for "
+					"non-templated daisy value "
+					"instead of %d",
+					__func__, current_device_number);
+				saved_current_device_number = current_device_number;
+			}
+			/* At this point we applied no hacks yet,
+			 * just stashed a non-negative value into
+			 * saved_current_device_number
+			 */
+		}
+	}
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 /* FIXME: daisychain status support! */
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ups.status, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -3166,6 +3299,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
 
 /* FIXME: daisychain alarms support! */
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"some alarm, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -3183,6 +3319,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	 * present, this means that the alarm condition is TRUE.
 	 * Only present in powerware-mib.c for now */
 	if (!strcasecmp(su_info_p->info_type, "ups.alarms")) {
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ups.alarms, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			upsdebugx(2, "=> %ld alarms present", value);
@@ -3234,6 +3373,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcasecmp(su_info_p->info_type, "ambient.temperature")) {
 		float temp=0;
 
+		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
+			"ambient.temperature, with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 
 		if(status != TRUE) {
@@ -3266,6 +3408,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
+		upsdebugx(2, "%s: requesting nut_snmp_get_str(), "
+			"with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_str(su_info_p->OID, buf,
 			sizeof(buf), su_info_p->oid2info);
 		if (status == TRUE) {
@@ -3285,6 +3430,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			}
 		}
 	} else {
+		upsdebugx(2, "%s: requesting nut_snmp_get_int(), "
+			"with%s daisy template originally",
+			__func__, (format_char!=NULL ? "" : "out"));
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			if ((su_info_p->flags&SU_FLAG_NEGINVALID && value<0)
@@ -3316,7 +3464,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (status == TRUE) {
+		if (saved_current_device_number >= 0) {
+			current_device_number = 1;
+		}
 		su_setinfo(su_info_p, buf);
+		if (saved_current_device_number >= 0) {
+			current_device_number = saved_current_device_number;
+		}
 		upsdebugx(2, "=> value: %s", buf);
 	}
 	else {
@@ -3361,21 +3515,62 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
 
-	/* Check if it's a daisychain setting */
+	/* Check if it's a daisychain setting (device.x.varname),
+	 * or a non-daisy setting/value/cmd for the "master" unit
+	 * (as un-numbered device.varname), or something else?
+	 */
 	if (!strncmp(varname, "device", 6)) {
-		/* Extract the device number */
-		daisychain_device_number = atoi(&varname[7]);
-		/* Point at the command, without the "device.x" prefix */
-		tmp_varname = strdup(&varname[9]);
-		snprintf(template_count_var, 10, "%s", varname);
+		if (varname[7] >= '0' && varname[7] <= '9') {
+			/* Extract the (single-digit) device number
+			 * TODO: use strtol() or similar to support multi-digit
+			 * chains and offset tmp_varname inside varname properly
+			 */
+			daisychain_device_number = atoi(&varname[7]);
+			/* Point at the command, without the "device.x" prefix */
+			tmp_varname = strdup(&varname[9]);
+			snprintf(template_count_var, 10, "%s", varname);
 
-		upsdebugx(2, "%s: got a daisychain %s (%s) for device %i",
-			__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
-			tmp_varname, daisychain_device_number);
+			upsdebugx(2, "%s: got a daisychain %s (%s) for device %i",
+				__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
+				tmp_varname, daisychain_device_number);
 
-		if (daisychain_device_number > devices_count)
-			upsdebugx(2, "%s: item is out of bound (%i / %ld)",
-				__func__, daisychain_device_number, devices_count);
+			if (daisychain_device_number > devices_count)
+				upsdebugx(2, "%s: item is out of bound (%i / %ld)",
+					__func__, daisychain_device_number, devices_count);
+		}
+		else {
+			/* Note: below we check if "OID" contains ".%i" template text
+			 * like we do in su_setinfo(); eventually we might get vendor
+			 * MIBs that do expose device.contact/location/description
+			 * for each link in the chain...
+			 */
+			if (daisychain_enabled == TRUE) {
+				/* Is the original "device.varname" backed by a templated
+				 * OID string, so we can commonly set e.g. device.contact
+				 * for everything in the chain?
+				 */
+				su_info_p = su_find_info(varname);
+				if (su_info_p
+				&&  (su_info_p->OID == NULL || strstr(su_info_p->OID, ".%i") != NULL)
+				) {
+					/* is templated or defaulted */
+					daisychain_device_number = 0;
+				} else {
+					daisychain_device_number = 1;
+				}
+
+				upsdebugx(2, "%s: got an un-numbered daisychain %s (%s), "
+					"directing it to %s",
+					__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
+					varname,
+					(daisychain_device_number==1)?"'master' device":"all devices"
+					);
+			} else {
+				/* No daisy, no poppy */
+				daisychain_device_number = 0;
+			}
+			tmp_varname = strdup(varname);
+		}
 	}
 	else {
 		daisychain_device_number = 0;
@@ -3392,9 +3587,39 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Check if it is outlet / outlet.group, or standard variable */
-	if (strncmp(tmp_varname, "outlet", 6))
+	if (strncmp(tmp_varname, "outlet", 6)) {
 		su_info_p = su_find_info(tmp_varname);
-	else {
+		/* what if e.g. "device.x.contact" is not found as a "contact"? */
+		if (!su_info_p && strcmp(tmp_varname, varname)) {
+			upsdebugx(2,
+				"%s: did not find info for daisychained entry %s, "
+				"retrying with original varname %s",
+				__func__, tmp_varname, varname);
+			su_info_p = su_find_info(varname);
+
+			/* Still nothing? Try to revert from "device.1."
+			 * as a daisychain master? */
+			if (!su_info_p
+			&&  daisychain_enabled == TRUE
+			&&  devices_count > 1
+			&&  daisychain_device_number == 1
+			&&  !strncmp(varname, "device.1.", 9)
+			) {
+				char tmp_buf[SU_INFOSIZE];
+				snprintf(tmp_buf, sizeof(tmp_buf),
+					"device.%s", (varname + 9));
+				su_info_p = su_find_info(tmp_buf);
+				if (su_info_p) {
+					upsdebugx(2, "%s: finally found "
+						"as daisy master revert %s",
+						__func__, tmp_buf);
+					free(tmp_varname);
+					tmp_varname = strdup(tmp_buf);
+				}
+			}
+		}
+	} else {
+		/* is indeed an outlet.* or device.x.outlet.* */
 		snmp_info_t *tmp_info_p;
 		/* Point the outlet or outlet group number in the string */
 		const char *item_number_ptr = NULL;
