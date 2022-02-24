@@ -34,7 +34,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.58"
+#define EATON_MARLIN_MIB_VERSION	"0.59"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -217,7 +217,7 @@ static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 			snprintf(marlin_scratch_buf, sizeof(marlin_scratch_buf), "L%i", phases_nb);
 			if (phases_nb < 1 || phases_nb > 3)
 				upsdebugx(3, "WARNING: %s got %i phases which is an unexpected amount",
-				        __func__, phases_nb);
+					__func__, phases_nb);
 
 			return marlin_scratch_buf;
 		}
@@ -231,6 +231,11 @@ static info_lkp_t marlin_outlet_group_phase_info[] = {
 
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",

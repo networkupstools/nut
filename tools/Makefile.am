@@ -13,7 +13,7 @@ SUBDIRS = . nut-scanner
 
 PYTHON = @PYTHON@
 
-EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
+EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
   gitlog2changelog.py.in nut-snmpinfo.py.in driver-list-format.sh
 
 GENERATED_SNMP_FILES = nut-scanner/nutscan-snmp.h

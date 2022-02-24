@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.53"
+#define MGE_MIB_VERSION	"0.54"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -146,6 +146,11 @@ static info_lkp_t mge_power_source_info[] = {
 
 /* Snmp2NUT lookup table */
 static snmp_info_t mge_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Eaton", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

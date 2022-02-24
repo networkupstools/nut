@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.94"
+#define PW_MIB_VERSION "0.95"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -197,6 +197,12 @@ static info_lkp_t pw_yes_no_info[] = {
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* FIXME: miss device page! */
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
