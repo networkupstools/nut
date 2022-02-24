@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2864 utf-8
+personal_ws-1.1 en 2868 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,6 +12,7 @@ ADDRCONFIG
 ADDRINFO
 ADK
 ADKK
+ADELSYSTEM
 AEC
 AEF
 AEG
@@ -153,6 +154,7 @@ ByPass
 CA's
 CABAC
 CAs
+CBI
 CBLimit
 CCC
 CCCC
@@ -1330,6 +1332,7 @@ addenum
 addinfo
 addr
 addrange
+adelsystem
 adkorte
 adm
 admin's
@@ -1498,6 +1501,7 @@ byv
 cablepower
 calloc
 cb
+cbi
 cbl
 cblimit
 ccache
