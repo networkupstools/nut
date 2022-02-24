@@ -213,7 +213,10 @@ static void send_to_all(const char *fmt, ...)
 		ret = write(conn->fd, buf, buflen);
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
-			upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
+			upsdebugx(1, "%s: write %zd bytes to socket %d failed "
+				"(ret=%zd): %s",
+				__func__, buflen, conn->fd, ret, strerror(errno));
+			upsdebugx(6, "failed write: %s", buf);
 			sock_disconnect(conn);
 		}
 	}
@@ -258,10 +261,13 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret <= INT_MAX)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
-	ret = write(conn->fd, buf, strlen(buf));
+	ret = write(conn->fd, buf, buflen);
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
-		upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
+		upsdebugx(1, "%s: write %zd bytes to socket %d failed "
+			"(ret=%zd): %s",
+			__func__, buflen, conn->fd, ret, strerror(errno));
+		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
@@ -602,7 +608,7 @@ static void sock_close(void)
 
 /* interface */
 
-void dstate_init(const char *prog, const char *devname)
+char * dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
@@ -625,6 +631,9 @@ void dstate_init(const char *prog, const char *devname)
 	sockfd = sock_open(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+
+	/* NOTE: Caller must free this string */
+	return xstrdup(sockname);
 }
 
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */

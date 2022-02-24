@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2866 utf-8
+personal_ws-1.1 en 2870 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -157,6 +157,7 @@ CBLimit
 CCC
 CCCC
 CDC
+CDS
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -1078,6 +1079,7 @@ Sicon
 Sidorov
 Signetic
 Silvino
+Sinline
 Sistem
 Sistemas
 Slackware
@@ -1843,6 +1845,7 @@ hh
 hibernate's
 hiddev
 hidparser
+hidtypes
 hidups
 highbattery
 highfrequency
@@ -2804,6 +2807,7 @@ vid
 vin
 virsh
 virtualization
+vivo
 vo
 vod
 voltronic

@@ -25,7 +25,7 @@
 
 #include "raritan-pdu-mib.h"
 
-#define RARITAN_MIB_VERSION	"0.7"
+#define RARITAN_MIB_VERSION	"0.8"
 
 /* Raritan MIB
  * this one uses the same MIB as Eaton Revelation,
@@ -48,6 +48,12 @@ static info_lkp_t raritan_pdu_outlet_status_info[] = {
 
 /* Snmp2NUT lookup table for Raritan MIB */
 static snmp_info_t raritan_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Raritan",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

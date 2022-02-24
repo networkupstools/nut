@@ -101,6 +101,9 @@ fi
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
+AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+	[RUN_AS_GROUP="nogroup"]
+)
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -635,9 +638,9 @@ AC_ARG_WITH(drivers,
 							dnl Break once, maybe a driver hits several categories
 						])
 					done
-					AS_IF([test -z "${DRV_HITS}"],
-						[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 				done
+				AS_IF([test -z "${DRV_HITS}"],
+					[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 
 			done
 			])
@@ -1647,7 +1650,7 @@ AC_MSG_RESULT(${PORT})
 
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
 [
 	case "${withval}" in
 	yes|no)
@@ -1666,7 +1669,7 @@ AC_MSG_RESULT(${RUN_AS_USER})
 
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
 [
 	case "${withval}" in
 	yes|no)
@@ -1850,19 +1853,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-dnl Note: Currently there is no automatic detection enabled -
-dnl users have to ask they want systemd units installed.
-dnl It may be changed based on popular demand to just always
-dnl run the "case" below for ${systemdsystemunitdir} values,
-dnl like we do for systemdtmpfilesdir further below.
+dnl Note: Currently there is no reliable automatic detection -
+dnl users have to ask they want systemd units installed, or
+dnl risk auto-detection like seen below.
 AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-[
-	case "${withval}" in
+	[systemdsystemunitdir="${withval}"],
+	[systemdsystemunitdir="auto"])
+case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${withval}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdsystemunitdir=""
@@ -1874,8 +1876,8 @@ AC_ARG_WITH([systemdsystemunitdir],
 	*)
 		systemdsystemunitdir="${withval}"
 		;;
-	esac
-], [])
+esac
+if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
@@ -1889,13 +1891,14 @@ dnl given
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
-	[systemdshutdowndir=${withval}])
+	[systemdshutdowndir="${withval}"],
+	[systemdshutdowndir="auto"])
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdshutdowndir=""
@@ -1909,6 +1912,7 @@ if test -n "${systemdsystemunitdir}"; then
 		;;
 	esac
 fi
+if test "${systemdshutdowndir}" = "auto" ; then systemdshutdowndir=""; fi
 if test -n "${systemdshutdowndir}"; then
 	AC_MSG_RESULT(using ${systemdshutdowndir})
 else
@@ -1916,15 +1920,16 @@ else
 fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
-dnl daemons starting not as systemd units
+dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir=${withval}])
+	[systemdtmpfilesdir="${withval}"],
+	[systemdtmpfilesdir="auto"])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdtmpfilesdir=""
@@ -1937,6 +1942,7 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir="${withval}"
 		;;
 esac
+if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
 if test -n "${systemdtmpfilesdir}"; then
 	AC_MSG_RESULT(using ${systemdtmpfilesdir})
 else

@@ -69,8 +69,8 @@ this option should be used for specific needs only.
 
 *-D*::
 Raise the debugging level.  Use this multiple times to see more details.
-Running a driver in debug mode will prevent it from backgrounding after
-startup.  It will keep on logging information to the console until it
+Running a driver in debug mode will (by default) prevent it from backgrounding
+after startup.  It will keep on logging information to the console until it
 receives a SIGINT (usually Ctrl-C) or SIGTERM signal.
 +
 The level of debugging needed depends both on the driver and the
@@ -82,6 +82,7 @@ either too limited or too verbose to be of any use.
 *-d* 'update_count'::
 Dump the data tree (in upsc-like format) to stdout after running the driver
 update loop for 'update_count' times and exit.
+By default this prevents the driver process from backgrounding after startup.
 Note that the driver banner will be printed too, so when using this option in
 scripts, don't forget to trim the first line.
 
@@ -89,6 +90,14 @@ scripts, don't forget to trim the first line.
 Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
+
+*-F*::
+Enforce running the driver as a foreground process, regardless of debugging
+or data-dumping settings.
+
+*-B*::
+Enforce running the driver as a background process, regardless of debugging
+or data-dumping settings.
 
 *-i* 'interval'::
 Set the poll interval for the device.  The default value is 2 (in seconds).
@@ -131,6 +140,11 @@ you can set this option to `root` to bypass permission errors, especially with
 USB-based drivers. However, you will want to remove this option later in order
 to avoid permission conflicts between the driver and the unprivileged copy of
 linkman:upsd[8].
+
+*-g* 'groupname'::
+Override the unprivileged group name that the driver may use after startup
+to set permissions for the filesystem socket so `upsd` may still access it
+if the run-time `user` of the driver normally would deny that access.
 
 *-x* 'var'='val'::
 Define a variable called 'var' with the value of 'var' in the

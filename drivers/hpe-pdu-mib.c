@@ -24,7 +24,7 @@
 #include "hpe-pdu-mib.h"
 #include "dstate.h"
 
-#define HPE_EPDU_MIB_VERSION      "0.32"
+#define HPE_EPDU_MIB_VERSION      "0.33"
 #define HPE_EPDU_MIB_SYSOID       ".1.3.6.1.4.1.232.165.7"
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
@@ -175,6 +175,11 @@ static info_lkp_t hpe_pdu_outlet_group_phase_info[] = {
 
 /* Snmp2NUT lookup table for HPE PDU MIB */
 static snmp_info_t hpe_pdu_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "HPE",

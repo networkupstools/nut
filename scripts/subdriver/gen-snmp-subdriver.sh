@@ -241,6 +241,13 @@ generate_C() {
 		 * 	{ 0, NULL }
 		 * };
 		 */
+
+		/* standard MIB items; if the vendor MIB contains better OIDs for
+		 * this (e.g. with daisy-chain support), consider adding those here
+		 */
+		{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+		{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+		{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 	EOF
 
 	# extract OID string paths, one by one
