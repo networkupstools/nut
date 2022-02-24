@@ -218,6 +218,10 @@ static void send_to_all(const char *fmt, ...)
 				__func__, buflen, conn->fd, ret, strerror(errno));
 			upsdebugx(6, "failed write: %s", buf);
 			sock_disconnect(conn);
+		} else {
+			upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
+				"(ret=%zd): %s",
+				__func__, buflen, conn->fd, ret, buf);
 		}
 	}
 }
@@ -301,7 +305,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	} else {
-		upsdebugx(1, "%s: write %zd bytes to socket %d succeeded "
+		upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
 			"(ret=%zd): %s",
 			__func__, buflen, conn->fd, ret, buf);
 	}
