@@ -218,6 +218,17 @@ static void send_to_all(const char *fmt, ...)
 				__func__, buflen, conn->fd, ret, strerror(errno));
 			upsdebugx(6, "failed write: %s", buf);
 			sock_disconnect(conn);
+
+			/* TOTHINK: Maybe fallback elsewhere in other cases? */
+			if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
+				upsdebugx(0, "%s: synchronous mode was 'auto', "
+					"will try 'on' for next connections",
+					__func__);
+				do_synchronous = 1;
+			}
+
+			dstate_setinfo("driver.parameter.synchronous", "%s",
+				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
 			upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
 				"(ret=%zd): %s",
