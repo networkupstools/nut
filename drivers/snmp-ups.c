@@ -2893,7 +2893,8 @@ bool_t snmp_ups_walk(int mode)
 		current_device_number <= devices_count; current_device_number++)
 	{
 
-		upsdebugx(0, "%s: walking device.%d", __func__, current_device_number);
+		upsdebugx(1, "%s: walking device %d",
+			__func__, current_device_number);
 
 		/* reinit the alarm buffer, before */
 		if (devices_count > 1)
