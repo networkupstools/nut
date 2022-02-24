@@ -110,7 +110,8 @@ maxretry = 3
 #                The default is 45 seconds.
 #
 # synchronous: optional.  The driver work by default in asynchronous
-#              mode (i.e *synchronous=no*).  This means that all data
+#              mode (like *no*) with fallback to synchronous if sending
+#              fails (i.e *synchronous=auto*).  This means that all data
 #              are pushed by the driver on the communication socket to
 #              upsd (Unix socket on Unix, Named pipe on Windows) without
 #              waiting for these data to be actually consumed.  With

@@ -93,8 +93,9 @@ provided in the respective driver man pages.
 
 *synchronous*::
 
-Optional.  The driver work by default in asynchronous mode (i.e
-*synchronous=no*).  This means that all data are pushed by the driver
+Optional.  The drivers work by default in asynchronous mode initially
+but can fall back to synchronous mode if writes to server socket failed
+(i.e *synchronous=auto*).  This means that all data are pushed by the driver
 on the communication socket to upsd (Unix socket on Unix, Named pipe
 on Windows) without waiting for these data to be actually consumed.
 With some HW, such as ePDUs, that can produce a lot of data,
@@ -108,8 +109,11 @@ By enabling the 'synchronous' flag (value = 'yes'), the driver will wait
 for data to be consumed by upsd, prior to publishing more.  This can be
 enabled either globally or per driver.
 +
-The default is 'no' (i.e. asynchronous mode) for backward compatibility
-of the driver behavior.
+The default of 'auto' acts like 'no' (i.e. asynchronous mode) for backward
+compatibility of the driver behavior, until communications fail with a
+"Resource temporarily unavailable" condition, which happens when the
+driver has many data points to send in a burst, and the server can not
+handle that quickly enough so the buffer fills up.
 
 *user*::
 

@@ -287,6 +287,18 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 			__func__, buflen, conn->fd, ret, strerror(errno));
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
+
+		/* TOTHINK: Maybe fallback elsewhere in other cases? */
+		if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
+			upsdebugx(0, "%s: synchronous mode was 'auto', "
+				"will try 'on' for next connections",
+				__func__);
+			do_synchronous = 1;
+		}
+
+		dstate_setinfo("driver.parameter.synchronous", "%s",
+			(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
+
 		return 0;	/* failed */
 	} else {
 		upsdebugx(1, "%s: write %zd bytes to socket %d succeeded "
@@ -315,8 +327,15 @@ static void sock_connect(int sock)
 		return;
 	}
 
-	/* enable nonblocking I/O */
-	if (!do_synchronous) {
+	/* enable nonblocking I/O?
+	 * -1 = auto (try async, allow fallback to sync)
+	 *  0 = async
+	 *  1 = sync
+	 */
+	if (do_synchronous < 1) {
+		upsdebugx(0, "%s: enabling asynchronous mode (%s)",
+			__func__, (do_synchronous<0)?"auto":"fixed");
+
 		ret = fcntl(fd, F_GETFL, 0);
 
 		if (ret < 0) {
@@ -332,6 +351,9 @@ static void sock_connect(int sock)
 			close(fd);
 			return;
 		}
+	}
+	else {
+		upsdebugx(0, "%s: keeping default synchronous mode", __func__);
 	}
 
 	conn = xcalloc(1, sizeof(*conn));
