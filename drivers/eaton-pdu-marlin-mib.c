@@ -295,8 +295,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		, NULL /* devices_count */ },
 
 	/* UPS collection */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL,
+		"EATON", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE,
 		"1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
 		"Eaton Powerware ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
@@ -392,7 +393,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)
 	 * 		=> RFC input.Lx.voltage.context */
-	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1",
+	{ "input.voltage", 0, 0.001,
+		".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1",
 		NULL, 0, NULL },
 	{ "input.voltage.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.1",
@@ -654,7 +656,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 /*	{ "input.%i.feed.color", 0, 1,
  *		".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
- *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL},
+ *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
  */
 	{ "input.feed.color", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
@@ -786,7 +788,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* outletName: Outlet friendly name, which can be modified by the user */
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
@@ -794,7 +797,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Numeric identifier of the outlet, tied to the whole unit */
 	{ "outlet.%i.id", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL },
 	/* outletID: Outlet physical name, related to its number in the group
 	 * ex: first outlet of the second group (B) is B1 */
 	/* Outlet physical name OID in new G3 firmware (02.00.0051)
@@ -803,12 +807,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.6.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
-		NULL, NULL },
+		NULL },
 	/* Fallback in firmwares issued before Sep 2017: */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
-		NULL, NULL },
+		NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */
 	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE,
@@ -917,7 +921,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* User-friendly (writeable) description of the outlet group: */
 	{ "outlet.group.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL },
 	/* Outlet-group physical name, a read-only string,
 	 * is named groupDesignator (other MIBs groupPhysicalName)
 	 * groupPhysicalName.0.1 = Value (OctetString): A
@@ -925,19 +930,21 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	{ "outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.8.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL },
 	/* Outlet-group color: groupColor (other MIBs groupBkgColor)
 	 * groupColor.0.1 = Value (Gauge32): 16051527    (0xF4ED47)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "outlet.group.%i.color", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.7.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL },
 	/* groupType.0.1 = Integer: outletSection  (4) */
 	{ "outlet.group.%i.type", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_type_info[0], NULL },
+		&marlin_outlet_group_type_info[0] },
 	/* Phase to which an outlet-group is connected:
 	 * We use the following OID, which gives the voltage measurement type
 	 * groupVoltageMeasType.0.1; Value (Integer): singlePhase  (1)
@@ -946,7 +953,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.3.1.2.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase_info[0], NULL },
+		&marlin_outlet_group_phase_info[0] },
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i",
