@@ -33,6 +33,16 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    for them to complete initializing. This matters on systems that monitor
    from dozens to hundreds of devices.
 
+ - Drivers support a new value for `synchronous` setting, which is the
+   new default now: `auto`.  Initially after driver start-up this mode
+   acts as the older default `off`, but would fall back to `on` in case
+   the driver fails to send reports to `upsd` by overflowing the socket
+   buffer in async mode -- so the next connections of this driver uptime
+   would be synchronized (potentially slower, but safer -- blocking on
+   writes to the data server).  This adaptation would primarily impact
+   and benefit devices with many (hundreds of) data points, such as
+   ePDUs and daisy chains. [issue #1309, PR #1315]
+
  - Daemons such as upsd, upsmon, upslog, and device drivers previously
    implied that enabled debugging (or upslog to stdout) means foreground
    running, otherwise the daemon was always sent to the background.

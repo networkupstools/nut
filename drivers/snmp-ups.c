@@ -5,7 +5,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2021	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -135,10 +135,23 @@ int g_pwr_battery;
 int pollfreq; /* polling frequency */
 static int quirk_symmetra_threephase = 0;
 
-/* Number of device(s): standard is "1", but daisychain means more than 1 */
+/* Number of device(s): standard is "1", but talking
+ * to a daisychain (master device) means more than 1
+ * (a directly addressable member of a daisy chain
+ * would be seen as a single-device chain though)
+ */
 static long devices_count = 1;
-static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
-static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
+/* global var to handle daisychain iterations -
+ * changed by loops in snmp_ups_walk() and su_addcmd();
+ * may be 0 for addressing certain values/commands
+ * across all chain devices via master (1);
+ * also may be 0 for non-daisychained devices
+ */
+static int current_device_number = 0;
+/* global var to handle daisychain iterations -
+ * made TRUE if we resolved a "device.count" value
+ */
+static bool_t daisychain_enabled = FALSE;
 static daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
@@ -2962,8 +2975,13 @@ bool_t snmp_ups_walk(int mode)
 	 * for the whole (#0) virtual device, so it *seems* similar to unitary.
 	 */
 
-	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
+	for (current_device_number = (daisychain_enabled == FALSE && devices_count == 1 ? 1 : 0) ;
+		current_device_number <= devices_count; current_device_number++)
 	{
+
+		upsdebugx(1, "%s: walking device %d",
+			__func__, current_device_number);
+
 		/* reinit the alarm buffer, before */
 		if (devices_count > 1)
 			device_alarm_init();
@@ -2980,16 +2998,33 @@ bool_t snmp_ups_walk(int mode)
 		/* Loop through all mapping entries for the current_device_number */
 		for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++) {
 
-			/* FIXME:
+			/* NOTE: Effectively below we do this:
 			 * switch(current_device_number) {
-			 * case 0: devtype = "daisychain whole"
-			 * case 1: devtype = "daisychain master"
-			 * default: devtype = "daisychain slave"
+			 *  case 0: devtype = "daisychain whole"
+			 *  case 1: devtype = "daisychain master"
+			 *  default: devtype = "daisychain slave"
+			 * }
+			 * with a consideration for directly-addressable
+			 * slave devices (can be seen in chain via master,
+			 * but also queryable alone with an IP connection)
+			 * NOTE: until proven otherwise, "single" may mean
+			 * both (either) a daisy-chain enabled master device
+			 * without further connected "slave" devices, and
+			 * a directly addressable (IP-connected) "slave".
+			 * Possibly also an ePDU etc. that serves a MIB
+			 * which resolves "device.count" with the selected
+			 * subdriver.
 			 */
 			if (daisychain_enabled == TRUE) {
-				upsdebugx(1, "%s: processing device %i (%s)", __func__,
-					current_device_number,
-					(current_device_number == 1)?"master":"slave"); /* FIXME: daisychain */
+				upsdebugx(1, "%s: processing daisy-chain device %i (%s)",
+					__func__, current_device_number,
+					(current_device_number == 1)
+						? (devices_count > 1 ? "master" : "single")
+						: (current_device_number > 1 ? "slave" : "whole")
+					);
+			} else {
+				upsdebugx(1, "%s: processing unitary device (%i)",
+					__func__, current_device_number);
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
@@ -3012,7 +3047,7 @@ bool_t snmp_ups_walk(int mode)
  * then we'd skip it still (unitary device is at current_device_number == 1)...
  */
 			/* skip the whole-daisychain for now */
-			if (current_device_number == 0) {
+			if (current_device_number == 0 && daisychain_enabled == TRUE) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
 				continue;
 			}
