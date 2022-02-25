@@ -43,8 +43,9 @@ int	extrafd = -1;
 /* for ser_open */
 int	do_lock_port = 1;
 
-/* for dstate->sock_connect, default to asynchronous */
-int	do_synchronous = 0;
+/* for dstate->sock_connect, default to effectively
+ * asynchronous (0) with fallback to synchronous (1) */
+int	do_synchronous = -1;
 
 /* for detecting -a values that don't match anything */
 static	int	upsname_found = 0;
@@ -379,6 +380,9 @@ static int main_arg(char *var, char *val)
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
 		else
+		if (!strcmp(val, "auto"))
+			do_synchronous=-1;
+		else
 			do_synchronous=0;
 
 		return 1;	/* handled */
@@ -461,6 +465,9 @@ static void do_global_args(const char *var, const char *val)
 	if (!strcmp(var, "synchronous")) {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
+		else
+		if (!strcmp(val, "auto"))
+			do_synchronous=-1;
 		else
 			do_synchronous=0;
 	}
@@ -1013,7 +1020,7 @@ int main(int argc, char **argv)
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",
-		(do_synchronous==1)?"yes":"no");
+		(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 
 	/* remap the device.* info from ups.* for the transition period */
 	if (dstate_getinfo("ups.mfr") != NULL)
