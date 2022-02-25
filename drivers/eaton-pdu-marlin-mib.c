@@ -455,7 +455,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 *   Voltage has to be expressed either phase-phase or phase-neutral
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)
-	 * 		=> RFC input.Lx.voltage.context */
+	 *      => RFC input.Lx.voltage.context */
 	{ "input.voltage", 0, 0.001,
 		".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1",
 		NULL, 0, NULL },
@@ -708,7 +708,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
 /*	{ "input.%i.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
  *		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i",
- *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+ *		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
  */
 	{ "input.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.1",
@@ -811,31 +811,56 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* EMP002 (EATON EMP MIB) mapping, including daisychain support */
 	/* Warning: indexes start at '1' not '0'! */
 	/* sensorCount.0 */
-	{ "ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "0", SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.count", ST_FLAG_RW, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.1.0",
+		"0", SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* CommunicationStatus.n */
-	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
-		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_emp002_ambient_presence_info[0] },
+	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_emp002_ambient_presence_info[0] },
 	/* sensorName.n: OctetString EMPDT1H1C2 @1 */
-	{ "ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.name", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorManufacturer.n */
-	{ "ambient.%i.mfr", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.6.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.mfr", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.6.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorModel.n */
-	{ "ambient.%i.model", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.model", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorSerialNumber.n */
-	{ "ambient.%i.serial", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.serial", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorUuid.n */
-	{ "ambient.%i.id", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.id", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorAddress.n */
-	{ "ambient.%i.address", 0, 1, ".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.address", 0, 1,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorMonitoredBy.n */
-	{ "ambient.%i.parent.serial", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.5.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.parent.serial", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.5.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorFirmwareVersion.n */
-	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureUnit.1
 	 * MUST be before the temperature data reading! */
-	{ "ambient.%i.temperature.unit", 0, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &eaton_sensor_temperature_unit_info[0] },
+	{ "ambient.%i.temperature.unit", 0, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.2.5.0",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&eaton_sensor_temperature_unit_info[0] },
 	/* temperatureValue.n.1 */
-	{ "ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+	{ "ambient.%i.temperature", 0, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
 #if WITH_SNMP_LKP_FUN
 	&eaton_sensor_temperature_read_info[0]
 #else
@@ -844,45 +869,83 @@ static snmp_info_t eaton_marlin_mib[] = {
 	},
 	{ "ambient.%i.temperature.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_threshold_status_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_threshold_status_info[0] },
 	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_threshold_temperature_alarms_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_threshold_temperature_alarms_info[0] },
 	/* FIXME: ambient.n.temperature.{minimum,maximum} */
 	/* temperatureThresholdLowCritical.n.1 */
-	{ "ambient.%i.temperature.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.temperature.low.critical", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.2.2.1.6.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureThresholdLowWarning.n.1 */
-	{ "ambient.%i.temperature.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.temperature.low.warning", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.2.2.1.5.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureThresholdHighWarning.n.1 */
-	{ "ambient.%i.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.temperature.high.warning", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.2.2.1.7.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* temperatureThresholdHighCritical.n.1 */
-	{ "ambient.%i.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.temperature.high.critical", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.2.2.1.8.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* humidityValue.n.1 */
-	{ "ambient.%i.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.humidity", 0, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.3.3.1.3.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	{ "ambient.%i.humidity.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.3.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_threshold_status_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_threshold_status_info[0] },
 	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.3.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_threshold_humidity_alarms_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_threshold_humidity_alarms_info[0] },
 	/* FIXME: consider ambient.n.humidity.{minimum,maximum} */
 	/* humidityThresholdLowCritical.n.1 */
-	{ "ambient.%i.humidity.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.humidity.low.critical", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.3.2.1.6.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* humidityThresholdLowWarning.n.1 */
-	{ "ambient.%i.humidity.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.humidity.low.warning", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.3.2.1.5.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* humidityThresholdHighWarning.n.1 */
-	{ "ambient.%i.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.humidity.high.warning", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.3.2.1.7.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* humidityThresholdHighCritical.n.1 */
-	{ "ambient.%i.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.humidity.high.critical", ST_FLAG_RW, 0.1,
+		".1.3.6.1.4.1.534.6.8.1.3.2.1.8.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* digitalInputName.n.{1,2} */
-	{ "ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
-	{ "ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	{ "ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* digitalInputPolarity.n */
-	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_polarity_info[0] },
-	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_ambient_drycontacts_polarity_info[0] },
 	/* XUPS-MIB::xupsContactState.n */
-	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_state_info[0] },
-	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0,
+		".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2",
+		"", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY,
+		&marlin_ambient_drycontacts_state_info[0] },
 
 	/* Outlet collection */
 	{ "outlet.count", 0, 1,
@@ -1187,14 +1250,16 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* groupVA.0.1 = Integer: 3132 */
 	{ "outlet.group.%i.power", 0, 1.0,
 		".1.3.6.1.4.1.534.6.6.7.5.5.1.2.%i.%i",
-		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL },
 	/* Input to which an outlet-group is connected
 	 * groupInputIndex.0.1 = Integer: 1
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "outlet.group.%i.input", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.9.%i.%i",
-		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL },
 
 	/* instant commands. */
 	/* Notes:
