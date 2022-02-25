@@ -117,7 +117,7 @@ typedef int bool_t;
  * this macro to a specific value while building the codebase and see
  * what happens under different conditions ;)
  */
-# if WITH_DMFMIB
+# if (defined WITH_DMFMIB) && (WITH_DMFMIB != 0)
 #  define WITH_SNMP_LKP_FUN 0
 # else
 #  define WITH_SNMP_LKP_FUN 1
