@@ -1068,16 +1068,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.load.cycle", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
-	{ "outlet.%i.load.off.delay", 0, 1,
-		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
-		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.on.delay", 0, 1,
-		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
-		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.cycle.delay", 0, 1,
-		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
-		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* Per-outlet shutdown / startup delay (configuration point, not the timers)
 	 * outletControlShutoffDelay.0.3 = INTEGER: 120
@@ -1091,7 +1081,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
-	/* TODO: handle delays
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "outlet.%i.load.off.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.on.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.cycle.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+
+	/* Delays handling:
 	 * 0-n :Time in seconds until the group command is issued
 	 * -1:Cancel a pending group-level Off/On/Reboot command */
 	/* groupControlOffCmd.0.1 = Integer: -1 */
