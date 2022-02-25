@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.65"
+#define CPQPOWER_MIB_VERSION	"1.66"
 
 #define DEFAULT_ONDELAY		"30"
 #define DEFAULT_OFFDELAY	"20"
@@ -173,6 +173,12 @@ static info_lkp_t cpqpower_outlet_switchability_info[] = {
 /* Snmp2NUT lookup table */
 
 static snmp_info_t cpqpower_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MFR_NAME, "HP/Compaq", SU_FLAG_STATIC, NULL },

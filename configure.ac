@@ -101,6 +101,9 @@ fi
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
+AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+	[RUN_AS_GROUP="nogroup"]
+)
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -635,9 +638,9 @@ AC_ARG_WITH(drivers,
 							dnl Break once, maybe a driver hits several categories
 						])
 					done
-					AS_IF([test -z "${DRV_HITS}"],
-						[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 				done
+				AS_IF([test -z "${DRV_HITS}"],
+					[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
 
 			done
 			])
@@ -1647,7 +1650,7 @@ AC_MSG_RESULT(${PORT})
 
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
 [
 	case "${withval}" in
 	yes|no)
@@ -1666,7 +1669,7 @@ AC_MSG_RESULT(${RUN_AS_USER})
 
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
 [
 	case "${withval}" in
 	yes|no)

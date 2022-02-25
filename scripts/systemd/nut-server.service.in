@@ -20,9 +20,10 @@ PartOf=nut.target
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=@SBINDIR@/upsd
-ExecReload=@SBINDIR@/upsd -c reload
-Type=forking
+# Note: foreground mode by default skips writing a PID file (and
+# needs Type=simple); can use "-FF" here to create one anyway:
+ExecStart=@SBINDIR@/upsd -F
+ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
 
 [Install]
 WantedBy=nut.target

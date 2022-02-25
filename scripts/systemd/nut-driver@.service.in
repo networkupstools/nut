@@ -1,7 +1,20 @@
 [Unit]
 Description=Network UPS Tools - device driver for %I
 After=local-fs.target
+
+# Note: If the "Before" line below is uncommented, the target unit
+# would only become initialized after the driver units are all in
+# a final state (active, failed, ...) and would allow nut-server
+# (upsd) to start up and represent those devices on the network.
+# With this constraint commented away, the nut-server should start
+# earlier, but may initially report some devices as Not connected
+# (they should appear when drivers complete their initialization -
+# e.g. snmp walks of large MIBs can take a while):
+#Before=nut-driver.target
+
+# Propagate stopping of the target:
 PartOf=nut-driver.target
+
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the
 # subsequent `upsd` will have a `0.0.0.0` or a `localhost` to bind
@@ -29,6 +42,16 @@ EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
 ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl start "$NUTDEV"'
 ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl stop "$NUTDEV"'
+# Restart really always, do not stop trying:
+StartLimitInterval=0
+Restart=always
+# Protract the "hold-off" interval, so if the device connection is
+# lost, the driver does not reapidly restart and fail too many times,
+# and then systemd would keep the unit failed without further retries.
+# Notably, this helps start "dummy-ups" drivers retranslating local
+# devices (so getting a chicken-and-egg problem for driver-upsd-driver
+# orderly series of initializations). More details in NUT issue #779.
+RestartSec=15s
 Type=forking
 # Note: If you customize the "maxstartdelay" in ups.conf or in your
 # NUT compilation defaults, so it exceeds the default systemd unit
