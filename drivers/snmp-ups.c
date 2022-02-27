@@ -196,9 +196,6 @@ static int outletgroup_template_index_base = -1;
 static int ambient_template_index_base = -1;
 static int device_template_offset = -1;
 
-/* Temperature handling, to convert back to Celsius */
-int temperature_unit = TEMPERATURE_UNKNOWN;
-
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
 
@@ -4056,39 +4053,3 @@ void read_mibconf(char *mib)
 	}
 	pconf_finish(&ctx);
 }
-
-/***********************************************************************
- * Subdrivers shared helpers functions
- **********************************************************************/
-
-static char su_scratch_buf[20];
-
-/* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(void *raw_snmp_value)
-{
-	const long snmp_value = *((long*)raw_snmp_value);
-	long celsius_value = snmp_value;
-
-	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
-
-	switch (temperature_unit) {
-		case TEMPERATURE_KELVIN:
-			celsius_value = (snmp_value / 10) - 273.15;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_CELSIUS:
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
-			break;
-		case TEMPERATURE_FAHRENHEIT:
-			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_UNKNOWN:
-		default:
-			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
-			break;
-	}
-	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
-	return su_scratch_buf;
-}
-
