@@ -990,10 +990,14 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
-	/* outletName: Outlet friendly name, which can be modified by the user */
+	/* Outlet friendly name, which can be modified by the user
+	 * outletName: = OctetString: "Outlet A16"
+	 */
+	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING =>
+	 * refreshed from time to time or upon call to setvar */
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
 		NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
@@ -1015,7 +1019,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1,
 		NULL },
 
-	/* Fallback in firmwares issued before Sep 2017: */
+	/* Fallback in firmwares issued before Sep 2017 (outletID): */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
@@ -1134,12 +1138,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.id", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
-	/* groupName.0.1 = OctetString: Factory Group 1 */
-	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
-	/* User-friendly (writeable) description of the outlet group: */
+	/* User-friendly (writeable) description of the outlet group:
+	 * groupName.0.1 = OctetString: Factory Group 1
+	 * groupName.0.2 = OctetString: Branch Circuit B
+	 */
+	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING =>
+	 * refreshed from time to time or upon call to setvar */
 	{ "outlet.group.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL, SU_FLAG_SEMI_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		NULL },
 	/* Outlet-group physical name, a read-only string,
 	 * is named groupDesignator (other MIBs groupPhysicalName)
