@@ -794,11 +794,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 		&marlin_outlet_status_info[0] },
 
 	/* Numeric identifier of the outlet, tied to the whole unit */
-	{ "outlet.%i.id", 0, 1,
-		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1,
-		NULL },
-
 	/* NOTE: For daisychain devices ATM the last listed value presented by
 	 * the SNMP device is kept by the driver - no SU_FLAG_UNIQUE here yet.
 	 * Verified that a non-implemented OID does not publish empty values. */
@@ -808,6 +803,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * the outlet number (represented as string) and is a read-only string
 	 * outletID.0.8 = Value (OctetString): "8"
 	 */
+	{ "outlet.%i.id", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL },
+
+	/* Fallback in firmwares issued before Sep 2017: */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
