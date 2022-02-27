@@ -24,6 +24,6 @@
 #define EATON_EPDU_MARLIN_HELPERS_H
 
 long marlin_device_count_fun(const char *daisy_dev_list);
-const char *eaton_sensor_temperature_unit_fun(long snmp_value);
+const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value);
 
 #endif /* EATON_EPDU_MARLIN_HELPERS_H */
