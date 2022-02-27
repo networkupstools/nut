@@ -251,8 +251,8 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
-/* FIXME: daisychain commands support! */
-su_addcmd(su_info_p);
+			/* FIXME: daisychain commands support! */
+			su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -2118,7 +2118,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 	info_lkp_t *info_lkp;
 	long value = *((long *)raw_value);
 
-#ifdef WITH_SNMP_LKP_FUN
+#if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
@@ -2315,7 +2315,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			/* we should never fall here! */
 			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
 				__func__, template_type, su_info_p->info_type);
-		}
+	}
 	base_index = template_index_base;
 
 	if (template_index_base == -1)
