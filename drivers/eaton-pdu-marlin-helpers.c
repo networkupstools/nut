@@ -43,13 +43,13 @@
 long marlin_device_count_fun(const char *daisy_dev_list)
 {
 	long count = 0, i;
-	for (i=0; daisy_dev_list[i] != '\0'; i++) {
+	for (i = 0; daisy_dev_list[i] != '\0'; i++) {
 		if (daisy_dev_list[i] == ',') {
 			/* Each comma means a new device in the list */
 			count ++;
 		}
 	}
-	if (i>0 && (daisy_dev_list[i-1] != ',') ) {
+	if (i > 0 && (daisy_dev_list[i - 1] != ',') ) {
 		/* Non-empty string => at least one device, and no trailing commas */
 		count ++;
 	}
