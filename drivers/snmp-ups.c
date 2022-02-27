@@ -2816,6 +2816,8 @@ bool_t daisychain_init()
 		daisychain_enabled = TRUE;
 
 		/* Try to get the OID value, if it's not a template */
+		upsdebugx(3, "OID for device.count is %s",
+			su_info_p->OID ? su_info_p->OID : "<null>");
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
