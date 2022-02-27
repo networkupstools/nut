@@ -128,8 +128,24 @@ static const char *apc_date_conversion_fun(double value)
 	return buf;
 }
 
+static double apc_date_conversion_reverse(const char *date_string)
+{
+	int year, month, day;
+	long date;
+
+	sscanf(date_string, "%04d/%02d/%02d", &year, &month, &day);
+	if(year >= 2070 || month > 12 || day > 31)
+		return 0;
+	year %= 100;
+	date = ((year / 10 & 0x0F) << 4) + (year % 10);
+	date += ((month / 10 & 0x0F) << 20) + ((month % 10) << 16);
+	date += ((day / 10 & 0x0F) << 12) + ((day % 10) << 8);
+
+	return (double) date;
+}
+
 static info_lkp_t apc_date_conversion[] = {
-	{ 0, NULL, apc_date_conversion_fun, NULL }
+	{ 0, NULL, apc_date_conversion_fun, apc_date_conversion_reverse }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500 */
@@ -318,7 +334,7 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
-  { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", 0, date_conversion },
+  { "battery.mfr.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_SEMI_STATIC, date_conversion },
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
   { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Observed values: 0x0 on Back-UPS ES 650, 0x92501 on Back-UPS BF500 whose manufacture date was 2005/01/20 - this makes little sense but at least it's a valid date. */
 
