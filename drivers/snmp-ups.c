@@ -4066,10 +4066,12 @@ void read_mibconf(char *mib)
 static char su_scratch_buf[20];
 
 /* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(long snmp_value)
+const char *su_temperature_read_fun(void *raw_snmp_value)
 {
-	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
+	const long snmp_value = *((long*)raw_snmp_value);
 	long celsius_value = snmp_value;
+
+	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
 
 	switch (temperature_unit) {
 		case TEMPERATURE_KELVIN:

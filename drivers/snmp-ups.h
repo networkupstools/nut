@@ -370,7 +370,7 @@ extern info_lkp_t su_convert_to_iso_date_info[];
 #define FUNMAP_USDATE_TO_ISODATE 0
 
 /* Process temperature value according to 'temperature_unit' */
-const char *su_temperature_read_fun(long snmp_value);
+const char *su_temperature_read_fun(void *raw_snmp_value);
 
 /* Temperature handling, to convert back to Celsius (NUT standard) */
 extern int temperature_unit;

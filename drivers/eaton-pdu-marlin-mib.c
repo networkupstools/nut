@@ -213,10 +213,10 @@ static info_lkp_t marlin_outlet_group_phase_info[] = {
 
 #if WITH_SNMP_LKP_FUN_DUMMY
 /* Temperature unit consideration */
-const char *eaton_sensor_temperature_unit_fun(long snmp_value)
+const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value)
 		{ return "unknown"; }
 /* FIXME: please DMF, though this should be in snmp-ups.c or equiv. */
-const char *su_temperature_read_fun(long snmp_value)
+const char *su_temperature_read_fun(void *raw_snmp_value)
 	{ return "dummy"; }
 #endif // WITH_SNMP_LKP_FUN_DUMMY
 
