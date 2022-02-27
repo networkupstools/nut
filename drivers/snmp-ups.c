@@ -2821,14 +2821,38 @@ bool_t daisychain_init()
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
-			if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
-				upsdebugx(1, "There are %ld device(s) present", devices_count);
-			else
-			{
-				upsdebugx(1, "Error: can't get the number of device(s) present!");
-				upsdebugx(1, "Falling back to 1 device!");
-				devices_count = 1;
+#if WITH_SNMP_LKP_FUN
+			devices_count = -1;
+			/* First test if we have a generic lookup function
+			 * FIXME: Check if the field type is a string?
+			 */
+			/* TODO: backport the 2x2 mapping function support
+			 * and this would be "fun_s2l" in resulting codebase
+			 */
+			if ( (su_info_p->oid2info != NULL) && (su_info_p->oid2info->nuf_s2l != NULL) ) {
+				char buf[1024];
+				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
+				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
+					devices_count = su_info_p->oid2info->nuf_s2l(buf);
+					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+				}
 			}
+
+			if (devices_count == -1) {
+#endif /* WITH_SNMP_LKP_FUN */
+
+				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
+					upsdebugx(1, "There are %ld device(s) present", devices_count);
+				else
+				{
+					upsdebugx(1, "Error: can't get the number of device(s) present!");
+					upsdebugx(1, "Falling back to 1 device!");
+					devices_count = 1;
+				}
+
+#if WITH_SNMP_LKP_FUN
+			}
+#endif /* WITH_SNMP_LKP_FUN */
 		}
 		/* Otherwise (template), use the guesstimation function to get
 		 * the number of devices present */
