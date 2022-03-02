@@ -534,7 +534,13 @@ dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
 `gcc` installed by package) into `/usr/lib/ccache`.
 
 NOTE: For Jenkins agents, also need to `pkg_add jre` or `pkg_add jdk`
-(pick version 1.8 or 8, or 11+).
+(if asked, pick version 1.8 or 8, or 11+). You would likely have to update
+the trusted CA store to connect to NUT CI, see e.g. (raw!) download from
+https://gist.github.com/galan/ec8b5f92dd325a97e2f66e524d28aaf8
+but ensure that you run it with `bash` and it does `wget` the certificates
+(maybe with `--no-check-certificate` option if the OS does not trust current
+internet infrastructure either), and revise the suggested certificate files
+vs. https://letsencrypt.org/certificates/ and/or comments to that gist.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
