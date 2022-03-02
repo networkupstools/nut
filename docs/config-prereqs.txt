@@ -446,6 +446,9 @@ mirror. The `gcc` version on CD image differed notably from that in the
 networked repository (4.2.x vs 4.9.x)
 
 ------
+# Optionally, make the environment comfortable, e.g.:
+:; pkg_add sudo bash mc wget rsync
+
 :; pkg_add \
     git python curl \
     gmake autoconf automake libltdl libtool \
