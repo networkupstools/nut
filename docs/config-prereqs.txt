@@ -495,7 +495,7 @@ networked repository (4.2.x vs 4.9.x)
     lua
 
 :; pkg_add \
-    bash dash busybox ksh93
+    dash ksh93
 ------
 
 [NOTE]
