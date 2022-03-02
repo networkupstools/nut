@@ -124,6 +124,10 @@ typedef int bool_t;
 # endif
 #endif
 
+#ifndef WITH_SNMP_LKP_FUN_DUMMY
+# define WITH_SNMP_LKP_FUN_DUMMY 0
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
