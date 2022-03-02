@@ -443,7 +443,10 @@ that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
-networked repository (4.2.x vs 4.9.x)
+networked repository (4.2.x vs 4.9.x).
+You may have to echo a working base URL (part before "6.4/..." into the
+`/etc/installurl` file, since the old distribution is no longer served by
+default site.
 
 ------
 # Optionally, make the environment comfortable, e.g.:
