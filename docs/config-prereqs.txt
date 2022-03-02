@@ -456,11 +456,11 @@ networked repository (4.2.x vs 4.9.x)
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
-#   :; yum install python-2.7.15p0
+#   :; pkg_add python-2.7.15p0
 # and/or:
-#   :; yum install python-3.6.6p1
+#   :; pkg_add python-3.6.6p1
 # although you might succeed specifying shorter names and the packager
-# will offer a list of matching variants.
+# will offer a list of matching variants (as it does for "python" above).
 # NOTE: "perl" is not currently a package, but seemingly part of base OS.
 # You can find a list of what is (pre-)installed with:
 #   :; pkg_info | grep -Ei 'perl|python'
