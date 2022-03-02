@@ -521,6 +521,12 @@ Recommended:
             ln -s ../../local/bin/ccache "$TOOL" ; \
         done ; \
    )
+
+:; ( cd /usr/bin && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
+:; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
+
+:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-6.0.0" ; done )
+:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-6.0.0" ; done )
 ------
 
 For compatibility with common setups on other operating systems, can add
