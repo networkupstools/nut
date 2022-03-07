@@ -141,7 +141,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 	int retries;
 #endif
-	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	/* libusb-1.0 usb_ctrl_charbufsize is uint16_t and we
+	 * want the rdlen vars signed - so taking a wider type */
+	int32_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
 	ssize_t	devcount = 0;
@@ -159,7 +161,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int		rdlen;
+	int32_t		rdlen;
 
 	/* libusb base init */
 	if (libusb_init(NULL) < 0) {
@@ -425,7 +427,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
-			rdlen1 = buf[7] | (buf[8] << 8);
+			rdlen1 = ((uint16_t)buf[7] & 0x00FF) | (((uint16_t)buf[8] & 0x00FF) << 8);
 		}
 
 		if (rdlen1 < -1) {
@@ -450,7 +452,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			if (i+9 <= if_desc->extra_length && if_desc->extra[i] >= 9 && if_desc->extra[i+1] == 0x21) {
 				p = &if_desc->extra[i];
 				upsdebug_hex(3, "HID descriptor, method 2", p, 9);
-				rdlen2 = p[7] | (p[8] << 8);
+				rdlen2 = ((uint16_t)p[7] & 0x00FF) | (((uint16_t)p[8] & 0x00FF) << 8);
 				break;
 			}
 		}

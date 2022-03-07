@@ -377,7 +377,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 				upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
-				rdlen1 = (uint8_t)buf[7] | ((uint8_t)buf[8] << 8);
+				rdlen1 = ((uint16_t)buf[7] & 0x00FF) | (((uint16_t)buf[8] & 0x00FF) << 8);
 			}
 
 			if (rdlen1 < -1) {
@@ -407,7 +407,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				) {
 					p = (usb_ctrl_char *)&iface->extra[i];
 					upsdebug_hex(3, "HID descriptor, method 2", p, 9);
-					rdlen2 = (uint8_t)p[7] | ((uint8_t)p[8] << 8);
+					rdlen2 = ((uint16_t)p[7] & 0x00FF) | (((uint16_t)p[8] & 0x00FF) << 8);
 					break;
 				}
 			}
