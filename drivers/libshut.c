@@ -893,7 +893,7 @@ static unsigned char shut_checksum(
 	unsigned char chk=0;
 
 	for(i=0; i<bufsize; i++)
-		chk^=buf[i];
+		chk ^= (unsigned char)buf[i];
 
 	upsdebugx (4, "shut_checksum: %02x", chk);
 	return chk;
