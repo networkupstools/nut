@@ -197,7 +197,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 	}
 
 	/* copy to buffer */
-	size = inBuf[0] & 0x07;
+	size = (unsigned char)(inBuf[0]) & 0x07;
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
