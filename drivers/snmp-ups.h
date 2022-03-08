@@ -90,6 +90,7 @@
 #define DEFAULT_POLLFREQ          30   /* in seconds */
 #define DEFAULT_NETSNMP_RETRIES   5
 #define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
+#define DEFAULT_SEMISTATICFREQ    10   /* in snmpwalk update cycles */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -108,10 +109,34 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+#ifndef WITH_SNMP_LKP_FUN
+/* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
+ * all corners of the codebase, e.g. not by DMF. So at least until that
+ * is fixed, (TODO) we enable those bits of code only optionally during
+ * a build for particular usage. Conversely, experimenters can define
+ * this macro to a specific value while building the codebase and see
+ * what happens under different conditions ;)
+ */
+# if (defined WITH_DMFMIB) && (WITH_DMFMIB != 0)
+#  define WITH_SNMP_LKP_FUN 0
+# else
+#  define WITH_SNMP_LKP_FUN 1
+# endif
+#endif
+
+#ifndef WITH_SNMP_LKP_FUN_DUMMY
+# define WITH_SNMP_LKP_FUN_DUMMY 0
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
+#if WITH_SNMP_LKP_FUN
+/* FIXME: Currently we do not have a way to provide custom C code
+ * via DMF - keep old approach until we get the ability, e.g. by
+ * requiring a LUA implementation to be passed alongside C lookups.
+ */
 /*
  * Currently there are a few cases using a "fun_vp2s" type of lookup
  * function, while the "nuf_s2l" type was added for completeness but
@@ -123,6 +148,7 @@ typedef struct {
  */
 	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
 	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
+#endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -157,7 +183,7 @@ typedef struct {
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-/* "flags" bits 0..8 (and 9 reserved for DMF) */
+/* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
 										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
@@ -175,9 +201,9 @@ typedef struct {
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
-/* Reserved slot -- to import from DMF branch codebase:
-//#define SU_FLAG_SEMI_STATIC	(1UL << 9)*/	/* Refresh this entry once in several walks
-// * (for R/W values user can set on device, like descriptions or contacts) */
+#define SU_FLAG_SEMI_STATIC	(1UL << 9)	/* Refresh this entry once in several walks
+                                      	 * (for R/W values user can set on device,
+                                      	 * like descriptions or contacts) */
 
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -222,17 +248,14 @@ typedef struct {
 /* "flags" bits 21..23 (and 24 reserved for DMF) */
 #define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY(t)	((t)->flags & (3UL << 21))	/* Mask the 2 SU_TYPE_DAISY_* but not SU_DAISY */
+#define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the SU_TYPE_DAISY_{1,2,MASTER_ONLY} but not SU_DAISY */
 #define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
-/* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2*/
-/* Reserved slot -- to import from DMF branch codebase
-// (and change SU_TYPE_DAISY to 11UL<<21 for the 3 types then):
-//#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)*/	/* Only valid for daisychain master (device.1) */
+/* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */
+#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
 /* Free slot: (1UL << 25) */
 
-/* Reserved slot -- to import from DMF branch codebase:
-//#define SU_AMBIENT_TEMPLATE	(1UL << 26)*/	/* ambient template definition */
+#define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 /* Reserved slot -- to import from DMF branch codebase:
 //#define SU_FLAG_FUNCTION	(1UL << 27)
@@ -255,6 +278,7 @@ typedef struct {
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
 #define SU_VAR_TIMEOUT		"snmp_timeout"
+#define SU_VAR_SEMISTATICFREQ	"semistaticfreq"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -349,6 +373,17 @@ extern info_lkp_t su_convert_to_iso_date_info[];
 /* Name the mapping location in that array for consumers to reference */
 #define FUNMAP_USDATE_TO_ISODATE 0
 
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(void *raw_snmp_value);
+
+/* Temperature handling, to convert back to Celsius (NUT standard) */
+extern int temperature_unit;
+
+#define TEMPERATURE_UNKNOWN    0
+#define TEMPERATURE_CELSIUS    1
+#define TEMPERATURE_KELVIN     2
+#define TEMPERATURE_FAHRENHEIT 3
+
 /*****************************************************
  * End of Subdrivers shared helpers functions
  *****************************************************/
@@ -366,6 +401,7 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
+extern int semistaticfreq; /* semistatic entry update frequency */
 
 /* pointer to the Snmp2Nut lookup table */
 extern mib2nut_info_t *mib2nut_info;

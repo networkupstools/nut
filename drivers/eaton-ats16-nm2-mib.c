@@ -25,7 +25,7 @@
 
 #include "eaton-ats16-nm2-mib.h"
 
-#define EATON_ATS16_NM2_MIB_VERSION  "0.21"
+#define EATON_ATS16_NM2_MIB_VERSION  "0.22"
 
 #define EATON_ATS16_NM2_SYSOID  ".1.3.6.1.4.1.534.10.2" /* newer Network-M2 */
 #define EATON_ATS16_NM2_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -75,6 +75,15 @@ static info_lkp_t eaton_ats16_nm2_test_result_info[] = {
 static info_lkp_t eaton_ats16_nm2_output_status_info[] = {
 	{ 1, "OFF", NULL, NULL }, /* Output not powered */
 	{ 2, "OL", NULL, NULL },  /* Output powered */
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "opened", NULL, NULL },
+	{ 2, "closed", NULL, NULL },
+	{ 3, "opened", NULL, NULL },   /* openWithNotice   */
+	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -167,6 +176,15 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
 	{ "ambient.humidity.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.8.0", NULL, SU_FLAG_OK, NULL },
+	/* Dry contacts on EMP001 TH module */
+	/* ats2ContactState.1 = INTEGER: open(1) */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+	/* ats2ContactState.2 = INTEGER: open(1) */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
 
 #if 0 /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
