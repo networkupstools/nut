@@ -3058,7 +3058,7 @@ void	upsdrv_initups(void)
 			ret = usb_get_string(udev, 0, 0,
 				(usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 			if (ret >= 4) {
-				langid = tbuf[2] | (tbuf[3] << 8);
+				langid = ((uint8_t)tbuf[2]) | (((uint8_t)tbuf[3]) << 8);
 				upsdebugx(1,
 					"First supported language ID: 0x%x "
 					"(please report to the NUT maintainer!)",

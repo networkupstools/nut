@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.54"
+#define MGE_MIB_VERSION	"0.55"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -129,6 +129,13 @@ static info_lkp_t mge_power_source_info[] = {
 	{ 5, "OB" /* battery */, NULL, NULL },
 	{ 6, "BOOST" /* booster */, NULL, NULL },
 	{ 7, "TRIM" /* reducer */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t mge_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "closed", NULL, NULL },
+	{ 2, "opened", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -244,6 +251,10 @@ static snmp_info_t mge_mib[] = {
 	/* Ambient page: Environment Sensor (ref 66 846) */
 	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.705.1.8.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.705.1.8.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.9.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.10.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

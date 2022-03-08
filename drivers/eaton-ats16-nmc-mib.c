@@ -25,7 +25,7 @@
 
 #include "eaton-ats16-nmc-mib.h"
 
-#define EATON_ATS16_NMC_MIB_VERSION  "0.20"
+#define EATON_ATS16_NMC_MIB_VERSION  "0.21"
 
 #define EATON_ATS16_NMC_SYSOID  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
 #define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -78,9 +78,17 @@ static info_lkp_t eaton_ats16_nmc_output_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "opened", NULL, NULL },
+	{ 2, "closed", NULL, NULL },
+	{ 3, "opened", NULL, NULL },   /* openWithNotice   */
+	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
+	{ 0, NULL, NULL, NULL }
+};
+
 /* EATON_ATS_NMC Snmp2NUT lookup table */
 static snmp_info_t eaton_ats16_nmc_mib[] = {
-
 	/* standard MIB items */
 	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
@@ -167,6 +175,15 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
 	{ "ambient.humidity.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.8.0", NULL, SU_FLAG_OK, NULL },
+	/* Dry contacts on EMP001 TH module */
+	/* ats2ContactState.1 = INTEGER: open(1) */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+	/* ats2ContactState.2 = INTEGER: open(1) */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]},
 
 #if 0 /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
@@ -236,10 +253,6 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ "unmapped.ats2ContactType", 0, 1, ".1.3.6.1.4.1.534.10.2.5.4.1.2.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactType.2 = INTEGER: notUsed(4) */
 	{ "unmapped.ats2ContactType", 0, 1, ".1.3.6.1.4.1.534.10.2.5.4.1.2.2", NULL, SU_FLAG_OK, NULL },
-	/* ats2ContactState.1 = INTEGER: open(1) */
-	{ "unmapped.ats2ContactState", 0, 1, ".1.3.6.1.4.1.534.10.2.5.4.1.3.1", NULL, SU_FLAG_OK, NULL },
-	/* ats2ContactState.2 = INTEGER: open(1) */
-	{ "unmapped.ats2ContactState", 0, 1, ".1.3.6.1.4.1.534.10.2.5.4.1.3.2", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactDescr.1 = STRING: Input #1 */
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactDescr.2 = STRING: Input #2 */

@@ -334,7 +334,7 @@ static int shut_control_msg(
 
 /* Data portability */
 /* realign packet data according to Endianess */
-#define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
+#define BYTESWAP(in) ((((uint16_t)in & 0x00FF) << 8) + (((uint16_t)in & 0xFF00) >> 8))
 static void align_request(struct shut_ctrltransfer_s *ctrl)
 {
 #if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
@@ -893,7 +893,7 @@ static unsigned char shut_checksum(
 	unsigned char chk=0;
 
 	for(i=0; i<bufsize; i++)
-		chk^=buf[i];
+		chk ^= (unsigned char)buf[i];
 
 	upsdebugx (4, "shut_checksum: %02x", chk);
 	return chk;
