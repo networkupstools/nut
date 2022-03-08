@@ -28,13 +28,14 @@ UPS with the following characteristics.
 
 2. Connection: RS-232 
 
-My netvision died out on me and appears impossible to procure another, so
-I set about to talk to the UPS directly. The documentation yielded mild
-success for the DIGYS I have handy over here.
+These are typically provided with a Netvision WEB/SNMP management card / external 
+box that would be better served by the linkman:snmp-ups[8] driver.
+In case netvision isn't available, you can hook up the UPS directly via the
+serial port and use this driver.
 
 Currently, it has only been tested on the following model.
 
-* DIGYS 3/3 !%kVA
+* DIGYS 3/3 15kVA
 
 In theory, any Socomec JBUS model should work. It should be discovered
 as ``Unknown Socomec JBUS'' with a numeric id that I'll need to add it
@@ -53,11 +54,9 @@ CABLING
 -------
 
 The UPS has an RS-232 port which should be connected with a NULL-modem
-cable to a PC serial port. The UPS, mine at least, has curiously a female
-DB9 connector, so if you construct the cable yourself, use a male DB9 on
-one end. 
-
-It only uses RX,TX and ground, so do not strain too much with DTR et all
+cable to a PC serial port. The UPS tested has a female DB9 connector, 
+so if you construct the cable yourself, make note of the connector type to 
+avoid using gender changers.
 
 RS-232 is supported on all operating systems, either via a built-in serial
 port on your computer, or by using an external USB-to-RS-232 converter. If
@@ -68,8 +67,9 @@ operating system.
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by installing libmodbus
-(with development packages) and running
+This driver should be built by default if libmodbus and development headers are
+available. You can force the configure script to build it with the following 
+arguments:
 
     configure --with-serial=yes --with-modbus=yes
 
@@ -83,42 +83,10 @@ or `/dev/ttyUSB0` on Linux, or `/dev/ttyU0` on FreeBSD (note the capital "U").
 A built-in serial port can be identified as `/dev/ttyS0` on Linux or one of
 `/dev/cua*` names on FreeBSD.
 
-EXTRA ARGUMENTS
----------------
-This driver supports the following optional settings in the
-linkman:ups.conf[5] file:
-
-*offdelay=*'value'::
-Time to wait before shutting down the UPS (seconds), acceptable range is
-6 seconds (0.1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
-Must be a multiple of 6 seconds. To ensure your system has adequate time
-to shut down after a power failure, it's highly recommended to adjust
-*offdelay*.
-
-*rebootdelay=*'value'::
-Time to wait before rebooting the UPS (seconds), acceptable range is
-6 seconds (0.1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
-Must be a multiple of 6 seconds. This is used by the *shutdown.reboot.graceful*
-instant command. If you've adjusted *offdelay*, you should also adjust
-*rebootdelay*.
-
-*ondelay=*'value'::
-Time to wait before switching on the UPS (seconds), acceptable range is
-60 seconds (1 minutes) to 5940 seconds (99 minutes). Defaults to 60 seconds.
-Must be a multiple of 60 seconds (not 6 seconds). You don't need to adjust
-this delay unless you have special requirements.
-
-NOTE: Due to hardware limitation, in this driver, *ondelay* is respected
-only when line power is available. If a power failure has occurred, the
-UPS and the load is always immediately switched on, as soon (or as late)
-as line power is restored.
-
 INSTANT COMMANDS
 ----------------
 
-This driver does not (yet?) support any commands sent to the UPS, mostly
-because I'm too afraid to meddle with the UPS that is currently powering
-half of our datacenter.
+This driver does not (yet?) support sending commands to the UPS. 
 
 VARIABLES
 ---------
@@ -131,14 +99,18 @@ inconsistencies in the documentation, I'm witholding from trying them.
 KNOWN ISSUES AND BUGS
 ---------------------
 
-Well, it is an alpha release at best, so no promises. Mostly based on the work of
-Yifeng Li <tomli@tomli.me> on the huawei-ups2000 in that very same source tree.
+Well, it is an alpha release at best, but so far appears to report the UPS status
+reliably. Mostly based on the work of Yifeng Li <tomli@tomli.me> on the huawei-ups2000 
+in that very same source tree.
 
-Battery status has a non-fatal read failure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Read failure on some JBUS addresses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It's usually harmless and can be safely ignored. It's only logged for
-informative purposes (*LOG_INFO*), not as a warning or error.
+The driver polls all documented JBUS addresses and it is quite possible that your
+UPS model does not support one of them. (eg the Digys does not support address 
+0x1020 which should provide the current UPS status).
+This should be logged with LOG_ERR from modbus_read_input_registers() 
+along with the address that produced the error.
 
 Data stale
 ~~~~~~~~~~~
@@ -149,8 +121,8 @@ you should see error messages similar to the example below in the system
 log.
 
     socomec_jbus: modbus_read_input_registers(addr:XXXX, count:Z): Illegal data address
-    upsd: Data for UPS [huawei] is stale - check driver
-    upsd: UPS [huawei] data is no longer stale
+    upsd: Data for UPS [socomec] is stale - check driver
+    upsd: UPS [socomec] data is no longer stale
 
 So far all known problems have been fixed by the author, but an unknown one
 cannot be ruled out. If you have encountered "data stale" problems during
