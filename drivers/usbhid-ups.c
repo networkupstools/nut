@@ -436,9 +436,23 @@ static const char *date_conversion_fun(double value)
 	return buf;
 }
 
-/* FIXME? Do we need an inverse "nuf()" here? */
+static double date_conversion_reverse(const char* date_string)
+{
+	long year, month, day;
+	long date;
+
+	sscanf(date_string, "%04ld/%02ld/%02ld", &year, &month, &day);
+	if(year - 1980 > 127 || month > 12 || day > 31)
+		return 0;
+	date = (year - 1980) << 9;
+	date += month << 5;
+	date += day;
+
+	return (double) date;
+}
+
 info_lkp_t date_conversion[] = {
-	{ 0, NULL, date_conversion_fun, NULL }
+	{ 0, NULL, date_conversion_fun, date_conversion_reverse }
 };
 
 /* returns statically allocated string - must not use it again before
