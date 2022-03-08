@@ -427,7 +427,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
-			rdlen1 = ((uint16_t)buf[7] & 0x00FF) | (((uint16_t)buf[8] & 0x00FF) << 8);
+			rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);
 		}
 
 		if (rdlen1 < -1) {
@@ -452,7 +452,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			if (i+9 <= if_desc->extra_length && if_desc->extra[i] >= 9 && if_desc->extra[i+1] == 0x21) {
 				p = &if_desc->extra[i];
 				upsdebug_hex(3, "HID descriptor, method 2", p, 9);
-				rdlen2 = ((uint16_t)p[7] & 0x00FF) | (((uint16_t)p[8] & 0x00FF) << 8);
+				rdlen2 = ((uint8_t)p[7]) | (((uint8_t)p[8]) << 8);
 				break;
 			}
 		}
