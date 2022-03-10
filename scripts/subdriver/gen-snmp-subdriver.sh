@@ -142,6 +142,7 @@ generate_C() {
 	UDRIVER="`echo "$UDRIVER" | tr - _`"
 
 	# generate header file
+	# NOTE: with <<-EOF leading TABs are all stripped
 	echo "Creating $HFILE"
 	cat > "$HFILE" <<-EOF
 	/* ${HFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
@@ -176,7 +177,8 @@ generate_C() {
 	EOF
 
 	# generate source file
-	# create header
+	# create heading boilerblate
+	# NOTE: with <<-EOF leading TABs are all stripped
 	echo "Creating $CFILE"
 	cat > "$CFILE" <<-EOF
 	/* ${CFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
@@ -248,9 +250,13 @@ generate_C() {
 		 * this (e.g. with daisy-chain support), consider adding those here
 		 */
 	EOF
-	printf "\t{ \"device.description\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.1.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
-	printf "\t{ \"device.contact\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.4.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
-	printf "\t{ \"device.location\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.6.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
+
+	# Same file, indented text (TABs not stripped):
+	cat >> "$CFILE" <<EOF
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+EOF
 
 	# extract OID string paths, one by one
 	LINENB="0"
@@ -271,9 +277,17 @@ generate_C() {
 		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
 	done < "${STRWALKFILE}" >> "${CFILE}"
 
-	# append footer
-	printf "\n\t/* end of structure. */\n\t{ NULL, 0, 0, NULL, NULL, 0, NULL }\n};\n\n" >> "$CFILE"
-	printf "mib2nut_info_t	${LDRIVER} = { \"${LDRIVER}\", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_SYSOID };\n" >> "$CFILE"
+	# append footer (TABs not stripped):
+	cat >> "$CFILE" <<EOF
+
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+};
+
+	mib2nut_info_t  ${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };
+EOF
+
+	return
 }
 
 # process command line options
