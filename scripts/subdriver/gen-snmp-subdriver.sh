@@ -90,30 +90,30 @@ MODE=0
 NAME=gen-snmp-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
 SYSOID_NUMBER=".1.3.6.1.2.1.1.2.0"
-DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
-DFL_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-NUMWALK.XXXXXX"`
-DFL_STRWALKFILE=`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`
-TMP_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`
-TMP_STRWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`
+DEBUG="`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`"
+DFL_NUMWALKFILE="`mktemp "$TMPDIR/$NAME-NUMWALK.XXXXXX"`"
+DFL_STRWALKFILE="`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`"
+TMP_NUMWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`"
+TMP_STRWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`"
 
 get_snmp_data() {
 	# 1) get the sysOID (points the mfr specif MIB), apart if there's an override
 	if [ -z "$SYSOID" ]
 	then
-		SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME $SYSOID_NUMBER | cut -d' ' -f2`
+		SYSOID="`snmpget -On -v1 -c "$COMMUNITY" -Ov "$HOSTNAME" "$SYSOID_NUMBER" | cut -d' ' -f2`"
 		echo "sysOID retrieved: ${SYSOID}"
 	else
 		echo "Using the provided sysOID override ($SYSOID)"
 	fi
-	DEVICE_SYSOID=$SYSOID
+	DEVICE_SYSOID="$SYSOID"
 
 	OID_COUNT=0
-	while (test $OID_COUNT -eq 0)
+	while (test "$OID_COUNT" -eq 0)
 	do
 		# 2) get the content of the mfr specif MIB
 		echo "Retrieving SNMP information. This may take some time"
-		snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-		snmpwalk -Os -v1 -m ALL -M$MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+		snmpwalk -On -v1 -c "$COMMUNITY" "$HOSTNAME" "$SYSOID" 2>/dev/null 1> "$DFL_NUMWALKFILE"
+		snmpwalk -Os -v1 -m ALL -M"$MIBS_DIRLIST" -c "$COMMUNITY" "$HOSTNAME" "$SYSOID" 2>/dev/null 1> "$DFL_STRWALKFILE"
 
 		# 3) test return value of the walk, and possibly ramp-up the path to get something.
 		# The sysOID mechanism only works if we're pointed somehow in the right direction
@@ -132,14 +132,14 @@ get_snmp_data() {
 
 generate_C() {
 	# create file names, lowercase
-	LDRIVER=`echo $DRIVER | tr A-Z a-z`
-	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	LDRIVER="`echo "$DRIVER" | tr A-Z a-z`"
+	UDRIVER="`echo "$DRIVER" | tr a-z A-Z`"
 	# keep dashes in name for files
 	CFILE="$LDRIVER-mib.c"
 	HFILE="$LDRIVER-mib.h"
 	# but replace with underscores for the structures and defines
-	LDRIVER=`echo $LDRIVER | tr - _`
-	UDRIVER=`echo $UDRIVER | tr - _`
+	LDRIVER="`echo "$LDRIVER" | tr - _`"
+	UDRIVER="`echo "$UDRIVER" | tr - _`"
 
 	# generate header file
 	echo "Creating $HFILE"
@@ -248,17 +248,17 @@ generate_C() {
 		 * this (e.g. with daisy-chain support), consider adding those here
 		 */
 	EOF
-	printf "\t{ \"device.description\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.1.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
-	printf "\t{ \"device.contact\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.4.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
-	printf "\t{ \"device.location\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.6.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
+	printf "\t{ \"device.description\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.1.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
+	printf "\t{ \"device.contact\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.4.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
+	printf "\t{ \"device.location\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.6.0\", NULL, SU_FLAG_OK, NULL },\n" >> "${CFILE}"
 
 	# extract OID string paths, one by one
 	LINENB="0"
 	while IFS= read -r line; do
 		LINENB="`expr $LINENB + 1`"
 		FULL_STR_OID="$line"
-		STR_OID="`echo $line | cut -d'.' -f1`"
-		echo $line | grep STRING > /dev/null
+		STR_OID="`echo "$line" | cut -d'.' -f1`"
+		echo "$line" | grep STRING > /dev/null
 		if [ $? -eq 0 ]; then
 			ST_FLAG_TYPE="ST_FLAG_STRING"
 			SU_INFOSIZE="SU_INFOSIZE"
@@ -267,9 +267,9 @@ generate_C() {
 			SU_INFOSIZE="1"
 		fi
 		# get the matching numeric OID
-		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
+		NUM_OID="`sed -n "${LINENB}p" "${NUMWALKFILE}" | cut -d' ' -f1`"
 		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
-	done < ${STRWALKFILE} >> ${CFILE}
+	done < "${STRWALKFILE}" >> "${CFILE}"
 
 	# append footer
 	printf "\n\t/* end of structure. */\n\t{ NULL, 0, 0, NULL, NULL, 0, NULL }\n};\n\n" >> "$CFILE"
@@ -322,8 +322,8 @@ if [ -z "$NUMWALKFILE" ]; then
 	# mode 1: directly get SNMP data from a real agent
 	echo "Mode 1 selected"
 	MODE=1
-	NUMWALKFILE=$DFL_NUMWALKFILE
-	STRWALKFILE=$DFL_STRWALKFILE
+	NUMWALKFILE="$DFL_NUMWALKFILE"
+	STRWALKFILE="$DFL_STRWALKFILE"
 
 	# check if Net SNMP is available
 	if [ -z "`command -v snmpget`" -o -z "`command -v snmpwalk`" ] && \
@@ -335,7 +335,7 @@ if [ -z "$NUMWALKFILE" ]; then
 	while [ -z "$HOSTNAME" ]; do
 		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
-		if echo $HOSTNAME | egrep -q '[^a-zA-Z0-9]'; then
+		if echo "$HOSTNAME" | egrep -q '[^a-zA-Z0-9]'; then
 			echo "Please use only letters and digits"
 			HOSTNAME=""
 		fi
@@ -351,9 +351,9 @@ else
 		# then use snmptranslate to get the string OIDs and generated the string SNMP walk
 		echo "Mode 3 selected"
 		MODE=3
-		RAWWALKFILE=$NUMWALKFILE
-		NUMWALKFILE=$DFL_NUMWALKFILE
-		STRWALKFILE=$DFL_STRWALKFILE
+		RAWWALKFILE="$NUMWALKFILE"
+		NUMWALKFILE="$DFL_NUMWALKFILE"
+		STRWALKFILE="$DFL_STRWALKFILE"
 
 		# check for actual file existence
 		if [ ! -f "$RAWWALKFILE" ]; then
@@ -362,7 +362,7 @@ else
 		fi
 		# Extract the sysOID
 		# Format is "1.3.6.1.2.1.1.2.0 = OID: 1.3.6.1.4.1.4555.1.1.1"
-		DEVICE_SYSOID=`grep 1.3.6.1.2.1.1.2.0 $RAWWALKFILE | cut -d' ' -f4`
+		DEVICE_SYSOID="`grep 1.3.6.1.2.1.1.2.0 "$RAWWALKFILE" | cut -d' ' -f4`"
 		if [ -n "$DEVICE_SYSOID" ]; then
 			echo "Found sysOID $DEVICE_SYSOID"
 		else
@@ -373,19 +373,19 @@ else
 		# Switch to the entry point, and extract the subtree
 		# Extract the numeric walk
 		echo -n "Extracting numeric SNMP walk..."
-		grep $DEVICE_SYSOID $RAWWALKFILE | egrep -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> $NUMWALKFILE
+		grep "$DEVICE_SYSOID" "$RAWWALKFILE" | egrep -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
 		echo " done"
 
 		# Create the string walk from a translation of the numeric one
 		echo -n "Converting string SNMP walk..."
 		while IFS=' = ' read NUM_OID OID_VALUE
 		do
-			STR_OID=`snmptranslate -Os  -m ALL -M+. $NUM_OID 2>/dev/null`
+			STR_OID="`snmptranslate -Os  -m ALL -M+. "$NUM_OID" 2>/dev/null`"
 			# Uncomment the below line to get debug logs
 			#echo "Got: $STR_OID = $OID_VALUE"
-			echo -n "."
-			echo "$STR_OID = $OID_VALUE" >> $STRWALKFILE
-		done < $NUMWALKFILE
+			printf "."
+			echo "$STR_OID = $OID_VALUE" >> "$STRWALKFILE"
+		done < "$NUMWALKFILE"
 		echo " done"
 	else
 		# mode 2: get data from files
@@ -398,7 +398,7 @@ else
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
 You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
 			read -p "Value of sysOID: " SYSOID < /dev/tty
-			if echo $SYSOID | egrep -q '[^0-9.]'; then
+			if echo "$SYSOID" | egrep -q '[^0-9.]'; then
 				echo "Please use only the numeric form, with dots and digits"
 				SYSOID=""
 			fi
@@ -425,21 +425,21 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 	read -p "Name of subdriver: " DRIVER < /dev/tty
-	if echo $DRIVER | egrep -q '[^a-zA-Z0-9]'; then
+	if echo "$DRIVER" | egrep -q '[^a-zA-Z0-9]'; then
 		echo "Please use only letters and digits"
 		DRIVER=""
 	fi
 done
 
 # remove blank and "End of MIB" lines
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v ${NUMWALKFILE} > ${TMP_NUMWALKFILE}
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v ${STRWALKFILE} > ${TMP_STRWALKFILE}
-NUMWALKFILE=${TMP_NUMWALKFILE}
-STRWALKFILE=${TMP_STRWALKFILE}
+egrep -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
+egrep -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+NUMWALKFILE="${TMP_NUMWALKFILE}"
+STRWALKFILE="${TMP_STRWALKFILE}"
 
 # FIXME: sanity checks (! -z contents -a same `wc -l`)
-NUM_OID_COUNT="`cat $NUMWALKFILE | wc -l`"
-STR_OID_COUNT="`cat $STRWALKFILE | wc -l`"
+NUM_OID_COUNT="`cat "$NUMWALKFILE" | wc -l`"
+STR_OID_COUNT="`cat "$STRWALKFILE" | wc -l`"
 
 echo "SNMP OIDs extracted = $NUM_OID_COUNT / $NUM_OID_COUNT"
 
