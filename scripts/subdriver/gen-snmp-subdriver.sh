@@ -3,13 +3,13 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.12
+# Version: 0.13
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
-# 2015 - 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
+# 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
 # 2011 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -131,13 +131,15 @@ get_snmp_data() {
 }
 
 generate_C() {
-	# create file names
+	# create file names, lowercase
 	LDRIVER=`echo $DRIVER | tr A-Z a-z`
 	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	# keep dashes in name for files
 	CFILE="$LDRIVER-mib.c"
 	HFILE="$LDRIVER-mib.h"
-
-	#FIXME: LDRIVER & UDRIVER => replace - by _
+	# but replace with underscores for the structures and defines
+	LDRIVER=`echo $LDRIVER | tr - _`
+	UDRIVER=`echo $UDRIVER | tr - _`
 
 	# generate header file
 	echo "Creating $HFILE"
@@ -245,10 +247,10 @@ generate_C() {
 		/* standard MIB items; if the vendor MIB contains better OIDs for
 		 * this (e.g. with daisy-chain support), consider adding those here
 		 */
-		{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-		{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-		{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 	EOF
+	printf "\t{ \"device.description\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.1.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
+	printf "\t{ \"device.contact\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.4.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
+	printf "\t{ \"device.location\", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, \".1.3.6.1.2.1.1.6.0\", NULL, SU_FLAG_OK, NULL },\n" >> ${CFILE}
 
 	# extract OID string paths, one by one
 	LINENB="0"
@@ -270,14 +272,8 @@ generate_C() {
 	done < ${STRWALKFILE} >> ${CFILE}
 
 	# append footer
-	cat >> "$CFILE" <<-EOF
-
-		/* end of structure. */
-		{ NULL, 0, 0, NULL, NULL, 0, NULL }
-	};
-
-	mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };
-	EOF
+	printf "\t/* end of structure. */\n\t{ NULL, 0, 0, NULL, NULL, 0, NULL }\n};" >> "$CFILE"
+	printf "mib2nut_info_t	${LDRIVER} = { \"${LDRIVER}\", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_SYSOID };" >> "$CFILE"
 }
 
 # process command line options
@@ -385,6 +381,9 @@ else
 		while IFS=' = ' read NUM_OID OID_VALUE
 		do
 			STR_OID=`snmptranslate -Os  -m ALL -M+. $NUM_OID 2>/dev/null`
+			# Uncomment the below line to get debug logs
+			#echo "Got: $STR_OID = $OID_VALUE"
+			echo -n "."
 			echo "$STR_OID = $OID_VALUE" >> $STRWALKFILE
 		done < $NUMWALKFILE
 		echo " done"
@@ -442,7 +441,7 @@ STRWALKFILE=${TMP_STRWALKFILE}
 NUM_OID_COUNT="`cat $NUMWALKFILE | wc -l`"
 STR_OID_COUNT="`cat $STRWALKFILE | wc -l`"
 
-echo "COUNT = $NUM_OID_COUNT / $NUM_OID_COUNT"
+echo "SNMP OIDs extracted = $NUM_OID_COUNT / $NUM_OID_COUNT"
 
 generate_C
 
