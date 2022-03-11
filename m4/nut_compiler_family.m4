@@ -102,13 +102,11 @@ dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
     dnl First check for this to avoid failing on unused include paths etc:
     NUT_CHECK_COMPILE_FLAG([-Qunused-arguments])
 
-dnl # Future: test for something else?
-dnl    m4_foreach_w([TESTCOMPILERFLAG], [
-dnl        -Qunused-arguments
-dnl        -Wno-unknown-warning-option
-dnl    ], [
-dnl        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
-dnl    ])
+    m4_foreach_w([TESTCOMPILERFLAG], [
+        -Wno-reserved-identifier
+    ], [
+        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
+    ])
 
     dnl Note: each m4_foreach_w arg must be named uniquely
     dnl Note: Seems -fcolor-diagnostics is clang-only and sometimes
