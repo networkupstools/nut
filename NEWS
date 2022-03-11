@@ -100,6 +100,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    RS-232 Modbus device support of Huawei UPS2000/2000A (1kVA-3kVA) series,
    and possibly some related FSP UPS models. [PR #954]
 
+ - socomec_jbus: added new driver for modbus-based JBUS protocol over serial
+   RS-232 for Socomec UPS (tested with a DIGYS 3/3 15kVA model, working
+   on Linux x86-64 and Raspberry Pi 3 ARM). [PR #1313]
+
  - generic_modbus: added new driver for TCP and Serial Modbus device support.
    The driver has been tested against PULS UPS (model UB40.241) via
    MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP), and configuration
