@@ -53,6 +53,8 @@ void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* make sure this is a valid user */
 	if (!user_checkaction(client->username, client->password, "LOGIN")) {
+		upsdebugx(3, "%s: not a valid user: %s",
+			__func__, client->username);
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}
