@@ -217,9 +217,14 @@ static void do_notify(const utype_t *ups, int ntype)
  * we do not need to try becoming a primary). This currently
  * propagates further as the return value of do_upsd_auth().
  */
+/* TODO: Includes API change in NUT 2.8.0 to replace deprecated
+ * keywords "MASTER" with "PRIMARY", and "SLAVE" with "SECONDARY",
+ * (and backwards-compatible alias handling)
+ */
 static int apply_for_primary(utype_t *ups)
 {
 	char	buf[SMALLBUF];
+	char	upscli_readraw_error;
 
 	/* don't bother if we're not configured as a primary for this ups */
 	if (!flag_isset(ups->status, ST_PRIMARY))
@@ -232,10 +237,13 @@ static int apply_for_primary(utype_t *ups)
 		return 0;
 	}
 
-	/* TODO: Use PRIMARY first but if talking to older server, retry with MASTER */
-	snprintf(buf, sizeof(buf), "MASTER %s\n", ups->upsname);
+	/* Use PRIMARY first but if talking to older server, retry with MASTER */
+	snprintf(buf, sizeof(buf), "PRIMARY %s\n", ups->upsname);
 
 	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
+		/* File descriptor not suitable, net_write() errors, etc.
+		 * Not connected to issues with PRIMARY vs. MASTER keyword.
+		 */
 		upslogx(LOG_ALERT, "Can't set primary managerial mode on UPS [%s] - %s",
 			ups->sys, upscli_strerror(&ups->conn));
 		return 0;
@@ -245,8 +253,35 @@ static int apply_for_primary(utype_t *ups)
 		if (!strncmp(buf, "OK", 2))
 			return 1;
 
-		/* not ERR, but not caught by readline either? */
+		/* Try the older keyword */
+		upsdebugx(3,
+			"%s: Server did not grant PRIMARY mode on UPS [%s], "
+			"retry with older MASTER keyword",
+			__func__, ups->upsname);
+		snprintf(buf, sizeof(buf), "MASTER %s\n", ups->upsname);
 
+		if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
+			upslogx(LOG_ALERT, "Can't set primary managerial mode on UPS [%s] - %s",
+				ups->sys, upscli_strerror(&ups->conn));
+			return 0;
+		}
+
+		if (upscli_readline(&ups->conn, buf, sizeof(buf)) == 0) {
+			if (!strncmp(buf, "OK", 2))
+				return 1;
+
+			upscli_readraw_error = 0;
+		}
+		else {
+			upscli_readraw_error = 1;
+		}
+	}
+	else {
+		upscli_readraw_error = 1;
+	}
+
+	if (upscli_readraw_error == 0) {
+		/* not ERR, but not caught by readline either? */
 		upslogx(LOG_ALERT, "Primary managerial privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Response: [%s]", buf);
@@ -261,9 +296,6 @@ static int apply_for_primary(utype_t *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
-/* TODO: API change pending to replace deprecated MASTER with PRIMARY
- * and SLAVE with SECONDARY (and backwards-compatible alias handling)
- */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
