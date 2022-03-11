@@ -121,7 +121,13 @@ static int do_net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
 /* MASTER <upsname> (deprecated) */
 void net_master(nut_ctype_t *client, size_t numarg, const char **arg) {
 	/* Allow existing binaries linked against this file to still work */
-	upsdebugx(1, "WARNING: net_master() is deprecated in favor of net_primary() since NUT 2.8.0");
+	upsdebugx(1,
+		"WARNING: Client %s@%s "
+		"requested MASTER level for device %s - "
+		"which is deprecated in favor of PRIMARY "
+		"since NUT 2.8.0",
+		client->username, client->addr,
+		(numarg > 0) ? arg[0] : "<null>");
 	if (0 == do_net_primary(client, numarg, arg)) {
 		sendback(client, "OK MASTER-GRANTED\n");
 	}
