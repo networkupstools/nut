@@ -272,17 +272,22 @@ Returns OK on success or raises an error
 
 Returns OK on success or raises an error
 
-TODO: API change pending to replace MASTER with PRIMARY
+NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
 
         if self.__debug :
-            print( "[DEBUG] MASTER called..." )
+            print( "[DEBUG] "PRIMARY called..." )
 
-        self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
+        self.__srv_handler.write( ("PRIMARY %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
-        if ( result != b"OK MASTER-GRANTED\n" ) :
-            raise PyNUTError( ( "Master level function are not available", "" ) )
+        if ( result != b"OK PRIMARY-GRANTED\n" ) :
+            if self.__debug :
+                print( "[DEBUG] Retrying: "MASTER called..." )
+            self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
+            result = self.__srv_handler.read_until( b"\n" )
+            if ( result != b"OK MASTER-GRANTED\n" ) :
+                raise PyNUTError( ( "Primary level functions are not available", "" ) )
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )

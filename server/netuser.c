@@ -85,34 +85,54 @@ void net_logout(nut_ctype_t *client, size_t numarg, const char **arg)
 	client->last_heard = 0;
 }
 
-/* MASTER <upsname> */
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
+/* NOTE: Protocol updated since NUT 2.8.0 to handle master/primary
+ * and API bumped, to rename/alias the routine.
  */
-void net_master(nut_ctype_t *client, size_t numarg, const char **arg)
+static int do_net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
-		return;
+		return -1;
 	}
 
 	ups = get_ups_ptr(arg[0]);
 
 	if (!ups) {
 		send_err(client, NUT_ERR_UNKNOWN_UPS);
-		return;
+		return -1;
 	}
 
-	/* make sure this user is allowed to do MASTER */
-	if (!user_checkaction(client->username, client->password, "MASTER")) {
+	/* make sure this user is allowed to do PRIMARY or MASTER */
+	if (!user_checkaction(client->username, client->password, "PRIMARY")
+	&&  !user_checkaction(client->username, client->password, "MASTER")
+	) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
-		return;
+		return -1;
 	}
 
 	/* this is just an access level check */
-	sendback(client, "OK MASTER-GRANTED\n");
+	/* sendback() will be worded by caller below */
+	return 0;
+	sendback(client, "OK PRIMARY-GRANTED\n");
+}
+
+/* MASTER <upsname> (deprecated) */
+void net_master(nut_ctype_t *client, size_t numarg, const char **arg) {
+	/* Allow existing binaries linked against this file to still work */
+	upsdebugx(1, "WARNING: net_master() is deprecated in favor of net_primary() since NUT 2.8.0");
+	if (0 == do_net_primary(client, numarg, arg)) {
+		sendback(client, "OK MASTER-GRANTED\n");
+	}
+}
+
+/* PRIMARY <upsname> (since NUT 2.8.0) */
+void net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
+{
+	if (0 == do_net_primary(client, numarg, arg)) {
+		sendback(client, "OK PRIMARY-GRANTED\n");
+	}
 }
 
 /* USERNAME <username> */
