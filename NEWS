@@ -290,11 +290,25 @@ Release notes for NUT 2.8.0 - what's new since 2.7.4:
       ISO 8601 Calendar date "YYYY-MM-DD" was added to snmp-ups.c [PR #1078]
 
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
-   modes of upsmon client. Respective keywords in the configuration are
-   supported as backwards-compatible settings, but obsoleted values are
-   no longer documented. [For details see issue #840 and several pull
-   requests referenced from it, and discussions on NUT mailing lists]
-   * Note: protocol keyword support currently was not updated
+   modes of `upsmon` client:
+   * Respective keywords in the configuration files (`upsd.users` and
+     `upsmon.conf`) are supported as backwards-compatible settings,
+     but the obsoleted values are no longer documented.
+   * Protocol keyword support was similarly updated, with `upsmon` now
+     first trying to elevate privileges with `PRIMARY <ups>` request,
+     and falling back to `MASTER <ups>` just in case it talks to an
+     older build of an `upsd` server.
+   * For the principle of least surprise, NUT codebase still exposes the
+     `net_master()` (as handler for `MASTER` net command) in header and
+     C code for the sake of existing linked binaries, and returns the
+     `OK MASTER-GRANTED` line to the older client that invoked it.
+   * Newly introduced `net_primary()` (as handler for `PRIMARY` net command)
+     calls the exact same application logic, but returns `OK PRIMARY-GRANTED`
+     line to the client.
+   * Python binding updated to handle both cases, as the only found in-tree
+     protocol consumer of the full-line text.
+   * For more details see issue #840 and several pull requests referenced
+     from it, and discussions on NUT mailing lists.
 
  - Build fixes:
    * In general, numerous fixes were applied to ensure portability and avoid
