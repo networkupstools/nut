@@ -453,17 +453,22 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 	const char **arg)
 {
+	upsdebugx(6, "Entering %s: %s", __func__, numarg > 0 ? arg[0] : "<>");
+
 	if (netcmds[cmdnum].flags & FLAG_USER) {
+		/* command requires previous authentication */
 #ifdef HAVE_WRAP
 		struct request_info	req;
 #endif	/* HAVE_WRAP */
 
 		if (!client->username) {
+			upsdebugx(1, "%s: client not logged in yet", __func__);
 			send_err(client, NUT_ERR_USERNAME_REQUIRED);
 			return;
 		}
 
 		if (!client->password) {
+			upsdebugx(1, "%s: client not logged in yet", __func__);
 			send_err(client, NUT_ERR_PASSWORD_REQUIRED);
 			return;
 		}
@@ -473,12 +478,17 @@ static void check_command(int cmdnum, nut_ctype_t *client, size_t numarg,
 		fromhost(&req);
 
 		if (!hosts_access(&req)) {
-			/* tcp-wrappers says access should be denied */
+			upsdebugx(1,
+				"%s: while authenticating %s found that "
+				"tcp-wrappers says access should be denied",
+				__func__, client->username);
 			send_err(client, NUT_ERR_ACCESS_DENIED);
 			return;
 		}
 #endif	/* HAVE_WRAP */
 	}
+
+	upsdebugx(6, "%s: Calling command handler for %s", __func__, numarg > 0 ? arg[0] : "<>");
 
 	/* looks good - call the command */
 	netcmds[cmdnum].func(client, (numarg < 2) ? 0 : (numarg - 1), (numarg > 1) ? &arg[1] : NULL);
