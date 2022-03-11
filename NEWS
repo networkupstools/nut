@@ -5,7 +5,12 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
-Release notes for NUT 2.7.5 - what's new since 2.7.4:
+Release notes for NUT 2.8.0 - what's new since 2.7.4:
+
+ - New (optional) keywords for configuration files were added,
+   so existing NUT 2.7.x builds would not accept them if some
+   deployments switch versions back and forth -- due to this,
+   semantically the version was bumped to NUT 2.8.x.
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
