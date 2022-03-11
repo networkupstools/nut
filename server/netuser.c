@@ -115,7 +115,6 @@ static int do_net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
 	/* this is just an access level check */
 	/* sendback() will be worded by caller below */
 	return 0;
-	sendback(client, "OK PRIMARY-GRANTED\n");
 }
 
 /* MASTER <upsname> (deprecated) */
@@ -128,6 +127,7 @@ void net_master(nut_ctype_t *client, size_t numarg, const char **arg) {
 		"since NUT 2.8.0",
 		client->username, client->addr,
 		(numarg > 0) ? arg[0] : "<null>");
+
 	if (0 == do_net_primary(client, numarg, arg)) {
 		sendback(client, "OK MASTER-GRANTED\n");
 	}
