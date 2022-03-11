@@ -5,7 +5,11 @@ String configureOptionalDMF = ""
 
 pipeline {
     agent {
-        label infra.getAgentLabels()
+        docker {
+            label 'docker-dev-1'
+            image infra.getDockerAgentImage()
+            args '--entrypoint=/startup.sh --oom-score-adj=100 -v /opt/cov:/opt/cov:ro -v /etc/ssh/id_rsa_git-proxy-cache:/etc/ssh/id_rsa_git-proxy-cache:ro -v /etc/ssh/ssh_config:/etc/ssh/ssh_config:ro -v /etc/gitconfig:/etc/gitconfig:ro'
+        }
     }
     parameters {
         // Use DEFAULT_DEPLOY_BRANCH_PATTERN and DEFAULT_DEPLOY_JOB_NAME if
@@ -105,7 +109,6 @@ pipeline {
         // record that a particular commit is being processed, but the explicit ways
         // might work better. In either case it honors SCM settings like refrepo if
         // set up in the Pipeline or MultiBranchPipeline job.
-        skipDefaultCheckout()
     }
 // Note: your Jenkins setup may benefit from similar setup on side of agents:
 //        PATH="/usr/lib64/ccache:/usr/lib/ccache:/usr/bin:/bin:${PATH}"
@@ -120,15 +123,6 @@ pipeline {
                             deleteDir()
                         }
                         sh 'rm -f ccache.log cppcheck.xml'
-                    }
-        }
-
-        stage ('git') {
-                    steps {
-                        retry(3) {
-                            checkout scm
-                        }
-                        milestone ordinal: 30, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     }
         }
 
@@ -623,40 +617,11 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                     }
                 } // Commit Coverity
 
-                stage ('deploy if appropriate') {
+                stage ('deploy') {
                     steps {
                         script {
-                            def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
-                            def myDEPLOY_BRANCH_PATTERN = sh(returnStdout: true, script: """echo "${params["DEPLOY_BRANCH_PATTERN"]}" """).trim();
-                            def myDEPLOY_REPORT_RESULT = sh(returnStdout: true, script: """echo "${params["DEPLOY_REPORT_RESULT"]}" """).trim().toBoolean();
-                            echo "Original: DEPLOY_JOB_NAME : ${params["DEPLOY_JOB_NAME"]} DEPLOY_BRANCH_PATTERN : ${params["DEPLOY_BRANCH_PATTERN"]} DEPLOY_REPORT_RESULT : ${params["DEPLOY_REPORT_RESULT"]}"
-                            echo "Used:     myDEPLOY_JOB_NAME:${myDEPLOY_JOB_NAME} myDEPLOY_BRANCH_PATTERN:${myDEPLOY_BRANCH_PATTERN} myDEPLOY_REPORT_RESULT:${myDEPLOY_REPORT_RESULT}"
-                            if ( (myDEPLOY_JOB_NAME != "") && (myDEPLOY_BRANCH_PATTERN != "") ) {
-                                if ( env.BRANCH_NAME =~ myDEPLOY_BRANCH_PATTERN ) {
-                                    def GIT_URL = sh(returnStdout: true, script: """git remote -v | egrep '^origin' | awk '{print \$2}' | head -1""").trim()
-                                    def GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
-                                    def DIST_ARCHIVE = ""
-                                    def msg = "Would deploy ${GIT_URL} ${GIT_COMMIT} because tested branch '${env.BRANCH_NAME}' matches filter '${myDEPLOY_BRANCH_PATTERN}'"
-                                    if ( params.DO_DIST_DOCS ) {
-                                        DIST_ARCHIVE = env.BUILD_URL + "artifact/__dist.tar.gz"
-                                        msg += ", using dist archive '${DIST_ARCHIVE}' to speed up deployment"
-                                    }
-                                    echo msg
-                                    //milestone ordinal: 100, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
-                                    build job: "${myDEPLOY_JOB_NAME}", parameters: [
-                                        string(name: 'DEPLOY_GIT_URL', value: "${GIT_URL}"),
-                                        string(name: 'DEPLOY_GIT_BRANCH', value: env.BRANCH_NAME),
-                                        string(name: 'DEPLOY_GIT_COMMIT', value: "${GIT_COMMIT}"),
-                                        string(name: 'DEPLOY_DIST_ARCHIVE', value: "${DIST_ARCHIVE}")
-                                        ], quietPeriod: 0, wait: myDEPLOY_REPORT_RESULT, propagate: myDEPLOY_REPORT_RESULT
-                                } else {
-                                    echo "Not deploying because branch '${env.BRANCH_NAME}' did not match filter '${myDEPLOY_BRANCH_PATTERN}'"
-                                }
-                            } else {
-                                echo "Not deploying because deploy-job parameters are not set"
-                            }
-
-                            manager.addShortText("Processing of push to packaging completed")
+                            deploy.pushToOBS()
+                            manager.addShortText("Pushed to OBS")
                         }
                     }
                 }
