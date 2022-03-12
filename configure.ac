@@ -261,7 +261,7 @@ CODE_STRINGINCL='#ifdef HAVE_STRING_H
 
 AC_CACHE_CHECK([for strcasecmp(s1,s2)],
     [ac_cv_func_strcasecmp],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [if (strcasecmp("STR1", "str1") != 0) return 1])],
         [ac_cv_func_strcasecmp=yes], [ac_cv_func_strcasecmp=no]
@@ -273,7 +273,7 @@ AS_IF([test x"${ac_cv_func_strcasecmp}" = xyes],
 
 AC_CACHE_CHECK([for strncasecmp(s1,s2,n)],
     [ac_cv_func_strncasecmp],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [if (strncasecmp("STR1", "strX", 2) != 0) return 1])],
         [ac_cv_func_strncasecmp=yes], [ac_cv_func_strncasecmp=no]
@@ -285,7 +285,7 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
 
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [[int res = 0;
 char *t = "Test";
@@ -2070,7 +2070,7 @@ return res ? 0 : 1;
      my_CXXFLAGS="$CXXFLAGS"
      CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
-     AC_RUN_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [have_cppunit=yes], [have_cppunit=no])
      CXXFLAGS="$my_CXXFLAGS"
      AC_LANG_POP([C++])
