@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2864 utf-8
+personal_ws-1.1 en 2868 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -242,6 +242,7 @@ DES
 DESTDIR
 DF
 DHEA
+DIGYS
 DISCHRG
 DMF
 DN
@@ -486,6 +487,7 @@ Invter
 IoT
 Ioannou
 JAWAN
+JBUS
 JBus
 JKL
 JRE
@@ -1941,6 +1943,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jbus
 jdk
 jenkins
 jessie
@@ -2524,6 +2527,7 @@ snprintf
 snprintfcat
 snr
 sockdebug
+socomec
 solaris
 solis
 somepass

@@ -100,8 +100,18 @@ source versions on both Debian 8 Jessie and Debian 11 Buster).
     valgrind \
     cppcheck \
     pkg-config \
-    gcc g++ clang \
-    asciidoc source-highlight python3-pygments dblatex aspell \
+    gcc g++ clang
+
+# For spell-checking:
+:; apt-get install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; apt-get install \
+    asciidoc source-highlight python3-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; apt-get install \
     libgd-dev
 
 # NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
@@ -216,8 +226,18 @@ https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
     valgrind \
     cppcheck \
     pkgconfig \
-    gcc gcc-c++ clang \
-    asciidoc source-highlight python-pygments dblatex aspell \
+    gcc gcc-c++ clang
+
+# For spell-checking:
+:; yum install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; yum install \
+    asciidoc source-highlight python-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; yum install \
     gd-devel
 
 # NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
@@ -277,8 +297,18 @@ below.
     valgrind \
     cppcheck \
     pkgconf \
-    gcc clang \
-    asciidoc source-highlight textproc/py-pygments dblatex en-aspell aspell \
+    gcc clang
+
+# For spell-checking:
+:; pkg install \
+    aspell en-aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc source-highlight textproc/py-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
     libgd
 
 :; pkg install \
@@ -367,8 +397,18 @@ networked repository (4.2.x vs 4.9.x)
     valgrind \
     cppcheck \
     pkgconf \
-    gcc clang \
-    asciidoc source-highlight py-pygments dblatex aspell \
+    gcc clang
+
+# For spell-checking:
+:; pkg_add \
+    aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg_add \
+    asciidoc source-highlight py-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkg_add \
     gd
 
 # Need to find proper package name and/or mirror for this:
@@ -447,10 +487,21 @@ Typical tooling would include:
     gnu-make autoconf automake libltdl libtool \
     valgrind \
     pkg-config \
-    gnu-binutils developer/linker \
-    asciidoc libxslt aspell text/aspell/en \
+    gnu-binutils developer/linker
+
+# For spell-checking:
+:; pkg install \
+    aspell text/aspell/en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc libxslt \
     docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect gd graphviz-tcl
+    graphviz expect graphviz-tcl
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
+    gd
 
 :; pkg install \
     openssl library/mozilla-nss \
