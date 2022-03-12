@@ -245,6 +245,13 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     # See also below for some compiler-dependent decisions
 fi
 
+if [ -z "${PKG_CONFIG-}" ]; then
+    # Default to using one from PATH, if any - mostly for config tuning done
+    # below in this script
+    # DO NOT "export" it here so ./configure script can find one for the build
+    PKG_CONFIG="pkg-config"
+fi
+
 configure_nut() {
     local CONFIGURE_SCRIPT=./configure
     if [[ "$CI_OS_NAME" == "windows" ]] ; then
@@ -739,7 +746,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
+                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
@@ -890,7 +897,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
-        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
+        # This should be done in scratch containers...
+        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
 
@@ -981,15 +989,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Technically, let caller provide this setting explicitly
             if [ -z "$NUT_SSL_VARIANTS" ] ; then
                 NUT_SSL_VARIANTS="auto"
-                if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+                if $PKG_CONFIG --exists nss && $PKG_CONFIG --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
                     # Try builds for both cases as they are ifdef-ed
                     # TODO: Extend if we begin to care about different
                     # major versions of openssl (with their APIs), etc.
                     NUT_SSL_VARIANTS="openssl nss"
                 else
                     if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                        pkg-config --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
-                        pkg-config --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
+                        $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
+                        $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
                     fi  # else leave at "auto", if we skipped building
                         # two variants while having two possibilities
                 fi
@@ -1002,12 +1010,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             if [ -z "$NUT_USB_VARIANTS" ] ; then
                 # Check preferred version first, in case BUILD_USB_ONCE==true
-                if pkg-config --exists libusb-1.0 ; then
+                if $PKG_CONFIG --exists libusb-1.0 ; then
                     NUT_USB_VARIANTS="1.0"
                 fi
 
                 # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
-                if pkg-config --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
+                if $PKG_CONFIG --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
                     if [ -z "$NUT_USB_VARIANTS" ] ; then
                         NUT_USB_VARIANTS="0.1"
                     else
