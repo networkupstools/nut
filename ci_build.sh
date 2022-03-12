@@ -746,7 +746,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib ; then
+                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
