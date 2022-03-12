@@ -184,15 +184,26 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    for CI_OS_HINT in "$OS_FAMILY-$OS_DISTRO" "`uname -o`" "`uname -s -r -v`" "`uname -a`" ; do
+    for CI_OS_HINT in \
+        "$OS_FAMILY-$OS_DISTRO" \
+        "`grep = /etc/os-release 2>/dev/null`" \
+        "`cat /etc/release 2>/dev/null`" \
+        "`uname -o`" \
+        "`uname -s -r -v`" \
+        "`uname -a`" \
+    ; do
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
     case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
-        *debian*|*linux*)
+        *debian*|*ubuntu*)
             CI_OS_NAME="debian" ;;
+        *centos*|*fedora*|*redhat*|*rhel*)
+            CI_OS_NAME="centos" ;;
+        *linux*)
+            CI_OS_NAME="linux" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
