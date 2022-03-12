@@ -80,6 +80,12 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+#ifndef ONE_SEC
+/* This macro name disappeared from net-snmp sources and headers
+ * after v5.9 tag, and was replaced by explicit expression below: */
+# define ONE_SEC (1000L * 1000L)
+#endif
+
 /* Force numeric OIDs by disabling MIB loading */
 #ifdef DISABLE_MIB_LOADING
 # undef DISABLE_MIB_LOADING
