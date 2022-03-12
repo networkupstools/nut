@@ -674,6 +674,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--with-valgrind=no")
     fi
 
+    if [ -n "${CI_CROSSBUILD_TARGET-}" ] || [ -n "${CI_CROSSBUILD_HOST-}" ] ; then
+        # at least one is e.g. "arm-linux-gnueabihf"
+        [ -z "${CI_CROSSBUILD_TARGET-}" ] && CI_CROSSBUILD_TARGET="${CI_CROSSBUILD_HOST}"
+        [ -z "${CI_CROSSBUILD_HOST-}" ] && CI_CROSSBUILD_HOST="${CI_CROSSBUILD_TARGET}"
+        echo "NOTE: Cross-build was requested, passing options to configure this for target '${CI_CROSSBUILD_TARGET}' host '${CI_CROSSBUILD_HOST}' (note you may need customized PKG_CONFIG_PATH)" >&2
+        CONFIG_OPTS+=("--host=${CI_CROSSBUILD_HOST}")
+        CONFIG_OPTS+=("--target=${CI_CROSSBUILD_TARGET}")
+    fi
+
     # This flag is primarily linked with (lack of) docs generation enabled
     # (or not) in some BUILD_TYPE scenarios or workers. Initial value may
     # be set by caller, but codepaths below have the final word.
