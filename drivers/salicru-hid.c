@@ -86,7 +86,7 @@ static hid_info_t salicru_hid2nut[] = {
   { "experimental.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
 #endif /* DEBUG */
 
-/* A few more unknow fields
+/* A few more unknown fields
    0.043266	[D1] Path: UPS.ff010004.ff010024.ff0100d0, Type: Feature, ReportID: 0x19, Offset: 0, Size: 8, Value: 0.1
    0.043766	[D1] Path: UPS.ff010004.ff010024.ff0100d1, Type: Feature, ReportID: 0x1a, Offset: 0, Size: 8, Value: 0
    0.044308	[D1] Path: UPS.ff01001d.ff010019.ff010020, Type: Feature, ReportID: 0x25, Offset: 0, Size: 1, Value: 0
@@ -204,7 +204,7 @@ static hid_info_t salicru_hid2nut[] = {
   { "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 */
 
-  /* Salicru Twin Pro 2 Descriptors Sensors*/
+  /* Salicru Twin Pro 2 Descriptors: Sensors */
   { "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
   { "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
   { "ups.realpower.nominal", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", 0, NULL },
@@ -218,11 +218,10 @@ static hid_info_t salicru_hid2nut[] = {
   { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
 
-  /* Salicru Twin Pro 2 Descriptors Instants commands*/
+  /* Salicru Twin Pro 2 Descriptors: Instant commands */
   { "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
   { "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
   { "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
-
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
