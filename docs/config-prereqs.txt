@@ -102,7 +102,7 @@ source versions on both Debian 8 Jessie and Debian 11 Buster).
     pkg-config \
     gcc g++ clang
 
-# For spell-checking:
+# For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
     aspell aspell-en
 
@@ -228,7 +228,7 @@ https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
     pkgconfig \
     gcc gcc-c++ clang
 
-# For spell-checking:
+# For spell-checking, highly recommended if you would propose pull requests:
 :; yum install \
     aspell aspell-en
 
@@ -299,7 +299,7 @@ below.
     pkgconf \
     gcc clang
 
-# For spell-checking:
+# For spell-checking, highly recommended if you would propose pull requests:
 :; pkg install \
     aspell en-aspell
 
@@ -399,7 +399,7 @@ networked repository (4.2.x vs 4.9.x)
     pkgconf \
     gcc clang
 
-# For spell-checking:
+# For spell-checking, highly recommended if you would propose pull requests:
 :; pkg_add \
     aspell
 
@@ -489,7 +489,7 @@ Typical tooling would include:
     pkg-config \
     gnu-binutils developer/linker
 
-# For spell-checking:
+# For spell-checking, highly recommended if you would propose pull requests:
 :; pkg install \
     aspell text/aspell/en
 
