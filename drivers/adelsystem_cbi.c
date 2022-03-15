@@ -576,9 +576,20 @@ void reginit(void)
 				regs[i].saddr = rnum - 1;
 				regs[i].xaddr = 0x40000 + rnum - 1;
 				break;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 			/* All enum cases defined as of the time of coding
 			 * have been covered above. Handle later definitions,
@@ -595,9 +606,12 @@ void reginit(void)
 						  regs[i].type,
 						  regs[i].num
 				);			
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
-#endif				
+#endif
 		}
 		upsdebugx(3,
 				  "reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
@@ -1120,9 +1134,21 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case BINH:
 		case FSD:
 			break;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 		/* All enum cases defined as of the time of coding
 		 * have been covered above. Handle later definitions,
@@ -1139,7 +1165,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			sprintf(reg_val_s, "%d", reg_val);
 			state->reg.strval = reg_val_s;
 			break;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 	}
