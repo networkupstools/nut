@@ -469,7 +469,7 @@ scripts), better use this routine to test the config/build:
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-OpenIndiana 2021.04
+OpenIndiana 2021.10
 ~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
@@ -507,6 +507,7 @@ Typical tooling would include:
     openssl library/mozilla-nss \
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
+    libmodbus \
     neon \
     net-snmp \
     powerman \
@@ -526,23 +527,41 @@ Typical tooling would include:
 ### Maybe - after it gets fixed for GCC builds/linkage
 :; pkg install \
     cppunit
-
-### Not yet in distro, PR pending:
-:; pkg install \
-    libmodbus
 ----
 
-For extra compiler coverage, can also set up `gcc-4.4.4-il` (used to build
-the OS, or was recently, and is a viable example of an old GCC baseline);
+For extra compiler coverage, we can install a large selection of versions:
+----
+:; pkg install \
+    gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
+    clang-80 clang-90 \
+    developer/clang-13 runtime/clang-13 \
+    ccache
+
+# Get clang-cpp-X visible in standard PATH (for CI to reference the right one):
+:; (cd /usr/bin && for X in 8 9 13 ; do \
+    ln -s ../clang/$X.0/bin/clang-cpp clang-cpp-$X ; \
+   done)
+
+# If /usr/lib/ccache/ symlinks to these do not appear, call the service:
+:; svcadm refresh ccache-update-symlinks
+----
+
+We can also include a `gcc-4.4.4-il` (used to build the illumos OS ecosystems,
+at least until recently, which is a viable example of an old GCC baseline);
 but note that so far it conflicts with libgd builds at `configure --with-cgi`
 stage:
+
 ----
 :; pkg install \
-    illumos-gcc@4.4.4 \
-    gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 \
-    clang-80 clang-90
+    illumos-gcc@4.4.4
 
-:; svcadm refresh clang-update-symlinks
+# Make it visible in standard PATH
+:; (cd /usr/bin && for T in gcc g++ cpp ; do \
+    ln -s ../../opt/gcc/4.4.4/bin/$T $T-4.4.4 ; \
+   done)
+
+# If /usr/lib/ccache/ symlinks to these do not appear, call the service:
+:; svcadm refresh ccache-update-symlinks
 ----
 
 OI currently also does not build cppunit-based tests well, at least
@@ -556,7 +575,8 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 No pre-packaged `cppcheck` was found, either.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
-(or 11+).
+(or `pkg install runtime/java/openjdk11` for JRE 11 -- currently the OS does
+not offer in-distro JDK version 11+).
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
