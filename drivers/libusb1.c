@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.42"
+#define USB_DRIVER_VERSION	"0.43"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -45,6 +45,7 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
+#define MAX_RETRY               3
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
@@ -138,9 +139,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
-#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 	int retries;
-#endif
 	/* libusb-1.0 usb_ctrl_charbufsize is uint16_t and we
 	 * want the rdlen vars signed - so taking a wider type */
 	int32_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -227,38 +226,56 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		curDevice->bcdDevice = dev_desc.bcdDevice;
 
 		if (dev_desc.iManufacturer) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Vendor = strdup(string);
-				if (curDevice->Vendor == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Vendor = strdup(string);
+					if (curDevice->Vendor == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
 				}
+				retries--;
+				upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
 			}
 		}
 
 		if (dev_desc.iProduct) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Product = strdup(string);
-				if (curDevice->Product == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Product = strdup(string);
+					if (curDevice->Product == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
 				}
+				retries--;
+				upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
 			}
 		}
 
 		if (dev_desc.iSerialNumber) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Serial = strdup(string);
-				if (curDevice->Serial == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Serial = strdup(string);
+					if (curDevice->Serial == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
 				}
+				retries--;
+				upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
 			}
 		}
 
@@ -343,7 +360,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
-		retries = 3;
+		retries = MAX_RETRY;
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
