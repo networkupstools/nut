@@ -254,7 +254,7 @@ typedef struct alrm_ar alrm_ar_t;
 #define BSTA_CNNFLT_I 5			/* connection fault */
 
 /* Allocate alarm arrays */
-inline
+static inline
 alrm_ar_t *alloc_alrm_ar(int as, size_t n)
 {
 	alrm_ar_t *ret = xcalloc(sizeof(alrm_t) + n, 1);
@@ -270,7 +270,7 @@ alrm_ar_t *alloc_alrm_ar(int as, size_t n)
 }
 
 /* Initialize alarm arrays */
-inline
+static inline
 void alrm_ar_init(alrm_ar_t *ar_ptr, alrm_t *a_ptr, int as)
 {
 	ar_ptr->alrm_c = as;
