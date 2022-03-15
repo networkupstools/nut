@@ -534,8 +534,12 @@ For extra compiler coverage, we can install a large selection of versions:
 :; pkg install \
     gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
     clang-80 clang-90 \
-    developer/clang-13 runtime/clang-13 \
     ccache
+
+# As of this writing, clang-13 refused to link (claiming issues with
+# --fuse-ld which was never specified) on OI; maybe later it will:
+:; pkg install \
+    developer/clang-13 runtime/clang-13 \
 
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one):
 :; (cd /usr/bin && for X in 8 9 13 ; do \
