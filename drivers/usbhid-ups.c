@@ -147,7 +147,7 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static time_t lastpoll; /* Timestamp the last polling */
-hid_dev_handle_t udev = NULL;
+hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
