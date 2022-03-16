@@ -911,13 +911,14 @@ fi
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
 if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   nut_have_ax_c_printf_string_null_seen="yes"
+  AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
 
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
   AC_CACHE_CHECK([for practical support to pritnf("%s", NULL)],
     [ax_cv__printf_string_null],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([dnl
 #include <stdio.h>
 #include <strings.h>

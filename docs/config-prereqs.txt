@@ -100,8 +100,18 @@ source versions on both Debian 8 Jessie and Debian 11 Buster).
     valgrind \
     cppcheck \
     pkg-config \
-    gcc g++ clang \
-    asciidoc source-highlight python3-pygments dblatex aspell \
+    gcc g++ clang
+
+# For spell-checking:
+:; apt-get install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; apt-get install \
+    asciidoc source-highlight python3-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; apt-get install \
     libgd-dev
 
 # NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
@@ -216,8 +226,18 @@ https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
     valgrind \
     cppcheck \
     pkgconfig \
-    gcc gcc-c++ clang \
-    asciidoc source-highlight python-pygments dblatex aspell \
+    gcc gcc-c++ clang
+
+# For spell-checking:
+:; yum install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; yum install \
+    asciidoc source-highlight python-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; yum install \
     gd-devel
 
 # NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
@@ -277,8 +297,18 @@ below.
     valgrind \
     cppcheck \
     pkgconf \
-    gcc clang \
-    asciidoc source-highlight textproc/py-pygments dblatex en-aspell aspell \
+    gcc clang
+
+# For spell-checking:
+:; pkg install \
+    aspell en-aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc source-highlight textproc/py-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
     libgd
 
 :; pkg install \
@@ -367,8 +397,18 @@ networked repository (4.2.x vs 4.9.x)
     valgrind \
     cppcheck \
     pkgconf \
-    gcc clang \
-    asciidoc source-highlight py-pygments dblatex aspell \
+    gcc clang
+
+# For spell-checking:
+:; pkg_add \
+    aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg_add \
+    asciidoc source-highlight py-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkg_add \
     gd
 
 # Need to find proper package name and/or mirror for this:
@@ -429,7 +469,7 @@ scripts), better use this routine to test the config/build:
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-OpenIndiana 2021.04
+OpenIndiana 2021.10
 ~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
@@ -447,15 +487,27 @@ Typical tooling would include:
     gnu-make autoconf automake libltdl libtool \
     valgrind \
     pkg-config \
-    gnu-binutils developer/linker \
-    asciidoc libxslt aspell text/aspell/en \
+    gnu-binutils developer/linker
+
+# For spell-checking:
+:; pkg install \
+    aspell text/aspell/en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc libxslt \
     docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect gd graphviz-tcl
+    graphviz expect graphviz-tcl
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
+    gd
 
 :; pkg install \
     openssl library/mozilla-nss \
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
+    libmodbus \
     neon \
     net-snmp \
     powerman \
@@ -475,23 +527,45 @@ Typical tooling would include:
 ### Maybe - after it gets fixed for GCC builds/linkage
 :; pkg install \
     cppunit
-
-### Not yet in distro, PR pending:
-:; pkg install \
-    libmodbus
 ----
 
-For extra compiler coverage, can also set up `gcc-4.4.4-il` (used to build
-the OS, or was recently, and is a viable example of an old GCC baseline);
+For extra compiler coverage, we can install a large selection of versions:
+----
+:; pkg install \
+    gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
+    clang-80 clang-90 \
+    ccache
+
+# As of this writing, clang-13 refused to link (claiming issues with
+# --fuse-ld which was never specified) on OI; maybe later it will:
+:; pkg install \
+    developer/clang-13 runtime/clang-13 \
+
+# Get clang-cpp-X visible in standard PATH (for CI to reference the right one):
+:; (cd /usr/bin && for X in 8 9 13 ; do \
+    ln -s ../clang/$X.0/bin/clang-cpp clang-cpp-$X ; \
+   done)
+
+# If /usr/lib/ccache/ symlinks to these do not appear, call the service:
+:; svcadm refresh ccache-update-symlinks
+----
+
+We can also include a `gcc-4.4.4-il` (used to build the illumos OS ecosystems,
+at least until recently, which is a viable example of an old GCC baseline);
 but note that so far it conflicts with libgd builds at `configure --with-cgi`
 stage:
+
 ----
 :; pkg install \
-    illumos-gcc@4.4.4 \
-    gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 \
-    clang-80 clang-90
+    illumos-gcc@4.4.4
 
-:; svcadm refresh clang-update-symlinks
+# Make it visible in standard PATH
+:; (cd /usr/bin && for T in gcc g++ cpp ; do \
+    ln -s ../../opt/gcc/4.4.4/bin/$T $T-4.4.4 ; \
+   done)
+
+# If /usr/lib/ccache/ symlinks to these do not appear, call the service:
+:; svcadm refresh ccache-update-symlinks
 ----
 
 OI currently also does not build cppunit-based tests well, at least
@@ -505,7 +579,8 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 No pre-packaged `cppcheck` was found, either.
 
 NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
-(or 11+).
+(or `pkg install runtime/java/openjdk11` for JRE 11 -- currently the OS does
+not offer in-distro JDK version 11+).
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

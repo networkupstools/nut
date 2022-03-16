@@ -5,7 +5,12 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
-Release notes for NUT 2.7.5 - what's new since 2.7.4:
+Release notes for NUT 2.8.0 - what's new since 2.7.4:
+
+ - New (optional) keywords for configuration files were added,
+   so existing NUT 2.7.x builds would not accept them if some
+   deployments switch versions back and forth -- due to this,
+   semantically the version was bumped to NUT 2.8.x.
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
@@ -100,6 +105,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    RS-232 Modbus device support of Huawei UPS2000/2000A (1kVA-3kVA) series,
    and possibly some related FSP UPS models. [PR #954]
 
+ - socomec_jbus: added new driver for modbus-based JBUS protocol over serial
+   RS-232 for Socomec UPS (tested with a DIGYS 3/3 15kVA model, working
+   on Linux x86-64 and Raspberry Pi 3 ARM). [PR #1313]
+
  - generic_modbus: added new driver for TCP and Serial Modbus device support.
    The driver has been tested against PULS UPS (model UB40.241) via
    MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP), and configuration
@@ -173,6 +182,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      [PR #1199, issue #732]
    * add new ever-hid subdriver to support EVER UPS devices (Sinline RT Series,
      Sinline RT XL Series, ECO PRO AVR CDS Series) [PR #431]
+   * add ability to set `battery.mfr.date` for APC HID UPS [PR #1318]
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
@@ -285,11 +295,25 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
       ISO 8601 Calendar date "YYYY-MM-DD" was added to snmp-ups.c [PR #1078]
 
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
-   modes of upsmon client. Respective keywords in the configuration are
-   supported as backwards-compatible settings, but obsoleted values are
-   no longer documented. [For details see issue #840 and several pull
-   requests referenced from it, and discussions on NUT mailing lists]
-   * Note: protocol keyword support currently was not updated
+   modes of `upsmon` client:
+   * Respective keywords in the configuration files (`upsd.users` and
+     `upsmon.conf`) are supported as backwards-compatible settings,
+     but the obsoleted values are no longer documented.
+   * Protocol keyword support was similarly updated, with `upsmon` now
+     first trying to elevate privileges with `PRIMARY <ups>` request,
+     and falling back to `MASTER <ups>` just in case it talks to an
+     older build of an `upsd` server.
+   * For the principle of least surprise, NUT codebase still exposes the
+     `net_master()` (as handler for `MASTER` net command) in header and
+     C code for the sake of existing linked binaries, and returns the
+     `OK MASTER-GRANTED` line to the older client that invoked it.
+   * Newly introduced `net_primary()` (as handler for `PRIMARY` net command)
+     calls the exact same application logic, but returns `OK PRIMARY-GRANTED`
+     line to the client.
+   * Python binding updated to handle both cases, as the only found in-tree
+     protocol consumer of the full-line text.
+   * For more details see issue #840 and several pull requests referenced
+     from it, and discussions on NUT mailing lists.
 
  - Build fixes:
    * In general, numerous fixes were applied to ensure portability and avoid

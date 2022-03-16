@@ -244,6 +244,7 @@ DES
 DESTDIR
 DF
 DHEA
+DIGYS
 DISCHRG
 DMF
 DN
@@ -488,6 +489,7 @@ Invter
 IoT
 Ioannou
 JAWAN
+JBUS
 JBus
 JKL
 JRE
@@ -1945,6 +1947,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jbus
 jdk
 jenkins
 jessie
@@ -2528,6 +2531,7 @@ snprintf
 snprintfcat
 snr
 sockdebug
+socomec
 solaris
 solis
 somepass
