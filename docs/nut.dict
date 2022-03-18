@@ -12,6 +12,7 @@ ADDRCONFIG
 ADDRINFO
 ADK
 ADKK
+ADELSYSTEM
 AEC
 AEF
 AEG
@@ -153,6 +154,7 @@ ByPass
 CA's
 CABAC
 CAs
+CBI
 CBLimit
 CCC
 CCCC
@@ -1332,6 +1334,7 @@ addenum
 addinfo
 addr
 addrange
+adelsystem
 adkorte
 adm
 admin's
@@ -1500,6 +1503,7 @@ byv
 cablepower
 calloc
 cb
+cbi
 cbl
 cblimit
 ccache

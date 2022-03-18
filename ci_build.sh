@@ -1215,8 +1215,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         # Quietly build one scenario, whatever we can (or not)
                         # configure regarding USB and other features
                         NUT_USB_VARIANT=auto
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb")
                           configure_nut
@@ -1224,8 +1226,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     no)
                         echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--without-usb")
                           configure_nut
@@ -1233,8 +1237,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     libusb-*)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
                           configure_nut
@@ -1242,8 +1248,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     *)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
                           configure_nut

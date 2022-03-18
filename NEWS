@@ -109,6 +109,10 @@ Release notes for NUT 2.8.0 - what's new since 2.7.4:
    RS-232 for Socomec UPS (tested with a DIGYS 3/3 15kVA model, working
    on Linux x86-64 and Raspberry Pi 3 ARM). [PR #1313]
 
+ - adelsystem_cbi: added new driver for ADELSYSTEM CBI2801224A, an all-in-one
+   12/24Vdc DC-UPS, which supports the modbus RTU communication protocol
+   [PR #1282]
+
  - generic_modbus: added new driver for TCP and Serial Modbus device support.
    The driver has been tested against PULS UPS (model UB40.241) via
    MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP), and configuration

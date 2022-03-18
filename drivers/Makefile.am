@@ -50,7 +50,7 @@ SERIAL_USB_DRIVERLIST = \
 	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
-MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus
+MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
@@ -275,6 +275,8 @@ phoenixcontact_modbus_SOURCES = phoenixcontact_modbus.c
 phoenixcontact_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 generic_modbus_SOURCES = generic_modbus.c
 generic_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
+adelsystem_cbi_SOURCES = adelsystem_cbi.c
+adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
@@ -336,7 +338,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
- hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h
+ hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
