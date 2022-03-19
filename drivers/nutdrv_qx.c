@@ -1670,7 +1670,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
 	}
-	
+
 	int	retry;
 
 	for (retry = 0; retry < 3; retry++) {
@@ -3768,7 +3768,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 			if (!val) {
 				upsdebugx(2, "%s: unable to get battery.voltage", __func__);
 			} else {
-				
+
 				batt.volt.act = batt.packs * strtod(val, NULL);
 
 				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
