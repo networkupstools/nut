@@ -23,7 +23,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -412,7 +412,7 @@ static ssize_t ups_ident( void )
 			printf( "Old (broken) WH found\n" );
 		parseOldWH( buf );
 	}
-	else if( ret == 3 && strncmp(buf, "NAK", 3) == 0 )
+	else if( ret == 3 && strcmp(buf, "NAK") == 0 )
 	{
 		if( DEBUG )
 			printf( "WH was NAKed\n" );

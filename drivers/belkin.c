@@ -28,7 +28,7 @@
 #include "belkin.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);
@@ -513,7 +513,7 @@ void upsdrv_initinfo(void)
 	/* deal with stupid firmware that breaks RAT */
 	send_belkin_command(STATUS, RATING, "");
 
-	if (!strncmp(temp, "001", 3)) {
+	if (!strcmp(temp, "001")) {
 		res = do_broken_rat(temp);
 	} else {
 		res = get_belkin_reply(temp);

@@ -35,7 +35,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.32"
+#define MGE_XML_VERSION		"MGEXML/0.36"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -577,6 +577,25 @@ static const char *mge_ambient_info(const char *arg_val)
 	}
 }
 
+static const char *mge_drycontact_info(const char *arg_val)
+{
+	/* these values should theoretically be obtained through
+	 * Environment.Input[1].State[x].Description
+	 * Examples:
+	 * <OBJECT name="Environment.Input[1].State[0].Description">open</OBJECT>
+	 * <OBJECT name="Environment.Input[1].State[1].Description">closed</OBJECT>
+	 */
+	switch (atoi(arg_val))
+	{
+	case 0:
+		return "opened";
+	case 1:
+		return "closed";
+	default:
+		return NULL;
+	}
+}
+
 static const char *mge_timer_shutdown(const char *delay_before_shutoff)
 {
 	if (atoi(delay_before_shutoff) > -1 ) {
@@ -1059,6 +1078,8 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.temperature.low", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
 	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, mge_ambient_info },
 	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, mge_ambient_info },
+	{ "ambient.contacts.1.status", 0, 0, "Environment.Input[1].PresentStatus.State", 0, 0, mge_drycontact_info },
+	{ "ambient.contacts.2.status", 0, 0, "Environment.Input[2].PresentStatus.State", 0, 0, mge_drycontact_info },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
@@ -1231,7 +1252,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="upsprop.xml" or url="ws/summary.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.summary);
 					mge_xml_subdriver.summary = strdup(url_convert(atts[i+1]));
 				}
@@ -1243,7 +1264,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="config.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.configure);
 					mge_xml_subdriver.configure = strdup(url_convert(atts[i+1]));
 				}
@@ -1263,7 +1284,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="subscribe.cgi" security="basic" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.subscribe);
 					mge_xml_subdriver.subscribe = strdup(url_convert(atts[i+1]));
 				}
@@ -1301,7 +1322,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="getvalue.cgi" security="none" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.getobject);
 					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
 				}
@@ -1313,7 +1334,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* url="setvalue.cgi" security="ssl" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
-				if (!strncasecmp(atts[i], "url", 3)) {
+				if (!strcasecmp(atts[i], "url")) {
 					free(mge_xml_subdriver.setobject);
 					mge_xml_subdriver.setobject = strdup(url_convert(atts[i+1]));
 				}

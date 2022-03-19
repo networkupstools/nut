@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.4"
+#define APCC_MIB_VERSION	"1.6"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs sysOID for this one? */
@@ -151,6 +151,11 @@ static info_lkp_t apcc_transfer_reasons[] = {
 
 static snmp_info_t apcc_mib[] = {
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* info elements. */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -187,7 +192,7 @@ static snmp_info_t apcc_mib[] = {
 	{ "input.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.4.0", "", SU_FLAG_OK, NULL },
 	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.3.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
-    { "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
+	{ "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
 	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, apcc_sensitivity_modes },
 	{ "ups.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.9.0", "", SU_FLAG_OK, NULL },
 	{ "ups.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.8.0", "", SU_FLAG_OK, NULL },
@@ -271,13 +276,7 @@ static snmp_info_t apcc_mib[] = {
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
-
-	/* IEM ambient variables */
 /* IEM: integrated environment monitor probe */
-#define APCC_OID_IEM_TEMP       ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.4.1"
-#define APCC_OID_IEM_TEMP_UNIT  ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.5.1"
-#define APCC_IEM_FAHRENHEIT	    2
-#define APCC_OID_IEM_HUMID      ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.6.1"
 	{ "ambient.temperature", 0, 1, APCC_OID_IEM_TEMP, "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 

@@ -904,10 +904,19 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{
 		/* lookup tables first (to override defaults) */
-		if ((usage = hid_lookup_usage(token, utab)) >= 0)
+		/* Note/FIXME?: we happen to process "usage" as a "signed long"
+		 * while the HIDNode_t behind it is (currently) uint32_t.
+		 * The method below returns `-1` for entries not found; however
+		 * half of our permissible range may seem negative and be valid.
+		 */
+		if ((usage = hid_lookup_usage(token, utab)) != -1)
 		{
 			path->Node[i++] = (HIDNode_t)usage;
 			continue;
+		} else {
+			/* hid_lookup_usage() logs for itself: ... -> not found in lookup table */
+			upsdebugx(5, "string_to_path: hid_lookup_usage failed, "
+				"checking if token %s is a raw value", token);
 		}
 
 		/* translate unnamed path components such as "ff860024" */
@@ -916,6 +925,9 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			long l = strtol(token, NULL, 16);
 			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				upsdebugx(5, "string_to_path: badvalue (pathcomp): "
+					"%ld negative or %ju too large",
+					l, (uintmax_t)l);
 				goto badvalue;
 			}
 			path->Node[i++] = (HIDNode_t)l;
@@ -927,6 +939,9 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 		{
 			int l = atoi(token + 1); /* +1: skip the bracket */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				upsdebugx(5, "string_to_path: badvalue(indexed): "
+					"%d negative or %ju too large",
+					l, (uintmax_t)l);
 				goto badvalue;
 			}
 			path->Node[i++] = 0x00ff0000 + (HIDNode_t)l;

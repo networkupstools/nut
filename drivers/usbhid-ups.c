@@ -1,7 +1,7 @@
 /* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  *
  * Copyright (C)
- *   2003-2012 Arnaud Quette <arnaud.quette@gmail.com>
+ *   2003-2022 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005      John Stamp <kinsayder@hotmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.44"
+#define DRIVER_VERSION		"0.46"
 
 #include "main.h"
 #include "libhid.h"
@@ -47,6 +47,7 @@
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
+	#include "ever-hid.h"
 	#include "idowell-hid.h"
 	#include "legrand-hid.h"
 	#include "liebert-hid.h"
@@ -69,6 +70,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ever_subdriver,
 	&idowell_subdriver,
 	&legrand_subdriver,
 	&liebert_subdriver,
@@ -145,7 +147,7 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static time_t lastpoll; /* Timestamp the last polling */
-hid_dev_handle_t udev;
+hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -434,9 +436,23 @@ static const char *date_conversion_fun(double value)
 	return buf;
 }
 
-/* FIXME? Do we need an inverse "nuf()" here? */
+static double date_conversion_reverse(const char* date_string)
+{
+	long year, month, day;
+	long date;
+
+	sscanf(date_string, "%04ld/%02ld/%02ld", &year, &month, &day);
+	if(year - 1980 > 127 || month > 12 || day > 31)
+		return 0;
+	date = (year - 1980) << 9;
+	date += month << 5;
+	date += day;
+
+	return (double) date;
+}
+
 info_lkp_t date_conversion[] = {
-	{ 0, NULL, date_conversion_fun, NULL }
+	{ 0, NULL, date_conversion_fun, date_conversion_reverse }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -1527,6 +1543,10 @@ static int reconnect_ups(void)
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
+
+	/* Try to close the previous handle */
+	if (udev)
+		comm_driver->close(udev);
 
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
 
