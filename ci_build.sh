@@ -46,10 +46,10 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # SSL implementations since their ifdef-driven codebases differ and
     # emit varied warnings. But so far would be nice to get the majority
     # of shared codebase clean first:
-    [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+    #[ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 
     # Similarly for libusb implementations with varying support
-    [ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
+    #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
 # Set this to enable verbose profiling
