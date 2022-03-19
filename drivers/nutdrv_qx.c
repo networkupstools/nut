@@ -3794,7 +3794,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 					 * battery too old and otherwise behaving non-linearly
 					 */
 					if (voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+						double estPrev = batt.runt.est;
 						batt.runt.est = voltage_battery_charge * batt.runt.nom;
+						upsdebugx(3, "%s: updating batt.runt.est from '%g' to '%g'",
+							__func__, estPrev, batt.runt.est);
 					}
 
 				}
