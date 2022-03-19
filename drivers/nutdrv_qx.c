@@ -3768,6 +3768,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 			if (!val) {
 				upsdebugx(2, "%s: unable to get battery.voltage", __func__);
 			} else {
+				/* For age-corrected estimates below,
+				 * see theory and experimental graphs at
+				 * https://github.com/networkupstools/nut/pull/1027
+				 */
 
 				batt.volt.act = batt.packs * strtod(val, NULL);
 
@@ -3783,8 +3787,13 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 						voltage_battery_charge = 1;
 					}
 
-					/* Correct estimated runtime remaining for old batteries */
-					if(voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+					/* Correct estimated runtime remaining for old batteries:
+					 * this value replacement only happens if the actual
+					 * voltage_battery_charge is smaller than expected by
+					 * previous (load-based) estimation, thus adapting to a
+					 * battery too old and otherwise behaving non-linearly
+					 */
+					if (voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
 						batt.runt.est = voltage_battery_charge * batt.runt.nom;
 					}
 
