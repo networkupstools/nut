@@ -73,6 +73,9 @@ Release notes for NUT 2.8.0 - what's new since 2.7.4:
    * Emerson Avocent PM3000 PDU (SNMP)
    * HPE ePDU (SNMP)
 
+ - nutdrv_qx: enhanced estimation of remaining battery runtime based
+   on speed of voltage drop, which varies as they age [PR #1027]
+
  - nutdrv_qx: several subdrivers added or improved, including:
    * "snr" subdriver with USB connection, for SNR-UPS-LID-XXXX [PR #1008].
      Note that end-users should reference explicitly the `snr` subdriver

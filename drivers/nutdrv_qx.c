@@ -1567,6 +1567,14 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		return 0;
 	}
 
+	/* Prepare SNR-UPS for communication.
+	 * Without the interrupt UPS returns zeros for some time,
+	 * and afterwards NUT returns a communications error.
+	 */
+	usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)buf, 102, 1000);
+
 	for (i = 0; command[i].str; i++) {
 
 		int	retry;
@@ -1662,7 +1670,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
 	}
-	
+
 	int	retry;
 
 	for (retry = 0; retry < 3; retry++) {
@@ -3753,6 +3761,46 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 					batt.runt.est = 0;
 				}
 
+			}
+
+			const char	*val = dstate_getinfo("battery.voltage");
+
+			if (!val) {
+				upsdebugx(2, "%s: unable to get battery.voltage", __func__);
+			} else {
+				/* For age-corrected estimates below,
+				 * see theory and experimental graphs at
+				 * https://github.com/networkupstools/nut/pull/1027
+				 */
+
+				batt.volt.act = batt.packs * strtod(val, NULL);
+
+				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+
+					double voltage_battery_charge = (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
+
+					if (voltage_battery_charge < 0) {
+						voltage_battery_charge = 0;
+					}
+
+					if (voltage_battery_charge > 1) {
+						voltage_battery_charge = 1;
+					}
+
+					/* Correct estimated runtime remaining for old batteries:
+					 * this value replacement only happens if the actual
+					 * voltage_battery_charge is smaller than expected by
+					 * previous (load-based) estimation, thus adapting to a
+					 * battery too old and otherwise behaving non-linearly
+					 */
+					if (voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+						double estPrev = batt.runt.est;
+						batt.runt.est = voltage_battery_charge * batt.runt.nom;
+						upsdebugx(3, "%s: updating batt.runt.est from '%g' to '%g'",
+							__func__, estPrev, batt.runt.est);
+					}
+
+				}
 			}
 
 			if (d_equal(batt.chrg.act, -1))
