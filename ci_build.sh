@@ -38,7 +38,9 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     BUILD_TYPE=default-all-errors
     BUILD_WARNFATAL=yes
 
-    # Current fightwarn goal is to have no warnings at preset level below:
+    # Current fightwarn goal is to have no warnings at preset level below,
+    # or at the level defaulted with configure.ac (perhaps considering the
+    # compiler version, etc.):
     #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
     [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
 
