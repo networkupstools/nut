@@ -25,7 +25,7 @@ Changes from 2.7.4 to 2.8.0
   few changes also happened in header files installed for builds configured
   `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
   At the very least, binaries for those consumers should be rebuilt to remain
-  stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+  stable with NUT 2.8.0 and not mismatch int-type sizes and other arguments.
 
 - libusb-1.0: NUT now defaults to building against libusb-1.0 API version
   if the configure script finds the development headers, falling back to
