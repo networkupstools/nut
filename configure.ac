@@ -26,6 +26,8 @@ m4_version_prereq(2.61, [
 	AC_MSG_RESULT(no)
 ])
 
+AC_PREREQ([2.64])
+
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
