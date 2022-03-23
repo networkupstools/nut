@@ -157,7 +157,7 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
-static uint16_t crc16(uint8_t *buffer, uint16_t buffer_length);
+static uint16_t crc16(uint8_t *buffer, size_t buffer_length);
 static time_t time_seek(time_t t, int seconds);
 
 /* rw variables function prototypes */
@@ -346,7 +346,7 @@ static void ups2000_device_identification(void)
 					     "or longer than UINT16_MAX!");
 		}
 
-		crc16_calc = crc16(ident_response, (uint16_t)(ident_response_len - IDENT_RESPONSE_CRC_LEN));
+		crc16_calc = crc16(ident_response, ident_response_len - IDENT_RESPONSE_CRC_LEN);
 		if (crc16_recv == crc16_calc) {
 			crc16_fail = 0;
 			break;
@@ -2093,7 +2093,7 @@ static const uint8_t table_crc_lo[] = {
 };
 
 
-static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
+static uint16_t crc16(uint8_t * buffer, size_t buffer_length)
 {
 	uint8_t crc_hi = 0xFF;	/* high CRC byte initialized */
 	uint8_t crc_lo = 0xFF;	/* low CRC byte initialized */
