@@ -338,7 +338,7 @@ static void ups2000_device_identification(void)
 		}
 
 		/* step 3: check response CRC-16 */
-		crc16_recv = (uint16_t)((uint16_t)(ident_response_end[0]) << 8) | (uint16_t)(ident_response_end[1]);
+		crc16_recv = (uint16_t) ident_response_end[0] << 8 | ident_response_end[1];
 		if (ident_response_len < IDENT_RESPONSE_CRC_LEN
 		|| (((uintmax_t)(ident_response_len) - IDENT_RESPONSE_CRC_LEN) > UINT16_MAX)
 		) {
