@@ -142,11 +142,18 @@ dnl    AS_IF([test "x$GCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning"])
 dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
 dnl # There should be no need to include standard system paths (and possibly
-dnl # confuse the compiler assumptions - along with its provided headers):
-dnl #    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
-dnl #        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
-dnl #    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
-dnl #        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
+dnl # confuse the compiler assumptions - along with its provided headers)...
+dnl # ideally; in practice however cppunit, net-snmp and some system include
+dnl # files do cause grief to picky compiler settings (more so from third
+dnl # party packages shipped via /usr/local/... namespace):
+    AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
+        CFLAGS="-isystem /usr/local/include $CFLAGS"
+    ])
+    AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
+        CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"
+    ])
 
 dnl # Default to avoid noisy warnings on older compilers
 dnl # (gcc-4.x, clang-3.x) due to their preference of
