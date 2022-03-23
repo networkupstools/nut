@@ -2510,7 +2510,7 @@ dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
 dnl default "nut_warning_difficulty" and/or the case handling below.
 dnl NOTE: Until X-Mas 2021, the default was "minimal" (now "medium")
 nut_warning_difficulty="medium"
-AC_MSG_CHECKING([whether to pre-set warnings])
+AC_MSG_CHECKING([whether to pre-set warnings (from '${nut_enable_warnings}')])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
     [clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
