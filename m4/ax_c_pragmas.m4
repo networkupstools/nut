@@ -323,6 +323,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Warray-bounds" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-type-limit-compare" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_tautological_type_limit_compare_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wtautological-type-limit-compare" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"],
     [ax_cv__pragma__gcc__diags_ignored_tautological_constant_out_of_range_compare],
     [AC_COMPILE_IFELSE(
