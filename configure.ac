@@ -50,7 +50,7 @@ AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
 dnl Should not be necessary, since old servers have well-defined errors for
 dnl unsupported commands:
-NUT_NETVERSION="1.2"
+NUT_NETVERSION="1.3"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
 
