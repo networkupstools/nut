@@ -46,6 +46,9 @@ NUT network protocol, over the time:
                                |Add ranges of values for writable variables
 .2+|1.3        .2+|>= 2.8.0    |Add "cmdparam" to "INSTCMD"
                                |Add "TRACKING" commands (GET, SET)
+                               |Add "PRIMARY" as alias to older "MASTER"
+                               |    (implementation tested to be backwards
+                               |    compatible in `upsd` and `upsmon`)
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
