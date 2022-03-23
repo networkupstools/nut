@@ -729,7 +729,7 @@ NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
-    [medium])
+    [auto])
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
     [no])
