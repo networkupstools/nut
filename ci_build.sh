@@ -36,13 +36,17 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # For CFLAGS/CXXFLAGS keep caller or compiler defaults
     # (including C/C++ revision)
     BUILD_TYPE=default-all-errors
-    BUILD_WARNFATAL=yes
+    #BUILD_WARNFATAL=yes
+    #   configure => "yes" except for antique compilers
+    BUILD_WARNFATAL=auto
 
     # Current fightwarn goal is to have no warnings at preset level below,
     # or at the level defaulted with configure.ac (perhaps considering the
     # compiler version, etc.):
     #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
-    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #   configure => default to medium, detect by compiler type
+    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=auto
 
     # Eventually this constraint would be removed to check all present
     # SSL implementations since their ifdef-driven codebases differ and
