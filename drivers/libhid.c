@@ -195,7 +195,6 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
@@ -309,7 +308,6 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
@@ -575,7 +573,6 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 #endif
 	if ((uintmax_t)Index > (uintmax_t)USB_CTRL_STRINDEX_MAX
 	||  (intmax_t)Index < (intmax_t)USB_CTRL_STRINDEX_MIN
@@ -721,7 +718,6 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		/* FIXME: Should we try here, or plain abort? */
