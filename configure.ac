@@ -2527,7 +2527,8 @@ AS_CASE(["${nut_enable_warnings}"],
                     [AS_CASE(["`$CC --version | grep -i gcc`"],
                         [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
                             AC_MSG_WARN([Very old GCC in use, disabling warnings])
-                            AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror=no])
+                            dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])
+                            nut_enable_Werror="no"
                             nut_enable_warnings="no"],
                         [*" "4.4*|*" "4.5*|*" "4.6*|*" "4.7*|*" "4.8*], [nut_enable_warnings="gcc-legacy"],
                         [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
