@@ -32,6 +32,9 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.axisCombos_COMPILER_GCC = [~/COMPILER=GCC/]
     dynacfgPipeline.axisCombos_COMPILER_NOT_GCC = [~/COMPILER=(?!GCC)/]
 
+    // Avoid requiring success on GCC so old we can't manage warnings by CLI or pragmas:
+    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD = [~/COMPILER=GCC/, ~/GCCVER=([0123]\.|4\.[0123])/]
+
     // Beside the flag here, the pre-defined C89/C90/ANSI scenarios
     // should only get considered in branches named ~/fightwarn.*89.*/
     // or PRs to those (for non-GCC builds):
@@ -135,9 +138,6 @@ import org.nut.dynamatrix.*;
     // Avoid mix-up of bitness-related requests and abilities
     dynacfgPipeline.axisCombos_ARCH32x64 = [~/BITS=32/, ~/ARCH_BITS=64/]
     dynacfgPipeline.axisCombos_ARCH64x32 = [~/BITS=64/, ~/ARCH_BITS=32/]
-
-    // Avoid requiring success on GCC so old we can't manage warnings by CLI or pragmas:
-    dynacfgPipeline.axisCombos_GCC_TOO_OLD = [~/COMPILER=GCC/, ~/GCCVER=([0123]\.|4\.[0123])/]
 
     // Some (but not all) builds skip strict-C standard due to
     // current build failures with its requirements
@@ -409,7 +409,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -609,7 +609,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -647,7 +647,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -686,7 +686,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -907,7 +907,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     //+ [ [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/] ]
                 ], body)
             }, // getParStages
@@ -949,7 +949,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/]
                     ] +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -988,7 +988,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=(?!GCC)/]
                     ] +
-                    [dynacfgPipeline.axisCombos_GCC_TOO_OLD]
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -1016,7 +1016,7 @@ set | sort -n """
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    dynacfgPipeline.axisCombos_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
@@ -1055,7 +1055,7 @@ set | sort -n """
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    dynacfgPipeline.axisCombos_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
@@ -1091,7 +1091,7 @@ set | sort -n """
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    dynacfgPipeline.axisCombos_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
@@ -1137,7 +1137,7 @@ set | sort -n """
                 excludeCombos: [
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,
-                    dynacfgPipeline.axisCombos_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
                     dynacfgPipeline.axisCombos_NOT_WINDOWS
                     ]
                 ], body)
