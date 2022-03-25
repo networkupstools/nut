@@ -61,7 +61,10 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
 
 AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
 [
-    AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
+dnl Note: with this line uncommented, builds report
+dnl   sed: 0: conftest.c: No such file or directory
+dnl so seemingly try to parse the method without args:
+    dnl### AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])
 
 dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
 dnl the -Werror below is needed to detect "warnings" about unsupported options
