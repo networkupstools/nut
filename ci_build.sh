@@ -536,11 +536,25 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     EXTRA_CXXFLAGS=""
 
     is_gnucc() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
     }
 
     is_clang() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    }
+
+    filter_version() {
+        # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+        # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+        sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+    }
+
+    ver_gnucc() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+    }
+
+    ver_clang() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
     }
 
     COMPILER_FAMILY=""
@@ -553,6 +567,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             export CC CXX
         fi
     else
+        # Generally we prefer GCC unless it is very old so we can't impact
+        # its warnings and complaints.
         if is_gnucc "gcc" && is_gnucc "g++" ; then
             # Autoconf would pick this by default
             COMPILER_FAMILY="GCC"
@@ -564,17 +580,45 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -n "$CC" ] || CC=cc
             [ -n "$CXX" ] || CXX=c++
             export CC CXX
-        elif is_clang "clang" && is_clang "clang++" ; then
-            # Autoconf would pick this by default
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=clang
-            [ -n "$CXX" ] || CXX=clang++
-            export CC CXX
-        elif is_clang "cc" && is_clang "c++" ; then
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=cc
-            [ -n "$CXX" ] || CXX=c++
-            export CC CXX
+        fi
+
+        if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
+            case "`ver_gnucc "$CC"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac && \
+            case "`ver_gnucc "$CXX"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac
+        ) ; then
+            echo "NOTE: default GCC here is very old, do we have a CLANG instead?.." >&2
+            COMPILER_FAMILY="GCC_OLD"
+        fi
+
+        if [ -z "$COMPILER_FAMILY" ] || [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            if is_clang "clang" && is_clang "clang++" ; then
+                # Autoconf would pick this by default
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=clang
+                [ -n "$CXX" ] || CXX=clang++
+                export CC CXX
+            elif is_clang "cc" && is_clang "c++" ; then
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=cc
+                [ -n "$CXX" ] || CXX=c++
+                export CC CXX
+            fi
+        fi
+
+        if [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            COMPILER_FAMILY="GCC"
         fi
     fi
 
