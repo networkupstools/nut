@@ -26,6 +26,8 @@ m4_version_prereq(2.61, [
 	AC_MSG_RESULT(no)
 ])
 
+AC_PREREQ([2.64])
+
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
@@ -727,7 +729,7 @@ NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
-    [medium])
+    [auto])
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
     [no])
@@ -2508,7 +2510,7 @@ dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
 dnl default "nut_warning_difficulty" and/or the case handling below.
 dnl NOTE: Until X-Mas 2021, the default was "minimal" (now "medium")
 nut_warning_difficulty="medium"
-AC_MSG_CHECKING([whether to pre-set warnings])
+AC_MSG_CHECKING([whether to pre-set warnings (from '${nut_enable_warnings}')])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
     [clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
@@ -2522,7 +2524,15 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [
                 AS_CASE(["${CFLAGS}"],
                     [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
-                    [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
+                    [AS_CASE(["`$CC --version | grep -i gcc`"],
+                        [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
+                            AC_MSG_WARN([Very old GCC in use, disabling warnings])
+                            dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])
+                            nut_enable_Werror="no"
+                            nut_enable_warnings="no"],
+                        [*" "4.4*|*" "4.5*|*" "4.6*|*" "4.7*|*" "4.8*], [nut_enable_warnings="gcc-legacy"],
+                        [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
+                    )]
                 )], [nut_enable_warnings="all"])
             ])
         ],

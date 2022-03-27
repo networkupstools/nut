@@ -405,7 +405,8 @@ networked repository (4.2.x vs 4.9.x)
 
 # For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
 :; pkg_add \
-    asciidoc source-highlight py-pygments dblatex
+    asciidoc source-highlight py-pygments dblatex \
+    docbook2x docbook-to-man
 
 # For CGI graph generation - massive packages (X11):
 :; pkg_add \
