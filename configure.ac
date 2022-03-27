@@ -18,6 +18,7 @@ AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
+dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -52,7 +53,7 @@ AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
 dnl Should not be necessary, since old servers have well-defined errors for
 dnl unsupported commands:
-NUT_NETVERSION="1.2"
+NUT_NETVERSION="1.3"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
 
