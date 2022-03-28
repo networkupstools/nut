@@ -152,10 +152,9 @@ hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 /**
  * CyberPower UT series sometime need a bit of help deciding their online status.
  * This quirk is to enable the special handling of OL & DISCHRG at the same time
- * as being OB (on battery power/no mains power)
+ * as being OB (on battery power/no mains power). Enabled by device config flag.
  */
-#define DEFAULT_ONLINEDISCHARGE 0
-static int onlinedischarge = DEFAULT_ONLINEDISCHARGE;
+static int onlinedischarge = 0;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -797,10 +796,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
-	snprintf(temp, sizeof(temp),
-		"Treat discharging while online as being offline (default=%d)",
-		DEFAULT_ONLINEDISCHARGE);
-	addvar(VAR_FLAG, "onlinedischarge", temp);
+	addvar(VAR_FLAG, "onlinedischarge",
+		"Set to treat discharging while online as being offline");
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
