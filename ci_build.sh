@@ -205,6 +205,10 @@ if [ -z "$CI_OS_NAME" ]; then
     case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
+        *openbsd*)
+            CI_OS_NAME="openbsd" ;;
+        *netbsd*)
+            CI_OS_NAME="netbsd" ;;
         *debian*|*ubuntu*)
             CI_OS_NAME="debian" ;;
         *centos*|*fedora*|*redhat*|*rhel*)
