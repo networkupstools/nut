@@ -797,7 +797,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
-	snprintf(temp, sizeof(temp), "Treat discharging while online as being offline (default=%s)",
+	snprintf(temp, sizeof(temp),
+		"Treat discharging while online as being offline (default=%d)",
 		DEFAULT_ONLINEDISCHARGE);
 	addvar(VAR_FLAG, "onlinedischarge", temp);
 
