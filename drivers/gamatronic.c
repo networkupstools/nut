@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -167,31 +167,31 @@ static void update_pseudovars( void )
 {
 	status_init();
 
-	if(strncmp(sec_varlist[9].value, "1", 1)== 0) {
+	if(strcmp(sec_varlist[9].value,"1")== 0) {
 		status_set("OFF");
 	}
-	if(strncmp(sec_varlist[76].value, "0", 1)== 0) {
+	if(strcmp(sec_varlist[76].value,"0")== 0) {
 		status_set("OL");
 	}
-	if(strncmp(sec_varlist[76].value, "1", 1)== 0) {
+	if(strcmp(sec_varlist[76].value,"1")== 0) {
 		status_set("OB");
 	}
-	if(strncmp(sec_varlist[76].value, "2", 1)== 0) {
+	if(strcmp(sec_varlist[76].value,"2")== 0) {
 		status_set("BYPASS");
 	}
-	if(strncmp(sec_varlist[76].value, "3", 1)== 0) {
+	if(strcmp(sec_varlist[76].value,"3")== 0) {
 		status_set("TRIM");
 	}
-	if(strncmp(sec_varlist[76].value, "4", 1)== 0) {
+	if(strcmp(sec_varlist[76].value,"4")== 0) {
 		status_set("BOOST");
 	}
-	if(strncmp(sec_varlist[10].value, "1", 1)== 0) {
+	if(strcmp(sec_varlist[10].value,"1")== 0) {
 		status_set("OVER");
 	}
-	if(strncmp(sec_varlist[22].value, "1", 1)== 0) {
+	if(strcmp(sec_varlist[22].value,"1")== 0) {
 		status_set("LB");
 	}
-	if(strncmp(sec_varlist[19].value, "2", 1)== 0) {
+	if(strcmp(sec_varlist[19].value,"2")== 0) {
 		status_set("RB");
 	}
 
@@ -246,7 +246,7 @@ static void sec_poll ( int pollflag ) {
 				}
 
 				/* If SEC VAR is alarm and it's on, add it to the alarm property */
-				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strncmp(r, "1", 1)== 0) {
+				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
 					alarm_set(sec_varlist[sqv(q,f)].name);
 				}
 			}

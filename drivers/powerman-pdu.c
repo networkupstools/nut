@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -73,13 +73,13 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/* Power on the outlet */
-	if (!strncasecmp(cmdsuffix, "on", 2)) {
+	if (!strcasecmp(cmdsuffix, "on")) {
 		rv = pm_node_on(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}
 
 	/* Power off the outlet */
-	if (!strncasecmp(cmdsuffix, "off", 3)) {
+	if (!strcasecmp(cmdsuffix, "off")) {
 		rv = pm_node_off(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}

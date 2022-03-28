@@ -18,6 +18,7 @@ AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
+dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -25,6 +26,8 @@ m4_version_prereq(2.61, [
 ], [
 	AC_MSG_RESULT(no)
 ])
+
+AC_PREREQ([2.64])
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
@@ -50,7 +53,7 @@ AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
 dnl Should not be necessary, since old servers have well-defined errors for
 dnl unsupported commands:
-NUT_NETVERSION="1.2"
+NUT_NETVERSION="1.3"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
 
@@ -101,6 +104,9 @@ fi
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
+AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+	[RUN_AS_GROUP="nogroup"]
+)
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -258,7 +264,7 @@ CODE_STRINGINCL='#ifdef HAVE_STRING_H
 
 AC_CACHE_CHECK([for strcasecmp(s1,s2)],
     [ac_cv_func_strcasecmp],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [if (strcasecmp("STR1", "str1") != 0) return 1])],
         [ac_cv_func_strcasecmp=yes], [ac_cv_func_strcasecmp=no]
@@ -270,7 +276,7 @@ AS_IF([test x"${ac_cv_func_strcasecmp}" = xyes],
 
 AC_CACHE_CHECK([for strncasecmp(s1,s2,n)],
     [ac_cv_func_strncasecmp],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [if (strncasecmp("STR1", "strX", 2) != 0) return 1])],
         [ac_cv_func_strncasecmp=yes], [ac_cv_func_strncasecmp=no]
@@ -282,7 +288,7 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
 
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
-    [AC_RUN_IFELSE(
+    [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
             [[int res = 0;
 char *t = "Test";
@@ -452,6 +458,211 @@ NUT_CHECK_PYTHON2
 NUT_CHECK_PYTHON3
 
 dnl ----------------------------------------------------------------------
+dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
+
+dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs
+dnl (square brackets), so the help string depends on the version used
+AC_MSG_CHECKING(which drivers to build)
+AC_ARG_WITH(drivers,
+	AS_HELP_STRING([m4_version_prereq(2.62,
+		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
+		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
+	[Only build specific drivers (all)]),
+[
+	case "${withval}" in
+	yes|no|'')
+		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
+		;;
+	all)
+		dnl Explicit request to build all drivers (unless specified), or fail
+		DRIVER_BUILD_LIST="all"
+		if test -z "${with_serial}"; then with_serial="yes"; fi
+		if test -z "${with_usb}"; then with_usb="yes"; fi
+		if test -z "${with_snmp}"; then with_snmp="yes"; fi
+		if test -z "${with_neon}"; then with_neon="yes"; fi
+		if test -z "${with_powerman}"; then with_powerman="yes"; fi
+		if test -z "${with_modbus}"; then with_modbus="yes"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
+
+		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_linux_i2c}"; then
+			case ${target_os} in
+				linux*) with_linux_i2c="yes";;
+				*) with_linux_i2c="auto";;
+			esac
+		fi
+		if test -z "${with_macosx_ups}"; then
+			if test -d /System/Library/Frameworks/IOKit.framework/ ; then
+				with_macosx_ups="yes"
+			else
+				with_macosx_ups="auto"
+			fi
+		fi
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+		;;
+	auto)
+		dnl Explicit request to build all drivers that we can
+		DRIVER_BUILD_LIST="all"
+		if test -z "${with_serial}"; then with_serial="${withval}"; fi
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
+		if test -z "${with_neon}"; then with_neon="${withval}"; fi
+		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
+		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
+		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+		;;
+	*)
+		DRIVER_BUILD_LIST="`echo ${withval} | sed 's/,/ /g'`"
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+
+		AS_IF([test -n "$DRIVER_BUILD_LIST"],
+			[dnl DRVLIST is occasionally synced with drivers/Makefile.am
+			 dnl NOTE: Currently "USB_DRIVERLIST" is not used standalone:
+			DRVLIST_NAMES="
+				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
+				SNMP_DRIVERLIST NEONXML_DRIVERLIST
+				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST"
+
+			get_drvlist() (
+				dnl Note escaped brackets - "against" m4 parser
+				m4_version_prereq(2.62,
+					[LB="@<:@"; RB="@:>@"],
+					[LB="[["; RB="]]"]
+				)
+				SPACE="`printf "$LB"' \t'"$RB"`"
+				SPACES="${SPACE}*"
+				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
+				    -e "s/^${SPACES}//" < drivers/Makefile.am \
+				| {
+					C=false; V=false
+					while read LINE ; do
+						case "$LINE" in
+							*'\') C=true; if $V ; then echo "$LINE" ; fi ;;
+							*) C=false; V=false ;;
+						esac
+						case "$LINE" in
+							"$1"=*)
+								echo "$LINE" | sed -e 's,^'"$LB"'^='"$RB"'*=,,' -e 's,\$,,'
+								V=$C
+								;;
+						esac
+					done
+				} | tr '\n' ' ' | sed -e "s,${SPACE}${SPACES}, ," -e "s,${SPACES}\$,,"
+			)
+
+			for DRVLIST_NAME in $DRVLIST_NAMES; do
+				OUT="`get_drvlist "$DRVLIST_NAME"`" \
+				&& test -n "$OUT" || OUT=""
+				eval $DRVLIST_NAME="\$OUT"
+				AC_MSG_NOTICE([Will check custom driver selection against $DRVLIST_NAME="$OUT"])
+			done
+
+			dnl Note: do not quote the expansion below to keep it multi-token:
+			for DRV in $DRIVER_BUILD_LIST ; do
+
+				DRV_HITS=""
+				dnl #DEVEL-DEBUG# AC_MSG_NOTICE([= Checking DRV="$DRV"])
+				for DRVLIST_NAME in $DRVLIST_NAMES; do
+					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Checking DRVLIST_NAME="$DRVLIST_NAME"])
+					eval DRVLIST="\${$DRVLIST_NAME}"
+					dnl #DEVEL-DEBUG# AC_MSG_NOTICE([== Contents DRVLIST="$DRVLIST"])
+
+					for DN in $DRVLIST ; do
+						dnl #DEVEL-DEBUG# AC_MSG_NOTICE([=== Checking DN="$DN"])
+						AS_IF([test x"$DN" = x"$DRV"], [
+							DRV_HITS="$DRV_HITS $DRVLIST_NAME"
+							AS_CASE(["$DRVLIST_NAME"],
+
+								[SERIAL_DRIVERLIST], [
+									AS_IF([test -z "${with_serial}"],
+										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])
+										with_serial=yes]
+									)],
+								[USB_LIBUSB_DRIVERLIST], [
+									AS_IF([test -z "${with_usb}"],
+										[AC_MSG_NOTICE([Requiring --with-usb=yes for driver "$DRV"])
+										with_usb=yes]
+									)],
+								[SERIAL_USB_DRIVERLIST], [
+									dnl e.g. nutdrv_qx that can do both
+									AS_IF([test -z "${with_usb}"],
+										[AC_MSG_NOTICE([Requiring --with-usb=yes for driver "$DRV"])
+										with_usb=yes]
+									)
+									AS_IF([test -z "${with_serial}"],
+										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])
+										with_serial=yes]
+									)],
+								[SNMP_DRIVERLIST], [
+									AS_IF([test -z "${with_snmp}"],
+										[AC_MSG_NOTICE([Requiring --with-snmp=yes for driver "$DRV"])
+										with_snmp=yes]
+									)],
+								[NEONXML_DRIVERLIST], [
+									AS_IF([test -z "${with_neon}"],
+										[AC_MSG_NOTICE([Requiring --with-neon=yes for driver "$DRV"])
+										with_neon=yes]
+									)],
+								[MACOSX_DRIVERLIST], [
+									dnl NOTE: This one is a bit special,
+									dnl just one certain driver so far
+									AS_IF([test -z "${with_macosx_ups}"],
+										[AC_MSG_NOTICE([Requiring --with-macosx-ups=yes for driver "$DRV"])
+										with_macosx_ups=yes]
+									)],
+								[MODBUS_DRIVERLIST], [
+									AS_IF([test -z "${with_modbus}"],
+										[AC_MSG_NOTICE([Requiring --with-modbus=yes for driver "$DRV"])
+										with_modbus=yes]
+									)],
+								[LINUX_I2C_DRIVERLIST], [
+									AS_IF([test -z "${with_linux_i2c}"],
+										[AC_MSG_NOTICE([Requiring --with-linux-i2c=yes for driver "$DRV"])
+										with_linux_i2c=yes]
+									)],
+								[POWERMAN_DRIVERLIST], [
+									AS_IF([test -z "${with_powerman}"],
+										[AC_MSG_NOTICE([Requiring --with-powerman=yes for driver "$DRV"])
+										with_powerman=yes]
+									)],
+								[IPMI_DRIVERLIST], [
+									AS_IF([test -z "${with_ipmi}"],
+										[AC_MSG_NOTICE([Requiring --with-ipmi=yes for driver "$DRV"])
+										with_ipmi=yes]
+									)],
+
+								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
+							)
+							break
+							dnl Break once, maybe a driver hits several categories
+						])
+					done
+				done
+				AS_IF([test -z "${DRV_HITS}"],
+					[AC_MSG_ERROR([Requested driver '$DRV' is not defined in drivers/Makefile.am (or configure.ac has a bug/lag detecting driver lists)])])
+
+			done
+			])
+
+		;;
+	esac
+], [
+	dnl Implicit request to build whatever is enabled;
+	dnl do not force --with-all here:
+	DRIVER_BUILD_LIST="all"
+	AC_MSG_RESULT(all available)
+])
+AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
+
+if test "${DRIVER_BUILD_LIST}" != "all"; then
+	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
+fi
+
+dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
@@ -461,17 +672,36 @@ AC_ARG_WITH(all,
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
+		dnl Note: these settings do not touch generation of
+		dnl "--with-docs=...", that is handled separately
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+
+		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_linux_i2c}"; then
+			with_linux_i2c="${withval}"
+			case ${target_os} in
+				linux*) ;;
+				*) test x"${withval}" = xno || with_linux_i2c="auto" ;;
+			esac
+		fi
+		if test -z "${with_macosx_ups}"; then
+			with_macosx_ups="${withval}"
+			if ! test -d /System/Library/Frameworks/IOKit.framework/ ; then
+				test x"${withval}" = xno || with_macosx_ups="auto"
+			fi
+		fi
+
+		dnl These are not driver families, but other features:
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
-		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
-		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
+
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -487,7 +717,6 @@ dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
-NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -501,7 +730,7 @@ NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
-    [medium])
+    [auto])
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
     [no])
@@ -509,6 +738,8 @@ dnl To help find warning/error details in a wall of text, see --enable-Wcolor ha
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
+
+NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 
 dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
@@ -765,6 +996,9 @@ if test "${nut_with_macosx_ups}" != no; then
    if test -d /System/Library/Frameworks/IOKit.framework/ ; then
       nut_with_macosx_ups="yes"
    else
+      if test "${nut_with_macosx_ups}" = yes; then
+          AC_MSG_ERROR([macosx-ups was required but can not be fulfilled for this build: not MacOS])
+      fi
       nut_with_macosx_ups="no"
    fi
 fi
@@ -818,6 +1052,9 @@ if test "${nut_with_linux_i2c}" != no; then
                 ])
             ;;
         * )
+            if test "${nut_with_linux_i2c}" = yes; then
+                AC_MSG_ERROR([i2c was required but can not be fulfilled for this build: not linux])
+            fi
             nut_with_linux_i2c="no"
             ;;
     esac
@@ -1416,7 +1653,7 @@ AC_MSG_RESULT(${PORT})
 
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
 [
 	case "${withval}" in
 	yes|no)
@@ -1435,7 +1672,7 @@ AC_MSG_RESULT(${RUN_AS_USER})
 
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
 [
 	case "${withval}" in
 	yes|no)
@@ -1476,34 +1713,6 @@ AC_ARG_WITH(logfacility,
 ])
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
-
-dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
-dnl so the help string depends on the version used
-AC_MSG_CHECKING(which drivers to build)
-AC_ARG_WITH(drivers,
-	AS_HELP_STRING([m4_version_prereq(2.62,
-		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
-		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
-	[Only build specific drivers (all)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
-		;;
-	*)
-		DRIVER_BUILD_LIST=`echo ${withval} | sed "s/,/ /g"`
-		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
-		;;
-	esac
-], [
-	DRIVER_BUILD_LIST="all"
-	AC_MSG_RESULT(all available)
-])
-AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
-
-if test "${DRIVER_BUILD_LIST}" != "all"; then
-	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
-fi
 
 AC_MSG_CHECKING(which driver man pages to install)
 if test "${WITH_MANS}" = "yes"; then
@@ -1647,19 +1856,18 @@ fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
 
-dnl Note: Currently there is no automatic detection enabled -
-dnl users have to ask they want systemd units installed.
-dnl It may be changed based on popular demand to just always
-dnl run the "case" below for ${systemdsystemunitdir} values,
-dnl like we do for systemdtmpfilesdir further below.
+dnl Note: Currently there is no reliable automatic detection -
+dnl users have to ask they want systemd units installed, or
+dnl risk auto-detection like seen below.
 AC_MSG_CHECKING(whether to install systemd unit files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-[
-	case "${withval}" in
+	[systemdsystemunitdir="${withval}"],
+	[systemdsystemunitdir="auto"])
+case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"],
+			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${withval}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdsystemunitdir=""
@@ -1671,8 +1879,8 @@ AC_ARG_WITH([systemdsystemunitdir],
 	*)
 		systemdsystemunitdir="${withval}"
 		;;
-	esac
-], [])
+esac
+if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
@@ -1686,13 +1894,14 @@ dnl given
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
-	[systemdshutdowndir=${withval}])
+	[systemdshutdowndir="${withval}"],
+	[systemdshutdowndir="auto"])
 dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
 if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd`"],
+			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdshutdowndir=""
@@ -1706,6 +1915,7 @@ if test -n "${systemdsystemunitdir}"; then
 		;;
 	esac
 fi
+if test "${systemdshutdowndir}" = "auto" ; then systemdshutdowndir=""; fi
 if test -n "${systemdshutdowndir}"; then
 	AC_MSG_RESULT(using ${systemdshutdowndir})
 else
@@ -1713,15 +1923,16 @@ else
 fi
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
-dnl daemons starting not as systemd units
+dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
 AC_ARG_WITH([systemdtmpfilesdir],
 	AS_HELP_STRING([--with-systemdtmpfilesdir=DIR], [Directory for systemd tmpfiles scripts (auto)]),
-	[systemdtmpfilesdir=${withval}])
+	[systemdtmpfilesdir="${withval}"],
+	[systemdtmpfilesdir="auto"])
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd`"],
+			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
 			[AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdtmpfilesdir=""
@@ -1734,6 +1945,7 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir="${withval}"
 		;;
 esac
+if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
 if test -n "${systemdtmpfilesdir}"; then
 	AC_MSG_RESULT(using ${systemdtmpfilesdir})
 else
@@ -1861,7 +2073,7 @@ return res ? 0 : 1;
      my_CXXFLAGS="$CXXFLAGS"
      CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
-     AC_RUN_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [have_cppunit=yes], [have_cppunit=no])
      CXXFLAGS="$my_CXXFLAGS"
      AC_LANG_POP([C++])
@@ -2299,7 +2511,7 @@ dnl C89/C90/ANSI mode to be less noisy. Keep this in mind if changing the
 dnl default "nut_warning_difficulty" and/or the case handling below.
 dnl NOTE: Until X-Mas 2021, the default was "minimal" (now "medium")
 nut_warning_difficulty="medium"
-AC_MSG_CHECKING([whether to pre-set warnings])
+AC_MSG_CHECKING([whether to pre-set warnings (from '${nut_enable_warnings}')])
 AS_CASE(["${nut_enable_warnings}"],
     [no|all|gcc-legacy|gcc-minimal|clang-minimal|gcc-medium|clang-medium|gcc-hard|clang-hard], [],
     [clang], [nut_enable_warnings="${nut_enable_warnings}-${nut_warning_difficulty}"],
@@ -2313,7 +2525,15 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [
                 AS_CASE(["${CFLAGS}"],
                     [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
-                    [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
+                    [AS_CASE(["`$CC --version | grep -i gcc`"],
+                        [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
+                            AC_MSG_WARN([Very old GCC in use, disabling warnings])
+                            dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])
+                            nut_enable_Werror="no"
+                            nut_enable_warnings="no"],
+                        [*" "4.4*|*" "4.5*|*" "4.6*|*" "4.7*|*" "4.8*], [nut_enable_warnings="gcc-legacy"],
+                        [nut_enable_warnings="gcc-${nut_warning_difficulty}"]
+                    )]
                 )], [nut_enable_warnings="all"])
             ])
         ],

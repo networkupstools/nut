@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2828 utf-8
+personal_ws-1.1 en 2868 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,6 +12,7 @@ ADDRCONFIG
 ADDRINFO
 ADK
 ADKK
+ADELSYSTEM
 AEC
 AEF
 AEG
@@ -54,7 +55,9 @@ AllowOverride
 Alm
 AlmCPol
 AlmEnbl
+Amplon
 Ampère
+Amplon
 Andreas
 Andreassen
 Andrzej
@@ -78,6 +81,7 @@ AutoRst
 Autobook
 Autoconfigure
 Autostartup
+Avocent
 Axxium
 BATGNn
 BATNn
@@ -150,10 +154,12 @@ ByPass
 CA's
 CABAC
 CAs
+CBI
 CBLimit
 CCC
 CCCC
 CDC
+CDS
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -238,6 +244,7 @@ DES
 DESTDIR
 DF
 DHEA
+DIGYS
 DISCHRG
 DMF
 DN
@@ -288,6 +295,7 @@ EOF
 EOLed
 EPEL
 EPERM
+EPFCLCD
 EPO
 EPS
 ESC
@@ -333,6 +341,7 @@ FREEADDRINFO
 FREHn
 FRELn
 FRU
+FSP
 FTS
 FTTx
 FTUPS
@@ -351,7 +360,7 @@ Filipozzi
 Fiskars
 FlossMetrics
 Forza
-FossHost
+Fosshost
 Frama
 FreeBSD
 FreeDesktop
@@ -410,9 +419,11 @@ HFILE
 HIDIOCINITREPORT
 HITRANS
 HMAC
+HNX
 HOSTLINK
 HOSTSYNC
 HOWTO
+HPE
 HPS
 HPUX
 HREF
@@ -459,6 +470,7 @@ IPBX
 IPC
 IPs
 IPv
+IRC
 IRIX
 ITEMP
 ITy
@@ -477,6 +489,7 @@ Invter
 IoT
 Ioannou
 JAWAN
+JBUS
 JBus
 JKL
 JRE
@@ -523,12 +536,14 @@ Kx
 LASTXFER
 LBT
 LCDRM
+LCDRT
 LCDRTXL
 LDADD
 LDFLAGS
 LDLC
 LDRIVER
 LEDs
+LGTM
 LH
 LIBGD
 LIBNEON
@@ -623,6 +638,7 @@ MaxDCV
 MaxLinear
 McKinnon
 Megaline
+MemClientStub
 Metheringham
 Michal
 Michalkiewicz
@@ -718,6 +734,7 @@ NrLoBatt
 NutException
 Nxx
 OAH
+OBSOLETION
 OC
 ODH
 OEM
@@ -796,6 +813,7 @@ PPDn
 PPDnnn
 PPP
 PPPPPPPPPP
+PR
 PR'ed
 PROGS
 PRs
@@ -806,6 +824,7 @@ PSGPSER
 PSKxn
 PSSENTR
 PSUs
+PSW
 PSX
 PULS
 PV
@@ -869,6 +888,7 @@ Powerwell
 Prachi
 Prereqs
 PresentStatus
+Priv
 Procomm
 ProductID
 Prynych
@@ -949,6 +969,7 @@ Repotec's
 Repoteck
 Richthof
 Rickard
+Ridgway
 Riihikallio
 Rik
 RntmK
@@ -971,6 +992,7 @@ SDR
 SDRnnnnn
 SDT
 SELFTEST
+SELinux
 SENTR
 SERIALNO
 SERVER's
@@ -1010,6 +1032,7 @@ SOFF
 SOLA
 SOLA's
 SOV
+SPARC
 SPC
 SPECs
 SPLY
@@ -1031,6 +1054,7 @@ SX
 SXI
 SXL
 SafeNet
+Salicru
 Salvia
 Santinoli
 Savia
@@ -1057,6 +1081,7 @@ Sicon
 Sidorov
 Signetic
 Silvino
+Sinline
 Sistem
 Sistemas
 Slackware
@@ -1097,6 +1122,7 @@ Symmetras
 Synology
 SysHrs
 Sysgration
+SyslogIdentifier
 SystemIO
 Systeme
 Szady
@@ -1158,6 +1184,7 @@ UB
 UBD
 UBR
 UDP
+UHV
 UI
 UID
 UIDA
@@ -1307,6 +1334,7 @@ addenum
 addinfo
 addr
 addrange
+adelsystem
 adkorte
 adm
 admin's
@@ -1349,6 +1377,7 @@ apctest
 apcupsd
 aphel
 ar
+arduino
 arg
 argc
 args
@@ -1443,6 +1472,7 @@ bindir
 binfmt
 binutils
 bitmapped
+bitmask
 bitness
 bitnesses
 bitwise
@@ -1473,6 +1503,7 @@ byv
 cablepower
 calloc
 cb
+cbi
 cbl
 cblimit
 ccache
@@ -1777,6 +1808,7 @@ gentoo
 gestion
 getDescription
 getDevice
+getDevicesVariableValues
 getTrackingResult
 getValue
 getVariable
@@ -1817,6 +1849,7 @@ hh
 hibernate's
 hiddev
 hidparser
+hidtypes
 hidups
 highbattery
 highfrequency
@@ -1914,6 +1947,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jbus
 jdk
 jenkins
 jessie
@@ -1950,6 +1984,7 @@ libavahi
 libc
 libcommon
 libcppunit
+libcrypto
 libdir
 libexec
 libfreeipmi
@@ -2106,6 +2141,7 @@ morbo
 mozilla
 msec
 multi
+multicommands
 multilib
 multilink
 multimeter
@@ -2138,6 +2174,7 @@ nearlowbattery
 netcat
 netclient
 netserver
+netsnmp
 netvision
 networkupstools
 netxml
@@ -2189,6 +2226,7 @@ numa
 numlogins
 numq
 nutclient
+nutclientmem
 nutdev
 nutdrv
 nutmon
@@ -2306,6 +2344,8 @@ powerware
 ppc
 pprint
 ppro
+pragma
+pragmas
 pre
 prepend
 prepended
@@ -2366,6 +2406,7 @@ receivexhs
 reconnection
 redistributors
 reentrancy
+refactored
 refactoring
 referencenominal
 regex
@@ -2410,6 +2451,7 @@ rva
 rw
 réseau
 safenet
+salicru
 sbin
 sbindir
 scd
@@ -2464,6 +2506,7 @@ si
 siemens
 sigaction
 sigmask
+signedness
 simplejson
 simu
 sio
@@ -2473,6 +2516,7 @@ sizeof
 skel
 slavesync
 slewrate
+slibtool
 sm
 smartups
 smbus
@@ -2487,6 +2531,7 @@ snprintf
 snprintfcat
 snr
 sockdebug
+socomec
 solaris
 solis
 somepass
@@ -2523,14 +2568,11 @@ strarr
 strcasecmp
 strcat
 strchr
-strcmp
 strcpy
 strdup
 strerror
 strftime
 strlen
-strncasecmp
-strncmp
 struct
 structs
 sts
@@ -2608,6 +2650,7 @@ th
 timehead
 timeline
 timername
+timeticks
 tiocm
 tios
 tmp
@@ -2769,6 +2812,7 @@ vid
 vin
 virsh
 virtualization
+vivo
 vo
 vod
 voltronic

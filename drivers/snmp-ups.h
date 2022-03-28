@@ -30,7 +30,6 @@
  */
 
 /* TODO list:
-- add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
 - optimize network flow by:
@@ -81,6 +80,12 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+#ifndef ONE_SEC
+/* This macro name disappeared from net-snmp sources and headers
+ * after v5.9 tag, and was replaced by explicit expression below: */
+# define ONE_SEC (1000L * 1000L)
+#endif
+
 /* Force numeric OIDs by disabling MIB loading */
 #ifdef DISABLE_MIB_LOADING
 # undef DISABLE_MIB_LOADING
@@ -91,6 +96,7 @@
 #define DEFAULT_POLLFREQ          30   /* in seconds */
 #define DEFAULT_NETSNMP_RETRIES   5
 #define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
+#define DEFAULT_SEMISTATICFREQ    10   /* in snmpwalk update cycles */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -109,10 +115,34 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+#ifndef WITH_SNMP_LKP_FUN
+/* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
+ * all corners of the codebase, e.g. not by DMF. So at least until that
+ * is fixed, (TODO) we enable those bits of code only optionally during
+ * a build for particular usage. Conversely, experimenters can define
+ * this macro to a specific value while building the codebase and see
+ * what happens under different conditions ;)
+ */
+# if (defined WITH_DMFMIB) && (WITH_DMFMIB != 0)
+#  define WITH_SNMP_LKP_FUN 0
+# else
+#  define WITH_SNMP_LKP_FUN 1
+# endif
+#endif
+
+#ifndef WITH_SNMP_LKP_FUN_DUMMY
+# define WITH_SNMP_LKP_FUN_DUMMY 0
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
+#if WITH_SNMP_LKP_FUN
+/* FIXME: Currently we do not have a way to provide custom C code
+ * via DMF - keep old approach until we get the ability, e.g. by
+ * requiring a LUA implementation to be passed alongside C lookups.
+ */
 /*
  * Currently there are a few cases using a "fun_vp2s" type of lookup
  * function, while the "nuf_s2l" type was added for completeness but
@@ -124,6 +154,7 @@ typedef struct {
  */
 	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
 	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
+#endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -149,6 +180,8 @@ typedef struct {
 	                           * NOTE that some *-mib.c mappings can specify
 	                           * a zero in this field... better fix that in
 	                           * favor of explicit values with a meaning!
+	                           * Current code treats such zero values as
+	                           * "OK if avail, otherwise discarded".
 	                           * NOTE: With C99+ a "long" is guaranteed to be
 	                           * at least 4 bytes; consider "unsigned long long"
 	                           * when/if we get more than 32 flag values.
@@ -156,7 +189,7 @@ typedef struct {
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-/* "flags" bits 0..8 (and 9 reserved for DMF) */
+/* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
 										 * internal to snmp driver */
 #define SU_FLAG_STATIC		(1UL << 1)	/* retrieve info only once. */
@@ -168,53 +201,46 @@ typedef struct {
 #define SU_FLAG_UNIQUE		(1UL << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-/* Free slot
+/* Note: older releases defined the following flag, but removed it by 2.7.5:
  * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
-#define SU_OUTLET			(1UL << 7)	/* outlet template definition */
+#define SU_FLAG_ZEROINVALID	(1UL << 6)	/* Invalid if "0" value */
+#define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
+
+#define SU_FLAG_SEMI_STATIC	(1UL << 9)	/* Refresh this entry once in several walks
+                                      	 * (for R/W values user can set on device,
+                                      	 * like descriptions or contacts) */
+
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
  * Otherwise, the driver will try to determine it by itself...
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
-/* Reserved slot (1UL << 9) -- to import from DMF branch codebase */
-
-/* status string components
- * FIXME: these should be removed, since there is no added value.
- * Ie, this can be guessed from info->type! */
-
-/* "flags" value 0, or bits 8..9, or "8 and 9" */
-#define SU_STATUS_PWR		(0UL << 8)	/* indicates power status element */
-#define SU_STATUS_BATT		(1UL << 8)	/* indicates battery status element */
-#define SU_STATUS_CAL		(2UL << 8)	/* indicates calibration status element */
-#define SU_STATUS_RB		(3UL << 8)	/* indicates replace battery status element */
-#define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
-#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 8) & 7UL)
 
 /* "flags" bit 10 */
 #define SU_OUTLET_GROUP		(1UL << 10)	/* outlet group template definition */
+#define SU_OUTLET			(1UL << 11)	/* outlet template definition */
 
 /* Phase specific data */
 /* "flags" bits 12..17 */
-#define SU_PHASES		(0x0000003F << 12)
-#define SU_INPHASES		(0x00000003 << 12)
-#define SU_INPUT_1		(1UL << 12)	/* only if 1 input phase */
-#define SU_INPUT_3		(1UL << 13)	/* only if 3 input phases */
-#define SU_OUTPHASES	(0x00000003 << 14)
-#define SU_OUTPUT_1		(1UL << 14)	/* only if 1 output phase */
-#define SU_OUTPUT_3		(1UL << 15)	/* only if 3 output phases */
-#define SU_BYPPHASES	(0x00000003 << 16)
-#define SU_BYPASS_1		(1UL << 16)	/* only if 1 bypass phase */
-#define SU_BYPASS_3		(1UL << 17)	/* only if 3 bypass phases */
+#define SU_PHASES			(0x0000003F << 12)
+#define SU_INPHASES			(0x00000003 << 12)
+#define SU_INPUT_1			(1UL << 12)	/* only if 1 input phase */
+#define SU_INPUT_3			(1UL << 13)	/* only if 3 input phases */
+#define SU_OUTPHASES		(0x00000003 << 14)
+#define SU_OUTPUT_1			(1UL << 14)	/* only if 1 output phase */
+#define SU_OUTPUT_3			(1UL << 15)	/* only if 3 output phases */
+#define SU_BYPPHASES		(0x00000003 << 16)
+#define SU_BYPASS_1			(1UL << 16)	/* only if 1 bypass phase */
+#define SU_BYPASS_3			(1UL << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
 /* hints for su_ups_set, applicable only to rw vars */
-/* "flags" value 0, or bits 18..19, or "18 and 19" */
-#define SU_TYPE_INT			(0UL << 18)	/* cast to int when setting value */
-/* Free slot                (1UL << 18) */
-#define SU_TYPE_TIME		(2UL << 18)	/* cast to int */
-#define SU_TYPE_CMD			(3UL << 18)	/* instant command */
+/* "flags" bits 18..20 */
+#define SU_TYPE_INT			(1UL << 18)	/* cast to int when setting value */
+#define SU_TYPE_TIME		(1UL << 19)	/* cast to int */
+#define SU_TYPE_CMD			(1UL << 20)	/* instant command */
 /* The following helper macro is used like:
  *   if (SU_TYPE(su_info_p) == SU_TYPE_CMD) { ... }
  */
@@ -225,20 +251,40 @@ typedef struct {
  * in the formatting string. This is useful when considering daisychain with
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
-/* "flags" bits 19..20, and 20 again */
-#define SU_TYPE_DAISY_1		(1UL << 19)	/* Daisychain index is the 1st specifier */
-#define SU_TYPE_DAISY_2		(2UL << 19)	/* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY(t)	((t)->flags & (7UL << 19))
-#define SU_DAISY			(2UL << 19)	/* Daisychain template definition */
+/* "flags" bits 21..23 (and 24 reserved for DMF) */
+#define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the SU_TYPE_DAISY_{1,2,MASTER_ONLY} but not SU_DAISY */
+#define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
+/* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */
+#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
-/* "flags" bits 20..21 */
-#define SU_FLAG_ZEROINVALID	(1UL << 20)	/* Invalid if "0" value */
-#define SU_FLAG_NAINVALID	(1UL << 21)	/* Invalid if "N/A" value */
+/* Free slot: (1UL << 25) */
 
+#define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
+
+/* Reserved slot -- to import from DMF branch codebase:
+//#define SU_FLAG_FUNCTION	(1UL << 27)
+*/
+
+/* status string components
+ * FIXME: these should be removed, since there is no added value.
+ * Ie, this can be guessed from info->type! */
+
+/* "flags" bits 28..31 */
+#define SU_STATUS_PWR		(1UL << 28)	/* indicates power status element */
+#define SU_STATUS_BATT		(1UL << 29)	/* indicates battery status element */
+#define SU_STATUS_CAL		(1UL << 30)	/* indicates calibration status element */
+#define SU_STATUS_RB		(1UL << 31)	/* indicates replace battery status element */
+#define SU_STATUS_NUM_ELEM	4			/* Obsolete? No references found in codebase */
+#define SU_STATUS_INDEX(t)	(((unsigned long)(t) >> 28) & 15UL)
+
+/* Despite similar names, definitons below are not among the bit-flags ;) */
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
 #define SU_VAR_TIMEOUT		"snmp_timeout"
+#define SU_VAR_SEMISTATICFREQ	"semistaticfreq"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -333,6 +379,17 @@ extern info_lkp_t su_convert_to_iso_date_info[];
 /* Name the mapping location in that array for consumers to reference */
 #define FUNMAP_USDATE_TO_ISODATE 0
 
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(void *raw_snmp_value);
+
+/* Temperature handling, to convert back to Celsius (NUT standard) */
+extern int temperature_unit;
+
+#define TEMPERATURE_UNKNOWN    0
+#define TEMPERATURE_CELSIUS    1
+#define TEMPERATURE_KELVIN     2
+#define TEMPERATURE_FAHRENHEIT 3
+
 /*****************************************************
  * End of Subdrivers shared helpers functions
  *****************************************************/
@@ -350,6 +407,7 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
+extern int semistaticfreq; /* semistatic entry update frequency */
 
 /* pointer to the Snmp2Nut lookup table */
 extern mib2nut_info_t *mib2nut_info;

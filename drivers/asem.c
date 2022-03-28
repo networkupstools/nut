@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B

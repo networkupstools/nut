@@ -241,6 +241,8 @@ input: Incoming line/power information
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
                                 phases real power (W)             | 300
+| input.realpower.nominal     | Nominal sum value of all (ePDU)
+                                phases real power (W)             | 850
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
@@ -632,6 +634,8 @@ Some specific data to outlet groups exists:
 |=================================================================================
 | Name                           | Description                    | Example value
 | outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
+| outlet.group.n.color           | Color-coding of the outlets
+                                   in this group (OPAQUE)         | yellow
 | outlet.group.n.count           | Number of outlets in the group | 12
 | outlet.group.n.phase           | Electrical phase to which the
                                    physical outlet group (Gang) is

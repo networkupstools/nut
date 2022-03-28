@@ -44,8 +44,11 @@ NUT network protocol, over the time:
 |1.1              |>= 1.5.0    |Original protocol (without old commands)
 .2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENTS" and "NETVER" commands
                                |Add ranges of values for writable variables
-.2+|1.3        .2+|>= 2.7.5    |Add "cmdparam" to "INSTCMD"
+.2+|1.3        .2+|>= 2.8.0    |Add "cmdparam" to "INSTCMD"
                                |Add "TRACKING" commands (GET, SET)
+                               |Add "PRIMARY" as alias to older "MASTER"
+                               |    (implementation tested to be backwards
+                               |    compatible in `upsd` and `upsmon`)
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
@@ -489,8 +492,11 @@ NOTE: You probably shouldn't send this command unless you are upsmon,
 or a upsmon replacement.
 
 
-MASTER
-------
+PRIMARY (since NUT 2.8.0) or MASTER (deprecated)
+------------------------------------------------
+
+NOTE: This command was renamed in NUT 2.8.0 to "PRIMARY" with the older
+name "MASTER" kept as deprecated alias for compatibility.
 
 Form:
 
@@ -498,18 +504,25 @@ Form:
 
 Response:
 
-	OK	(upon success)
+	OK MASTER-GRANTED	(upon success)
+
+Form:
+
+	PRIMARY <upsname>
+
+Response:
+
+	OK PRIMARY-GRANTED	(upon success)
 
 or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon primary" in upsd.users
 
+NOTE: Previously documented response was just `OK` -- clients checking
+that server reply *starts with* that keyword would handle all cases.
+
 This function doesn't do much by itself.  It is used by upsmon to make
 sure that primary-mode functions like FSD are available if necessary.
-
-NOTE: This command will be eventually renamed to "PRIMARY" with the older
-name "MASTER" kept as deprecated alias for compatibility; a protocol bump
-or special backwards-compatibility handling may be needed for that however.
 
 
 FSD

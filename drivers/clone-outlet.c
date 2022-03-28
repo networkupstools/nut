@@ -26,7 +26,7 @@
 #include <sys/un.h>
 
 #define DRIVER_NAME	"clone outlet UPS Driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -124,7 +124,7 @@ static int parse_args(size_t numargs, char **arg)
 		}
 
 		if (!strcasecmp(arg[1], prefix.status)) {
-			outlet.status = strncasecmp(arg[2], "off", 3);
+			outlet.status = strcasecmp(arg[2], "off");
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {
