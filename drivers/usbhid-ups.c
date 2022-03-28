@@ -1644,7 +1644,7 @@ static void ups_status_set(void)
 				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
 				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
 				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
-				  __func__, ups->upsname)
+				__func__, upsname);
 			}
 			/* if we're calibrating */
 			status_set("OL");	/* on line */
