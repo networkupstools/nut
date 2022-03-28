@@ -194,9 +194,10 @@ if [ -z "$CI_OS_NAME" ]; then
         "$OS_FAMILY-$OS_DISTRO" \
         "`grep = /etc/os-release 2>/dev/null`" \
         "`cat /etc/release 2>/dev/null`" \
-        "`uname -o`" \
-        "`uname -s -r -v`" \
+        "`uname -o 2>/dev/null`" \
+        "`uname -s -r -v 2>/dev/null`" \
         "`uname -a`" \
+        "`uname`" \
     ; do
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
