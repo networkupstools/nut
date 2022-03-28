@@ -1072,6 +1072,12 @@ void upsdrv_initups(void)
 	if (testvar("interruptonly")) {
 		interrupt_only = 1;
 	}
+
+	/* Activate Cyberpower tweaks */
+	if (testvar("onlinedischarge")) {
+		onlinedischarge = 1;
+	}
+
 	val = getval("interruptsize");
 	if (val) {
 		int ipv = atoi(val);
