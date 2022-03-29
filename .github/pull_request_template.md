@@ -45,7 +45,7 @@
   (several vendors do use same interface chips for unrelated protocols).
 
 - [ ] For new USB devices, built and committed the changes for the
-  `scripts/upower/95-upower-hid.rules` file
+  `scripts/upower/95-upower-hid.hwdb` file
 
 - [ ] Proposed NUT data mapping is aligned with existing `docs/nut-names.txt`
   file. If the device exposes useful data points not listed in the file, the
