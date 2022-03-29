@@ -194,9 +194,10 @@ if [ -z "$CI_OS_NAME" ]; then
         "$OS_FAMILY-$OS_DISTRO" \
         "`grep = /etc/os-release 2>/dev/null`" \
         "`cat /etc/release 2>/dev/null`" \
-        "`uname -o`" \
-        "`uname -s -r -v`" \
+        "`uname -o 2>/dev/null`" \
+        "`uname -s -r -v 2>/dev/null`" \
         "`uname -a`" \
+        "`uname`" \
     ; do
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
@@ -204,6 +205,10 @@ if [ -z "$CI_OS_NAME" ]; then
     case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
+        *openbsd*)
+            CI_OS_NAME="openbsd" ;;
+        *netbsd*)
+            CI_OS_NAME="netbsd" ;;
         *debian*|*ubuntu*)
             CI_OS_NAME="debian" ;;
         *centos*|*fedora*|*redhat*|*rhel*)

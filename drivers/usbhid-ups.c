@@ -149,6 +149,13 @@ bool_t use_interrupt_pipe = FALSE;
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
+/**
+ * CyberPower UT series sometime need a bit of help deciding their online status.
+ * This quirk is to enable the special handling of OL & DISCHRG at the same time
+ * as being OB (on battery power/no mains power). Enabled by device config flag.
+ */
+static int onlinedischarge = 0;
+
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const HIDData_t *hiddata);
@@ -789,6 +796,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
+	addvar(VAR_FLAG, "onlinedischarge",
+		"Set to treat discharging while online as being offline");
+
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1062,6 +1072,12 @@ void upsdrv_initups(void)
 	if (testvar("interruptonly")) {
 		interrupt_only = 1;
 	}
+
+	/* Activate Cyberpower tweaks */
+	if (testvar("onlinedischarge")) {
+		onlinedischarge = 1;
+	}
+
 	val = getval("interruptsize");
 	if (val) {
 		int ipv = atoi(val);
@@ -1617,10 +1633,25 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
-	if (ups_status & STATUS(ONLINE)) {
-		status_set("OL");		/* on line */
-	} else {
+
+	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
+	} else if ((ups_status & STATUS(DISCHRG))) {
+			/* if online */
+		if (onlinedischarge) {
+			/* if we treat OL+DISCHRG as being offline */
+			status_set("OB");	/* on battery */
+		} else {
+			if (!(ups_status & STATUS(CAL))) {
+				/* if in OL+DISCHRG unknowingly, warn user */
+				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
+				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
+				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
+				__func__, upsname);
+			}
+			/* if we're calibrating */
+			status_set("OL");	/* on line */
+		}
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {

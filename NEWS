@@ -7,6 +7,9 @@ control history for "live" codebase.
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
+NOTE: Earlier discussions (mailing list threads, GitHub issues, etc.) could
+refer to this change set (too long in the making) as NUT 2.7.5.
+
  - New (optional) keywords for configuration files were added,
    so existing NUT 2.7.x builds would not accept them if some
    deployments switch versions back and forth -- due to this,
@@ -169,6 +172,8 @@ Release notes for NUT 2.8.0 - what's new since 2.7.4:
      subdriver rather than polluting the main code with UPS specific
      exceptions, and applied fixes for known mistakes in (some releases
      of firmware for) CyberPower CPS*EPFCLCD [issue #439, PR #1245]
+   * added `onlinedischarge` option for UPSes that report `OL+DISCHRG`
+     when wall power is lost [PR #811]
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
    * Liebert GXT4 USB VID:PID [10AF:0000]
