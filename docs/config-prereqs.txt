@@ -412,9 +412,6 @@ networked repository (4.2.x vs 4.9.x)
 :; pkg_add \
     gd
 
-# Need to find proper package name and/or mirror for this:
-:; pkg_add clang
-
 :; pkg_add \
     cppunit \
     openssl nss \
