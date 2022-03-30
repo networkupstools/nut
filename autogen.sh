@@ -52,6 +52,7 @@ then
 			touch scripts/augeas/nutupsconf.aug.in scripts/augeas/nutupsconf.aug.in.AUTOGEN_WITHOUT
 		else
 			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true   and re-run" >&2
+			echo "or better yet,    export PYTHON=python-x.y   and re-run" >&2
 			exit 1
 		fi
 	fi
