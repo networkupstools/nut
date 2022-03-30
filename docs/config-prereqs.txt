@@ -467,6 +467,124 @@ scripts), better use this routine to test the config/build:
 Note the lack of `pkg-config` also precludes libcppunit tests, although they
 also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
+NetBSD 9.2
+~~~~~~~~~~
+
+Instructions below assume that `pkgin` tool (pkg-src component to
+"install binary packages") is present on the system. Text below
+was prepared with a VM where "everything" was installed from the
+ISO image, including compilers and X11. It is possible that some
+packages provided this way differ from those served by `pkgin`,
+or on the contrary, that the list of suggested tool installation
+below would not include something a bare-minimum system would
+require to build NUT.
+
+Note that `PATH` for builds on NetBSD should include `local` and
+`pkg`; the default after installation of the test system was:
+
+----
+:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
+:; export PATH
+----
+
+NOTE: You may want to reference `ccache` even before all that,
+as detailed below:
+
+----
+:; PATH="/usr/lib/ccache:$PATH"
+:; export PATH
+----
+
+To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+base installation. It is not required for "legacy" builds arranged by just
+`autogen.sh` and `configure` scripts.
+
+----
+:; pkgin install \
+    git python27 python39 curl \
+    make gmake autoconf automake libltdl libtool \
+    cppcheck \
+    pkgconf \
+    gcc7 clang
+
+;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pkgin install \
+    aspell aspell-en
+
+# For man-page doc types, footprint on this platform is moderate:
+:; pkgin install \
+    asciidoc
+
+# For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
+:; pkgin install \
+    source-highlight py39-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkgin install \
+    gd openmp
+
+:; pkgin install \
+    cppunit \
+    openssl nss \
+    augeas \
+    libusb libusb1 \
+    neon \
+    net-snmp \
+    avahi
+
+# Select a LUA-5.1 (or possibly 5.2?) version
+:; pkgin install \
+    lua51
+
+:; pkgin install \
+    bash dash ast-ksh oksh
+----
+
+NOTE: 9TBD) On NetBSD 9.2 this package complains that it requires
+OS ABI 9.0, or that `CHECK_OSABI=no` is set in `pkg_install.conf`.
+Such file was not found in the test system...
++
+----
+:; pkgin install \
+    openipmi
+----
+
+Recommended: For compatibility with common setups on other operating
+systems, can add dash-number suffixed symlinks to compiler tools (e.g.
+`gcc-7` beside the `gcc` installed by package) near the original
+binaries and into `/usr/lib/ccache`:
+----
+:; ( cd /usr/bin && for TOOL in cpp gcc g++ ; do \
+        ln -s "$TOOL" "$TOOL-7" ; \
+     done )
+
+# Note that the one delivered binary is `clang-13` and many (unnumbered)
+# symlinks to it. For NUT CI style of support for builds with many
+# compilers, complete the known numbers:
+:; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
+        ln -s clang-13 "$TOOL-13" ; \
+     done )
+
+:; pkgin install ccache
+:; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
+        for TOOL in cpp gcc g++ clang ; do \
+            for VER in "" "-7" ; do \
+                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+            done ; \
+        done ; \
+        for TOOL in clang clang++ clang-cpp ; do \
+            for VER in "" "-13" ; do \
+                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+            done ; \
+        done ; \
+   )
+----
+
+NOTE: For Jenkins agents, also need to `pkgin install openjdk11` (will be
+in `JAVA_HOME=/usr/pkg/java/openjdk11`).
+
 OpenIndiana 2021.10
 ~~~~~~~~~~~~~~~~~~~
 
