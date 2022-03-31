@@ -1401,6 +1401,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+            else
+                echo "(and no build scenarios had failed)" >&2
             fi
 
             echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
