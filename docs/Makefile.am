@@ -87,7 +87,7 @@ doc: @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
-docs: pdf html-single html-chunked man
+docs: pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
@@ -130,7 +130,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
 # Note: usually the results from man-page check will be reported twice:
 # once as a SUBDIRS child makefile, and once via DOC_CHECK_LIST expansion
-check-man:
+# Note: default `make all` in the man directory caters to drivers etc.
+# chosen during configure script execution. The "all-man" and "all-html"
+# rules build everything documented.
+check-man all-man man-man all-html html-man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
 
 man:

@@ -735,7 +735,11 @@ HTML_MANS = \
 
 all:
 
-html-man: $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS) index.html
+
+# Have a way to build all man pages, not just those that fit currently
+# configured drivers, daemons, developer aspect, etc.
+all-man man-man: $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
