@@ -23,6 +23,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include "nut_stdint.h"
 #include <ctype.h>
 
 static ups_t	*upstable = NULL;
@@ -158,7 +159,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			maxage = atoi(arg[1]);
 			return 1;
 		}
@@ -170,7 +171,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			tracking_delay = atoi(arg[1]);
 			return 1;
 		}
@@ -182,7 +183,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* ALLOW_NO_DEVICE <seconds> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
 			return 1;
 		}
@@ -195,7 +196,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 			maxconn = (nfds_t)atol(arg[1]);
 			return 1;
@@ -237,7 +238,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			certrequest = atoi(arg[1]);
 			return 1;
 		}
