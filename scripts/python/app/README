@@ -5,4 +5,16 @@ This application (variants written in Python 2 + GTK2, and in Python 3 + Qt5)
 uses the python-pynut class (available at http://www.lestat.st), delivered
 as PyNUT in the NUT source tree.
 
-David Goncalves <david@lestat.st>
+Refer to your OS packaging and/or install custom modules with `pip` (or `pip3`)
+to get required dependencies (GTK + GObject or QT5).
+
+For quick tests (e.g. during development), you can run the clients like this:
+````
+:; PYTHONPATH=../module/ python2 ./NUT-Monitor-py2gtk2.in
+````
+or:
+````
+:; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt5.in
+````
+
+Originally authored by David Goncalves <david@lestat.st>
