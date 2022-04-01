@@ -151,11 +151,17 @@ dnl # files do cause grief to picky compiler settings (more so from third
 dnl # party packages shipped via /usr/local/... namespace):
     AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
 dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
-        CFLAGS="-isystem /usr/local/include $CFLAGS"
+        AS_IF([test -d /usr/local/include],
+            [CFLAGS="-isystem /usr/local/include $CFLAGS"])
+        AS_IF([test -d /usr/pkg/include],
+            [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
     ])
     AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
 dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
-        CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"
+        AS_IF([test -d /usr/local/include],
+            [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
+        AS_IF([test -d /usr/pkg/include],
+            [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
     ])
 
 dnl # Default to avoid noisy warnings on older compilers
