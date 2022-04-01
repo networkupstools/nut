@@ -5,9 +5,9 @@ EXTRA_DIST = README \
 			 app/ui/dialog1.ui \
 			 app/ui/dialog2.ui \
 			 app/ui/window1.ui \
-			 app/NUT-Monitor.in \
+			 app/NUT-Monitor-py3qt5.in \
 			 app/nut-monitor.appdata.xml \
-			 app/nut-monitor.desktop \
+			 app/nut-monitor-py3qt5.desktop \
 			 app/icons/48x48/nut-monitor.png \
 			 app/icons/64x64/nut-monitor.png \
 			 app/icons/256x256/nut-monitor.png \

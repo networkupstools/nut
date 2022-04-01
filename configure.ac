@@ -2895,7 +2895,7 @@ AC_MSG_NOTICE([Generating templated script files that should be marked executabl
 m4_foreach_w([SCRIPTFILE], [
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall
- scripts/python/app/NUT-Monitor
+ scripts/python/app/NUT-Monitor-py3qt5
  scripts/augeas/gen-nutupsconf-aug.py
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
