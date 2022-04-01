@@ -277,13 +277,13 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
         """
 
         if self.__debug :
-            print( "[DEBUG] "PRIMARY called..." )
+            print( "[DEBUG] PRIMARY called..." )
 
         self.__srv_handler.write( ("PRIMARY %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
         if ( result != b"OK PRIMARY-GRANTED\n" ) :
             if self.__debug :
-                print( "[DEBUG] Retrying: "MASTER called..." )
+                print( "[DEBUG] Retrying: MASTER called..." )
             self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
             result = self.__srv_handler.read_until( b"\n" )
             if ( result != b"OK MASTER-GRANTED\n" ) :
