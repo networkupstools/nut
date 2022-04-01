@@ -17,4 +17,9 @@ or:
 :; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt5.in
 ````
 
+For localized UI, also `export LANG=fr_FR.UTF-8` or `export LANG=ru_RU.UTF-8`
+(see and feel welcome to improve the choice of languages in `locale` directory).
+
+NOTE: Currently localization only works for Python 2 client, PRs are welcome.
+
 Originally authored by David Goncalves <david@lestat.st>
