@@ -1,10 +1,10 @@
 # Network UPS Tools: data/html
 
 EXTRA_DIST = README \
-			 app/gui-1.3.glade \
-			 app/NUT-Monitor.in \
+			 app/ui/gui-1.3.glade \
+			 app/NUT-Monitor-py2gtk2.in \
 			 app/nut-monitor.appdata.xml \
-			 app/nut-monitor.desktop \
+			 app/nut-monitor-py2gtk2.desktop \
 			 app/icons/48x48/nut-monitor.png \
 			 app/icons/64x64/nut-monitor.png \
 			 app/icons/256x256/nut-monitor.png \
