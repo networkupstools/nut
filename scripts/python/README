@@ -19,7 +19,8 @@ To install the PyNUT module on Debian/Ubuntu, copy it to:
 
 This directory also contains test_nutclient.py, which is a PyNUT test program.
 For this to be fully functional, you will need to adapt the login, password and
-upsname to fit your configuration.
+upsname to fit your configuration. A NUT data server should be running for the
+test program to verify connection and protocol support.
 
 
 * "app": this directory contains the NUT-Monitor application, that uses the
