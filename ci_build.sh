@@ -18,6 +18,29 @@ set -e
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
+    fightwarn-all)
+        # This recipe allows to test with different (default-named)
+        # compiler suites if available. Primary goal is to see whether
+        # everything is building ok on a given platform, with one shot.
+        TRIED_BUILD=false
+        if (command -v gcc) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-gcc "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-gcc: compiler not found" >&2
+        fi
+        if (command -v clang) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-clang "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
+        fi
+        if ! $TRIED_BUILD ; then
+            echo "FAILED to run: no default-named compilers were found" >&2
+            exit 1
+        fi
+        exit 0
+        ;;
     fightwarn-gcc)
         CC="gcc"
         CXX="g++"
@@ -1401,6 +1424,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+            else
+                echo "(and no build scenarios had failed)" >&2
             fi
 
             echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2

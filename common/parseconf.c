@@ -89,6 +89,7 @@
 
 #include "parseconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 /* possible states */
 
@@ -241,7 +242,7 @@ static int findwordstart(PCONF_CTX_t *ctx)
 		return STATE_FINDEOL;
 
 	/* space = not in a word yet, so loop back */
-	if (isspace(ctx->ch))
+	if (isspace((size_t)ctx->ch))
 		return STATE_FINDWORDSTART;
 
 	/* \ = literal = accept the next char blindly */
@@ -341,7 +342,7 @@ static int collect(PCONF_CTX_t *ctx)
 	}
 
 	/* space means the word is done */
-	if (isspace(ctx->ch)) {
+	if (isspace((size_t)ctx->ch)) {
 		endofword(ctx);
 
 		return STATE_FINDWORDSTART;

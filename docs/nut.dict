@@ -1,5 +1,6 @@
-personal_ws-1.1 en 2870 utf-8
+personal_ws-1.1 en 2884 utf-8
 AAS
+ABI
 ACFAIL
 ACFREQ
 ACK
@@ -10,9 +11,9 @@ ACrms
 ADDR
 ADDRCONFIG
 ADDRINFO
+ADELSYSTEM
 ADK
 ADKK
-ADELSYSTEM
 AEC
 AEF
 AEG
@@ -57,7 +58,6 @@ AlmCPol
 AlmEnbl
 Amplon
 Ampère
-Amplon
 Andreas
 Andreassen
 Andrzej
@@ -747,6 +747,7 @@ OMNIVSINT
 ONF
 ONV
 OOM
+OSABI
 OSF
 OSs
 OUTPUTV
@@ -1236,6 +1237,7 @@ VER
 VERFW
 VFI
 VIB
+VM
 VMIN
 VMM
 VMware
@@ -1390,6 +1392,7 @@ ascii
 asciidoc
 asem
 aspell
+ast
 async
 atcl
 ats
@@ -2246,6 +2249,7 @@ offtimedays
 oftd
 oids
 ok
+oksh
 ol
 oldmac
 oldmge
@@ -2263,8 +2267,10 @@ ontimedays
 ontiniedays
 ooce
 openSUSE
+openipmi
 openjdk
 openlog
+openmp
 opensolaris
 openssh
 openssl
@@ -2312,6 +2318,7 @@ pinouts
 pkg
 pkgconf
 pkgconfig
+pkgin
 plaintext
 plugin
 plugnplay

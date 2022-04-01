@@ -118,7 +118,7 @@ char	*str_ltrim_space(char *string)
 
 	while (
 		*string != '\0' &&
-		isspace(*string)
+		isspace((size_t)*string)
 	)
 		memmove(string, string + 1, strlen(string));
 
@@ -139,7 +139,7 @@ char	*str_rtrim_space(char *string)
 
 	while (
 		ptr >= string &&
-		isspace(*ptr)
+		isspace((size_t)*ptr)
 	)
 		*ptr-- = '\0';
 
@@ -438,7 +438,7 @@ int	str_to_long_strict(const char *string, long *number, const int base)
 	if (
 		string == NULL ||
 		*string == '\0' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;
@@ -504,7 +504,7 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 		*string == '\0' ||
 		*string == '+' ||
 		*string == '-' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;
@@ -568,7 +568,7 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	if (
 		string == NULL ||
 		*string == '\0' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;

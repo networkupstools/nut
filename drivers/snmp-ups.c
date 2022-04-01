@@ -1222,7 +1222,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 		int hex = 0, x;
 		unsigned char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
-			if (!(isprint(*cp) || isspace(*cp))) {
+			if (!(isprint((size_t)*cp) || isspace((size_t)*cp))) {
 				hex = 1;
 			}
 		}
