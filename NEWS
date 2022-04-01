@@ -155,6 +155,10 @@ refer to this change set (too long in the making) as NUT 2.7.5.
 
  - Added Russian translation for NUT-Monitor GUI client [PR #806]
 
+ - Separated NUT-Monitor UI into two applications, NUT-Monitor-py2gtk2 and
+   NUT-Monitor-py3qt5, suitable for two generations of Python ecosystem
+   with their great differences [PR #1310]
+
  - Various USB driver families: expanded device-matching with "device" in
    addition to "bus" and generic USB fields. This is needed to support
    multiple attached devices that seem identical by other fields (e.g.
