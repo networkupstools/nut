@@ -15,7 +15,11 @@ Changes from 2.7.4 to 2.8.0
   remain, please consider making pull requests for upstream NUT codebase
   to share the fixes consistently across the ecosystem. Also note that
   some new types of drivers (so package groups with unique dependencies)
-  could have appeared since your packaging was written (e.g. with modbus).
+  could have appeared since your packaging was written (e.g. with modbus),
+  as well as new features in systemd integration (`nut-driver@instances`
+  and the `nut-driver-enumerator` to manage their population), as well as
+  updated Python 2 and Python 3 support (again, maybe dictating different
+  package groups) as detailed below.
 
 - Due to changes needed to resolve build warnings, mostly about mismatching
   data types for some variables, some structure definitions and API signatures
