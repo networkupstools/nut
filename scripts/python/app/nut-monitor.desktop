@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=NUT Monitor
+Name[fr]=Moniteur NUT
+Comment=Network UPS Tools GUI client
+Comment[fr]=Client graphique pour NUT (Network UPS Tools)
+Comment[it]=Client grafico per NUT (Network UPS Tools)
+Categories=System;Monitor;HardwareSettings;Settings
+Exec=NUT-Monitor
+Icon=nut-monitor
+Terminal=false
+Type=Application
