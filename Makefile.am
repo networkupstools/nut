@@ -108,7 +108,14 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
-doc spellcheck-sortdict:
+# Note: the "all-docs" and "check-docs" targets may require tools not
+# found by `configure` script (and so avoided by conventional recipes)
+# such as PDF generators, so it should only be called at developer's
+# discretion, choice and risk. The "check-man" targets covers source
+# texts, man pages and HTML rendering of man pages, as enabled by tools.
+doc spellcheck-sortdict \
+all-docs check-docs \
+man all-man man-man check-man man-html all-html:
 	cd $(srcdir)/docs && $(MAKE) $@
 
 # This target adds syntax-checking for committed shell script files,
