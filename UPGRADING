@@ -89,6 +89,19 @@ Changes from 2.7.4 to 2.8.0
 
 - Python: scripts have been updated to work with Python 3 as well as 2.
 
+  * PyNUT module (protocol binding) supports both Python generations.
+
+  * NUT-Monitor (desktop UI client) got separated into two projects:
+    one with support for Python2 and GTK2, and another for Python3 and Qt5.
+    On operating systems that serve both environments, either of these
+    implementation should be usable. For distributions that deprecated
+    and removed Python2 support, it is a point to consider in NUT packages
+    and their build-time and installation dependencies.
+    The historic filenames for desktop integration (`NUT-Monitor` script
+    and `nut-monitor.desktop`) are still delivered, but now cover a wrapper
+    script which detects the environment capabilities and launches the best
+    suitable UI implementation (if both are available).
+
 - apcsmart: updates to CS "hack" (see docs/man/apcsmart.txt for details)
 
 - upsdebugx(): added `[D#]` prefix to log entries with level > 0
