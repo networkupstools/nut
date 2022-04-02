@@ -1,1 +1,7 @@
+# Retain the names for possible publication symlinks:
 /NUT-Monitor
+/nut-monitor.desktop
+
+# Final scripts generated from .in templates:
+/NUT-Monitor-py2gtk2
+/NUT-Monitor-py3qt5
