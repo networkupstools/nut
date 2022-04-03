@@ -655,7 +655,7 @@ For extra compiler coverage, we can install a large selection of versions:
 # As of this writing, clang-13 refused to link (claiming issues with
 # --fuse-ld which was never specified) on OI; maybe later it will:
 :; pkg install \
-    developer/clang-13 runtime/clang-13 \
+    developer/clang-13 runtime/clang-13
 
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
@@ -666,7 +666,7 @@ For extra compiler coverage, we can install a large selection of versions:
 
 # If /usr/lib/ccache/ symlinks to compilers do not appear after package
 # installation, or if you had to add links like above, call the service:
-:; svcadm refresh ccache-update-symlinks
+:; svcadm restart ccache-update-symlinks
 ----
 
 We can also include a `gcc-4.4.4-il` (used to build the illumos OS ecosystems,
@@ -684,7 +684,7 @@ stage:
    done)
 
 # If /usr/lib/ccache/ symlinks to these do not appear, call the service:
-:; svcadm refresh ccache-update-symlinks
+:; svcadm restart ccache-update-symlinks
 ----
 
 OI currently also does not build cppunit-based tests well, at least
