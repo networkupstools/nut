@@ -282,6 +282,10 @@ refer to this change set (too long in the making) as NUT 2.7.5.
 
  - upsrw: display the variable type beside ENUM / RANGE
 
+ - Added `PROTVER` as alias to `NETVER` to report the protocol version in use.
+   Note that NUT codebase itself does not use this value and handles commands
+   and reported errors individually [issue #1347]
+
  - Implement status tracking for instant commands (instcmd) and variables
    settings (setvar): this allows to get the actual execution status from the
    driver, and is available in libraries and upscmd / upsrw [PR #659]

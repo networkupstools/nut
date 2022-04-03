@@ -50,6 +50,7 @@ static struct {
 } netcmds[] = {
 	{ "VER",	net_ver,	0		},
 	{ "NETVER",	net_netver,	0		},
+	{ "PROTVER",	net_netver,	0		},	/* aliased since NUT 2.8.0 */
 	{ "HELP",	net_help,	0		},
 	{ "STARTTLS",	net_starttls,	0		},
 

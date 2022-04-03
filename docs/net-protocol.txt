@@ -49,6 +49,7 @@ NUT network protocol, over the time:
                                |Add "PRIMARY" as alias to older "MASTER"
                                |    (implementation tested to be backwards
                                |    compatible in `upsd` and `upsmon`)
+                               |Add "PROTVER" as alias to older "NETVER"
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
@@ -627,6 +628,7 @@ Other commands
 - HELP: lists the commands supported by this server
 - VER: shows the version of the server currently in use
 - NETVER: shows the version of the network protocol currently in use
+  (aliased as PROTVER since NUT v2.8.0, or formal protocol version 1.3)
 
 These three are not intended to be used directly by programs.  Humans can
 make use of this program by using telnet or netcat.  If you use
