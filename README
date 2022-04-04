@@ -508,7 +508,11 @@ The past stable trees were 1.0, 1.2, 1.4, 2.0, 2.2 and 2.4, with the
 latest stable tree designated 2.6.  The development trees were 1.1, 1.3,
 1.5, 2.1 and 2.3.  As of the 2.4 release, there is no real development
 branch anymore since the code is available through a revision control
-system (namely Subversion) and snapshots.
+system (namely Subversion) and snapshots.  Since 2.7 line of releases,
+sources are tracked in Git revision control system, with the project
+ecosystem being hosted on GitHub, and improvements or other contributions
+merged through common pull request approach and custom NUT CI testing
+on multiple platforms.
 
 Major release jumps are mostly due to large changes to the features
 list.  There have also been a number of architectural changes which
