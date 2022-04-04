@@ -65,7 +65,9 @@ NOTE: To build older releases, such as "vanilla" NUT 2.7.4, you may need to:
   generated `configure` script gets interpreted by it)
 
 * Generally you may have better results with GNU Make newer than 3.81
-  than with other make implementations
+  than with other make implementations; however, builds are regularly
+  tested by CI with Sun dmake and BSD make as well, so recipes should
+  not expect GNU-only syntax and constructs to work
 
 * For intensive rebuilds, `ccache` is recommended
 
