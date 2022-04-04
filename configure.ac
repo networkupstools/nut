@@ -12,7 +12,7 @@ dnl primarily for better messaging in the script itself.
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ.
 (command -v git >/dev/null 2>/dev/null) \
-&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]-signed' --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
 dnl Note: except for experiments, do not pass this into config.h - use
