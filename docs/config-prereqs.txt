@@ -97,12 +97,20 @@ source versions on both Debian 8 Jessie and Debian 11 Buster).
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     ccache time \
-    git python curl \
+    git python perl curl \
     make autoconf automake libltdl-dev libtool-bin libtool \
     valgrind \
     cppcheck \
     pkg-config \
     gcc g++ clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; apt-get install python2 python2.7 python-is-python2
+# and/or:
+#   :; apt-get install python3 python3.9
+# You can find a list of what is (pre-)installed with:
+#   :; dpkg -l | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
@@ -223,12 +231,20 @@ https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
 :; yum install \
     ccache time \
     file systemd-devel \
-    git python curl \
+    git python perl curl \
     make autoconf automake libtool-ltdl-devel libtool \
     valgrind \
     cppcheck \
     pkgconfig \
     gcc gcc-c++ clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; yum install python-2.7.5
+# and/or:
+#   :; yum install python3 python3-3.6.8
+# You can find a list of what is (pre-)installed with:
+#   :; rpm -qa | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; yum install \
@@ -294,12 +310,20 @@ below.
 
 ----
 :; pkg install \
-    git python curl \
+    git python perl5 curl \
     gmake autoconf automake autotools libltdl libtool \
     valgrind \
     cppcheck \
     pkgconf \
     gcc clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; pkg install python2 python27
+# and/or:
+#   :; pkg install python3 python37
+# You can find a list of what is (pre-)installed with:
+#   :; pkg info | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkg install \
@@ -400,6 +424,17 @@ networked repository (4.2.x vs 4.9.x)
     cppcheck \
     pkgconf \
     gcc clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; yum install python-2.7.15p0
+# and/or:
+#   :; yum install python-3.6.6p1
+# although you might succeed specifying shorter names and the packager
+# will offer a list of matching variants.
+# NOTE: "perl" is not currently a package, but seemingly part of base OS.
+# You can find a list of what is (pre-)installed with:
+#   :; pkg_info | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkg_add \
@@ -503,13 +538,15 @@ base installation. It is not required for "legacy" builds arranged by just
 
 ----
 :; pkgin install \
-    git python27 python39 curl \
+    git python27 python39 perl curl \
     make gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
     gcc7 clang
 
 ;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
+# You can find a list of what is (pre-)installed with:
+#   :; pkgin list | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkgin install \
@@ -544,7 +581,7 @@ base installation. It is not required for "legacy" builds arranged by just
     bash dash ast-ksh oksh
 ----
 
-NOTE: 9TBD) On NetBSD 9.2 this package complains that it requires
+NOTE: (TBD) On NetBSD 9.2 this package complains that it requires
 OS ABI 9.0, or that `CHECK_OSABI=no` is set in `pkg_install.conf`.
 Such file was not found in the test system...
 +
@@ -606,6 +643,20 @@ Typical tooling would include:
     valgrind \
     pkg-config \
     gnu-binutils developer/linker
+
+# NOTE: For python, some suitable version should be available since `pkg(5)`
+# tool is written in it. Similarly, many system tools are written in perl
+# so some version should be installed. You may specify additional variants
+# like this (numbers depending on default or additional packages of your
+# distro; recommended to group `pkg` calls with many packages at once to
+# save processing time for calculating a build strategy):
+#   :; pkg install runtime/python-27
+# and/or:
+#   :; pkg install runtime/python-37 runtime/python-35 runtime/python-39
+# Similarly for perl variants, e.g.:
+#   :; pkg install runtime/perl-522 runtime/perl-524 runtime/perl-534
+# You can find a list of what is available in remote repositories with:
+#   :; pkg info -r | grep -Ei 'perl|python'
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pkg install \
@@ -719,11 +770,19 @@ Note you may need not just the "Core" IPS package publisher, but also the
 :; pkg install \
     developer/build/autoconf developer/build/automake developer/build/libtool \
     build-essential ccache git developer/pkg-config \
+    runtime/perl \
     asciidoc \
     libgd
 
 :; pkg install \
     net-snmp
+
+# NOTE: For python, some suitable version should be available since `pkg(5)`
+# tool is written in it. You may specify an additional variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; pkg install runtime/python-37
+# You can find a list of what is available in remote repositories with:
+#   :; pkg info -r | grep -Ei 'perl|python'
 ----
 
 OmniOS lacks a pre-packaged libusb, however the binary build from contemporary

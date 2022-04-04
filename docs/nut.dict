@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2884 utf-8
+personal_ws-1.1 en 2885 utf-8
 AAS
 ABI
 ACFAIL
@@ -1672,6 +1672,7 @@ distros
 dl
 dll
 dlopen
+dmake
 dmesg
 dnf
 dnl
