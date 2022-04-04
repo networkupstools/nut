@@ -65,7 +65,7 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 2:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
