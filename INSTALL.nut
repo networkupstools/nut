@@ -52,7 +52,7 @@ long as you are consistent.
 The process for doing this varies from one system to the next, and
 explaining how to add users is beyond the scope of this document.
 
-For the purposes of this document, the user name and group name 
+For the purposes of this document, the user name and group name
 will be 'ups' and 'nut' respectively.
 
 Be sure the new user is a member of the new group!  If you forget to
@@ -87,7 +87,7 @@ docs/configure.txt or './configure --help' for all the available
 options.
 
 If you alter paths with additional switches, be sure to use those
-new paths while reading the rest of the steps.    
+new paths while reading the rest of the steps.
 
 Reference: <<Configure_options,Configure options>> from the
 User Manual.
@@ -100,7 +100,7 @@ Build the programs
 
 This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
-selected during <<Configuration,configuration>> step above. 
+selected during <<Configuration,configuration>> step above.
 
 
 Installation
@@ -175,7 +175,7 @@ permissions for the USB device, you may need to set up (operating
 system dependent) hotplugging scripts.  Sample scripts and
 information are provided in the scripts/hotplug and
 scripts/udev directories. For most users, the hotplugging scripts
-will be installed automatically by "make install". 
+will be installed automatically by "make install".
 
 (If you want to try if a driver works without setting up
 hotplugging, you can add the "-u root" option to upsd, upsmon, and
@@ -299,7 +299,7 @@ To install NUT as a package execute:
 Port
 ^^^^
 
-The port is located under +sysutils/nut+. 
+The port is located under +sysutils/nut+.
 Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
 To install it, use:
 
