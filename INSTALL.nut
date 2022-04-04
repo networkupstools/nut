@@ -1,11 +1,13 @@
 Installation instructions
 =========================
 
-This chapter describe the various methods for installing Network UPS Tools.
+This chapter describes the various methods for installing Network UPS Tools.
 
 Whenever it is possible, prefer <<Installing_packages, installing from packages>>.
 Packagers have done an excellent and hard work at improving NUT integration into
-their system.
+their system.  On the other hand, distributions and appliances tend to package
+"official releases" of projects such as NUT, and so do not deliver latest and
+greatest fixes, new drivers, bugs and other features.
 
 [[Installing_source]]
 Installing from source
@@ -15,6 +17,13 @@ These are the essential steps for compiling and installing this software.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
+
+The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+document suggests prerequisite packages with tools and dependencies
+available and needed to build and test as much as possible of NUT on
+numerous platforms, written from perspective of CI testing (if you
+are interested in getting updated drivers for a particular device,
+you might select a sub-set of those suggestions).
 
 [NOTE]
 .Keep in mind that...
