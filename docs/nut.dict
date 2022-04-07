@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2885 utf-8
+personal_ws-1.1 en 2898 utf-8
 AAS
 ABI
 ACFAIL
@@ -37,6 +37,8 @@ ATT
 ATTRS
 ATX
 ATs
+AUTOCOMMIT
+AUTOPUSH
 AVL
 AVR
 AVRLCD
@@ -289,6 +291,7 @@ EG
 EL
 ELCD
 EMI
+EMP
 ENDFOR
 ENV
 EOF
@@ -452,6 +455,7 @@ ID's
 IDEN
 IDentifiers
 IFBETWEEN
+IFF
 IFSUPP
 IGN
 IMG
@@ -750,6 +754,7 @@ OOM
 OSABI
 OSF
 OSs
+OUTDIR
 OUTPUTV
 OUTVOLT
 OV
@@ -832,6 +837,7 @@ PULS
 PV
 PWLv
 PWR
+PXG
 PaaS
 Pac
 Parisi
@@ -894,6 +900,7 @@ Priv
 Procomm
 ProductID
 Prynych
+Pulizzi
 PwrOut
 PyGTK
 PyNUT
@@ -934,6 +941,7 @@ README
 REDi
 REPLBATT
 REQSSL
+RESPIN
 RETPCT
 RK
 RMCARD
@@ -1662,6 +1670,7 @@ devscan
 dfl
 dhcp
 dialout
+difftool
 dipsw
 dir
 disp
@@ -2101,6 +2110,7 @@ mecer
 megatec
 memset
 merchantability
+mergetool
 metadata
 metasys
 methodOfFlowControl
@@ -2377,6 +2387,7 @@ prog
 prtconf
 psu
 pty
+pulizzi
 pw
 pwl
 pwmib
@@ -2515,6 +2526,7 @@ shutdowntime
 shutup
 si
 siemens
+sig
 sigaction
 sigmask
 signedness
