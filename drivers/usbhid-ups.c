@@ -659,7 +659,10 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
+	upsdebugx(3, "%s: using Path '%s'",
+		__func__,
+		(hidups_item->hidpath ? hidups_item->hidpath : "[NULL]")
+	);
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
