@@ -597,7 +597,6 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
