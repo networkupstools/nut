@@ -180,6 +180,10 @@ refer to this change set (too long in the making) as NUT 2.7.5.
      of firmware for) CyberPower CPS*EPFCLCD [issue #439, PR #1245]
    * added `onlinedischarge` option for UPSes that report `OL+DISCHRG`
      when wall power is lost [PR #811]
+   * changed detection of VendorID 0x06da handling of which is claimed
+     by Liebert/Phoenixtec HID historically, and MGE HID (for AEG PROTECT
+     NAS UPSes) since NUT 2.7.4, so that the higher-priority MGE subdriver
+     would not grab each and all of the devices exposing that ID [PR #1357]
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
    * Liebert GXT4 USB VID:PID [10AF:0000]
