@@ -60,13 +60,14 @@
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
+#include "nut_stdint.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 
 /* driver description structure */
@@ -908,7 +909,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send command */
 	for (p = command; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -922,7 +923,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send terminating string */
 	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);

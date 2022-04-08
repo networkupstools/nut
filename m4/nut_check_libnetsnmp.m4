@@ -164,6 +164,9 @@ oid * pProto = usmAES128PrivProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmDESPrivProtocol;
+#ifdef NETSNMP_DISABLE_DES
+#error "NETSNMP_DISABLE_DES is defined"
+#endif
 ],
 []
 			)],
@@ -179,6 +182,9 @@ oid * pProto = usmDESPrivProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC256SHA384AuthProtocol;
+#ifndef HAVE_EVP_SHA384
+#error "HAVE_EVP_SHA384 is NOT defined"
+#endif
 ],
 []
 			)],
@@ -194,6 +200,9 @@ oid * pProto = usmHMAC256SHA384AuthProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC384SHA512AuthProtocol;
+#ifndef HAVE_EVP_SHA384
+#error "HAVE_EVP_SHA384 is NOT defined"
+#endif
 ],
 []
 			)],
@@ -209,6 +218,9 @@ oid * pProto = usmHMAC384SHA512AuthProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMAC192SHA256AuthProtocol;
+#ifndef HAVE_EVP_SHA224
+#error "HAVE_EVP_SHA224 is NOT defined"
+#endif
 ],
 []
 			)],
@@ -224,6 +236,9 @@ oid * pProto = usmHMAC192SHA256AuthProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAES192PrivProtocol;
+#ifndef NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#error "NETSNMP_DRAFT_BLUMENTHAL_AES_04 is NOT defined"
+#endif
 ],
 []
 			)],
@@ -239,6 +254,9 @@ oid * pProto = usmAES192PrivProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmAES256PrivProtocol;
+#ifndef NETSNMP_DRAFT_BLUMENTHAL_AES_04
+#error "NETSNMP_DRAFT_BLUMENTHAL_AES_04 is NOT defined"
+#endif
 ],
 []
 			)],
@@ -254,6 +272,9 @@ oid * pProto = usmAES256PrivProtocol;
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 oid * pProto = usmHMACMD5AuthProtocol;
+#ifdef NETSNMP_DISABLE_MD5
+#error "NETSNMP_DISABLE_MD5 is defined"
+#endif
 ],
 []
 			)],

@@ -209,7 +209,7 @@ This can be a big issue on systems which monitor multiple devices, such as
 big servers with multiple power sources, or administrative workstations
 which monitor a datacenter full of UPSes.
 
-For this reason, NUT starting with version 2.7.5 supports startup of its
+For this reason, NUT starting with version 2.8.0 supports startup of its
 drivers as independent instances of a `nut-driver` service under the Linux
 systemd and Solaris/illumos SMF service-management frameworks (corresponding
 files and scripts may be not pre-installed in packaging for other systems).

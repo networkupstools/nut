@@ -89,6 +89,14 @@ static int 	opt_af = AF_UNSPEC;
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the upsmon.conf
+ * can define a debug_min value in the global section,
+ * to set the minimal debug level (CLI provided value less
+ * than that would not have effect, can only have more).
+ */
+static int nut_debug_level_global = -1;
+
 static void setflag(int *val, int flag)
 {
 	*val |= flag;
@@ -209,9 +217,14 @@ static void do_notify(const utype_t *ups, int ntype)
  * we do not need to try becoming a primary). This currently
  * propagates further as the return value of do_upsd_auth().
  */
+/* TODO: Includes API change in NUT 2.8.0 to replace deprecated
+ * keywords "MASTER" with "PRIMARY", and "SLAVE" with "SECONDARY",
+ * (and backwards-compatible alias handling)
+ */
 static int apply_for_primary(utype_t *ups)
 {
 	char	buf[SMALLBUF];
+	char	upscli_readraw_error;
 
 	/* don't bother if we're not configured as a primary for this ups */
 	if (!flag_isset(ups->status, ST_PRIMARY))
@@ -224,10 +237,13 @@ static int apply_for_primary(utype_t *ups)
 		return 0;
 	}
 
-	/* TODO: Use PRIMARY first but if talking to older server, retry with MASTER */
-	snprintf(buf, sizeof(buf), "MASTER %s\n", ups->upsname);
+	/* Use PRIMARY first but if talking to older server, retry with MASTER */
+	snprintf(buf, sizeof(buf), "PRIMARY %s\n", ups->upsname);
 
 	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
+		/* File descriptor not suitable, net_write() errors, etc.
+		 * Not connected to issues with PRIMARY vs. MASTER keyword.
+		 */
 		upslogx(LOG_ALERT, "Can't set primary managerial mode on UPS [%s] - %s",
 			ups->sys, upscli_strerror(&ups->conn));
 		return 0;
@@ -237,8 +253,35 @@ static int apply_for_primary(utype_t *ups)
 		if (!strncmp(buf, "OK", 2))
 			return 1;
 
-		/* not ERR, but not caught by readline either? */
+		/* Try the older keyword */
+		upsdebugx(3,
+			"%s: Server did not grant PRIMARY mode on UPS [%s], "
+			"retry with older MASTER keyword",
+			__func__, ups->upsname);
+		snprintf(buf, sizeof(buf), "MASTER %s\n", ups->upsname);
 
+		if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
+			upslogx(LOG_ALERT, "Can't set primary managerial mode on UPS [%s] - %s",
+				ups->sys, upscli_strerror(&ups->conn));
+			return 0;
+		}
+
+		if (upscli_readline(&ups->conn, buf, sizeof(buf)) == 0) {
+			if (!strncmp(buf, "OK", 2))
+				return 1;
+
+			upscli_readraw_error = 0;
+		}
+		else {
+			upscli_readraw_error = 1;
+		}
+	}
+	else {
+		upscli_readraw_error = 1;
+	}
+
+	if (upscli_readraw_error == 0) {
+		/* not ERR, but not caught by readline either? */
 		upslogx(LOG_ALERT, "Primary managerial privileges unavailable on UPS [%s]",
 			ups->sys);
 		upslogx(LOG_ALERT, "Response: [%s]", buf);
@@ -253,9 +296,6 @@ static int apply_for_primary(utype_t *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
-/* TODO: API change pending to replace deprecated MASTER with PRIMARY
- * and SLAVE with SECONDARY (and backwards-compatible alias handling)
- */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -1271,7 +1311,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	}
 
 	/* RUN_AS_USER <userid> */
- 	if (!strcmp(arg[0], "RUN_AS_USER")) {
+	if (!strcmp(arg[0], "RUN_AS_USER")) {
 		free(run_as_user);
 		run_as_user = xstrdup(arg[1]);
 		return 1;
@@ -1293,6 +1333,18 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	/* FORCESSL (0|1) */
 	if (!strcmp(arg[0], "FORCESSL")) {
 		forcessl = atoi(arg[1]);
+		return 1;
+	}
+
+	/* DEBUG_MIN (NUM) */
+	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
+	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid DEBUG_MIN value found in upsmon.conf global settings");
+		}
 		return 1;
 	}
 
@@ -1373,6 +1425,13 @@ static void loadconfig(void)
 		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
+	if (reload_flag == 1) {
+		/* if upsmon.conf added or changed
+		 * (or commented away) the debug_min
+		 * setting, detect that */
+		nut_debug_level_global = -1;
+	}
+
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
@@ -1396,6 +1455,15 @@ static void loadconfig(void)
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
+		}
+	}
+
+	if (reload_flag == 1) {
+		if (nut_debug_level_global > -1) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from upsmon.conf",
+				nut_debug_level_global);
+			nut_debug_level = nut_debug_level_global;
 		}
 	}
 
@@ -1789,7 +1857,10 @@ static void help(const char *arg_progname)
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
 	printf("		 - stop: stop monitoring and exit\n");
-	printf("  -D		raise debugging level\n");
+	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
+	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -F		stay foregrounded even if no debugging is enabled\n");
+	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
@@ -2020,7 +2091,8 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, checking_flag = 0;
+	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
+	pid_t	oldpid = -1;
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -2031,7 +2103,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -2045,8 +2117,20 @@ int main(int argc, char *argv[])
 				if (cmd == 0)
 					help(argv[0]);
 				break;
+
+			case 'P':
+				if ((oldpid = parsepid(optarg)) < 0)
+					help(argv[0]);
+				break;
+
 			case 'D':
 				nut_debug_level++;
+				break;
+			case 'F':
+				foreground = 1;
+				break;
+			case 'B':
+				foreground = 0;
 				break;
 			case 'f':
 				free(configfile);
@@ -2084,18 +2168,50 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (foreground < 0) {
+		if (nut_debug_level > 0) {
+			foreground = 1;
+		} else {
+			foreground = 0;
+		}
+	}
+
 	if (cmd) {
-		sendsignal(prog, cmd);
-		exit(EXIT_SUCCESS);
+		if (oldpid < 0) {
+			cmdret = sendsignal(prog, cmd);
+		} else {
+			cmdret = sendsignalpid(oldpid, cmd);
+		}
+		/* exit(EXIT_SUCCESS); */
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
-	if (sendsignal(prog, 0) == 0) {
+	if (oldpid < 0) {
+		cmdret = sendsignal(prog, 0);
+	} else {
+		cmdret = sendsignalpid(oldpid, 0);
+	}
+	switch (cmdret) {
+	case 0:
 		printf("Fatal error: A previous upsmon instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
+
+	case -3:
+	case -2:
+		upslogx(LOG_WARNING, "Could not %s PID file "
+			"to see if previous upsmon instance is "
+			"already running!\n",
+			(cmdret == -3 ? "find" : "parse"));
+		break;
+
+	case -1:
+	default:
+		/* Just failed to send signal, no competitor running */
+		break;
 	}
 
 	argc -= optind;
@@ -2104,6 +2220,14 @@ int main(int argc, char *argv[])
 	open_syslog(prog);
 
 	loadconfig();
+
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in upsmon.conf. Note that non-zero debug_min does not impact
+	 * foreground running mode.
+	 */
+	if (nut_debug_level_global > nut_debug_level)
+		nut_debug_level = nut_debug_level_global;
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	if (checking_flag)
 		exit(check_pdflag());
@@ -2127,9 +2251,11 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (nut_debug_level < 1) {
+	if (!foreground) {
 		background();
-	} else {
+	}
+
+	if (nut_debug_level >= 1) {
 		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
 

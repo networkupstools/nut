@@ -34,7 +34,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -684,7 +684,7 @@ void upsdrv_initups(void)
 		 * This should allow automatic application of the workaround */
 		ret = usb_get_string(udev, 0, 0, (usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 		if (ret >= 4) {
-			langid = tbuf[2] | (tbuf[3] << 8);
+			langid = (unsigned char)tbuf[2] | ((unsigned char)tbuf[3] << 8);
 			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
 		}
 	}

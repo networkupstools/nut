@@ -1,5 +1,6 @@
-personal_ws-1.1 en 2861 utf-8
+personal_ws-1.1 en 2899 utf-8
 AAS
+ABI
 ACFAIL
 ACFREQ
 ACK
@@ -10,6 +11,7 @@ ACrms
 ADDR
 ADDRCONFIG
 ADDRINFO
+ADELSYSTEM
 ADK
 ADKK
 AEC
@@ -35,6 +37,8 @@ ATT
 ATTRS
 ATX
 ATs
+AUTOCOMMIT
+AUTOPUSH
 AVL
 AVR
 AVRLCD
@@ -56,7 +60,6 @@ AlmCPol
 AlmEnbl
 Amplon
 Ampère
-Amplon
 Andreas
 Andreassen
 Andrzej
@@ -153,10 +156,12 @@ ByPass
 CA's
 CABAC
 CAs
+CBI
 CBLimit
 CCC
 CCCC
 CDC
+CDS
 CELLPADDING
 CELLSPACING
 CERTHOST
@@ -241,6 +246,7 @@ DES
 DESTDIR
 DF
 DHEA
+DIGYS
 DISCHRG
 DMF
 DN
@@ -285,6 +291,7 @@ EG
 EL
 ELCD
 EMI
+EMP
 ENDFOR
 ENV
 EOF
@@ -448,6 +455,7 @@ ID's
 IDEN
 IDentifiers
 IFBETWEEN
+IFF
 IFSUPP
 IGN
 IMG
@@ -466,6 +474,7 @@ IPBX
 IPC
 IPs
 IPv
+IRC
 IRIX
 ITEMP
 ITy
@@ -484,6 +493,7 @@ Invter
 IoT
 Ioannou
 JAWAN
+JBUS
 JBus
 JKL
 JRE
@@ -741,8 +751,10 @@ OMNIVSINT
 ONF
 ONV
 OOM
+OSABI
 OSF
 OSs
+OUTDIR
 OUTPUTV
 OUTVOLT
 OV
@@ -810,6 +822,7 @@ PPPPPPPPPP
 PR
 PR'ed
 PROGS
+PROTVER
 PRs
 PSA
 PSD
@@ -824,6 +837,7 @@ PULS
 PV
 PWLv
 PWR
+PXG
 PaaS
 Pac
 Parisi
@@ -886,6 +900,7 @@ Priv
 Procomm
 ProductID
 Prynych
+Pulizzi
 PwrOut
 PyGTK
 PyNUT
@@ -926,6 +941,7 @@ README
 REDi
 REPLBATT
 REQSSL
+RESPIN
 RETPCT
 RK
 RMCARD
@@ -963,6 +979,7 @@ Repotec's
 Repoteck
 Richthof
 Rickard
+Ridgway
 Riihikallio
 Rik
 RntmK
@@ -1074,6 +1091,7 @@ Sicon
 Sidorov
 Signetic
 Silvino
+Sinline
 Sistem
 Sistemas
 Slackware
@@ -1228,6 +1246,7 @@ VER
 VERFW
 VFI
 VIB
+VM
 VMIN
 VMM
 VMware
@@ -1326,6 +1345,7 @@ addenum
 addinfo
 addr
 addrange
+adelsystem
 adkorte
 adm
 admin's
@@ -1381,6 +1401,7 @@ ascii
 asciidoc
 asem
 aspell
+ast
 async
 atcl
 ats
@@ -1494,6 +1515,7 @@ byv
 cablepower
 calloc
 cb
+cbi
 cbl
 cblimit
 ccache
@@ -1648,6 +1670,7 @@ devscan
 dfl
 dhcp
 dialout
+difftool
 dipsw
 dir
 disp
@@ -1658,6 +1681,7 @@ distros
 dl
 dll
 dlopen
+dmake
 dmesg
 dnf
 dnl
@@ -1821,6 +1845,7 @@ gpg
 graphviz
 groupadd
 groupname
+gtk
 guardpend
 guardpstart
 guestimate
@@ -1839,6 +1864,7 @@ hh
 hibernate's
 hiddev
 hidparser
+hidtypes
 hidups
 highbattery
 highfrequency
@@ -1936,6 +1962,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+jbus
 jdk
 jenkins
 jessie
@@ -2083,6 +2110,7 @@ mecer
 megatec
 memset
 merchantability
+mergetool
 metadata
 metasys
 methodOfFlowControl
@@ -2233,6 +2261,7 @@ offtimedays
 oftd
 oids
 ok
+oksh
 ol
 oldmac
 oldmge
@@ -2243,14 +2272,17 @@ onclick
 ondelay
 oneac
 online
+onlinedischarge
 ont
 ontd
 ontimedays
 ontiniedays
 ooce
 openSUSE
+openipmi
 openjdk
 openlog
+openmp
 opensolaris
 openssh
 openssl
@@ -2298,6 +2330,7 @@ pinouts
 pkg
 pkgconf
 pkgconfig
+pkgin
 plaintext
 plugin
 plugnplay
@@ -2354,6 +2387,7 @@ prog
 prtconf
 psu
 pty
+pulizzi
 pw
 pwl
 pwmib
@@ -2492,6 +2526,7 @@ shutdowntime
 shutup
 si
 siemens
+sig
 sigaction
 sigmask
 signedness
@@ -2519,6 +2554,7 @@ snprintf
 snprintfcat
 snr
 sockdebug
+socomec
 solaris
 solis
 somepass
@@ -2799,6 +2835,7 @@ vid
 vin
 virsh
 virtualization
+vivo
 vo
 vod
 voltronic
@@ -2811,6 +2848,7 @@ wf
 wget
 whitespace
 wiki
+winnutclient
 wmnut
 wordformat
 workflow

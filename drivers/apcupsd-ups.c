@@ -29,7 +29,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.5"
+#define DRIVER_VERSION	"0.6"
 
 #define POLL_INTERVAL_MIN 10
 

@@ -18,6 +18,29 @@ set -e
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
+    fightwarn-all)
+        # This recipe allows to test with different (default-named)
+        # compiler suites if available. Primary goal is to see whether
+        # everything is building ok on a given platform, with one shot.
+        TRIED_BUILD=false
+        if (command -v gcc) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-gcc "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-gcc: compiler not found" >&2
+        fi
+        if (command -v clang) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-clang "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
+        fi
+        if ! $TRIED_BUILD ; then
+            echo "FAILED to run: no default-named compilers were found" >&2
+            exit 1
+        fi
+        exit 0
+        ;;
     fightwarn-gcc)
         CC="gcc"
         CXX="g++"
@@ -36,20 +59,26 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # For CFLAGS/CXXFLAGS keep caller or compiler defaults
     # (including C/C++ revision)
     BUILD_TYPE=default-all-errors
-    BUILD_WARNFATAL=yes
+    #BUILD_WARNFATAL=yes
+    #   configure => "yes" except for antique compilers
+    BUILD_WARNFATAL=auto
 
-    # Current fightwarn goal is to have no warnings at preset level below:
+    # Current fightwarn goal is to have no warnings at preset level below,
+    # or at the level defaulted with configure.ac (perhaps considering the
+    # compiler version, etc.):
     #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
-    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #   configure => default to medium, detect by compiler type
+    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=auto
 
     # Eventually this constraint would be removed to check all present
     # SSL implementations since their ifdef-driven codebases differ and
     # emit varied warnings. But so far would be nice to get the majority
     # of shared codebase clean first:
-    [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+    #[ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 
     # Similarly for libusb implementations with varying support
-    [ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
+    #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
 # Set this to enable verbose profiling
@@ -184,15 +213,31 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    for CI_OS_HINT in "$OS_FAMILY-$OS_DISTRO" "`uname -o`" "`uname -s -r -v`" "`uname -a`" ; do
+    for CI_OS_HINT in \
+        "$OS_FAMILY-$OS_DISTRO" \
+        "`grep = /etc/os-release 2>/dev/null`" \
+        "`cat /etc/release 2>/dev/null`" \
+        "`uname -o 2>/dev/null`" \
+        "`uname -s -r -v 2>/dev/null`" \
+        "`uname -a`" \
+        "`uname`" \
+    ; do
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
     case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
-        *debian*|*linux*)
+        *openbsd*)
+            CI_OS_NAME="openbsd" ;;
+        *netbsd*)
+            CI_OS_NAME="netbsd" ;;
+        *debian*|*ubuntu*)
             CI_OS_NAME="debian" ;;
+        *centos*|*fedora*|*redhat*|*rhel*)
+            CI_OS_NAME="centos" ;;
+        *linux*)
+            CI_OS_NAME="linux" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
@@ -232,6 +277,13 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     || [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
 
     # See also below for some compiler-dependent decisions
+fi
+
+if [ -z "${PKG_CONFIG-}" ]; then
+    # Default to using one from PATH, if any - mostly for config tuning done
+    # below in this script
+    # DO NOT "export" it here so ./configure script can find one for the build
+    PKG_CONFIG="pkg-config"
 fi
 
 configure_nut() {
@@ -458,7 +510,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -512,11 +564,25 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     EXTRA_CXXFLAGS=""
 
     is_gnucc() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
     }
 
     is_clang() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    }
+
+    filter_version() {
+        # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+        # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+        sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+    }
+
+    ver_gnucc() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+    }
+
+    ver_clang() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
     }
 
     COMPILER_FAMILY=""
@@ -529,6 +595,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             export CC CXX
         fi
     else
+        # Generally we prefer GCC unless it is very old so we can't impact
+        # its warnings and complaints.
         if is_gnucc "gcc" && is_gnucc "g++" ; then
             # Autoconf would pick this by default
             COMPILER_FAMILY="GCC"
@@ -540,17 +608,45 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -n "$CC" ] || CC=cc
             [ -n "$CXX" ] || CXX=c++
             export CC CXX
-        elif is_clang "clang" && is_clang "clang++" ; then
-            # Autoconf would pick this by default
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=clang
-            [ -n "$CXX" ] || CXX=clang++
-            export CC CXX
-        elif is_clang "cc" && is_clang "c++" ; then
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=cc
-            [ -n "$CXX" ] || CXX=c++
-            export CC CXX
+        fi
+
+        if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
+            case "`ver_gnucc "$CC"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac && \
+            case "`ver_gnucc "$CXX"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac
+        ) ; then
+            echo "NOTE: default GCC here is very old, do we have a CLANG instead?.." >&2
+            COMPILER_FAMILY="GCC_OLD"
+        fi
+
+        if [ -z "$COMPILER_FAMILY" ] || [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            if is_clang "clang" && is_clang "clang++" ; then
+                # Autoconf would pick this by default
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=clang
+                [ -n "$CXX" ] || CXX=clang++
+                export CC CXX
+            elif is_clang "cc" && is_clang "c++" ; then
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=cc
+                [ -n "$CXX" ] || CXX=c++
+                export CC CXX
+            fi
+        fi
+
+        if [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            COMPILER_FAMILY="GCC"
         fi
     fi
 
@@ -656,6 +752,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--with-valgrind=no")
     fi
 
+    if [ -n "${CI_CROSSBUILD_TARGET-}" ] || [ -n "${CI_CROSSBUILD_HOST-}" ] ; then
+        # at least one is e.g. "arm-linux-gnueabihf"
+        [ -z "${CI_CROSSBUILD_TARGET-}" ] && CI_CROSSBUILD_TARGET="${CI_CROSSBUILD_HOST}"
+        [ -z "${CI_CROSSBUILD_HOST-}" ] && CI_CROSSBUILD_HOST="${CI_CROSSBUILD_TARGET}"
+        echo "NOTE: Cross-build was requested, passing options to configure this for target '${CI_CROSSBUILD_TARGET}' host '${CI_CROSSBUILD_HOST}' (note you may need customized PKG_CONFIG_PATH)" >&2
+        CONFIG_OPTS+=("--host=${CI_CROSSBUILD_HOST}")
+        CONFIG_OPTS+=("--target=${CI_CROSSBUILD_TARGET}")
+    fi
+
     # This flag is primarily linked with (lack of) docs generation enabled
     # (or not) in some BUILD_TYPE scenarios or workers. Initial value may
     # be set by caller, but codepaths below have the final word.
@@ -728,7 +833,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
+                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
@@ -879,7 +984,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
-        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
+        # This should be done in scratch containers...
+        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
 
@@ -970,15 +1076,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Technically, let caller provide this setting explicitly
             if [ -z "$NUT_SSL_VARIANTS" ] ; then
                 NUT_SSL_VARIANTS="auto"
-                if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+                if $PKG_CONFIG --exists nss && $PKG_CONFIG --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
                     # Try builds for both cases as they are ifdef-ed
                     # TODO: Extend if we begin to care about different
                     # major versions of openssl (with their APIs), etc.
                     NUT_SSL_VARIANTS="openssl nss"
                 else
                     if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                        pkg-config --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
-                        pkg-config --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
+                        $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
+                        $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
                     fi  # else leave at "auto", if we skipped building
                         # two variants while having two possibilities
                 fi
@@ -991,12 +1097,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             if [ -z "$NUT_USB_VARIANTS" ] ; then
                 # Check preferred version first, in case BUILD_USB_ONCE==true
-                if pkg-config --exists libusb-1.0 ; then
+                if $PKG_CONFIG --exists libusb-1.0 ; then
                     NUT_USB_VARIANTS="1.0"
                 fi
 
                 # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
-                if pkg-config --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
+                if $PKG_CONFIG --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
                     if [ -z "$NUT_USB_VARIANTS" ] ; then
                         NUT_USB_VARIANTS="0.1"
                     else
@@ -1187,8 +1293,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         # Quietly build one scenario, whatever we can (or not)
                         # configure regarding USB and other features
                         NUT_USB_VARIANT=auto
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb")
                           configure_nut
@@ -1196,8 +1304,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     no)
                         echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--without-usb")
                           configure_nut
@@ -1205,8 +1315,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     libusb-*)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
                           configure_nut
@@ -1214,8 +1326,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     *)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
                           configure_nut
@@ -1310,6 +1424,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+            else
+                echo "(and no build scenarios had failed)" >&2
             fi
 
             echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2

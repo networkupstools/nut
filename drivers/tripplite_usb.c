@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -743,10 +743,11 @@ static int soft_shutdown(void)
 static int hard_shutdown(void)
 {
 	int ret;
-	char buf[256], cmd_N[]="N\0x", cmd_K[] = "K\0";
+	unsigned char buf[256], cmd_N[]="N\0x", cmd_K[] = "K\0";
 
-	cmd_N[2] = offdelay;
-	cmd_N[1] = offdelay >> 8;
+	/* FIXME: Assumes memory layout / endianness? */
+	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
+	cmd_N[1] = (unsigned char)(offdelay >> 8);
 	upsdebugx(3, "hard_shutdown(offdelay=%d): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));

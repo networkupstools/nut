@@ -36,7 +36,10 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.07"
+
+#define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -54,6 +57,10 @@ static uint8_t gpser_error_control;
 
 static uint8_t input_monophase;
 static uint8_t output_monophase;
+
+/*! Time in seconds to delay before shutting down. */
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
 static TRielloData DevData;
 
@@ -88,9 +95,9 @@ static int cypress_setfeatures()
 
 	/* Write features report */
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-								0x09,						/* HID_REPORT_SET = 0x09 */
-								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
+		0x09,				/* HID_REPORT_SET = 0x09 */
+		0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
+		0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
@@ -190,7 +197,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 	}
 
 	/* copy to buffer */
-	size = inBuf[0] & 0x07;
+	size = (unsigned char)(inBuf[0]) & 0x07;
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
@@ -972,6 +979,13 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.panel.start");
 
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", 3);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
+	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.reboot", 3);
+
 	/* install handlers */
 /*	upsh.setvar = hid_set_value; setvar; */
 
@@ -1058,9 +1072,14 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+	if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
+		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	}
+
+	if (DevData.Tsystem < 0xFF)
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);

@@ -111,7 +111,7 @@ static const char *prtchr(char x)
 	static char info[32];
 
 	curr = (curr + 8) & 0x1F;
-	snprintf(info + curr, 8, isprint(x) ? "%c" : "0x%02x", x);
+	snprintf(info + curr, 8, isprint((size_t)x) ? "%c" : "0x%02x", x);
 
 	return info + curr;
 }
@@ -1712,7 +1712,7 @@ void upsdrv_shutdown(void)
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && toupper(*getval("advorder")) != 'N')
+	if (testvar("advorder") && toupper((size_t)*getval("advorder")) != 'N')
 		upsdrv_shutdown_advanced();
 	else
 		upsdrv_shutdown_simple();
@@ -2040,10 +2040,10 @@ static int instcmd(const char *cmd, const char *ext)
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
-		if (toupper(*ext) == 'A')
+		if (toupper((size_t)*ext) == 'A')
 			return sdcmd_AT(ext + 3);
 
-		if (toupper(*ext) == 'C')
+		if (toupper((size_t)*ext) == 'C')
 			return sdcmd_CS(0);
 	}
 

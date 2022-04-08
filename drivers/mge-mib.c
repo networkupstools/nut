@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.52"
+#define MGE_MIB_VERSION	"0.55"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -132,6 +132,13 @@ static info_lkp_t mge_power_source_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t mge_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "closed", NULL, NULL },
+	{ 2, "opened", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Parameters default values */
 #define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
 										/* and powering up of load, in seconds */
@@ -146,6 +153,11 @@ static info_lkp_t mge_power_source_info[] = {
 
 /* Snmp2NUT lookup table */
 static snmp_info_t mge_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Eaton", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -239,6 +251,10 @@ static snmp_info_t mge_mib[] = {
 	/* Ambient page: Environment Sensor (ref 66 846) */
 	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.705.1.8.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.705.1.8.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.9.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.10.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

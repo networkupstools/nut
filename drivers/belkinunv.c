@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1196,35 +1196,43 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 1);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.disable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 1);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 2);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.mute")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 0);
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
@@ -1236,11 +1244,13 @@ int instcmd(const char *cmdname, const char *extra)
 		   the UPS will stay off between 60 and 120 seconds */
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 40); /* 40 seconds */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {

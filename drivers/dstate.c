@@ -213,8 +213,26 @@ static void send_to_all(const char *fmt, ...)
 		ret = write(conn->fd, buf, buflen);
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
-			upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
+			upsdebugx(0, "WARNING: %s: write %zd bytes to "
+				"socket %d failed (ret=%zd), disconnecting: %s",
+				__func__, buflen, conn->fd, ret, strerror(errno));
+			upsdebugx(6, "failed write: %s", buf);
 			sock_disconnect(conn);
+
+			/* TOTHINK: Maybe fallback elsewhere in other cases? */
+			if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
+				upsdebugx(0, "%s: synchronous mode was 'auto', "
+					"will try 'on' for next connections",
+					__func__);
+				do_synchronous = 1;
+			}
+
+			dstate_setinfo("driver.parameter.synchronous", "%s",
+				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
+		} else {
+			upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
+				"(ret=%zd): %s",
+				__func__, buflen, conn->fd, ret, buf);
 		}
 	}
 }
@@ -258,12 +276,51 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret <= INT_MAX)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
-	ret = write(conn->fd, buf, strlen(buf));
+/*
+	upsdebugx(0, "%s: writing %zd bytes to socket %d: %s",
+		__func__, buflen, conn->fd, buf);
+*/
+
+  ret = write(conn->fd, buf, buflen);
+
+  if (ret < 0) {
+		/* Hacky bugfix: throttle down for upsd to read that */
+		upsdebugx(1, "%s: had to throttle down to retry "
+			"writing %zd bytes to socket %d "
+			"(ret=%zd, errno=%d, strerror=%s): %s",
+			__func__, buflen, conn->fd,
+			ret, errno, strerror(errno),
+			buf);
+		usleep(200);
+		ret = write(conn->fd, buf, buflen);
+		if (ret == (ssize_t)buflen) {
+			upsdebugx(1, "%s: throttling down helped", __func__);
+		}
+	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
-		upsdebugx(1, "write %zd bytes to socket %d failed", buflen, conn->fd);
+		upsdebugx(0, "WARNING: %s: write %zd bytes to "
+			"socket %d failed (ret=%zd), disconnecting: %s",
+			__func__, buflen, conn->fd, ret, strerror(errno));
+		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
+
+		/* TOTHINK: Maybe fallback elsewhere in other cases? */
+		if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
+			upsdebugx(0, "%s: synchronous mode was 'auto', "
+				"will try 'on' for next connections",
+				__func__);
+			do_synchronous = 1;
+		}
+
+		dstate_setinfo("driver.parameter.synchronous", "%s",
+			(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
+
 		return 0;	/* failed */
+	} else {
+		upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
+			"(ret=%zd): %s",
+			__func__, buflen, conn->fd, ret, buf);
 	}
 
 	return 1;	/* OK */
@@ -287,8 +344,15 @@ static void sock_connect(int sock)
 		return;
 	}
 
-	/* enable nonblocking I/O */
-	if (!do_synchronous) {
+	/* enable nonblocking I/O?
+	 * -1 = auto (try async, allow fallback to sync)
+	 *  0 = async
+	 *  1 = sync
+	 */
+	if (do_synchronous < 1) {
+		upsdebugx(0, "%s: enabling asynchronous mode (%s)",
+			__func__, (do_synchronous<0)?"auto":"fixed");
+
 		ret = fcntl(fd, F_GETFL, 0);
 
 		if (ret < 0) {
@@ -304,6 +368,9 @@ static void sock_connect(int sock)
 			close(fd);
 			return;
 		}
+	}
+	else {
+		upsdebugx(0, "%s: keeping default synchronous mode", __func__);
 	}
 
 	conn = xcalloc(1, sizeof(*conn));
@@ -602,7 +669,7 @@ static void sock_close(void)
 
 /* interface */
 
-void dstate_init(const char *prog, const char *devname)
+char * dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
@@ -625,6 +692,9 @@ void dstate_init(const char *prog, const char *devname)
 	sockfd = sock_open(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+
+	/* NOTE: Caller must free this string */
+	return xstrdup(sockname);
 }
 
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */

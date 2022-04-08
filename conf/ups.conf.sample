@@ -64,6 +64,17 @@
 # Set maxretry to 3 by default, this should mitigate race with slow devices:
 maxretry = 3
 
+# These directives can be set outside and inside a driver definition, with
+# slightly different meanings per context:
+#
+#   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
+#              (when specified at global level), or for this driver daemon
+#              (when specified in a driver section), e.g. for troubleshooting
+#              a deployment. This does not directly impact the foreground or
+#              background running mode. If both the global and driver level
+#              `debug_min` are set, the driver-level setting takes precedence.
+#              Command-line option `-D` can only increase this verbosity level.
+
 # These directives are common to all drivers that support ups.conf:
 #
 #  driver: REQUIRED.  Specify the program to run to talk to this UPS.
@@ -99,7 +110,8 @@ maxretry = 3
 #                The default is 45 seconds.
 #
 # synchronous: optional.  The driver work by default in asynchronous
-#              mode (i.e *synchronous=no*).  This means that all data
+#              mode (like *no*) with fallback to synchronous if sending
+#              fails (i.e *synchronous=auto*).  This means that all data
 #              are pushed by the driver on the communication socket to
 #              upsd (Unix socket on Unix, Named pipe on Windows) without
 #              waiting for these data to be actually consumed.  With

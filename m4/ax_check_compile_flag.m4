@@ -24,10 +24,13 @@
 #   NOTE: Implementation based on AX_CFLAGS_GCC_OPTION. Please keep this
 #   macro in sync with AX_CHECK_{PREPROC,LINK}_FLAG.
 #
+#   NOTE: This implementation was extended with check for compiler complaints
+#
 # LICENSE
 #
 #   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
 #   Copyright (c) 2011 Maarten Bosmans <mkbosmans@gmail.com>
+#   Copyright (c) 2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
@@ -43,7 +46,12 @@ AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
   ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
   _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
   AC_COMPILE_IFELSE([m4_default([$5],[AC_LANG_PROGRAM()])],
-    [AS_VAR_SET(CACHEVAR,[yes])],
+    [dnl Toolkit per se did not return an error code; but did it complain?
+     dnl Below are a few strings typical for some versions of GCC and CLANG
+     dnl This relies on AC_COMPILE_IFELSE implementation retaining conftest.err
+     AS_IF([grep -E '(unrecognized.* option|did you mean|unknown argument:)' < conftest.err >/dev/null 2>/dev/null],
+        [AS_VAR_SET(CACHEVAR,[no])],dnl Hit a complaint, flag is not supported after all
+        [AS_VAR_SET(CACHEVAR,[yes])])],
     [AS_VAR_SET(CACHEVAR,[no])])
   _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags])
 AS_VAR_IF(CACHEVAR,yes,

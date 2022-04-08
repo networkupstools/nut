@@ -68,12 +68,12 @@ use Git or <<Snapshots,snapshots>>.
 Browse code
 ^^^^^^^^^^^
 
-You can also browse the code at
-link:https://github.com/networkupstools/nut[GitHub], or at the
-link:http://alioth.debian.org/scm/?group_id=30602[Alioth mirror]. The code was
-originally kept in Subversion, and the old
-link:http://trac.networkupstools.org/projects/nut[Trac site] will be kept
-around for a bit so as not to break the URLs in the mailing list archives.
+You can also browse the "vanilla NUT" code at
+link:https://github.com/networkupstools/nut[GitHub],
+or at packaging sources of operating system distributions such as:
+
+* link:https://salsa.debian.org/debian/nut/[Debian Salsa mirror]
+* link:https://src.fedoraproject.org/rpms/nut/tree/rawhide[Fedora Rawhide mirror]
 
 [[Snapshots]]
 Snapshots

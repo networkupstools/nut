@@ -398,6 +398,7 @@ SRC_SERIAL_PAGES = \
 	oneac.txt		\
 	microdowell.txt	\
 	microsol-apc.txt	\
+	nutdrv_siemens_sitop.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -441,6 +442,7 @@ MAN_SERIAL_PAGES = \
 	oneac.8		\
 	microdowell.8	\
 	microsol-apc.8	\
+	nutdrv_siemens_sitop.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
@@ -488,6 +490,7 @@ HTML_SERIAL_MANS = \
 	oneac.html		\
 	microdowell.html	\
 	microsol-apc.html	\
+	nutdrv_siemens_sitop.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
@@ -617,11 +620,13 @@ HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
 	generic_modbus.txt \
-	huawei-ups2000.txt
+	huawei-ups2000.txt \
+	adelsystem_cbi.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
 	generic_modbus.8 \
-	huawei-ups2000.8
+	huawei-ups2000.8 \
+	adelsystem_cbi.8
 endif
 
 if WITH_MODBUS
@@ -630,7 +635,8 @@ endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 	generic_modbus.html \
-	huawei-ups2000.html
+	huawei-ups2000.html \
+	adelsystem_cbi.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -729,7 +735,11 @@ HTML_MANS = \
 
 all:
 
-html-man: $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS) index.html
+
+# Have a way to build all man pages, not just those that fit currently
+# configured drivers, daemons, developer aspect, etc.
+all-man man-man: $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS

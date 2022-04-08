@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.1"
+#define DRIVER_VERSION	"2.2"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -536,7 +536,7 @@ static void protocol_verify(unsigned char cmd)
 	if (found)
 		return;
 
-	if (isprint(cmd))
+	if (isprint((size_t)cmd))
 		upsdebugx(1, "protocol_verify: 0x%02x [%c] unrecognized",
 			cmd, cmd);
 	else

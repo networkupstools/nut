@@ -1,11 +1,13 @@
 Installation instructions
 =========================
 
-This chapter describe the various methods for installing Network UPS Tools.
+This chapter describes the various methods for installing Network UPS Tools.
 
 Whenever it is possible, prefer <<Installing_packages, installing from packages>>.
 Packagers have done an excellent and hard work at improving NUT integration into
-their system.
+their system.  On the other hand, distributions and appliances tend to package
+"official releases" of projects such as NUT, and so do not deliver latest and
+greatest fixes, new drivers, bugs and other features.
 
 [[Installing_source]]
 Installing from source
@@ -15,6 +17,13 @@ These are the essential steps for compiling and installing this software.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
+
+The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+document suggests prerequisite packages with tools and dependencies
+available and needed to build and test as much as possible of NUT on
+numerous platforms, written from perspective of CI testing (if you
+are interested in getting updated drivers for a particular device,
+you might select a sub-set of those suggestions).
 
 [NOTE]
 .Keep in mind that...
@@ -52,7 +61,7 @@ long as you are consistent.
 The process for doing this varies from one system to the next, and
 explaining how to add users is beyond the scope of this document.
 
-For the purposes of this document, the user name and group name 
+For the purposes of this document, the user name and group name
 will be 'ups' and 'nut' respectively.
 
 Be sure the new user is a member of the new group!  If you forget to
@@ -87,7 +96,7 @@ docs/configure.txt or './configure --help' for all the available
 options.
 
 If you alter paths with additional switches, be sure to use those
-new paths while reading the rest of the steps.    
+new paths while reading the rest of the steps.
 
 Reference: <<Configure_options,Configure options>> from the
 User Manual.
@@ -100,7 +109,7 @@ Build the programs
 
 This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
-selected during <<Configuration,configuration>> step above. 
+selected during <<Configuration,configuration>> step above.
 
 
 Installation
@@ -175,7 +184,7 @@ permissions for the USB device, you may need to set up (operating
 system dependent) hotplugging scripts.  Sample scripts and
 information are provided in the scripts/hotplug and
 scripts/udev directories. For most users, the hotplugging scripts
-will be installed automatically by "make install". 
+will be installed automatically by "make install".
 
 (If you want to try if a driver works without setting up
 hotplugging, you can add the "-u root" option to upsd, upsmon, and
@@ -299,7 +308,7 @@ To install NUT as a package execute:
 Port
 ^^^^
 
-The port is located under +sysutils/nut+. 
+The port is located under +sysutils/nut+.
 Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
 To install it, use:
 

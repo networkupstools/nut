@@ -63,6 +63,17 @@ or as a pull request against the
 link:https://github.com/networkupstools/nut-ddl[NUT Devices Dumps Library]
 following the naming and other rules described in the DDL documentation page.
 
+Data dumps collected by the tools above, or by `upsc` client, or by drivers
+in exploratory data-dumping mode (with `-d 1` argument), can be compared by
+ifdef::website[]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-dumpdiff.sh[`tools/nut-dumpdiff.sh`]
+endif::website[]
+ifndef::website[]
+`./tools/nut-dumpdiff.sh`
+endif::website[]
+script from the main NUT codebase, which strips away lines with only numeric
+values (aiming to minimize the risk of losing meaningful changes like counters).
+
 Offsite Links
 -------------
 
@@ -83,7 +94,7 @@ These are writeups by users of the software.
 - link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
-- link:http://trac.networkupstools.org/projects/nut/wiki/NutOnMacOSX[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
+- link:https://github.com/networkupstools/nut/wiki/NUT-on-Mac-OS-X[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
 - link:http://www.llondel.org/ups.shtml[Interfacing a Contact-Closure UPS to Mac OS X and Linux] '(David Hough)'
 - link:http://fedoranews.org/contributors/kazutoshi_morioka/nut/[How to use UPS with nut on RedHat / Fedora Core] '(Kazutoshi Morioka)'
 - link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
@@ -92,6 +103,11 @@ These are writeups by users of the software.
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 - link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
+- link:https://www.jamesridgway.co.uk/monitoring-eaton-5sc-ups-scripts-and-integration-network-tools-home-assistant/amp/[USB UPS, notifications, and Home Assistant] '(James Ridgway)'
+
+Video articles are also available:
+
+- link:https://www.youtube.com/watch?v=vyBP7wpN72c[Network UPS Tools (NUT Server) Ultimate Guide] '(Techno Tim)'
 
 News articles and Press releases
 --------------------------------
