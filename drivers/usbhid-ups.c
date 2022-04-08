@@ -578,26 +578,30 @@ int instcmd(const char *cmdname, const char *extradata)
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
-			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+			"The 'beeper.off' command has been "
+			"renamed to 'beeper.disable'");
 		return instcmd("beeper.disable", NULL);
 	}
 
 	if (!strcasecmp(cmdname, "beeper.on")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
-			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+			"The 'beeper.on' command has been "
+			"renamed to 'beeper.enable'");
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
+	upsdebugx(1, "instcmd(%s, %s)",
+		cmdname,
+		extradata ? extradata : "[NULL]");
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
-		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives",
+		upsdebugx(3, "%s: cmdname '%s' not found; "
+			"checking for alternatives",
 			__func__, cmdname);
 
 		if (!strcasecmp(cmdname, "load.on")) {
@@ -611,7 +615,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int	ret;
 
-			/* Ensure "ups.start.auto" is set to "yes", if supported */
+			/* Ensure "ups.start.auto" is set to "yes",
+			 * if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				setvar("ups.start.auto", "yes");
 			}
@@ -654,7 +659,10 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
+	upsdebugx(3, "%s: using Path '%s'",
+		__func__,
+		(hidups_item->hidpath ? hidups_item->hidpath : "[NULL]")
+	);
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
