@@ -183,6 +183,9 @@ refer to this change set (too long in the making) as NUT 2.7.5.
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
    * Liebert GXT4 USB VID:PID [10AF:0000]
+   * add battery voltage and input/output transfer voltage and frequency
+     in Liebert/Phoenixtec HID mapping, to support PowerWalker VFI 2000 TGS
+     better [PR #564, issue #560]
    * add a little delay between multicommands [PR #1228]
    * fix Eaton/MGE mapping for beeper handling
    * add IBM USB VID
