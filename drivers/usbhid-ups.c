@@ -1660,6 +1660,8 @@ static void ups_status_set(void)
 			/* if we're calibrating */
 			status_set("OL");	/* on line */
 		}
+	} else if ((ups_status & STATUS(ONLINE))) {
+		status_set("OL");
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
