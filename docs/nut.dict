@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2903 utf-8
+personal_ws-1.1 en 2910 utf-8
 AAS
 ABI
 ACFAIL
@@ -697,6 +697,7 @@ NOAUTH
 NOCOMM
 NOCOMMWARNTIME
 NOCONF
+NOGET
 NOMBATTV
 NOMINV
 NOMOUTV
@@ -1081,6 +1082,7 @@ SendEnv
 Senoidal
 Sep
 Sequentializing
+SerialNumber
 Serv
 Shara
 Shaul
@@ -1627,6 +1629,7 @@ csh
 cshdelay
 css
 cts
+ctrl
 ctypes
 cua
 cuaa
@@ -1863,11 +1866,13 @@ hardcoded
 hasFeature
 hb
 hcl
+hcd
 hg
 hh
 hibernate's
 hiddev
 hidparser
+hidraw
 hidtypes
 hidups
 highbattery
@@ -2788,6 +2793,7 @@ upstype
 upsuser
 upswired
 uptime
+urb
 urpmi
 usb
 usbconfig
@@ -2878,6 +2884,7 @@ xfff
 xffff
 xfmrresistance
 xh
+xhci
 xhtml
 xmalloc
 xml

@@ -624,6 +624,55 @@ There is a rudimentary locking mechanism in NUT, but there is a chance that the
 packages might not use the same directory as the NUT default, and the conflict
 will be reported by the kernel.
 
+== Why does my (Eaton 5E) USB UPS on Linux connect but quickly disconnects soon?
+
+This issue was extensively investigated by NUT community members in
+https://github.com/networkupstools/nut/issues/630 and resulted in a
+chain of distribution bugs logged such as
+https://bugzilla.redhat.com/show_bug.cgi?id=1715504
+
+The gist of it is that some versions of Linux kernel used an "USB HID quirk"
+for certain devices, see Linux kernel source `drivers/hid/hid-quirks.c` file,
+including MGE/Eaton vendor ID (0x0463) based on an older device a contributor
+had issues with. Firmware in newer devices no longer had the bug which needed
+the "quirk" and misbehaved when it was enabled. While newer (and much older)
+Linux kernels should not have the problem, with the quirk removed according
+to https://lkml.org/lkml/2018/11/26/580 having the issue in the field really
+depends on the combination of Linux kernel and device firmware that meet.
+
+Either way, it seems that problematic combinations preclude Linux from seeing
+the device as a `hid-generic` first, to hand it over to a NUT driver.
+
+This quirk can be tuned with a kernel boot parameter (via GRUB etc.):
+
+	usbhid.quirks=0x0463:0xffff:0x08
+
+to re-enable the NOGET quirk.
+
+For context, according to https://bugzilla.redhat.com/show_bug.cgi?id=1875532
+the symptoms for the problem look like this:
+
+	# Plug in the UPS and observe the dmesg logs,
+	# the following continuously appears:
+	[   93.568082] usb 1-6: new full-speed USB device number 9 using xhci_hcd
+	[   94.311469] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[   94.311475] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[   94.311483] usb 1-6: Product: 5E
+	[   94.311486] usb 1-6: Manufacturer: EATON
+	[   96.269989] hid-generic 0003:0463:FFFF.000A: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  107.369425] hid-generic 0003:0463:FFFF.000A: usb_submit_urb(ctrl) failed: -1
+	[  107.369469] hid-generic 0003:0463:FFFF.000A: timeout initializing reports
+	[  112.828826] usb 1-6: USB disconnect, device number 9
+	[  113.284452] usb 1-6: new full-speed USB device number 10 using xhci_hcd
+	[  114.027693] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[  114.027698] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[  114.027701] usb 1-6: Product: 5E
+	[  114.027704] usb 1-6: Manufacturer: EATON
+	[  115.984222] hid-generic 0003:0463:FFFF.000B: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  126.825756] hid-generic 0003:0463:FFFF.000B: usb_submit_urb(ctrl) failed: -1
+	[  126.825775] hid-generic 0003:0463:FFFF.000B: timeout initializing reports
+	[  132.527809] usb 1-6: USB disconnect, device number 10
+
 == Why doesn't my package work?
 
 Or a variation like...
