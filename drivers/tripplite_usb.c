@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.32"
+#define DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -507,7 +507,7 @@ static void decode_v(const unsigned char *value)
 			  input_voltage_scaled  = 230;
 			  break;
 
-		case 6: input_voltage_nominal = 
+		case 6: input_voltage_nominal =
 			  input_voltage_scaled  = 230;
 			  break;
 
