@@ -111,7 +111,7 @@ esac
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
-[ -n "$MAKE" ] || MAKE=make
+[ -n "$MAKE" ] || [ "$1" = spellcheck ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -498,6 +498,11 @@ optional_dist_clean_check() {
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
+    if [ -z "${MAKE-}" ] && (command -v gmake) >/dev/null 2>/dev/null ; then
+        # GNU make processes quiet mode better, which helps with this use-case
+        MAKE=gmake
+        export MAKE
+    fi
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
         build_to_only_catch_errors_target spellcheck ; exit
