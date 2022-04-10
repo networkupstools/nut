@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2910 utf-8
+personal_ws-1.1 en 2911 utf-8
 AAS
 ABI
 ACFAIL
@@ -662,6 +662,7 @@ MiniGuard
 Minislot
 Moar
 Modbus
+ModemManager
 MonAMI
 MonUPS
 Monett

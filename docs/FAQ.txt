@@ -673,6 +673,30 @@ the symptoms for the problem look like this:
 	[  126.825775] hid-generic 0003:0463:FFFF.000B: timeout initializing reports
 	[  132.527809] usb 1-6: USB disconnect, device number 10
 
+A similar report on the driver side may look like:
+
+	usbhid-ups[4554]: libusb_get_report: Input/output error
+	upsd[4591]: Data for UPS [eaton] is stale - check driver
+	usbhid-ups[4554]: Can't claim USB device [0463:ffff]: No such file or directory
+	upsd[4591]: Can't connect to UPS [eaton] (usbhid-ups-eaton): No such file or directory
+	upsmon[5148]: Poll UPS [eaton@localhost] failed - Driver not connected
+	upsmon[5148]: Communications with UPS eaton@localhost lost
+
+Other similar looking issues may include improper setup of udev, upower
+and similar frameworks to hand over the device from the OS to a driver
+daemon; competition with other software probing USB devices (ModemManager
+was mentioned in this context), including running several copies of the
+NUT drivers trying to use same port (e.g. one started by services and
+another manually as you tried to debug the problems).
+
+Software quirks aside, please do test with a different USB cable and/or port
+on the computer. These were known to cause grief beyond what can be fixed
+with a few key words ;)
+
+Finally, sometimes the issue is on the OS side (and/or USB chipset), to
+the point that the USB driver can not be unloaded and re-attached until
+you power cycle the system.
+
 == Why doesn't my package work?
 
 Or a variation like...
