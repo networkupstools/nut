@@ -8,6 +8,7 @@ snmp-ups - Multi-MIB Driver for SNMP UPS equipment
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 snmp-ups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
@@ -149,6 +150,7 @@ run-time supported list.
 
 REQUIREMENTS
 ------------
+
 You will need to install the Net-SNMP package from
 http://www.net-snmp.org/ before building this driver.
 
@@ -156,6 +158,7 @@ SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
 LIMITATIONS
 -----------
+
 Shutdown
 ~~~~~~~~
 
@@ -168,12 +171,14 @@ supported command.
 
 INSTALLATION
 ------------
+
 This driver is only built if the Net-SNMP development files are present at
 configuration time.  You can also force it to be built by using
 +configure --with-snmp=yes+ before calling make.
 
 EXAMPLES
 --------
+
 The hostname of the UPS is specified with the "port" value in
 `ups.conf`, and may include a non-standard (161) remote peer port:
 
@@ -197,6 +202,7 @@ The hostname of the UPS is specified with the "port" value in
 
 AUTHORS
 -------
+
 Arnaud Quette, Dmitry Frolov
 
 
@@ -205,12 +211,15 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

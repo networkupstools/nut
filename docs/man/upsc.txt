@@ -1,13 +1,14 @@
 UPSC(8)
 =======
 
-
 NAME
 ----
+
 upsc - example lightweight UPS client
 
 SYNOPSIS
 --------
+
 *upsc* -l | -L ['host']
 
 *upsc* 'ups' ['variable']
@@ -23,6 +24,7 @@ want to include the full interface.
 
 OPTIONS
 -------
+
 *-l* 'host'::
 
   List all UPS names configured at 'host', one name per line. The hostname
@@ -113,7 +115,7 @@ SEE ALSO
 
 linkman:upsd[8]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -8,6 +8,7 @@ libupsclient-config - script to get information about the installed version of l
 
 SYNOPSIS
 --------
+
 *libupsclient-config* [--version] [--libs] [--cflags]
 
 DESCRIPTION
@@ -33,6 +34,7 @@ Print the compiler flags that are necessary to compile a *libupsclient* program.
 
 AUTHORS
 -------
+
 This manual page was written by Arnaud Quette <aquette.dev@gmail.com>.
 
 SEE ALSO
@@ -42,5 +44,6 @@ linkman:upsclient[3]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 

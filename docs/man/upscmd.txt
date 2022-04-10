@@ -3,10 +3,12 @@ UPSCMD(8)
 
 NAME
 ----
+
 upscmd - UPS administration program for instant commands
 
 SYNOPSIS
 --------
+
 *upscmd* -h
 
 *upscmd* -l 'ups'
@@ -102,8 +104,10 @@ It involves magic cookies.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upsrw[8]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

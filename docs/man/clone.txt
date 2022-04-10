@@ -3,22 +3,26 @@ CLONE(8)
 
 NAME
 ----
+
 clone - UPS driver clone
 
 NOTE
 ----
+
 This man page only documents the specific features of the
 clone driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
+
 This driver, which sits on top of another driver socket, allows users to group
 clients to a particular outlet of a device and deal with this output as if it
 was a normal UPS.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following settings:
 
 *load.off*='command'::
@@ -58,6 +62,7 @@ Set the remaining battery runtime when the clone UPS switches to LB
 
 IMPLEMENTATION
 --------------
+
 The port specification in the linkman:ups.conf[5] reference the driver
 socket that the "real" UPS driver is using. For example:
 
@@ -75,6 +80,7 @@ socket that the "real" UPS driver is using. For example:
 
 IMPORTANT
 ---------
+
 Unlike a real UPS, you should *not* configure a upsmon primary mode for this
 driver.  When a upsmon primary sees the OB LB flags and tells the upsd server
 it is OK to initiate the shutdown sequence, the server will latch the FSD
@@ -88,6 +94,7 @@ FSD flag if needed without the help of a upsmon primary.
 
 CAVEATS
 -------
+
 The clone UPS will follow the status on the real UPS driver.  You can only
 make the clone UPS shutdown earlier than the real UPS driver, not later.
 If the real UPS driver initiates a shutdown, the clone UPS driver will
@@ -100,6 +107,7 @@ warning.
 
 AUTHOR
 ------
+
 Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 SEE ALSO
@@ -112,4 +120,5 @@ linkman:nutupsdrv[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

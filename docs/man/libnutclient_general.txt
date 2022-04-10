@@ -42,4 +42,5 @@ It also frees all pointed strings.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]

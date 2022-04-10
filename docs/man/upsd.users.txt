@@ -3,6 +3,7 @@ UPSD.USERS(5)
 
 NAME
 ----
+
 upsd.users - Administrative user definitions for NUT upsd
 
 DESCRIPTION
@@ -84,7 +85,8 @@ SEE ALSO
 
 linkman:upsd[8], linkman:upsd.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 

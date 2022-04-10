@@ -15,6 +15,7 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 *bestups* was designed to monitor Best Power UPS hardware like the Fortress,
 Fortress Telecom, Axxium Rackmount and Patriot Pro.  It also recognizes
 and supports SOLA units such as the 325, 520 and 620.  In addition, the
@@ -101,17 +102,21 @@ things such as the perpetual 98.7% charge on the author's Fortress 750,
 even when it's been charging for weeks.  You can use `nombattvolt=` in
 linkman:ups.conf[8] to fix this.
 
-AUTHOR
-------
-Russell Kroll, Jason White
+AUTHORS
+-------
+
+* Russell Kroll
+* Jason White
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

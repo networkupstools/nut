@@ -82,6 +82,7 @@ device(s) that have alarms vs. nothing?)
 
 Example
 ^^^^^^^
+
 Here is an example excerpt of three PDUs, connected in daisychain mode, with
 one master and two slaves:
 

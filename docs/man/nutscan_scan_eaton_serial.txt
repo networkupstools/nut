@@ -30,6 +30,7 @@ The *nutscan_scan_eaton_serial()* function returns a pointer to a `nutscan_devic
 
 SEE ALSO
 --------
+
 linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_avahi[3],

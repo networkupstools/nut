@@ -130,6 +130,7 @@ The following packagers should be interested in working on this subject:
 
 Possible use cases
 ------------------
+
 - standalone (1 system + 1-n UPS)
 - network server (same as standalone, but serving data to network clients)
 - network monitoring client
@@ -162,6 +163,7 @@ This standard was created by:
 
 Overview of the package tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 FIXME: make a dependency graph
 
 - <<pkg-nut,nut>>
@@ -383,6 +385,7 @@ TO BE CONTINUED
 
 Configuration option
 ^^^^^^^^^^^^^^^^^^^^
+
 name= "ups" or "nut"
 ./configure \
             --prefix=/ \

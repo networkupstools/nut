@@ -15,10 +15,12 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports old Best Fortress UPS equipment using a serial connection.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
@@ -28,22 +30,26 @@ Set the speed of the serial connection - 1200, 2400, 4800 or 9600.
 *max_load*='VA'::
 Set the full-scale value of the *ups.load* variable.
 
-AUTHOR
-------
-Holger Dietze <holger.dietze@advis.de>,
-Stuart D. Gathman <stuart@bmsi.com>
+AUTHORS
+-------
+
+* Holger Dietze <holger.dietze@advis.de>
+* Stuart D. Gathman <stuart@bmsi.com>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 The newer Best Power drivers:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:bestups[8], linkman:bestuferrups[8], linkman:bestfcom[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -59,6 +59,7 @@ The *nutclient_set_device_variable_values* intend to set multiple values of the 
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_devices[3]
 linkman:libnutclient_general[3]

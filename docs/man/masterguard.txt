@@ -3,10 +3,12 @@ MASTERGUARD(8)
 
 NAME
 ----
+
 masterguard - Driver for Masterguard UPS equipment
 
 NOTES
 -----
+
 This man page only documents the hardware-specific features of the
 masterguard driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
@@ -16,6 +18,7 @@ framework that also supports USB, see linkman:nutdrv_qx[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports Masterguard UPS equipment (serial connection only).
 
 EXTRA ARGUMENTS
@@ -26,6 +29,7 @@ Cancel the shutdown procedure.
 
 AUTHOR
 ------
+
 Michael Spanier <mail@michael-spanier.de>
 
 SEE ALSO
@@ -33,12 +37,15 @@ SEE ALSO
 
 Newer driver:
 ~~~~~~~~~~~~~
+
 linkman:nutdrv_qx[8]
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -413,8 +413,10 @@ does not change the previously active logging verbosity.
 
 SEE ALSO
 --------
+
 linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

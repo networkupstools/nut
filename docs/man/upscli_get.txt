@@ -3,7 +3,8 @@ UPSCLI_GET(3)
 
 NAME
 ----
-upscli_get - retrieve data from a UPS
+
+upscli_get - retrieve data from an UPS
 
 SYNOPSIS
 --------
@@ -15,6 +16,7 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
 The *upscli_get()* function takes the pointer 'ups' to a
 `UPSCONN_t` state structure, and the pointer 'query' to an array of
 'numq' query elements.  It builds a properly-formatted request from
@@ -40,6 +42,7 @@ Some examples are:
 
 QUERY FORMATTING
 ----------------
+
 To generate a request for `GET NUMLOGINS su700`, you would populate
 query and numq as follows:
 
@@ -55,6 +58,7 @@ is handled for you inside this function.
 
 ANSWER FORMATTING
 -----------------
+
 The raw response from upsd to the above query would be `NUMLOGINS su700 1`.
 Since this is split up for you, the values work out like this:
 
@@ -69,6 +73,7 @@ Notice that the value which you seek typically starts at answer[numq].
 
 ERROR CHECKING
 --------------
+
 This function will check your query against the response from
 linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
 will expect to see those at the beginning of the response.
@@ -79,6 +84,7 @@ happens, linkman:upscli_upserror[3] will return 'UPSCLI_ERR_PROTOCOL'.
 
 ANSWER ARRAY LIFETIME
 ---------------------
+
 The pointers contained within the 'answer' array are only valid
 until the next call to a 'upsclient' function which references them.
 If you need to use data from multiple calls, you must copy it somewhere
@@ -95,6 +101,7 @@ access after that point is also undefined.
 
 RETURN VALUE
 ------------
+
 The *upscli_get()* function returns 0 on success, or -1 if an
 error occurs.
 
@@ -110,5 +117,6 @@ will allow the *upscli_get()* call to return an error in that case:
 
 SEE ALSO
 --------
+
 linkman:upscli_list_start[3], linkman:upscli_list_next[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

@@ -50,6 +50,7 @@ options and parameters that generally are not needed by normal users.
 
 OPTIONS
 -------
+
 *-h*::
 Display a help message without doing anything else.  This will also list
 possible values for '-x' in that driver, and other help text that the
@@ -171,6 +172,7 @@ production use.
 
 FILES
 -----
+
 ups.conf::
 Required configuration file.  This contains all details on which drivers
 to start and where the hardware is attached.
@@ -202,19 +204,29 @@ SEE ALSO
 --------
 
 Server:
+~~~~~~~
+
 linkman:upsd[8]
 
 Clients:
+~~~~~~~~
+
 linkman:upsc[8], linkman:upscmd[8],
 linkman:upsrw[8], linkman:upslog[8], linkman:upsmon[8]
 
 CGI programs:
+~~~~~~~~~~~~~
+
 linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Driver control:
-linkman:upsdrvctl[8]
+~~~~~~~~~~~~~~~
+
+linkman:upsdrvctl[8], linkman:upsdrvsvcctl[8]
 
 Drivers:
+~~~~~~~~
+
 linkman:al175[8]
 linkman:apcsmart[8],
 linkman:bcmxcp[8],
@@ -259,4 +271,6 @@ linkman:upscode2[8],
 linkman:victronups[8]
 
 Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

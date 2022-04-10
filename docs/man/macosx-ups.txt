@@ -3,16 +3,19 @@ MACOSX-UPS(8)
 
 NAME
 ----
+
 macosx-ups - monitor for Mac OS X built-in UPS and battery driver
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 *macosx-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 *macosx-ups* supports any USB HID Power Device Class (PDC) UPS which is
 matched by the Mac OS X built-in drivers. It also can monitor a laptop
 internal battery as though it were an UPS.
@@ -23,6 +26,7 @@ Preferences, this driver should be able to monitor it.
 
 EXTRA ARGUMENTS
 ----------------
+
 *port*=auto::
 Due to changes in the way that Mac OS X lists power sources, the *port*
 parameter no longer has any effect. The rest of NUT still requires a value here,
@@ -62,6 +66,7 @@ hardware only) or linkman:usbhid-ups[8].
 
 AUTHORS
 -------
+
 Charles Lepple <clepple+nut at gmail.com>
 
 SEE ALSO
@@ -71,10 +76,11 @@ linkman:usbhid-ups[8], *pmset*(8), *regex*(3)
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-The apcupsd home page: http://www.apcupsd.org/
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The apcupsd home page: http://www.apcupsd.org/

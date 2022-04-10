@@ -3,10 +3,12 @@ PIJUICE(8)
 
 NAME
 ----
+
 pijuice - driver for UPS in PiJuice HAT
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 *pijuice* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
@@ -17,6 +19,7 @@ may not fully apply to PiJuice HAT, patches from experts are welcome.
 
 SUPPORTED HARDWARE
 ------------------
+
 The *pijuice* driver supports the portable PiJuice HAT UPS for Raspberry Pi
 embedded PCs.
 
@@ -30,6 +33,7 @@ On the PiJuice HAT, this should be `/dev/i2c-1`.
 
 INSTALLATION
 ------------
+
 NOTE: This section was copied from `asem` driver manpage and may not fully
 apply to PiJuice HAT, patches are welcome.
 
@@ -52,6 +56,7 @@ DIAGNOSTICS
 
 KNOWN ISSUES AND BUGS
 ---------------------
+
 NOTE: This section was copied from `asem` driver manpage and may not fully
 apply to PiJuice HAT, patches are welcome.
 
@@ -60,6 +65,7 @@ made to turn off the UPS.
 
 AUTHORS
 -------
+
 Andrew Anderson <aander07@gmail.com>
 
 SEE ALSO
@@ -67,10 +73,12 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 Initial pull requests adding this driver:
 
 * https://github.com/networkupstools/nut/pull/730

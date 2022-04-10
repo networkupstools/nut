@@ -3,16 +3,19 @@ DUMMY-UPS(8)
 
 NAME
 ----
+
 dummy-ups - Driver for multi-purpose UPS emulation
 
 NOTE
 ----
+
 This man page only documents the specific features of the
 *dummy-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
+
 This program is a multi-purpose UPS emulation tool.
 Its behavior depends on the running mode: "dummy" or "repeater".
 
@@ -165,11 +168,13 @@ which allows one to build a virtual device, composed of several other devices
 
 BUGS
 ----
+
 Instant commands are not yet supported in Dummy Mode, and data need name/value
 checking enforcement, as well as boundaries or enumeration definition.
 
 AUTHOR
 ------
+
 Arnaud Quette
 
 SEE ALSO
@@ -182,4 +187,5 @@ linkman:nutupsdrv[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

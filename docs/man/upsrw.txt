@@ -112,8 +112,10 @@ confusing.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upscmd[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
