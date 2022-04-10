@@ -4,6 +4,18 @@ This man page only documents the hardware-specific features of the
 blazer driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
+NOTE
+----
+
+Please note that this driver is deprecated and will not receive
+new development. If it works for managing your devices -- fine,
+but if you are running it to try setting up a new device, please
+consider the newer linkman:nutdrv_qx[8] instead, which should
+handle all 'Q*' protocol variants for NUT.
++
+Please do also report if your device works with this driver,
+but linkman:nutdrv_qx[8] would not actually support it with any
+subdriver!
 
 SUPPORTED HARDWARE
 ------------------

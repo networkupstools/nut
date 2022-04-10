@@ -436,6 +436,15 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 }
