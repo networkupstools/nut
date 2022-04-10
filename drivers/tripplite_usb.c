@@ -507,6 +507,10 @@ static void decode_v(const unsigned char *value)
 			  input_voltage_scaled  = 230;
 			  break;
 
+		case 6: input_voltage_nominal = 
+			  input_voltage_scaled  = 230;
+			  break;
+
 		default:
 			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
 			  break;
@@ -1443,7 +1447,7 @@ void upsdrv_updateinfo(void)
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 || tl_model == TRIPP_LITE_SMART_3005) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */

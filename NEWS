@@ -267,6 +267,8 @@ refer to this change set (too long in the making) as NUT 2.7.5.
    and in particular to manage power separately on one or two outlet groups
    [PR #1048]
 
+ - tripplite_usb: updated to recognize the "3005" protocol [PR #584]
+
  - libnutclient: introduce getDevicesVariableValues() to improve performances
    when querying many devices (up to 15 times faster)
 

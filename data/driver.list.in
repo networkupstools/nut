@@ -1172,7 +1172,8 @@
 "Tripp Lite"	"ups"	"3"	"SMX3000RT2UTAA"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4396
 "Tripp Lite"	"ups"	"3"	"SMX3000XLRT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=2694
 "Tripp Lite"	"ups"	"3"	"SMX3000XLRT2UA"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5658
-"Tripp Lite"	"ups"	"3"	"SMX500RT1U"	"USB (protocol 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2691
+"Tripp Lite"	"ups"	"3"	"SMX500RT1U"	"USB (older; product ID 0001, protocol 3005)"	"tripplite_usb"	# https://www.tripplite.com/support/product/part-number/SMX500RT1U
+"Tripp Lite"	"ups"	"3"	"SMX500RT1U"	"USB (newer; protocol/product ID 3005)"	"usbhid-ups"	# https://www.tripplite.com/support/product/part-number/SMX500RT1U
 "Tripp Lite"	"ups"	"3"	"SMX750SLT"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3021
 "Tripp Lite"	"ups"	"3"	"SU750RTXL2U"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3194
 "Tripp Lite"	"ups"	"3"	"SU750RTXLCD2U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5070
