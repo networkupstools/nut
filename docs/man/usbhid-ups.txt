@@ -31,6 +31,7 @@ At the present time, usbhid-ups supports:
  - some Belkin models,
  - some Cyber Power Systems models,
  - some Powercom models,
+ - some PowerWalker models,
  - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
