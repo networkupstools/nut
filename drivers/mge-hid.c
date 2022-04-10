@@ -38,7 +38,7 @@
 #include "mge-hid.h"
 #include "nut_float.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.45"
+#define MGE_HID_VERSION		"MGE HID 1.46"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -56,6 +56,8 @@
 /* AEG */
 #define AEG_VENDORID 0x2b2d
 
+/* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
+ * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC 0x06da
 
