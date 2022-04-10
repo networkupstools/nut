@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2900 utf-8
+personal_ws-1.1 en 2903 utf-8
 AAS
 ABI
 ACFAIL
@@ -600,6 +600,7 @@ MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
+MEC
 MEGATAEC
 MH
 MIBs
@@ -792,6 +793,7 @@ PBTn
 PBTnn
 PC
 PC's
+PCI
 PDC
 PDUs
 PDX
@@ -1216,6 +1218,7 @@ UPSTEMP
 UPScode
 UPSes
 UPSilon
+UPSmart
 UPSmon
 UPSonic
 UPSs

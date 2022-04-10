@@ -551,6 +551,26 @@ Refer to the 'driver-name' (8) man page for more information.
 You can also consult the Hardware Compatibility List (HCL) and filter on USB:
 http://www.networkupstools.org/stable-hcl.html?connection=USB
 
+== My USB UPS has a bogus Vendor ID 0x0001 and Product ID 0x0000, what driver supports it?
+
+Unfortunately, many devices are made without registering as a Vendor with
+the corresponding standards body, and use generic USB chips for interfacing
+with a computer (roughly similar to using a network interface card with a
+random MAC address and PCI ID, and thus poorly identifiable device specifics
+needed to automatically load some certain driver). Often they also lack a
+unique serial number field, so monitoring several devices is problematic.
+
+One frequent case is with devices identifying as "Fry's Electronics" and/or
+"MEC0003", if those data are served at all, or plain "0001/0000" in ID field.
+In some cases they are accompanied by "UPSmart" software with a "MEGA(USB)"
+connection option that works for Windows users.
+
+Your best bet is to search for community discussions of issues on NUT GitHub
+at https://github.com/networkupstools/nut/issues?q=is%3Aissue and try options
+there. Devices with these chips were known to connect with drivers for such
+unrelated protocols as Megatec Qx (different sub-drivers, often `fabula` or
+`hunnox`), ATCL, or USB-HID.
+
 == My USB UPS is supported but doesn't work!
 
 On Linux, udev rules are provided to set the correct permissions on device
