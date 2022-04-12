@@ -50,10 +50,11 @@ Changes from 2.7.4 to 2.8.0
 
 - oldmge-shut has been removed, and replaced by mge-shut.
 
-- New drivers for devices with "Qx" family of protocols should be developed
-  as sub-drivers in the `nutdrv_qx` framework for USB and Serial connected
-  devices, not as updates/clones of older e.g. `blazer` family and `bestups`.
-  Sources of such older drivers were marked with "OBSOLETION WARNING".
+- New drivers for devices with "Qx" (also known as "Megatec Q*") family of
+  protocols should be developed as sub-drivers in the `nutdrv_qx` framework
+  for USB and Serial connected devices, not as updates/clones of older e.g.
+  `blazer` family and `bestups`. Sources, man pages and start-up messages
+  of such older drivers were marked with "OBSOLETION WARNING".
 
 - liebert-esp2: some multi-phase variable names have been updated to match the
   rest of NUT.
