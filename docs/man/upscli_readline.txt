@@ -18,6 +18,7 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
 The *upscli_readline()* and *upscli_readline_timeout()* functions take the
 pointer 'ups' to a `UPSCONN_t` state structure, receive a single line from the
 server, and copy up to 'buflen' bytes of the response into the buffer 'buf'.

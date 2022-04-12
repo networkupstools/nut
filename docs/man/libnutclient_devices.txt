@@ -35,6 +35,7 @@ The returned description string must be freed.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_commands[3]
 linkman:libnutclient_devices[3]

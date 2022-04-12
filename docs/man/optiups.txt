@@ -76,8 +76,9 @@ BUGS
 On the 420E, `ups.serial` and `ups.temperature` are unsupported features.  This
 is not a bug in NUT or the NUT driver, just the way things are with this UPS.
 
-AUTHOR
-------
+AUTHORS
+-------
+
 Russell Kroll, Scott Heavner, Matthias Goebl
 
 SEE ALSO
@@ -85,8 +86,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

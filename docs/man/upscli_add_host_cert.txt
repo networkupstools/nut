@@ -16,6 +16,7 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
 The *upscli_add_host_cert()* function register a security rule associated
 to the 'hostname'. All connections to this host use this rule.
 
@@ -34,5 +35,6 @@ RETURN VALUE
 
 SEE ALSO
 --------
+
 linkman:upscli_init[3], linkman:upscli_connect[3], linkman:upscli_ssl[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

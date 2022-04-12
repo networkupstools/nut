@@ -384,6 +384,7 @@ linkman:solis[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
 // vim: tw=80 ai si ts=8 sts=4 sw=4 et :

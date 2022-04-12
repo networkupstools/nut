@@ -3,15 +3,18 @@ NUTDRV_ATCL_USB(8)
 
 NAME
 ----
+
 nutdrv_atcl_usb - Driver for 'ATCL FOR UPS' equipment
 
 NOTE
 ----
+
 This man page only documents the specific features of the nutdrv_atcl_usb
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver is for UPS hardware which identifies itself as USB idVendor 0001
 and idProduct 0000, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
 include Kanji and Plexus. The UPS interface seems to be a generic USB-to-serial
@@ -35,6 +38,7 @@ devices, such as linkman:nutdrv_qx[8].
 
 BUGS
 ----
+
 The UPS returns the same code for "load power is off" as for "on line power".
 This condition will not be observed if the NUT `upsmon` in primary mode runs
 on the box powered by the UPS, but may be an issue if the UPS is monitored
@@ -53,6 +57,7 @@ kind that allows detection and proper load cycling on command.
 
 AUTHORS
 -------
+
 Charles Lepple
 
 SEE ALSO
@@ -60,16 +65,20 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 The generic serial driver:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:genericups[8]
 
 The Qx driver:
 ~~~~~~~~~~~~~~
+
 linkman:nutdrv_qx[8] (`fuji` subdriver)
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

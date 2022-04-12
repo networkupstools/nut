@@ -42,6 +42,7 @@ The *nutclient_execute_device_command* intend to execute the instant command.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_devices[3]
 linkman:libnutclient_general[3]

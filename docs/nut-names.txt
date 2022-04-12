@@ -274,11 +274,13 @@ broken down to their base components.
 
 Phase Count Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
 input.phases (3 for three-phase, absent or 1 for 1phase)
 output.phases (as for input.phases)
 
 DOMAINs
 ^^^^^^^
+
 Any input or output is considered a valid DOMAIN.
 
 input (should really be called input.mains, but keep this for compat)

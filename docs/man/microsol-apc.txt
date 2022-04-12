@@ -15,6 +15,7 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports the following UPS models:
 
  * APC Back-UPS BZ1500-BR
@@ -53,17 +54,20 @@ models, but is untested.
 
 AUTHOR
 ------
-Ygor A. S. Regados <ygorre@tutanota.com>,
-Roberto P. Velloso <rvelloso@gmail.com>,
-Silvino B. Magalhães <sbm2yk@gmail.com>
+
+* Ygor A. S. Regados <ygorre@tutanota.com>
+* Roberto P. Velloso <rvelloso@gmail.com>
+* Silvino B. Magalhães <sbm2yk@gmail.com>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

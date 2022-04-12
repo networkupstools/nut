@@ -8,6 +8,7 @@ belkinunv - Driver for Belkin "Universal UPS" and compatible
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
@@ -18,6 +19,7 @@ drivers you should use.
 
 SUPPORTED HARDWARE
 ------------------
+
 The belkinunv driver is known to work with the Belkin Universal UPS
 models F6C800-UNV and F6C120-UNV, and is expected to work with other
 Belkin Universal UPS models. The driver only supports serial
@@ -32,6 +34,7 @@ are supported using the linkman:genericups[8] driver with
 
 SOFT SHUTDOWN WORKAROUND
 ------------------------
+
 One problem with the Belkin Universal UPS is that it cannot enter a
 soft shutdown (shut down the load until AC power returns) unless the
 batteries are completely depleted. Thus, one cannot just shut off the
@@ -73,6 +76,7 @@ startup scripts.
 
 OPTIONS
 -------
+
 See also linkman:nutupsdrv[8] for generic options. Never use the
 *-k* option with this driver; it does not work properly.
 
@@ -126,6 +130,7 @@ line.
 
 VARIABLES
 ---------
+
 *battery.charge*::
 
 *battery.runtime*::
@@ -327,15 +332,22 @@ EXTRA ARGUMENTS
 
 This driver does not support any extra settings in linkman:ups.conf[5].
 
+AUTHOR
+------
+
+Peter Selinger <selinger@users.sourceforge.net>
+
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other Belkin drivers:
 ~~~~~~~~~~~~~~~~~~~~~
+
 linkman:belkinunv[8],
 linkman:blazer_ser[8],
 linkman:blazer_usb[8],
@@ -343,11 +355,7 @@ linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
- - The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
- - The documentation for the protocol used by this UPS:
-link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]
 
-AUTHOR
-------
-
-Peter Selinger <selinger@users.sourceforge.net>
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The documentation for the protocol used by this UPS:
+  link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]

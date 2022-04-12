@@ -1,19 +1,21 @@
 TRIPPLITE_USB(8)
 ================
 
-
 NAME
 ----
+
 tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
 
 SYNOPSIS
 --------
+
 *tripplite_usb* -h
 
 *tripplite_usb* -a 'UPS_NAME' ['OPTIONS']
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
@@ -152,11 +154,13 @@ exposed as a USB string descriptor, there is no easy way to use this ID to
 distinguish between multiple UPS units on a single machine. The UPS would need
 to be claimed by the driver in order to read this ID.
 
-AUTHOR
-------
-Written by Charles Lepple, based on the linkman:tripplite[8] driver by Rickard E. (Rik)
-Faith and Nicholas Kain. Please do not email the authors directly - use the
-nut-upsdev mailing list.
+AUTHORS
+-------
+
+Written by Charles Lepple, based on the linkman:tripplite[8] driver
+by Rickard E. (Rik) Faith and Nicholas Kain.
+
+Please do not email the authors directly - use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
 Feldman (http://www.bradleyloritheo.com)
@@ -166,19 +170,21 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other drivers for Tripp-Lite hardware:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 
 Other tools:
 ~~~~~~~~~~~~
+
 regex(7), lsusb(8)
 
-
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 

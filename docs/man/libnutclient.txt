@@ -39,10 +39,12 @@ See the `nutclient.h` header for more information.
 
 ERROR HANDLING
 --------------
+
 There is currently no specific mechanism around error handling.
 
 SEE ALSO
 --------
+
 linkman:libnutclient_devices[3]
 linkman:libnutclient_commands[3]
 linkman:libnutclient_general[3]

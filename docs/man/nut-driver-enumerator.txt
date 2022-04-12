@@ -8,6 +8,7 @@ nut-driver-enumerator - tool to map NUT device entries to service instances
 
 SYNOPSIS
 --------
+
 *nut-driver-enumerator.sh* -h
 
 *nut-driver-enumerator.sh*  (no args)
@@ -135,8 +136,10 @@ Absent or unreadable `ups.conf` file
 
 SEE ALSO
 --------
+
 linkman:upsdrvsvcctl[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

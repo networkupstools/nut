@@ -144,18 +144,21 @@ powered USB hub, try a full-speed USB isolator, etc.
 
 AUTHOR
 ------
+
 Thanos Chatziathanassiou <tchatzi@arx.net>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-Socomec JBUS/Modbus Reference Guide: https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
-
-libmodbus home page: http://libmodbus.org
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* Socomec JBUS/Modbus Reference Guide:
+  https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
+* libmodbus home page: http://libmodbus.org

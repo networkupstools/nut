@@ -31,6 +31,7 @@ Note that if a method is reported as unavailable by those variables, the call to
 
 SEE ALSO
 --------
+
 linkman:nutscan_init[3], linkman:nutscan_scan_usb[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_xml_http[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],

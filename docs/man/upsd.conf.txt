@@ -152,6 +152,7 @@ SEE ALSO
 
 linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsd.users[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

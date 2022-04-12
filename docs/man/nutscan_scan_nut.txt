@@ -31,6 +31,7 @@ The *nutscan_scan_nut()* function returns a pointer to a `nutscan_device_t` stru
 
 SEE ALSO
 --------
+
 linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_avahi[3],

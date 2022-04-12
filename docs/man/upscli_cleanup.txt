@@ -15,6 +15,7 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
 The *upscli_cleanup()* function flushes SSL caches and frees memory
 used internally in upsclient module.
 
@@ -25,5 +26,6 @@ The *upscli_cleanup()* function returns 1 on success, or -1 if an error occurs.
 
 SEE ALSO
 --------
+
 linkman:upscli_init[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

@@ -50,5 +50,6 @@ The *nutclient_tcp_get_timeout()* function retrieve the timeout duration for I/O
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_general[3]

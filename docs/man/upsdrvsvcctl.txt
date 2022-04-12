@@ -8,6 +8,7 @@ upsdrvsvcctl - UPS driver service instance controller
 
 SYNOPSIS
 --------
+
 *upsdrvsvcctl* -h
 
 *upsdrvsvcctl* ['OPTIONS'] {start | stop } ['ups']
@@ -189,9 +190,11 @@ Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
 
 SEE ALSO
 --------
+
 linkman:upsdrvctl[8], linkman:nutupsdrv[8], linkman:upsd[8],
 linkman:nut-driver-enumerator[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

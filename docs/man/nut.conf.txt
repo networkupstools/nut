@@ -3,6 +3,7 @@ NUT.CONF(5)
 
 NAME
 ----
+
 nut.conf - UPS definitions for Network UPS Tools
 
 DESCRIPTION
@@ -104,6 +105,7 @@ SEE ALSO
 linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5],
 linkman:upsmon.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

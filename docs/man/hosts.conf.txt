@@ -36,4 +36,5 @@ linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

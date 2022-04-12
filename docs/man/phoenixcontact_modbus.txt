@@ -75,16 +75,19 @@ This driver doesn't support any instant commands.
 
 AUTHOR
 ------
+
 Spiros Ioannou <sivann@gmail.com>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-libmodbus home page: http://libmodbus.org
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org

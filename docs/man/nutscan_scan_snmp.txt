@@ -57,6 +57,7 @@ The *nutscan_scan_snmp()* function returns a pointer to a `nutscan_device_t` str
 
 SEE ALSO
 --------
+
 linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
