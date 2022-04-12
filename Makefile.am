@@ -215,11 +215,15 @@ tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
-dist-sig:
+nut-@PACKAGE_VERSION@.tar.gz: dist
+nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
+nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash
+
+dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
 
-dist-hash:
+dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
 	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
 
@@ -295,7 +299,7 @@ MAINTAINERCLEANFILES_PACKAGES += *.p5p
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
-package:
+package: dist
 	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
 	case "`uname -s`" in \
