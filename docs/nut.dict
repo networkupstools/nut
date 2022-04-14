@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2939 utf-8
+personal_ws-1.1 en 2942 utf-8
 AAS
 ABI
 ACFAIL
@@ -241,6 +241,7 @@ DEBUGOUT
 DELCMD
 DELENUM
 DELINFO
+DELPHYS
 DELRANGE
 DES
 DESTDIR
@@ -277,6 +278,7 @@ DiSplay
 Diehl
 Dietze
 Digitus
+Digys
 Dimitris
 Dly
 Dmitry
@@ -624,6 +626,7 @@ MQ
 MSI
 MSII
 MSIII
+MX
 MacKenzie's
 MacOS
 Maccelari

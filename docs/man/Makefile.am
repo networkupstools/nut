@@ -621,11 +621,13 @@ HTML_MACOSX_MANS = macosx-ups.html
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
+	socomec_jbus.txt   \
 	adelsystem_cbi.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
 	generic_modbus.8 \
 	huawei-ups2000.8 \
+	socomec_jbus.8   \
 	adelsystem_cbi.8
 endif
 
@@ -636,6 +638,7 @@ endif
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
+	socomec_jbus.html   \
 	adelsystem_cbi.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
