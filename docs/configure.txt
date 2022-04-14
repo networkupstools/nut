@@ -10,13 +10,20 @@ current and complete listing for the current version of the codebase.
 Driver selection
 ----------------
 
+Serial drivers
+~~~~~~~~~~~~~~
+
 	--with-serial
+
+USB drivers
+~~~~~~~~~~~
 
 Build and install the serial drivers (default: yes)
 
 	--with-usb
 
 Build and install the USB drivers (default: auto-detect)
+
 Note that you need to install the libusb development package or files,
 and that both libusb 0.1 and 1.0 are supported. In case both are
 available, libusb 1.0 takes precedence, and will be used by default.
@@ -26,9 +33,13 @@ If you do specify the version to use (or `yes` for auto-detection),
 this option would fail if requested (or any) libusb version was not
 found.  The default `auto` value would not fail in such case.
 
+SNMP drivers
+~~~~~~~~~~~~
+
 	--with-snmp
 
 Build and install the SNMP drivers (default: auto-detect)
+
 Note that you need to install libsnmp development package or files.
 
 	--with-net-snmp-config
@@ -37,35 +48,56 @@ In addition to the `--with-snmp` option above, this one allows to provide
 a custom program name (in `PATH`) or complete pathname to `net-snmp-config`
 (may have copies named per architecture, e.g. `net-snmp-config-32` and
 `net-snmp-config-64`).
+
 This may be needed on build systems which support multiple architectures,
 or in cases where your distribution names this program differently.
 With a default value of `yes` it would mean preference of this program,
 compared to information from `pkg-config`, if both are available.
 
+XML drivers and features
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 	--with-neon
 
 Build and install the XML drivers (default: auto-detect)
+
 Note that you need to install neon development package or files.
+
+LLNC CHAOS Powerman driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	--with-powerman
 
 Build and install Powerman PDU client driver (default: auto-detect)
+
 This allows to interact with the Powerman daemon, and the numerous
 Power Distribution Units (PDU) supported by the project.
 Note that you need to install powerman development package or files.
+
+IPMI drivers
+~~~~~~~~~~~~
 
 	--with-ipmi
 	--with-freeipmi
 
 Build and install IPMI PSU driver (default: auto-detect)
+
 This allows to monitor numerous Power Supply Units (PSU) found on servers.
-Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner ; and
-1.0.1 or higher, for nut-ipmipsu) development package or files.
+
+Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner;
+and 1.0.1 or higher, for nut-ipmipsu) development package or files.
+
+I2C bus drivers
+~~~~~~~~~~~~~~~
 
 	--with-linux_i2c
 
 Build and install i2c drivers (default: auto-detect)
+
 Note that you need to install libi2c development package or files.
+
+Manual selection of drivers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	--with-drivers=<driver>,<driver>,...
 
@@ -73,19 +105,19 @@ Specify exactly which driver or drivers to build and install (this
 works for serial, usb, and snmp drivers, and overrides the
 preceding three options).
 
-As of the time of this writing (2010), there are 46 UPS drivers
+As of the time of original writing (2010), there are 46 UPS drivers
 available.  Most users will only need one, a few will need two or
 three, and very few people will need all of them.
 
 To save time during the compile and disk space later on, you can
 use this option to just build and install a subset of the drivers.
-To select mge-shut and usbhid-ups, you'd do this:
+For example, to select `mge-shut` and `usbhid-ups`, you'd do this:
 
 	--with-drivers=apcsmart,usbhid-ups
 
 If you need to build more drivers later on, you will need to rerun
-configure with a different list. To make it build all of the
-drivers from scratch again, run 'make clean' before starting.
+`configure` with a different list. To make it build all of the
+drivers from scratch again, run `make clean` before starting.
 
 
 Optional features
