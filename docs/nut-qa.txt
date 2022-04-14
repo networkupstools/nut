@@ -11,7 +11,7 @@ Documentation
 -------------
 
 The documentation toolchain uses
-link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
+link:https://asciidoc.org/[AsciiDoc] to output both HTML pages and
 manual pages (troff). This single point of control fills many gaps,
 suppresses many redundancies, and optimizes documentation management in
 general.
