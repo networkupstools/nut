@@ -22,14 +22,14 @@ SUPPORTED HARDWARE
 
 mge-utalk supports the following legacy units, using the MGE UTalk protocol:
 
-    Pulsar ESV+,
-    Pulsar ES+,
-    Pulsar EL,
-    Pulsar EX,
-    Pulsar EXtreme,
-    Comet EXtreme,
-    Comet (Utalk Serial Card, ref 66060),
-    Galaxy (Utalk Serial Card, ref 66060).
+* Pulsar ESV+
+* Pulsar ES+
+* Pulsar EL
+* Pulsar EX
+* Pulsar EXtreme
+* Comet EXtreme
+* Comet (Utalk Serial Card, ref 66060)
+* Galaxy (Utalk Serial Card, ref 66060)
 
 This driver also support some newer models with backward UTalk compatibility,
 such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
