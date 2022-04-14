@@ -182,6 +182,7 @@ EXAMPLES
 The hostname of the UPS is specified with the "port" value in
 `ups.conf`, and may include a non-standard (161) remote peer port:
 
+------
 	[snmpv1]
 		driver = snmp-ups
 		port = snmp-ups.example.com
@@ -199,6 +200,7 @@ The hostname of the UPS is specified with the "port" value in
 		authPassword = myauthenticationpassphrase
 		privPassword = myprivatepassphrase
 		desc = "Example SNMP v3 device, with the highest security level"
+------
 
 AUTHORS
 -------
