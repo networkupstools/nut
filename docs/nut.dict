@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2930 utf-8
+personal_ws-1.1 en 2939 utf-8
 AAS
 ABI
 ACFAIL
@@ -563,6 +563,7 @@ LINEV
 LISTINSTCMD
 LISTRW
 LISTVARS
+LLNC
 LOADPCT
 LOCKFN
 LOCKNAME
@@ -579,6 +580,9 @@ Laventhol
 Legrand
 Lepple
 Levente
+LibGD
+LibLTDL
+LibUSB
 LineA
 LineB
 LineSens
@@ -905,6 +909,7 @@ PresentStatus
 Priv
 Procomm
 ProductID
+Proxmox
 Prynych
 Pulizzi
 PwrOut
@@ -2032,6 +2037,7 @@ libneon
 libnss
 libnut
 libnutclient
+libnutclientsub
 libnutconfig
 libnutscan
 libpng
@@ -2231,6 +2237,7 @@ nobody's
 nobt
 nodtk
 noflag
+nogroup
 nohang
 noimp
 noinst
@@ -2310,6 +2317,7 @@ oq
 os
 ostream
 otherprotocols
+otheruser
 outliers
 pF
 pacman
@@ -2876,6 +2884,7 @@ wget
 whitespace
 wiki
 winnutclient
+wmNUT
 wmnut
 wordformat
 workflow
