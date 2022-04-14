@@ -46,12 +46,14 @@ QUERY FORMATTING
 To generate a request for `GET NUMLOGINS su700`, you would populate
 query and numq as follows:
 
+------
 	size_t numq;
 	const char *query[2];
 
 	query[0] = "NUMLOGINS";
 	query[1] = "su700";
 	numq = 2;
+------
 
 All escaping of special characters and quoting of elements with spaces
 is handled for you inside this function.
@@ -59,17 +61,19 @@ is handled for you inside this function.
 ANSWER FORMATTING
 -----------------
 
-The raw response from upsd to the above query would be `NUMLOGINS su700 1`.
+The raw response from `upsd` to the above query would be `NUMLOGINS su700 1`.
 Since this is split up for you, the values work out like this:
 
+------
 	size_t numa;
 
 	numa = 3;
 	answer[0] = "NUMLOGINS"
 	answer[1] = "su700"
 	answer[2] = "1"
+------
 
-Notice that the value which you seek typically starts at answer[numq].
+Notice that the value which you seek typically starts at `answer[numq]`.
 
 ERROR CHECKING
 --------------

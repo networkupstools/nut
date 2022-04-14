@@ -47,12 +47,14 @@ To see the list of variables on a UPS called 'su700', the protocol command
 would be `LIST VAR su700`.  To start that list with this function, you
 would populate query and numq as follows:
 
+------
 	size_t numq;
 	const char *query[2];
 
 	query[0] = "VAR";
 	query[1] = "su700";
 	numq = 2;
+------
 
 All escaping of special characters and quoting of elements with spaces
 are handled for you inside this function.
@@ -80,4 +82,3 @@ linkman:upscli_fd[3], linkman:upscli_get[3],
 linkman:upscli_readline[3], linkman:upscli_sendline[3],
 linkman:upscli_ssl[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]
-
