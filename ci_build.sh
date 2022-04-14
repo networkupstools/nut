@@ -503,6 +503,7 @@ if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
             # GNU make processes quiet mode better, which helps with this use-case
             MAKE=gmake
         else
+            # Use system default, there should be one
             MAKE=make
         fi
         export MAKE

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2911 utf-8
+personal_ws-1.1 en 2930 utf-8
 AAS
 ABI
 ACFAIL
@@ -498,6 +498,7 @@ JBus
 JKL
 JRE
 JSON
+JVM
 JW
 Jageson
 Jarosch
@@ -564,6 +565,7 @@ LISTRW
 LISTVARS
 LOADPCT
 LOCKFN
+LOCKNAME
 LOTRANS
 LUA
 LVM
@@ -943,6 +945,7 @@ RDNT
 RDWR
 README
 REDi
+REFREPO
 REPLBATT
 REQSSL
 RESPIN
@@ -1164,6 +1167,7 @@ TST
 TT
 TTT
 TXF
+TXG
 TXV
 TXVxx
 TapSwDly
@@ -1206,6 +1210,7 @@ UID
 UIDA
 UINT
 UNKCOMMAND
+UNSTASH
 UNV
 UPGUARDS
 UPM
@@ -1629,8 +1634,8 @@ crw
 csh
 cshdelay
 css
-cts
 ctrl
+cts
 ctypes
 cua
 cuaa
@@ -1663,6 +1668,7 @@ decrement
 decrypt
 dedb
 dedup
+deduplication
 defun
 dep
 dephasing
@@ -1681,6 +1687,7 @@ dialout
 difftool
 dipsw
 dir
+discardable
 disp
 distcheck
 distclean
@@ -1839,6 +1846,7 @@ getent
 getenv
 getopt
 getvar
+gitcache
 github
 gitignore
 gitk
@@ -1866,8 +1874,8 @@ hal
 hardcoded
 hasFeature
 hb
-hcl
 hcd
+hcl
 hg
 hh
 hibernate's
@@ -2087,6 +2095,7 @@ lxcbr
 lxccontainer
 lxml
 lxyz
+lz
 mA
 mDNS
 mS
@@ -2425,6 +2434,7 @@ raritan
 ratedva
 ratedwatts
 rb
+rcctl
 readline
 readonly
 realpower
@@ -2487,6 +2497,7 @@ salicru
 sbin
 sbindir
 scd
+scm
 screenshot
 screenshots
 scriptname
@@ -2509,6 +2520,7 @@ selftest
 sendback
 sendline
 sendmail
+sequentialized
 ser
 seria
 serialno
@@ -2528,6 +2540,7 @@ setvar's
 sfr
 sgml
 sgs
+shm
 shutdownArguments
 shutdowndebounce
 shutdowndelay
@@ -2688,6 +2701,7 @@ tiocm
 tios
 tmp
 tmpfiles
+tmpfs
 toolchain
 toolkits
 topbot
@@ -2713,6 +2727,7 @@ tuple
 turnon
 tw
 tx
+txg
 txt
 typedef
 uA
@@ -2744,6 +2759,7 @@ unmapped
 unmounts
 unpowered
 unshutup
+unstash
 updateinfo
 upexia
 upower
@@ -2864,9 +2880,11 @@ wmnut
 wordformat
 workflow
 workspace
+workspaces
 writability
 writeinfo
 writeups
+ws
 xAAAA
 xCC
 xD
@@ -2902,6 +2920,7 @@ xxxxAP
 youruid
 yyy
 zaac
+zfs
 zinto
 zlib
 zsh
