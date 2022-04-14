@@ -1,5 +1,5 @@
-Socomec_jbus(8)
-==================
+SOCOMEC_JBUS(8)
+===============
 
 NAME
 ----
@@ -28,10 +28,10 @@ UPS with the following characteristics.
 
 2. Connection: RS-232 
 
-These are typically provided with a Netvision WEB/SNMP management card / external 
-box that would be better served by the linkman:snmp-ups[8] driver.
-In case netvision isn't available, you can hook up the UPS directly via the
-serial port and use this driver.
+These are typically provided with a Netvision WEB/SNMP management
+card / external box that would be better served by the linkman:snmp-ups[8]
+driver. In case netvision isn't available, you can hook up the UPS directly
+via the serial port and use this driver.
 
 Currently, it has only been tested on the following model.
 
@@ -67,16 +67,17 @@ operating system.
 INSTALLATION
 ------------
 
-This driver should be built by default if libmodbus and development headers are
-available. You can force the configure script to build it with the following 
-arguments:
+This driver should be built by default if libmodbus and development headers
+are available. You can force the `configure` script to build it with the
+following arguments:
 
     configure --with-serial=yes --with-modbus=yes
 
-You also need to give proper (R/W) permissions on the local serial device file
-to allow the NUT driver run-time user to access it. This may need additional
-setup for start-up scripting, udev or upower rules, to apply the rights on every
-boot -- especially if your device nodes are tracked by a virtual filesystem.
+You also need to give proper (R/W) permissions on the local serial device
+file to allow the NUT driver run-time user to access it. This may need
+additional setup for start-up scripting, udev or upower rules, to apply
+the rights on every boot -- especially if your device nodes are tracked
+by a virtual filesystem.
 
 For example, a USB-to-serial converter can be identified as `/dev/ttyACM0`
 or `/dev/ttyUSB0` on Linux, or `/dev/ttyU0` on FreeBSD (note the capital "U").
@@ -94,22 +95,22 @@ VARIABLES
 This driver does not support writable runtime variables (see linkman:upsrw[8]):
 for the same reasons.
 Both should be trivial to implement, but since I've already found one or two
-inconsistencies in the documentation, I'm witholding from trying them.
+inconsistencies in the documentation, I'm withholding from trying them.
 
 KNOWN ISSUES AND BUGS
 ---------------------
 
-Well, it is an alpha release at best, but so far appears to report the UPS status
-reliably. Mostly based on the work of Yifeng Li <tomli@tomli.me> on the huawei-ups2000 
-in that very same source tree.
+Well, it is an alpha release at best, but so far appears to report the UPS
+status reliably. Mostly based on the work of Yifeng Li <tomli@tomli.me> on
+the huawei-ups2000 in that very same source tree.
 
 Read failure on some JBUS addresses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The driver polls all documented JBUS addresses and it is quite possible that your
-UPS model does not support one of them. (eg the Digys does not support address 
-0x1020 which should provide the current UPS status).
-This should be logged with LOG_ERR from modbus_read_input_registers() 
+The driver polls all documented JBUS addresses and it is quite possible
+that your UPS model does not support one of them (e.g. the Digys does not
+support address 0x1020 which should provide the current UPS status).
+This should be logged with LOG_ERR from modbus_read_input_registers()
 along with the address that produced the error.
 
 Data stale
@@ -120,7 +121,8 @@ and trigger a "data stale" error. Once a data stale error has occurred,
 you should see error messages similar to the example below in the system
 log.
 
-    socomec_jbus: modbus_read_input_registers(addr:XXXX, count:Z): Illegal data address
+    socomec_jbus: modbus_read_input_registers(addr:XXXX, count:Z):
+        Illegal data address
     upsd: Data for UPS [socomec] is stale - check driver
     upsd: UPS [socomec] data is no longer stale
 
