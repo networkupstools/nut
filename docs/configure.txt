@@ -98,6 +98,15 @@ Build and install i2c drivers (default: auto-detect)
 
 Note that you need to install libi2c development package or files.
 
+Modbus drivers
+~~~~~~~~~~~~~~
+
+	--with-modbus
+
+Build and install modbus (Serial, TCP) drivers (default: auto-detect)
+
+Note that you need to install libmodbus development package or files.
+
 Manual selection of drivers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
