@@ -4,7 +4,8 @@ NUTSCAN_FREE_DEVICE(3)
 NAME
 ----
 
-nutscan_free_device - Free a nutscan_device_t structure created by nutscan_new_device.
+nutscan_free_device - Free a `nutscan_device_t` structure created by
+`nutscan_new_device`.
 
 SYNOPSIS
 --------
@@ -16,7 +17,9 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_free_device()* function free a `nutscan_device_type_t` structure. Doing so, it free the whole linked list, not only the given device.
+The *nutscan_free_device()* function can free a `nutscan_device_type_t`
+structure. Doing so, it frees the whole linked list, not only the given
+device.
 
 SEE ALSO
 --------

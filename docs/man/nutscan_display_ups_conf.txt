@@ -4,7 +4,8 @@ NUTSCAN_DISPLAY_UPS_CONF(3)
 NAME
 ----
 
-nutscan_display_ups_conf - Display the specified `nutscan_device_t` structure on stdout.
+nutscan_display_ups_conf - Display the specified `nutscan_device_t`
+structure on stdout.
 
 SYNOPSIS
 --------
@@ -16,7 +17,9 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_display_ups_conf()* function displays all NUT devices in 'device' to stdout. It displays them in a way that it can be directly copied into the ups.conf file.
+The *nutscan_display_ups_conf()* function displays all NUT devices in
+'device' to stdout. It displays them in a way that it can be directly
+copied into the 'ups.conf' file.
 
 SEE ALSO
 --------
