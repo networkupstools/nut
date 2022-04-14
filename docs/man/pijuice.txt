@@ -79,11 +79,10 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-Initial pull requests adding this driver:
+* Initial pull requests adding this driver:
+** https://github.com/networkupstools/nut/pull/730
+** https://github.com/PiSupply/PiJuice/issues/124
 
-* https://github.com/networkupstools/nut/pull/730
-* https://github.com/PiSupply/PiJuice/issues/124
+* Product home page: https://uk.pi-supply.com/products/pijuice-standard
 
-Product home page: https://uk.pi-supply.com/products/pijuice-standard
-
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
