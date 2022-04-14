@@ -83,6 +83,7 @@ Please read http://bugs.debian.org/358696 for more details.
 EXAMPLE
 -------
 
+------
    # /etc/nut/nut.conf.  See nut.conf(5)
    
    MODE=none
@@ -92,6 +93,7 @@ EXAMPLE
    UPSMON_OPTIONS=""
    
    # POWEROFF_WAIT=15m
+------
 
 INTEGRATION
 -----------
