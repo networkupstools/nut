@@ -498,9 +498,13 @@ optional_dist_clean_check() {
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] && (command -v gmake) >/dev/null 2>/dev/null ; then
-        # GNU make processes quiet mode better, which helps with this use-case
-        MAKE=gmake
+    if [ -z "${MAKE-}" ] ; then
+        if (command -v gmake) >/dev/null 2>/dev/null ; then
+            # GNU make processes quiet mode better, which helps with this use-case
+            MAKE=gmake
+        else
+            MAKE=make
+        fi
         export MAKE
     fi
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
