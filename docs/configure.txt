@@ -71,7 +71,9 @@ LLNC CHAOS Powerman driver
 Build and install Powerman PDU client driver (default: auto-detect)
 
 This allows to interact with the Powerman daemon, and the numerous
-Power Distribution Units (PDU) supported by the project.
+Power Distribution Units (PDU) supported by the
+https://github.com/chaos/powerman[powerman] project.
+
 Note that you need to install powerman development package or files.
 
 IPMI drivers
