@@ -27,6 +27,7 @@ SUPPORTED HARDWARE
 ------------------
 
 Tested to work on the following units:
+
 * Liebert GXT2-6000RT208
 
 This is an experimental driver.  You have been warned.
