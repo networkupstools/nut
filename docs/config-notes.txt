@@ -330,6 +330,13 @@ is stale, then your ups.conf is not configured correctly, or you
 have a driver that isn't working properly.  You must fix this before
 going on to the next step.
 
+NOTE: Normally `upsd` requires that at least one driver section is
+defined in the 'ups.conf' file, and refuses to start otherwise.
+If you intentionally do not have any driver sections defined (yet)
+but still want the data server to run, respond and report zero devices
+(e.g. on an automatically managed monitoring deployment), you can enable
+the `ALLOW_NO_DEVICE true` option in the 'upsd.conf' file.
+
 On operating systems with service management frameworks, the data server
 life-cycle is managed by `nut-server` service.
 
