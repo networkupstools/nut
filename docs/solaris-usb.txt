@@ -209,23 +209,16 @@ as an UPS), especially when using USB hubs and chips where hardware
 vendors had cut a few corners too many, which were addressed in a
 newer rewrite of the library as libusb-1.0.
 
-Subsequently as at least the illumos-based distributions evolved to
+Subsequently just as at least the illumos-based distributions evolved to
 include the new library and certain patches for it, and the library
 itself matured, the NUT project also added an ability to build with
-libusb-1.0 either directly or using its 0.1-compat API.
+libusb-1.0 either directly or using its 0.1-compat API (available since
+NUT 2.8.0 release).
 
-Currently this is not part of the common codebase and thus tagged
-releases, but is experimented in several competing GitHub branches
-until one gets chosen as the best to integrate:
-
-* https://github.com/networkupstools/nut/issues/300 - Please port to libusb 1.0 #300
-* https://github.com/networkupstools/nut/tree/libusb-1.0
-* https://github.com/networkupstools/nut/tree/libusb-1.0+0.1
-* https://github.com/networkupstools/nut/tree/libusb-compat-1.0
-
-If your "standard" build of NUT has problems connecting to your
-USB UPS, consider building one of those branches using the recent
-library available for your distribution.
+If your "standard" build of NUT has problems connecting to your USB UPS
+(libusb binary variant should be visible in driver debug messages),
+consider re-building NUT from source with the other option using the
+recent library build as available for your distribution.
 
 In this context, note the OpenIndiana libusb-1 package pull requests
 with code which was successfully used when developing this documentation:
