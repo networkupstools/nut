@@ -162,15 +162,16 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
-A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
+A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
+    --attribute=icons \
     --xsltproc-opts="--nonet" \
     --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
     --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
     --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
-    --attribute iconsdir=$(srcdir)/images \
+    --attribute=iconsdir="$(srcdir)/images" \
     --attribute=badges \
     --attribute=external_title \
-    --attribute tree_version=@TREE_VERSION@ \
+    --attribute=tree_version="@TREE_VERSION@" \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
