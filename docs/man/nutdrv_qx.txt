@@ -21,6 +21,7 @@ The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power'
 (rebranded by many, many - have I said many? - others...
+
 Long story short: if your UPS came with a software called 'Viewpower',
 chances are high that it works with this driver with one of the
 <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>),
@@ -794,13 +795,13 @@ If you want to know the explanation of that bit you can either watch the log or 
 AUTHORS
 -------
 
-Daniele Pezzini <hyouko@gmail.com>,
-Arnaud Quette <arnaud.quette@gmail.com>,
-John Stamp <kinsayder@hotmail.com>,
-Peter Selinger <selinger@users.sourceforge.net>,
-Arjen de Korte <adkorte-guest@alioth.debian.org>,
-Alexander Gordeev <lasaine@lvk.cs.msu.su>,
-Edgar Fuß <ef@math.uni-bonn.de>
+* Daniele Pezzini <hyouko@gmail.com>
+* Arnaud Quette <arnaud.quette@gmail.com>
+* John Stamp <kinsayder@hotmail.com>
+* Peter Selinger <selinger@users.sourceforge.net>
+* Arjen de Korte <adkorte-guest@alioth.debian.org>
+* Alexander Gordeev <lasaine@lvk.cs.msu.su>
+* Edgar Fuß <ef@math.uni-bonn.de>
 
 
 SEE ALSO
@@ -823,4 +824,3 @@ Internet Resources:
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
 The NUT HCL: http://www.networkupstools.org/stable-hcl.html
-
