@@ -170,7 +170,13 @@ usb8/1                         connected    configured   ok
 Usually the driver mapping should set up the "friendly" device nodes
 under `/dev/` tree as well (symlinks to real entries in `/devices/`)
 so for NUT drivers you would specify a `port=/dev/usb/463.ffff/0` for
-your new `driver=usbhid-ups` section.
+your new driver section in `ups.conf`.
+
+NOTE: As detailed in link:config-notes.txt[], the "natively USB" drivers
+(including `usbhid-ups` and `nutdrv_qx`) match the device by ID and/or
+strings it reports, and so effectively require but ignore the `port`
+option -- so it is commonly configured as `port=auto`.
+Drivers used for SHUT or serial protocols do need the device path.
 
 For some serial-to-USB converter chips however it was noted that while
 the device driver is attached, and the `/device/...` path is exposed
