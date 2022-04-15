@@ -191,6 +191,10 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# Note that empirically it treats "destination-dir" as the source root for
+# PDF generation (even though it claims the argument is ignored for non-HTML
+# targets) so we have to provide the "images/" in this case. ONLY for PDF!
+
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
 DOCBUILD_BEGIN = { \
@@ -198,7 +202,9 @@ DOCBUILD_BEGIN = { \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
-        ln -s ../../images "./$${A2X_OUTDIR}" ; \
+        case "$${A2X_OUTDIR}" in \
+            tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
+        esac; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
