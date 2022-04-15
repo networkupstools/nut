@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2942 utf-8
+personal_ws-1.1 en 2943 utf-8
 AAS
 ABI
 ACFAIL
@@ -1719,6 +1719,7 @@ dq
 driverexec
 drivername
 driverpath
+drivertool
 drv
 drvctl
 drvpath
