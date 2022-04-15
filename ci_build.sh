@@ -741,6 +741,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    # TODO: Consider `--enable-maintainer-mode` to add recipes that
+    # would quickly regenerate Makefile(.in) if you edit Makefile.am
+
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
@@ -1507,6 +1510,8 @@ bindings)
 
     ./autogen.sh
 
+    # TODO: Consider `--enable-maintainer-mode` to add recipes that
+    # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so
