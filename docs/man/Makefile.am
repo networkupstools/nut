@@ -49,14 +49,20 @@ HTML_CONF_MANS = \
 	upsmon.conf.html \
 	upssched.conf.html
 
-SRC_CLIENT_PAGES = \
-	nutupsdrv.txt \
+# NOTE: Currently SRC_DRIVERTOOL_PAGES are a separate list to generate
+# a linkman-drivertool-names.txt file, but historically remain part of
+# MAN/HTML_CLIENT_PAGES in the bigger picture.
+SRC_DRIVERTOOL_PAGES = \
 	nut-driver-enumerator.txt \
+	upsdrvctl.txt \
+	upsdrvsvcctl.txt
+
+SRC_CLIENT_PAGES = \
+	$(SRC_DRIVERTOOL_PAGES) \
+	nutupsdrv.txt \
 	upsc.txt \
 	upscmd.txt \
 	upsd.txt \
-	upsdrvctl.txt \
-	upsdrvsvcctl.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsrw.txt \
@@ -677,14 +683,7 @@ MAN_MANS += \
 	$(MAN_LINUX_I2C_PAGES)
 endif
 
-# distribute everything, even those not installed by default
-# Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
-	$(SRC_CONF_PAGES) \
-	$(SRC_CLIENT_PAGES) \
-	$(SRC_TOOL_PAGES) \
-	$(SRC_CGI_PAGES) \
-	$(SRC_DEV_PAGES) \
+SRC_DRIVERS_PAGES = \
 	$(SRC_SERIAL_PAGES) \
 	$(SRC_SNMP_PAGES) \
 	$(SRC_USB_LIBUSB_PAGES) \
@@ -695,6 +694,16 @@ SRC_ALL_PAGES = \
 	$(SRC_MACOSX_PAGES) \
 	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES)
+
+# distribute everything, even those not installed by default
+# Note that 'dist' target requires AsciiDoc!
+SRC_ALL_PAGES = \
+	$(SRC_CONF_PAGES) \
+	$(SRC_CLIENT_PAGES) \
+	$(SRC_TOOL_PAGES) \
+	$(SRC_CGI_PAGES) \
+	$(SRC_DEV_PAGES) \
+	$(SRC_DRIVERS_PAGES)
 
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
@@ -735,6 +744,32 @@ HTML_MANS = \
 	$(HTML_MACOSX_MANS) \
 	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS)
+
+# Note: target documents, except nutupsdrv.txt itself, start the
+# list of drivers with `- linkman:nutupsdrv[8]` entry
+linkman-driver-names.txt:
+	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	  ls -1 $(SRC_DRIVERS_PAGES) | grep -vE '^nutupsdrv\.txt$$' | sort -n | uniq \
+	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
+	 ) > "$@"
+
+linkman-drivertool-names.txt:
+	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	  ls -1 $(SRC_DRIVERTOOL_PAGES) | sort -n | uniq \
+	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
+	 ) > "$@"
+
+index.txt index.html \
+upsd.txt upsd.html upsd.8 upsd.pdf \
+nutupsdrv.txt nutupsdrv.html nutupsdrv.8 nutupsdrv.pdf : linkman-driver-names.txt linkman-drivertool-names.txt
+
+# These files are generated when we build from git source so not tracked in
+# git, but we want it as part of tarball just in case the end-user's build
+# does not enable something related to docs:
+EXTRA_DIST += linkman-driver-names.txt
+EXTRA_DIST += linkman-drivertool-names.txt
+
+DISTCLEANFILES = linkman-driver-names.txt linkman-drivertool-names.txt
 
 all:
 
