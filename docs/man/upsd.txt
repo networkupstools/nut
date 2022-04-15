@@ -158,26 +158,45 @@ SEE ALSO
 Clients:
 ~~~~~~~~
 
-linkman:upsc[8], linkman:upscmd[8],
-linkman:upsrw[8], linkman:upslog[8], linkman:upsmon[8]
+- linkman:upsc[8]
+- linkman:upscmd[8]
+- linkman:upsrw[8]
+- linkman:upslog[8]
+- linkman:upsmon[8]
 
 CGI programs:
 ~~~~~~~~~~~~~
 
-linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
+- linkman:upsset.cgi[8]
+- linkman:upsstats.cgi[8]
+- linkman:upsimage.cgi[8]
 
 Drivers:
 ~~~~~~~~
 
-linkman:nutupsdrv[8],
-linkman:apcsmart[8], linkman:belkin[8], linkman:belkinunv[8],
-linkman:bestuferrups[8], linkman:bestups[8],
-linkman:cyberpower[8], linkman:energizerups[8], linkman:etapro[8],
-linkman:everups[8], linkman:genericups[8],
-linkman:isbmex[8], linkman:liebert[8], linkman:masterguard[8],
-linkman:mge-shut[8], linkman:mge-utalk[8], linkman:oneac[8],
-linkman:powercom[8], linkman:safenet[8], linkman:snmp-ups[8],
-linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8],
+- linkman:nutupsdrv[8]
+- linkman:apcsmart[8]
+- linkman:belkin[8]
+- linkman:belkinunv[8]
+- linkman:bestuferrups[8]
+- linkman:bestups[8]
+- linkman:cyberpower[8]
+- linkman:energizerups[8]
+- linkman:etapro[8]
+- linkman:everups[8]
+- linkman:genericups[8]
+- linkman:isbmex[8]
+- linkman:liebert[8]
+- linkman:masterguard[8]
+- linkman:mge-shut[8]
+- linkman:mge-utalk[8]
+- linkman:oneac[8]
+- linkman:powercom[8]
+- linkman:safenet[8]
+- linkman:snmp-ups[8]
+- linkman:tripplite[8]
+- linkman:tripplitesu[8]
+- linkman:victronups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
