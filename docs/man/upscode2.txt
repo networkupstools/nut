@@ -89,7 +89,7 @@ battery voltage.
 AUTHORS
 -------
 
-* Håvard Lygre <hklygre@online.no
+* Håvard Lygre <hklygre@online.no>
 * Niels Baggesen <niels@baggesen.net>
 
 SEE ALSO

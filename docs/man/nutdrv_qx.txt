@@ -821,6 +821,5 @@ linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
-The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT HCL: http://www.networkupstools.org/stable-hcl.html

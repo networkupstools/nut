@@ -253,8 +253,12 @@ AUTHORS
 -------
 
 Originally sponsored by MGE UPS SYSTEMS.
+
 Now sponsored by Eaton <http://opensource.eaton.com>
-Arnaud Quette, Peter Selinger, Arjen de Korte
+
+* Arnaud Quette
+* Peter Selinger
+* Arjen de Korte
 
 SEE ALSO
 --------

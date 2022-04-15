@@ -81,7 +81,9 @@ this UPS.
 AUTHORS
 -------
 
-Russell Kroll, Scott Heavner, Matthias Goebl
+* Russell Kroll
+* Scott Heavner
+* Matthias Goebl
 
 SEE ALSO
 --------
