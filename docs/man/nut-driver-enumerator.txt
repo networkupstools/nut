@@ -134,6 +134,11 @@ Bad inputs, e.g. unrecognized service management framework
 *2*::
 Absent or unreadable `ups.conf` file
 
+AUTHOR
+------
+
+Jim Klimov <jimklimov+nut@gmail.com>
+
 SEE ALSO
 --------
 
