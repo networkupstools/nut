@@ -17,9 +17,10 @@ DESCRIPTION
 -----------
 
 The *upscli_disconnect()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure, shuts down the connection to the server, and
-frees dynamic memory used by the state structure.  The `UPSCONN_t` structure
-is no longer valid after this function is called.
+`UPSCONN_t` state structure, shuts down the connection to the server,
+and frees dynamic memory used by the state structure.
+
+The `UPSCONN_t` structure is no longer valid after this function is called.
 
 This function must be called, or your program will leak memory and
 file descriptors.

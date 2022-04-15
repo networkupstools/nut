@@ -22,7 +22,8 @@ used internally in upsclient module.
 RETURN VALUE
 ------------
 
-The *upscli_cleanup()* function returns 1 on success, or -1 if an error occurs.
+The *upscli_cleanup()* function returns 1 on success, or -1 if an error
+occurs.
 
 SEE ALSO
 --------

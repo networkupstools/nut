@@ -22,15 +22,17 @@ The *upscli_get()* function takes the pointer 'ups' to a
 'numq' query elements.  It builds a properly-formatted request from
 those elements and transmits it to linkman:upsd[8].
 
-Upon success, the response will be split into separate components.  A
-pointer to those components will be returned in 'answer'.  The
-number of usable answer components will be returned in 'numa'.
+Upon success, the response will be split into separate components.
+A pointer to those components will be returned in 'answer'.
+The number of usable answer components will be returned in 'numa'.
 
 USES
 ----
 
-This function implements the "GET" command in the protocol.  As a
-result, you can use it to request many different things from the server.
+This function implements the "GET" command in the protocol.
+As a result, you can use it to request many different things
+from the server.
+
 Some examples are:
 
  * GET NUMLOGINS <ups>
@@ -62,6 +64,7 @@ ANSWER FORMATTING
 -----------------
 
 The raw response from `upsd` to the above query would be `NUMLOGINS su700 1`.
+
 Since this is split up for you, the values work out like this:
 
 ------
@@ -79,8 +82,8 @@ ERROR CHECKING
 --------------
 
 This function will check your query against the response from
-linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
-will expect to see those at the beginning of the response.
+linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status",
+it will expect to see those at the beginning of the response.
 
 If the results from *upsd* do not pass this case-insensitive test
 against your request, this function will return an error.   When this
@@ -100,8 +103,8 @@ which were returned by the most recent call.  You also must not attempt
 to use more than 'numa' elements in 'answer'.  Such behavior is
 undefined, and may yield bogus data or a crash.
 
-The array will be deleted after calling linkman:upscli_disconnect[3].  Any
-access after that point is also undefined.
+The array will be deleted after calling linkman:upscli_disconnect[3].
+Any access after that point is also undefined.
 
 RETURN VALUE
 ------------
@@ -109,10 +112,12 @@ RETURN VALUE
 The *upscli_get()* function returns 0 on success, or -1 if an
 error occurs.
 
-If *upsd* disconnects, you may need to handle or ignore `SIGPIPE` in order to
-prevent your program from terminating the next time that the library writes to
-the disconnected socket. The following code in your initialization function
-will allow the *upscli_get()* call to return an error in that case:
+If *upsd* disconnects, you may need to handle or ignore `SIGPIPE`
+in order to prevent your program from terminating the next time that
+the library writes to the disconnected socket.
+
+The following code in your initialization function will allow the
+*upscli_get()* call to return an error in that case:
 
    #include <signal.h>
    ...

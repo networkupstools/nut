@@ -35,8 +35,8 @@ Alternatively, the c_rehash utility (provided by openssl-perl) can take a
 directory and iterate it to link all certificates found in that directory,
 in the manner described above.
 
-If compiled with NSS, certpath refers to a directory
-containing database files.
+If compiled with NSS, certpath refers to a directory containing database
+files.
 
 If compiled with NSS and using SSL, you can specify 'certname' the name
 of the certificate to send to upsd and 'certpasswd' the password used
