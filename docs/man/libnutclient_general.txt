@@ -5,7 +5,8 @@ NAME
 ----
 
 libnutclient_general, nutclient_destroy, strarr_alloc, strarr_free -
-General and utility functions in Network UPS Tools high-level client access library
+General and utility functions in Network UPS Tools high-level client
+access library
 
 SYNOPSIS
 --------
@@ -19,6 +20,7 @@ SYNOPSIS
 	typedef char** strarr;
 
 	strarr strarr_alloc(unsigned short count);
+
 	void strarr_free(strarr arr);
 
 DESCRIPTION
