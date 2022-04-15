@@ -188,6 +188,11 @@ copy of the journals stored in the filesystem.
 *Solaris SMF*::
 Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
 
+AUTHOR
+------
+
+Jim Klimov <jimklimov+nut@gmail.com>
+
 SEE ALSO
 --------
 
