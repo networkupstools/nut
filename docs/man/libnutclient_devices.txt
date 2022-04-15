@@ -16,6 +16,8 @@ SYNOPSIS
 
 	typedef void* NUTCLIENT_t;
 
+	typedef char** strarr;
+
 	strarr nutclient_get_devices(NUTCLIENT_t client);
 
 	int nutclient_has_device(NUTCLIENT_t client, const char* dev);

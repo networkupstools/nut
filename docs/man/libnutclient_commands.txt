@@ -17,6 +17,8 @@ SYNOPSIS
 
 	typedef void* NUTCLIENT_t;
 
+	typedef char** strarr;
+
 	strarr nutclient_get_device_commands(
 		NUTCLIENT_t client,
 		const char* dev);
