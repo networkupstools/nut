@@ -11,7 +11,7 @@ SYNOPSIS
 
  #include <nut-scan.h>
 
- nutscan_device_t * nutscan_new_device();
+ nutscan_device_t * nutscan_new_device(void);
 
 DESCRIPTION
 -----------
