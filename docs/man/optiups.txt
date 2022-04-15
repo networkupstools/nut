@@ -56,13 +56,14 @@ sent to your system logs each time NUT polls the UPS.  If you specify
 
 *fake_lowbatt*::
 
-This forces the low battery flag true.  Without it, if you want to test your
-UPS, you will have to unplug it and wait until the battery drops to a low/critical
-voltage level before NUT will respond and power down your system.  With the flag,
-NUT should power down the system soon after you pull the plug.  When you are done
-testing, you should remove this flag.
+This forces the low battery flag true.  Without it, if you want to test
+your  UPS, you will have to unplug it and wait until the battery drops
+to a low/critical voltage level before NUT will respond and power down
+your system.  With the flag, NUT should power down the system soon after
+you pull the plug.  When you are done testing, you should remove this flag.
 +
-For basic shutdown configuration testing, the command 'upsmon -c fsd' is preferred.
+For basic shutdown configuration testing, the command 'upsmon -c fsd' is
+preferred.
 
 *powerup*::
 
@@ -73,8 +74,9 @@ This will also power-up your equipment connected to the UPS!
 BUGS
 ----
 
-On the 420E, `ups.serial` and `ups.temperature` are unsupported features.  This
-is not a bug in NUT or the NUT driver, just the way things are with this UPS.
+On the 420E, `ups.serial` and `ups.temperature` are unsupported features.
+This is not a bug in NUT or the NUT driver, just the way things are with
+this UPS.
 
 AUTHORS
 -------
