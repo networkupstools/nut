@@ -359,3 +359,5 @@ Internet resources:
 * The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 * The documentation for the protocol used by this UPS:
   link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]
+  (link:https://networkupstools.org/protocols/belkin-universal.html[replica
+  on NUT site])
