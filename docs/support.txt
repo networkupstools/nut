@@ -65,12 +65,13 @@ In this case, be sure to include the following information:
 
 - OS name and version,
 - exact NUT version,
-- NUT installation method: from source tarball, package or Subversion,
+- NUT installation method: package, or a custom build from source tarball
+  or GitHub (which fork, branch, PR),
 - exact device name and related information (manufacturing date, web
-pointers, ...),
+  pointers, ...),
 - complete problem description, with any relevant traces, like system
-log excerpts, and driver debug output. You can obtain the latter using
-the following command, running as root and after having stopped NUT:
+  log excerpts, and driver debug output. You can obtain the latter using
+  the following command, running as root and after having stopped NUT:
 
 	/path/to/driver -DD -a <upsname>
 
