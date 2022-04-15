@@ -181,8 +181,10 @@ Driver control:
 Drivers:
 ~~~~~~~~
 
+- linkman:nutupsdrv[8]
+
 /////////////////////////////////////////
-:; (cd docs/man && ls -1 *.8 | grep -E -v '(upsc|upsd|upsdrvsvcctl|upsdrvctl|upscmd|upssched|upsrw|upsmon|upslog|nut-driver-enumerator|nut-scanner|nut-recorder|.*cgi)\.8' | sed 's,^\(.*\)\.8$,- linkman:\1[8],')
+:; (cd docs/man && ls -1 *.8 | grep -E -v '(upsc|upsd|upsdrvsvcctl|upsdrvctl|upscmd|upssched|upsrw|upsmon|upslog|nut-driver-enumerator|nut-scanner|nut-recorder|nutupsdrv|.*cgi)\.8' | sed 's,^\(.*\)\.8$,- linkman:\1[8],')
 /////////////////////////////////////////
 
 - linkman:adelsystem_cbi[8]
@@ -225,7 +227,6 @@ Drivers:
 - linkman:nutdrv_atcl_usb[8]
 - linkman:nutdrv_qx[8]
 - linkman:nutdrv_siemens_sitop[8]
-- linkman:nutupsdrv[8]
 - linkman:oneac[8]
 - linkman:optiups[8]
 - linkman:phoenixcontact_modbus[8]
