@@ -172,7 +172,7 @@ SRC_DEV_PAGES = \
 	nutscan.txt \
 	nutscan_scan_snmp.txt \
 	nutscan_scan_usb.txt \
-	nutscan_scan_xml_http.txt \
+	nutscan_scan_xml_http_range.txt \
 	nutscan_scan_nut.txt \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
@@ -285,7 +285,7 @@ MAN3_DEV_PAGES = \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
-	nutscan_scan_xml_http.3 \
+	nutscan_scan_xml_http_range.3 \
 	nutscan_scan_nut.3 \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
@@ -347,7 +347,7 @@ HTML_DEV_MANS = \
 	nutscan.html \
 	nutscan_scan_snmp.html \
 	nutscan_scan_usb.html \
-	nutscan_scan_xml_http.html \
+	nutscan_scan_xml_http_range.html \
 	nutscan_scan_nut.html \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
