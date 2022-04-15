@@ -1,14 +1,24 @@
+# Intended build products
 /*.chunked/
 /*.html
 /*.pdf
+
+# Temporary build resources (can come from OS)
 /docbook-xsl.css
+
+# Intermediate files from docs-building
 /ups-html.txt
 /user-manual.xml
 /developer-guide.xml
+/packager-guide.xml
+/solaris-usb.xml
+/cables.xml
 /docinfo.xml
 /FAQ.xml
 /nut-dmf.xml
 /nut-names.xml
+
+# Temporary stuff
 nut.dict.sorted
 /*.bak
 /*.bak-*
