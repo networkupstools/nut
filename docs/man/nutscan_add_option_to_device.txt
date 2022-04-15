@@ -11,7 +11,10 @@ SYNOPSIS
 
  #include <nut-scan.h>
 
- void nutscan_add_option_to_device(nutscan_device_t * device,char * option_name, char * value);
+ void nutscan_add_option_to_device(
+        nutscan_device_t * device,
+        char * option_name,
+        char * value);
 
 
 DESCRIPTION
@@ -26,9 +29,19 @@ The `nutscan_device_t` contains the following variables:
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 
-This is a double linked list of device. Each device is described by its `type`, its `driver` name, its `port` and any number of optional data.
+This is a double linked list of device. Each device is described by
+its `type`, its `driver` name, its `port` and any number of optional data.
 
-The *nutscan_add_option_to_device()* adds an optional data in the given device. Optional data are made of an 'option_name' and an associated 'value'. Copies of 'option_name' and 'value' are stored in the device, so the caller can safely free both of them.
+The *nutscan_add_option_to_device()* adds an optional data in the
+given device. Optional data are made of an 'option_name' and an
+associated 'value'. Copies of 'option_name' and 'value' are stored
+in the device, so the caller can safely free both of the original
+strings used as arguments.
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-device.h' file.
 
 SEE ALSO
 --------

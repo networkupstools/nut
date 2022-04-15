@@ -44,6 +44,11 @@ The *nutscan_get_serial_ports_list()* function returns NULL if an error
 occurred (invalid port range) or a pointer to a null terminated array
 of strings on success.
 
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-serial.h' file.
+
 SEE ALSO
 --------
 

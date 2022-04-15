@@ -21,6 +21,11 @@ The *nutscan_free_device()* function can free a `nutscan_device_type_t`
 structure. Doing so, it frees the whole linked list, not only the given
 device.
 
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-device.h' file.
+
 SEE ALSO
 --------
 

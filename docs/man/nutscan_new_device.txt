@@ -16,12 +16,19 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_new_device()* function allocates a new `nutscan_device_type_t` structure.
+The *nutscan_new_device()* function allocates a new `nutscan_device_type_t`
+structure.
 
 RETURN VALUE
 ------------
 
-The *nutscan_new_device()* function returns the newly allocated `nutscan_device_type_t` structure
+The *nutscan_new_device()* function returns the newly allocated
+`nutscan_device_type_t` structure.
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-device.h' file.
 
 SEE ALSO
 --------

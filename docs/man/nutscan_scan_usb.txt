@@ -23,7 +23,9 @@ You MUST call linkman:nutscan_init[3] before using this function.
 RETURN VALUE
 ------------
 
-The *nutscan_scan_usb()* function returns a pointer to a `nutscan_device_t` structure containing all found devices or NULL if an error occurs or no device is found.
+The *nutscan_scan_usb()* function returns a pointer to a `nutscan_device_t`
+structure containing all found devices or NULL if an error occurs or no
+device is found.
 
 SEE ALSO
 --------

@@ -16,9 +16,13 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_init()* function must be called at least once before using any other function of the nutscan library.
+The *nutscan_init()* function must be called at least once before using
+any other function of the nutscan library.
 
-It updates the following global variables which can be used by nutscan library user to know which scan methods are available at run-time. This depends on the libraries installed on the system:
+It updates the following global variables which can be used by nutscan
+library user to know which scan methods are available at run-time.
+
+This depends on the libraries installed on the system:
 
 	nutscan_avail_avahi = 1 : AVAHI scan is available
 	nutscan_avail_ipmi = 1 : IPMI scan is available
@@ -27,7 +31,13 @@ It updates the following global variables which can be used by nutscan library u
 	nutscan_avail_usb = 1 : USB method is available
 	nutscan_avail_xml_http = 1 : XML HTTP method is available
 
-Note that if a method is reported as unavailable by those variables, the call to the corresponding nutscan_scan_* function will always return NULL.
+Note that if a method is reported as unavailable by those variables, the
+call to the corresponding `nutscan_scan_*` function will always return NULL.
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-init.h' file.
 
 SEE ALSO
 --------
