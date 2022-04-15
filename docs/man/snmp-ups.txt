@@ -215,8 +215,9 @@ The hostname of the UPS is specified with the "port" value in
 AUTHORS
 -------
 
-Arnaud Quette, Dmitry Frolov
-
+* Arnaud Quette
+* Dmitry Frolov
+* Jim Klimov
 
 SEE ALSO
 --------
