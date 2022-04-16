@@ -749,7 +749,12 @@ HTML_MANS = \
 # list of drivers with `- linkman:nutupsdrv[8]` entry
 # To regenerate these files, do `make clean` first
 linkman-driver-names.txt:
-	@if test -s "$@" || test -s "$(srcdir)/$(@F)" ; then exit 0 ; fi ; \
+	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
+	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
+	    fi ; \
+	 fi
+	@if test -s "$@" ; then exit 0 ; fi ; \
 	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERS_PAGES) ; do echo "$$F" ; done \
 	    | grep -vE '^nutupsdrv\.txt$$' \
@@ -758,7 +763,12 @@ linkman-driver-names.txt:
 	 ) > "$@"
 
 linkman-drivertool-names.txt:
-	@if test -s "$@" || test -s "$(srcdir)/$(@F)" ; then exit 0 ; fi ; \
+	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
+	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
+	    fi ; \
+	 fi
+	@if test -s "$@" ; then exit 0 ; fi ; \
 	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERTOOL_PAGES) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
