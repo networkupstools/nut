@@ -747,8 +747,10 @@ HTML_MANS = \
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry
+# To regenerate these files, do `make clean` first
 linkman-driver-names.txt:
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@if test -s "$@" || test -s "$(srcdir)/$(@F)" ; then exit 0 ; fi ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERS_PAGES) ; do echo "$$F" ; done \
 	    | grep -vE '^nutupsdrv\.txt$$' \
 	    | sort -n | uniq \
@@ -756,7 +758,8 @@ linkman-driver-names.txt:
 	 ) > "$@"
 
 linkman-drivertool-names.txt:
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@if test -s "$@" || test -s "$(srcdir)/$(@F)" ; then exit 0 ; fi ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(SRC_DRIVERTOOL_PAGES) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
