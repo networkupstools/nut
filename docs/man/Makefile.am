@@ -747,7 +747,9 @@ HTML_MANS = \
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry
-# To regenerate these files, do `make clean` first
+# To regenerate these files, do `make distclean` first
+LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt
+
 linkman-driver-names.txt:
 	@if test x"$(srcdir)" != x"$(builddir)" ; then \
 	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
@@ -775,6 +777,8 @@ linkman-drivertool-names.txt:
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
 
+# Dependencies are about particular filenames, since over time
+# we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
 index.txt index.html \
 upsd.txt upsd.html upsd.8 upsd.pdf \
 nutupsdrv.txt nutupsdrv.html nutupsdrv.8 nutupsdrv.pdf : linkman-driver-names.txt linkman-drivertool-names.txt
@@ -782,10 +786,9 @@ nutupsdrv.txt nutupsdrv.html nutupsdrv.8 nutupsdrv.pdf : linkman-driver-names.tx
 # These files are generated when we build from git source so not tracked in
 # git, but we want it as part of tarball just in case the end-user's build
 # does not enable something related to docs:
-EXTRA_DIST += linkman-driver-names.txt
-EXTRA_DIST += linkman-drivertool-names.txt
+EXTRA_DIST += $(LINKMAN_INCLUDE_GENERATED)
 
-DISTCLEANFILES = linkman-driver-names.txt linkman-drivertool-names.txt
+DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 all:
 
@@ -882,7 +885,7 @@ DOCBUILD_BEGIN = { \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
-        for F in linkman-driver-names.txt linkman-drivertool-names.txt ; do \
+        for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
             if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
         done ; \
@@ -906,7 +909,7 @@ DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        for F in linkman-driver-names.txt linkman-drivertool-names.txt ; do \
+        for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             rm -f "./$${A2X_OUTDIR}/$$F" || true ; \
         done ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
