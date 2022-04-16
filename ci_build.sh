@@ -428,7 +428,7 @@ check_gitignore() {
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
-            git diff -- "${FILE_GLOB}" || true
+            PAGER=cat git diff -- "${FILE_GLOB}" || true
         fi
         echo "==="
         return 1
