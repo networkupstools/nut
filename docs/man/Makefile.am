@@ -872,6 +872,10 @@ DOCBUILD_BEGIN = { \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        for F in linkman-driver-names.txt linkman-drivertool-names.txt ; do \
+            if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
+            if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
+        done ; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
@@ -881,12 +885,15 @@ DOCBUILD_BEGIN = { \
 }
 
 # Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
-# may generate miltiple files in one go... so we move "*" and hope
+# may generate multiple files in one go... so we move "*" and hope
 # for no required hidden files (or would have to `find` them all).
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
+        for F in linkman-driver-names.txt linkman-drivertool-names.txt ; do \
+            rm -f "./$${A2X_OUTDIR}/$$F" || true ; \
+        done ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
         mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
