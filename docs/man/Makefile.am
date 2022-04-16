@@ -892,6 +892,11 @@ DOCBUILD_BEGIN = { \
     && ! test -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+    if test x"$(srcdir)" != x"$(builddir)" ; then \
+        if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/$(<F)" ; then \
+            ln -fs "$(srcdir)/$(<F)" "$(builddir)/" ; \
+        fi ; \
+     fi ; \
 }
 
 # Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
