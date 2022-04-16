@@ -749,13 +749,16 @@ HTML_MANS = \
 # list of drivers with `- linkman:nutupsdrv[8]` entry
 linkman-driver-names.txt:
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
-	  ls -1 $(SRC_DRIVERS_PAGES) | grep -vE '^nutupsdrv\.txt$$' | sort -n | uniq \
+	  for F in $(SRC_DRIVERS_PAGES) ; do echo "$$F" ; done \
+	    | grep -vE '^nutupsdrv\.txt$$' \
+	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
 
 linkman-drivertool-names.txt:
 	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
-	  ls -1 $(SRC_DRIVERTOOL_PAGES) | sort -n | uniq \
+	  for F in $(SRC_DRIVERTOOL_PAGES) ; do echo "$$F" ; done \
+	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
 
