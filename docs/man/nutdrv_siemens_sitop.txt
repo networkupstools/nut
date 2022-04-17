@@ -182,8 +182,8 @@ During normal operation, no commands are sent to the UPS at all
 usability.
 It is not sure if the serial models are affected by this issue as well.
 
-AUTHORS
--------
+AUTHOR
+------
 
 Matthijs H. ten Berge
 

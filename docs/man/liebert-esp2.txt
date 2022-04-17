@@ -27,6 +27,7 @@ SUPPORTED HARDWARE
 ------------------
 
 Tested to work on the following units:
+
 * Liebert GXT2-6000RT208
 
 This is an experimental driver.  You have been warned.
@@ -42,8 +43,8 @@ This driver supports the following optional settings in linkman:ups.conf[5]:
 *baudrate=*'num'::
 Set the speed of the serial connection - 1200, 2400 (default), 4800, 9600 or 19200.
 
-AUTHOR
-------
+AUTHORS
+-------
 
 * Richard Gregory <R.Gregory at liverpool.ac.uk>
 * Arjen de Korte <adkorte-guest at alioth.debian.org>

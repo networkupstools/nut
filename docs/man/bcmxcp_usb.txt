@@ -99,11 +99,11 @@ You have forgotten to install the hotplug files, as explained
 in the INSTALLATION section above. Don't forget to restart
 hotplug so that it applies these changes.
 
-AUTHOR
-------
+AUTHORS
+-------
 
-Tore Ørpetveit <tore@orpetveit.net>,
-Wolfgang Ocker <weo@weo1.de>
+* Tore Ørpetveit <tore@orpetveit.net>
+* Wolfgang Ocker <weo@weo1.de>
 
 SEE ALSO
 --------

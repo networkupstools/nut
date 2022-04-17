@@ -13,7 +13,7 @@ new development. If it works for managing your devices -- fine,
 but if you are running it to try setting up a new device, please
 consider the newer linkman:nutdrv_qx[8] instead, which should
 handle all 'Q*' protocol variants for NUT.
-+
+
 Please do also report if your device works with this driver,
 but linkman:nutdrv_qx[8] would not actually support it with any
 subdriver!
@@ -338,4 +338,3 @@ Internet Resources:
 
 * The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 * The NUT HCL: http://www.networkupstools.org/stable-hcl.html
-

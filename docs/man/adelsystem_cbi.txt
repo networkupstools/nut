@@ -55,8 +55,6 @@ Modbus:
 An integer specifying the device modbus slave ID (default 1).
 
 
-----
-
 CONFIGURATION
 -------------
 

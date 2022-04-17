@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2911 utf-8
+personal_ws-1.1 en 2944 utf-8
 AAS
 ABI
 ACFAIL
@@ -241,6 +241,7 @@ DEBUGOUT
 DELCMD
 DELENUM
 DELINFO
+DELPHYS
 DELRANGE
 DES
 DESTDIR
@@ -277,6 +278,7 @@ DiSplay
 Diehl
 Dietze
 Digitus
+Digys
 Dimitris
 Dly
 Dmitry
@@ -498,6 +500,7 @@ JBus
 JKL
 JRE
 JSON
+JVM
 JW
 Jageson
 Jarosch
@@ -562,8 +565,10 @@ LINEV
 LISTINSTCMD
 LISTRW
 LISTVARS
+LLNC
 LOADPCT
 LOCKFN
+LOCKNAME
 LOTRANS
 LUA
 LVM
@@ -577,6 +582,9 @@ Laventhol
 Legrand
 Lepple
 Levente
+LibGD
+LibLTDL
+LibUSB
 LineA
 LineB
 LineSens
@@ -618,6 +626,7 @@ MQ
 MSI
 MSII
 MSIII
+MX
 MacKenzie's
 MacOS
 Maccelari
@@ -903,6 +912,7 @@ PresentStatus
 Priv
 Procomm
 ProductID
+Proxmox
 Prynych
 Pulizzi
 PwrOut
@@ -943,6 +953,7 @@ RDNT
 RDWR
 README
 REDi
+REFREPO
 REPLBATT
 REQSSL
 RESPIN
@@ -1164,6 +1175,7 @@ TST
 TT
 TTT
 TXF
+TXG
 TXV
 TXVxx
 TapSwDly
@@ -1206,6 +1218,7 @@ UID
 UIDA
 UINT
 UNKCOMMAND
+UNSTASH
 UNV
 UPGUARDS
 UPM
@@ -1629,8 +1642,8 @@ crw
 csh
 cshdelay
 css
-cts
 ctrl
+cts
 ctypes
 cua
 cuaa
@@ -1663,6 +1676,7 @@ decrement
 decrypt
 dedb
 dedup
+deduplication
 defun
 dep
 dephasing
@@ -1681,6 +1695,7 @@ dialout
 difftool
 dipsw
 dir
+discardable
 disp
 distcheck
 distclean
@@ -1704,6 +1719,7 @@ dq
 driverexec
 drivername
 driverpath
+drivertool
 drv
 drvctl
 drvpath
@@ -1839,6 +1855,7 @@ getent
 getenv
 getopt
 getvar
+gitcache
 github
 gitignore
 gitk
@@ -1866,8 +1883,8 @@ hal
 hardcoded
 hasFeature
 hb
-hcl
 hcd
+hcl
 hg
 hh
 hibernate's
@@ -2024,6 +2041,7 @@ libneon
 libnss
 libnut
 libnutclient
+libnutclientsub
 libnutconfig
 libnutscan
 libpng
@@ -2087,6 +2105,7 @@ lxcbr
 lxccontainer
 lxml
 lxyz
+lz
 mA
 mDNS
 mS
@@ -2222,6 +2241,7 @@ nobody's
 nobt
 nodtk
 noflag
+nogroup
 nohang
 noimp
 noinst
@@ -2301,9 +2321,11 @@ oq
 os
 ostream
 otherprotocols
+otheruser
 outliers
 pF
 pacman
+param
 paramkeywords
 parsable
 parseconf
@@ -2425,6 +2447,7 @@ raritan
 ratedva
 ratedwatts
 rb
+rcctl
 readline
 readonly
 realpower
@@ -2487,6 +2510,7 @@ salicru
 sbin
 sbindir
 scd
+scm
 screenshot
 screenshots
 scriptname
@@ -2509,6 +2533,7 @@ selftest
 sendback
 sendline
 sendmail
+sequentialized
 ser
 seria
 serialno
@@ -2528,6 +2553,7 @@ setvar's
 sfr
 sgml
 sgs
+shm
 shutdownArguments
 shutdowndebounce
 shutdowndelay
@@ -2688,6 +2714,7 @@ tiocm
 tios
 tmp
 tmpfiles
+tmpfs
 toolchain
 toolkits
 topbot
@@ -2713,6 +2740,7 @@ tuple
 turnon
 tw
 tx
+txg
 txt
 typedef
 uA
@@ -2744,6 +2772,7 @@ unmapped
 unmounts
 unpowered
 unshutup
+unstash
 updateinfo
 upexia
 upower
@@ -2860,13 +2889,16 @@ wget
 whitespace
 wiki
 winnutclient
+wmNUT
 wmnut
 wordformat
 workflow
 workspace
+workspaces
 writability
 writeinfo
 writeups
+ws
 xAAAA
 xCC
 xD
@@ -2902,6 +2934,7 @@ xxxxAP
 youruid
 yyy
 zaac
+zfs
 zinto
 zlib
 zsh

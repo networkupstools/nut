@@ -4,7 +4,8 @@ LIBUPSCLIENT-CONFIG(1)
 NAME
 ----
 
-libupsclient-config - script to get information about the installed version of libupsclient
+libupsclient-config - script to get information about the installed
+version of libupsclient
 
 SYNOPSIS
 --------
@@ -46,4 +47,3 @@ Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-

@@ -16,16 +16,19 @@ SYNOPSIS
 SUPPORTED HARDWARE
 ------------------
 
-This driver should work with older Tripp Lite UPSes which are detected as USB
-HID-class devices, but are not true HID Power-Device Class devices.  So far,
-the devices supported by tripplite_usb have product ID 0001, and the newer
-units (such as those with "LCD" in the model name) with product ID 2001 require
-the linkman:usbhid-ups[8] driver instead.  Please report success or failure to
-the nut-upsuser mailing list.  A key piece of information is the protocol
-number, returned in `ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
-for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the linkman:tripplite[8] or linkman:tripplitesu[8]
-driver.
+This driver should work with older Tripp Lite UPSes which are detected
+as USB HID-class devices, but are not true HID Power-Device Class devices.
+So far, the devices supported by `tripplite_usb` have product ID 0001,
+and the newer units (such as those with "LCD" in the model name) with
+product ID 2001 require the linkman:usbhid-ups[8] driver instead.
+
+Please report success or failure to the nut-upsuser mailing list.
+A key piece of information is the protocol number, returned in
+`ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
+for more informative log messages.
+
+If your Tripp Lite UPS uses a serial port, you may wish to investigate
+the linkman:tripplite[8] or linkman:tripplitesu[8] drivers.
 
 This driver has been tested with the following models:
 
@@ -187,4 +190,3 @@ Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-

@@ -10,30 +10,41 @@ SYNOPSIS
 --------
 
  #include <nut-scan.h>
+ #include <unistd.h> /* useconds_t */
 
- nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
+ nutscan_device_t * nutscan_scan_nut(
+        const char * startIP,
+        const char * stopIP,
+        const char * port,
+        useconds_t usec_timeout);
 
 DESCRIPTION
 -----------
 
-The *nutscan_scan_nut()* function try to detect available NUT services and their associated devices. It issues a NUT request on every IP ranging from 'startIP' to 'stopIP'. 'startIP' is mandatory, 'stopIP' is optional. Those IP may be either IPv4 or IPv6 addresses or host names.
+The *nutscan_scan_nut()* function try to detect available NUT services
+and their associated devices. It issues a NUT request on every IP ranging
+from 'startIP' to 'stopIP'. 'startIP' is mandatory, 'stopIP' is optional.
+Those IP arguments may be either IPv4 or IPv6 addresses or host names.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 
 A specific 'port' number may be passed, or NULL to use the default NUT port.
 
-This function waits up to 'usec_timeout' microseconds before considering an IP address does not respond to NUT queries.
+This function waits up to 'usec_timeout' microseconds before considering
+an IP address does not respond to NUT queries.
 
 RETURN VALUE
 ------------
 
-The *nutscan_scan_nut()* function returns a pointer to a `nutscan_device_t` structure containing all found devices or NULL if an error occurs or no device is found.
+The *nutscan_scan_nut()* function returns a pointer to a `nutscan_device_t`
+structure containing all found devices or NULL if an error occurs or no
+device is found.
 
 SEE ALSO
 --------
 
 linkman:nutscan_init[3],
-linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3],
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_snmp[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_display_ups_conf[3],
 linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],

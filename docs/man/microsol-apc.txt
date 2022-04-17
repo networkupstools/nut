@@ -52,8 +52,8 @@ real values, needing model-specific post-processing by the driver. Monitoring
 of UPS state (on-battery/on-line, critical battery) should work for other
 models, but is untested.
 
-AUTHOR
-------
+AUTHORS
+-------
 
 * Ygor A. S. Regados <ygorre@tutanota.com>
 * Roberto P. Velloso <rvelloso@gmail.com>

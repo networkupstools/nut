@@ -19,9 +19,10 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *upscli_readline()* and *upscli_readline_timeout()* functions take the
-pointer 'ups' to a `UPSCONN_t` state structure, receive a single line from the
-server, and copy up to 'buflen' bytes of the response into the buffer 'buf'.
+The *upscli_readline()* and *upscli_readline_timeout()* functions take
+the  pointer 'ups' to a `UPSCONN_t` state structure, receive a single
+line from the server, and copy up to 'buflen' bytes of the response
+into the buffer 'buf'.
 
 Some parsing of the string occurs during reception.  In particular,
 ERR messages from linkman:upsd[8] are detected and will cause this
@@ -35,8 +36,8 @@ freedom, and uses NUT default network timeout (5 seconds).
 RETURN VALUE
 ------------
 
-The *upscli_readline()* and *upscli_readline_timeout()* functions return 0 on
-success, or -1 if an error occurs.
+The *upscli_readline()* and *upscli_readline_timeout()* functions
+return 0 on success, or -1 if an error occurs.
 
 SEE ALSO
 --------

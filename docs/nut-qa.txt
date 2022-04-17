@@ -11,7 +11,7 @@ Documentation
 -------------
 
 The documentation toolchain uses
-link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
+link:https://asciidoc.org/[AsciiDoc] to output both HTML pages and
 manual pages (troff). This single point of control fills many gaps,
 suppresses many redundancies, and optimizes documentation management in
 general.
@@ -30,8 +30,9 @@ link:http://aspell.net[Aspell], both interactively (using
 'make spellcheck-interactive') and automatically in Buildbot (using
 'make spellcheck').
 
-NOTE: A NUT dictionary is also available (docs/nut.dict), providing a glossary
-of terms related to power devices and management.
+NOTE: A NUT dictionary is also available (docs/nut.dict), providing a
+glossary of terms related to power devices and management, as well as
+partial terms, technical jargon and author names.
 
 Source code
 -----------
@@ -67,7 +68,9 @@ mailing list.
 ////////////////////////////////////////////////////////////////////////////////
 
 - link:http://buildbot.networkupstools.org/public/nut/[Buildbot]
-  and the new dedicated Jenkins incarnation of the NUT CI Farm with "legacy UI"
+  for older take on multi-platform builds, and the
+
+- new dedicated Jenkins incarnation of the NUT CI Farm with "legacy UI"
   for link:https://ci.networkupstools.org/job/nut/job/nut/job/master/[main branch]
   and link:https://ci.networkupstools.org/job/nut/job/nut/view/change-requests/[PRs],
   also accessible at the slower but slicker-looking Blue Ocean user interface for
@@ -89,9 +92,12 @@ mailing list, and fixed quickly.
 
 - a project portal with trackers for bugs, feature request, patches and tasks
 
+- LGTM.COM automatically checking C/C++ and Python code
+
 - Static code analysis:
   * link:https://scan.coverity.com/projects/networkupstools-nut[Coverity Scan overview of NUT]
   * status: image:https://scan.coverity.com/projects/8829/badge.svg[Coverity Scan Build Status]
+  * cppcheck as part of NUT CI farm builds and reports
 
 NUT QA also relies on external tools and trackers, like:
 

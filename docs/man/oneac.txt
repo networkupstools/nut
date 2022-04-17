@@ -111,11 +111,11 @@ those values are used to create an allowable output range.  The UPS
 will do what it can to keep the output voltage value within the
 defined range (for example: tap change or switch to inverter).
 
-AUTHOR
-------
+AUTHORS
+-------
 
-Bill Elliot <bill@wreassoc.com>,
-Eric Lawson <elawson@inficad.com>
+* Bill Elliot <bill@wreassoc.com>
+* Eric Lawson <elawson@inficad.com>
 
 SEE ALSO
 --------

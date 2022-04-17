@@ -16,11 +16,18 @@ SYNOPSIS
 
 	typedef void* NUTCLIENT_t;
 
-	void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* passwd);
+	void nutclient_authenticate(
+		NUTCLIENT_t client,
+		const char* login, const char* passwd);
+
 	void nutclient_logout(NUTCLIENT_t client);
+
 	void nutclient_device_login(NUTCLIENT_t client, const char* dev);
+
 	int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
+
 	void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+
 	void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev);
 
 DESCRIPTION
@@ -28,9 +35,9 @@ DESCRIPTION
 
 The *nutclient_authenticate()* function authenticates the user.
 
-'login' is the user name.
+* 'login' is the user name.
 
-'passwd' is the user password.
+* 'passwd' is the user password.
 
 The *nutclient_logout()* function disconnects gracefully from the server.
 

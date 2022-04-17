@@ -177,8 +177,8 @@ Besides, if upsmon were rolled into upsd, upsd would get even
 bigger than it is now.  You'd have one less process, but the
 RAM consumption would be pretty close to now.
 
-See the "Data Room" section in docs/config-notes.txt for more configuration
-ideas and explanations.
+See the "Data Room" section in link:docs/config-notes.txt[] for
+more configuration ideas and explanations.
 
 *Answer 2*
 
@@ -305,7 +305,10 @@ that point.  You *want* the system to die without reaching the
 part where the kernel tells it to shut down.  A possible script
 might look like this:
 
+------
 	# other shutdown stuff here (mount -o remount,ro ...)
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
 
 	if (test -f /etc/killpower)
 	then
@@ -318,6 +321,7 @@ might look like this:
 	fi
 
 	halt -p
+------
 
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
@@ -349,14 +353,15 @@ cat some magic characters at /dev/adb to enable "server mode".
 This would instruct the system to reboot while unattended.
 
 From Usenet post <6boftzxz51.fsf@ecc-office.sp.cs.cmu.edu>:
-
+------
 	# Send packet over the ADB bus to the PowerMac CUDA chip
 	# telling it to reboot automatically when power is restored
 	# after a power failure.
 
 	cat /etc/local/autoboot.adb > /dev/adb
 
-    autoboot.adb contains these three bytes (in hex):  01 13 01
+    # autoboot.adb contains these three bytes (in hex):  01 13 01
+------
 
 Later PowerPC Macs with a PMU and the appropriate kernel driver can achieve the
 same effect with the following command:
@@ -442,7 +447,7 @@ update your startup scripts so it uses this procedure on your next
 boot.
 
 If you like this, you'll probably also find the chroot process to
-be useful and interesting.  See security.txt for more details.
+be useful and interesting.  See link:security.txt[] for more details.
 
 == What's the point of that 'security domains' concept above?
 
@@ -452,8 +457,8 @@ to that one user account.  Direct access to the serial device is
 not possible, since that is owned by another user.
 
 There is also the possibility of running the drivers and upsd in a
-chroot jail.  See the chroot.txt provided in the source
-distribution for an example implementation.
+chroot jail.  See the chroot option in link:security.txt[], `upsd`
+and driver documentation.
 
 Why give would-be vandals any sort of help?
 
@@ -465,8 +470,8 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at scheduling.txt or the upssched(8) man
-page for some ideas.
+the next entry), then look at link:scheduling.txt[] or the
+linkman:upssched[8] man page for some ideas.
 
 /////////////////////////////////////////////////////////////////
 TODO: figure out how to link to the upssched man page above.
@@ -494,7 +499,7 @@ with no visible interruption in service.
 If you purposely shut down early, you guarantee an interruption in
 service by bringing down the box.
 
-See upssched.txt for information on how you can shutdown early if
+See link:upssched.txt[] for information on how you can shutdown early if
 this is what you really want to do.
 
 == The CGI programs report 'access to that host is not authorized' --  what's going on?
@@ -1037,6 +1042,10 @@ they won't be stuck in the halted state with the UPS running on line power.
 
 Implement this by modifying your shutdown script like this:
 
+------
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
+
 	if (test -f /etc/killpower)
 	then
 		/sbin/upsdrvctl shutdown
@@ -1046,3 +1055,4 @@ Implement this by modifying your shutdown script like this:
 		# uh oh, we never got shut down! (power race?)
 		reboot
 	fi
+------

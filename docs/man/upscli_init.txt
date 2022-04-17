@@ -29,14 +29,14 @@ the same hash value (thus file name), the ".0" can be incremented to ".1"
 and so on, as needed. The bash command for creating links in this manner
 would be:
 
-ln -s ca.pem ./$(openssl x509 -hash -noout -in ca.pem).0
+    ln -s ca.pem ./$(openssl x509 -hash -noout -in ca.pem).0
 
 Alternatively, the c_rehash utility (provided by openssl-perl) can take a
 directory and iterate it to link all certificates found in that directory,
 in the manner described above.
 
-If compiled with NSS, certpath refers to a directory
-containing database files.
+If compiled with NSS, certpath refers to a directory containing database
+files.
 
 If compiled with NSS and using SSL, you can specify 'certname' the name
 of the certificate to send to upsd and 'certpasswd' the password used

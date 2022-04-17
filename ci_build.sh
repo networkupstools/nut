@@ -428,7 +428,7 @@ check_gitignore() {
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
-            git diff -- "${FILE_GLOB}" || true
+            PAGER=cat git diff -- "${FILE_GLOB}" || true
         fi
         echo "==="
         return 1
@@ -498,9 +498,14 @@ optional_dist_clean_check() {
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] && (command -v gmake) >/dev/null 2>/dev/null ; then
-        # GNU make processes quiet mode better, which helps with this use-case
-        MAKE=gmake
+    if [ -z "${MAKE-}" ] ; then
+        if (command -v gmake) >/dev/null 2>/dev/null ; then
+            # GNU make processes quiet mode better, which helps with this use-case
+            MAKE=gmake
+        else
+            # Use system default, there should be one
+            MAKE=make
+        fi
         export MAKE
     fi
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
@@ -735,6 +740,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+
+    # TODO: Consider `--enable-maintainer-mode` to add recipes that
+    # would quickly regenerate Makefile(.in) if you edit Makefile.am
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
@@ -1502,6 +1510,8 @@ bindings)
 
     ./autogen.sh
 
+    # TODO: Consider `--enable-maintainer-mode` to add recipes that
+    # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so

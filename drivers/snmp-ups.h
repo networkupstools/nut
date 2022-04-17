@@ -252,8 +252,8 @@ typedef struct {
  * templates, such as outlets / outlets groups, which already have a format
  * string specifier */
 /* "flags" bits 21..23 (and 24 reserved for DMF) */
-#define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
-#define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st %i specifier in a template with more than one */
+#define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd %i specifier in a template with more than one */
 #define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the SU_TYPE_DAISY_{1,2,MASTER_ONLY} but not SU_DAISY */
 #define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
 /* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */

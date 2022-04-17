@@ -66,6 +66,7 @@ IMPLEMENTATION
 The port specification in the linkman:ups.conf[5] reference the driver
 socket that the "real" UPS driver is using. For example:
 
+------
   [realups]
      driver = usbhid-ups
      port = auto
@@ -77,6 +78,7 @@ socket that the "real" UPS driver is using. For example:
      load.off = outlet.1.load.off
      load.status = outlet.1.status
      [...]
+------
 
 IMPORTANT
 ---------

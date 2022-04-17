@@ -63,3 +63,5 @@ __pycache__/
 # Debuggers and IDEs
 .gdb_history
 /nbproject
+/.idea
+/*.iml

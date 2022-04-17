@@ -64,8 +64,8 @@ the battery voltage, as well as current and frequency, are typically not
 shown. It may be possible to monitor these values with *apcupsd* (for APC
 hardware only) or linkman:usbhid-ups[8].
 
-AUTHORS
--------
+AUTHOR
+------
 
 Charles Lepple <clepple+nut at gmail.com>
 

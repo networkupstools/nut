@@ -68,8 +68,8 @@ KNOWN ISSUES AND BUGS
 The driver shutdown function is not implemented, so other arrangements must be
 made to turn off the UPS.
 
-AUTHORS
--------
+AUTHOR
+------
 
 Giuseppe Corbelli <giuseppe.corbelli@copanitalia.com>
 
@@ -84,6 +84,7 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* PB1300 specifications: http://www.asem.it/en/products/industrial-automation/box-pcs/performance/pb1300/
+* PB1300 specifications:
+  http://www.asem.it/en/products/industrial-automation/box-pcs/performance/pb1300/
 * BQ2060 datasheet: http://www.ti.com/lit/ds/symlink/bq2060.pdf
 * The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

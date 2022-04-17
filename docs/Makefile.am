@@ -162,15 +162,16 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
-A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
+A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
+    --attribute=icons \
     --xsltproc-opts="--nonet" \
     --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
     --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
     --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
-    --attribute iconsdir=$(srcdir)/images \
+    --attribute=iconsdir="$(srcdir)/images" \
     --attribute=badges \
     --attribute=external_title \
-    --attribute tree_version=@TREE_VERSION@ \
+    --attribute=tree_version="@TREE_VERSION@" \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
@@ -190,6 +191,10 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # As a brutal workaround for the former problem, we chmod. For second one we
 # might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 
+# Note that empirically it treats "destination-dir" as the source root for
+# PDF generation (even though it claims the argument is ignored for non-HTML
+# targets) so we have to provide the "images/" in this case. ONLY for PDF!
+
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
 DOCBUILD_BEGIN = { \
@@ -197,6 +202,9 @@ DOCBUILD_BEGIN = { \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        case "$${A2X_OUTDIR}" in \
+            tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
+        esac; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
