@@ -629,7 +629,8 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 

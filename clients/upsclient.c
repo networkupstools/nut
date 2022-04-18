@@ -38,10 +38,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include "upsclient.h"
 #include "common.h"
 #include "nut_stdint.h"
 #include "timehead.h"
+#include "upsclient.h"
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
 #if (defined NUT_PLATFORM_SOLARIS)
@@ -948,7 +948,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 #endif /* WITH_SSL */
 
-int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval * timeout)
 {
 	int				sock_fd;
 	struct addrinfo	hints, *res, *ai;
@@ -974,7 +974,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		return -1;
 	}
 
-	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
+	snprintf(sport, sizeof(sport), "%ju", (uintmax_t)port);
 
 	memset(&hints, 0, sizeof(hints));
 
@@ -1150,7 +1150,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	return 0;
 }
 
-int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags)
 {
 	return upscli_tryconnect(ups,host,port,flags,NULL);
 }
@@ -1538,7 +1538,7 @@ ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 }
 
 /* split upsname[@hostname[:port]] into separate components */
-int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port)
+int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t *port)
 {
 	char	*s, tmp[SMALLBUF], *last = NULL;
 
@@ -1574,9 +1574,10 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 }
 
 /* split hostname[:port] into separate components */
-int upscli_splitaddr(const char *buf, char **hostname, int *port)
+int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 {
 	char	*s, tmp[SMALLBUF], *last = NULL;
+	long	l;
 
 	/* paranoia */
 	if ((!buf) || (!hostname) || (!port)) {
@@ -1619,12 +1620,13 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 		}
 	}
 
-	/* FIXME: This assumes but does not check that "long" port
-	 * fits in an "int" and is in IP range (under 65535) */
-	if ((*(++s) == '\0') || ((*port = (int)strtol(s, NULL, 10)) < 1 )) {
+	/* Check that "long" port fits in an "uint16_t" so is in IP range
+	 * (under 65536) */
+	if ((*(++s) == '\0') || ((l = strtol(s, NULL, 10)) < 1 ) || (l > 65535)) {
 		fprintf(stderr, "upscli_splitaddr: no port specified after ':' separator\n");
 		return -1;
 	}
+	*port = (uint16_t)l;
 
 	return 0;
 }
