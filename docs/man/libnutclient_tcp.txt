@@ -15,6 +15,7 @@ SYNOPSIS
 
 	#include <nutclient.h>
 	#include <cstdint> /* uint16_t */
+	#include <ctime> /* time_t */
 
 	typedef NUTCLIENT_t NUTCLIENT_TCP_t;
 
@@ -27,9 +28,9 @@ SYNOPSIS
 
 	int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 
-	void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+	void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 
-	long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+	time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
 
 DESCRIPTION
 -----------

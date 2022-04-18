@@ -29,6 +29,7 @@
 #include <set>
 #include <exception>
 #include <cstdint>
+#include <ctime>
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
@@ -398,13 +399,13 @@ public:
 	 * Set the timeout in seconds.
 	 * \param timeout Timeout n seconds, negative to block operations.
 	 */
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 
 	/**
 	 * Retrieve the timeout.
 	 * \returns Current timeout in seconds.
 	 */
-	long getTimeout()const;
+	time_t getTimeout()const;
 
 	/**
 	 * Retriueve the host name of the server the client is connected to.
@@ -468,7 +469,7 @@ protected:
 private:
 	std::string _host;
 	uint16_t _port;
-	long _timeout;
+	time_t _timeout;
 	internal::Socket* _socket;
 };
 
@@ -1042,12 +1043,12 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.
  */
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 /**
  * Retrieve the timeout value for the TCP connection.
  * \return Timeout value in seconds.
  */
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
 
 /** \} */
 

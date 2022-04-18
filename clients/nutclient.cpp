@@ -135,7 +135,7 @@ public:
 	void disconnect();
 	bool isConnected()const;
 
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
 	size_t read(void* buf, size_t sz);
@@ -164,7 +164,7 @@ Socket::~Socket()
 	disconnect();
 }
 
-void Socket::setTimeout(long timeout)
+void Socket::setTimeout(time_t timeout)
 {
 	_tv.tv_sec = timeout;
 }
@@ -606,12 +606,12 @@ void TcpClient::disconnect()
 	_socket->disconnect();
 }
 
-void TcpClient::setTimeout(long timeout)
+void TcpClient::setTimeout(time_t timeout)
 {
 	_timeout = timeout;
 }
 
-long TcpClient::getTimeout()const
+time_t TcpClient::getTimeout()const
 {
 	return _timeout;
 }
@@ -1635,7 +1635,7 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client)
 	return -1;
 }
 
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout)
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout)
 {
 	if(client)
 	{
@@ -1647,7 +1647,7 @@ void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout)
 	}
 }
 
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client)
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{
