@@ -28,6 +28,7 @@
 #include <map>
 #include <set>
 #include <exception>
+#include <cstdint>
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
@@ -367,7 +368,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, int port = 3493);
+	TcpClient(const std::string& host, uint16_t port = 3493);
 	~TcpClient() override;
 
 	/**
@@ -375,7 +376,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, int port = 3493);
+	void connect(const std::string& host, uint16_t port = 3493);
 
 	/**
 	 * Connect to the server.
@@ -414,7 +415,7 @@ public:
 	 * Retriueve the port of host of the server the client is connected to.
 	 * \return Server port
 	 */
-	int getPort()const;
+	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
 	virtual void logout() override;
@@ -466,7 +467,7 @@ protected:
 
 private:
 	std::string _host;
-	int _port;
+	uint16_t _port;
 	long _timeout;
 	internal::Socket* _socket;
 };
@@ -1018,7 +1019,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \param port Host port.
  * \return New client or nullptr if failed.
  */
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.

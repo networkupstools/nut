@@ -131,7 +131,7 @@ public:
 	Socket();
 	~Socket();
 
-	void connect(const std::string& host, int port);
+	void connect(const std::string& host, uint16_t port);
 	void disconnect();
 	bool isConnected()const;
 
@@ -169,7 +169,7 @@ void Socket::setTimeout(long timeout)
 	_tv.tv_sec = timeout;
 }
 
-void Socket::connect(const std::string& host, int port)
+void Socket::connect(const std::string& host, uint16_t port)
 {
 	int	sock_fd;
 	struct addrinfo	hints, *res, *ai;
@@ -186,7 +186,7 @@ void Socket::connect(const std::string& host, int port)
 		throw nut::UnknownHostException();
 	}
 
-	snprintf(sport, sizeof(sport), "%hu", static_cast<unsigned short int>(port));
+	snprintf(sport, sizeof(sport), "%ju", static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -561,7 +561,7 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, int port):
+TcpClient::TcpClient(const std::string& host, uint16_t port):
 Client(),
 _timeout(0),
 _socket(new internal::Socket)
@@ -574,7 +574,7 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
-void TcpClient::connect(const std::string& host, int port)
+void TcpClient::connect(const std::string& host, uint16_t port)
 {
 	_host = host;
 	_port = port;
@@ -591,7 +591,7 @@ std::string TcpClient::getHost()const
 	return _host;
 }
 
-int TcpClient::getPort()const
+uint16_t TcpClient::getPort()const
 {
 	return _port;
 }
@@ -1566,7 +1566,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 	return arr;
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port)
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try

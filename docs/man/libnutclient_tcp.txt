@@ -14,11 +14,12 @@ SYNOPSIS
 --------
 
 	#include <nutclient.h>
+	#include <cstdint> /* uint16_t */
 
 	typedef NUTCLIENT_t NUTCLIENT_TCP_t;
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client(
-		const char* host, unsigned short port);
+		const char* host, uint16_t port);
 
 	int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client);
 
