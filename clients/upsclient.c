@@ -630,7 +630,7 @@ static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, 
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
 /* internal: abstract the SSL calls for the other functions */
-static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
+static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout)
 {
 	ssize_t	ret = -1;
 
@@ -714,7 +714,7 @@ static ssize_t upscli_select_write(const int fd, const void *buf, const size_t b
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
 /* internal: abstract the SSL calls for the other functions */
-static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
+static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout)
 {
 	ssize_t	ret = -1;
 
@@ -1441,7 +1441,7 @@ int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
 	return 1;
 }
 
-ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const long timeout)
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout)
 {
 	ssize_t	ret;
 
@@ -1479,7 +1479,7 @@ ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const long timeout)
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout)
 {
 	ssize_t	ret;
 	size_t	recv;

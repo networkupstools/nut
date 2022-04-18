@@ -10,11 +10,12 @@ SYNOPSIS
 --------
 
  #include <upsclient.h>
+ #include <time.h> /* or <sys/time.h> on some platforms */
 
  int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
  int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen,
-				const long timeout);
+				const time_t timeout);
 
 DESCRIPTION
 -----------
