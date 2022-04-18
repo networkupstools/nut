@@ -818,12 +818,30 @@ void TcpClient::deviceLogin(const std::string& dev)
  */
 void TcpClient::deviceMaster(const std::string& dev)
 {
-	detectError(sendQuery("MASTER " + dev));
+	try {
+		detectError(sendQuery("MASTER " + dev));
+	} catch (NutException &exOrig) {
+		try {
+			detectError(sendQuery("PRIMARY " + dev));
+		} catch (NutException &exRetry) {
+			NUT_UNUSED_VARIABLE(exRetry);
+			throw exOrig;
+		}
+	}
 }
 
 void TcpClient::devicePrimary(const std::string& dev)
 {
-	detectError(sendQuery("PRIMARY " + dev));
+	try {
+		detectError(sendQuery("PRIMARY " + dev));
+	} catch (NutException &exOrig) {
+		try {
+			detectError(sendQuery("MASTER " + dev));
+		} catch (NutException &exRetry) {
+			NUT_UNUSED_VARIABLE(exRetry);
+			throw exOrig;
+		}
+	}
 }
 
 void TcpClient::deviceForcedShutdown(const std::string& dev)
