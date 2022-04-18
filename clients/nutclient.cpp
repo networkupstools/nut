@@ -811,12 +811,19 @@ void TcpClient::deviceLogin(const std::string& dev)
 	detectError(sendQuery("LOGIN " + dev));
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
+/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+ * For the sake of old/new server/client interoperability,
+ * practical implementations should try to use one and fall
+ * back to the other, and only fail if both return "ERR".
  */
 void TcpClient::deviceMaster(const std::string& dev)
 {
 	detectError(sendQuery("MASTER " + dev));
+}
+
+void TcpClient::devicePrimary(const std::string& dev)
+{
+	detectError(sendQuery("PRIMARY " + dev));
 }
 
 void TcpClient::deviceForcedShutdown(const std::string& dev)
@@ -1313,13 +1320,18 @@ void Device::login()
 	getClient()->deviceLogin(getName());
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
+/* Note: "master" is deprecated, but supported
+ * for mixing old/new client/server combos: */
 void Device::master()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	getClient()->deviceMaster(getName());
+}
+
+void Device::primary()
+{
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->devicePrimary(getName());
 }
 
 void Device::forcedShutdown()
@@ -1725,9 +1737,8 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev)
 	return -1;
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
+/* Note: "master" is deprecated, but supported
+ * for mixing old/new client/server combos: */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 {
 	if(client)
@@ -1738,6 +1749,22 @@ void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 			try
 			{
 				cl->deviceMaster(dev);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				cl->devicePrimary(dev);
 			}
 			catch(...){}
 		}

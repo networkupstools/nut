@@ -324,15 +324,18 @@ public:
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
 	/**
-	 * Retrieve the number of user longged in the specified device.
+	 * Retrieve the number of user logged-in for the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
+	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	 * For the sake of old/new server/client interoperability,
+	 * practical implementations should try to use one and fall
+	 * back to the other, and only fail if both return "ERR".
 	 */
 	virtual void deviceMaster(const std::string& dev) = 0;
+	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
 
 	/**
@@ -443,6 +446,7 @@ public:
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	virtual void deviceMaster(const std::string& dev) override;
+	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
 
@@ -614,6 +618,7 @@ public:
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	void master();
+	void primary();
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -875,6 +880,7 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * and probably an API bump also, to rename/alias the routine.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.
