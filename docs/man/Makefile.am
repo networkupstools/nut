@@ -896,8 +896,8 @@ DOCBUILD_BEGIN = { \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
     if test x"$(srcdir)" != x"$(builddir)" ; then \
-        if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/$(<F)" ; then \
-            ln -fs "$(srcdir)/$(<F)" "$(builddir)/" ; \
+        if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/`basename $<`" ; then \
+            ln -fs "$(srcdir)/`basename $<`" "$(builddir)/" ; \
         fi ; \
      fi ; \
 }

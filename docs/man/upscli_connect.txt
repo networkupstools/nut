@@ -11,7 +11,7 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
+ int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
 DESCRIPTION
 -----------

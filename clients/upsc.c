@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 
 static char		*upsname = NULL, *hostname = NULL;
@@ -208,7 +209,8 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
 

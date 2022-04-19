@@ -28,6 +28,8 @@
 #include <map>
 #include <set>
 #include <exception>
+#include <cstdint>
+#include <ctime>
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
@@ -322,15 +324,18 @@ public:
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
 	/**
-	 * Retrieve the number of user longged in the specified device.
+	 * Retrieve the number of user logged-in for the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
+	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	 * For the sake of old/new server/client interoperability,
+	 * practical implementations should try to use one and fall
+	 * back to the other, and only fail if both return "ERR".
 	 */
 	virtual void deviceMaster(const std::string& dev) = 0;
+	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
 
 	/**
@@ -367,7 +372,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, int port = 3493);
+	TcpClient(const std::string& host, uint16_t port = 3493);
 	~TcpClient() override;
 
 	/**
@@ -375,7 +380,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, int port = 3493);
+	void connect(const std::string& host, uint16_t port = 3493);
 
 	/**
 	 * Connect to the server.
@@ -397,13 +402,13 @@ public:
 	 * Set the timeout in seconds.
 	 * \param timeout Timeout n seconds, negative to block operations.
 	 */
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 
 	/**
 	 * Retrieve the timeout.
 	 * \returns Current timeout in seconds.
 	 */
-	long getTimeout()const;
+	time_t getTimeout()const;
 
 	/**
 	 * Retriueve the host name of the server the client is connected to.
@@ -414,7 +419,7 @@ public:
 	 * Retriueve the port of host of the server the client is connected to.
 	 * \return Server port
 	 */
-	int getPort()const;
+	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
 	virtual void logout() override;
@@ -441,6 +446,7 @@ public:
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	virtual void deviceMaster(const std::string& dev) override;
+	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
 
@@ -466,8 +472,8 @@ protected:
 
 private:
 	std::string _host;
-	int _port;
-	long _timeout;
+	uint16_t _port;
+	time_t _timeout;
 	internal::Socket* _socket;
 };
 
@@ -612,6 +618,7 @@ public:
 	 * and probably an API bump also, to rename/alias the routine.
 	 */
 	void master();
+	void primary();
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -873,6 +880,7 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * and probably an API bump also, to rename/alias the routine.
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.
@@ -1018,7 +1026,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \param port Host port.
  * \return New client or nullptr if failed.
  */
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.
@@ -1041,12 +1049,12 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.
  */
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 /**
  * Retrieve the timeout value for the TCP connection.
  * \return Timeout value in seconds.
  */
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
 
 /** \} */
 

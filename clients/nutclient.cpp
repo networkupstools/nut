@@ -131,11 +131,11 @@ public:
 	Socket();
 	~Socket();
 
-	void connect(const std::string& host, int port);
+	void connect(const std::string& host, uint16_t port);
 	void disconnect();
 	bool isConnected()const;
 
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
 	size_t read(void* buf, size_t sz);
@@ -164,12 +164,12 @@ Socket::~Socket()
 	disconnect();
 }
 
-void Socket::setTimeout(long timeout)
+void Socket::setTimeout(time_t timeout)
 {
 	_tv.tv_sec = timeout;
 }
 
-void Socket::connect(const std::string& host, int port)
+void Socket::connect(const std::string& host, uint16_t port)
 {
 	int	sock_fd;
 	struct addrinfo	hints, *res, *ai;
@@ -186,7 +186,7 @@ void Socket::connect(const std::string& host, int port)
 		throw nut::UnknownHostException();
 	}
 
-	snprintf(sport, sizeof(sport), "%hu", static_cast<unsigned short int>(port));
+	snprintf(sport, sizeof(sport), "%ju", static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -561,7 +561,7 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, int port):
+TcpClient::TcpClient(const std::string& host, uint16_t port):
 Client(),
 _timeout(0),
 _socket(new internal::Socket)
@@ -574,7 +574,7 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
-void TcpClient::connect(const std::string& host, int port)
+void TcpClient::connect(const std::string& host, uint16_t port)
 {
 	_host = host;
 	_port = port;
@@ -591,7 +591,7 @@ std::string TcpClient::getHost()const
 	return _host;
 }
 
-int TcpClient::getPort()const
+uint16_t TcpClient::getPort()const
 {
 	return _port;
 }
@@ -606,12 +606,12 @@ void TcpClient::disconnect()
 	_socket->disconnect();
 }
 
-void TcpClient::setTimeout(long timeout)
+void TcpClient::setTimeout(time_t timeout)
 {
 	_timeout = timeout;
 }
 
-long TcpClient::getTimeout()const
+time_t TcpClient::getTimeout()const
 {
 	return _timeout;
 }
@@ -811,12 +811,37 @@ void TcpClient::deviceLogin(const std::string& dev)
 	detectError(sendQuery("LOGIN " + dev));
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
+/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+ * For the sake of old/new server/client interoperability,
+ * practical implementations should try to use one and fall
+ * back to the other, and only fail if both return "ERR".
  */
 void TcpClient::deviceMaster(const std::string& dev)
 {
-	detectError(sendQuery("MASTER " + dev));
+	try {
+		detectError(sendQuery("MASTER " + dev));
+	} catch (NutException &exOrig) {
+		try {
+			detectError(sendQuery("PRIMARY " + dev));
+		} catch (NutException &exRetry) {
+			NUT_UNUSED_VARIABLE(exRetry);
+			throw exOrig;
+		}
+	}
+}
+
+void TcpClient::devicePrimary(const std::string& dev)
+{
+	try {
+		detectError(sendQuery("PRIMARY " + dev));
+	} catch (NutException &exOrig) {
+		try {
+			detectError(sendQuery("MASTER " + dev));
+		} catch (NutException &exRetry) {
+			NUT_UNUSED_VARIABLE(exRetry);
+			throw exOrig;
+		}
+	}
 }
 
 void TcpClient::deviceForcedShutdown(const std::string& dev)
@@ -1313,13 +1338,18 @@ void Device::login()
 	getClient()->deviceLogin(getName());
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
+/* Note: "master" is deprecated, but supported
+ * for mixing old/new client/server combos: */
 void Device::master()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	getClient()->deviceMaster(getName());
+}
+
+void Device::primary()
+{
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->devicePrimary(getName());
 }
 
 void Device::forcedShutdown()
@@ -1566,7 +1596,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 	return arr;
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port)
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
@@ -1635,7 +1665,7 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client)
 	return -1;
 }
 
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout)
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout)
 {
 	if(client)
 	{
@@ -1647,7 +1677,7 @@ void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout)
 	}
 }
 
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client)
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{
@@ -1725,9 +1755,8 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev)
 	return -1;
 }
 
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
+/* Note: "master" is deprecated, but supported
+ * for mixing old/new client/server combos: */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 {
 	if(client)
@@ -1738,6 +1767,22 @@ void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 			try
 			{
 				cl->deviceMaster(dev);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				cl->devicePrimary(dev);
 			}
 			catch(...){}
 		}

@@ -51,6 +51,7 @@ static void usage(const char *prog)
 	printf("  -h            display this help text\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
+	printf("  -l            show all possible read/write variables.\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
@@ -59,7 +60,7 @@ static void usage(const char *prog)
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
-	printf("Call without -s to show all possible read/write variables.\n");
+	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 }
 
 static void clean_exit(void)
@@ -629,15 +630,22 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+hls:p:t:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
 			setvar = optarg;
+			break;
+		case 'l':
+			if (setvar) {
+				upslogx(LOG_WARNING, "Listing mode requested, overriding setvar specified earlier!");
+				setvar = NULL;
+			}
 			break;
 		case 'p':
 			password = optarg;

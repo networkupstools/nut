@@ -37,20 +37,20 @@
  */
 
 #include "common.h"
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "cgilib.h"
 #include <stdlib.h>
 #include <gd.h>
 #include <gdfontmb.h>
 
-#include "nut_stdint.h"
 #include "upsimagearg.h"
 
 #define MAX_CGI_STRLEN 64
 
 static	char	*monhost = NULL, *cmd = NULL;
 
-static	int	port;
+static	uint16_t	port;
 static	char	*upsname, *hostname;
 static	UPSCONN_t	ups;
 

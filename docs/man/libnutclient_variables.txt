@@ -47,19 +47,19 @@ DESCRIPTION
 
 These functions allow to manage variables of devices.
 
-The *nutclient_get_device_variables()* function retrieve the list
+The *nutclient_get_device_variables()* function retrieves the list
 of variables names for a device.
 The returned strarr must be freed by 'strarr_free'.
 
-The *nutclient_get_device_rw_variables* function retrieve the list
+The *nutclient_get_device_rw_variables* function retrieves the list
 of read-write variables names for a device.
 The returned strarr must be freed by 'strarr_free'.
 
-The *nutclient_has_device_variable* function test if the specified
+The *nutclient_has_device_variable* function tests if the specified
 variable is supported by the device.
 Return 1 is supported and 0 if not.
 
-The *nutclient_get_device_variable_description* function retrieve
+The *nutclient_get_device_variable_description* function retrieves
 the variable description, if any.
 The returned string must be freed.
 
@@ -67,10 +67,10 @@ The *nutclient_get_device_variable_values* returns variable values
 (generally only one).
 The returned strarr must be freed by 'strarr_free'.
 
-The *nutclient_set_device_variable_value* intend to set the value
+The *nutclient_set_device_variable_value* intends to set the value
 of the specified variable.
 
-The *nutclient_set_device_variable_values* intend to set multiple
+The *nutclient_set_device_variable_values* intends to set multiple
 values of the specified variable.
 
 Common arguments:

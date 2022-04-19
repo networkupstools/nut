@@ -24,6 +24,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "cgilib.h"
 #include "parseconf.h"
@@ -44,7 +45,7 @@ static char	*monups, *username, *password, *function, *upscommand;
 /* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
 static int	magic_string_set = 0;
 
-static	int	port;
+static	uint16_t	port;
 static	char	*upsname, *hostname;
 static	UPSCONN_t	ups;
 

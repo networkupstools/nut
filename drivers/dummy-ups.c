@@ -38,6 +38,7 @@
 
 #include "main.h"
 #include "parseconf.h"
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "dummy-ups.h"
 
@@ -79,7 +80,7 @@ static int upsclient_update_vars(void);
 /* connection information */
 static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
-static int	port;
+static uint16_t	port;
 
 /* Driver functions */
 

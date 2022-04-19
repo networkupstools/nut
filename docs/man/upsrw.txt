@@ -9,7 +9,7 @@ upsrw - UPS variable administration tool
 SYNOPSIS
 --------
 
-*upsrw* 'ups'
+*upsrw* [-l] 'ups'
 
 *upsrw* -h
 
@@ -47,6 +47,12 @@ Some variables are strings, and can be set to any value within the
 length limit.  Others are enumerated types and can only be set to one of
 those values.  Others may be within an allowed range of values. Refer to
 the list to know what's available in your hardware.
+
+*-l*::
+Just display the list of the variables and their possible values.
++
+Same as default activity without '-s' argument, provided for CLI similarity
+with other tools.
 
 *-u* 'username'::
 Set the NUT username for the connection to the server.  This is optional,
