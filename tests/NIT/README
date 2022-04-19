@@ -1,0 +1,5 @@
+NUT Integration Test suite
+==========================
+
+This suite aims to simplify running `upsd`, a `dummy-ups` driver and
+a few clients to query them.
