@@ -68,7 +68,7 @@ TOP_BUILDDIR=""
 case "${BUILDDIR}" in
     */tests/NIT)
         TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
-    *) log_info "Current directory is not a .../tests/NIT" ;;
+    *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
 esac
 if ! test -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
@@ -80,6 +80,7 @@ TOP_SRCDIR=""
 case "${SRCDIR}" in
     */tests/NIT)
         TOP_SRCDIR="`cd "${SRCDIR}"/../.. && pwd`" ;;
+    *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
 # No fuss about LD_LIBRARY_PATH: for binaries that need it,
@@ -105,7 +106,7 @@ unset PATH_ADD
 log_debug "Using PATH='$PATH'"
 
 for PROG in upsd upsc dummy-ups upsmon ; do
-    (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH"
+    (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
 PID_UPSD=""
