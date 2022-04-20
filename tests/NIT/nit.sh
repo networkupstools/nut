@@ -499,7 +499,13 @@ if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
     if (
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
-        NUT_SETVAR_DEVICE='dummy'
+        if [ x"${TOP_SRCDIR}" != x ]; then
+            # Avoid dummies with TIMER flip-flops
+            NUT_SETVAR_DEVICE='UPS2'
+        else
+            # Risks failure when lauching sub-test at the wrong second
+            NUT_SETVAR_DEVICE='dummy'
+        fi
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
