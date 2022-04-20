@@ -2071,11 +2071,17 @@ return res ? 0 : 1;
 '
 
      my_CXXFLAGS="$CXXFLAGS"
-     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
+     my_LDFLAGS="$LDFLAGS"
+     my_LIBS="$LIBS"
+     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_CXXFLAGS"
+     LDFLAGS="$my_LDFLAGS $pkg_cv_CPPUNIT_LDFLAGS"
+     LIBS="$my_LIBS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
      AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [have_cppunit=yes], [have_cppunit=no])
      CXXFLAGS="$my_CXXFLAGS"
+     LDFLAGS="$my_LDFLAGS"
+     LIBS="$my_LIBS"
      AC_LANG_POP([C++])
      unset CPLUSPLUS_MAIN
      unset CPLUSPLUS_DECL
