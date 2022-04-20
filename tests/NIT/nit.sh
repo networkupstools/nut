@@ -58,7 +58,11 @@ TOP_BUILDDIR=""
 case "${BUILDDIR}" in
     */tests/NIT)
         TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
+    *) log_info "Current directory is not a .../tests/NIT" ;;
 esac
+if ! test -w "${BUILDDIR}" ; then
+    log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
+fi
 
 SRCDIR="`dirname "$0"`"
 SRCDIR="`cd "$SCRIPTDIR" && pwd`"
