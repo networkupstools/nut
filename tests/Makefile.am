@@ -12,6 +12,12 @@ AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
 
+check-NIT: NIT/nit.sh
+	mkdir -p "$(builddir)/NIT"
+	cd "$(builddir)/NIT" && "$(abs_srcdir)/NIT/nit.sh"
+
+check-local: check-NIT
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
@@ -91,5 +97,10 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
+clean-local:
+	if [ x"$(abs_builddir)" = x"$(abs_srcdir)" ]; then \
+		rm -rf "$(builddir)/NIT/tmp" ; \
+	else \
+		rm -rf "$(builddir)/NIT" ; \
+	fi
 #	rm -rf $(builddir)/.deps
