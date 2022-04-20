@@ -12,9 +12,11 @@ AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
 
-check-NIT: NIT/nit.sh
+# NUT Integration Testing suite
+EXTRA_DIST += NIT/nit.sh NIT/README
+check-NIT: $(abs_top_srcdir)/tests/NIT/nit.sh
 	mkdir -p "$(builddir)/NIT"
-	cd "$(builddir)/NIT" && "$(abs_srcdir)/NIT/nit.sh"
+	cd "$(builddir)/NIT" && "$<"
 
 check-local: check-NIT
 
