@@ -14,6 +14,7 @@
 # Caller can export envvars to impact the script behavior, e.g.:
 #	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
+#	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
@@ -125,7 +126,8 @@ NUT_CONFPATH="$BUILDDIR/tmp/etc"
 export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
 
 # TODO: Find a portable way to grab a random unprivileged port?
-NUT_PORT="34931"
+[ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
+|| NUT_PORT="34931"
 
 ### upsd.conf: ##################################################
 
