@@ -14,9 +14,9 @@ check_PROGRAMS = $(TESTS)
 
 # NUT Integration Testing suite
 EXTRA_DIST += NIT/nit.sh NIT/README
-check-NIT: $(abs_top_srcdir)/tests/NIT/nit.sh
+check-NIT: NIT/nit.sh
 	mkdir -p "$(builddir)/NIT"
-	cd "$(builddir)/NIT" && "$<"
+	cd "$(builddir)/NIT" && "$(abs_srcdir)/NIT/nit.sh"
 
 check-local: check-NIT
 
