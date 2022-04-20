@@ -156,32 +156,37 @@ generatecfg_upsd_nodev() {
 
 ### upsd.users: ##################################################
 
+TESTPASS_ADMIN='mypass'
+TESTPASS_TESTER='pass words'
+TESTPASS_UPSMON_PRIMARY='P@ssW0rdAdm'
+TESTPASS_UPSMON_SECONDARY='P@ssW0rd'
+
 generatecfg_upsdusers_trivial() {
     cat > "$NUT_CONFPATH/upsd.users" << EOF
 [admin]
-    password = mypass
+    password = $TESTPASS_ADMIN
     actions = SET
     instcmds = ALL
 
 [tester]
-    password = "pass words"
+    password = "${TESTPASS_TESTER}"
     instcmds = test.battery.start
     instcmds = test.battery.stop
 
 [dummy-admin-m]
-    password = 'P@ssW0rdAdm'
+    password = "${TESTPASS_UPSMON_PRIMARY}"
     upsmon master
 
 [dummy-admin]
-    password = 'P@ssW0rdAdm'
+    password = "${TESTPASS_UPSMON_PRIMARY}"
     upsmon primary
 
 [dummy-user-s]
-    password = 'P@ssW0rd'
+    password = "${TESTPASS_UPSMON_SECONDARY}"
     upsmon slave
 
 [dummy-user]
-    password = 'P@ssW0rd'
+    password = "${TESTPASS_UPSMON_SECONDARY}"
     upsmon secondary
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
@@ -200,25 +205,25 @@ generatecfg_upsmon_trivial() {
 
 generatecfg_upsmon_master() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin-m' 'P@ssW0rdAdm' master" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin-m' '${TESTPASS_UPSMON_PRIMARY}' master" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 }
 
 generatecfg_upsmon_primary() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin' 'P@ssW0rdAdm' primary" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin' '${TESTPASS_UPSMON_PRIMARY}' primary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 }
 
 generatecfg_upsmon_slave() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user-s' 'P@ssW0rd' slave" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user-s' '${TESTPASS_UPSMON_SECONDARY}' slave" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 }
 
 generatecfg_upsmon_secondary() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user' 'P@ssW0rd' secondary" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user' '${TESTPASS_UPSMON_SECONDARY}' secondary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 }
 
@@ -461,7 +466,7 @@ if [ x"${TOP_BUILDDIR}" != x ] \
     log_info "Call Python module test suite: PyNUT (NUT Python bindings) with login credentials"
     if (
         NUT_USER='admin'
-        NUT_PASS='mypass'
+        NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
