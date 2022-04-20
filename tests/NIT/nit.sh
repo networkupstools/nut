@@ -482,9 +482,13 @@ fi
 
 # TODO: Some upsmon tests?
 
+log_separator
+log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
+
 # Allow to leave the sandbox daemons running for a while,
 # to experiment with them interactively:
 if [ -n "${DEBUG_SLEEP-}" ] ; then
+    log_separator
     log_info "Sleeping now as asked, so you can play with the driver and server (port $NUT_PORT) running"
     if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then
         sleep "${DEBUG_SLEEP}"
@@ -492,10 +496,9 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
         sleep 60
     fi
     log_info "Sleep finished"
+    log_separator
 fi
 
-log_separator
-log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
 if [ "$PASSED" = 0 ] || [ "$FAILED" != 0 ] ; then
     die "Some test scenarios failed!"
 else
