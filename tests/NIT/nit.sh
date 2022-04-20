@@ -437,13 +437,17 @@ else
     FAILED="`expr $FAILED + 1`"
 fi
 
-if [ x"${TOP_BUILDDIR}" != x ]; then
+# We optionally make python module (if interpreter is found):
+if [ x"${TOP_BUILDDIR}" != x ] \
+&& [ -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
+; then
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
     # setvars tested from python script.
     log_separator
     log_info "Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
-    if ( export NUT_PORT
+    if ( unset NUT_USER || true
+         unset NUT_PASS || true
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "OK, PyNUT did not complain"
@@ -458,7 +462,7 @@ if [ x"${TOP_BUILDDIR}" != x ]; then
     if (
         NUT_USER='admin'
         NUT_PASS='mypass'
-        export NUT_USER NUT_PASS NUT_PORT
+        export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "OK, PyNUT did not complain"
