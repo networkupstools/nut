@@ -189,7 +189,7 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 
 	for (usbdev = usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
 		if ((usbdev->vendorID == dev_VendorID)
-		 && (usbdev->productID == dev_ProductID)
+		 && ((usbdev->productID == dev_ProductID) || ((usbdev->productID & dev_ProductID) == dev_ProductID))
 		) {
 			return usbdev->driver_name;
 		}
