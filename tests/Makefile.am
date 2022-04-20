@@ -51,7 +51,7 @@ CPPUNITTESTERSRC = cpputest.cpp
 
 CPPCLIENTTESTSRC = cpputest-client.cpp
 
-TESTS_CXX11 = cppunittest cppnit
+TESTS_CXX11 = cppunittest
 
 if HAVE_CXX11
 if HAVE_CPPUNIT
@@ -59,6 +59,9 @@ if HAVE_CPPUNIT
 # that we HAVE_CXX11 - but better have it explicit
 
 TESTS += $(TESTS_CXX11)
+
+# Note: we only build it, but do not run directly (NIT prepares the sandbox)
+check_PROGRAMS += cppnit
 
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
@@ -86,12 +89,18 @@ else !HAVE_CPPUNIT
 
 EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
+cppnit:
+	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
+
 endif !HAVE_CPPUNIT
 
 else !HAVE_CXX11
 # Just redistribute test source into tarball if not building C++ at all
 
 EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+
+cppnit:
+	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CXX11
 
