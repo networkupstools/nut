@@ -125,9 +125,16 @@ NUT_ALTPIDPATH="$BUILDDIR/tmp/run"
 NUT_CONFPATH="$BUILDDIR/tmp/etc"
 export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
 
-# TODO: Find a portable way to grab a random unprivileged port?
+# TODO: Find a portable way to (check and) grab a random unprivileged port?
 [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
-|| NUT_PORT="34931"
+|| {
+    DELTA1="`date +%S`" || DELTA1=0
+    DELTA2="`expr $$ % 99`" || DELTA2=0
+
+    NUT_PORT="`expr 34931 + $DELTA1 + $DELTA2`" \
+    && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
+    || NUT_PORT=34931
+}
 
 ### upsd.conf: ##################################################
 
