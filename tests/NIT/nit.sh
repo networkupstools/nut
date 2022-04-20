@@ -90,6 +90,10 @@ unset PATH_ADD
 
 log_debug "Using PATH='$PATH'"
 
+for PROG in upsd upsc dummy-ups upsmon ; do
+    (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH"
+done
+
 PID_UPSD=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
