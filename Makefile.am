@@ -116,7 +116,7 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
-	cd $(srcdir)/docs && $(MAKE) $@
+	cd $(builddir)/docs && $(MAKE) $@
 
 check-NIT:
 	cd $(builddir)/tests && $(MAKE) $@
