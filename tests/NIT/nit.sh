@@ -10,6 +10,7 @@
 # sandbox to run tests which could be defined in other files.
 #
 # Caller can export envvars to impact the script behavior, e.g.:
+#	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #
 # Design note: written with dumbed-down POSIX shell syntax, to
@@ -31,8 +32,14 @@ log_separator() {
     echo "================================" >&2
 }
 
+shouldDebug() {
+    [ -n "$DEBUG" ] || [ -n "$DEBUG_SLEEP" ]
+}
+
 log_debug() {
-    echo "[DEBUG] $@" >&2
+    if shouldDebug ; then
+        echo "[DEBUG] $@" >&2
+    fi
 }
 
 log_info() {
@@ -378,7 +385,9 @@ fi
 
 sleep 5
 
-(ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
+if shouldDebug ; then
+    (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
+fi
 
 log_info "Query driver state from UPSD by UPSC after driver startup"
 upsc dummy@localhost:$NUT_PORT || die "upsd does not respond"
