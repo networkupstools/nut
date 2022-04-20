@@ -9,6 +9,8 @@
 # approach. Part of the goal was to let this script set up the
 # sandbox to run tests which could be defined in other files.
 #
+# WARNING: Current working directory when starting the script should be
+# the location where it may create temporary data (e.g. the BUILDDIR).
 # Caller can export envvars to impact the script behavior, e.g.:
 #	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running

@@ -6,6 +6,9 @@ a few clients to query them, as part of regular `make check` routine
 or separately with existing binaries (should not impact any existing
 installation data, processes or communications).
 
+WARNING: Current working directory when starting the script should be
+the location where it may create temporary data (e.g. the BUILDDIR).
+
 See also
 link:https://git.launchpad.net/ubuntu/+source/nut/tree/debian/tests/test-nut.py[The NUT testing script]
 available in the
