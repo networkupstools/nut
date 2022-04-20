@@ -9,6 +9,9 @@
 # approach. Part of the goal was to let this script set up the
 # sandbox to run tests which could be defined in other files.
 #
+# Caller can export envvars to impact the script behavior, e.g.:
+#	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
+#
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
@@ -445,11 +448,13 @@ fi
 # Allow to leave the sandbox daemons running for a while,
 # to experiment with them interactively:
 if [ -n "${DEBUG_SLEEP-}" ] ; then
+    log_info "Sleeping now as asked, so you can play with the driver and server (port $NUT_PORT) running"
     if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then
         sleep "${DEBUG_SLEEP}"
     else
         sleep 60
     fi
+    log_info "Sleep finished"
 fi
 
 log_separator
