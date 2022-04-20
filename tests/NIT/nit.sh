@@ -135,6 +135,7 @@ export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
     && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
     || NUT_PORT=34931
 }
+export NUT_PORT
 
 ### upsd.conf: ##################################################
 
@@ -478,7 +479,72 @@ if [ x"${TOP_BUILDDIR}" != x ] \
     fi
 fi
 
-# TODO: Make and run C++ client tests
+# We optionally make and here can run C++ client tests:
+if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
+    log_separator
+    log_info "Call libnutclient test suite: cppnit without login credentials"
+    if ( unset NUT_USER || true
+         unset NUT_PASS || true
+        "${TOP_BUILDDIR}/tests/cppnit"
+    ) ; then
+        log_info "OK, cppnit did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "cppnit complained, check above"
+        FAILED="`expr $FAILED + 1`"
+    fi
+
+    log_separator
+    log_info "Call libnutclient test suite: cppnit with login credentials: simple admin"
+    if (
+        NUT_USER='admin'
+        NUT_PASS="${TESTPASS_ADMIN}"
+        NUT_SETVAR_DEVICE='dummy'
+        unset NUT_PRIMARY_DEVICE
+        export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
+        "${TOP_BUILDDIR}/tests/cppnit"
+    ) ; then
+        log_info "OK, cppnit did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "cppnit complained, check above"
+        FAILED="`expr $FAILED + 1`"
+    fi
+
+    log_separator
+    log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
+    if (
+        NUT_USER='dummy-admin'
+        NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
+        NUT_PRIMARY_DEVICE='dummy'
+        unset NUT_SETVAR_DEVICE
+        export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        "${TOP_BUILDDIR}/tests/cppnit"
+    ) ; then
+        log_info "OK, cppnit did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "cppnit complained, check above"
+        FAILED="`expr $FAILED + 1`"
+    fi
+
+    log_separator
+    log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-master"
+    if (
+        NUT_USER='dummy-admin-m'
+        NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
+        NUT_PRIMARY_DEVICE='dummy'
+        unset NUT_SETVAR_DEVICE
+        export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        "${TOP_BUILDDIR}/tests/cppnit"
+    ) ; then
+        log_info "OK, cppnit did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "cppnit complained, check above"
+        FAILED="`expr $FAILED + 1`"
+    fi
+fi
 
 # TODO: Some upsmon tests?
 

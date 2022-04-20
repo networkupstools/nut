@@ -49,7 +49,9 @@ CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
-TESTS_CXX11 = cppunittest
+CPPCLIENTTESTSRC = cpputest-client.cpp
+
+TESTS_CXX11 = cppunittest cppnit
 
 if HAVE_CXX11
 if HAVE_CPPUNIT
@@ -68,6 +70,11 @@ cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
+cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
+cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
+cppnit_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building
 # only some parts of NUT):
 $(top_builddir)/clients/libnutclient.la \
@@ -75,16 +82,16 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
-# Just redistribute test source into tarball
+# Just redistribute test source into tarball if not building tests
 
-EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
 endif !HAVE_CPPUNIT
 
 else !HAVE_CXX11
-# Just redistribute test source into tarball
+# Just redistribute test source into tarball if not building C++ at all
 
-EXTRA_DIST += example.cpp cpputest.cpp
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
 endif !HAVE_CXX11
 
