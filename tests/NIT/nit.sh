@@ -65,7 +65,7 @@ if ! test -w "${BUILDDIR}" ; then
 fi
 
 SRCDIR="`dirname "$0"`"
-SRCDIR="`cd "$SCRIPTDIR" && pwd`"
+SRCDIR="`cd "$SRCDIR" && pwd`"
 TOP_SRCDIR=""
 case "${SRCDIR}" in
     */tests/NIT)
