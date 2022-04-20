@@ -519,9 +519,17 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* don't let the user shoot themselves in the foot */
 	if (!strcmp(var, "driver")) {
-		if (strcmp(val, progname) != 0)
+		/* Accomodate for libtool wrapped developer iterations */
+		char buf[PATH_MAX];
+		if (snprintfcat(buf, sizeof(buf), "lt-%s", progname) < 0)
+			buf[0] = '\0';
+
+		if (strcmp(val, progname) != 0
+		&&  strcmp(val, buf) != 0
+		) {
 			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
+		}
 		return;
 	}
 
