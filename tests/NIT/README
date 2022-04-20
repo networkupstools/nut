@@ -1,5 +1,14 @@
-NUT Integration Test suite
-==========================
+NUT Integration Testing suite
+=============================
 
 This suite aims to simplify running `upsd`, a `dummy-ups` driver and
-a few clients to query them.
+a few clients to query them, as part of regular `make check` routine
+or separately with existing binaries (should not impact any existing
+installation data, processes or communications).
+
+See also
+link:https://git.launchpad.net/ubuntu/+source/nut/tree/debian/tests/test-nut.py[The NUT testing script]
+available in the
+link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite]
+doing a similar job with NUT installed from packages and configuring
+it via files in standard path names.

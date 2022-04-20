@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# NUT Integration Test suite, assumes the codebase was built and
+# NUT Integration Testing suite, assumes the codebase was built and
 # arranges running of the binaries to test driver-client-server
 # ability to start and their interactions.
 #
