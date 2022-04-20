@@ -2894,6 +2894,7 @@ AC_CONFIG_FILES([
  tools/Makefile
  tools/nut-scanner/Makefile
  tests/Makefile
+ tests/NIT/Makefile
  Makefile
 ])
 

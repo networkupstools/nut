@@ -1,5 +1,7 @@
 # Network UPS Tools: tests
 
+SUBDIRS = . NIT
+
 all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
@@ -13,12 +15,8 @@ AM_CXXFLAGS = -I$(top_srcdir)/include
 check_PROGRAMS = $(TESTS)
 
 # NUT Integration Testing suite
-EXTRA_DIST += NIT/nit.sh NIT/README
-check-NIT: NIT/nit.sh
-	mkdir -p "$(builddir)/NIT"
-	cd "$(builddir)/NIT" && "$(abs_srcdir)/NIT/nit.sh"
-
-check-local: check-NIT
+check-NIT:
+	cd "$(builddir)/NIT" && $(MAKE) $@
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
@@ -99,10 +97,5 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-clean-local:
-	if [ x"$(abs_builddir)" = x"$(abs_srcdir)" ]; then \
-		rm -rf "$(builddir)/NIT/tmp" ; \
-	else \
-		rm -rf "$(builddir)/NIT" ; \
-	fi
+#clean-local:
 #	rm -rf $(builddir)/.deps

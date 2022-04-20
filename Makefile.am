@@ -119,7 +119,7 @@ man all-man man-man check-man man-html all-html:
 	cd $(builddir)/docs && $(MAKE) $@
 
 check-NIT:
-	cd $(builddir)/tests && $(MAKE) $@
+	cd $(builddir)/tests/NIT && $(MAKE) $@
 
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
