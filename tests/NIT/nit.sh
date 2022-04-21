@@ -575,7 +575,8 @@ log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
 # to experiment with them interactively:
 if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
-    log_info "Sleeping now as asked, so you can play with the driver and server (port $NUT_PORT) running"
+    log_info "Sleeping now as asked, so you can play with the driver and server running; hint: export NUT_PORT=$NUT_PORT"
+    log_separator
     if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then
         sleep "${DEBUG_SLEEP}"
     else
