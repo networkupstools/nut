@@ -288,6 +288,13 @@ EOF
     port = epdu-managed.dev
 EOF
         [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: ups.conf"
+
+        # HACK: Avoid empty ups.status that may be present in example docs
+        # FIXME: Might we actually want that value (un-)set for tests?..
+        for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i "$F"
+            grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
+        done
     fi
 
 }
