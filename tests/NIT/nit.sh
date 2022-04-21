@@ -154,7 +154,12 @@ EOF
     # and fails its connection tests. Others fare well with
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
-        ping -c 1 "$LH" 2>/dev/null >/dev/null && { echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"; }
+        if (
+           ( cat /etc/hosts || getent hosts ) | grep "$LH" \
+             || ping -c 1 "$LH"
+        ) 2>/dev/null >/dev/null ; then
+            echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"
+        fi
     done
 }
 
