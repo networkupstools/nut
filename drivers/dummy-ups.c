@@ -34,6 +34,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <string.h>
 
 #include "main.h"
@@ -88,6 +89,7 @@ static drivermode_t mode = MODE_NONE;
 /* parseconf context, for dummy mode using a file */
 static PCONF_CTX_t	*ctx = NULL;
 static time_t		next_update = -1;
+static struct stat	datafile_stat;
 
 #define MAX_STRING_SIZE	128
 
@@ -193,7 +195,25 @@ void upsdrv_updateinfo(void)
 
 		case MODE_DUMMY_ONCE:
 			/* less stress on the sys */
-			if (ctx == NULL) {
+			if (ctx == NULL && next_update == -1) {
+				struct stat	fs;
+
+				if (0 != fstat (upsfd, &fs) && 0 != stat (device_path, &fs)) {
+					upsdebugx(2, "Can't open %s currently", device_path);
+					/* retry ASAP until we get a file */
+					memset(&datafile_stat, 0, sizeof(struct stat));
+					next_update = 1;
+				} else {
+					if (datafile_stat.st_mtim.tv_sec != fs.st_mtim.tv_sec) {
+						upsdebugx(2, "upsdrv_updateinfo: input file was already read once to the end, but changed later - re-reading");
+						/* updated file => retry ASAP */
+						next_update = 1;
+						datafile_stat = fs;
+					}
+				}
+			}
+
+			if (ctx == NULL && next_update == -1) {
 				upsdebugx(2, "upsdrv_updateinfo: NO-OP: input file was already read once to the end");
 				dstate_dataok();
 			} else {
@@ -342,6 +362,10 @@ void upsdrv_initups(void)
 				mode = MODE_DUMMY_LOOP;
 				dstate_setinfo("driver.parameter.mode", "dummy");
 				break;
+		}
+
+		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
+			upsdebugx(2, "Can't open %s currently", device_path);
 		}
 	}
 }

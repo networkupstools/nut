@@ -89,14 +89,16 @@ Changes from 2.7.4 to 2.8.0
   with your platform.
 
 - dummy-ups can now specify `mode` as a driver argument, and separates the
-  notion of `dummy-once` (new default for `*.dev` files) vs. `dummy-loop`
-  (legacy default for `*.seq` and others) [issue #1385]
+  notion of `dummy-once` (new default for `*.dev` files that do not change)
+  vs. `dummy-loop` (legacy default for `*.seq` and others) [issue #1385]
 
   * Note this can break third-party test scripts which expected `*.dev`
     files to work as a looping sequence with a `TIMER` keywords to change
     values slowly; now such files should get processed to the end once.
     Specify `mode=dummy-loop` driver option or rename the data file used
     in the `port` option for legacy behavior.
+    Use/Test-cases which modified such files content externally should
+    not be impacted.
 
 - Python: scripts have been updated to work with Python 3 as well as 2.
 

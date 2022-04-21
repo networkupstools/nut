@@ -95,6 +95,9 @@ Now such files should get processed to the end once.
 
 Specify `mode=dummy-loop` driver option or rename the data file
 used in the `port` option for legacy behavior.
+
+Use/Test-cases which modified such files content externally should
+not be impacted.
 ======
 
 For instance:
@@ -132,7 +135,7 @@ This will avoid message spam into your system log files, if you are
 using NUT default configuration.
 
 NOTE: By default since NUT v2.8.0, it will not loop on files in `dummy-once`
-mode, e.g. those with a `.dev` extension.
+mode, e.g. those with a `.dev` extension, unless their timestamp changes.
 
 You can also use the `TIMER <seconds>` instruction to create scheduled event
 sequences (such files are traditionally named with the `.seq` extension).
