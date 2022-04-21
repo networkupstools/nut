@@ -431,7 +431,18 @@ if shouldDebug ; then
 fi
 
 log_info "Query driver state from UPSD by UPSC after driver startup"
-upsc dummy@localhost:$NUT_PORT || die "upsd does not respond"
+upsc dummy@localhost:$NUT_PORT || {
+    # Should not get to this, except on very laggy systems maybe
+    log_error "Query failed, retrying with UPSD started after drivers"
+
+    kill -15 $PID_UPSD
+    wait $PID_UPSD
+    upsd -F &
+    PID_UPSD="$!"
+
+    sleep 5
+    upsc dummy@localhost:$NUT_PORT || die "upsd does not respond"
+}
 
 OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond: $OUT"
 if [ x"$OUT" != x"Dummy UPS" ] ; then
