@@ -614,3 +614,16 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 
 	return 1;
 }
+
+int str_ends_with(const char *s, const char *suff) {
+	size_t slen;
+	size_t sufflen;
+
+	if (!s) return 0;	/* null string does not end with anything */
+	if (!suff) return 1;	/* null suffix tails anything */
+
+	slen = strlen(s);
+	sufflen = strlen(suff);
+
+	return (slen >= sufflen) && (!memcmp(s + slen - sufflen, suff, sufflen));
+}
