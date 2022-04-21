@@ -526,9 +526,17 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 		if (snprintfcat(buf, sizeof(buf), "lt-%s", val) < 0)
 			buf[0] = '\0';
 
-		if (strcmp(val, progname) != 0
-		&&  strcmp(buf, progname) != 0
-		) {
+		upsdebugx(6, "progname: check '%s' vs '%s' vs '%s'", progname, val, buf);
+		if (strcmp(buf, progname) == 0) {
+			upsdebugx(1, "Seems this driver binary %s is a libtool "
+				"wrapped build for driver %s", progname, val);
+			/* progname points to xbasename(argv[0]) in-place;
+			 * roll the pointer forward a bit, we know we can:
+			 */
+			progname = progname + strlen("lt-");
+		}
+
+		if (strcmp(val, progname) != 0) {
 			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
 		}
