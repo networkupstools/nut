@@ -148,6 +148,14 @@ LISTEN localhost $NUT_PORT
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
     chmod 640 "$NUT_CONFPATH/upsd.conf"
+
+    # Some systems listining on symbolic "localhost" actually
+    # only bind to IPv6, and Python telnetlib resolves IPv4
+    # and fails its connection tests. Others fare well with
+    # both addresses in one command.
+    for LH in 127.0.0.1 '::1' ; do
+        ping -c 1 "$LH" 2>/dev/null >/dev/null && { echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"; }
+    done
 }
 
 generatecfg_upsd_nodev() {
