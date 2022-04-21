@@ -295,7 +295,7 @@ EOF
         # FIXME: Might we actually want that value (un-)set for tests?..
         # TODO: Check if the problem was with dummy-ups looping? [#1385]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
-            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i "$F"
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i '' "$F"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
