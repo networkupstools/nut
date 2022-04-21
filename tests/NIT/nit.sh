@@ -270,6 +270,7 @@ EOF
     driver = dummy-ups
     desc = "Crash Dummy"
     port = dummy.dev
+    mode = dummy-loop
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
@@ -286,11 +287,13 @@ EOF
     driver = dummy-ups
     desc = "Example ePDU data dump"
     port = epdu-managed.dev
+    mode = dummy-once
 EOF
         [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
         # HACK: Avoid empty ups.status that may be present in example docs
         # FIXME: Might we actually want that value (un-)set for tests?..
+        # TODO: Check if the problem was with dummy-ups looping? [#1385]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
             sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i "$F"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
