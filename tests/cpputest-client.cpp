@@ -248,6 +248,12 @@ void NutActiveClientTest::test_auth_user() {
 			std::string s = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
 			std::string sTest = s + "-test";
 
+			std::cerr << "[D] Got initial device '" << NUT_SETVAR_DEVICE
+				<< "' variable '" << nutVar << "' value: " << s << std::endl;
+			CPPUNIT_ASSERT_MESSAGE(
+				"Did not expect empty value here",
+				!s.empty());
+
 			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, sTest);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
