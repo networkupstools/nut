@@ -53,6 +53,9 @@ IMPLEMENTATION
 The `port` specification in `ups.conf` depends on the running mode, and allows
 the driver to select the right mode of operation.
 
+Since NUT v2.8.0, the `mode` specification in `ups.conf` allows users to
+override the mode of operation which would be otherwise guessed by the driver.
+
 Dummy Mode
 ~~~~~~~~~~
 
@@ -60,6 +63,39 @@ In this context, `port` in the `ups.conf` block defines a file name for the
 *dummy-ups* to read data from. This can either be an absolute or a relative
 path name. In the latter case the NUT sysconfig directory (i.e. `/etc/nut`,
 `/usr/local/ups/etc`, ...) is prepended.
+
+Since NUT v2.8.0 two aspects of this mode are differentiated:
+
+* `dummy-once` reads the specified file once to the end (interrupting for
+  `TIMER` lines, etc.) and does not re-process it;
+  this allows use/test cases to `upsrw` variables in the driver instance
+  and they remain in memory until the driver is restarted;
++
+Since NUT v2.8.0 `dummy-once` is assigned by default to files with a `*.dev`
+  naming pattern.
+
+* `dummy-loop` reads the specified file again and again, with a short sleep
+  between the processing cycles; for sequence files using a `TIMER` keyword
+  (see below), or for use/test cases which modify file contents with external
+  means, this allows an impression of a device whose state changes over time.
++
+Before NUT v2.8.0 this was the only aspect, so a simple `dummy` mode value
+  maps to this behavior for backwards compatibility.
++
+Since NUT v2.8.0 `dummy-loop` is assigned by default to files with a `*.seq`
+  naming pattern, and `dummy` is assigned by default to files with other
+  naming patterns that the driver could not classify.
+
+[NOTE]
+======
+Said defaulting based on filename pattern can break third-party
+test scripts which earlier expected `*.dev` files to work as a
+looping sequence with a `TIMER` keywords to change values slowly.
+Now such files should get processed to the end once.
+
+Specify `mode=dummy-loop` driver option or rename the data file
+used in the `port` option for legacy behavior.
+======
 
 For instance:
 
@@ -90,10 +126,13 @@ Some sample definition files are available in the `data` directory of the
 NUT source tree, and generally in the sysconfig or share directory of your
 system distribution.
 
-Since *dummy-ups* will loop on reading this file, you can dynamically modify
-it with some external process to "interact" with the driver. This will avoid
-message spam into your system log files, if you are using NUT default
-configuration.
+Since *dummy-ups* will usually loop on reading this file, you can dynamically
+modify it with some external process to "interact" with the driver.
+This will avoid message spam into your system log files, if you are
+using NUT default configuration.
+
+NOTE: By default since NUT v2.8.0, it will not loop on files in `dummy-once`
+mode, e.g. those with a `.dev` extension.
 
 You can also use the `TIMER <seconds>` instruction to create scheduled event
 sequences (such files are traditionally named with the `.seq` extension).
@@ -107,9 +146,9 @@ between "OL", "OB" and "OB LB" every minute:
 	ups.status: OB LB
 	TIMER 60
 
-It is wise to end the script with a `TIMER` keyword. Otherwise *dummy-ups*
-will directly go back to the beginning of the file and, in particular, forget
-any values you could have just set with `upsrw`.
+It is wise to end the script for `dummy-loop` mode with a `TIMER` keyword.
+Otherwise `dummy-ups` will directly go back to the beginning of the file
+and, in particular, forget any values you could have just set with `upsrw`.
 
 Note that to avoid CPU overload with an infinite loop, the driver "sleeps"
 a bit between file-reading cycles (currently this delay is hardcoded to one

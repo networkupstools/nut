@@ -60,8 +60,20 @@ enum drivermode {
 
 	/* use the embedded defintion or a definition file, parsed in a
 	 * loop again and again (often with TIMER lines to delay changes)
+	 * Default mode for files with *.seq naming pattern
+	 * (legacy-compatibility note: and other patterns except *.dev)
 	 */
 	MODE_DUMMY_LOOP,
+
+	/* use the embedded defintion or a definition file, parsed once
+	 *
+	 * This allows to spin up a dummy device with initial readings
+	 * and retain in memory whatever SET VAR was sent by clients later.
+	 * This is also less stressful on system resources to run the dummy.
+	 *
+	 * Default mode for files with *.dev naming pattern
+	 */
+	MODE_DUMMY_ONCE,
 
 	/* use libupsclient to repeat another UPS */
 	MODE_REPEATER,
@@ -101,6 +113,7 @@ void upsdrv_initinfo(void)
 
 	switch (mode)
 	{
+		case MODE_DUMMY_ONCE:
 		case MODE_DUMMY_LOOP:
 			/* Initialise basic essential variables */
 			for ( item = nut_data ; item->info_type != NULL ; item++ )
@@ -178,6 +191,18 @@ void upsdrv_updateinfo(void)
 				dstate_dataok();
 			break;
 
+		case MODE_DUMMY_ONCE:
+			/* less stress on the sys */
+			if (ctx == NULL) {
+				upsdebugx(2, "upsdrv_updateinfo: NO-OP: input file was already read once to the end");
+				dstate_dataok();
+			} else {
+				/* initial parsing interrupted by e.g. TIMER line */
+				if (parse_data_file(upsfd) >= 0)
+					dstate_dataok();
+			}
+			break;
+
 		case MODE_META:
 		case MODE_REPEATER:
 			if (upsclient_update_vars() > 0)
@@ -236,13 +261,30 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
 }
 
 void upsdrv_initups(void)
 {
+	const char *val;
+
+	val = dstate_getinfo("driver.parameter.mode");
+	if (val) {
+		if (!strcmp(val, "dummy-loop")
+		&&  !strcmp(val, "dummy-once")
+		&&  !strcmp(val, "dummy")
+		&&  !strcmp(val, "repeater")
+		/* &&  !strcmp(val, "meta") */
+		) {
+			fatalx(EXIT_FAILURE, "Unsupported mode was specified: %s", val);
+		}
+	}
+
 	/* check the running mode... */
-	if (strchr(device_path, '@'))
-	{
+	if ( (!val && strchr(device_path, '@'))
+	||   (val && !strcmp(val, "repeater"))
+	/*||   (val && !strcmp(val, "meta")) */
+	) {
 		upsdebugx(1, "Repeater mode");
 		mode = MODE_REPEATER;
 		dstate_setinfo("driver.parameter.mode", "repeater");
@@ -250,9 +292,57 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		upsdebugx(1, "Dummy (simulation) mode");
-		mode = MODE_DUMMY_LOOP;
-		dstate_setinfo("driver.parameter.mode", "dummy");
+		mode = MODE_NONE;
+
+		if (val) {
+			if (!strcmp(val, "dummy-loop")) {
+				upsdebugx(2, "Dummy (simulation) mode looping infinitely was explicitly requested");
+				mode = MODE_DUMMY_LOOP;
+			} else
+			if (!strcmp(val, "dummy-once")) {
+				upsdebugx(2, "Dummy (simulation) mode with data read once was explicitly requested");
+				mode = MODE_DUMMY_ONCE;
+			} else
+			if (!strcmp(val, "dummy")) {
+				upsdebugx(2, "Dummy (simulation) mode default (looping infinitely) was explicitly requested");
+				mode = MODE_DUMMY_LOOP;
+			}
+		}
+
+		if (mode == MODE_NONE) {
+			if (str_ends_with(device_path, ".seq")) {
+				upsdebugx(2, "Dummy (simulation) mode with a sequence file name pattern (looping infinitely)");
+				mode = MODE_DUMMY_LOOP;
+			} else if (str_ends_with(device_path, ".dev")) {
+				upsdebugx(2, "Dummy (simulation) mode with a device data dump file name pattern (read once)");
+				mode = MODE_DUMMY_ONCE;
+			}
+		}
+
+		/* Report decisions similar to those above,
+		 * just a bit shorter and at another level */
+		switch (mode) {
+			case MODE_DUMMY_ONCE:
+				upsdebugx(1, "Dummy (simulation) mode using data read once");
+				dstate_setinfo("driver.parameter.mode", "dummy-once");
+				break;
+
+			case MODE_DUMMY_LOOP:
+				upsdebugx(1, "Dummy (simulation) mode looping infinitely");
+				dstate_setinfo("driver.parameter.mode", "dummy-loop");
+				break;
+
+			default:
+				/* This was the only mode until MODE_DUMMY_LOOP
+				 * got split from MODE_DUMMY_ONCE in NUT v2.8.0
+				 * so we keep the previously known mode string
+				 * and it remains default when we are not sure
+				 */
+				upsdebugx(1, "Dummy (simulation) mode default (looping infinitely)");
+				mode = MODE_DUMMY_LOOP;
+				dstate_setinfo("driver.parameter.mode", "dummy");
+				break;
+		}
 	}
 }
 
