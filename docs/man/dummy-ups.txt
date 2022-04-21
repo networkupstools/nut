@@ -41,6 +41,12 @@ the UPS. This arrangement can also help with networked UPSes, whose network
 management cards can be overwhelmed with a farm of servers directly polling
 SNMP or other protocols every few seconds.
 
+////////////////////////////////////////
+Future intention: Meta mode to aggregate several drivers as one device
+e.g. to represent same UPS with Serial + USB + SNMP links, and/or cover
+an SNMP UPS that supports different data in different MIBs.
+////////////////////////////////////////
+
 IMPLEMENTATION
 --------------
 
@@ -68,7 +74,7 @@ only to modify values of these variables), and has the same format as an
 linkman:upsc[8] dump (`<varname>: <value>`). So you can easily create
 definition files from an existing UPS using `upsc > file.dev`.
 
-Note that the Network UPS project provides a
+Note that the Network UPS project provides an extensive
 link:https://networkupstools.org/ddl/index.html[DDL (Devices Dumps Library)]
 with files which can be used for modelling real devices.
 Entries for the DDL library are best prepared with the
@@ -81,8 +87,8 @@ available: `device.*`, `driver.*`, `ups.mfr`, `ups.model`, `ups.status`
 as filled by the driver itself.
 
 Some sample definition files are available in the `data` directory of the
-NUT source tree, and generally in the sysconfig directory of your system
-distribution.
+NUT source tree, and generally in the sysconfig or share directory of your
+system distribution.
 
 Since *dummy-ups* will loop on reading this file, you can dynamically modify
 it with some external process to "interact" with the driver. This will avoid
