@@ -55,12 +55,23 @@ upsdrv_info_t upsdrv_info =
 	{ NULL }
 };
 
-#define MODE_NONE	0
-#define MODE_DUMMY		1 /* use the embedded defintion or a definition file */
-#define MODE_REPEATER	2 /* use libupsclient to repeat an UPS */
-#define MODE_META		3 /* consolidate data from several UPSs (TBS) */
+enum drivermode {
+	MODE_NONE = 0,
 
-static int mode = MODE_NONE;
+	/* use the embedded defintion or a definition file, parsed in a
+	 * loop again and again (often with TIMER lines to delay changes)
+	 */
+	MODE_DUMMY_LOOP,
+
+	/* use libupsclient to repeat another UPS */
+	MODE_REPEATER,
+
+	/* consolidate data from several UPSs (TBS) */
+	MODE_META
+};
+typedef enum drivermode drivermode_t;
+
+static drivermode_t mode = MODE_NONE;
 
 /* parseconf context, for dummy mode using a file */
 static PCONF_CTX_t	*ctx = NULL;
@@ -90,7 +101,7 @@ void upsdrv_initinfo(void)
 
 	switch (mode)
 	{
-		case MODE_DUMMY:
+		case MODE_DUMMY_LOOP:
 			/* Initialise basic essential variables */
 			for ( item = nut_data ; item->info_type != NULL ; item++ )
 			{
@@ -114,6 +125,7 @@ void upsdrv_initinfo(void)
 
 			dstate_dataok();
 			break;
+
 		case MODE_META:
 		case MODE_REPEATER:
 			/* Obtain the target name */
@@ -142,6 +154,7 @@ void upsdrv_initinfo(void)
 			}
 			/* FIXME: commands and settable variable! */
 			break;
+
 		case MODE_NONE:
 		default:
 			fatalx(EXIT_FAILURE, "no suitable definition found!");
@@ -159,11 +172,12 @@ void upsdrv_updateinfo(void)
 
 	switch (mode)
 	{
-		case MODE_DUMMY:
+		case MODE_DUMMY_LOOP:
 			/* Now get user's defined variables */
 			if (parse_data_file(upsfd) >= 0)
 				dstate_dataok();
 			break;
+
 		case MODE_META:
 		case MODE_REPEATER:
 			if (upsclient_update_vars() > 0)
@@ -184,6 +198,7 @@ void upsdrv_updateinfo(void)
 				}
 			}
 			break;
+
 		case MODE_NONE:
 		default:
 			break;
@@ -236,7 +251,7 @@ void upsdrv_initups(void)
 	else
 	{
 		upsdebugx(1, "Dummy (simulation) mode");
-		mode = MODE_DUMMY;
+		mode = MODE_DUMMY_LOOP;
 		dstate_setinfo("driver.parameter.mode", "dummy");
 	}
 }
