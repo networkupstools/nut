@@ -257,20 +257,20 @@ generatecfg_ups_trivial() {
 generatecfg_ups_dummy() {
     generatecfg_ups_trivial
 
-    cat > "$NUT_CONFPATH/dummy.dev" << EOF
+    cat > "$NUT_CONFPATH/dummy.seq" << EOF
 ups.status: OB
 TIMER 5
 ups.status: OL
 TIMER 5
 EOF
-    [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: dummy.dev"
+    [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: dummy.seq"
 
     cat >> "$NUT_CONFPATH/ups.conf" << EOF
 [dummy]
     driver = dummy-ups
     desc = "Crash Dummy"
-    port = dummy.dev
-    mode = dummy-loop
+    port = dummy.seq
+    #mode = dummy-loop
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
