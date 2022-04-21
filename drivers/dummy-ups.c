@@ -222,9 +222,15 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
+				char fn[SMALLBUF];
 
-				if (0 != fstat (upsfd, &fs) && 0 != stat (device_path, &fs)) {
-					upsdebugx(2, "Can't open %s currently", device_path);
+				if (device_path[0] == '/')
+					snprintf(fn, sizeof(fn), "%s", device_path);
+				else
+					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+
+				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
+					upsdebugx(2, "Can't open %s currently", fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
 					next_update = 1;
@@ -362,6 +368,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
+		char fn[SMALLBUF];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -441,6 +448,11 @@ void upsdrv_initups(void)
 # pragma GCC diagnostic pop
 #endif
 		}
+
+		if (device_path[0] == '/')
+			snprintf(fn, sizeof(fn), "%s", device_path);
+		else
+			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
 			upsdebugx(2, "Can't open %s currently", device_path);
