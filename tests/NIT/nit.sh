@@ -507,8 +507,8 @@ UPS2"
         log_error "upsc was supposed to answer with error exit code: $OUT"
         FAILED="`expr $FAILED + 1`"
     }
-    if [ x"$OUT" != x'Error: Driver not connected' ] ; then
-        log_error "got reply for upsc query when 'Error: Driver not connected' was expected: $OUT"
+    if ! echo "$OUT" | grep 'Error: Driver not connected' ; then
+        log_error "got reply for upsc query when 'Error: Driver not connected' was expected: '$OUT'"
         FAILED="`expr $FAILED + 1`"
     else
         PASSED="`expr $PASSED + 1`"
@@ -569,7 +569,7 @@ testcase_sandbox_upsc_query_bogus() {
         log_error "upsc was supposed to answer with error exit code: $OUT"
         FAILED="`expr $FAILED + 1`"
     }
-    if [ x"$OUT" != x'Error: Variable not supported by UPS' ] ; then
+    if ! echo "$OUT" | grep 'Error: Variable not supported by UPS' ; then
         log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
     else
