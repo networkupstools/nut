@@ -244,6 +244,7 @@ void NutActiveClientTest::test_auth_user() {
 		try {
 			TrackingResult tres;
 			TrackingID tid;
+			int i;
 			std::string nutVar = "ups.status"; /* Has a risk of flip-flop with NIT dummy setup */
 			std::string s1 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
 			std::string sTest = s1 + "-test";
@@ -264,8 +265,23 @@ void NutActiveClientTest::test_auth_user() {
 				noException = false;
 			}
 			/* Check what we got after set */
-			std::string s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
-			std::cerr << "[D] Read back: " << s2 << std::endl;
+			/* Note that above we told the server to tell the driver
+			 * to set a dstate entry; below we ask the server to ask
+			 * the driver and relay the answer to us. The dummy-ups
+			 * driver may also be in a sleeping state between cycles.
+			 * Data propagation may be not instantaneous, so we loop
+			 * for a while to see the expected value (or give up).
+			 */
+			std::string s2;
+			for (i = 0; i < 100 ; i++) {
+				s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				if (s2 == sTest)
+					break;
+				usleep(100000);
+			}
+			std::cerr << "[D] Read back: " << s2
+				<< " after " << (100 * i) << "msec"
+				<< std::endl;
 
 			/* Fix it back */
 			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s1);
@@ -277,8 +293,16 @@ void NutActiveClientTest::test_auth_user() {
 					<< "tracking result is " << tres << std::endl;
 				noException = false;
 			}
-			std::string s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
-			std::cerr << "[D] Read back: " << s3 << std::endl;
+			std::string s3;
+			for (i = 0; i < 100 ; i++) {
+				s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				if (s3 == s1)
+					break;
+				usleep(100000);
+			}
+			std::cerr << "[D] Read back: " << s3
+				<< " after " << (100 * i) << "msec"
+				<< std::endl;
 
 			if (s3 != s1) {
 				std::cerr << "[D] Final device variable value '" << s3
