@@ -324,187 +324,276 @@ EOF
 
 #####################################################
 
+isPidAlive() {
+    [ -n "$1" ] && [ "$1" -gt 0 ] || return
+    [ -d "/proc/$1" ] || kill -0 "$1" 2>/dev/null
+}
+
 FAILED=0
 PASSED=0
 
-log_separator
-log_info "Test UPSD without configs at all"
-upsd -F
-if [ "$?" = 0 ]; then
-    log_error "upsd should fail without configs"
-    FAILED="`expr $FAILED + 1`"
-else
-    log_info "OK, upsd failed to start in wrong conditions"
-    PASSED="`expr $PASSED + 1`"
-fi
-
-log_separator
-log_info "Test UPSD without driver config file"
-generatecfg_upsd_trivial
-upsd -F
-if [ "$?" = 0 ]; then
-    log_error "upsd should fail without driver config file"
-    FAILED="`expr $FAILED + 1`"
-else
-    log_info "OK, upsd failed to start in wrong conditions"
-    PASSED="`expr $PASSED + 1`"
-fi
-
-log_separator
-log_info "Test UPSD without drivers defined in config file"
-generatecfg_upsd_trivial
-generatecfg_ups_trivial
-upsd -F
-if [ "$?" = 0 ]; then
-    log_error "upsd should fail without drivers defined in config file"
-    FAILED="`expr $FAILED + 1`"
-else
-    log_info "OK, upsd failed to start in wrong conditions"
-    PASSED="`expr $PASSED + 1`"
-fi
-
-log_separator
-log_info "Test UPSD allowed to run without driver configs"
-generatecfg_upsd_nodev
-generatecfg_upsdusers_trivial
-generatecfg_ups_trivial
-upsd -F &
-PID_UPSD="$!"
-sleep 2
-if [ -d "/proc/$PID_UPSD" ] || kill -0 "$PID_UPSD"; then
-    log_info "OK, upsd is running"
-    PASSED="`expr $PASSED + 1`"
-
+testcase_upsd_no_configs_at_all() {
     log_separator
-    log_info "Test that UPSD responds to UPSC"
-    OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond: $OUT"
-    if [ -n "$OUT" ] ; then
-        log_error "got reply for upsc listing when none was expected: $OUT"
+    log_info "Test UPSD without configs at all"
+    upsd -F
+    if [ "$?" = 0 ]; then
+        log_error "upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
     else
-        log_info "OK, empty response as expected"
+        log_info "OK, upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
-else
-    log_error "upsd was expected to be running although no devices are defined"
-    FAILED="`expr $FAILED + 1`"
-fi
-kill -15 $PID_UPSD
-wait $PID_UPSD
+}
 
-log_separator
-log_info "Test starting UPSD and a driver"
-generatecfg_upsd_nodev
-generatecfg_upsdusers_trivial
-generatecfg_ups_dummy
+testcase_upsd_no_configs_driver_file() {
+    log_separator
+    log_info "Test UPSD without driver config file"
+    generatecfg_upsd_trivial
+    upsd -F
+    if [ "$?" = 0 ]; then
+        log_error "upsd should fail without driver config file"
+        FAILED="`expr $FAILED + 1`"
+    else
+        log_info "OK, upsd failed to start in wrong conditions"
+        PASSED="`expr $PASSED + 1`"
+    fi
+}
 
-log_info "Starting UPSD alone first"
-upsd -F &
-PID_UPSD="$!"
-sleep 5
+testcase_upsd_no_configs_in_driver_file() {
+    log_separator
+    log_info "Test UPSD without drivers defined in config file"
+    generatecfg_upsd_trivial
+    generatecfg_ups_trivial
+    upsd -F
+    if [ "$?" = 0 ]; then
+        log_error "upsd should fail without drivers defined in config file"
+        FAILED="`expr $FAILED + 1`"
+    else
+        log_info "OK, upsd failed to start in wrong conditions"
+        PASSED="`expr $PASSED + 1`"
+    fi
+}
 
-EXPECTED_UPSLIST='dummy'
-if [ x"${TOP_SRCDIR}" != x ]; then
-    EXPECTED_UPSLIST="$EXPECTED_UPSLIST
+testcase_upsd_allow_no_device() {
+    log_separator
+    log_info "Test UPSD allowed to run without driver configs"
+    generatecfg_upsd_nodev
+    generatecfg_upsdusers_trivial
+    generatecfg_ups_trivial
+    upsd -F &
+    PID_UPSD="$!"
+    sleep 2
+    if isPidAlive "$PID_UPSD"; then
+        log_info "OK, upsd is running"
+        PASSED="`expr $PASSED + 1`"
+
+        log_separator
+        log_info "Test that UPSD responds to UPSC"
+        OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond: $OUT"
+        if [ -n "$OUT" ] ; then
+            log_error "got reply for upsc listing when none was expected: $OUT"
+            FAILED="`expr $FAILED + 1`"
+        else
+            log_info "OK, empty response as expected"
+            PASSED="`expr $PASSED + 1`"
+        fi
+    else
+        log_error "upsd was expected to be running although no devices are defined"
+        FAILED="`expr $FAILED + 1`"
+    fi
+    kill -15 $PID_UPSD
+    wait $PID_UPSD
+}
+
+testgroup_upsd_invalid_configs() {
+    testcase_upsd_no_configs_at_all
+    testcase_upsd_no_configs_driver_file
+    testcase_upsd_no_configs_in_driver_file
+}
+
+testgroup_upsd_questionable_configs() {
+    testcase_upsd_allow_no_device
+}
+
+#########################################################
+### Tests in a common sandbox with driver(s) + server ###
+#########################################################
+
+SANDBOX_CONFIG_GENERATED=false
+sandbox_generate_configs() {
+    if $SANDBOX_CONFIG_GENERATED ; then return ; fi
+
+    log_info "Generating configs for sandbox"
+    generatecfg_upsd_nodev
+    generatecfg_upsdusers_trivial
+    generatecfg_ups_dummy
+    SANDBOX_CONFIG_GENERATED=true
+}
+
+sandbox_forget_configs() {
+    SANDBOX_CONFIG_GENERATED=false
+    if [ -z "${DEBUG_SLEEP-}" ] ; then
+        stop_daemons
+    fi
+}
+
+sandbox_start_upsd() {
+    if isPidAlive "$PID_UPSD" ; then
+        return 0
+    fi
+
+    sandbox_generate_configs
+
+    log_info "Starting UPSD for sandbox"
+    upsd -F &
+    PID_UPSD="$!"
+    sleep 5
+}
+
+sandbox_start_drivers() {
+    if isPidAlive "$PID_DUMMYUPS" \
+    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+         || [ x"${TOP_SRCDIR}" = x ] ; } \
+    ; then
+        # All drivers expected for this environment are already running
+        return 0
+    fi
+
+    sandbox_generate_configs
+
+    log_info "Starting dummy-ups driver(s) for sandbox"
+    #upsdrvctl -F start dummy &
+    dummy-ups -a dummy -F &
+    PID_DUMMYUPS="$!"
+
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        dummy-ups -a UPS1 -F &
+        PID_DUMMYUPS1="$!"
+
+        dummy-ups -a UPS2 -F &
+        PID_DUMMYUPS2="$!"
+    fi
+
+    sleep 5
+
+    if shouldDebug ; then
+        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
+    fi
+}
+
+testcase_sandbox_start_upsd_alone() {
+    log_separator
+    log_info "Test starting UPSD but not a driver before it"
+    sandbox_start_upsd
+
+    EXPECTED_UPSLIST='dummy'
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        EXPECTED_UPSLIST="$EXPECTED_UPSLIST
 UPS1
 UPS2"
-fi
+    fi
 
-log_info "Query listing from UPSD by UPSC (driver not running yet)"
-OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond: $OUT"
-if [ x"$OUT" != x"$EXPECTED_UPSLIST" ] ; then
-    log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: $OUT"
-    FAILED="`expr $FAILED + 1`"
-else
-    PASSED="`expr $PASSED + 1`"
-fi
+    log_info "Query listing from UPSD by UPSC (driver not running yet)"
+    OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond: $OUT"
+    if [ x"$OUT" != x"$EXPECTED_UPSLIST" ] ; then
+        log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
 
-log_info "Query driver state from UPSD by UPSC (driver not running yet)"
-OUT="`upsc dummy@localhost:$NUT_PORT 2>&1`" && {
-    log_error "upsc was supposed to answer with error exit code: $OUT"
-    FAILED="`expr $FAILED + 1`"
+    log_info "Query driver state from UPSD by UPSC (driver not running yet)"
+    OUT="`upsc dummy@localhost:$NUT_PORT 2>&1`" && {
+        log_error "upsc was supposed to answer with error exit code: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    }
+    if [ x"$OUT" != x'Error: Driver not connected' ] ; then
+        log_error "got reply for upsc query when 'Error: Driver not connected' was expected: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
 }
-if [ x"$OUT" != x'Error: Driver not connected' ] ; then
-    log_error "got reply for upsc query when 'Error: Driver not connected' was expected: $OUT"
-    FAILED="`expr $FAILED + 1`"
-else
-    PASSED="`expr $PASSED + 1`"
-fi
 
-log_info "Starting dummy-ups driver(s) now"
-#upsdrvctl -F start dummy &
-dummy-ups -a dummy -F &
-PID_DUMMYUPS="$!"
-
-if [ x"${TOP_SRCDIR}" != x ]; then
-    dummy-ups -a UPS1 -F &
-    PID_DUMMYUPS1="$!"
-
-    dummy-ups -a UPS2 -F &
-    PID_DUMMYUPS2="$!"
-fi
-
-sleep 5
-
-if shouldDebug ; then
-    (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
-fi
-
-log_info "Query driver state from UPSD by UPSC after driver startup"
-upsc dummy@localhost:$NUT_PORT || {
-    # Should not get to this, except on very laggy systems maybe
-    log_error "Query failed, retrying with UPSD started after drivers"
-
-    kill -15 $PID_UPSD
+testcase_sandbox_start_upsd_after_drivers() {
+    # Historically this is a fallback from testcase_sandbox_start_drivers_after_upsd
+    kill -15 $PID_UPSD 2>/dev/null
     wait $PID_UPSD
     upsd -F &
     PID_UPSD="$!"
+
+    sandbox_start_drivers
+    sandbox_start_upsd
 
     sleep 5
     upsc dummy@localhost:$NUT_PORT || die "upsd does not respond"
 }
 
-OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond: $OUT"
-if [ x"$OUT" != x"Dummy UPS" ] ; then
-    log_error "got this reply for upsc query when 'Dummy UPS' was expected: $OUT"
-    FAILED="`expr $FAILED + 1`"
-else
-    PASSED="`expr $PASSED + 1`"
-fi
+testcase_sandbox_start_drivers_after_upsd() {
+    #sandbox_start_upsd
+    testcase_sandbox_start_upsd_alone
+    sandbox_start_drivers
 
-log_info "Query driver state from UPSD by UPSC for bogus info"
-OUT="`upsc dummy@localhost:$NUT_PORT ups.bogus.value 2>&1`" && {
-    log_error "upsc was supposed to answer with error exit code: $OUT"
-    FAILED="`expr $FAILED + 1`"
+    log_info "Query driver state from UPSD by UPSC after driver startup"
+    upsc dummy@localhost:$NUT_PORT || {
+        # Should not get to this, except on very laggy systems maybe
+        log_error "Query failed, retrying with UPSD started after drivers"
+        testcase_start_upsd_after_drivers
+    }
 }
-if [ x"$OUT" != x'Error: Variable not supported by UPS' ] ; then
-    log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected: $OUT"
-    FAILED="`expr $FAILED + 1`"
-else
-    PASSED="`expr $PASSED + 1`"
-fi
 
-log_separator
-log_info "Test that dummy-ups TIMER action changes the reported state"
-# Driver is set up to flip ups.status every 5 sec, so check every 3
-OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT1" ; sleep 3
-OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT2" ; sleep 3
-OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT3" ; sleep 3
-if echo "$OUT1$OUT2$OUT3" | grep "OB" && echo "$OUT1$OUT2$OUT3" | grep "OL" ; then
-    log_info "OK, ups.status flips over time"
-    PASSED="`expr $PASSED + 1`"
-else
-    log_error "ups.status did not flip over time"
-    FAILED="`expr $FAILED + 1`"
-fi
+testcase_sandbox_upsc_query_model() {
+    OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond: $OUT"
+    if [ x"$OUT" != x"Dummy UPS" ] ; then
+        log_error "got this reply for upsc query when 'Dummy UPS' was expected: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
+}
 
-# We optionally make python module (if interpreter is found):
-if [ x"${TOP_BUILDDIR}" != x ] \
-&& [ -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
-; then
-    # That script says it expects data/evolution500.seq (as the UPS1 dummy)
-    # but the dummy data does not currently let issue the commands and
-    # setvars tested from python script.
+testcase_sandbox_upsc_query_bogus() {
+    log_info "Query driver state from UPSD by UPSC for bogus info"
+    OUT="`upsc dummy@localhost:$NUT_PORT ups.bogus.value 2>&1`" && {
+        log_error "upsc was supposed to answer with error exit code: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    }
+    if [ x"$OUT" != x'Error: Variable not supported by UPS' ] ; then
+        log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected: $OUT"
+        FAILED="`expr $FAILED + 1`"
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
+}
+
+testcase_sandbox_upsc_query_timer() {
+    log_separator
+    log_info "Test that dummy-ups TIMER action changes the reported state"
+    # Driver is set up to flip ups.status every 5 sec, so check every 3
+    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT1" ; sleep 3
+    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT2" ; sleep 3
+    OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT3" ; sleep 3
+    if echo "$OUT1$OUT2$OUT3" | grep "OB" && echo "$OUT1$OUT2$OUT3" | grep "OL" ; then
+        log_info "OK, ups.status flips over time"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "ups.status did not flip over time"
+        FAILED="`expr $FAILED + 1`"
+    fi
+}
+
+isTestablePython() {
+    # We optionally make python module (if interpreter is found):
+    if [ x"${TOP_BUILDDIR}" = x ] \
+    || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
+    ; then
+        return 1
+    fi
+    return 0
+}
+
+testcase_sandbox_python_without_credentials() {
+    isTestablePython || return 0
     log_separator
     log_info "Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
@@ -517,7 +606,14 @@ if [ x"${TOP_BUILDDIR}" != x ] \
         log_error "PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
+}
 
+testcase_sandbox_python_with_credentials() {
+    isTestablePython || return 0
+
+    # That script says it expects data/evolution500.seq (as the UPS1 dummy)
+    # but the dummy data does not currently let issue the commands and
+    # setvars tested from python script.
     log_separator
     log_info "Call Python module test suite: PyNUT (NUT Python bindings) with login credentials"
     if (
@@ -532,10 +628,29 @@ if [ x"${TOP_BUILDDIR}" != x ] \
         log_error "PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
-fi
+}
 
-# We optionally make and here can run C++ client tests:
-if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
+testcases_sandbox_python() {
+    isTestablePython || return 0
+    testcase_sandbox_python_without_credentials
+    testcase_sandbox_python_with_credentials
+}
+
+####################################
+
+isTestableCppNIT() {
+    # We optionally make and here can run C++ client tests:
+    if [ x"${TOP_BUILDDIR}" = x ] \
+    || [ ! -x "${TOP_BUILDDIR}/tests/cppnit" ] \
+    ; then
+        return 1
+    fi
+    return 0
+}
+
+testcase_sandbox_cppnit_without_creds() {
+    isTestableCppNIT || return 0
+
     log_separator
     log_info "Call libnutclient test suite: cppnit without login credentials"
     if ( unset NUT_USER || true
@@ -548,6 +663,10 @@ if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
+}
+
+testcase_sandbox_cppnit_simple_admin() {
+    isTestableCppNIT || return 0
 
     log_separator
     log_info "Call libnutclient test suite: cppnit with login credentials: simple admin"
@@ -571,6 +690,10 @@ if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
+}
+
+testcase_sandbox_cppnit_upsmon_primary() {
+    isTestableCppNIT || return 0
 
     log_separator
     log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
@@ -588,6 +711,10 @@ if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
+}
+
+testcase_sandbox_cppnit_upsmon_master() {
+    isTestableCppNIT || return 0
 
     log_separator
     log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-master"
@@ -605,9 +732,57 @@ if [ x"${TOP_BUILDDIR}" != x ] && [ -x "${TOP_BUILDDIR}/tests/cppnit" ] ; then
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
     fi
-fi
+}
+
+testcases_sandbox_cppnit() {
+    isTestableCppNIT || return 0
+    testcase_sandbox_cppnit_without_creds
+    testcase_sandbox_cppnit_upsmon_primary
+    testcase_sandbox_cppnit_upsmon_master
+    testcase_sandbox_cppnit_simple_admin
+}
 
 # TODO: Some upsmon tests?
+
+testgroup_sandbox() {
+    testcase_sandbox_start_drivers_after_upsd
+    testcase_sandbox_upsc_query_model
+    testcase_sandbox_upsc_query_bogus
+    testcase_sandbox_upsc_query_timer
+    testcases_sandbox_python
+    testcases_sandbox_cppnit
+
+    sandbox_forget_configs
+}
+
+testgroup_sandbox_python() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_python
+    sandbox_forget_configs
+}
+
+testgroup_sandbox_cppnit() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_cppnit
+    sandbox_forget_configs
+}
+
+################################################################
+
+case "${NIT_CASE}" in
+    cppnit) testgroup_sandbox_cppnit ;;
+    python) testgroup_sandbox_python ;;
+    testcase_*|testgroup_*|testcases_*|testgroups_*)
+        "${NIT_CASE}" ;;
+    "") # Default test groups:
+        testgroup_upsd_invalid_configs
+        testgroup_upsd_questionable_configs
+        testgroup_sandbox
+        ;;
+    *)  die "Unsupported NIT_CASE='$NIT_CASE' was requested" ;;
+esac
 
 log_separator
 log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
