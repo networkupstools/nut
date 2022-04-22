@@ -14,6 +14,7 @@
 # Caller can export envvars to impact the script behavior, e.g.:
 #	DEBUG=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
+#	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #
 # Design note: written with dumbed-down POSIX shell syntax, to
@@ -161,6 +162,10 @@ EOF
             echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"
         fi
     done
+
+    if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+        echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsd.conf" || exit
+    fi
 }
 
 generatecfg_upsd_nodev() {
@@ -214,6 +219,10 @@ generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
        echo 'SHUTDOWNCMD "echo TESTING_DUMMY_SHUTDOWN_NOW"' >> "$NUT_CONFPATH/upsmon.conf" || exit
+
+       if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+           echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
+       fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
     chmod 640 "$NUT_CONFPATH/upsmon.conf"
 }
@@ -250,8 +259,12 @@ generatecfg_ups_trivial() {
         if [ x"${TOP_BUILDDIR}" != x ]; then
             echo "driverpath = '${TOP_BUILDDIR}/drivers'" >> "$NUT_CONFPATH/ups.conf" || exit
         fi
+        if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+            echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
+        fi
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
     chmod 640 "$NUT_CONFPATH/ups.conf"
+
 }
 
 generatecfg_ups_dummy() {
