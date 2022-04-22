@@ -35,3 +35,6 @@ EXTRA_DIST += $(EXTRA_DIST_PY2GTK2)
 EXTRA_DIST += $(EXTRA_DIST_PY3QT5)
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+clean-local:
+	rm -rf *.pyc __pycache__ */*.pyc */__pycache__ */*/*.pyc */*/__pycache__
