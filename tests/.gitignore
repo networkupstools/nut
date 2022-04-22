@@ -1,6 +1,9 @@
 /cppunittest
 /cppunittest.log
 /cppunittest.trs
+/cppnit
+/cppnit.log
+/cppnit.trs
 /test-suite.log
 /selftest-rw/*
 /nutlogtest
