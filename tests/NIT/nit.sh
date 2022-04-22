@@ -540,6 +540,17 @@ testcase_sandbox_start_drivers_after_upsd() {
         log_error "Query failed, retrying with UPSD started after drivers"
         testcase_start_upsd_after_drivers
     }
+
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        log_info "Wait for dummy UPSes with larger data sets to initialize"
+        for U in UPS1 UPS2 ; do
+            while ! upsc $U@localhost:$NUT_PORT ups.status ; do
+                sleep 1
+            done
+        done
+    fi
+
+    log_info "Expected drivers are now responding via UPSD"
 }
 
 testcase_sandbox_upsc_query_model() {
