@@ -118,7 +118,7 @@ all-docs check-docs \
 man all-man man-man check-man man-html all-html:
 	cd $(builddir)/docs && $(MAKE) $@
 
-check-NIT:
+check-NIT check-NIT-devel:
 	cd $(builddir)/tests/NIT && $(MAKE) $@
 
 # This target adds syntax-checking for committed shell script files,

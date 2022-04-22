@@ -15,7 +15,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/include
 check_PROGRAMS = $(TESTS)
 
 # NUT Integration Testing suite
-check-NIT:
+check-NIT check-NIT-devel:
 	cd "$(builddir)/NIT" && $(MAKE) $@
 
 nutlogtest_SOURCES = nutlogtest.c
