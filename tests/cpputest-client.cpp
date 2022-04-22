@@ -245,14 +245,14 @@ void NutActiveClientTest::test_auth_user() {
 			TrackingResult tres;
 			TrackingID tid;
 			std::string nutVar = "ups.status"; /* Has a risk of flip-flop with NIT dummy setup */
-			std::string s = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
-			std::string sTest = s + "-test";
+			std::string s1 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+			std::string sTest = s1 + "-test";
 
 			std::cerr << "[D] Got initial device '" << NUT_SETVAR_DEVICE
-				<< "' variable '" << nutVar << "' value: " << s << std::endl;
+				<< "' variable '" << nutVar << "' value: " << s1 << std::endl;
 			CPPUNIT_ASSERT_MESSAGE(
 				"Did not expect empty value here",
-				!s.empty());
+				!s1.empty());
 
 			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, sTest);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
@@ -267,7 +267,7 @@ void NutActiveClientTest::test_auth_user() {
 			std::string s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
 
 			/* Fix it back */
-			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s);
+			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s1);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
 			}
@@ -278,16 +278,16 @@ void NutActiveClientTest::test_auth_user() {
 			}
 			std::string s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
 
-			if (s3 != s) {
+			if (s3 != s1) {
 				std::cerr << "[D] Final device variable value '" << s3
-					<< "' differs from original '" << s
+					<< "' differs from original '" << s1
 					<< "'" << std::endl;
 				noException = false;
 			}
 
-			if (s2 == s) {
+			if (s2 == s1) {
 				std::cerr << "[D] Tweaked device variable value '" << s2
-					<< "' does not differ from original '" << s
+					<< "' does not differ from original '" << s1
 					<< "'" << std::endl;
 				noException = false;
 			}
