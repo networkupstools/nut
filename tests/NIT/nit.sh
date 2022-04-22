@@ -780,6 +780,13 @@ testgroup_sandbox_cppnit() {
     sandbox_forget_configs
 }
 
+testgroup_sandbox_cppnit_simple_admin() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcase_sandbox_cppnit_simple_admin
+    sandbox_forget_configs
+}
+
 ################################################################
 
 case "${NIT_CASE}" in
