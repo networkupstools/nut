@@ -120,7 +120,14 @@ rm -rf "$BUILDDIR/tmp" || true
 mkdir -p "$BUILDDIR/tmp/etc" "$BUILDDIR/tmp/run" && chmod 750 "$BUILDDIR/tmp/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
-trap 'RES=$?; if [ -n "$PID_UPSD$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then kill -15 $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 ; fi; exit $RES;' 0 1 2 3 15
+stop_daemons() {
+    if [ -n "$PID_UPSD$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
+        log_info "Stopping test daemons"
+        kill -15 $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null
+    fi
+}
+
+trap 'RES=$?; stop_daemons; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="$BUILDDIR/tmp/run"
 NUT_ALTPIDPATH="$BUILDDIR/tmp/run"
