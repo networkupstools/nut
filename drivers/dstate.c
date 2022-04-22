@@ -481,6 +481,9 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
+	upsdebugx(6, "Driver on %s is now handling %s with %zu args",
+		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
+
 	if (numarg < 1) {
 		return 0;
 	}
