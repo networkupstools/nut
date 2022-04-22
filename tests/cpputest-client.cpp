@@ -265,6 +265,7 @@ void NutActiveClientTest::test_auth_user() {
 			}
 			/* Check what we got after set */
 			std::string s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+			std::cerr << "[D] Read back: " << s2 << std::endl;
 
 			/* Fix it back */
 			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s1);
@@ -277,6 +278,7 @@ void NutActiveClientTest::test_auth_user() {
 				noException = false;
 			}
 			std::string s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+			std::cerr << "[D] Read back: " << s3 << std::endl;
 
 			if (s3 != s1) {
 				std::cerr << "[D] Final device variable value '" << s3
