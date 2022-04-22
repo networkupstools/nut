@@ -584,7 +584,8 @@ testcase_sandbox_upsc_query_timer() {
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT1" ; sleep 3
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT2" ; sleep 3
     OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT3" ; sleep 3
-    if echo "$OUT1$OUT2$OUT3" | grep "OB" && echo "$OUT1$OUT2$OUT3" | grep "OL" ; then
+    OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond: $OUT4" ; sleep 3
+    if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
         log_info "OK, ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
