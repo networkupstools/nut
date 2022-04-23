@@ -74,9 +74,11 @@ path name. In the latter case the NUT sysconfig directory (i.e. `/etc/nut`,
 Since NUT v2.8.0 two aspects of this mode are differentiated:
 
 * `dummy-once` reads the specified file once to the end (interrupting for
-  `TIMER` lines, etc.) and does not re-process it;
-  this allows use/test cases to `upsrw` variables in the driver instance
-  and they remain in memory until the driver is restarted;
+  `TIMER` lines, etc.) and does not re-process it until the filesystem
+  timestamp of the data file is changed; this reduces run-time stress if
+  you test with a lot of dummy devices, and allows use/test cases to
+  `upsrw` variables into the driver instance -- and they remain in memory
+  until the driver is restarted (or the file is touched or modified);
 +
 Since NUT v2.8.0 `dummy-once` is assigned by default to files with a `*.dev`
   naming pattern.
