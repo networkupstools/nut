@@ -1040,6 +1040,8 @@
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
+"Salicru"	"ups"	"2"	"SPS ONE 700VA"	"USB"	"blazer_usb"
+"Salicru"	"ups"	"2"	"SPS ONE 2000VA"	"USB"	"nutdrv_qx"	# https://www.salicru.com/en/ups/sps-one.html https://github.com/networkupstools/nut/issues/554
 "Salicru"	"ups"	"2"	"SPS 650/850 HOME"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"2"	"SLC TWIN PRO2"	"usb"	"usbhid-ups (experimental)" # https://github.com/networkupstools/nut/issues/450
 "Salicru"	"ups"	"2"	"SLC-1500-TWIN PRO3"	"usb"	"usbhid-ups (experimental)" # https://github.com/networkupstools/nut/issues/1142
