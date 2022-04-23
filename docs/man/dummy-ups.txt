@@ -205,7 +205,9 @@ linkman:upsrw[1] and linkman:upscmd[1] commands.
 
 Note that in simulation mode, new variables can be added on the fly, but only
 by adding these to the definition file (and waiting for it to be re-read).
-Conversely, if you need to remove variable (such as transient ones, like
+That is, the driver should not allow to define a new variable via `upsrw`.
+
+Conversely, if you need to remove a variable (such as transient ones, like
 `ups.alarm`), simply update these by setting an empty value. As a result,
 they will get removed from the data.
 
