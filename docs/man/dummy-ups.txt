@@ -17,7 +17,11 @@ DESCRIPTION
 -----------
 
 This program is a multi-purpose UPS emulation tool.
-Its behavior depends on the running mode: "dummy" or "repeater".
+Its general behavior depends on the running mode: "dummy" ("dummy-once"
+or "dummy-loop"), or "repeater".
+////////////////////////////////////////
+...or "meta" eventually.
+////////////////////////////////////////
 
 Dummy Mode
 ~~~~~~~~~~
@@ -29,6 +33,9 @@ linkman:upscmd[1] commands (or equivalent graphical tool), and batchable
 through script files. It can be configured, launched and used as any other
 "real" NUT driver. This mode is mostly useful for development and testing
 purposes.
+
+NOTE: See below about the differences of `dummy-once` vs. `dummy-loop`
+modes -- the former may be more suitable for "interactive" uses and tests.
 
 Repeater Mode
 ~~~~~~~~~~~~~
@@ -102,10 +109,15 @@ not be impacted.
 
 For instance:
 
-	[dummy]
+	[dummy1]
 		driver = dummy-ups
 		port = evolution500.seq
-		desc = "dummy-ups in dummy mode"
+		desc = "dummy-ups in dummy-loop mode"
+
+	[dummy2]
+		driver = dummy-ups
+		port = epdu-managed.dev
+		desc = "dummy-ups in dummy-once mode"
 
 This file is generally named `something.dev` or `something.seq`. It contains
 a list of all valid variables and associated values (you can later use `upsrw`
