@@ -276,6 +276,8 @@
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
+"DigiTECH"	"ups"	"2"	"Computer 650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/674 (may need longer pollinterval)
+
 "Digitus"	"ups"	"1"	"DN-170014"	"USB"	"richcomm_usb"	# http://www.digitus.info/en/products/professional-network/security-and-surveillance/power-supply/uninterrruptable-power-supplies/ups-uninterruptible-power-systems-dn-170014/section/prof/
 "Digitus"	"ups"	"2"	"DN-170020"	""	"blazer_ser"
 
