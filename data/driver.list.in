@@ -74,6 +74,7 @@
 "APC"	"ups"	"2"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
+"APC"	"ups"	"2"	"SMC2200BI-BR"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/557
 "APC"	"ups"	"2"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
