@@ -241,6 +241,7 @@
 "Cyber Power Systems"	"ups"	"3"	"EC850LCD"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/ec850lcd/ https://github.com/networkupstools/nut/issues/622
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"OR500LCDRM1U"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/or500lcdrm1u/ https://github.com/networkupstools/nut/issues/578
 "Cyber Power Systems"	"ups"	"3"	"PR1500RT2U"	""	"usbhid-ups" # https://www.cyberpowersystems.com/product/ups/new-smart-app-sinewave/pr1500rt2u/
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR2200LCDRT2U"	""	"snmp-ups"
