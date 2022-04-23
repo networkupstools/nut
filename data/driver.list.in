@@ -556,6 +556,7 @@
 "Kanji"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
 
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
+"Kebo"	"ups"	"2"	"UPS-1000D"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/981
 
 "KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
 "KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K XL TOWER"	""	"blazer_usb"
