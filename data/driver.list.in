@@ -435,6 +435,9 @@
 
 "Grafenthal"	"ups"	"2"	"PR-3000-HS"	"SNMP/Web Minislot card (ref 149G0006)"	"snmp-ups"	# http://grafenthal.de/produkte/usv/online/pr-hs-serie/pr-3000-hs/?L=3et8
 
+"Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1080
+"Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1080
+
 "Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	""	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	""	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"USB port"	"blazer_usb"
