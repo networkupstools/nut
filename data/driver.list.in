@@ -926,6 +926,8 @@
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"1"	"BNT-xxxAP"	"USB (product id: 0001)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"3"	"RPT-600AP"	"USB"	"usbhid-ups"	# http://pcmups.com.tw/eA/html/product/show.php?num=226&root=13&kind=105&page=1&keyword= https://github.com/networkupstools/nut/issues/633
+"Powercom"	"ups"	"3"	"Raptor 2000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/633
 
 "Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
 "Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
