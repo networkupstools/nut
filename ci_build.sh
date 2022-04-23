@@ -743,6 +743,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
+    CONFIG_OPTS+=("--enable-check-NIT")
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
