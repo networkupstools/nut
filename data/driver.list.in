@@ -391,6 +391,8 @@
 
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
 
+"Energy Technologies"	"ups"	"2"	"DPK1/1-3"	"Serial"	"blazer_ser"	# https://www.tensy.ru/podderzhka/dokumentatsiya/ibp-serii-dpk/ https://github.com/networkupstools/nut/issues/762
+
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"	"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
 
