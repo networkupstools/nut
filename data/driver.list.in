@@ -382,6 +382,8 @@
 
 "Electrys"	"ups"	"2"	"UPS 2500"	""	"nutdrv_qx or blazer_ser"
 
+"Elsist"	"ups"	"2"	"Nemo2.0 160"	"USB"	"blazer_usb"	# http://www.naicon.com/company/wp-content/uploads/2017/05/Manual-NEMO2.0-Ver.02-Eng.pdf https://github.com/networkupstools/nut/issues/719
+
 "Emerson"	"pdu"	"3"	"PM3000 metered & switched"	""	"snmp-ups"
 
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
