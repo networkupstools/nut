@@ -981,6 +981,7 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
 "PowerWalker"	"ups"	"2"	"VFI 2000 TGS"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/560 and https://github.com/networkupstools/nut/pull/564
+"PowerWalker"	"ups"	"2"	"VI 650 SH"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/483
 "PowerWalker"	"ups"	"2"	"VI 1200 SHL"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/1270
 "PowerWalker"	"ups"	"2"	"Basic VI 1000 SB"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"PR1500LCDRT2U"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
@@ -1136,6 +1137,7 @@
 "Sweex"	"ups"	"2"	"INTELLIGENT UPS 1500VA P220"	"USB"	"blazer_usb (USB ID 0665:5161)"	# http://www.sweex.com/en/notebook-pc-accessoires/ups/PP220/
 
 "Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
+"Syndome"	"ups"	"2"	"Atom LCD-1000"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/483
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
