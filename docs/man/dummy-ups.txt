@@ -218,17 +218,18 @@ BACKGROUND
 ----------
 
 Dummy Mode was originally written in one evening to replace the previous
-dummycons testing driver, which was too limited, and required a terminal for
-interaction.
+'dummycons' testing driver, which was too limited, and required a terminal
+for interaction.
 
 *dummy-ups* is useful for NUT client development, and other testing purposes.
 
-It also helps the NUT Quality Assurance effort, by automating some tests on the
-NUT framework.
+It also helps the NUT Quality Assurance effort, by automating some tests on
+the NUT framework.
 
 It now offers a repeater mode. This will help in building the Meta UPS approach,
 which allows one to build a virtual device, composed of several other devices
-(either UPS, PDUs).
+(either UPS, PDUs), or perhaps represent the same device which supports
+several communication protocols and different media (Serial, USB, SNMP...)
 
 BUGS
 ----
