@@ -1067,6 +1067,9 @@
 "Salicru"	"ups"	"2"	"SLC TWINPRO3"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"2"	"SLC TWIN RT3"	"usb"	"usbhid-ups (experimental)"
 
+"Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
+"Santak"	"ups"	"2"	"MT*-PRO"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
+
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
 
