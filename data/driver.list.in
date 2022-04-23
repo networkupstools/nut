@@ -902,6 +902,7 @@
 "Online"	"ups"	"2"	"Zinto A"	""	"blazer_usb"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
 "Online"	"ups"	"2"	"Yunto YQ450"	""	"blazer_usb"
+"Online"	"ups"	"2"	"Xanto S700"	"/dev/ttyUSB0"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1279
 
 "OnLite"	"ups"	"2"	"AQUA"	"50"	"blazer_ser"
 
