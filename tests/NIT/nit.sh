@@ -544,8 +544,12 @@ testcase_sandbox_start_drivers_after_upsd() {
     if [ x"${TOP_SRCDIR}" != x ]; then
         log_info "Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
+            COUNTDOWN=60
             while ! upsc $U@localhost:$NUT_PORT ups.status ; do
                 sleep 1
+                COUNTDOWN="`expr $COUNTDOWN - 1`"
+                # Systemic error, e.g. could not create socket file?
+                [ "$COUNTDOWN" -lt 1 ] && die "Dummy driver did not start or respond in time"
             done
         done
     fi
