@@ -96,6 +96,8 @@
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
+"ARES"	"ups"	"2"	"AR265i"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 did not explicitly mention the driver parameters, but other reports in the discussion did
+
 "ARTronic"	"ups"	"2"	"ARTon Millenium 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
 "ARTronic"	"ups"	"2"	"ARTon Millenium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
 "ARTronic"	"ups"	"2"	"ARTon Titanium 6/10 kVA"	"Serial"	"blazer_ser"
@@ -194,6 +196,8 @@
 "COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K"	""	"blazer_usb"
 "COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	""	"blazer_usb"
 "COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	""	"blazer_usb"
+
+"CPC"	"ups"	"2"	"RACK850VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
 "Crown"	"ups"	"2"	"CMU-SP1200IEC"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/1014
 
@@ -905,6 +909,10 @@
 "Powercom"	"ups"	"1"	"BNT-xxxAP"	"USB (product id: 0001)"	"usbhid-ups (experimental)"
 
 "Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
+"Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
+"Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 bus=001 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor norating noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
+"Powercool"	"ups"	"2"	"1500VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537 - e.g. battery percentage is not being returned
+"Powercool"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
 "POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
