@@ -220,6 +220,7 @@
 "Cyber Power Systems"	"ups"	"1"	"PR2200"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"2"	"AE550"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"BL1250U"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/battery-backup/bl1250u/ https://github.com/networkupstools/nut/issues/1012
 "Cyber Power Systems"	"ups"	"2"	"BR1000ELCD"	"USB"	"usbhid-ups"	# https://www.cyberpower.com/eu/en/product/sku/BR1000ELCD https://github.com/networkupstools/nut/issues/552
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
