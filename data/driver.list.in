@@ -982,8 +982,11 @@
 "PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
 "PowerWalker"	"ups"	"2"	"VFI 2000 TGS"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/560 and https://github.com/networkupstools/nut/pull/564
 "PowerWalker"	"ups"	"2"	"VI 650 SH"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/483
+"PowerWalker"	"ups"	"2"	"VI 650/850 SHL"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/646
 "PowerWalker"	"ups"	"2"	"VI 1200 SHL"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/1270
 "PowerWalker"	"ups"	"2"	"VI 2200 SHL"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/756
+"PowerWalker"	"ups"	"2"	"VI 1200 SH"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/646
+"PowerWalker"	"ups"	"2"	"VI 2200 SH"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/646
 "PowerWalker"	"ups"	"2"	"Basic VI 1000 SB"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"PR1500LCDRT2U"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"VI 3000 SCL"	"USB"	"blazer_usb" # https://github.com/networkupstools/nut/issues/971
