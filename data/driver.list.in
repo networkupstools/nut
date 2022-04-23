@@ -603,6 +603,8 @@
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"ups"	"2"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"2"	"PowerSure PSA"	"USB"	"usbhid-ups"
+"Liebert"	"ups"	"2"	"PowerSure PSA 500"	"USB"	"usbhid-ups"
+"Liebert"	"ups"	"2"	"PowerSure PSA500MT3-230U"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/601
 "Liebert"	"ups"	"2"	"PowerSure PSI 1440"	"USB"	"usbhid-ups"	# http://www.emersonnetworkpower.com/en-US/Products/ACPower/Pages/LiebertPowerSurePSILineInteractiveUPS10003000VA.aspx
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
