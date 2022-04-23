@@ -990,6 +990,7 @@
 "PowerWalker"	"ups"	"2"	"Basic VI 1000 SB"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"PR1500LCDRT2U"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/818
 "PowerWalker"	"ups"	"2"	"VI 3000 SCL"	"USB"	"blazer_usb" # https://github.com/networkupstools/nut/issues/971
+"PowerWalker"	"ups"	"2"	"VI 750T/HID"	"USB"	"usbhid-ups" # https://powerwalker.com/?page=select&cat=VI_THID&lang=en https://github.com/networkupstools/nut/issues/774
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
