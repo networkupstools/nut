@@ -477,6 +477,7 @@
 "HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
+"Huawei"	"ups"	"3"	"UPS2000-G and UPS2000-A series"	"MODBUS (USB with Linux 5.12+, or Serial RS-232)"	"huawei-ups2000"	# https://github.com/networkupstools/nut/issues/1066 https://github.com/networkupstools/nut/pull/1198 https://github.com/networkupstools/nut/pull/954 https://github.com/networkupstools/nut/issues/1017
 
 "Hunnox"	"ups"	"2"	"HNX-850"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638
 
