@@ -302,6 +302,7 @@
 
 "Digitus"	"ups"	"1"	"DN-170014"	"USB"	"richcomm_usb"	# http://www.digitus.info/en/products/professional-network/security-and-surveillance/power-supply/uninterrruptable-power-supplies/ups-uninterruptible-power-systems-dn-170014/section/prof/
 "Digitus"	"ups"	"2"	"DN-170020"	""	"blazer_ser"
+"Digitus"	"ups"	"2"	"DN-170076"	"USB"	"nutdrv_qx"	# https://www.digitus.info/en/products/network-and-server-cabinets/power-supply/uninterruptible-power-supplies/dn-170076/ https://github.com/networkupstools/nut/issues/948
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
 "Dynamix"	"ups"	"2"	"UPS-650VA"	""	"blazer_ser"
