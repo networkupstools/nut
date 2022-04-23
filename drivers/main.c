@@ -522,18 +522,17 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 		/* Accomodate for libtool wrapped developer iterations
 		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
 		 */
-		char buf[PATH_MAX];
-		if (snprintfcat(buf, sizeof(buf), "lt-%s", val) < 0)
-			buf[0] = '\0';
-
-		upsdebugx(6, "progname: check '%s' vs '%s' vs '%s'", progname, val, buf);
-		if (strcmp(buf, progname) == 0) {
-			upsdebugx(1, "Seems this driver binary %s is a libtool "
+		size_t tmplen = strlen("lt-");
+		if (strncmp("lt-", progname, tmplen) == 0
+		&&  strcmp(val, progname + tmplen) == 0) {
+			/* debug level may be not initialized yet, and situation
+			 * should not happen in end-user builds, so ok to yell: */
+			upsdebugx(0, "Seems this driver binary %s is a libtool "
 				"wrapped build for driver %s", progname, val);
 			/* progname points to xbasename(argv[0]) in-place;
 			 * roll the pointer forward a bit, we know we can:
 			 */
-			progname = progname + strlen("lt-");
+			progname = progname + tmplen;
 		}
 
 		if (strcmp(val, progname) != 0) {
