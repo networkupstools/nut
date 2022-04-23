@@ -48,6 +48,8 @@ static int socket_connect(const char *sockfn)
 	int	ret, fd;
 	struct	sockaddr_un sa;
 
+	check_unix_socket_filename(sockfn);
+
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
 	snprintf(sa.sun_path, sizeof(sa.sun_path), "%s", sockfn);

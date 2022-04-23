@@ -181,6 +181,8 @@ int sstate_connect(upstype_t *ups)
 	ssize_t	ret;
 	struct sockaddr_un	sa;
 
+	check_unix_socket_filename(ups->fn);
+
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
 	snprintf(sa.sun_path, sizeof(sa.sun_path), "%s", ups->fn);

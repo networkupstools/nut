@@ -109,6 +109,8 @@ static int sock_open(const char *fn)
 	int	ret, fd;
 	struct sockaddr_un	ssaddr;
 
+	check_unix_socket_filename(fn);
+
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0) {
