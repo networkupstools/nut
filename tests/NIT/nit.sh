@@ -140,7 +140,7 @@ stop_daemons() {
     fi
 }
 
-trap 'RES=$?; stop_daemons; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}" ; fi; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
