@@ -240,10 +240,10 @@ checking enforcement, as well as boundaries or enumeration definition.
 CAVEATS
 -------
 
-If you use service management frameworks like systemd or SMF to manage the
-dependencies between driver instances and the data server, and some of these
-drivers are `dummy-ups` in repeater mode (or `clone` drivers) representing
-data from another driver running on the same system, then you may have to
+If you use service management frameworks like systemd or SMF to manage
+the dependencies between driver instances and the data server, and some
+of these drivers are `dummy-ups` in repeater mode representing data
+from another driver running on the same system, then you may have to
 set up special dependencies (e.g. with systemd "drop-in" snippet files)
 to allow your `nut-server` to start after the "real" device drivers and
 before such repeater drivers (without a responding server, they would fail
