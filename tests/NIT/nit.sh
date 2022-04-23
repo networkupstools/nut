@@ -551,7 +551,7 @@ testcase_sandbox_start_drivers_after_upsd() {
     upsc dummy@localhost:$NUT_PORT || {
         # Should not get to this, except on very laggy systems maybe
         log_error "Query failed, retrying with UPSD started after drivers"
-        testcase_start_upsd_after_drivers
+        testcase_sandbox_start_upsd_after_drivers
     }
 
     if [ x"${TOP_SRCDIR}" != x ]; then
