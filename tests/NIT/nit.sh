@@ -115,9 +115,22 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
-rm -rf "$BUILDDIR/tmp" || true
+TESTDIR="$BUILDDIR/tmp"
+# Technically the limit is sizeof(sockaddr.sun_path) for complete socket
+# pathname, which varies 104-108 chars max on systems seen in CI farm;
+# we reserve 17 chars for "/dummy-ups-dummy" longest filename.
+if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
+    log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
+    if ! ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
+        if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
+    fi
+    TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
+else
+    rm -rf "${TESTDIR}" || true
+fi
+log_info "Using '$TESTDIR' for generated configs and state files"
 
-mkdir -p "$BUILDDIR/tmp/etc" "$BUILDDIR/tmp/run" && chmod 750 "$BUILDDIR/tmp/run" \
+mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
 stop_daemons() {
@@ -129,9 +142,9 @@ stop_daemons() {
 
 trap 'RES=$?; stop_daemons; exit $RES;' 0 1 2 3 15
 
-NUT_STATEPATH="$BUILDDIR/tmp/run"
-NUT_ALTPIDPATH="$BUILDDIR/tmp/run"
-NUT_CONFPATH="$BUILDDIR/tmp/etc"
+NUT_STATEPATH="${TESTDIR}/run"
+NUT_ALTPIDPATH="${TESTDIR}/run"
+NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
