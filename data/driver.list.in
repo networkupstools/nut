@@ -345,6 +345,7 @@
 "Eaton"	"ups"	"5"	"5P"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"9SX"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"9PX"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX 2000 RT"	"USB port"	"mge-shut"	# https://github.com/networkupstools/nut/issues/540
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"9PX"	"SNMP/Web card"	"netxml-ups"
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"SNMP/Web card"	"netxml-ups"
