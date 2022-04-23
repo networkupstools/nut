@@ -58,6 +58,7 @@
 "AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	""	"usbhid-ups"
 "AEG Power Solutions"	"ups"	"3"	"PROTECT B"	""	"usbhid-ups"
 
+"APC"	"ups"	"3"	"APC AP9584 Serial-to-USB kit"	"USB"	"usbhid-ups"	# Allows USB connections to Serial-port APC devices, https://github.com/networkupstools/nut/pull/181
 "APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
 "APC"	"ups"	"2"	"Back-UPS BZ2200BI-BR (Microsol)"	""	"solis"
 "APC"	"ups"	"1"	"Back-UPS Pro"	""	"apcsmart"
