@@ -35,16 +35,16 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
-"Ablerex"	"ups"	"2"	"MS-RT"	""	"blazer_ser"
 "Ablerex"	"ups"	"2"	"625L"	"USB"	"blazer_usb"
 "Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"blazer_ser"
+"Ablerex"	"ups"	"2"	"MARS MS3000RT"	""	"blazer_ser"
+"Ablerex"	"ups"	"2"	"MS-RT"	""	"blazer_ser"
 "Ablerex"	"ups"	"2"	"MP series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"ARES Plus series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"MSII series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"MSIII series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"GRs series"	"USB"	"nutdrv_qx"
 "Ablerex"	"ups"	"2"	"GRs Plus series"	"USB"	"nutdrv_qx"
-
 
 "ActivePower"	"ups"	"2"	"400VA"	""	"blazer_ser"
 "ActivePower"	"ups"	"2"	"1400VA"	""	"blazer_ser"
