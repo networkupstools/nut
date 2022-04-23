@@ -303,6 +303,10 @@
 
 "Digitus"	"ups"	"1"	"DN-170014"	"USB"	"richcomm_usb"	# http://www.digitus.info/en/products/professional-network/security-and-surveillance/power-supply/uninterrruptable-power-supplies/ups-uninterruptible-power-systems-dn-170014/section/prof/
 "Digitus"	"ups"	"2"	"DN-170020"	""	"blazer_ser"
+"Digitus"	"ups"	"2"	"DN-170040"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1251
+"Digitus"	"ups"	"2"	"DN-170041"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1251
+"Digitus"	"ups"	"2"	"DN-170040"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1251
+"Digitus"	"ups"	"2"	"DN-170041"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1251
 "Digitus"	"ups"	"2"	"DN-170076"	"USB"	"nutdrv_qx"	# https://www.digitus.info/en/products/network-and-server-cabinets/power-supply/uninterruptible-power-supplies/dn-170076/ https://github.com/networkupstools/nut/issues/948
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
@@ -1314,6 +1318,8 @@
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Galleon X9-RT LCD-1-3K"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1251
+"Voltronic Power"	"ups"	"2"	"Galleon X9-RT LCD-1-3K"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1251
 "Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Prosine 800"	"Serial"	"nutdrv_qx"
