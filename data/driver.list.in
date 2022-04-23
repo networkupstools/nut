@@ -825,6 +825,7 @@
 
 "nJoy"	"ups"	"2"	"Keen 600"	"USB"	"blazer_ser port=/dev/ttyUSB0"	# https://www.njoy.ro/UPS/keen-600
 "nJoy"	"ups"	"2"	"Keen 600"	"USB"	"nutdrv_qx port=/dev/ttyUSB0"	# https://www.njoy.ro/UPS/keen-600
+"nJoy"	"ups"	"3"	"Aten PRO 3000"	"SNMP"	"snmp-ups"	# At least basic status is served; https://www.njoy.global/product/aten-pro-3000
 
 "Novex"	"ups"	"1"	"NUPS-650"	"USB"	"blazer_usb protocol=megatec"	# http://komp.1k.by/periphery-ups/novex/Novex_NUPS_650-130052.html
 
