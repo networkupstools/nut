@@ -379,7 +379,7 @@
 "EVER"	"ups"	"2"	"DUO II Pro series"	"USB port"	"blazer_usb"
 "EVER"	"ups"	"2"	"POWERLINE RT 1-3kVA series"	"USB port"	"blazer_usb"
 "EVER"	"ups"	"2"	"POWERLINE RT 6-10kVA series"	"USB port"	"blazer_usb"
-"EVER"	"ups"	"4"	"ECO Pro AVR CDS series"	"USB port"	"usbhid-up"
+"EVER"	"ups"	"4"	"ECO Pro AVR CDS series"	"USB port"	"usbhid-ups"
 
 "Exide"	"ups"	"1"	"NetUPS SE"	""	"genericups upstype=15"
 "Exide"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
