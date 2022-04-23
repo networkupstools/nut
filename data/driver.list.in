@@ -242,6 +242,7 @@
 "Cyber Power Systems"	"ups"	"3"	"EC350G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/ecologic/ec350g
 "Cyber Power Systems"	"ups"	"3"	"EC750G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/desktop/ec750g
 "Cyber Power Systems"	"ups"	"3"	"EC850LCD"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/ec850lcd/ https://github.com/networkupstools/nut/issues/622
+"Cyber Power Systems"	"ups"	"3"	"OR1500ERM1U"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/1338
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR500LCDRM1U"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/or500lcdrm1u/ https://github.com/networkupstools/nut/issues/578
