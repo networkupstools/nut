@@ -1,6 +1,11 @@
 EXTRA_DIST = nit.sh README
 
+if WITH_CHECK_NIT
 check: check-NIT
+else
+check:
+	@echo "NO-OP: $@ in `pwd` is inactive by default. Run 'configure --enable-check-NIT' or 'make check-NIT' explicitly" >&2
+endif
 
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that

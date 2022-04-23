@@ -1218,6 +1218,12 @@ esac
 AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 
 dnl ----------------------------------------------------------------------
+dnl checks related to --enable-check-NIT
+
+NUT_ARG_ENABLE([check-NIT], [Run check-NIT among default checks], [no])
+AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc

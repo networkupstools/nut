@@ -126,7 +126,9 @@ FIXME (POST):
   a few data points and checks that these are well propagated with upsc.
 
 - similar approach is explored in NIT (NUT Integration Testing) suite,
-  which is part of the codebase and `make check` activities
+  which is part of the codebase and automated with `make check-NIT`;
+  it can also be added to default `make check` activities by running
+  `configure --enable-check-NIT`
 
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
