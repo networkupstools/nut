@@ -823,6 +823,9 @@
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
 
+"nJoy"	"ups"	"2"	"Keen 600"	"USB"	"blazer_ser port=/dev/ttyUSB0"	# https://www.njoy.ro/UPS/keen-600
+"nJoy"	"ups"	"2"	"Keen 600"	"USB"	"nutdrv_qx port=/dev/ttyUSB0"	# https://www.njoy.ro/UPS/keen-600
+
 "Novex"	"ups"	"1"	"NUPS-650"	"USB"	"blazer_usb protocol=megatec"	# http://komp.1k.by/periphery-ups/novex/Novex_NUPS_650-130052.html
 
 "Numeric"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
