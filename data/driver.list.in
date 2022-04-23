@@ -531,6 +531,7 @@
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
+"Ippon"	"ups"	"2"	"Back Basic 850 Euro"	"USB"	"blazer_usb (experimental)"	# https://github.com/networkupstools/nut/issues/802
 "Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	""	"blazer_ser"
