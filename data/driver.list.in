@@ -914,6 +914,7 @@
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
+"Phasak"	"ups"	"2"	"9465 or P6N"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1187 => Voltronic-QS-Hex protocol detected
 
 "PhoenixContact"	"ups"	"4"	"QUINT-UPS/24DC"	"2320461"	"phoenixcontact_modbus" #https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
 
