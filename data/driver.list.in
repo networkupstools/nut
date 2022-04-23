@@ -1275,6 +1275,8 @@
 "UPSonic"	"ups"	"2"	"PrOffice 650"	"USB"	"blazer_usb"
 "UPSonic"	"ups"	"2"	"DS-800"	"USB"	"blazer_usb"
 
+"V7"	"ups"	"2"	"UPS1RM2U1500-1E"	"USB"	"blazer_usb"	# http://www.v7world.com/uk/ups-1500va-rack-mount-2u-eu.html https://github.com/networkupstools/nut/issues/716
+
 "Various"	"ups"	"4"	"(various)"	"SEC protocol"	"gamatronic"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
