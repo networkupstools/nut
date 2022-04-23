@@ -1117,7 +1117,8 @@
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
-"Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
+"Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"
+"Tecnoware"	"ups"	"2"	"UPS ERA PLUS 1100"	"USB"	"blazer_usb"	# https://www.tecnoware.com/Prodotti/FGCERAPL1100/ups-era-plus-1100.aspx https://github.com/networkupstools/nut/issues/747
 
 "Tripp Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 "Tripp Lite"	"ups"	"2"	"1500 LCD"	"USB"	"usbhid-ups"
