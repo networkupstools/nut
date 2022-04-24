@@ -1225,7 +1225,7 @@ nut_enable_check_NIT="no"
 AC_ARG_ENABLE([check-NIT],
 	AS_HELP_STRING([--enable-check-NIT], [Run check-NIT among default checks (no)]),
 [
-	case "${withval}" in
+	case "${enableval}" in
 	no)
 		AC_MSG_RESULT(no)
 		;;
@@ -1760,7 +1760,7 @@ AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
 	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
 [
-	case "${withval}" in
+	case "${enableval}" in
 	no)
 		AC_MSG_RESULT(no)
 		;;
