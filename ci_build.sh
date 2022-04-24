@@ -10,12 +10,18 @@
 ################################################################################
 
 set -e
+SCRIPTDIR="`dirname "$0"`"
+SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
 # or to quickly hit the first-found errors in a larger matrix
 # (and then easily `make` to iterate fixes), like this:
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
+# For out-of-tree builds you can specify a CI_BUILDDIR (absolute or relative
+# to SCRIPTDIR - not current path), or just call .../ci_build.sh while being
+# in a different directory and then it would be used with a warning. This may
+# require that you `make distclean` the original source checkout first.
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-all)
@@ -110,6 +116,34 @@ esac
 # Abort loops like BUILD_TYPE=default-all-errors as soon as we have a problem
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
+
+# By default we configure and build in the same directory as source;
+# and a `make distcheck` handles how we build from a tarball.
+# However there are also cases where source is prepared (autogen) once,
+# but is built in various directories with different configurations.
+# This is something to test via CI, that recipes are not broken for
+# such use-case. Note the path should be in .gitignore, e.g. equal to
+# or under ./tmp/ for CI_REQUIRE_GOOD_GITIGNORE sanity checks to pass.
+case "${CI_BUILDDIR-}" in
+    "") # Not set, likeliest case
+        CI_BUILDDIR="`pwd`"
+        if [ x"${SCRIPTDIR}" = x"${CI_BUILDDIR}" ] ; then
+            CI_BUILDDIR="."
+        else
+            echo "=== WARNING: This build will use '${CI_BUILDDIR}'"
+            echo "=== for an out-of-tree build of NUT with sources located"
+            echo "=== in '${SCRIPTDIR}'"
+            echo "=== PRESS CTRL+C NOW if you did not mean this! (Sleeping 5 sec)"
+
+            sleep 5
+        fi
+        ;;
+    ".") ;; # Is SCRIPTDIR, in-tree build
+    /*)  ;; # Absolute path located somewhere else
+    *) # Non-trivial, relative to SCRIPTDIR, may not exist yet
+        CI_BUILDDIR="${SCRIPTDIR}/${CI_BUILDDIR}"
+        ;;
+esac
 
 [ -n "$MAKE" ] || [ "$1" = spellcheck ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
@@ -282,15 +316,17 @@ fi
 if [ -z "${PKG_CONFIG-}" ]; then
     # Default to using one from PATH, if any - mostly for config tuning done
     # below in this script
-    # DO NOT "export" it here so ./configure script can find one for the build
+    # DO NOT "export" it here so configure script can find one for the build
     PKG_CONFIG="pkg-config"
 fi
 
 configure_nut() {
-    local CONFIGURE_SCRIPT=./configure
+    local CONFIGURE_SCRIPT="configure"
+    cd "$SCRIPTDIR"
+
     if [[ "$CI_OS_NAME" == "windows" ]] ; then
         find . -ls
-        CONFIGURE_SCRIPT=./configure.bat
+        CONFIGURE_SCRIPT="configure.bat"
     fi
 
     if [ ! -s "$CONFIGURE_SCRIPT" ]; then
@@ -304,6 +340,15 @@ configure_nut() {
         else
             $CI_TIME ./autogen.sh ### 2>/dev/null
         fi || exit
+    fi
+
+    if [ "${CI_BUILDDIR}" != "." ]; then
+        # Per above, we always start this routine in absolute $SCRIPTDIR
+        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
+        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
+        CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
+    else
+        CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
@@ -327,9 +372,9 @@ configure_nut() {
             # Real-life story from the trenches: there are weird systems
             # which fail ./configure in random spots not due to script's
             # quality. Then we'd just loop here.
-            echo "WOULD BE FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+            echo "WOULD BE FATAL: FAILED ($RES_CFG) to $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
         else
-            echo "FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "FATAL: FAILED ($RES_CFG) to $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}" >&2
             echo "If you are sure this is not a fault of scripting or config option, try" >&2
             echo "    CI_SHELL_IS_FLAKY=true $0"
             exit $RES_CFG
@@ -1232,6 +1277,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
@@ -1364,6 +1410,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 } || {
@@ -1504,6 +1551,8 @@ bindings)
         sleep 5
     fi
     echo ""
+
+    cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
@@ -1513,13 +1562,21 @@ bindings)
 
     ./autogen.sh
 
+    if [ "${CI_BUILDDIR}" != "." ]; then
+        # Per above, we always start this routine in absolute $SCRIPTDIR
+        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
+        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
+        CONFIGURE_SCRIPT="${SCRIPTDIR}/configure"
+    else
+        CONFIGURE_SCRIPT="./configure"
+    fi
+
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so
     # enable whatever is auto-detectable (except docs), and highlight
-    # any warnings if we can:
-    #./configure
-    ./configure --enable-Wcolor \
+    # any warnings if we can.
+    ${CONFIGURE_SCRIPT} --enable-Wcolor \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
         --enable-check-NIT --enable-maintainer-mode
