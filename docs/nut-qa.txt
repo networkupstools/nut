@@ -130,6 +130,10 @@ FIXME (POST):
   it can also be added to default `make check` activities by running
   `configure --enable-check-NIT`
 
+  * Note that developers updating components which directly impact NIT runs
+    may benefit from `make check-NIT-devel` target, to rebuild the `upsd`,
+    `dummy-ups`, `cppnit` and other programs used in the test as they iterate.
+
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
 - link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net)

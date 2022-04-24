@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2950 utf-8
+personal_ws-1.1 en 2951 utf-8
 AAS
 ABI
 ACFAIL
@@ -1629,6 +1629,7 @@ coverity
 cp
 cpp
 cppcheck
+cppnit
 cppunit
 cpqpower
 cpsups
