@@ -743,7 +743,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
-    CONFIG_OPTS+=("--enable-check-NIT")
+    # TODO: Resolve port-collision reliably (for multi-executor agents)
+    # and enable the test for CI runs. Bonus for making it quieter.
+    CONFIG_OPTS+=("--enable-check-NIT=no")
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
