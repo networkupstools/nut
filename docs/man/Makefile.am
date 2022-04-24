@@ -899,7 +899,8 @@ DOCBUILD_BEGIN = { \
         if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/`basename $<`" ; then \
             ln -fs "$(srcdir)/`basename $<`" "$(builddir)/" ; \
         fi ; \
-     fi ; \
+    fi ; \
+    A2X_VERBOSE="$(ASCIIDOC_VERBOSE)"; if [ "$(V)" = 1 ]; then A2X_VERBOSE="--verbose"; fi; \
 }
 
 # Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
@@ -922,16 +923,16 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(ASCIIDOC) --backend=xhtml11 \
-		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
+	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
+		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
 		--attribute nutversion="@PACKAGE_VERSION@" \
 		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
-A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
