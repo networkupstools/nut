@@ -783,10 +783,7 @@ linkman-drivertool-names.txt:
 $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.txt
 
 # These files are generated when we build from git source so not tracked in
-# git, but we want it as part of tarball just in case the end-user's build
-# does not enable something related to docs:
-EXTRA_DIST += $(LINKMAN_INCLUDE_GENERATED)
-
+# git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 all:
@@ -918,6 +915,10 @@ DOCBUILD_END = { \
     fi ; \
 }
 
+### Regarding absolute paths in attributes below: by default asciidoc
+### resolves include paths relative to the main document, so while we
+### see the relative builddir as "." in the makefile, for included
+### data it would mean the source directory where the .txt resides.
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
@@ -926,6 +927,8 @@ DOCBUILD_END = { \
 		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
 		--attribute nutversion="@PACKAGE_VERSION@" \
+		--attribute srcdir="$(abs_srcdir)" \
+		--attribute builddir="$(abs_builddir)" \
 		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -936,6 +939,8 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
+	--attribute srcdir="$(abs_srcdir)" \
+	--attribute builddir="$(abs_builddir)" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:

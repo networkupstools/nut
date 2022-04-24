@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2951 utf-8
+personal_ws-1.1 en 2952 utf-8
 AAS
 ABI
 ACFAIL
@@ -1527,6 +1527,7 @@ buflen
 bugfix
 bugfixes
 buildbots
+builddir
 bullseye
 busybox
 bv
