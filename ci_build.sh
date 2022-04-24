@@ -18,10 +18,12 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 # or to quickly hit the first-found errors in a larger matrix
 # (and then easily `make` to iterate fixes), like this:
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
+#
 # For out-of-tree builds you can specify a CI_BUILDDIR (absolute or relative
 # to SCRIPTDIR - not current path), or just call .../ci_build.sh while being
 # in a different directory and then it would be used with a warning. This may
-# require that you `make distclean` the original source checkout first.
+# require that you `make distclean` the original source checkout first:
+#   CI_BUILDDIR=obj BUILD_TYPE=default-all-errors ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-all)
@@ -123,7 +125,8 @@ esac
 # but is built in various directories with different configurations.
 # This is something to test via CI, that recipes are not broken for
 # such use-case. Note the path should be in .gitignore, e.g. equal to
-# or under ./tmp/ for CI_REQUIRE_GOOD_GITIGNORE sanity checks to pass.
+# or under ./tmp/ or ./obj/ for the CI_REQUIRE_GOOD_GITIGNORE sanity
+# checks to pass.
 case "${CI_BUILDDIR-}" in
     "") # Not set, likeliest case
         CI_BUILDDIR="`pwd`"

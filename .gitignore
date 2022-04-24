@@ -10,6 +10,7 @@
 .libs/
 .inst/
 /tmp/
+/obj/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
