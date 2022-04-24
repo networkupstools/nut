@@ -109,6 +109,8 @@ static int sock_open(const char *fn)
 	int	ret, fd;
 	struct sockaddr_un	ssaddr;
 
+	check_unix_socket_filename(fn);
+
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0) {
@@ -281,9 +283,9 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		__func__, buflen, conn->fd, buf);
 */
 
-  ret = write(conn->fd, buf, buflen);
+	ret = write(conn->fd, buf, buflen);
 
-  if (ret < 0) {
+	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 		upsdebugx(1, "%s: had to throttle down to retry "
 			"writing %zd bytes to socket %d "
@@ -481,6 +483,9 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
+	upsdebugx(6, "Driver on %s is now handling %s with %zu args",
+		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
+
 	if (numarg < 1) {
 		return 0;
 	}

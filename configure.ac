@@ -1218,6 +1218,29 @@ esac
 AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 
 dnl ----------------------------------------------------------------------
+dnl checks related to --enable-check-NIT
+
+AC_MSG_CHECKING(whether to run NIT among default make check target)
+nut_enable_check_NIT="no"
+AC_ARG_ENABLE([check-NIT],
+	AS_HELP_STRING([--enable-check-NIT], [Run check-NIT among default checks (no)]),
+[
+	case "${enableval}" in
+	no)
+		AC_MSG_RESULT(no)
+		;;
+	*)
+		AC_MSG_RESULT(yes)
+		nut_enable_check_NIT="yes"
+		;;
+	esac
+], [
+	AC_MSG_RESULT(no)
+])
+
+AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
@@ -1737,7 +1760,7 @@ AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
 	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
 [
-	case "${withval}" in
+	case "${enableval}" in
 	no)
 		AC_MSG_RESULT(no)
 		;;
@@ -2071,11 +2094,17 @@ return res ? 0 : 1;
 '
 
      my_CXXFLAGS="$CXXFLAGS"
-     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_LIBS"
+     my_LDFLAGS="$LDFLAGS"
+     my_LIBS="$LIBS"
+     CXXFLAGS="$myCXXFLAGS $pkg_cv_CPPUNIT_CFLAGS $pkg_cv_CPPUNIT_CXXFLAGS"
+     LDFLAGS="$my_LDFLAGS $pkg_cv_CPPUNIT_LDFLAGS"
+     LIBS="$my_LIBS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
      AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [have_cppunit=yes], [have_cppunit=no])
      CXXFLAGS="$my_CXXFLAGS"
+     LDFLAGS="$my_LDFLAGS"
+     LIBS="$my_LIBS"
      AC_LANG_POP([C++])
      unset CPLUSPLUS_MAIN
      unset CPLUSPLUS_DECL
@@ -2888,6 +2917,7 @@ AC_CONFIG_FILES([
  tools/Makefile
  tools/nut-scanner/Makefile
  tests/Makefile
+ tests/NIT/Makefile
  Makefile
 ])
 

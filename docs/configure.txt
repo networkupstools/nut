@@ -205,6 +205,25 @@ Development files
 Build and install the upsclient and nutclient library and header files, to
 build further projects against NUT (such as wmNUT client and many others).
 
+Options for developers
+~~~~~~~~~~~~~~~~~~~~~~
+
+	--enable-check-NIT (default: no)
+
+Add `make check-NIT` to default activity of `make check` to run the
+NUT Integration Testing suite. This is potentially dangerous (e.g. due
+to port conflicts when running many such tests in same environment),
+so not active by default.
+
+	--enable-maintainer-mode (default: no)
+
+Use maintainer mode to keep `Makefile.in` and `Makefile` in sync with
+ever-changing `Makefile.am` content after Git updates or editing.
+
+	--enable-cppcheck (default: no)
+
+Activate recipes for static analysis with `cppcheck` tools (if available).
+
 I want it all!
 ~~~~~~~~~~~~~~
 

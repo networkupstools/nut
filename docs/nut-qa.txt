@@ -118,16 +118,22 @@ FIXME (POST):
      the installation, upgrade and removal testing processes.
 
 - a runtime testing suite, which automates the inter-layer communication testing
-(driver -- upsd -- upsmon / clients), that is part of Ubuntu.
-link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
-is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
-It installs NUT, configures it with the dummy-ups driver, changes a few data and
-checks that these are well propagated with upsc.
+  (driver -- upsd -- upsmon / clients), that is part of Ubuntu.
+  link:https://git.launchpad.net/ubuntu/+source/nut/tree/debian/tests/test-nut.py[The NUT testing script]
+  is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
++
+  It installs NUT packages, configures it with the dummy-ups driver, changes
+  a few data points and checks that these are well propagated with upsc.
+
+- similar approach is explored in NIT (NUT Integration Testing) suite,
+  which is part of the codebase and automated with `make check-NIT`;
+  it can also be added to default `make check` activities by running
+  `configure --enable-check-NIT`
 
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
 - link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net)
-provides metrics on NUT source code base and activity.
+  provides metrics on NUT source code base and activity.
 
 Runtime quality
 ~~~~~~~~~~~~~~~

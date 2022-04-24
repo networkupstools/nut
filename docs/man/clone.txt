@@ -107,6 +107,16 @@ drivers are not affected, so if you tell the real UPS driver to shutdown
 the outlet of the clone UPS driver, your clients will lose power without
 warning.
 
+If you use service management frameworks like systemd or SMF to manage the
+dependencies between driver instances and other units, then you may have
+to set up special dependencies (e.g. with systemd "drop-in" snippet files)
+to queue your `clone` drivers to start after the "real" device drivers.
+
+//////////////////////////////////////
+TODO later: declare the driver as "optional", see
+https://github.com/networkupstools/nut/issues/1389
+//////////////////////////////////////
+
 AUTHOR
 ------
 
@@ -119,6 +129,15 @@ linkman:upscmd[1],
 linkman:upsrw[1],
 linkman:ups.conf[5],
 linkman:nutupsdrv[8]
+
+Dummy driver:
+~~~~~~~~~~~~~
+
+The "repeater" mode of 'dummy-ups' driver is in some ways similar to the
+'clone' driver, by relaying information from a locally or remotely running
+"real" device driver (and NUT data server).
+
+linkman:dummy-ups[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

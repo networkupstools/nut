@@ -519,9 +519,26 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* don't let the user shoot themselves in the foot */
 	if (!strcmp(var, "driver")) {
-		if (strcmp(val, progname) != 0)
+		/* Accomodate for libtool wrapped developer iterations
+		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+		 */
+		size_t tmplen = strlen("lt-");
+		if (strncmp("lt-", progname, tmplen) == 0
+		&&  strcmp(val, progname + tmplen) == 0) {
+			/* debug level may be not initialized yet, and situation
+			 * should not happen in end-user builds, so ok to yell: */
+			upsdebugx(0, "Seems this driver binary %s is a libtool "
+				"wrapped build for driver %s", progname, val);
+			/* progname points to xbasename(argv[0]) in-place;
+			 * roll the pointer forward a bit, we know we can:
+			 */
+			progname = progname + tmplen;
+		}
+
+		if (strcmp(val, progname) != 0) {
 			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
+		}
 		return;
 	}
 

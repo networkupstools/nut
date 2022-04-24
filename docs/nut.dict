@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2946 utf-8
+personal_ws-1.1 en 2950 utf-8
 AAS
 ABI
 ACFAIL
@@ -1912,6 +1912,8 @@ httpd
 https
 huawei
 hunnox
+hypervisor
+hypervisors
 iBox
 iDowell
 iManufacturer
@@ -2318,6 +2320,7 @@ openmp
 opensolaris
 openssh
 openssl
+optimizations
 optiups
 oq
 os
@@ -2711,6 +2714,7 @@ th
 timehead
 timeline
 timername
+timestamp
 timeticks
 tiocm
 tios

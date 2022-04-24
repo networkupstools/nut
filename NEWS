@@ -302,6 +302,10 @@ refer to this change set (too long in the making) as NUT 2.7.5.
  - Add support for extra parameter for instant commands, both in library and
    in upscmd
 
+ - dummy-ups can now specify `mode` as a driver argument, and separates the
+   notion of `dummy-once` (new default for `*.dev` files that do not change)
+   vs. `dummy-loop` (legacy default for `*.seq` and others) [issue #1385]
+
  - new protocol variables:
    * `input.phase.shift`
    * `outlet.N.name`

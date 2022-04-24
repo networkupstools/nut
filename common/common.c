@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2022  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
+#include <sys/un.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -569,6 +570,27 @@ const char * altpidpath(void)
 /* We assume, here and elsewhere, that at least STATEPATH is always defined */
 	return STATEPATH;
 #endif
+}
+
+/* Die with a standard message if socket filename is too long */
+void check_unix_socket_filename(const char *fn) {
+	struct sockaddr_un	ssaddr;
+	if (strlen(fn) < sizeof(ssaddr.sun_path))
+		return;
+
+	/* Avoid useless truncated pathnames that
+	 * other driver instances would conflict
+	 * with, and upsd can not discover.
+	 * Note this is quite short on many OSes
+	 * varying 104-108 bytes (UNIX_PATH_MAX)
+	 * as opposed to PATH_MAX or MAXPATHLEN
+	 * typically of a kilobyte range.
+	 */
+	fatalx(EXIT_FAILURE,
+		"Can't create a unix domain socket: pathname '%s' "
+		"is too long (%zu) for 'struct sockaddr_un->sun_path' "
+		"on this system (%zu)",
+		fn, strlen(fn), sizeof(ssaddr.sun_path));
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */

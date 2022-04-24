@@ -360,6 +360,11 @@ protected:
  */
 class TcpClient : public Client
 {
+	/* We have a number of direct-call methods we do not expose
+	 * generally, but still want covered with integration tests
+	 */
+	friend class NutActiveClientTest;
+
 public:
 	/**
 	 * Construct a nut TcpClient object.

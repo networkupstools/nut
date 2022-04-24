@@ -1,5 +1,7 @@
 # Network UPS Tools: tests
 
+SUBDIRS = . NIT
+
 all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
@@ -11,6 +13,10 @@ AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
+
+# NUT Integration Testing suite
+check-NIT check-NIT-devel:
+	cd "$(builddir)/NIT" && $(MAKE) $@
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
@@ -43,6 +49,8 @@ CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
+CPPCLIENTTESTSRC = cpputest-client.cpp
+
 TESTS_CXX11 = cppunittest
 
 if HAVE_CXX11
@@ -52,15 +60,23 @@ if HAVE_CPPUNIT
 
 TESTS += $(TESTS_CXX11)
 
+# Note: we only build it, but do not run directly (NIT prepares the sandbox)
+check_PROGRAMS += cppnit
+
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
 	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
 endif
 
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
-cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
+cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppunittest_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+
+cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
+cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
+cppnit_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libnutclientstub.la
+cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 
 # Make sure out-of-dir C++ dependencies exist (especially when dev-building
 # only some parts of NUT):
@@ -69,16 +85,22 @@ $(top_builddir)/clients/libnutclientstub.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
-# Just redistribute test source into tarball
+# Just redistribute test source into tarball if not building tests
 
-EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+
+cppnit:
+	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CPPUNIT
 
 else !HAVE_CXX11
-# Just redistribute test source into tarball
+# Just redistribute test source into tarball if not building C++ at all
 
-EXTRA_DIST += example.cpp cpputest.cpp
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+
+cppnit:
+	@echo "SKIP: $@ not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CXX11
 

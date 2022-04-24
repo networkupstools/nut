@@ -743,6 +743,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
+    # TODO: Resolve port-collision reliably (for multi-executor agents)
+    # and enable the test for CI runs. Bonus for making it quieter.
+    CONFIG_OPTS+=("--enable-check-NIT=no")
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
@@ -1510,15 +1513,16 @@ bindings)
 
     ./autogen.sh
 
-    # TODO: Consider `--enable-maintainer-mode` to add recipes that
-    # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can:
     #./configure
-    ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    ./configure --enable-Wcolor \
+        --with-all=auto --with-cgi=auto --with-serial=auto \
+        --with-dev=auto --with-doc=skip \
+        --enable-check-NIT --enable-maintainer-mode
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
