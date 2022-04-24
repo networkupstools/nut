@@ -983,6 +983,9 @@ set | sort -n """
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes',
+                     // Build in a subdirectory to check that out-of-dir
+                     // builds are healthy too
+                     'CI_BUILDDIR=obj',
                      // NOTE: "gcc-hard" warnings are still not as picky
                      // as "clang-hard" and do not differ much from the
                      // "gcc-medium" definition currently:
