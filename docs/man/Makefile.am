@@ -749,6 +749,7 @@ HTML_MANS = \
 # list of drivers with `- linkman:nutupsdrv[8]` entry
 # To regenerate these files, do `make distclean` first
 LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt
+LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt
 
 linkman-driver-names.txt:
 	@if test x"$(srcdir)" != x"$(builddir)" ; then \
@@ -779,9 +780,7 @@ linkman-drivertool-names.txt:
 
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
-index.txt index.html \
-upsd.txt upsd.html upsd.8 upsd.pdf \
-nutupsdrv.txt nutupsdrv.html nutupsdrv.8 nutupsdrv.pdf : linkman-driver-names.txt linkman-drivertool-names.txt
+$(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.txt
 
 # These files are generated when we build from git source so not tracked in
 # git, but we want it as part of tarball just in case the end-user's build
