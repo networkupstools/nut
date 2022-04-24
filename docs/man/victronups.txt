@@ -28,7 +28,8 @@ CABLING
 If your Victron cable is broken or missing, use this diagram to build
 a clone:
 
-docs/cables/victron.txt
+* https://github.com/networkupstools/nut/blob/master/docs/cables/ge-imv-victron.txt
+* link:docs/cables/ge-imv-victron.txt[]
 
 EXTRA ARGUMENTS
 ---------------
