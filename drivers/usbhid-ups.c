@@ -1017,6 +1017,7 @@ void upsdrv_initups(void)
 	char *regex_array[7];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+	warn_if_bad_usb_port_filename(device_path);
 
 	subdriver_matcher = &subdriver_matcher_struct;
 

@@ -2945,6 +2945,8 @@ void	upsdrv_initups(void)
 /* USB */
 #ifdef QX_USB
 
+	warn_if_bad_usb_port_filename(device_path);
+
 	#ifndef TESTING
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */

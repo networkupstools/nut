@@ -499,6 +499,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	int            ret = 0;
 
 	upsdebugx(1, "entering nutusb_open()");
+	warn_if_bad_usb_port_filename(device_path);
 
 	/* Initialize Libusb */
 #if WITH_LIBUSB_1_0

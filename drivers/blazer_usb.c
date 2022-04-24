@@ -584,8 +584,9 @@ void upsdrv_initups(void)
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
 	char	*regex_array[7];
-
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");

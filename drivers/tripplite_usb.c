@@ -1566,6 +1566,8 @@ void upsdrv_initups(void)
 	char *value;
 	int r;
 
+	warn_if_bad_usb_port_filename(device_path);
+
 	/* process the UPS selection options */
 	regex_array[0] = NULL; /* handled by USB IDs device table */
 	regex_array[1] = getval("productid");

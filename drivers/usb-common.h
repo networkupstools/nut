@@ -513,4 +513,9 @@ int is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 
 void nut_usb_addvars(void);
 
+/* Tell the users that port="auto" should be used for USB,
+ * and other values are quietly ignored. Implemented once
+ * here, to use in several USB-capable drivers. */
+void warn_if_bad_usb_port_filename(const char *fn);
+
 #endif /* NUT_USB_COMMON_H */
