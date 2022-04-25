@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2953 utf-8
+personal_ws-1.1 en 2954 utf-8
 AAS
 ABI
 ACFAIL
@@ -2891,6 +2891,7 @@ voltronic
 von
 wDescriptorLength
 wakeup
+wc
 wchar
 webserver
 wf
