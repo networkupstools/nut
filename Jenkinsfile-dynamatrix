@@ -661,7 +661,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'A build with all docs types on capable systems, and a distcheck (must pass)',
+        ,[name: 'An out-of-tree build with all docs types on capable systems, and a distcheck (must pass)',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers (maybe
          // iterate docs tools though, if we were to support many backends?)
@@ -685,6 +685,9 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     // Build in a subdirectory to check that out-of-dir
+                     // builds are healthy too
+                     'CI_BUILDDIR=obj',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
                     ]
                     ],
@@ -964,7 +967,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'GNU C standard builds with fatal warnings with GCC, without distcheck and docs (must pass)',
+        ,[name: 'GNU C standard out-of-tree builds with fatal warnings with GCC, without distcheck and docs (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
