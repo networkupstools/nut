@@ -81,13 +81,23 @@ Snapshots
 
 GitHub has several download links for repository snapshots (for particular tags
 or branches), but you will need a number of tools such as autoconf, automake
-and libtool to use these snapshots.
+and libtool to use these snapshots to generate the `configure` script and some
+other files.
+
+After you `configure` the source workspace, a `make dist-hash` recipe would
+create the snapshot tarballs which do not require the auto* tools, and their
+checksum files, such as those available on the NUT website and attached to
+link:https://github.com/networkupstools/nut/releases[GitHub Releases page].
+
+/////////
+TODO: #1400 to replace this with a NUT CI farm service to publish the tarballs
 
 If our Buildbot instance is behaving, you can download a snapshot which does
 not require auto* tools from this
 link:http://buildbot.networkupstools.org/snapshots[builder].  Look for the
 latest *[tarball]* link towards the top of the page, and be sure to check the
 'Build ##' link to verify the branch name.
+/////////
 
 Older versions
 ~~~~~~~~~~~~~~
