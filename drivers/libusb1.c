@@ -157,6 +157,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const unsigned char *p;
 	char string[256];
 	int i;
+	int count_open_EACCESS = 0;
+	int count_open_errors = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
@@ -197,6 +199,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				dev_desc.idVendor,
 				dev_desc.idProduct,
 				libusb_strerror((enum libusb_error)ret));
+			count_open_errors++;
+			if (ret == LIBUSB_ERROR_ACCESS) {
+				count_open_EACCESS++;
+			}
 			continue;
 		}
 		udev = *udevp;
@@ -589,6 +595,20 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	libusb_free_device_list(devlist, 1);
 	upsdebugx(2, "libusb1: No appropriate HID device found");
 	fflush(stdout);
+
+	if (devcount < 1) {
+		upslogx(LOG_WARNING,
+			"libusb1: Could not open any HID devices: "
+			"no USB buses found");
+	}
+	else
+	if (count_open_errors > 0
+	||  count_open_errors == count_open_EACCESS
+	) {
+		upslogx(LOG_WARNING,
+			"libusb1: Could not open any HID devices: "
+			"insufficient permissions on everything");
+	}
 
 	return -1;
 }
