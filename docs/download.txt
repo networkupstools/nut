@@ -108,7 +108,8 @@ Binary packages
 
 NOTE: The only official releases from this project are source code.
 
-NUT is already available in the following operating systems (and likely more):
+NUT is already available in the following operating systems (and
+link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging-recipes-and-repository-sections[likely more]):
 
 - link:https://repology.org/project/nut/versions[Repology report on NUT]
   lists 745 entries about NUT, as of this writing
