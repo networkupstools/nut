@@ -846,6 +846,8 @@ void upsdrv_initups(void)
 
 	char	*subdrv = getval("subdriver");
 
+	warn_if_bad_usb_port_filename(device_path);
+
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
 	regex_array[2] = getval("vendor");
