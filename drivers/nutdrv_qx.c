@@ -78,6 +78,7 @@
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
+#include "nutdrv_qx_voltronic-sunny.h"
 #include "nutdrv_qx_zinto.h"
 #include "nutdrv_qx_masterguard.h"
 #include "nutdrv_qx_ablerex.h"
@@ -85,6 +86,7 @@
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
+	&voltronic_sunny_subdriver,
 	&voltronic_qs_subdriver,
 	&voltronic_qs_hex_subdriver,
 	&mustek_subdriver,
@@ -154,7 +156,7 @@ static struct {
 
 /* == Support functions == */
 static int	subdriver_matcher(void);
-static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen);
+static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen);
 static int	qx_process_answer(item_t *item, const size_t len); /* returns just 0 or -1 */
 static bool_t	qx_ups_walk(walkmode_t mode);
 static void	ups_status_set(void);
@@ -461,12 +463,13 @@ static USBDeviceMatcher_t		*reopen_matcher = NULL;
 static USBDeviceMatcher_t		*regex_matcher = NULL;
 static int				langid_fix = -1;
 
-static int	(*subdriver_command)(const char *cmd, char *buf, size_t buflen) = NULL;
+static int	(*subdriver_command)(const char *cmd, size_t cmdlen, char *buf, size_t buflen) = NULL;
 
 /* Cypress communication subdriver */
-static int	cypress_command(const char *cmd, char *buf, size_t buflen)
+static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
+	size_t	tmplen;
 	int	ret = 0;
 	size_t	i;
 
@@ -479,9 +482,10 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
-	snprintf(tmp, sizeof(tmp), "%s", cmd);
+	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
+	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -537,11 +541,11 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* SGS communication subdriver */
-static int	sgs_command(const char *cmd, char *buf, size_t buflen)
+static int	sgs_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
 	int	ret = 0;
-	size_t  cmdlen, i;
+	size_t  i;
 
 	if (buflen > INT_MAX) {
 		upsdebugx(3, "%s: requested to read too much (%zu), "
@@ -551,8 +555,6 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	/* Send command */
-	cmdlen = strlen(cmd);
-
 	for (i = 0; i < cmdlen; i += (size_t)ret) {
 
 		memset(tmp, 0, sizeof(tmp));
@@ -642,9 +644,10 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Phoenix communication subdriver */
-static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
+static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
+	size_t	tmplen;
 	int	ret;
 	size_t	i;
 
@@ -689,9 +692,10 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
-	snprintf(tmp, sizeof(tmp), "%s", cmd);
+	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
+	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
@@ -744,9 +748,10 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Ippon communication subdriver */
-static int	ippon_command(const char *cmd, char *buf, size_t buflen)
+static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[64];
+	size_t	tmplen;
 	int	ret;
 	size_t	i, len;
 
@@ -758,9 +763,11 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	/* Send command */
-	snprintf(tmp, sizeof(tmp), "%s", cmd);
+	memset(tmp, 0, sizeof(tmp));
+	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
+	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev,
@@ -892,7 +899,7 @@ static int 	hunnox_protocol(int asking_for)
 }
 
 /* Krauler communication subdriver */
-static int	krauler_command(const char *cmd, char *buf, size_t buflen)
+static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	/* Still not implemented:
 	 * 0x6	T<n>	(don't know how to pass the parameter)
@@ -928,7 +935,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 
 		int	retry;
 
-		if (strcmp(cmd, command[i].str)) {
+		if (strncmp(cmd, command[i].str, cmdlen)) {
 			continue;
 		}
 
@@ -1024,7 +1031,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Fabula communication subdriver */
-static int	fabula_command(const char *cmd, char *buf, size_t buflen)
+static int	fabula_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	const struct {
 		const char	*str;	/* Megatec command */
@@ -1050,7 +1057,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 
 	for (i = 0; commands[i].str; i++) {
 
-		if (strcmp(cmd, commands[i].str))
+		if (strncmp(cmd, commands[i].str, cmdlen))
 			continue;
 
 		index = commands[i].index;
@@ -1143,7 +1150,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 /* Hunnox communication subdriver, based on Fabula code above so repeats
  * much of it currently. Possible future optimization is to refactor shared
  * code into new routines to be called from both (or more) methods.*/
-static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
+static int	hunnox_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	/* The hunnox_patch was an argument in initial implementation of PR #638
 	 * which added "hunnox" support; keeping it fixed here helps to visibly
@@ -1175,7 +1182,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 
 	for (i = 0; commands[i].str; i++) {
 
-		if (strcmp(cmd, commands[i].str))
+		if (strncmp(cmd, commands[i].str, cmdlen))
 			continue;
 
 		index = commands[i].index;
@@ -1309,7 +1316,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Fuji communication subdriver */
-static int	fuji_command(const char *cmd, char *buf, size_t buflen)
+static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
@@ -1381,7 +1388,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	if (strlen(command) > 3) {
 		/* Be 'megatec-y': echo the unsupported command back */
 		upsdebugx(3, "%s: unsupported command %s", __func__, command);
-		return snprintf(buf, buflen, "%s", cmd);
+		return snprintf(buf, buflen, "%.*s", (int)cmdlen, cmd);
 	}
 
 	/* Expected length of the answer to the ongoing query
@@ -1460,13 +1467,12 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Phoenixtec (Masterguard) communication subdriver */
-static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
+static int	phoenixtec_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	int ret;
 	char *p, *e = NULL;
 	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
 	char **lp;
-	size_t cmdlen = strlen(cmd);
 
 	if (cmdlen > INT_MAX) {
 		upsdebugx(3, "%s: requested command is too long (%zu)",
@@ -1655,7 +1661,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	return snprintf(buf, buflen, "%s", cmd);
 }
 
-static int ablerex_command(const char *cmd, char *buf, size_t buflen)
+static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	int iii;
 	int	len;
@@ -1759,12 +1765,11 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
  */
-static int	armac_command(const char *cmd, char *buf, size_t buflen)
+static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmpbuf[6];
 	int	ret = 0;
 	size_t	i, bufpos;
-	const size_t cmdlen = strlen(cmd);
 
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
@@ -3141,7 +3146,7 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
-static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
+static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 /* NOTE: Could not find in which ifdef-ed codepath, but clang complained
  * about unused parameters here. Reference them just in case...
@@ -3169,7 +3174,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 			}
 		}
 
-		ret = (*subdriver_command)(cmd, buf, buflen);
+		ret = (*subdriver_command)(cmd, cmdlen, buf, buflen);
 
 		if (ret >= 0) {
 			return ret;
@@ -3252,7 +3257,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		ser_flush_io(upsfd);
 
-		ret = ser_send(upsfd, "%s", cmd);
+		ret = ser_send_buf(upsfd, cmd, cmdlen);
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%zd)",
@@ -3915,8 +3920,8 @@ static int	qx_process_answer(item_t *item, const size_t len)
 
 	/* Short reply */
 	if (item->answer_len && len < item->answer_len) {
-		upsdebugx(2, "%s: short reply (%s)",
-			__func__, item->info_type);
+		upsdebugx(2, "%s: short reply (%s) %d<%d",
+			__func__, item->info_type, len, item->answer_len);
 		return -1;
 	}
 
@@ -3958,6 +3963,7 @@ int	qx_process(item_t *item, const char *command)
 		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
 		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
 	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+	size_t cmd_len;
 
 	if ( !(cmd = xmalloc(cmdsz)) ) {
 		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
@@ -3966,12 +3972,12 @@ int	qx_process(item_t *item, const char *command)
 
 	/* Prepare the command to be used */
 	memset(cmd, 0, cmdsz);
-	snprintf(cmd, cmdsz, "%s", command ? command : item->command);
+	snprintf(cmd, cmdsz, "%s%n", command ? command : item->command, &cmd_len);
 
 	/* Preprocess the command */
 	if (
 		item->preprocess_command != NULL &&
-		item->preprocess_command(item, cmd, cmdsz) == -1
+		(cmd_len = item->preprocess_command(item, cmd, cmdsz)) == -1
 	) {
 		upsdebugx(4, "%s: failed to preprocess command [%s]",
 			__func__, item->info_type);
@@ -3980,7 +3986,7 @@ int	qx_process(item_t *item, const char *command)
 	}
 
 	/* Send the command */
-	len = qx_command(cmd, buf, sizeof(buf));
+	len = qx_command(cmd, cmd_len, buf, sizeof(buf));
 
 	memset(item->answer, 0, sizeof(item->answer));
 
