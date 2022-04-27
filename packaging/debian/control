@@ -214,7 +214,7 @@ Description: network UPS tools - documentation
  .
  This package contains FAQ, user, developer and packager documentation.
 
-Package: libupsclient4
+Package: libupsclient6
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -232,7 +232,7 @@ Description: network UPS tools - client library
 Package: libupsclient-dev
 Section: libdevel
 Architecture: any
-Depends: libupsclient4 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libupsclient6 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libupsclient1-dev
 Replaces: libupsclient1-dev
 Description: network UPS tools - development files
@@ -244,7 +244,7 @@ Description: network UPS tools - development files
  .
  This package provides the development files.
 
-Package: libnutscan1
+Package: libnutscan2
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -262,7 +262,7 @@ Description: network UPS tools - scanner library
 Package: libnutscan-dev
 Section: libdevel
 Architecture: any
-Depends: libnutscan1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libnutscan2 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: network UPS tools - development files
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
@@ -272,7 +272,7 @@ Description: network UPS tools - development files
  .
  This package provides the development files.
 
-Package: libnutclient1
+Package: libnutclient2
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -305,7 +305,7 @@ Description: network UPS tools - new client library Stub
 Package: libnutclient-dev
 Section: libdevel
 Architecture: any
-Depends: libnutclient1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libnutclient2 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: network UPS tools - development files
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
