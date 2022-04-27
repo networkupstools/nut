@@ -108,8 +108,18 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
-doc spellcheck-sortdict:
-	cd $(srcdir)/docs && $(MAKE) $@
+# Note: the "all-docs" and "check-docs" targets may require tools not
+# found by `configure` script (and so avoided by conventional recipes)
+# such as PDF generators, so it should only be called at developer's
+# discretion, choice and risk. The "check-man" targets covers source
+# texts, man pages and HTML rendering of man pages, as enabled by tools.
+doc spellcheck-sortdict \
+all-docs check-docs \
+man all-man man-man check-man man-html all-html:
+	cd $(builddir)/docs && $(MAKE) $@
+
+check-NIT check-NIT-devel:
+	cd $(builddir)/tests/NIT && $(MAKE) $@
 
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
@@ -208,11 +218,15 @@ tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
-dist-sig:
+nut-@PACKAGE_VERSION@.tar.gz: dist
+nut-@PACKAGE_VERSION@.tar.gz.sig: dist-sig
+nut-@PACKAGE_VERSION@.tar.gz.md5 nut-@PACKAGE_VERSION@.tar.gz.sha256: dist-hash
+
+dist-sig: nut-@PACKAGE_VERSION@.tar.gz
 	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
 
-dist-hash:
+dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
 	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
 
@@ -288,7 +302,7 @@ MAINTAINERCLEANFILES_PACKAGES += *.p5p
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
-package:
+package: dist
 	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
 	case "`uname -s`" in \

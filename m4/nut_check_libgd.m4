@@ -1,9 +1,9 @@
 dnl Check for LIBGD compiler flags. On success, set nut_have_libgd="yes"
 dnl and set LIBGD_CFLAGS and LIBGD_LDFLAGS. On failure, set
 dnl nut_have_libgd="no". This macro can be run multiple times, but will
-dnl do the checking only once. 
+dnl do the checking only once.
 
-AC_DEFUN([NUT_CHECK_LIBGD], 
+AC_DEFUN([NUT_CHECK_LIBGD],
 [
 if test -z "${nut_have_libgd_seen}"; then
 	nut_have_libgd_seen=yes
@@ -117,7 +117,21 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	dnl check if gd is usable
 	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no], [AC_INCLUDES_DEFAULT])
-	AC_SEARCH_LIBS(gdImagePng, gd, [], [nut_have_libgd=no])
+	AC_SEARCH_LIBS(gdImagePng, gd, [], [
+		dnl If using pkg-config, query additionally for Libs.private
+		dnl to pull -L/usr/X11R6/lib or whatever current OS wants
+		AC_MSG_CHECKING([for more gd library flags])
+		AS_IF([test -n "${with_gd_libs}" || test x"$have_PKG_CONFIG" != xyes], [nut_have_libgd=no], [
+			_LIBS_PRIVATE="`$PKG_CONFIG --silence-errors --libs gdlib --static 2>/dev/null`"
+			AS_IF([test -z "${_LIBS_PRIVATE}"], [nut_have_libgd=no], [
+				AC_MSG_CHECKING([with gdlib.pc Libs.private])
+				LDFLAGS="$LDFLAGS $_LIBS_PRIVATE"
+				unset ac_cv_search_gdImagePng
+				AC_SEARCH_LIBS(gdImagePng, gd, [], [nut_have_libgd=no])
+			])
+			unset _LIBS_PRIVATE
+		])
+	])
 
 	if test "${nut_have_libgd}" = "yes"; then
 		AC_DEFINE(HAVE_LIBGD, 1, [Define if you have Boutell's libgd installed])

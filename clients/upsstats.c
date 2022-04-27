@@ -19,14 +19,14 @@
  */
 
 #include "common.h"
+#include "nut_stdint.h"
+#include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
 #include "cgilib.h"
 #include "parseconf.h"
-#include "timehead.h"
 #include "upsstats.h"
 #include "upsimagearg.h"
-#include "nut_stdint.h"
 
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
@@ -37,7 +37,7 @@ static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 	/* from cgilib's checkhost() */
 static char	*monhostdesc = NULL;
 
-static int	port;
+static uint16_t	port;
 static char	*upsname, *hostname;
 static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
 static UPSCONN_t	ups;
@@ -351,7 +351,7 @@ static void ups_connect(void)
 {
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
-	int	newport;
+	uint16_t	newport;
 
 	/* try to minimize reconnects */
 	if (lastups) {

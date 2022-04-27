@@ -3,10 +3,12 @@ BCMXCP_USB(8)
 
 NAME
 ----
+
 bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol over USB
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 bcmxcp_usb driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
@@ -14,6 +16,7 @@ This driver is a variant of the serial driver bcmxcp and uses the same core code
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver should recognize all BCM/XCP-compatible UPSes that are connected
 via USB.  It has been developed and tested on Powerware PW3501 hardware. It also has
 been tested on PW5110 hardware.
@@ -30,10 +33,12 @@ shutdown command and actually shutting off.
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
+
 *shutdown_delay =*'120'
 
 INSTANT COMMANDS
 ----------------
+
 This driver supports the following Instant Commands:
 
 *shutdown.return*::
@@ -56,6 +61,7 @@ BCM/XCP supports reporting of UPS statistics data.
 
 EXPERIMENTAL DRIVER
 -------------------
+
 This driver has been tagged experimental, even if it has been reported
 to be stable. Thus it is not suitable for production systems and it is
 not built by default. This is mainly due to the fact that it is a
@@ -63,6 +69,7 @@ new driver.
 
 INSTALLATION
 ------------
+
 This driver is not built by default.  You can build it by using
 "configure --with-usb=yes". Note that it will also install other USB
 drivers.
@@ -74,6 +81,7 @@ must have execution flag set (ie using chmod +x ...).
 
 IMPLEMENTATION
 --------------
+
 bcmxcp_usb only supports 1 UPS at this time. You can put the
 "auto" value for port in `ups.conf`, i.e.:
 
@@ -83,6 +91,7 @@ bcmxcp_usb only supports 1 UPS at this time. You can put the
 
 KNOWN ISSUES AND BUGS
 ---------------------
+
 "Got EPERM: Operation not permitted upon driver startup"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,18 +99,21 @@ You have forgotten to install the hotplug files, as explained
 in the INSTALLATION section above. Don't forget to restart
 hotplug so that it applies these changes.
 
-AUTHOR
-------
-Tore Ørpetveit <tore@orpetveit.net>,
-Wolfgang Ocker <weo@weo1.de>
+AUTHORS
+-------
+
+* Tore Ørpetveit <tore@orpetveit.net>
+* Wolfgang Ocker <weo@weo1.de>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

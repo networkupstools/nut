@@ -55,8 +55,10 @@ web server, don't blame me.
 
 SEE ALSO
 --------
+
 linkman:upsset.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

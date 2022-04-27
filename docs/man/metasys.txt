@@ -32,15 +32,18 @@ The driver should support all the common features of the ups models:
 
 CABLING
 -------
+
 The needed cable is a standard pin-to-pin serial cable with at least
 pins 2, 3, and 5 (on DB9 connector) connected.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports no extra arguments from linkman:ups.conf[5].
 
 BUGS
 ----
+
 This driver has been tested on Meta System HF Millennium 820 and
 ally HF 1000 only.
 
@@ -49,6 +52,7 @@ UPS are really welcome.
 
 AUTHOR
 ------
+
 Fabio Di Niro <blaxwan@users.sourceforge.net>
 
 SEE ALSO
@@ -56,8 +60,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

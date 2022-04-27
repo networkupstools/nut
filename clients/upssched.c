@@ -272,6 +272,7 @@ static int open_sock(void)
 	int	ret, fd;
 	struct	sockaddr_un	ssaddr;
 
+	check_unix_socket_filename(pipefn);
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
@@ -631,6 +632,8 @@ static int try_connect(void)
 {
 	int	pipefd, ret;
 	struct	sockaddr_un saddr;
+
+	check_unix_socket_filename(pipefn);
 
 	memset(&saddr, '\0', sizeof(saddr));
 	saddr.sun_family = AF_UNIX;

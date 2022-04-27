@@ -229,16 +229,19 @@ HB etc) by writing over those registers.
 
 AUTHOR
 ------
+
 Dimitris Economou <dimitris.s.economou@gmail.com>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-libmodbus home page: http://libmodbus.org
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org

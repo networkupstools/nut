@@ -37,9 +37,11 @@
 
 #include "config.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 #include "upslog.h"
 
-	static	int	port, reopen_flag = 0, exit_flag = 0;
+	static	int	reopen_flag = 0, exit_flag = 0;
+	static	uint16_t	port;
 	static	char	*upsname, *hostname;
 	static	UPSCONN_t	ups;
 
@@ -405,7 +407,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FB")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FB")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);

@@ -5,12 +5,17 @@
 
 import PyNUT
 import sys
+import os
 
 if __name__ == "__main__" :
+    NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
+    NUT_USER = os.getenv('NUT_USER', None)
+    NUT_PASS = os.getenv('NUT_PASS', None)
 
     print( "PyNUTClient test..." )
-    nut    = PyNUT.PyNUTClient( debug=True )
-    #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True )
+    #nut    = PyNUT.PyNUTClient( debug=True, port=NUT_PORT )
+    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, port=NUT_PORT )
+    #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True, port=NUT_PORT )
 
     print( 80*"-" + "\nTesting 'GetUPSList' :")
     result = nut.GetUPSList( )

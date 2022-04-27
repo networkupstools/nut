@@ -42,8 +42,8 @@ ANSWER FORMATTING
 -----------------
 
 The contents of 'numa' and 'answer' work just like a call to
-linkman:upscli_get[3].  The values returned by linkman:upsd[8] are identical to
-a single item request, so this is not surprising.
+linkman:upscli_get[3].  The values returned by linkman:upsd[8] are
+identical to a single item request, so this is not surprising.
 
 ERROR CHECKING
 --------------
@@ -66,5 +66,6 @@ its first call in that case.
 
 SEE ALSO
 --------
+
 linkman:upscli_list_start[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

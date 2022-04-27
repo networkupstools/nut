@@ -95,9 +95,9 @@ static int cypress_setfeatures()
 
 	/* Write features report */
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-								0x09,						/* HID_REPORT_SET = 0x09 */
-								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
+		0x09,				/* HID_REPORT_SET = 0x09 */
+		0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
+		0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
@@ -197,7 +197,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 	}
 
 	/* copy to buffer */
-	size = inBuf[0] & 0x07;
+	size = (unsigned char)(inBuf[0]) & 0x07;
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
@@ -845,6 +845,8 @@ void upsdrv_initups(void)
 	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");

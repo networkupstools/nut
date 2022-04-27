@@ -144,6 +144,9 @@ const char * dflt_statepath(void);
 /* Return the alternate path for pid files */
 const char * altpidpath(void);
 
+/* Die with a standard message if socket filename is too long */
+void check_unix_socket_filename(const char *fn);
+
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)

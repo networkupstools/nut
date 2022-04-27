@@ -1,13 +1,14 @@
 NUT-SCANNER(8)
 ==============
 
-
 NAME
 ----
+
 nut-scanner - scan communication buses for NUT devices
 
 SYNOPSIS
 --------
+
 *nut-scanner* -h
 
 *nut-scanner* ['OPTIONS']
@@ -29,6 +30,7 @@ both during compilation and runtime, then SNMP discovery will be available.
 
 OPTIONS
 -------
+
 *-h*::
 Display the help text.
 
@@ -213,7 +215,7 @@ SEE ALSO
 
 linkman:ups.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -175,7 +175,7 @@ also receives the notification message (see below) as the first (and
 only) argument, so you can deliver a pre-formatted message too.
 
 Note that the NOTIFYCMD will only be called for a given event when you set
-the EXEC flag by using the notify flags, below:
+the EXEC flag by using the notify flags, as detailed below.
 
 NOTIFY FLAGS
 ------------
@@ -450,17 +450,21 @@ SEE ALSO
 
 Server:
 ~~~~~~~
+
 linkman:upsd[8]
 
 Clients:
 ~~~~~~~~
+
 linkman:upsc[8], linkman:upscmd[8],
 linkman:upsrw[8], linkman:upsmon[8]
 
 CGI programs:
 ~~~~~~~~~~~~~
+
 linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

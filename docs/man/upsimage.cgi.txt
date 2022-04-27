@@ -45,6 +45,5 @@ linkman:upsd[8], linkman:upsstats.cgi[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The gd home page: http://libgd.bitbucket.org
-
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The gd home page: http://libgd.bitbucket.org

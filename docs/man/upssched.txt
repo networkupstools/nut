@@ -8,6 +8,7 @@ upssched - Timer helper for scheduling events from upsmon
 
 SYNOPSIS
 --------
+
 *upssched*
 
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
@@ -112,4 +113,5 @@ linkman:upsmon[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

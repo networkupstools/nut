@@ -9,7 +9,6 @@ upscli_splitaddr - split a listening address into its components
 SYNOPSIS
 --------
 
-
  #include <upsclient.h>
 
  int upscli_splitaddr(const char *buf, char **hostname,

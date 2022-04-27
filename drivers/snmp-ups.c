@@ -133,6 +133,9 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int semistaticfreq; /* semistatic entry update frequency */
+static int semistatic_countdown = 0;
+
 static int quirk_symmetra_threephase = 0;
 
 /* Number of device(s): standard is "1", but talking
@@ -163,7 +166,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.19"
+#define DRIVER_VERSION		"1.21"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -183,6 +186,12 @@ upsdrv_info_t	upsdrv_info = {
 
 static time_t lastpoll = 0;
 
+/* Communication status handling */
+#define COMM_UNKNOWN 0
+#define COMM_OK      1
+#define COMM_LOST    2
+static int comm_status = COMM_UNKNOWN;
+
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
 static int template_index_base = -1;
@@ -190,6 +199,7 @@ static int template_index_base = -1;
 static int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
 static int outlet_template_index_base = -1;
 static int outletgroup_template_index_base = -1;
+static int ambient_template_index_base = -1;
 static int device_template_offset = -1;
 
 /* sysOID location */
@@ -241,8 +251,8 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
-/* FIXME: daisychain commands support! */
-su_addcmd(su_info_p);
+			/* FIXME: daisychain commands support! */
+			su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -263,9 +273,11 @@ su_addcmd(su_info_p);
 	/* initialize all other INFO_ fields from list */
 	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
+		comm_status = COMM_OK;
 	}
 	else {
 		dstate_datastale();
+		comm_status = COMM_LOST;
 	}
 
 	/* setup handlers for instcmd and setvar functions */
@@ -288,10 +300,12 @@ void upsdrv_updateinfo(void)
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
 			upsdebugx(1, "%s: pollfreq: Data OK", __func__);
 			dstate_dataok();
+			comm_status = COMM_OK;
 		}
 		else {
 			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
 			dstate_datastale();
+			comm_status = COMM_LOST;
 		}
 
 		/* Commit status first, otherwise in daisychain mode, "device.0" may
@@ -307,8 +321,11 @@ void upsdrv_updateinfo(void)
 		lastpoll = time(NULL);
 	}
 	else {
-		/* Just tell everything is ok to upsd */
-		dstate_dataok();
+		/* Just tell the same status to upsd */
+		if (comm_status == COMM_OK)
+			dstate_dataok();
+		else
+			dstate_datastale();
 	}
 }
 
@@ -368,6 +385,8 @@ void upsdrv_makevartable(void)
 		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
+	addvar(VAR_VALUE, SU_VAR_SEMISTATICFREQ,
+		"Set semistatic value update frequency in update cycles, to reduce network flow (default=10)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
 		"Specifies the number of Net-SNMP retries to be used in the requests (default=5)");
 	addvar(VAR_VALUE, SU_VAR_TIMEOUT,
@@ -596,6 +615,17 @@ void upsdrv_initups(void)
 		pollfreq = atoi(getval(SU_VAR_POLLFREQ));
 	else
 		pollfreq = DEFAULT_POLLFREQ;
+
+	/* init semistatic update frequency */
+	if (getval(SU_VAR_SEMISTATICFREQ))
+		semistaticfreq = atoi(getval(SU_VAR_SEMISTATICFREQ));
+	else
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	if (semistaticfreq < 1) {
+		upsdebugx(1, "Bad %s value provided, setting to default", SU_VAR_SEMISTATICFREQ);
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	}
+	semistatic_countdown = semistaticfreq;
 
 	/* Get UPS Model node to see if there's a MIB */
 /* FIXME: extend and use match_model_OID(char *model) */
@@ -1192,7 +1222,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 		int hex = 0, x;
 		unsigned char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
-			if (!(isprint(*cp) || isspace(*cp))) {
+			if (!(isprint((size_t)*cp) || isspace((size_t)*cp))) {
 				hex = 1;
 			}
 		}
@@ -1251,8 +1281,6 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			snprintf(buf, buf_len, "%s", oid_leaf+1);
 			upsdebugx(3, "Fallback value: %s", buf);
 		}
-		else
-			snprintf(buf, buf_len, "%s", tmp_buf);
 		break;
 	default:
 		return FALSE;
@@ -2069,6 +2097,7 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 /* String reformating function */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
+#if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
@@ -2077,6 +2106,10 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 		return retvalue;
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
+#else
+	NUT_UNUSED_VARIABLE(oid2info);
+	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
+#endif // WITH_SNMP_LKP_FUN
 	return NULL;
 }
 
@@ -2086,6 +2119,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 	info_lkp_t *info_lkp;
 	long value = *((long *)raw_value);
 
+#if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
@@ -2093,6 +2127,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
+#endif // WITH_SNMP_LKP_FUN
 
 	/* Otherwise, use the simple values mapping */
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
@@ -2190,7 +2225,7 @@ static bool_t is_multiple_template(const char *OID_template)
 }
 
 /* Instantiate an snmp_info_t from a template.
- * Useful for outlet and outlet.group templates.
+ * Useful for device, outlet, outlet.group and ambient templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
 static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
@@ -2274,6 +2309,9 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		case SU_DAISY:
 			template_index_base = device_template_index_base;
 			break;
+		case SU_AMBIENT_TEMPLATE:
+			template_index_base = ambient_template_index_base;
+			break;
 		default:
 			/* we should never fall here! */
 			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
@@ -2338,6 +2376,8 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			outlet_template_index_base = base_index;
 		else if (su_info_p->flags & SU_OUTLET_GROUP)
 			outletgroup_template_index_base = base_index;
+		else if (su_info_p->flags & SU_AMBIENT_TEMPLATE)
+			ambient_template_index_base = base_index;
 		else
 			device_template_index_base = base_index;
 	}
@@ -2446,6 +2486,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	else {
 		template_count = atoi(dstate_getinfo(template_count_var));
 	}
+	upsdebugx(1, "%i instances found...", template_count);
 
 	/* Only instantiate templates if needed! */
 	if (template_count > 0) {
@@ -2458,6 +2499,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				cur_template_number < (template_count + base_snmp_index) ;
 				cur_template_number++)
 		{
+			upsdebugx(1, "Processing instance %i/%i...", cur_template_number, template_count);
 			/* Special processing for daisychain:
 			 * append 'device.x' to the NUT variable name, except for the
 			 * whole daisychain ("device.0") */
@@ -2497,7 +2539,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 #endif
 				}
 			}
-			else /* Outlet and outlet groups templates */
+			else if (!strncmp(type, "outlet", 6)) /* Outlet and outlet groups templates */
 			{
 				/* Get the index of the current template instance */
 				cur_nut_index = cur_template_number;
@@ -2534,6 +2576,44 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 						su_info_p->info_type, cur_nut_index);
 				}
 			}
+			else if (!strncmp(type, "ambient", 7))
+			{
+				/* FIXME: can be grouped with outlet* above */
+				/* Get the index of the current template instance */
+				cur_nut_index = cur_template_number;
+
+				/* Special processing for daisychain */
+				if (daisychain_enabled == TRUE) {
+					/* Only publish on the daisychain host */
+					if ( (su_info_p->flags & SU_TYPE_DAISY_MASTER_ONLY)
+						&& (current_device_number != 1) ) {
+							upsdebugx(2, "discarding variable due to daisychain master flag");
+							continue;
+						}
+
+					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
+					if ((devices_count > 1) && (current_device_number > 0)) {
+						memset(&tmp_buf[0], 0, SU_INFOSIZE);
+						strcat(&tmp_buf[0], "device.%i.");
+						strcat(&tmp_buf[0], su_info_p->info_type);
+
+						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
+							snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+								&tmp_buf[0], current_device_number, cur_nut_index);
+					}
+					else {
+						/* FIXME: daisychain-whole, what to do? */
+						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+							su_info_p->info_type, cur_nut_index);
+					}
+				}
+				else {
+					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+						su_info_p->info_type, cur_nut_index);
+				}
+			}
+			else
+				upsdebugx(4, "Error: unknown template type '%s", type);
 
 			/* check if default value is also a template */
 			if ((cur_info_p.dfl != NULL) &&
@@ -2562,9 +2642,14 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
 								su_info_p->OID, current_device_number + device_template_offset, cur_template_number);
 						}
-						else {
+						else if (su_info_p->flags & SU_TYPE_DAISY_2) {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, cur_template_number + device_template_offset, current_device_number - device_template_offset);
+								su_info_p->OID, cur_template_number + device_template_offset,
+								current_device_number - device_template_offset);
+						}
+						else {
+							/* Note: no device daisychain templating (SU_TYPE_DAISY_MASTER_ONLY)! */
+							snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 						}
 					}
 					else {
@@ -2620,6 +2705,10 @@ snmp_info_flags_t get_template_type(const char* varname)
 		upsdebugx(4, "device template");
 		return SU_DAISY;
 	}
+	else if (!strncmp(varname, "ambient", 7)) {
+		upsdebugx(4, "ambient template");
+		return SU_AMBIENT_TEMPLATE;
+	}
 	else {
 		upsdebugx(2, "Unknown template type: %s", varname);
 		return 0;
@@ -2639,6 +2728,8 @@ int extract_template_number(snmp_info_flags_t template_type, const char* varname
 		item_number_ptr = &varname[6];
 	else if (template_type & SU_DAISY)
 		item_number_ptr = &varname[6];
+	else if (template_type & SU_AMBIENT_TEMPLATE)
+		item_number_ptr = &varname[7];
 	else
 		return -1;
 
@@ -2725,17 +2816,43 @@ bool_t daisychain_init()
 		daisychain_enabled = TRUE;
 
 		/* Try to get the OID value, if it's not a template */
+		upsdebugx(3, "OID for device.count is %s",
+			su_info_p->OID ? su_info_p->OID : "<null>");
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
-			if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
-				upsdebugx(1, "There are %ld device(s) present", devices_count);
-			else
-			{
-				upsdebugx(1, "Error: can't get the number of device(s) present!");
-				upsdebugx(1, "Falling back to 1 device!");
-				devices_count = 1;
+#if WITH_SNMP_LKP_FUN
+			devices_count = -1;
+			/* First test if we have a generic lookup function
+			 * FIXME: Check if the field type is a string?
+			 */
+			/* TODO: backport the 2x2 mapping function support
+			 * and this would be "fun_s2l" in resulting codebase
+			 */
+			if ( (su_info_p->oid2info != NULL) && (su_info_p->oid2info->nuf_s2l != NULL) ) {
+				char buf[1024];
+				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
+				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
+					devices_count = su_info_p->oid2info->nuf_s2l(buf);
+					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+				}
 			}
+
+			if (devices_count == -1) {
+#endif /* WITH_SNMP_LKP_FUN */
+
+				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
+					upsdebugx(1, "There are %ld device(s) present", devices_count);
+				else
+				{
+					upsdebugx(1, "Error: can't get the number of device(s) present!");
+					upsdebugx(1, "Falling back to 1 device!");
+					devices_count = 1;
+				}
+
+#if WITH_SNMP_LKP_FUN
+			}
+#endif /* WITH_SNMP_LKP_FUN */
 		}
 		/* Otherwise (template), use the guesstimation function to get
 		 * the number of devices present */
@@ -2751,10 +2868,9 @@ bool_t daisychain_init()
 			daisychain_enabled = FALSE;
 			upsdebugx(1, "Devices count is less than 1!");
 			upsdebugx(1, "Falling back to 1 device and disabling daisychain support!");
-		}
-
-		/* Publish the device(s) count */
-		if (devices_count > 1) {
+		} else {
+			/* Publish the device(s) count - even if just one
+			 * device was recognized at this moment */
 			dstate_setinfo("device.count", "%ld", devices_count);
 
 			/* Also publish the default value for mfr and a forged model
@@ -2956,6 +3072,12 @@ bool_t snmp_ups_walk(int mode)
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
 
+	if (mode == SU_WALKMODE_UPDATE) {
+		semistatic_countdown--;
+		if (semistatic_countdown < 0)
+			semistatic_countdown = semistaticfreq;
+	}
+
 	/* Loop through all device(s) */
 	/* Note: considering "unitary" and "daisy-chained" devices, we have
 	 * several variables (and their values) that can come into play:
@@ -3063,6 +3185,13 @@ bool_t snmp_ups_walk(int mode)
 			if ((mode == SU_WALKMODE_UPDATE) && !(su_info_p->flags & SU_FLAG_OK))
 				continue;
 
+			/* skip semi-static elements in update mode: only parse when countdown reaches 0 */
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_SEMI_STATIC)) {
+				if (semistatic_countdown != 0)
+					continue;
+				upsdebugx(1, "Refreshing semi-static entry %s", su_info_p->OID);
+			}
+
 			/* skip static elements in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
 				continue;
@@ -3072,7 +3201,8 @@ bool_t snmp_ups_walk(int mode)
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
 			if ((su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP))
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
 			{
 				if (mode == SU_WALKMODE_INIT)
 				{
@@ -3144,6 +3274,13 @@ bool_t snmp_ups_walk(int mode)
 				else
 					status = process_template(mode, "outlet.group", su_info_p);
 			}
+			else if (su_info_p->flags & SU_AMBIENT_TEMPLATE) {
+				/* Skip commands after init */
+				if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+					continue;
+				else
+					status = process_template(mode, "ambient", su_info_p);
+			}
 			else {
 /*				if (daisychain_enabled == TRUE) {
 					status = process_template(mode, "device", su_info_p);
@@ -3187,7 +3324,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
 
 	/* Check if this is a daisychain template */
-	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+	if (su_info_p->OID != NULL
+	&&  (format_char = strchr(su_info_p->OID, '%')) != NULL
+	) {
 		upsdebugx(3, "%s: calling instantiate_info() for "
 			"daisy-chain template", __func__);
 		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
@@ -3407,7 +3546,14 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return TRUE;
 	}
 
-	if (su_info_p->info_flags & ST_FLAG_STRING) {
+	/* special treatment for element without oid but with default value */
+	if (su_info_p->OID == NULL && su_info_p->dfl != NULL) {
+		status = TRUE;
+		/* FIXME: strlcpy() would fit here safer; not used in NUT yet */
+		strncpy(buf, su_info_p->dfl, sizeof(buf) - 1);
+		buf[sizeof(buf) - 1] = '\0';
+	}
+	else if (su_info_p->info_flags & ST_FLAG_STRING) {
 		upsdebugx(2, "%s: requesting nut_snmp_get_str(), "
 			"with%s daisy template originally",
 			__func__, (format_char!=NULL ? "" : "out"));

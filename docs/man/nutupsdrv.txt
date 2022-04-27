@@ -50,6 +50,7 @@ options and parameters that generally are not needed by normal users.
 
 OPTIONS
 -------
+
 *-h*::
 Display a help message without doing anything else.  This will also list
 possible values for '-x' in that driver, and other help text that the
@@ -171,6 +172,7 @@ production use.
 
 FILES
 -----
+
 ups.conf::
 Required configuration file.  This contains all details on which drivers
 to start and where the hardware is attached.
@@ -202,61 +204,37 @@ SEE ALSO
 --------
 
 Server:
-linkman:upsd[8]
+~~~~~~~
+
+- linkman:upsd[8]
 
 Clients:
-linkman:upsc[8], linkman:upscmd[8],
-linkman:upsrw[8], linkman:upslog[8], linkman:upsmon[8]
+~~~~~~~~
+
+- linkman:upsc[8]
+- linkman:upscmd[8]
+- linkman:upsrw[8]
+- linkman:upslog[8]
+- linkman:upsmon[8]
 
 CGI programs:
-linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
+~~~~~~~~~~~~~
+
+- linkman:upsset.cgi[8]
+- linkman:upsstats.cgi[8]
+- linkman:upsimage.cgi[8]
 
 Driver control:
-linkman:upsdrvctl[8]
+~~~~~~~~~~~~~~~
+
+include::{builddir}/linkman-drivertool-names.txt[]
 
 Drivers:
-linkman:al175[8]
-linkman:apcsmart[8],
-linkman:bcmxcp[8],
-linkman:bcmxcp_usb[8],
-linkman:belkin[8],
-linkman:belkinunv[8],
-linkman:bestfcom[8],
-linkman:bestuferrups[8],
-linkman:bestups[8],
-linkman:blazer_ser[8],
-linkman:blazer_usb[8],
-linkman:cyberpower[8],
-linkman:dummy-ups[8],
-linkman:etapro[8],
-linkman:everups[8],
-linkman:gamatronic[8],
-linkman:genericups[8],
-linkman:isbmex[8],
-linkman:liebert[8],
-linkman:masterguard[8],
-linkman:metasys[8],
-linkman:mge-shut[8],
-linkman:mge-utalk[8],
-linkman:mge-xml[8],
-linkman:nitram[8],
-linkman:nutdrv_qx[8],
-linkman:oneac[8],
-linkman:optiups[8],
-linkman:powercom[8],
-linkman:powerman-pdu[8],
-linkman:powerpanel[8],
-linkman:rhino[8],
-linkman:richcomm_usb[8],
-linkman:safenet[8],
-linkman:snmp-ups[8],
-linkman:solis[8],
-linkman:tripplite[8],
-linkman:tripplitesu[8],
-linkman:tripplite_usb[8],
-linkman:usbhid-ups[8],
-linkman:upscode2[8],
-linkman:victronups[8]
+~~~~~~~~
+
+include::{builddir}/linkman-driver-names.txt[]
 
 Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

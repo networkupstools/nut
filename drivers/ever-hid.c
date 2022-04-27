@@ -47,6 +47,7 @@ static usb_device_id_t ever_usb_device_table[] = {
 
 	{ USB_DEVICE(STMICRO_VENDORID, 0xa113), NULL },
 	{ USB_DEVICE(EVER_VENDORID, 0xffff), NULL},
+	{ USB_DEVICE(EVER_VENDORID, 0x0000), NULL},
 
 	/* Terminating entry */
 	{ 0, 0, NULL }

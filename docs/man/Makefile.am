@@ -49,14 +49,20 @@ HTML_CONF_MANS = \
 	upsmon.conf.html \
 	upssched.conf.html
 
-SRC_CLIENT_PAGES = \
-	nutupsdrv.txt \
+# NOTE: Currently SRC_DRIVERTOOL_PAGES are a separate list to generate
+# a linkman-drivertool-names.txt file, but historically remain part of
+# MAN/HTML_CLIENT_PAGES in the bigger picture.
+SRC_DRIVERTOOL_PAGES = \
 	nut-driver-enumerator.txt \
+	upsdrvctl.txt \
+	upsdrvsvcctl.txt
+
+SRC_CLIENT_PAGES = \
+	$(SRC_DRIVERTOOL_PAGES) \
+	nutupsdrv.txt \
 	upsc.txt \
 	upscmd.txt \
 	upsd.txt \
-	upsdrvctl.txt \
-	upsdrvsvcctl.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsrw.txt \
@@ -166,7 +172,7 @@ SRC_DEV_PAGES = \
 	nutscan.txt \
 	nutscan_scan_snmp.txt \
 	nutscan_scan_usb.txt \
-	nutscan_scan_xml_http.txt \
+	nutscan_scan_xml_http_range.txt \
 	nutscan_scan_nut.txt \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
@@ -279,7 +285,7 @@ MAN3_DEV_PAGES = \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
-	nutscan_scan_xml_http.3 \
+	nutscan_scan_xml_http_range.3 \
 	nutscan_scan_nut.3 \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
@@ -341,7 +347,7 @@ HTML_DEV_MANS = \
 	nutscan.html \
 	nutscan_scan_snmp.html \
 	nutscan_scan_usb.html \
-	nutscan_scan_xml_http.html \
+	nutscan_scan_xml_http_range.html \
 	nutscan_scan_nut.html \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
@@ -620,11 +626,15 @@ HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
 	generic_modbus.txt \
-	huawei-ups2000.txt
+	huawei-ups2000.txt \
+	socomec_jbus.txt   \
+	adelsystem_cbi.txt
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
 	generic_modbus.8 \
-	huawei-ups2000.8
+	huawei-ups2000.8 \
+	socomec_jbus.8   \
+	adelsystem_cbi.8
 endif
 
 if WITH_MODBUS
@@ -633,7 +643,9 @@ endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 	generic_modbus.html \
-	huawei-ups2000.html
+	huawei-ups2000.html \
+	socomec_jbus.html   \
+	adelsystem_cbi.html
 
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
@@ -671,14 +683,7 @@ MAN_MANS += \
 	$(MAN_LINUX_I2C_PAGES)
 endif
 
-# distribute everything, even those not installed by default
-# Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
-	$(SRC_CONF_PAGES) \
-	$(SRC_CLIENT_PAGES) \
-	$(SRC_TOOL_PAGES) \
-	$(SRC_CGI_PAGES) \
-	$(SRC_DEV_PAGES) \
+SRC_DRIVERS_PAGES = \
 	$(SRC_SERIAL_PAGES) \
 	$(SRC_SNMP_PAGES) \
 	$(SRC_USB_LIBUSB_PAGES) \
@@ -689,6 +694,16 @@ SRC_ALL_PAGES = \
 	$(SRC_MACOSX_PAGES) \
 	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES)
+
+# distribute everything, even those not installed by default
+# Note that 'dist' target requires AsciiDoc!
+SRC_ALL_PAGES = \
+	$(SRC_CONF_PAGES) \
+	$(SRC_CLIENT_PAGES) \
+	$(SRC_TOOL_PAGES) \
+	$(SRC_CGI_PAGES) \
+	$(SRC_DEV_PAGES) \
+	$(SRC_DRIVERS_PAGES)
 
 EXTRA_DIST = \
 	$(SRC_ALL_PAGES) \
@@ -730,9 +745,54 @@ HTML_MANS = \
 	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS)
 
+# Note: target documents, except nutupsdrv.txt itself, start the
+# list of drivers with `- linkman:nutupsdrv[8]` entry
+# To regenerate these files, do `make distclean` first
+LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.txt
+LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt
+
+linkman-driver-names.txt:
+	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
+	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
+	    fi ; \
+	 fi
+	@if test -s "$@" ; then exit 0 ; fi ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	  for F in $(SRC_DRIVERS_PAGES) ; do echo "$$F" ; done \
+	    | grep -vE '^nutupsdrv\.txt$$' \
+	    | sort -n | uniq \
+	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
+	 ) > "$@"
+
+linkman-drivertool-names.txt:
+	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
+	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
+	    fi ; \
+	 fi
+	@if test -s "$@" ; then exit 0 ; fi ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	  for F in $(SRC_DRIVERTOOL_PAGES) ; do echo "$$F" ; done \
+	    | sort -n | uniq \
+	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
+	 ) > "$@"
+
+# Dependencies are about particular filenames, since over time
+# we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
+$(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.txt
+
+# These files are generated when we build from git source so not tracked in
+# git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
+DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
+
 all:
 
-html-man: $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS) index.html
+
+# Have a way to build all man pages, not just those that fit currently
+# configured drivers, daemons, developer aspect, etc.
+all-man man-man: $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
@@ -821,45 +881,66 @@ DOCBUILD_BEGIN = { \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
         mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
+            if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
+            if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
+        done ; \
     else A2X_OUTDIR='.' ; fi; \
     if test -s "${builddir}/docbook-xsl.css" \
     && test -r "${builddir}/docbook-xsl.css" \
     && ! test -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
+    if test x"$(srcdir)" != x"$(builddir)" ; then \
+        if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/`basename $<`" ; then \
+            ln -fs "$(srcdir)/`basename $<`" "$(builddir)/" ; \
+        fi ; \
+    fi ; \
+    A2X_VERBOSE="$(ASCIIDOC_VERBOSE)"; if [ "$(V)" = 1 ]; then A2X_VERBOSE="--verbose"; fi; \
 }
 
 # Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
-# may generate miltiple files in one go... so we move "*" and hope
+# may generate multiple files in one go... so we move "*" and hope
 # for no required hidden files (or would have to `find` them all).
 DOCBUILD_END = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
+        for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
+            rm -f "./$${A2X_OUTDIR}/$$F" || true ; \
+        done ; \
         mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
         mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \
 }
 
+### Regarding absolute paths in attributes below: by default asciidoc
+### resolves include paths relative to the main document, so while we
+### see the relative builddir as "." in the makefile, for included
+### data it would mean the source directory where the .txt resides.
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(ASCIIDOC) --backend=xhtml11 \
-		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
+	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
+		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
 		--attribute nutversion="@PACKAGE_VERSION@" \
+		--attribute srcdir="$(abs_srcdir)" \
+		--attribute builddir="$(abs_builddir)" \
 		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
-A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
+	--attribute srcdir="$(abs_srcdir)" \
+	--attribute builddir="$(abs_builddir)" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:

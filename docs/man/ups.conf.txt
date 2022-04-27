@@ -3,6 +3,7 @@ UPS.CONF(5)
 
 NAME
 ----
+
 ups.conf - UPS definitions for Network UPS Tools
 
 DESCRIPTION
@@ -140,6 +141,7 @@ verbosity level.
 
 UPS FIELDS
 ----------
+
 *driver*::
 
 Required.  This specifies which program will be monitoring this UPS.  You
@@ -289,8 +291,11 @@ from linkman:upsc[8] or similar as "snoopy@doghouse".
 
 SEE ALSO
 --------
-linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsdrvctl[8]
+
+linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsdrvctl[8],
+linkman:upsdrvsvcctl[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

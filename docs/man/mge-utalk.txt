@@ -22,14 +22,14 @@ SUPPORTED HARDWARE
 
 mge-utalk supports the following legacy units, using the MGE UTalk protocol:
 
-    Pulsar ESV+,
-    Pulsar ES+,
-    Pulsar EL,
-    Pulsar EX,
-    Pulsar EXtreme,
-    Comet EXtreme,
-    Comet (Utalk Serial Card, ref 66060),
-    Galaxy (Utalk Serial Card, ref 66060).
+* Pulsar ESV+
+* Pulsar ES+
+* Pulsar EL
+* Pulsar EX
+* Pulsar EXtreme
+* Comet EXtreme
+* Comet (Utalk Serial Card, ref 66060)
+* Galaxy (Utalk Serial Card, ref 66060)
 
 This driver also support some newer models with backward UTalk compatibility,
 such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
@@ -75,24 +75,26 @@ This is due to the fact that these models don't support too much polling.
 To solve this problem, add "pollinterval=20" in ups.conf, and change the value
 of MAXAGE to 25 in upsd.conf, and DEADTIME to 25 in upsmon.conf.
 
-AUTHOR
-------
+AUTHORS
+-------
 
-Hans Ekkehard Plesser,
-Arnaud Quette,
-Martin Loyer,
-Patrick Agrain,
-Nicholas Reilly,
-Dave Abbott,
-Marek Kralewski
+* Hans Ekkehard Plesser
+* Arnaud Quette
+* Martin Loyer
+* Patrick Agrain
+* Nicholas Reilly
+* Dave Abbott
+* Marek Kralewski
 
 SEE ALSO
 --------
 
 The core driver
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

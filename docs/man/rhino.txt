@@ -3,17 +3,20 @@ RHINO(8)
 
 NAME
 ----
+
 rhino - Driver for Brazilian Microsol RHINO UPS equipment
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 rhino driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver has been tested with :
+
+This driver has been tested with:
 
  * Rhino   6000 VA
  * Rhino   7500 VA
@@ -45,6 +48,7 @@ COMMANDS
 
 AUTHOR
 ------
+
 Silvino B. Magalhães <sbm2yk@gmail.com>
 
 SEE ALSO
@@ -52,8 +56,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

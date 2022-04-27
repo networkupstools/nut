@@ -462,3 +462,38 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 	free(data);
 	free(matcher);
 }
+
+void warn_if_bad_usb_port_filename(const char *fn) {
+	/* USB drivers ignore the 'port' setting - log a notice
+	 * if it is not "auto". Note: per se, ignoring the port
+	 * (or internally the device_path variable from main.c)
+	 * is currently not a bug and is actually documented at
+	 * docs/config-notes.txt; however it is not something
+	 * evident to users during troubleshooting a device.
+	 * Documentation and common practice recommend port=auto
+	 * so here we warn during driver start if it has some
+	 * other value and users might think it is honoured.
+	 */
+
+	if (!fn) {
+		upslogx(LOG_WARNING,
+			"WARNING: %s(): port argument was not "
+			"specified to the driver",
+			__func__);
+		return;
+	}
+
+	if (!strcmp(fn, "auto"))
+		return;
+
+	upslogx(LOG_WARNING,
+		"WARNING: %s(): port argument specified to\n"
+		"  the driver is \"%s\" but USB drivers do "
+		"not use it and rely on\n"
+		"  libusb walking all devices and matching "
+		"their identification metadata.\n"
+		"  NUT documentation recommends port=\"auto\" "
+		"for USB devices to avoid confusion.",
+		__func__, fn);
+	return;
+}

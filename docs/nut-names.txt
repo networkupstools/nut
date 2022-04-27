@@ -87,11 +87,14 @@ during a transition period. The ups.* data will then be removed.
 | device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27
 | device.uptime       | Device uptime in seconds                   | 1782
 | device.count        | Total number of daisychained devices       | 1
-|=====================================================================================
+|====================================================================================
 
-NOTE: When present, device.count implies daisychain support.  For more
+[NOTE]
+======
+When present, `device.count` implies daisychain support.  For more
 information, refer to the <<daisychain,NUT daisychain support notes>> chapter
 of the user manual and developer guide.
+======
 
 ups: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,10 +175,11 @@ ups: General unit information
                           shutdown ability (poweroff)  | enabled
 |===============================================================================
 
-NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
-commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
-to the right value before issuing the command. That is, shutdown.stayoff will first
-set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
+NOTE: When present, the value of `ups.start.auto` has an impact on
+`shutdown.*` commands. For the sake of coherence, shutdown commands
+will set `ups.start.auto` to the right value before issuing the command.
+That is, `shutdown.stayoff` will first set `ups.start.auto` to `no`,
+while `shutdown.return` will set it to `yes`.
 
 NOTE: When possible, time-stamps and dates should be expressed as detailed
 above in the Time and Date format chapter.
@@ -241,6 +245,8 @@ input: Incoming line/power information
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
                                 phases real power (W)             | 300
+| input.realpower.nominal     | Nominal sum value of all (ePDU)
+                                phases real power (W)             | 850
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
@@ -272,21 +278,24 @@ broken down to their base components.
 
 Phase Count Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-input.phases (3 for three-phase, absent or 1 for 1phase)
-output.phases (as for input.phases)
+
+`input.phases` (3 for three-phase, absent or 1 for 1phase)
+
+`output.phases` (as for `input.phases`)
 
 DOMAINs
 ^^^^^^^
+
 Any input or output is considered a valid DOMAIN.
 
-input (should really be called input.mains, but keep this for compat)
-input.bypass
-input.servicebypass
+* input (should really be called input.mains, but keep this for compat)
+** input.bypass
+** input.servicebypass
 
-output (should really be called output.load, but keep this for compat)
-output.bypass
-output.inverter
-output.servicebypass
+* output (should really be called output.load, but keep this for compat)
+** output.bypass
+** output.inverter
+** output.servicebypass
 
 Specification (SPEC)
 ^^^^^^^^^^^^^^^^^^^^
@@ -295,6 +304,7 @@ Voltage, current, frequency, etc are considered to be a specification of
 the measurement.
 
 With this notation, the old 1phase naming scheme becomes DOMAIN.SPEC
+
 Example: `input.current`
 
 CONTEXT
@@ -305,6 +315,7 @@ measurements in more detail. We call this the CONTEXT.
 
 With this notation, the naming scheme becomes DOMAIN.CONTEXT.SPEC when
 in three-phase mode.
+
 Example: `input.L1.current`
 
 Valid CONTEXTs
@@ -465,15 +476,15 @@ battery: Any battery details
 |===============================================================================
 
 NOTE:
-battery.charger.status replaces the historic flags CHRG and DISCHRG that were
-exposed through ups.status.  battery.charger.status can have one of the
-following value:
+`battery.charger.status` replaces the historic flags `CHRG` and `DISCHRG`
+that were exposed through `ups.status`.
+The `battery.charger.status` can have one of the following values:
 
-- charging: battery is charging,
-- discharging: battery is discharging,
-- floating: battery has completed its charge cycle, and waiting to go to resting
-mode,
-- resting: the battery is fully charged, and not charging nor discharging.
+- `charging`: battery is charging,
+- `discharging`: battery is discharging,
+- `floating`: battery has completed its charge cycle,
+   and waiting to go to resting mode,
+- `resting`: the battery is fully charged, and not charging nor discharging.
 
 NOTE: When possible, time-stamps and dates should be expressed as detailed
 above in the Time and Date format chapter.
@@ -632,6 +643,8 @@ Some specific data to outlet groups exists:
 |=================================================================================
 | Name                           | Description                    | Example value
 | outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
+| outlet.group.n.color           | Color-coding of the outlets
+                                   in this group (OPAQUE)         | yellow
 | outlet.group.n.count           | Number of outlets in the group | 12
 | outlet.group.n.phase           | Electrical phase to which the
                                    physical outlet group (Gang) is

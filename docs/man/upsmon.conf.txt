@@ -226,7 +226,7 @@ REPLBATT;; The UPS battery is bad and needs to be replaced
 
 NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 
-*NOTIFYFLAG* 'type' 'flag'[\+'flag'][+'flag']...::
+*NOTIFYFLAG* 'type' 'flag'[+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)
 via /bin/wall and writes to the syslog when things happen.  You can
@@ -413,8 +413,10 @@ does not change the previously active logging verbosity.
 
 SEE ALSO
 --------
+
 linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

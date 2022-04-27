@@ -3,10 +3,12 @@ UPSCMD(8)
 
 NAME
 ----
+
 upscmd - UPS administration program for instant commands
 
 SYNOPSIS
 --------
+
 *upscmd* -h
 
 *upscmd* -l 'ups'
@@ -45,7 +47,7 @@ like -u, and you will be prompted for it if necessary.
 *-w*::
 Wait for the completion of command execution by the driver and return its
 actual result from the device. Note that this feature requires that both upsd
-and the driver support TRACKING (NUT version 2.7.5 or higher) or it will
+and the driver support TRACKING (NUT version 2.8.0 or higher) or it will
 otherwise fail.
 The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
@@ -102,8 +104,10 @@ It involves magic cookies.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upsrw[8]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

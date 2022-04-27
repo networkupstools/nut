@@ -37,6 +37,7 @@ Definitions without an explicit port value receive the default value of
 
 MEMORY USAGE
 ------------
+
 You must *free*(3) the pointers to 'upsname' and 'hostname'
 when you are done with them to avoid memory leaks.
 

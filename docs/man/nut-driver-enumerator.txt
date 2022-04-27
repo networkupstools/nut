@@ -8,6 +8,7 @@ nut-driver-enumerator - tool to map NUT device entries to service instances
 
 SYNOPSIS
 --------
+
 *nut-driver-enumerator.sh* -h
 
 *nut-driver-enumerator.sh*  (no args)
@@ -133,10 +134,17 @@ Bad inputs, e.g. unrecognized service management framework
 *2*::
 Absent or unreadable `ups.conf` file
 
+AUTHOR
+------
+
+Jim Klimov <jimklimov+nut@gmail.com>
+
 SEE ALSO
 --------
+
 linkman:upsdrvsvcctl[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

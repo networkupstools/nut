@@ -367,14 +367,18 @@ other unexpected values have occasionally slipped through.
 APC UPS models with both USB and serial ports require a power cycle when
 switching from USB communication to serial, and perhaps vice versa.
 
-AUTHOR
-------
+AUTHORS AND HISTORY
+-------------------
 
 Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
-heavily on the original apcsmart driver by Russell Kroll). This driver
-was called newapc for a time and was renamed in the 1.5 series. In 2.6.2
-it was renamed to apcsmart-old, being superseded by updated version with
-new features, which is maintained by Michal Soltys <soltys@ziu.info>
+heavily on the original `apcsmart` driver by Russell Kroll).
+
+This driver was called `newapc` for a time and was renamed in
+the 1.5 series.
+
+In 2.6.2 it was renamed to `apcsmart-old`, being superseded by
+updated version with new features, which is maintained by Michal
+Soltys <soltys@ziu.info>
 
 SEE ALSO
 --------
@@ -384,6 +388,7 @@ linkman:solis[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
 // vim: tw=80 ai si ts=8 sts=4 sw=4 et :

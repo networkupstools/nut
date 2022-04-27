@@ -485,7 +485,7 @@ ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
 		if (verbose == 0)
 			continue;
 
-		if (isprint(ch & 0xFF))
+		if (isprint((unsigned char)ch & 0xFF))
 			upslogx(LOG_INFO, "ser_flush_in: read char %c",	ch);
 		else
 			upslogx(LOG_INFO, "ser_flush_in: read char 0x%02x", ch);

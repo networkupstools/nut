@@ -571,6 +571,8 @@ void upsdrv_initups(void)
 	char	reply[REPLY_PACKETSIZE];
 	int	i;
 
+	warn_if_bad_usb_port_filename(device_path);
+
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
 		if ((i < 32) && (sleep(5) == 0)) {
