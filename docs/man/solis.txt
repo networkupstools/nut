@@ -15,8 +15,9 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver has been tested with :
-  
+
+This driver has been tested with:
+
  * Solis   1000 VA
  * Solis   1500 VA
  * Solis   2000 VA
@@ -37,7 +38,7 @@ linkman:ups.conf[5].
 
 *battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
 
-*prgshut = 1* - (default = 0, no programable shutdown )
+*prgshut = 1* - (default = 0, no programmable shutdown )
 
 COMMANDS
 --------
@@ -55,6 +56,7 @@ connect to the UPS, but some values are read incorrectly.
 
 AUTHOR
 ------
+
 Silvino B. Magalhães <sbm2yk@gmail.com>
 
 SEE ALSO
@@ -62,8 +64,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

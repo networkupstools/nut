@@ -1,29 +1,34 @@
 TRIPPLITE_USB(8)
 ================
 
-
 NAME
 ----
+
 tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
 
 SYNOPSIS
 --------
+
 *tripplite_usb* -h
 
 *tripplite_usb* -a 'UPS_NAME' ['OPTIONS']
 
 SUPPORTED HARDWARE
 ------------------
-This driver should work with older Tripp Lite UPSes which are detected as USB
-HID-class devices, but are not true HID Power-Device Class devices.  So far,
-the devices supported by tripplite_usb have product ID 0001, and the newer
-units (such as those with "LCD" in the model name) with product ID 2001 require
-the linkman:usbhid-ups[8] driver instead.  Please report success or failure to
-the nut-upsuser mailing list.  A key piece of information is the protocol
-number, returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD')
-for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the linkman:tripplite[8] or linkman:tripplite_su[8]
-driver.
+
+This driver should work with older Tripp Lite UPSes which are detected
+as USB HID-class devices, but are not true HID Power-Device Class devices.
+So far, the devices supported by `tripplite_usb` have product ID 0001,
+and the newer units (such as those with "LCD" in the model name) with
+product ID 2001 require the linkman:usbhid-ups[8] driver instead.
+
+Please report success or failure to the nut-upsuser mailing list.
+A key piece of information is the protocol number, returned in
+`ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
+for more informative log messages.
+
+If your Tripp Lite UPS uses a serial port, you may wish to investigate
+the linkman:tripplite[8] or linkman:tripplitesu[8] drivers.
 
 This driver has been tested with the following models:
 
@@ -43,6 +48,7 @@ following protocols:
  * Protocol 1001
  * Protocol 2001
  * Protocol 3003
+ * Protocol 3005
 
 On the other hand, if the web page for your UPS on the Tripp-Lite website says
 "HID-compliant USB port also enables direct integration with built-in power
@@ -73,6 +79,13 @@ problems.
 
 This regular expression is used to match the USB bus (as seen in
 `/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
+
+*device*::
+
+This regular expression is used to match the USB device (as seen in
+`/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
+Note that device numbers are not guaranteed by the OS to be stable across
+re-boots or device re-plugging.
 
 *product*::
 
@@ -130,26 +143,27 @@ please re-run the driver with `-DDD` to increase the verbosity.
 
 So far, the Tripp Lite UPSes do not seem to have a serial number or other
 globally unique identifier accessible through USB. Thus, when monitoring
-several Tripp Lite USB UPSes, you should use either the 'bus' or 'product'
-configuration options to uniquely specify which UPS a given driver instance
-should control.
+several Tripp Lite USB UPSes, you should use either the 'bus', 'device' or
+'product' configuration options to uniquely specify which UPS a given driver
+instance should control.
 
 For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
 same time, since they have different USB Product ID strings. If you have two
-SMART1500RM2U units, you would have to find which USB bus number each unit is
-on (via lsusb(8)), which may result in ambiguities if the available USB ports
-are on the same bus.
+SMART1500RM2U units, you would have to find which USB bus and device number
+each unit is on (via lsusb(8)).
 
 Some of the SMART*2U models have an ID number, but because this ID is not
 exposed as a USB string descriptor, there is no easy way to use this ID to
 distinguish between multiple UPS units on a single machine. The UPS would need
 to be claimed by the driver in order to read this ID.
 
-AUTHOR
-------
-Written by Charles Lepple, based on the linkman:tripplite[8] driver by Rickard E. (Rik)
-Faith and Nicholas Kain. Please do not email the authors directly - use the
-nut-upsdev mailing list.
+AUTHORS
+-------
+
+Written by Charles Lepple, based on the linkman:tripplite[8] driver
+by Rickard E. (Rik) Faith and Nicholas Kain.
+
+Please do not email the authors directly - use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
 Feldman (http://www.bradleyloritheo.com)
@@ -159,19 +173,20 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other drivers for Tripp-Lite hardware:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 
 Other tools:
 ~~~~~~~~~~~~
+
 regex(7), lsusb(8)
 
-
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-

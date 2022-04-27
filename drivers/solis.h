@@ -1,6 +1,8 @@
 /* solis.h -  Microsol Solis UPS hardware
 
-   Copyright (C) 2004  Silvino B. Magalhaes  <sbm2yk@gmail.com>
+   Copyright (C) 2004  Silvino B. Magalhaes    <sbm2yk@gmail.com>
+                 2019  Roberto Panerai Velloso <rvelloso@gmail.com>
+
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,23 +24,34 @@
    2004/10/30 - Version 0.40 - add model data structs
    2004/11/22 - Version 0.50 - add internal e external shutdown programming
    2005/06/16 - Version 0.60 - save external shutdown programming to ups,
- 			       support new cables and Solaris compilation
+                               support new cables and Solaris compilation
+   2015/09/19 - Version 0.63 - patch for correct reading for Microsol Back-Ups BZ1200-BR
 
 */
 
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
+#include "nut_stdint.h"
+
+/* General FIXMEs:
+ * * "static" declarations belong in some one single C source;
+ *   headers should use "extern" to refer linker to look for
+ *   vars in other object files
+ * * use a common definition of bool_t
+ */
 typedef int bool_t;
 
 /* autonomy constants */
 
-int bext[5] = {14,18,28,18,1};
-int nompow[4] = { 1000,1500,2000,3000 };
-int inds[5] = { 0,0,1,2,3 };
-double InVolt_offset = 30.;
+static const int bext[5] = {14,18,28,18,1};
+static const int nompow[5] = { 1000,1500,2000,3000,1200 };
+static const int inds[6] = { 0,0,1,2,3,4 };
+static const double InVolt_offset = 30.;
+#define PACKET_SIZE 25
+static const size_t packet_size = PACKET_SIZE;
 
-struct {
+static const struct {
          int maxi;              /* power internals */
          int minc[21];          /* power minimal index */
          int maxc[21];          /* power maximus index */
@@ -201,7 +214,7 @@ struct {
  * Solis constants for data ajustment
  * ----------------------------------------------------------- */
 
-struct {
+static const struct {
   double m_infreq;
   double m_appp_offset;
   double m_involt193[2];
@@ -216,7 +229,7 @@ struct {
   double m_utilp_i[2][2];
   double m_appp_s[2][2];
   double m_appp_i[2][2];
-} ctab[5] =
+} ctab[6] =
 {
   { 101620.0, 25.0,
     { 1.141, 13.0 },
@@ -287,21 +300,56 @@ struct {
     { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } },
     { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },
     { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }
+  },
+
+  /*STAY1200_USB
+
+  double m_infreq;
+  double m_appp_offset;
+  double m_involt193[2];
+  double m_involt194[2];
+  double m_incurr[2];
+  double m_battvolt[2];
+  double m_outvolt_s[2][2];
+  double m_outvolt_i[2][2];
+  double m_outcurr_s[2][2];
+  double m_outcurr_i[2][2];
+  double m_utilp_s[2][2];
+  double m_utilp_i[2][2];
+  double m_appp_s[2][2];
+  double m_appp_i[2][2];
+
+
+   */
+  { 101800.0, /* m_infreq */
+    56.0, /* m_appp_offset */
+    { 1.64, 9.34 }, /* m_involt193 - ok */
+    { 2.5, -250.0 }, /* m_involt194 */
+    { 35.0, 1000.0 }, /* m_incurr */
+    { 0.1551, 0.2525 }, /* m_battvolt */
+    { { 1.41, 13.0 }, { 1.4, 17.0 } }, /* m_outvolt_s */
+    { { 2.73, 25.0 }, { 2.73, 30.0 } }, /* m_outvolt_i */
+    { { 1.0/8.15, 0.25 }, { 1.0/8.15, 0.25 } }, /* m_outcurr_s */
+    { { 1.0/16.0, 0.4 }, { 1.0/15.0, 0.4 } }, /* m_outcurr_i */
+    { { 1.0/4.87, 19.0 }, { 1.0/4.55, 17.0 } }, /* m_utilp_s */
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }, /* m_utilp_i */
+    { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },  /* m__app_s */
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } } /* m_app_i */
   }
 };
 
 /* Date, time and programming group */
-static int const BASE_YEAR = 1998;
-int Day, Month, Year;
-int isprogram = 0, progshut = 0, prgups = 0;
-int dian=0, mesn=0, anon=0, weekn=0;
-int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
-unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
-char seman[4];
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
+static int Day, Month, Year;
+static int isprogram = 0, progshut = 0, prgups = 0;
+static int dian=0, mesn=0, anon=0, weekn=0;
+static int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
+static uint8_t DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
+static char seman[4];
 
 /* buffers */
-unsigned char RecPack[25];
-unsigned char ConfigPack[12];
+static unsigned char RecPack[PACKET_SIZE];
+static unsigned char ConfigPack[12];
 
 /*
 unsigned char MibData[161];
@@ -309,48 +357,39 @@ unsigned char DumpPack[242];
 */
 
 /* Identification */
-const char *Model;
-int SolisModel, imodel;
-int InputValue, Out220;
-
-/* protocol */
-int Waiting, NumByteRec = 0;
-int pacsize;
+static const char *Model;
+static int SolisModel, imodel;
+static int InputValue, Out220;
 
 /* Status group */
-unsigned char InputStatus,OutputStatus, BattStatus, StatusGeral;
+static unsigned char InputStatus,OutputStatus, BattStatus;
 /* Events group */
-unsigned char SourceEvents, OutputEvents, BattEvents, GeneralEvents;
+static unsigned char SourceEvents, OutputEvents, BattEvents;
 
 /* logical */
-bool_t detected = 0;
-bool_t SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
-bool_t SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
-bool_t CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
+static bool_t detected = 0;
+static bool_t SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
+static bool_t SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
+static bool_t CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
 
 /* Input group */
-double InVoltage, InCurrent, InFreq;
-double InDownLim, InUpLim, NomInVolt;
+static double InVoltage, InCurrent, InFreq;
+static double InDownLim, InUpLim, NomInVolt;
 /* Output group */
-double OutVoltage, OutCurrent, OutFreq, OutDownLim, OutUpLim, NomOutVolt;
+static double OutVoltage, OutCurrent, OutFreq, OutDownLim, OutUpLim, NomOutVolt;
 /* Battery group */
-int Autonomy, BattExtension, maxauto;
-double BattVoltage, BattCurrent, Temperature, batcharge;
-double Bat_LimInfRede, Bat_LimSupRede, Bat_LimInfInv, Bat_LimSupInv, Bat_VoltNom;
+static int Autonomy, BattExtension, maxauto;
+static double BattVoltage, Temperature, batcharge;
 /* Power group */
-double AppPower, UtilPower, upscharge;
-int ChargePowerFactor, NominalPower, UpsPowerFactor;
+static double AppPower, UtilPower, upscharge;
+static int ChargePowerFactor, NominalPower, UpsPowerFactor;
 
-static void prnInfo(void);
-static int  IsToday( unsigned char, int );
-static void AutonomyCalc( int );
-static void ScanReceivePack(void);
-static void CommReceive(const char*,  int );
-static void getbaseinfo(void);
-static void getupdateinfo(void);
+static void print_info(void);
+static int  is_today( unsigned char, int );
+static void autonomy_calc( int );
+static void scan_received_pack(void);
+static void comm_receive(const unsigned char*, size_t);
+static void get_base_info(void);
+static void get_update_info(void);
 
 #endif /* INCLUDED_SOLIS_H */
-
-
-
-

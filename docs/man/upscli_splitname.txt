@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_splitname(const char *buf, char **upsname, 
+ int upscli_splitname(const char *buf, char **upsname,
 				char **hostname, int *port)
 
 DESCRIPTION
 -----------
 
-The *upscli_splitname()* function takes a pointer to the raw UPS 
+The *upscli_splitname()* function takes a pointer to the raw UPS
 definition 'buf' and returns pointers to dynamically allocated
 memory in 'upsname' and 'hostname'.  It also copies the port
 number into 'port'.
@@ -37,6 +37,7 @@ Definitions without an explicit port value receive the default value of
 
 MEMORY USAGE
 ------------
+
 You must *free*(3) the pointers to 'upsname' and 'hostname'
 when you are done with them to avoid memory leaks.
 

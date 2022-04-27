@@ -47,13 +47,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
-
 #include "nut_stdint.h"
 typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -80,7 +79,7 @@ upsdrv_info_t upsdrv_info = {
  */
 typedef struct {
 	byte_t     *buf;	/*!< the whole buffer address	*/
-	unsigned    buf_size;	/*!< the whole buffer size	*/
+	size_t      buf_size;	/*!< the whole buffer size	*/
 
 	byte_t     *begin;	/*!< begin of content		*/
 	byte_t     *end;	/*!< one-past-end of content	*/
@@ -115,7 +114,7 @@ typedef struct {
  * @param  size	size in bytes
  * @return xmalloc'ed memory as raw_data
  */
-raw_data_t raw_xmalloc(size_t size)
+static raw_data_t raw_xmalloc(size_t size)
 {
 	raw_data_t data;
 
@@ -132,7 +131,7 @@ raw_data_t raw_xmalloc(size_t size)
  * free raw_data buffer
  * @param  buf	raw_data buffer to free
  */
-void raw_free(raw_data_t *buf)
+static void raw_free(raw_data_t *buf)
 {
 	free(buf->buf);
 
@@ -164,8 +163,8 @@ typedef struct {
  * @see 1. INTRODUCTION
  */
 typedef struct {
-	unsigned  addr;	/*!< Addr[5:8]		*/
-	unsigned  len;	/*!< NOB[9:10]		*/
+	size_t  addr;	/*!< Addr[5:8]		*/
+	size_t  len;	/*!< NOB[9:10]		*/
 } io_head_t;
 
 /**
@@ -191,7 +190,7 @@ typedef struct {
 /**
  * convert hex string to int
  * @param  head  input string
- * @param  count string length
+ * @param  len   string length
  * @return parsed value (>=0) if success, -1 on error
  */
 static long from_hex(const byte_t *head, unsigned len)
@@ -233,7 +232,7 @@ static long from_hex(const byte_t *head, unsigned len)
 static byte_t compute_bcc(const byte_t *buf, size_t count)
 {
 	byte_t bcc=0;
-	unsigned i;
+	size_t i;
 
 	for (i=0; i<count; ++i)
 		bcc ^= buf[i];
@@ -254,14 +253,14 @@ static void reverse_bits(byte_t *buf, size_t count)
 
 	while (count!=0) {
 		x = *buf;
-		x = ( (x & 0x80) >> 7 )  |
-		    ( (x & 0x40) >> 5 )  |
-		    ( (x & 0x20) >> 3 )  |
-		    ( (x & 0x10) >> 1 )  |
-		    ( (x & 0x08) << 1 )  |
-		    ( (x & 0x04) << 3 )  |
-		    ( (x & 0x02) << 5 )  |
-		    ( (x & 0x01) << 7 );
+		x = (byte_t)( (x & 0x80) >> 7 )  |
+		    (byte_t)( (x & 0x40) >> 5 )  |
+		    (byte_t)( (x & 0x20) >> 3 )  |
+		    (byte_t)( (x & 0x10) >> 1 )  |
+		    (byte_t)( (x & 0x08) << 1 )  |
+		    (byte_t)( (x & 0x04) << 3 )  |
+		    (byte_t)( (x & 0x02) << 5 )  |
+		    (byte_t)( (x & 0x01) << 7 );
 		*buf = x;
 
 		++buf;
@@ -333,7 +332,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
-	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04X%02X", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
+	snprintf((char *)out+1, 10+1, "%02X%1i%1i%04zX%02zX", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
 
 	memcpy(out+11, buf, count);
 	reverse_bits(out+11, count);
@@ -355,7 +354,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
  * @param   addr    start address of requested area
  * @param   count   no. of requested bytes
  */
-static void al_prep_read_req(raw_data_t *dest, unsigned addr, size_t count)
+static void al_prep_read_req(raw_data_t *dest, size_t addr, size_t count)
 {
 	comli_head_t h;
 
@@ -393,11 +392,29 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	h.io.len	= 8;
 
 	/* NOTE: doc says we should use ASCII coding here, but the actual
-	 *       values are > 0x80, so we use binary coding	*/
-	data[0] = cmd;
-	data[1] = subcmd;
+	 *       values are > 0x80, so we use binary coding. And have to
+	 *       make this "fit" into the char array required by snprintf */
+	data[0] = (char)cmd;
+	data[1] = (char)subcmd;
 
-	snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3);
+	/* FIXME? One CI testcase builder claims here that
+	 *   warning: '%2X' directive output may be truncated writing
+	 *   between 2 and 4 bytes into a region of size between 3 and 5
+	 *   [-Wformat-truncation=]
+	 * but none others do, and I can't figure out how it thinks so :/
+	 *
+	 * Per https://stackoverflow.com/questions/51534284/how-to-circumvent-format-truncation-warning-in-gcc
+	 * https://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg521037.html
+	 * and simlar googlable sources, this seems to be a bug-or-feature
+	 * linked to non-zero optimization level and/or not checking for the
+	 * return value (conveys runtime errors if any do happen).
+	 */
+	assert (pr1 <= UINT8_MAX);
+	assert (pr2 <= UINT8_MAX);
+	assert (pr3 <= UINT8_MAX);
+	if (0 > snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3)) {
+		data[8] = '\0';
+	}
 
 	comli_prepare(dest, &h, data, 8);
 }
@@ -417,6 +434,9 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	int bcc;
 	byte_t *tail;
 
+	if ( (f.end - f.begin) < 2 )
+		return -1;
+
 	if (*f.begin!=STX)
 		return -1;
 
@@ -427,7 +447,7 @@ static int comli_check_frame(/*const*/ raw_data_t f)
 	if (tail[0]!=ETX)
 		return -1;
 
-	bcc = compute_bcc(f.begin+1, (f.end - f.begin) - 2/*STX & BCC*/);
+	bcc = compute_bcc(f.begin+1, (size_t)(f.end - f.begin) - 2 /*STX & BCC*/);
 	if (bcc!= tail[1])
 		return -1;
 
@@ -458,7 +478,7 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
  *     begin							       end
  */
 
-	unsigned long io_addr, io_len;
+	size_t io_addr, io_len;
 	const byte_t *reply_head = raw_reply_head.begin - 1;
 
 	if ( (raw_reply_head.end - raw_reply_head.begin) != 10)  {
@@ -481,20 +501,24 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 		return -1;		/* wrong type	*/
 	}
 
-	io_addr = from_hex(&reply_head[5], 4);
-	if (io_addr==-1UL)  {
-		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__, reply_head[5],reply_head[6],reply_head[7],reply_head[8]);
+	/* Avoid signed/unsigned implicit conversion warnings
+	 * At least, when shuffling a signed long into unsigned long,
+	 * don't have to worry about overflows */
+	io_addr = (size_t)from_hex(&reply_head[5], 4);
+	if (io_addr == -1UL)  {
+		upsdebugx(3, "%s: invalid addr\t('%c%c%c%c')", __func__,
+			reply_head[5], reply_head[6], reply_head[7], reply_head[8]);
 		return -1;		/* wrong addr	*/
 	}
 
-	io_len = from_hex(&reply_head[9], 2);
-	if (io_len==-1UL)   {
-		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9],reply_head[10]);
+	io_len = (size_t)from_hex(&reply_head[9], 2);
+	if (io_len == -1UL)   {
+		upsdebugx(3, "%s: invalid nob\t('%c%c')", __func__, reply_head[9], reply_head[10]);
 		return -1;		/* wrong NOB	*/
 	}
 
 	if (io_len > IO_LEN_MAX) {
-		upsdebugx(3, "nob too big\t(%lu > %i)", io_len, IO_LEN_MAX);
+		upsdebugx(3, "nob too big\t(%zu > %i)", io_len, IO_LEN_MAX);
 		return -1;		/* too much data claimed */
 	}
 
@@ -530,8 +554,8 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
  */
 
 	int err;
-	unsigned i;
-	const byte_t *reply = raw_reply.begin - 1;
+	size_t i;
+	const byte_t *reply = NULL;
 
 	/* 1: extract header and parse it */
 	/*const*/ raw_data_t raw_reply_head = raw_reply;
@@ -548,7 +572,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %i)",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %zi)",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -556,7 +580,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 
 	/* extract the data */
 	if (io_buf->buf_size < io_head->len)	{
-		upsdebugx(3, "%s: too much data to fit in io_buf\t(%u > %u)",
+		upsdebugx(3, "%s: too much data to fit in io_buf\t(%zu > %zu)",
 				__func__, io_head->len, io_buf->buf_size);
 		return -1;		/* too much data to fit in io_buf	*/
 	}
@@ -567,9 +591,11 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	for (i=0; i<io_head->len; ++i)
 		*(io_buf->end++) = reply[11+i];
 
-	reverse_bits(io_buf->begin, (io_buf->end - io_buf->begin) );
+	assert(io_buf->end - io_buf->begin >= 0);
+	size_t io_buf_len = (size_t)(io_buf->end - io_buf->begin);
+	reverse_bits(io_buf->begin, io_buf_len );
 
-	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, (io_buf->end - io_buf->begin));
+	upsdebug_hex(3, "\t\t--> payload", io_buf->begin, io_buf_len);
 
 	return 0;	/* all ok */
 }
@@ -648,7 +674,11 @@ static void ser_disable_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	/* Clumsy rewrite of a one-liner
+	 *   tio.c_iflag &= ~ (IXON | IXOFF);
+	 * to avoid type conversion warnings */
+	tcflag_t x = (IXON | IXOFF);
+	tio.c_iflag &= ~ x;
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
@@ -672,17 +702,20 @@ static void flush_rx_queue()
  */
 static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 {
-	int err;
+	ssize_t err;
 
-	upsdebug_ascii(3, dmsg, frame.begin, (frame.end - frame.begin));
+	assert(frame.end - frame.begin >= 0);
+	size_t frame_len = (size_t)(frame.end - frame.begin);
 
-	err = ser_send_buf(upsfd, frame.begin, (frame.end - frame.begin) );
+	upsdebug_ascii(3, dmsg, frame.begin, frame_len);
+
+	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
 		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
 		return -1;
 	}
 
-	if (err != (frame.end - frame.begin)) {
+	if (err != (ssize_t)frame_len) {
 		upslogx(LOG_ERR, "sent incomplete frame to PRS");
 		return -1;
 	}
@@ -712,7 +745,7 @@ static void io_new_transaction(int timeout)
  * @return -1 (error)  0 (timeout)  >0 (got it)
  *
  */
-static int get_char(char *ch)
+static ssize_t get_char(char *ch)
 {
 	time_t now = time(NULL);
 	long rx_timeout;
@@ -734,7 +767,7 @@ static int get_char(char *ch)
  * @return -1 (error)  0 (timeout)  >0 (no. of characters actually read)
  *
  */
-static int get_buf(byte_t *buf, size_t len)
+static ssize_t get_buf(byte_t *buf, size_t len)
 {
 	time_t now = time(NULL);
 	long rx_timeout;
@@ -754,7 +787,7 @@ static int get_buf(byte_t *buf, size_t len)
 static int scan_for(char c)
 {
 	char in;
-	int  err;
+	ssize_t  err;
 
 	while (1) {
 		err = get_char(&in);
@@ -776,7 +809,7 @@ static int scan_for(char c)
  */
 static int recv_command_ack()
 {
-	int err;
+	ssize_t err;
 	raw_data_t ack;
 	byte_t     ack_buf[8];
 
@@ -798,7 +831,8 @@ static int recv_command_ack()
 	ack.end += 7;
 
 	/* frame constructed - let's verify it */
-	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (ack.end - ack.begin));
+	assert (ack.end - ack.begin >= 0);
+	upsdebug_ascii(3, "rx (ack):\t\t", ack.begin, (size_t)(ack.end - ack.begin));
 
 	/* generic layout */
 	err = comli_check_frame(ack);
@@ -821,11 +855,12 @@ static int recv_command_ack()
  */
 static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 {
-	int err, ret;
+	ssize_t err;
+	int ret;
 	raw_data_t reply_head;
 	raw_data_t reply;
 
-	byte_t	   reply_head_buf[11];
+	byte_t     reply_head_buf[11];
 
 	/* 1:  STX  */
 	err = scan_for(STX);
@@ -843,7 +878,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.end += 10;
 
-	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (reply_head.end - reply_head.begin));
+	assert (reply_head.end - reply_head.begin >= 0);
+	upsdebug_ascii(3, "rx (head):\t", reply_head.begin, (size_t)(reply_head.end - reply_head.begin));
 
 
 	/* 3:  check header, extract IO info */
@@ -855,18 +891,21 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.begin -= 1;  /* restore STX */
 
-	upsdebugx(4, "\t\t--> addr: 0x%x  len: 0x%x", io->addr, io->len);
+	upsdebugx(4, "\t\t--> addr: 0x%zx  len: 0x%zx", io->addr, io->len);
 
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
 
-	memcpy(reply.end, reply_head.begin, (reply_head.end - reply_head.begin));
-	reply.end += (reply_head.end - reply_head.begin);
+	assert (reply_head.end - reply_head.begin >= 0);
+	size_t reply_head_len = (size_t)(reply_head.end - reply_head.begin);
+
+	memcpy(reply.end, reply_head.begin, reply_head_len);
+	reply.end += reply_head_len;
 
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%i (!= %i)", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%zi (!= %zi)", err, io->len+2);
 		ret = -1; goto out;
 	}
 
@@ -874,7 +913,8 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 
 	/* frame constructed, let's verify it */
-	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (reply.end - reply.begin));
+	assert (reply.end - reply.begin >= 0);
+	upsdebug_ascii(3, "rx (head+data):\t", reply.begin, (size_t)(reply.end - reply.begin));
 
 	/* generic layout */
 	err = comli_check_frame(reply);
@@ -932,7 +972,7 @@ static int al175_do(byte_t cmd, byte_t subcmd, uint16_t pr1, uint16_t pr2, uint1
  * 'READ REGISTER'
  *
  */
-static int al175_read(byte_t *dst, unsigned addr, size_t count)
+static int al175_read(byte_t *dst, size_t addr, size_t count)
 {
 	int err;
 	raw_data_t REQ_frame;
@@ -960,13 +1000,13 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
 	if (err==-1)
 		return -1;
 
-	if ((rx_data.end - rx_data.begin) != (int)count)
+	if ((rx_data.end - rx_data.begin) < 0 ||
+	    (size_t)(rx_data.end - rx_data.begin) != count)
 		return -1;
 
 	if ( (io.addr != addr) || (io.len != count) ) {
-		upsdebugx(3, "%s: io_head mismatch\t(%x,%x != %x,%x)",
-				__func__, io.addr, io.len, addr,
-				(unsigned int)count);
+		upsdebugx(3, "%s: io_head mismatch\t(%zx,%zx != %zx,%zx)",
+				__func__, io.addr, io.len, addr, count);
 		return -1;
 	}
 
@@ -984,8 +1024,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
  * see 8. ACTIVATE COMMANDS
  */
 
-typedef int mm_t;	/* minutes */
-typedef int VV_t;	/* voltage */
+typedef uint16_t mm_t;	/* minutes */
+typedef uint16_t VV_t;	/* voltage */
 
 #define	Z1  , 0
 #define Z2  , 0, 0
@@ -993,10 +1033,30 @@ typedef int VV_t;	/* voltage */
 
 #define	ACT int
 
+/* Declare to keep compiler happy even if some routines below are not used currently */
+ACT	TOGGLE_PRS_ONOFF	(void);
+ACT	CANCEL_BOOST		(void);
+ACT	STOP_BATTERY_TEST	(void);
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes);
+ACT	SET_FLOAT_VOLTAGE	(VV_t v);
+ACT	SET_BOOST_VOLTAGE	(VV_t v);
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow);
+ACT	SET_DISCONNECT_LEVEL_AND_DELAY	(VV_t level, mm_t delay);
+ACT	RESET_ALARMS		(void);
+ACT	CHANGE_COMM_PROTOCOL	(void);
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
+ACT	SWITCH_TEMP_COMP	(uint16_t on);
+ACT	SWITCH_SYM_ALARM	(void);
+
+/* Implement */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
+ACT	START_BATTERY_TEST	(VV_t EndVolt, mm_t Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
 ACT	SET_FLOAT_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x80, v			Z2);	}
@@ -1016,7 +1076,7 @@ ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 
 ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
 ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
-ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
+ACT	SWITCH_TEMP_COMP	(uint16_t on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
 ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
 
@@ -1204,6 +1264,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
@@ -1247,7 +1310,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

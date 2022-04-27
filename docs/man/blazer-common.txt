@@ -1,9 +1,22 @@
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 blazer driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
+NOTE
+----
+
+Please note that this driver is deprecated and will not receive
+new development. If it works for managing your devices -- fine,
+but if you are running it to try setting up a new device, please
+consider the newer linkman:nutdrv_qx[8] instead, which should
+handle all 'Q*' protocol variants for NUT.
+
+Please do also report if your device works with this driver,
+but linkman:nutdrv_qx[8] would not actually support it with any
+subdriver!
 
 SUPPORTED HARDWARE
 ------------------
@@ -144,9 +157,17 @@ Examples:
 
 *bus =* 'regex'::
 
-Select a UPS on a specific USB bus or group of busses. The argument is
+Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]").
+
+*device =* 'regex'::
+
+Select a UPS on a specific USB device or group of devices. The argument is
+a regular expression that must match the device name where the UPS is
+connected (e.g. device="001", device="00[1-2]").
+Note that device numbers are not guaranteed by the OS to be stable across
+re-boots or device re-plugging.
 
 *subdriver =* 'string'::
 
@@ -296,8 +317,8 @@ The temperature and load value is known to be bogus in some models.
 AUTHORS
 -------
 
-Arjen de Korte <adkorte-guest at alioth.debian.org>,
-Alexander Gordeev <lasaine at lvk.cs.msu.su>
+* Arjen de Korte <adkorte-guest at alioth.debian.org>
+* Alexander Gordeev <lasaine at lvk.cs.msu.su>
 
 
 SEE ALSO
@@ -315,7 +336,5 @@ linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
-The NUT HCL: http://www.networkupstools.org/stable-hcl.html
-
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT HCL: http://www.networkupstools.org/stable-hcl.html

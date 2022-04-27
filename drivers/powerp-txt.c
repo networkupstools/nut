@@ -1,11 +1,11 @@
 /*
  * powerp-txt.c - Model specific routines for CyberPower text
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
  *	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	2012        Timothy Pearson <kb9vqf@pearsoncomputing.net>
+ *	2012-2016   Timothy Pearson <kb9vqf@pearsoncomputing.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@
 
 #include "powerp-txt.h"
 
+#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.5"
+
 typedef struct {
 	float          i_volt;
 	float          o_volt;
@@ -51,8 +53,8 @@ typedef struct {
 	float          q_unknwn;
 } status_t;
 
-static int	ondelay = 1;	/* minutes */
-static int	offdelay = 60;	/* seconds */
+static long	ondelay = 1;	/* minutes */
+static long	offdelay = 60;	/* seconds */
 
 static char	powpan_answer[SMALLBUF];
 
@@ -64,7 +66,7 @@ static struct {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
 	{ "battery.charge.low", "P8\r", "C4:%02d\r" },
-	{ NULL }
+	{ NULL, NULL, NULL }
 };
 
 static struct {
@@ -72,18 +74,19 @@ static struct {
 	const char	*command;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\r" },
+	{ "test.battery.start.deep", "TL\r" },
 	{ "test.battery.stop", "CT\r" },
 	{ "beeper.enable", "C7:1\r" },
 	{ "beeper.disable", "C7:0\r" },
 	{ "beeper.on", NULL },
 	{ "beeper.off", NULL },
 	{ "shutdown.stop", "C\r" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
-static int powpan_command(const char *command)
+static ssize_t powpan_command(const char *command)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -118,7 +121,7 @@ static int powpan_command(const char *command)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 	return ret;
 }
 
@@ -147,34 +150,34 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) { 
+		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "Z.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "Z.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "Z%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "Z%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%d\r", offdelay / 6);
+			snprintf(command, sizeof(command), "S.%ld\r", offdelay / 6);
 		} else {
-			snprintf(command, sizeof(command), "S%02d\r", offdelay / 60);
+			snprintf(command, sizeof(command), "S%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		if (offdelay < 60) {
-			snprintf(command, sizeof(command), "S.%dR%04d\r", offdelay / 6, ondelay);
+			snprintf(command, sizeof(command), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 		} else {
-			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
+			snprintf(command, sizeof(command), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] unknown", __func__, cmdname);
+		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -182,7 +185,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -202,7 +205,19 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			dstate_setinfo(varname, "%s", val);
@@ -222,15 +237,15 @@ static void powpan_initinfo(void)
 	int	i;
 	char	*s;
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	/*
 	 * NOTE: The reply is already in the buffer, since the P4\r command
 	 * was used for autodetection of the UPS. No need to do it again.
 	 */
 	if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
-		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.model", "%s", str_rtrim(s, ' '));
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
 		dstate_setinfo("ups.firmware", "%s", s);
@@ -239,7 +254,7 @@ static void powpan_initinfo(void)
 		dstate_setinfo("ups.serial", "%s", s);
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
-		dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.mfr", "%s", str_rtrim(s, ' '));
 	}
 
 	/*
@@ -362,15 +377,16 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.reboot");
 }
 
-static int powpan_status(status_t *status)
+static ssize_t powpan_status(status_t *status)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
 	/*
 	 * WRITE D\r
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
+	 *      #I118.0O118.0L029B100F060.0R0218S..\r
 	 *      01234567890123456789012345678901234
 	 *      0         1         2         3
 	 */
@@ -404,7 +420,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 	ret = sscanf(powpan_answer, "#I%fO%fL%dB%dT%dF%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -415,8 +431,21 @@ static int powpan_status(status_t *status)
 		status->has_b_volt = 0;
 		status->has_o_freq = 0;
 		status->has_runtime = 0;
+	} else {
+
+		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dF%fR%dS%2c\r",
+			&status->i_volt, &status->o_volt, &status->o_load,
+			&status->b_chrg, &status->i_freq, &status->runtime,
+			status->flags);
+
+		if (ret >= 7) {
+			status->has_b_volt = 0;
+			status->has_o_freq = 0;
+			status->has_runtime = 1;
+		}
+
 	}
-	else {
+	if (ret < 7) {
 		ret = ser_get_buf_len(upsfd, powpan_answer+35, 23, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret < 0) {
@@ -424,14 +453,14 @@ static int powpan_status(status_t *status)
 			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
 			return -1;
 		}
-		
+
 		if (ret == 0) {
 			upsdebugx(3, "read: timeout");
 			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
 			return -1;
 		}
-		
-		upsdebug_hex(3, "read", powpan_answer, ret);
+
+		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -499,7 +528,7 @@ static int powpan_updateinfo(void)
 		} else if (status.o_volt < 1.05 * status.i_volt) {
 			/* ignore */
 		} else if (status.o_volt < 1.5 * status.i_volt) {
-			status_set("BOOST"); 
+			status_set("BOOST");
 		} else {
 			upsdebugx(2, "%s: output voltage too high", __func__);
 		}
@@ -518,9 +547,10 @@ static int powpan_updateinfo(void)
 	return (status.flags[0] & 0x40) ? 1 : 0;
 }
 
-static int powpan_initups(void)
+static ssize_t powpan_initups(void)
 {
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	upsdebugx(1, "Trying text protocol...");
 
@@ -535,7 +565,7 @@ static int powpan_initups(void)
 
 		/*
 		 * WRITE P4\r
-		 * READ #BC1200     ,1.600,000000000000,CYBER POWER    
+		 * READ #BC1200     ,1.600,000000000000,CYBER POWER
 		 *      01234567890123456789012345678901234567890123456
 		 *      0         1         2         3         4
 		 */
@@ -544,9 +574,9 @@ static int powpan_initups(void)
 		if (ret < 1) {
 			continue;
 		}
-		
+
 		if (ret < 46) {
-			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
+			upsdebugx(2, "Expected 46 bytes, but only got %zd", ret);
 			continue;
 		}
 
@@ -561,7 +591,7 @@ static int powpan_initups(void)
 		}
 
 		if ((ondelay < 0) || (ondelay > 9999)) {
-			fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+			fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 		}
 
 		val = getval("offdelay");
@@ -570,7 +600,7 @@ static int powpan_initups(void)
 		}
 
 		if ((offdelay < 6) || (offdelay > 600)) {
-			fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [6..600]", offdelay);
+			fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [6..600]", offdelay);
 		}
 
 		/* Truncate to nearest setable value */
@@ -588,6 +618,7 @@ static int powpan_initups(void)
 
 subdriver_t powpan_text = {
 	"text",
+	POWERPANEL_TEXT_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,

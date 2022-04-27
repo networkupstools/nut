@@ -19,8 +19,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef STATE_H_SEEN
-#define STATE_H_SEEN
+#ifndef NUT_STATE_H_SEEN
+#define NUT_STATE_H_SEEN 1
 
 #include "extstate.h"
 
@@ -43,7 +43,7 @@ typedef struct st_tree_s {
 	size_t	safesize;
 
 	int	flags;
-	int	aux;
+	long	aux;
 
 	struct enum_s		*enum_list;
 	struct range_s		*range_list;
@@ -58,10 +58,10 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 int state_setaux(st_tree_t *root, const char *var, const char *auxs);
 const char *state_getinfo(st_tree_t *root, const char *var);
 int state_getflags(st_tree_t *root, const char *var);
-int state_getaux(st_tree_t *root, const char *var);
+long state_getaux(st_tree_t *root, const char *var);
 const enum_t *state_getenumlist(st_tree_t *root, const char *var);
 const range_t *state_getrangelist(st_tree_t *root, const char *var);
-void state_setflags(st_tree_t *root, const char *var, int numflags, char **flags);
+void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flags);
 int state_addcmd(cmdlist_t **list, const char *cmd);
 void state_infofree(st_tree_t *node);
 void state_cmdfree(cmdlist_t *list);
@@ -77,4 +77,4 @@ st_tree_t *state_tree_find(st_tree_t *node, const char *var);
 /* *INDENT-ON* */
 #endif
 
-#endif /* STATE_H_SEEN */
+#endif /* NUT_STATE_H_SEEN */

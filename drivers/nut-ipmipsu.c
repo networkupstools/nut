@@ -27,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -47,11 +47,11 @@ upsdrv_info_t upsdrv_info = {
 
 /* Abstract structure to allow different IPMI implementation
  * We currently use FreeIPMI, but OpenIPMI and others are serious
- * candidates! */ 
-IPMIDevice_t ipmi_dev;
+ * candidates! */
+static IPMIDevice_t ipmi_dev;
 
 /* Currently used to store FRU ID, but will probably evolve... */
-int ipmi_id = -1;
+static int ipmi_id = -1;
 
 void upsdrv_initinfo(void)
 {
@@ -87,10 +87,17 @@ void upsdrv_initinfo(void)
 	if (ipmi_dev.overall_capacity != -1)
 		dstate_setinfo("ups.realpower.nominal", "%i", ipmi_dev.overall_capacity);
 
+	/* FIXME: Did older FreeIPMI with "unsigned int" voltage ranges
+	 * have a way to report invalid readings?
+	 */
+#ifdef HAVE_FREEIPMI_11X_12X
 	if (ipmi_dev.input_minvoltage != -1)
+#endif
 		dstate_setinfo("input.voltage.minimum", "%i", ipmi_dev.input_minvoltage);
 
+#ifdef HAVE_FREEIPMI_11X_12X
 	if (ipmi_dev.input_maxvoltage != -1)
+#endif
 		dstate_setinfo("input.voltage.maximum", "%i", ipmi_dev.input_maxvoltage);
 
 	if (ipmi_dev.input_minfreq != -1)
@@ -137,6 +144,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
@@ -181,7 +191,7 @@ void upsdrv_makevartable(void)
 			"Authentication type to use during lan session activation");
 	addvar(VAR_VALUE, "type",
 		"Type of the device to match ('psu' for \"Power Supply\")");
-	
+
 	addvar(VAR_VALUE, "serial", "Serial number to match a specific device");
 	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device"); */
 }
@@ -197,7 +207,7 @@ void upsdrv_initups(void)
 	 * - out of band
 	 *   "id?@host"
 	 *   "host" => requires serial or ...
-	 */ 
+	 */
 	if (!strncmp( device_path, "id", 2))
 	{
 		ipmi_id = atoi(device_path+2);

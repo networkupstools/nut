@@ -2,12 +2,12 @@
 #
 # This file is provided to ensure that you do not expose your upsd server
 # to the world upon installing the CGI programs.  Specifically, it keeps
-# the upsset.cgi program from running until you have assured it that you 
+# the upsset.cgi program from running until you have assured it that you
 # have secured your web server's CGI directory.
 #
 # By default, your web server will probably let anyone access upsset.cgi
 # once it is installed.  This means that anyone could attempt to crack
-# upsd logins since they would appear to be coming from your web server, 
+# upsd logins since they would appear to be coming from your web server,
 # rather than the outside world, slipping through any ACL/ACCESS definitions.
 #
 # For this reason, you *MUST* first secure your CGI programs before
@@ -17,17 +17,17 @@
 # For Apache, the .htaccess file can be used in the directory with the
 # programs.  You'll need something like this:
 #
-# 	<Files upsset.cgi>
-#	deny from all
-#	allow from your.network.addresses
-#	</Files>
+#   <Files upsset.cgi>
+#       deny from all
+#       allow from your.network.addresses
+#   </Files>
 #
 # You will probably have to set "AllowOverride Limit" for this directory in
 # your server-level configuration file as well.
 #
 # If this doesn't make sense, then stop reading and leave this program alone.
 #
-# Assuming you have all this done (and it works), then you may uncomment 
+# Assuming you have all this done (and it works), then you may uncomment
 # the line below and start using upsset.cgi through your web browser.
 #
 

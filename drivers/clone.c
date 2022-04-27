@@ -18,15 +18,18 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 #include "main.h"
 #include "parseconf.h"
+#include "attribute.h"
+#include "nut_stdint.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -39,8 +42,8 @@ upsdrv_info_t upsdrv_info = {
 
 static struct {
 	struct {
-		int	start;
-		int	shutdown;
+		long	start;
+		long	shutdown;
 	} timer;
 	char	status[ST_MAX_VALUE_LEN];
 } ups = { { -1, -1 }, "WAIT" };
@@ -57,7 +60,7 @@ static struct {
 } battery = { { 0, 0 }, { 0, 0 } };
 
 static int	dumpdone = 0, online = 1, outlet = 1;
-static int	offdelay = 120, ondelay = 30;
+static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0,
@@ -66,7 +69,7 @@ static time_t	last_poll = 0, last_heard = 0,
 static int instcmd(const char *cmdname, const char *extra);
 
 
-static int parse_args(int numargs, char **arg)
+static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
 		return 0;
@@ -156,13 +159,28 @@ static int parse_args(int numargs, char **arg)
 
 static int sstate_connect(void)
 {
-	int	ret, fd;
+	ssize_t	ret;
+	int	fd, len;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
-	snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+	len = snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+
+	if (len < 0) {
+		fatalx(EXIT_FAILURE, "Can't create a unix domain socket: "
+			"failed to prepare the pathname");
+	}
+	if ((uintmax_t)len >= (uintmax_t)sizeof(sa.sun_path)) {
+		fatalx(EXIT_FAILURE,
+			"Can't create a unix domain socket: pathname '%s/%s' "
+			"is too long (%zu) for 'struct sockaddr_un->sun_path' "
+			"on this system (%zu)",
+			dflt_statepath(), device_path,
+			strlen(dflt_statepath()) + 1 + strlen(device_path),
+			sizeof(sa.sun_path));
+	}
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -245,7 +263,7 @@ static void sstate_disconnect(void)
 
 static int sstate_sendline(const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 
 	if (upsfd < 0) {
 		return -1;	/* failed */
@@ -264,7 +282,8 @@ static int sstate_sendline(const char *buf)
 
 static int sstate_readline(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	buf[SMALLBUF];
 
 	if (upsfd < 0) {
@@ -381,7 +400,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -434,11 +453,11 @@ void upsdrv_initinfo(void)
 		battery.runtime.low = strtod(val, NULL);
 	}
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-	dstate_setinfo("ups.delay.start", "%d", ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", ondelay);
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -513,12 +532,15 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	last_poll = now;
 }
 
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

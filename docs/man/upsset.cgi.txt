@@ -34,10 +34,10 @@ You should see a list of items with the descriptions on the left side
 and the possible options or input spaces on the right.  After changing
 something, be sure to "Save changes" to update the values in your UPS.
 
-If your UPS doesn't support any read/write variables, there will be 
+If your UPS doesn't support any read/write variables, there will be
 nothing to do on this page.
 
-Setting values in read/write variables can also be done from the command 
+Setting values in read/write variables can also be done from the command
 line with linkman:upsrw[8].
 
 INSTANT COMMANDS
@@ -94,4 +94,5 @@ SEE ALSO
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

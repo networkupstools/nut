@@ -1,0 +1,848 @@
+ifdef::website[]
+Prerequisites for building NUT on different OSes
+================================================
+endif::website[]
+
+This chapter aims to list packages with the tools needed on a freshly minimally
+deployed worker to build as many targets of NUT recipes as possible, mainly
+the diverse driver and documentation types.
+
+NUT codebase generally should not depend on particular operating system or
+kernel technology and version, and with the operating systems listed below
+one can benefit from use of containers (jails, zones) to build and test
+against numerous OS distributions on one physical or virtual machine,
+e.g. to cover non-regression with older tool kits while taking advantage
+of new releases.
+
+* For Linux systems, we have notes on link:ci-farm-lxc-setup.txt[Setting
+  up the multi-arch Linux LXC container farm for NUT CI]
+
+Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
+or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
+both, at a disk space cost.
+
+NOTE: Some NUT branches may need additional or different software versions
+that are not yet included into `master` branch dependencies, e.g. the DMF
+(Dynamic Mapping Files) sub-project needs LUA 5.1.
+
+More packages and/or system setup may be needed to actually run NUT with
+all features enabled; chapters below concern just with building it.
+
+General call to Test the ability to configure and build
+-------------------------------------------------------
+
+Check out from git, generate files and configure to tailor to your build
+environment, and build some tests:
+
+------
+:; mkdir -p nut && cd nut && \
+    git clone https://github.com/networkupstools/nut/ -b master .
+:; ./autogen.sh && \
+    ./configure --with-doc=all --with-all --with-cgi && \
+    make all && make check && make spellcheck
+------
+
+You can toggle some `configure` options to check different dependency
+variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
+
+For reproducible runs of various pre-sets of configuration during
+development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
+(and other) environment variable settings that it supports. A minimal run
+with it is just to call the script, e.g.:
+
+------
+:; mkdir -p nut && cd nut && \
+   git clone https://github.com/networkupstools/nut/ -b fightwarn .
+:; ./ci_build.sh
+------
+
+[NOTE]
+======
+To build older releases, such as "vanilla" NUT 2.7.4 and older,
+you may need to address some nuances:
+
+* Ensure that `python` in `PATH` points to a python-2.x implementation
+  (`master` branch is fixed to work with python 2 and 3)
+
+* Ensure that `bash` is your user and maybe system shell (or ensure the
+  generated `configure` script gets interpreted by it)
+
+* Generally you may have better results with GNU Make newer than 3.81
+  than with other make implementations; however, builds are regularly
+  tested by CI with Sun dmake and BSD make as well, so recipes should
+  not expect GNU-only syntax and constructs to work
+
+* Parallel builds should be okay in current development version and
+  since NUT 2.8.0 (is a bug to log and fix, if not), but they may be
+  failure-prone in 2.7.4 and earlier releases
+======
+
+For intensive rebuilds, `ccache` is recommended.
+
+
+Build prerequisites to make NUT from scratch on various Operating Systems
+-------------------------------------------------------------------------
+
+Debian 10/11
+~~~~~~~~~~~~
+
+Being a popular baseline among Linux distributions, Debian is an
+important build target. Related common operating systems include
+Ubuntu and customized distros for Raspberry Pi, Proxmox, as well
+as many others.
+
+The package list below should largely apply to those as well,
+however note that some well-known package names tend to differ.
+A few of those are noted below.
+
+[NOTE]
+======
+While Debian distros I've seen (8 to 11) provide a "libusb-dev"
+for libusb-0.1 headers, the binary library package name is specifically
+versioned package by default of the current release (e.g. "libusb-0.1-4"),
+while names of both the library and development packages for libusb-1.0
+must be determined with:
+------
+:; apt-cache search 'libusb.*1\.0.*
+------
+yielding e.g. "libusb-1.0-0-dev" (string name was seen with different
+actual package source versions on both Debian 8 "Jessie" and
+Debian 11 "Buster").
+======
+
+Debian-like package installations commonly start with an update of
+metadata about recently published package revisions:
+
+------
+:; apt-get update
+
+# NOTE: Older Debian-like distributions may lack a "libtool-bin"
+:; apt-get install \
+    ccache time \
+    git python perl curl \
+    make autoconf automake libltdl-dev libtool-bin libtool \
+    valgrind \
+    cppcheck \
+    pkg-config \
+    gcc g++ clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; apt-get install python2 python2.7 python-is-python2
+# and/or:
+#   :; apt-get install python3 python3.9
+# You can find a list of what is (pre-)installed with:
+#   :; dpkg -l | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; apt-get install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; apt-get install \
+    asciidoc source-highlight python3-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; apt-get install \
+    libgd-dev
+
+# NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
+# and/or "openssl-dev" instead of "libssl-dev" by its modern name
+:; apt-get install \
+    libcppunit-dev \
+    libssl-dev libnss3-dev \
+    augeas-tools libaugeas-dev augeas-lenses \
+    libusb-dev libusb-1.0-0-dev \
+    libi2c-dev \
+    libmodbus-dev \
+    libsnmp-dev \
+    libpowerman0-dev \
+    libfreeipmi-dev libipmimonitoring-dev \
+    libavahi-common-dev libavahi-core-dev libavahi-client-dev
+# For libneon, see below
+
+:; apt-get install \
+    lua5.1-dev
+
+:; apt-get install \
+    bash dash ksh busybox
+------
+
+Alternatives that can depend on your system's other packaging choices:
+------
+:; apt-get install libneon27-dev
+# ... or
+:; apt-get install libneon27-gnutls-dev
+------
+
+Over time, Debian and Ubuntu had different packages and libraries providing
+the actual methods for I2C; if your system lacks the `libi2c` (and so fails
+to `./configure --with-all`), try adding the following packages:
+------
+:; apt-get install build-essential git-core libi2c-dev i2c-tools lm-sensors
+------
+
+For cross-builds (note that not everything supports multilib approach,
+limiting standard package installations to one or another implementation;
+in that case local containers each with one ARCH may be a better choice,
+with `qemu-user-static` playing a role to "natively" run the other-ARCH
+complete environments):
+------
+:; apt-get install \
+    gcc-multilib g++-multilib \
+    crossbuild-essential \
+    gcc-10:armhf gcc-10-base:armhf \
+    qemu-user-static
+------
+
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
+(technically, needs at least JRE 8+). You may have to ensure `/proc` is mounted
+in the target chroot (or do this from the running container).
+
+CentOS 7
+~~~~~~~~
+
+CentOS is another popular baseline among Linux distributions, being a free
+derivative of the RedHat Linux, upon which many other distros are based as
+well. These systems typically use the RPM package manager, using directly
+`rpm` command, or `yum` or `dnf` front-ends depending on their generation.
+
+For CentOS 7 it seems that not all repositories are equally good; some of
+the software below is only served by EPEL (Extra Packages for Enterprise
+Linux), as detailed at:
+
+* https://docs.fedoraproject.org/en-US/epel/
+* https://www.redhat.com/en/blog/whats-epel-and-how-do-i-use-it
+* https://pkgs.org/download/epel-release
+
+You may have to specify a mirror as the `baseurl` in a `/etc/yum.repos.d/...`
+file (as the aged distributions become less served by mirrors), such as:
+
+* https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7/x86_64/
++
+------
+# e.g. for CentOS7 currently:
+:; yum install https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+
+# And edit /etc/yum.repos.d/epel.repo to uncomment and set the baseurl=...
+# lines, and comment away the mirrorlist= lines (if yum hiccups otherwise)
+------
+
+General developer system helpers mentioned in link:ci-farm-lxc-setup.txt[]:
+------
+:; yum update
+
+:; yum install \
+    sudo vim mc p7zip pigz pbzip2
+------
+
+NOTE: Below we request to install generic `python` per system defaults.
+You may request specifically `python2` or `python3` (or both): current
+NUT should be compatible with both (2.7+ at least).
+
+NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version.
+
+NOTE: On CentOS, it seems that development against libi2c/smbus is not
+supported. Neither the suitable devel packages were found, nor i2c-based
+drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
+
+------
+:; yum install \
+    ccache time \
+    file systemd-devel \
+    git python perl curl \
+    make autoconf automake libtool-ltdl-devel libtool \
+    valgrind \
+    cppcheck \
+    pkgconfig \
+    gcc gcc-c++ clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; yum install python-2.7.5
+# and/or:
+#   :; yum install python3 python3-3.6.8
+# You can find a list of what is (pre-)installed with:
+#   :; rpm -qa | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; yum install \
+    aspell aspell-en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; yum install \
+    asciidoc source-highlight python-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; yum install \
+    gd-devel
+
+# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
+# vs. the older "libusb" as the package with "libusb-0.1"
+:; yum install \
+    cppunit-devel \
+    openssl-devel nss-devel \
+    augeas augeas-devel \
+    libusb-devel libusbx-devel \
+    i2c-tools \
+    libmodbus-devel \
+    net-snmp-devel \
+    powerman-devel \
+    freeipmi-devel \
+    avahi-devel \
+    neon-devel
+#?# is python-augeas needed? exists at least...
+#?# no (lib)i2c-devel ...
+#?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd" cut it at least for run-time?
+
+# Some NUT code related to lua may be currently limited to lua-5.1
+# or possibly 5.2; the former is default in CentOS 7 releases...
+:; yum install \
+    lua-devel
+
+:; yum install \
+    bash dash ksh
+------
+
+NOTE: `busybox` is not packaged for CentOS 7 release; a static binary can
+be downloaded if needed. For more details, see
+https://unix.stackexchange.com/questions/475584/cannot-install-busybox-on-centos
+
+CentOS packaging for 64-bit systems delivers the directory for dispatching
+compiler symlinks as `/usr/lib64/ccache`. You can set it up same way as for
+other described environments by adding a symlink `/usr/lib/ccache`:
+------
+:; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
+------
+
+NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
+(technically, needs at least JRE 8+).
+
+FreeBSD 12.2
+~~~~~~~~~~~~
+
+Note that `PATH` for builds on BSD should include `/usr/local/...`:
+
+------
+:; PATH=/usr/local/libexec/ccache:/usr/local/bin:/usr/bin:$PATH
+:; export PATH
+------
+
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
+
+------
+:; pkg install \
+    git python perl5 curl \
+    gmake autoconf automake autotools libltdl libtool \
+    valgrind \
+    cppcheck \
+    pkgconf \
+    gcc clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; pkg install python2 python27
+# and/or:
+#   :; pkg install python3 python37
+# You can find a list of what is (pre-)installed with:
+#   :; pkg info | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pkg install \
+    aspell en-aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc source-highlight textproc/py-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
+    libgd
+
+:; pkg install \
+    cppunit \
+    openssl nss \
+    augeas \
+    libmodbus \
+    neon \
+    net-snmp \
+    powerman \
+    freeipmi \
+    avahi
+
+:; pkg install \
+    lua51
+
+:; pkg install \
+    bash dash busybox ksh93
+------
+
+Recommended:
+------
+:; pkg install ccache
+:; ccache-update-links
+------
+
+For compatibility with common setups on other operating systems, can symlink
+`/usr/local/libexec/ccache` as `/usr/lib/ccache` and possibly add dash-number
+suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
+by package).
+
+NOTE: For Jenkins agents, also need to `pkg install openjdk8` (or 11+) --
+and do note its further OS configuration suggestions for special filesystem
+mounts.
+
+Due to BSD specific paths *when not using* an implementation of `pkg-config`
+or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
+`m4` scripts), better use this routine to test the config/build:
+----
+:; ./configure --with-doc=all --with-all --with-cgi \
+    --without-avahi --without-powerman --without-modbus \
+    ### CPPFLAGS="-I/usr/local/include -I/usr/include" \
+    ### LDFLAGS="-L/usr/local/lib -L/usr/lib"
+----
+
+Note the lack of `pkg-config` also precludes `libcppunit` tests, although
+they also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+OpenBSD 6.4
+~~~~~~~~~~~
+
+Note that `PATH` for builds on BSD should include `/usr/local/...`:
+
+------
+:; PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+:; export PATH
+------
+
+NOTE: You may want to reference `ccache` even before all that, as detailed
+below.
+
+OpenBSD delivers many versions of numerous packages, you should specify
+your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
+
+During builds, you may have to tell system dispatcher scripts which version
+to use (which feels inconvenient, but on the up-side for CI -- this system
+allows to test many versions of auto-tools in the same agent), e.g.:
+------
+:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10
+------
+
+To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+base installation. It is not required for "legacy" builds arranged by just
+`autogen.sh` and `configure` scripts.
+
+NOTE: The OpenBSD 6.4 `install64.iso` installation includes a set of packages
+that seems to exceed whatever is available on network mirrors; for example,
+the CD image included `clang` program while it is not available to `pkg_add`,
+at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
+mirror. The `gcc` version on CD image differed notably from that in the
+networked repository (4.2.x vs 4.9.x)
+
+------
+:; pkg_add \
+    git python curl \
+    gmake autoconf automake libltdl libtool \
+    valgrind \
+    cppcheck \
+    pkgconf \
+    gcc clang
+
+# NOTE: For python, you may eventually have to specify a variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; yum install python-2.7.15p0
+# and/or:
+#   :; yum install python-3.6.6p1
+# although you might succeed specifying shorter names and the packager
+# will offer a list of matching variants.
+# NOTE: "perl" is not currently a package, but seemingly part of base OS.
+# You can find a list of what is (pre-)installed with:
+#   :; pkg_info | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pkg_add \
+    aspell
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg_add \
+    asciidoc source-highlight py-pygments dblatex \
+    docbook2x docbook-to-man
+
+# For CGI graph generation - massive packages (X11):
+:; pkg_add \
+    gd
+
+:; pkg_add \
+    cppunit \
+    openssl nss \
+    augeas \
+    libusb1 \
+    neon \
+    net-snmp \
+    avahi
+
+# Select a LUA-5.1 (or possibly 5.2?) version
+:; pkg_add \
+    lua
+
+:; pkg_add \
+    bash dash busybox ksh93
+------
+
+[NOTE]
+======
+With OpenBSD 6.4, building against freeipmi failed: its libtool
+recipes referenced `-largp` which did not get installed in the system.
+Maybe some more packages are needed explicitly?
+
+------
+:; pkg_add \
+    freeipmi
+------
+======
+
+Recommended:
+------
+:; pkg_add ccache
+:; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
+        for TOOL in cpp gcc g++ clang clang++ clang-cpp ; do \
+            ln -s ../../local/bin/ccache "$TOOL" ; \
+        done ; \
+   )
+------
+
+For compatibility with common setups on other operating systems, can add
+dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
+`gcc` installed by package) into `/usr/lib/ccache`.
+
+NOTE: For Jenkins agents, also need to `pkg_add jre` or `pkg_add jdk`
+(pick version 1.8 or 8, or 11+).
+
+Due to BSD specific paths *when not using* an implementation of `pkg-config`
+or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
+`m4` scripts), better use this routine to test the config/build:
+------
+:; ./configure --with-doc=all --with-all --with-cgi \
+    --without-avahi --without-powerman --without-modbus \
+    ### CPPFLAGS="-I/usr/local/include -I/usr/include"
+    ### LDFLAGS="-L/usr/local/lib -L/usr/lib"
+------
+
+Note the lack of `pkg-config` also precludes `libcppunit` tests, although
+they also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+NetBSD 9.2
+~~~~~~~~~~
+
+Instructions below assume that `pkgin` tool (pkg-src component to
+"install binary packages") is present on the system. Text below
+was prepared with a VM where "everything" was installed from the
+ISO image, including compilers and X11. It is possible that some
+packages provided this way differ from those served by `pkgin`,
+or on the contrary, that the list of suggested tool installation
+below would not include something a bare-minimum system would
+require to build NUT.
+
+Note that `PATH` for builds on NetBSD should include `local` and
+`pkg`; the default after installation of the test system was:
+
+------
+:; PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/X11R7/bin:/usr/local/sbin:/usr/local/bin"
+:; export PATH
+------
+
+NOTE: You may want to reference `ccache` even before all that,
+as detailed below:
+
+------
+:; PATH="/usr/lib/ccache:$PATH"
+:; export PATH
+------
+
+To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+base installation. It is not required for "legacy" builds arranged by just
+`autogen.sh` and `configure` scripts.
+
+------
+:; pkgin install \
+    git python27 python39 perl curl \
+    make gmake autoconf automake libltdl libtool \
+    cppcheck \
+    pkgconf \
+    gcc7 clang
+
+;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
+# You can find a list of what is (pre-)installed with:
+#   :; pkgin list | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pkgin install \
+    aspell aspell-en
+
+# For man-page doc types, footprint on this platform is moderate:
+:; pkgin install \
+    asciidoc
+
+# For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
+:; pkgin install \
+    source-highlight py39-pygments dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pkgin install \
+    gd openmp
+
+:; pkgin install \
+    cppunit \
+    openssl nss \
+    augeas \
+    libusb libusb1 \
+    neon \
+    net-snmp \
+    avahi
+
+# Select a LUA-5.1 (or possibly 5.2?) version
+:; pkgin install \
+    lua51
+
+:; pkgin install \
+    bash dash ast-ksh oksh
+------
+
+[NOTE]
+======
+(TBD) On NetBSD 9.2 this package complains that it requires
+OS ABI 9.0, or that `CHECK_OSABI=no` is set in `pkg_install.conf`.
+Such file was not found in the test system...
+
+------
+:; pkgin install \
+    openipmi
+------
+======
+
+Recommended: For compatibility with common setups on other operating
+systems, can add dash-number suffixed symlinks to compiler tools (e.g.
+`gcc-7` beside the `gcc` installed by package) near the original
+binaries and into `/usr/lib/ccache`:
+------
+:; ( cd /usr/bin && for TOOL in cpp gcc g++ ; do \
+        ln -s "$TOOL" "$TOOL-7" ; \
+     done )
+
+# Note that the one delivered binary is `clang-13` and many (unnumbered)
+# symlinks to it. For NUT CI style of support for builds with many
+# compilers, complete the known numbers:
+:; ( cd /usr/pkg/bin && for TOOL in clang-cpp clang++ ; do \
+        ln -s clang-13 "$TOOL-13" ; \
+     done )
+
+:; pkgin install ccache
+:; ( mkdir -p /usr/lib/ccache && cd /usr/lib/ccache && \
+        for TOOL in cpp gcc g++ clang ; do \
+            for VER in "" "-7" ; do \
+                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+            done ; \
+        done ; \
+        for TOOL in clang clang++ clang-cpp ; do \
+            for VER in "" "-13" ; do \
+                ln -s ../../pkg/bin/ccache "$TOOL$VER" ; \
+            done ; \
+        done ; \
+   )
+------
+
+NOTE: For Jenkins agents, also need to `pkgin install openjdk11` (will be
+in `JAVA_HOME=/usr/pkg/java/openjdk11`).
+
+OpenIndiana 2021.10
+~~~~~~~~~~~~~~~~~~~
+
+Note that due to IPS and `pkg(5)`, a version of python is part of baseline
+illumos-based OS; this may not be the case on some other illumos distributions
+which do not use IPS however. Currently they use python 3.7 or newer.
+
+To build older NUT releases (2.7.4 and before), you may need to explicitly
+`pkg install python-27`.
+
+Typical tooling would include:
+
+------
+:; pkg install \
+    git curl wget \
+    gnu-make autoconf automake libltdl libtool \
+    valgrind \
+    pkg-config \
+    gnu-binutils developer/linker
+
+# NOTE: For python, some suitable version should be available since `pkg(5)`
+# tool is written in it. Similarly, many system tools are written in perl
+# so some version should be installed. You may specify additional variants
+# like this (numbers depending on default or additional packages of your
+# distro; recommended to group `pkg` calls with many packages at once to
+# save processing time for calculating a build strategy):
+#   :; pkg install runtime/python-27
+# and/or:
+#   :; pkg install runtime/python-37 runtime/python-35 runtime/python-39
+# Similarly for perl variants, e.g.:
+#   :; pkg install runtime/perl-522 runtime/perl-524 runtime/perl-534
+# You can find a list of what is available in remote repositories with:
+#   :; pkg info -r | grep -Ei 'perl|python'
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pkg install \
+    aspell text/aspell/en
+
+# For other doc types (man-page, PDF, HTML) generation - massive packages (TEX, X11):
+:; pkg install \
+    asciidoc libxslt \
+    docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
+    graphviz expect graphviz-tcl
+
+# For CGI graph generation - massive packages (X11):
+:; pkg install \
+    gd
+
+:; pkg install \
+    openssl library/mozilla-nss \
+    library/augeas python/augeas \
+    libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
+    libmodbus \
+    neon \
+    net-snmp \
+    powerman \
+    freeipmi \
+    avahi
+
+:; pkg install \
+    lua
+
+:; pkg install \
+    dash bash shell/ksh93
+
+### Maybe
+:; pkg install \
+    gnu-coreutils
+
+### Maybe - after it gets fixed for GCC builds/linkage
+:; pkg install \
+    cppunit
+------
+
+For extra compiler coverage, we can install a large selection of versions,
+although to meet NUT CI farm expectations we also need to expose "numbered"
+filenames, as automated below:
+------
+:; pkg install \
+    gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
+    clang-80 clang-90 \
+    ccache
+
+# As of this writing, clang-13 refused to link (claiming issues with
+# --fuse-ld which was never specified) on OI; maybe later it will:
+:; pkg install \
+    developer/clang-13 runtime/clang-13
+
+# Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
+# and make sure other frontends are exposed with versions (not all OI distro
+# releases have such symlinks packaged right), e.g.:
+:; (cd /usr/bin && for X in 8 9 13 ; do for T in "" "++" "-cpp"; do \
+    ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
+   done; done)
+
+# If /usr/lib/ccache/ symlinks to compilers do not appear after package
+# installation, or if you had to add links like above, call the service:
+:; svcadm restart ccache-update-symlinks
+------
+
+We can even include a `gcc-4.4.4-il` version (used to build the illumos OS
+ecosystems, at least until recently, which is a viable example of an old
+GCC baseline); but note that so far it conflicts with `libgd` builds at
+`./configure --with-cgi` stage (its binaries require newer ecosystem):
+
+------
+:; pkg install \
+    illumos-gcc@4.4.4
+
+# Make it visible in standard PATH
+:; (cd /usr/bin && for T in gcc g++ cpp ; do \
+    ln -s ../../opt/gcc/4.4.4/bin/$T $T-4.4.4 ; \
+   done)
+
+# If /usr/lib/ccache/ symlinks to these do not appear, call the service:
+:; svcadm restart ccache-update-symlinks
+------
+
+OI currently also does not build `cppunit`-based tests well, at least
+not with GCC (they segfault at run-time with `ostream` issues); a CLANG
+build works for that however.
+
+It also lacks out-of-the-box Tex suite and `dblatex` in particular, which
+`asciidoc` needs to build PDF documents. It may be possible to add these
+from third-party repositories (e.g. SFE) and/or build from sources.
+
+No pre-packaged `cppcheck` was found, either.
+
+NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
+(or `pkg install runtime/java/openjdk11` for JRE 11 -- currently the OS does
+not offer in-distro JDK version 11+).
+
+OmniOS CE (as of release 151036)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Being a minimal-footprint system, OmniOS CE provides very few packages out
+of the box. There are additional repositories supported by the project, as
+well as third-party repositories such as SFE. For some dependencies, it may
+happen that you would need to roll and install your own builds in accordance
+with that project's design goals.
+
+Note you may need not just the "Core" IPS package publisher, but also the
+"Extra" one. See OmniOS CE web site for setup details.
+
+------
+:; pkg install \
+    developer/build/autoconf developer/build/automake developer/build/libtool \
+    build-essential ccache git developer/pkg-config \
+    runtime/perl \
+    asciidoc \
+    libgd
+
+:; pkg install \
+    net-snmp
+
+# NOTE: For python, some suitable version should be available since `pkg(5)`
+# tool is written in it. You may specify an additional variant like this
+# (numbers depending on default or additional packages of your distro):
+#   :; pkg install runtime/python-37
+# You can find a list of what is available in remote repositories with:
+#   :; pkg info -r | grep -Ei 'perl|python'
+------
+
+OmniOS lacks a pre-packaged libusb, however the binary build from contemporary
+OpenIndiana can be used (copy the header files and the library+symlinks for
+all architectures you would need).
+
+You may need to set up `ccache` with the same `/usr/lib/ccache` dir used
+in other OS recipes. Assuming your Build Essentials pulled GCC 9 version,
+and ccache is under `/opt/ooce` namespace, that would be like:
+------
+:; mkdir -p /usr/lib/ccache
+:; cd /usr/lib/ccache
+:; ln -fs ../../../opt/ooce/bin/ccache gcc
+:; ln -fs ../../../opt/ooce/bin/ccache g++
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp
+:; ln -fs ../../../opt/ooce/bin/ccache gcc-9
+:; ln -fs ../../../opt/ooce/bin/ccache g++-9
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
+------
+
+Given that many of the dependencies can get installed into that namespace,
+you may have to specify where `pkg-config` will look for them (note that
+library and binary paths can be architecture bitness-dependent):
+------
+:; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
+------
+
+Note also that the minimal footprint nature of OmniOS CE precludes building
+any large scope easily, so avoid docs and "all drivers" unless you provide
+whatever they need to happen.

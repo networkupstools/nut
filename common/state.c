@@ -20,6 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"	/* must be first */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -124,7 +126,10 @@ static void st_tree_node_add(st_tree_t **nptr, st_tree_t *sptr)
 	*nptr = sptr;
 }
 
-/* remove a variable from a tree */
+/* remove a variable from a tree
+ * except for variables with ST_FLAG_IMMUTABLE
+ * (for override.* to survive) per issue #737
+ */
 int state_delinfo(st_tree_t **nptr, const char *var)
 {
 	while (*nptr) {
@@ -141,6 +146,11 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 			continue;
 		}
 
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not deleting immutable variable [%s]", __func__, var);
+			return 0;
+		}
+
 		/* whatever is on the left, hang it off current right */
 		st_tree_node_add(&node->right, node->left);
 
@@ -153,7 +163,7 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 	}
 
 	return 0;	/* not found */
-}	
+}
 
 /* interface */
 
@@ -218,7 +228,7 @@ static int st_tree_enum_add(enum_t **list, const char *enc)
 			list = &(*list)->next;
 			continue;
 		}
-		
+
 		return 0;	/* duplicate */
 	}
 
@@ -303,7 +313,7 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 {
 	st_tree_t	*sttmp;
-	int	aux;
+	long	aux;
 
 	/* find the tree node for var */
 	sttmp = state_tree_find(root, var);
@@ -354,7 +364,7 @@ int state_getflags(st_tree_t *root, const char *var)
 	return sttmp->flags;
 }
 
-int state_getaux(st_tree_t *root, const char *var)
+long state_getaux(st_tree_t *root, const char *var)
 {
 	st_tree_t	*sttmp;
 
@@ -396,9 +406,9 @@ const range_t *state_getrangelist(st_tree_t *root, const char *var)
 	return sttmp->range_list;
 }
 
-void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
-{	
-	int	i;
+void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flag)
+{
+	size_t	i;
 	st_tree_t	*sttmp;
 
 	/* find the tree node for var */
@@ -421,6 +431,11 @@ void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
 
 		if (!strcasecmp(flag[i], "STRING")) {
 			sttmp->flags |= ST_FLAG_STRING;
+			continue;
+		}
+
+		if (!strcasecmp(flag[i], "NUMBER")) {
+			sttmp->flags |= ST_FLAG_NUMBER;
 			continue;
 		}
 

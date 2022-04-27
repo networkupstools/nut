@@ -7,6 +7,7 @@
  *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
+ * Copyright (C) 2016   Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,15 +26,20 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <stdint.h>
 
 #include "main.h"
-#include "libusb.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.07"
+
+#define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -44,22 +50,19 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
+static uint8_t gpser_error_control;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
+/*! Time in seconds to delay before shutting down. */
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
-TRielloData DevData;
+static TRielloData DevData;
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
@@ -69,7 +72,7 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
-void ussleep(long usec)
+static void ussleep(useconds_t usec)
 {
 
 	if (usec == 1)
@@ -92,12 +95,12 @@ static int cypress_setfeatures()
 
 	/* Write features report */
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-								0x09,						/* HID_REPORT_SET = 0x09 */
-								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (char*) bufOut, 0x5, 1000);
+		0x09,				/* HID_REPORT_SET = 0x09 */
+		0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
+		0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s", ret ? usb_strerror() : "error");
+		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
 		return ret;
 	}
 
@@ -105,10 +108,11 @@ static int cypress_setfeatures()
 	return ret;
 }
 
-int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
+static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
-	int i, err, size, errno;
+	int i, err, size;
+	/*int errno;*/
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -127,7 +131,7 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -157,7 +161,7 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
+		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
 			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
@@ -168,31 +172,39 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 	return (0);
 }
 
-int Get_USB_Packet(uint8_t *buffer)
+static int Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
-	int err, size, errno, ep;
+	int err, ep;
+	size_t size;
+	/*int errno;*/
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
+	/* Note: depending on libusb API version, size is either int or uint16_t
+	 * either way, likely less than size_t limit. But we don't assign much.
+	 */
 	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, (char*) inBuf, size, 1000);
+	err = usb_bulk_read(udev, ep, (usb_ctrl_charbuf) inBuf, (int)size, 1000);
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
-	
+
 	if (err < 0){
 		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
 		return err;
 	}
 
 	/* copy to buffer */
-	size = inBuf[0] & 0x07;
+	size = (unsigned char)(inBuf[0]) & 0x07;
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
-	return(size);
+	if (size > INT_MAX)
+		return -1;
+
+	return (int)size;
 }
 
 static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint16_t buflen)
@@ -251,6 +263,8 @@ static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint1
 
 static void *cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -262,13 +276,15 @@ static usb_device_id_t riello_usb_id[] = {
 	/* various models */
 	{ USB_DEVICE(RIELLO_VENDORID, 0x5500), &cypress_subdriver },
 
-	/* end of list */
-	{-1, -1, NULL}
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 
 static int device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -300,15 +316,22 @@ static USBDeviceMatcher_t device_matcher = {
  * caller, don't do this here. Return < 0 on error, 0 or higher on
  * success.
  */
-static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
+static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
-	/*if (usb_set_configuration(handle, 1) < 0) {
-		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
-		return -1;
-	} */
+	int ret = 0;
+	NUT_UNUSED_VARIABLE(device);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
 
-	if (usb_claim_interface(handle, 0) < 0) {
-		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());
+/*
+	if ((ret = usb_set_configuration(handle, 1)) < 0) {
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", nut_usb_strerror(ret));
+		return -1;
+	}
+*/
+
+	if ((ret = usb_claim_interface(handle, 0)) < 0) {
+		upslogx(LOG_WARNING, "Can't claim USB interface: %s", nut_usb_strerror(ret));
 		return -1;
 	}
 
@@ -322,7 +345,7 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
+static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int ret;
 
@@ -330,10 +353,10 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
-		if (ret < 0) 
+		if (ret < 0)
 			return ret;
-		
-		upsdrv_initinfo();	//reconekt usb cable 
+
+		upsdrv_initinfo();	/* reconnect usb cable */
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -346,39 +369,53 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 
 	switch (ret)
 	{
-	case -EBUSY:		/* Device or resource busy */
+	case ERROR_BUSY:			/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
-	case -EPERM:		/* Operation not permitted */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+	case -EPERM:				/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+# ifndef HAVE___ATTRIBUTE__NORETURN
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# endif
+#endif
 
-	case -EPIPE:		/* Broken pipe */
+	case ERROR_PIPE:			/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#ifdef ETIME
-	case -ETIME:		/* Timer expired */
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
+		goto fallthrough_case_etime;
+	case -ETIME:				/* Timer expired */
+	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
-	case -ENODEV:		/* No such device */
-	case -EACCES:		/* Permission denied */
-	case -EIO:		/* I/O error */
-	case -ENXIO:		/* No such device or address */
-	case -ENOENT:		/* No such file or directory */
+		goto fallthrough_case_reconnect;
+	case ERROR_NO_DEVICE: /* No such device */
+	case ERROR_ACCESS:    /* Permission denied */
+	case ERROR_IO:        /* I/O error */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+	case -ENXIO:				/* No such device or address */
+#endif
+	case ERROR_NOT_FOUND:		/* No such file or directory */
+	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
 		break;
 
-	case -ETIMEDOUT:	/* Connection timed out */
+	case ERROR_TIMEOUT:  /* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
+		break;
 
-
-	case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+	case ERROR_OVERFLOW: /* Value too large for defined data type */
+#if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
 #endif
 		break;
@@ -386,11 +423,10 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		break;
 	}
 
-	
 	return ret;
 }
 
-int get_ups_nominal()
+static int get_ups_nominal()
 {
 
 	uint8_t length;
@@ -423,7 +459,7 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status()
+static int get_ups_status()
 {
 	uint8_t numread, length;
 	int recv;
@@ -462,7 +498,7 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended()
+static int get_ups_extended()
 {
 	uint8_t length;
 	int recv;
@@ -494,6 +530,7 @@ int get_ups_extended()
 	return 0;
 }
 
+/* Not static, exposed via header. Not used though, currently... */
 int get_ups_statuscode()
 {
 	uint8_t length;
@@ -526,7 +563,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-int riello_instcmd(const char *cmdname, const char *extra)
+static int riello_instcmd(const char *cmdname, const char *extra)
 {
 	uint8_t length;
 	int recv;
@@ -561,8 +598,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -612,8 +653,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -639,8 +684,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			/* With a "char" in the name, might assume we fit... but :) */
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
@@ -734,11 +783,11 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm()
+static int start_ups_comm()
 {
 	uint16_t length;
 	int recv;
@@ -789,13 +838,15 @@ void upsdrv_initups(void)
 		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	int	ret;
-	char	*regex_array[6];
+	char	*regex_array[7];
 
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -803,6 +854,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -929,6 +981,13 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.panel.start");
 
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", 3);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
+	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.reboot", 3);
+
 	/* install handlers */
 /*	upsh.setvar = hid_set_value; setvar; */
 
@@ -938,6 +997,9 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = riello_instcmd;
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
@@ -1012,9 +1074,14 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+	if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
+		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	}
+
+	if (DevData.Tsystem < 0xFF)
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
@@ -1075,11 +1142,11 @@ void upsdrv_updateinfo(void)
 
 	/* Boost */
 	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");	
+		status_set("BOOST");
 
 	/* Replace battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");	
+		status_set("RB");
 
 	/* Charging battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 2))
@@ -1156,4 +1223,5 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 }

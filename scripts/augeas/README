@@ -41,7 +41,7 @@ As an example, on Debian and derivatives, do the following:
 
 	$ apt-get install augeas-lenses augeas-tools
 
-And optionaly:
+And optionally:
 
 	$ apt-get install libaugeas0 libaugeas-dev python-augeas 
 
@@ -57,7 +57,7 @@ These are the *.aug files in the present directory.
 
 You can either install the files to the right location on your system,
 generally in '/usr/share/augeas/lenses/', or use these from NUT
-source directory ('nut/scripts/augeas'). The latter is to be prefered for
+source directory ('nut/scripts/augeas'). The latter is to be preferred for
 the time being.
 
 
@@ -240,7 +240,7 @@ a.set(("/files/etc/nut/upsd.users/%s/instcmds" % user), "ALL")
 monuser = "monuser"
 monpasswd = "******"
 a.set(("/files/etc/nut/upsd.users/%s/password" % monuser), monpasswd)
-a.set(("/files/etc/nut/upsd.users/%s/upsmon" % monuser), "master")
+a.set(("/files/etc/nut/upsd.users/%s/upsmon" % monuser), "primary")
 
 # Generate upsmon.conf
 a.set("/files/etc/nut/upsmon.conf/MONITOR/system/upsname", device_name)
@@ -250,7 +250,7 @@ a.set("/files/etc/nut/upsmon.conf/MONITOR/system/upsname", device_name)
 a.set("/files/etc/nut/upsmon.conf/MONITOR/powervalue", "1")
 a.set("/files/etc/nut/upsmon.conf/MONITOR/username", monuser)
 a.set("/files/etc/nut/upsmon.conf/MONITOR/password", monpasswd)
-a.set("/files/etc/nut/upsmon.conf/MONITOR/type", "master")
+a.set("/files/etc/nut/upsmon.conf/MONITOR/type", "primary")
 
 # FIXME: glitch on the generated content
 a.set("/files/etc/nut/upsmon.conf/SHUTDOWNCMD", "/sbin/shutdown -h +0")

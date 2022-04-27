@@ -21,11 +21,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"Liebert MultiLink UPS driver"
-#define DRIVER_VERSION	"1.02"
+#define DRIVER_VERSION	"1.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -38,6 +40,9 @@ upsdrv_info_t upsdrv_info = {
 };
 
 #define	ML_ONBATTERY	0x55
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
@@ -92,7 +97,7 @@ void upsdrv_updateinfo(void)
 		if (c == ML_ONBATTERY)
 			ob = 1;
 	}
-	
+
 	if (ser_get_dcd(upsfd))
 		lb = 1;
 

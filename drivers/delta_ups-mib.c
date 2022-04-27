@@ -7,7 +7,7 @@
  *  gen-snmp-subdriver.sh script. It must be customized!
  *
  *  MIB reference: http://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -25,38 +25,38 @@
 
 #include "delta_ups-mib.h"
 
-#define DELTA_UPS_MIB_VERSION  "0.2"
+#define DELTA_UPS_MIB_VERSION  "0.5"
 
 #define DELTA_UPS_SYSOID       ".1.3.6.1.4.1.2254.2.4"
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * static info_lkp_t delta_ups_onbatt_info[] = {
+ * 	{ 1, "OB", NULL, NULL },
+ * 	{ 2, "OL", NULL, NULL },
+ * 	{ 0, NULL, NULL, NULL }
  * };
  */
 
 static info_lkp_t delta_ups_upstype_info[] = {
-	{ 1, "on-line" },
-	{ 2, "off-line" },
-	{ 3, "line-interactive" },
-	{ 4, "3phase" },
-	{ 5, "splite-phase" },
-	{ 0, "NULL" }
+	{ 1, "on-line", NULL, NULL },
+	{ 2, "off-line", NULL, NULL },
+	{ 3, "line-interactive", NULL, NULL },
+	{ 4, "3phase", NULL, NULL },
+	{ 5, "splite-phase", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
-    { 0, "OL" },        /* normal  */
-    { 1, "OB" },        /* battery  */
-    { 2, "BYPASS" },    /* bypass */
-    { 3, "TRIM" },      /* reducing */
-    { 4, "BOOST" },     /* boosting */
-    { 5, "BYPASS" },    /* manualBypass */
-    /*{ 6, "NULL" },*/      /* other  */
-    { 7, "OFF" },      /* none */
-    { 0, "NULL" }
+    { 0, "OL", NULL, NULL },        /* normal  */
+    { 1, "OB", NULL, NULL },        /* battery  */
+    { 2, "BYPASS", NULL, NULL },    /* bypass */
+    { 3, "TRIM", NULL, NULL },      /* reducing */
+    { 4, "BOOST", NULL, NULL },     /* boosting */
+    { 5, "BYPASS", NULL, NULL },    /* manualBypass */
+    /*{ 6, "NULL", NULL, NULL },*/      /* other  */
+    { 7, "OFF", NULL, NULL },      /* none */
+    { 0, NULL, NULL, NULL }
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
@@ -73,20 +73,24 @@ static snmp_info_t delta_ups_mib[] = {
 	 *	dfl: default value
 	 *	flags: snmp-ups internal flags (FIXME: ...)
 	 *	oid2info: lookup table between OID and NUT values
-	 *	setvar: variable to set for SU_FLAG_SETINT
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, delta_ups_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t delta_ups_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* dupsIdentManufacturer.0 = STRING: "Socomec" */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.1.0", NULL, SU_FLAG_OK, NULL },
@@ -358,4 +362,4 @@ static snmp_info_t delta_ups_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID };
+mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID, NULL };

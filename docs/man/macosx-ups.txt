@@ -3,16 +3,19 @@ MACOSX-UPS(8)
 
 NAME
 ----
+
 macosx-ups - monitor for Mac OS X built-in UPS and battery driver
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 *macosx-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 *macosx-ups* supports any USB HID Power Device Class (PDC) UPS which is
 matched by the Mac OS X built-in drivers. It also can monitor a laptop
 internal battery as though it were an UPS.
@@ -23,39 +26,16 @@ Preferences, this driver should be able to monitor it.
 
 EXTRA ARGUMENTS
 ----------------
-*port*='regex'::
-The *port* parameter in the configuration file can be a case-insensitive
-extended regular expression (see *regex*(3) for details) to match against
-specific UPS and battery names.
-+
-The traditional NUT auto-detection value of "auto" will be changed to "/UPS".
-To test this driver against the internal battery of a laptop, a value such as
-"battery" can be used.
+
+*port*=auto::
+Due to changes in the way that Mac OS X lists power sources, the *port*
+parameter no longer has any effect. The rest of NUT still requires a value here,
+and our traditional "don't care" value is `auto`.
 
 *model*='regex'::
 Likewise, if you have more than one UPS, it may be necessary to specify a
 *model* name to match against. This parameter is also a case-insensitive
 extended regular expression.
-
-//////////////////////////////////////////
-This driver also supports the following optional settings:
-
-*option1*='num'::
-Set the value of ... to 'num'. Contrast with *option2*.
- 
-*option2*='string'::
-Some other option.
-//////////////////////////////////////////
-
-//////////////////////////////////////////
-Optional: list supported instant commands here:
-
-INSTANT COMMANDS
-----------------
-
-*instcmd1*::
-Command 1.
-//////////////////////////////////////////
 
 DIAGNOSTICS
 -----------
@@ -84,8 +64,9 @@ the battery voltage, as well as current and frequency, are typically not
 shown. It may be possible to monitor these values with *apcupsd* (for APC
 hardware only) or linkman:usbhid-ups[8].
 
-AUTHORS
--------
+AUTHOR
+------
+
 Charles Lepple <clepple+nut at gmail.com>
 
 SEE ALSO
@@ -95,10 +76,11 @@ linkman:usbhid-ups[8], *pmset*(8), *regex*(3)
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-The apcupsd home page: http://www.apcupsd.org/
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The apcupsd home page: http://www.apcupsd.org/

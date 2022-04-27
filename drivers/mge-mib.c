@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.5"
+#define MGE_MIB_VERSION	"0.55"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -38,116 +38,126 @@
 #define MGE_OID_MODEL_NAME	MGE_BASE_OID ".1.1.0"
 
 static info_lkp_t mge_lowbatt_info[] = {
-	{ 1, "LB" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "LB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_onbatt_info[] = {
-	{ 1, "OB" },
-	{ 2, "OL" },
-	{ 0, "NULL" }
+	{ 1, "OB", NULL, NULL },
+	{ 2, "OL", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_bypass_info[] = {
-	{ 1, "BYPASS" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "BYPASS", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_boost_info[] = {
-	{ 1, "BOOST" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "BOOST", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_trim_info[] = {
-	{ 1, "TRIM" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "TRIM", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_overload_info[] = {
-	{ 1, "OVER" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "OVER", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 
 static info_lkp_t mge_replacebatt_info[] = {
-	{ 1, "RB" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "RB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_output_util_off_info[] = {
-	{ 1, "OFF" },
-	{ 2, "" },
-	{ 0, "NULL" }
+	{ 1, "OFF", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_transfer_reason_info[] = {
-	{ 1, "" },
-	{ 2, "input voltage out of range" },
-	{ 3, "input frequency out of range" },
-	{ 4, "utility off" },
-	{ 0, "NULL" }
+	{ 1, "", NULL, NULL },
+	{ 2, "input voltage out of range", NULL, NULL },
+	{ 3, "input frequency out of range", NULL, NULL },
+	{ 4, "utility off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+static info_lkp_t mge_test_result_info[] = {
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_beeper_status_info[] = {
-	{ 1, "disabled" },
-	{ 2, "enabled" },
-	{ 3, "muted" },
-	{ 0, "NULL" }
+static info_lkp_t mge_beeper_status_info[] = {
+	{ 1, "disabled", NULL, NULL },
+	{ 2, "enabled", NULL, NULL },
+	{ 3, "muted", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, "NULL" }
+static info_lkp_t mge_yes_no_info[] = {
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
- * adressed by the driver, as for usbhid-ups! */
-static info_lkp_t ietf_power_source_info[] = {
-	{ 1, "" /* other */ },
-	{ 2, "OFF" /* none */ },
+ * addressed by the driver, as for usbhid-ups! */
+static info_lkp_t mge_power_source_info[] = {
+	{ 1, "" /* other */, NULL, NULL },
+	{ 2, "OFF" /* none */, NULL, NULL },
 #if 0
-	{ 3, "OL" /* normal */ },
+	{ 3, "OL" /* normal */, NULL, NULL },
 #endif
-	{ 4, "BYPASS" /* bypass */ },
-	{ 5, "OB" /* battery */ },
-	{ 6, "BOOST" /* booster */ },
-	{ 7, "TRIM" /* reducer */ },
-	{ 0, "NULL" }
+	{ 4, "BYPASS" /* bypass */, NULL, NULL },
+	{ 5, "OB" /* battery */, NULL, NULL },
+	{ 6, "BOOST" /* booster */, NULL, NULL },
+	{ 7, "TRIM" /* reducer */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t mge_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "closed", NULL, NULL },
+	{ 2, "opened", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Parameters default values */
-#define STR_DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
+#define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
 										/* and powering up of load, in seconds */
 										/* CAUTION: ondelay > offdelay */
-#define DEFAULT_ONDELAY		30
-#define STR_DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
-#define DEFAULT_OFFDELAY	20
+#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
 
-#define MGE_NOTHING_VALUE	1
-#define MGE_START_VALUE		2
-#define MGE_STOP_VALUE		3
+#define MGE_NOTHING_VALUE	"1"
+#define MGE_START_VALUE		"2"
+#define MGE_STOP_VALUE		"3"
 
 /* TODO: PowerShare (per plug .1, .2, .3) and deals with delays */
 
 /* Snmp2NUT lookup table */
 static snmp_info_t mge_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Eaton", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -156,17 +166,17 @@ static snmp_info_t mge_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.1.4.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.12.12.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.1", "", SU_OUTPUT_1, NULL },
-	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.9.8.0", "", 0, ietf_beeper_status_info },
+	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.9.8.0", "", 0, mge_beeper_status_info },
 	{ "ups.L1.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.1", "", SU_OUTPUT_3, NULL },
 	{ "ups.L2.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.2", "", SU_OUTPUT_3, NULL },
 	{ "ups.L3.load", 0, 1, ".1.3.6.1.4.1.705.1.7.2.1.4.3", "", SU_OUTPUT_3, NULL },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, ietf_test_result_info },
-	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.2.0", STR_DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.3.0", STR_DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, mge_test_result_info },
+	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.2.0", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, "1.3.6.1.2.1.33.1.8.3.0", DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.timer.shutdown", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", "", SU_FLAG_OK, NULL },
 	{ "ups.timer.start", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", "", SU_FLAG_OK, NULL },
 	{ "ups.timer.reboot", 0, 1, "1.3.6.1.2.1.33.1.8.4.0", "", SU_FLAG_OK, NULL },
-	{ "ups.start.auto", ST_FLAG_RW, 1, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, ietf_yes_no_info },
+	{ "ups.start.auto", ST_FLAG_RW, 1, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, mge_yes_no_info },
 	/* status data */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.5.11.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_replacebatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.5.14.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_lowbatt_info },
@@ -177,7 +187,7 @@ static snmp_info_t mge_mib[] = {
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.8.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_boost_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.10.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_overload_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.12.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_trim_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.4.1.0", "", SU_STATUS_PWR | SU_FLAG_OK, ietf_power_source_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.4.1.0", "", SU_STATUS_PWR | SU_FLAG_OK, mge_power_source_info },
 
 	/* FIXME: Alarms
 	 * - upsmgBatteryChargerFault (.1.3.6.1.4.1.705.1.5.15.0), yes (1), no (2)
@@ -193,7 +203,7 @@ static snmp_info_t mge_mib[] = {
 	 */
 
 	/* Input page */
-	{ "input.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.6.1.0", "", SU_FLAG_SETINT, NULL, &input_phases },
+	{ "input.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.6.1.0", "", 0, NULL },
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
 	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_3, NULL },
 	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.2", "", SU_INPUT_3, NULL },
@@ -217,7 +227,7 @@ static snmp_info_t mge_mib[] = {
 	{ "input.transfer.reason", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.6.4.0", "", SU_FLAG_OK, mge_transfer_reason_info },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.7.1.0", "", SU_FLAG_SETINT, NULL, &output_phases },
+	{ "output.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.7.1.0", "", 0, NULL },
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.1", "", SU_OUTPUT_1, NULL },
 	{ "output.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.2", "", SU_OUTPUT_3, NULL },
@@ -241,13 +251,17 @@ static snmp_info_t mge_mib[] = {
 	/* Ambient page: Environment Sensor (ref 66 846) */
 	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.705.1.8.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.705.1.8.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.9.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
+	/* upsmgEnvironmentInput1State.1 */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.8.7.1.10.1", "", SU_TYPE_INT | SU_FLAG_OK, mge_ambient_drycontacts_info },
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "Main Outlet",  SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 
 	/* instant commands. */
-	{ "test.battery.start", 0, MGE_START_VALUE, ".1.3.6.1.4.1.705.1.10.4.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.705.1.10.4.0", MGE_START_VALUE, SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* Also use IETF OIDs
 	 * { "test.battery.stop", 0, 0, "1.3.6.1.2.1.33.1.7.1.0", "1.3.6.1.2.1.33.1.7.7.2", SU_TYPE_CMD, NULL },
 	 * { "test.battery.start", 0, 0, "1.3.6.1.2.1.33.1.7.1.0", "1.3.6.1.2.1.33.1.7.7.3", SU_TYPE_CMD, NULL },
@@ -255,20 +269,21 @@ static snmp_info_t mge_mib[] = {
 	 * { "test.battery.start.deep", 0, 0, "1.3.6.1.2.1.33.1.7.1.0", "1.3.6.1.2.1.33.1.7.7.5", SU_TYPE_CMD, NULL },
 	 */
 
-	/* { "load.off", 0, MGE_START_VALUE, ".1.3.6.1.4.1.705.1.9.1.1.6.1", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	 * { "load.on", 0, MGE_START_VALUE, ".1.3.6.1.4.1.705.1.9.1.1.3.1", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	 * { "shutdown.return", 0, MGE_START_VALUE, ".1.3.6.1.4.1.705.1.9.1.1.9.1", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* { "load.off", 0, 1, ".1.3.6.1.4.1.705.1.9.1.1.6.1", MGE_START_VALUE, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	 * { "load.on", 0, 1, ".1.3.6.1.4.1.705.1.9.1.1.3.1", MGE_START_VALUE, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	 * { "shutdown.return", 0, 1, ".1.3.6.1.4.1.705.1.9.1.1.9.1", MGE_START_VALUE, SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	 */
 	/* IETF MIB fallback */
-	{ "beeper.disable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "", SU_TYPE_CMD, NULL },
-	{ "beeper.enable", 0, 2, "1.3.6.1.2.1.33.1.9.8.0", "", SU_TYPE_CMD, NULL },
-	{ "beeper.mute", 0, 3, "1.3.6.1.2.1.33.1.9.8.0", "", SU_TYPE_CMD, NULL },
-	/* Use ST_FLAG_STRING to get default value from ->dfl instead of info_len */
-	{ "load.off.delay", 0, DEFAULT_OFFDELAY, "1.3.6.1.2.1.33.1.8.2.0", "", SU_TYPE_CMD, NULL },
-	{ "load.on.delay", 0, DEFAULT_ONDELAY, "1.3.6.1.2.1.33.1.8.3.0", "", SU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "1", SU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "2", SU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "3", SU_TYPE_CMD, NULL },
+	/*{ "load.off", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL },
+	{ "load.on", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL },*/
+	{ "load.off.delay", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", NULL, SU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", NULL, SU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, "", MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID };
+mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, NULL, MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID, NULL };

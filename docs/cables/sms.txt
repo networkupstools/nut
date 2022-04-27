@@ -1,4 +1,4 @@
-Desc: SMS UPS cables, for Upsilon compatible SMS UPS 
+Desc: SMS UPS cables, for Upsilon compatible SMS UPS
 File: sms.txt
 Date: 9 October 2001
 Auth: Marcio Gomes <tecnica@microlink.com.br>
@@ -11,6 +11,6 @@ FEMEA DB9      MACHO DB9
 4/8  ----------  5
 5    ----------  8
 
-- This cable is working with Manager III 1300 VA and 650 VA, SMS Ups's 
-- Jump in computer side pins 4/8 and conect to pin 1 in UPS side
+- This cable is working with Manager III 1300 VA and 650 VA, SMS UPS's
+- Jump in computer side pins 4/8 and connect to pin 1 in UPS side
 - Use NUT blazer_ser driver

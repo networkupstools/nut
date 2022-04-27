@@ -41,7 +41,7 @@
 #include "safenet.h"
 
 #define DRIVER_NAME	"Generic SafeNet UPS driver"
-#define DRIVER_VERSION	"1.6"
+#define DRIVER_VERSION	"1.7"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -60,13 +60,14 @@ static union	{
 	struct safenet		status;
 } ups;
 
-static int ondelay = 1;		/* minutes */
-static int offdelay = 30;	/* seconds */
+static long ondelay = 1;		/* minutes */
+static long offdelay = 30;	/* seconds */
 
 static int safenet_command(const char *command)
 {
 	char	reply[32];
-	int	i, ret;
+	size_t	i;
+	ssize_t	ret;
 
 	/*
 	 * Get rid of whatever is in the in- and output buffers.
@@ -260,7 +261,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		char	command[] = SHUTDOWN_RETURN;
-		
+
 		command[4] += ((offdelay % 1000) / 100);
 		command[5] += ((offdelay % 100) / 10);
 		command[6] +=  (offdelay % 10);
@@ -288,7 +289,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -328,8 +329,8 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.model", "%s", ((v = getval("modelname")) != NULL) ? v : "unknown");
 	dstate_setinfo("ups.serial", "%s", ((v = getval("serialnumber")) != NULL) ? v : "unknown");
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	/*
 	 * These are the instant commands we support.
@@ -508,7 +509,7 @@ void upsdrv_initups(void)
 	}
 
 	if ((ondelay < 0) || (ondelay > 9999)) {
-		fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+		fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 	}
 
 	val = getval("offdelay");
@@ -517,7 +518,7 @@ void upsdrv_initups(void)
 	}
 
 	if ((offdelay < 0) || (offdelay > 999)) {
-		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [0..999]", offdelay);
+		fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [0..999]", offdelay);
 	}
 }
 

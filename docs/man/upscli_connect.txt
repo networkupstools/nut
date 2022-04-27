@@ -11,16 +11,23 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
+ int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
 DESCRIPTION
 -----------
+
 The *upscli_connect()* function takes the pointer 'ups' to a
 `UPSCONN_t` state structure and opens a TCP connection to the 'host' on
 the given 'port'.
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
-connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection. 
+connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection.
+
+Introduced in version 2.7, an additional flag `UPSCLI_CONN_CERTVERIF`
+now exists to verify the signature offered during the SSL handshake.
+This flag should be used in conjunction with linkman:upscli_init[3]
+and/or linkman:upscli_add_host_cert[3] calls before connecting in
+order to define a CA certificate with which to verify.
 
 If SSL mode is required, this function will only return successfully if
 it is able to establish a SSL connection with the server.  Possible
@@ -39,7 +46,8 @@ returns 0 on success, or -1 if an error occurs.
 
 SEE ALSO
 --------
-linkman:upscli_disconnect[3], linkman:upscli_fd[3], 
-linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
-linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+
+linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
+linkman:upscli_ssl[3], linkman:upscli_strerror[3],
 linkman:upscli_upserror[3]

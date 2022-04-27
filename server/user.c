@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -28,9 +30,9 @@
 #include "user.h"
 #include "user-data.h"
 
-	ulist_t	*users = NULL;
+static ulist_t	*users = NULL;
 
-	static	ulist_t	*curr_user;
+static	ulist_t	*curr_user;
 
 /* create a new user entry */
 static void user_add(const char *un)
@@ -57,7 +59,7 @@ static void user_add(const char *un)
 	if (last) {
 		last->next = tmp;
 	} else {
-		users = tmp;	
+		users = tmp;
 	}
 
 	/* remember who we're working on */
@@ -78,7 +80,7 @@ static void user_password(const char *pw)
 	}
 
 	if (curr_user->password) {
-		fprintf(stderr, "Ignoring duplicate password for %s\n", 
+		fprintf(stderr, "Ignoring duplicate password for %s\n",
 			curr_user->username);
 		return;
 	}
@@ -317,19 +319,20 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	return 0;	/* fail */
 }
 
-/* handle "upsmon master" and "upsmon slave" for nicer configurations */
+/* handle "upsmon primary" and "upsmon secondary" for nicer configurations */
+/* FIXME: Protocol update needed to handle master/primary alias (in action and in protocol) */
 static void set_upsmon_type(char *type)
 {
-	/* master: login, master, fsd */
-	if (!strcasecmp(type, "master")) {
+	/* primary: login, master, fsd */
+	if (!strcasecmp(type, "master") || !strcasecmp(type, "primary")) {
 		user_add_action("login");
-		user_add_action("master");
+		user_add_action("master"); /* Note: this is linked to "MASTER" API command permission */
 		user_add_action("fsd");
 		return;
 	}
 
-	/* slave: just login */
-	if (!strcasecmp(type, "slave")) {
+	/* secondary: just login */
+	if (!strcasecmp(type, "slave") || !strcasecmp(type, "secondary")) {
 		user_add_action("login");
 		return;
 	}
@@ -370,9 +373,9 @@ static void parse_var(char *var, char *val)
 }
 
 /* parse first var+val pair, then flip through remaining vals */
-static void parse_rest(char *var, char *fval, char **arg, int next, int left)
+static void parse_rest(char *var, char *fval, char **arg, size_t next, size_t left)
 {
-	int	i;
+	size_t	i;
 
 	/* no globals supported yet, so there's no sense in continuing */
 	if (!curr_user) {
@@ -390,7 +393,7 @@ static void parse_rest(char *var, char *fval, char **arg, int next, int left)
 	}
 }
 
-static void user_parse_arg(int numargs, char **arg)
+static void user_parse_arg(size_t numargs, char **arg)
 {
 	char	*ep;
 
@@ -414,7 +417,7 @@ static void user_parse_arg(int numargs, char **arg)
 		/*      0       1       2  ... */
 		/* foo=bar <rest1> <rest2> ... */
 
-		parse_rest(arg[0], ep+1, arg, 1, numargs - 1);
+		parse_rest(arg[0], ep+1, arg, 1, (numargs < 2) ? 0 : (numargs - 1));
 		return;
 	}
 
@@ -447,8 +450,8 @@ static void user_parse_arg(int numargs, char **arg)
 		/* foo = bar <rest1> <rest2> ... */
 
 		/* parse first var/val, plus subsequent values (if any) */
-		
-		parse_rest(arg[0], arg[2], arg, 3, numargs - 3);
+
+		parse_rest(arg[0], arg[2], arg, 3, (numargs < 4) ? 0 : (numargs - 3));
 		return;
 	}
 

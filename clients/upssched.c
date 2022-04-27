@@ -46,9 +46,12 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "upssched.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 
 typedef struct ttype_s {
 	char	*name;
@@ -56,14 +59,13 @@ typedef struct ttype_s {
 	struct ttype_s	*next;
 } ttype_t;
 
-	ttype_t	*thead = NULL;
-	static	conn_t	*connhead = NULL;
-	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
-	int	verbose = 0;		/* use for debugging */
+static ttype_t	*thead = NULL;
+static conn_t	*connhead = NULL;
+static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static int	verbose = 0;		/* use for debugging */
 
-
-	/* ups name and notify type (string) as received from upsmon */
-	const	char	*upsname, *notify_type;
+/* ups name and notify type (string) as received from upsmon */
+static const	char	*upsname, *notify_type;
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -179,7 +181,7 @@ static void checktimers(void)
 static void start_timer(const char *name, const char *ofsstr)
 {
 	time_t	now;
-	int	ofs;
+	long	ofs;
 	ttype_t	*tmp, *last;
 
 	/* get the time */
@@ -194,7 +196,7 @@ static void start_timer(const char *name, const char *ofsstr)
 	}
 
 	if (verbose)
-		upslogx(LOG_INFO, "New timer: %s (%d seconds)", name, ofs);
+		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
 
 	/* now add to the queue */
 	tmp = last = thead;
@@ -240,7 +242,7 @@ static void cancel_timer(const char *name, const char *cname)
 static void us_serialize(int op)
 {
 	static	int	pipefd[2];
-	int	ret;
+	ssize_t	ret;
 	char	ch;
 
 	switch(op) {
@@ -270,6 +272,7 @@ static int open_sock(void)
 	int	ret, fd;
 	struct	sockaddr_un	ssaddr;
 
+	check_unix_socket_filename(pipefn);
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
@@ -296,6 +299,9 @@ static int open_sock(void)
 
 	if (ret < 0)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
+
+	/* don't leak socket to CMDSCRIPT */
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
 
 	return fd;
 }
@@ -329,17 +335,40 @@ static void conn_del(conn_t *target)
 
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
+	size_t	buflen;
 	va_list	ap;
 	char	buf[US_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(buf, sizeof(buf), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
-	ret = write(conn->fd, buf, strlen(buf));
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret */
+		upsdebugx(2, "send_to_one(): buffered message too large");
 
-	if ((ret < 1) || (ret != (int) strlen(buf))) {
+		close(conn->fd);
+		conn_del(conn);
+
+		return 0;	/* failed */
+	}
+	ret = write(conn->fd, buf, buflen);
+
+	if ((ret < 1) || (ret != (ssize_t) buflen)) {
 		upsdebugx(2, "write to fd %d failed", conn->fd);
 
 		close(conn->fd);
@@ -356,7 +385,7 @@ static void conn_add(int sockfd)
 	int	acc, ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int			salen;
 #else
 	socklen_t	salen;
@@ -369,6 +398,9 @@ static void conn_add(int sockfd)
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
+
+	/* don't leak connection to CMDSCRIPT */
+	fcntl(acc, F_SETFD, FD_CLOEXEC);
 
 	/* enable nonblocking I/O */
 
@@ -440,19 +472,20 @@ static int sock_arg(conn_t *conn)
 	return 0;
 }
 
-static void log_unknown(int numarg, char **arg)
+static void log_unknown(size_t numarg, char **arg)
 {
-	int	i;
+	size_t	i;
 
 	upslogx(LOG_INFO, "Unknown command on socket: ");
 
 	for (i = 0; i < numarg; i++)
-		upslogx(LOG_INFO, "arg %d: %s", i, arg[i]);
+		upslogx(LOG_INFO, "arg %zu: %s", i, arg[i]);
 }
 
 static int sock_read(conn_t *conn)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	ch;
 
 	for (i = 0; i < US_MAX_READ; i++) {
@@ -465,13 +498,19 @@ static int sock_read(conn_t *conn)
 			if ((ret == -1) && (errno == EAGAIN))
 				return 0;
 
+			/* O_NDELAY with zero bytes means nothing to read but
+			 * since read() follows a succesful select() with
+			 * ready file descriptor, ret shouldn't be 0. */
+			if (ret == 0)
+				continue;
+
 			/* some other problem */
 			return -1;	/* error */
 		}
 
 		ret = pconf_char(&conn->ctx, ch);
 
-		if (ret == 0)		/* nothing to parse yet */
+		if (ret == 0)	/* nothing to parse yet */
 			continue;
 
 		if (ret == -1) {
@@ -594,6 +633,8 @@ static int try_connect(void)
 	int	pipefd, ret;
 	struct	sockaddr_un saddr;
 
+	check_unix_socket_filename(pipefn);
+
 	memset(&saddr, '\0', sizeof(saddr));
 	saddr.sun_family = AF_UNIX;
 	snprintf(saddr.sun_path, sizeof(saddr.sun_path), "%s", pipefn);
@@ -659,28 +700,15 @@ static int check_parent(const char *cmd, const char *arg2)
 	exit(EXIT_FAILURE);
 }
 
-static void read_timeout(int sig)
-{
-	/* ignore this */
-	return;
-}
-
-static void setup_sigalrm(void)
-{
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
-
-	sigemptyset(&nut_upssched_sigmask);
-	sa.sa_mask = nut_upssched_sigmask;
-	sa.sa_flags = 0;
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-}
-
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
-	int	i, pipefd, ret;
-	char	buf[SMALLBUF], enc[SMALLBUF];
+	int	i, pipefd;
+	ssize_t	ret;
+	size_t	enclen, buflen;
+	char buf[SMALLBUF], enc[SMALLBUF + 8];
+	int	ret_s;
+	struct	timeval tv;
+	fd_set	fdread;
 
 	/* insanity */
 	if (!arg1)
@@ -696,6 +724,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
+	/* Sanity checks, for static analyzers to sleep well */
+	enclen = strlen(enc);
+	buflen = strlen(buf);
+	if (enclen >= SSIZE_MAX || buflen >= SSIZE_MAX) {
+		/* Can't compare enclen to ret below */
+		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
+	}
+
 	/* see if the parent needs to be started (and maybe start it) */
 
 	for (i = 0; i < MAX_TRIES; i++) {
@@ -703,7 +739,6 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		pipefd = check_parent(cmd, arg2);
 
 		if (pipefd == PARENT_STARTED) {
-
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
@@ -715,23 +750,41 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, enc, strlen(enc));
+		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (int) strlen(enc))) {
+		if ((ret < 1) || (ret != (ssize_t)enclen)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
 		}
 
-		/* ugh - probably should use select here... */
-		setup_sigalrm();
+		/* select on child's pipe fd */
+		do {
+			/* set timeout every time before call select() */
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
 
-		alarm(2);
-		ret = read(pipefd, buf, sizeof(buf));
-		alarm(0);
+			FD_ZERO(&fdread);
+			FD_SET(pipefd, &fdread);
 
-		signal(SIGALRM, SIG_IGN);
+			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			switch(ret_s) {
+				/* select error */
+				case -1:
+					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					break;
+
+				/* nothing to read */
+				case 0:
+					break;
+
+				/* available data to read */
+				default:
+					ret = read(pipefd, buf, sizeof(buf));
+					break;
+			}
+		} while (ret_s <= 0);
 
 		close(pipefd);
 
@@ -747,7 +800,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
 		/* try again ... */
-	}
+	}	/* loop until MAX_TRIES if no success above */
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
@@ -794,7 +847,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		if (ca1 == '\0') {
+		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
 			return;
 		}
@@ -809,7 +862,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	upslogx(LOG_ERR, "Invalid command: %s", cmd);
 }
 
-static int conf_arg(int numargs, char **arg)
+static int conf_arg(size_t numargs, char **arg)
 {
 	if (numargs < 2)
 		return 0;
@@ -900,9 +953,15 @@ static void checkconf(void)
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = NULL;
+	/* More a use for argc to avoid warnings than a real need: */
+	if (argc > 0) {
+		xbasename(argv[0]);
+	} else {
+		xbasename("upssched");
+	}
 
-	verbose = 1;		/* TODO: remove when done testing */
+	verbose = 1;		/* TODO: remove when done testing, or add -D */
 
 	/* normally we don't have stderr, so get this going to syslog early */
 	open_syslog(prog);

@@ -22,8 +22,8 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef HIDPARS_H
-#define HIDPARS_H
+#ifndef NUT_HID_PARSER_H_SEEN
+#define NUT_HID_PARSER_H_SEEN
 
 
 #ifdef __cplusplus
@@ -32,27 +32,38 @@ extern "C" {
 /* *INDENT-ON* */
 #endif /* __cplusplus */
 
+#include "config.h"
 #include "hidtypes.h"
+
+/* Include "usb-common.h" or "libshut.h" as appropriate, to define the 
+ * usb_ctrl_* types used below according to the backend USB API version
+ */
+#ifdef SHUT_MODE
+# include "libshut.h"
+#else
+# include "usb-common.h"
+#endif
 
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n);
+HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_charbufsize n);
 
 /*
  * Free_ReportDesc
  * -------------------------------------------------------------------------- */
-void Free_ReportDesc(HIDDesc_t *pDesc);
+void Free_ReportDesc(HIDDesc_t *pDesc_arg);
 
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc_t *pDesc, HIDData_t *pData);
+int FindObject(HIDDesc_t *pDesc_arg, HIDData_t *pData);
 
-HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type);
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc_arg, HIDPath_t *Path, uint8_t Type);
 
-HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type);
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Offset, uint8_t Type);
 
+HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t Node);
 /*
  * GetValue
  * -------------------------------------------------------------------------- */
@@ -70,4 +81,4 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value);
 /* *INDENT-ON* */
 #endif /* __cplusplus */
 
-#endif
+#endif	/* NUT_HID_PARSER_H_SEEN */

@@ -2,6 +2,7 @@
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
+ *   2016 Eaton
  * Based on:
  *  usbhid-ups.c - Copyright (C)
  *    2003-2012 Arnaud Quette <arnaud.quette@gmail.com>
@@ -16,6 +17,10 @@
  *  blazer_usb.c - Copyright (C)
  *    2003-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
+ *  Masterguard additions
+ *    2020-2021 Edgar Fuß, Mathematisches Institut der Universität Bonn <ef@math.uni-bonn.de>
+ *  Armac (Richcomm-variant) additions
+ *    2021      Tomasz Fortuna <bla@thera.be>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,16 +38,17 @@
  *
  */
 
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.32"
 
+#include "config.h"
 #include "main.h"
-
-#include <math.h>
+#include "attribute.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
-	#include "libusb.h"
-	#include "usb-common.h"
+	#include "nut_libusb.h" /* also includes "usb-common.h" */
 
 	#ifdef QX_SERIAL
 		#define DRIVER_NAME	"Generic Q* USB/Serial driver"
@@ -63,6 +69,7 @@
 /* == Subdrivers == */
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
+#include "nutdrv_qx_hunnox.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -73,8 +80,10 @@
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_voltronic-sunny.h"
 #include "nutdrv_qx_zinto.h"
+#include "nutdrv_qx_masterguard.h"
+#include "nutdrv_qx_ablerex.h"
 
-/* Master list of available subdrivers */
+/* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
 	&voltronic_sunny_subdriver,
@@ -86,6 +95,9 @@ static subdriver_t	*subdriver_list[] = {
 	&mecer_subdriver,
 	&megatec_subdriver,
 	&zinto_subdriver,
+	&masterguard_subdriver,
+	&hunnox_subdriver,
+	&ablerex_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -100,7 +112,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Arnaud Quette <arnaud.quette@gmail.com>" \
 	"John Stamp <kinsayder@hotmail.com>" \
 	"Peter Selinger <selinger@users.sourceforge.net>" \
-	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>" \
+	"Edgar Fuß <ef@math.uni-bonn.de>",
 	DRV_BETA,
 #ifdef QX_USB
 	{ &comm_upsdrv_info, NULL }
@@ -108,7 +121,6 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 #endif	/* QX_USB */
 };
-
 
 /* == Data walk modes == */
 typedef enum {
@@ -122,11 +134,15 @@ typedef enum {
 /* Pointer to the active subdriver object (changed in subdriver_matcher() function) */
 static subdriver_t	*subdriver = NULL;
 
-static int	pollfreq = DEFAULT_POLLFREQ;
-static int	ups_status = 0;
+static long	pollfreq = DEFAULT_POLLFREQ;
+static unsigned int	ups_status = 0;
 static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
+
+#if defined(QX_USB) && !defined(TESTING)
+static int	hunnox_step = 0;
+#endif	/* QX_USB && !TESTING */
 
 #if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
@@ -141,7 +157,7 @@ static struct {
 /* == Support functions == */
 static int	subdriver_matcher(void);
 static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen);
-static int	qx_process_answer(item_t *item, const int len);
+static int	qx_process_answer(item_t *item, const size_t len); /* returns just 0 or -1 */
 static bool_t	qx_ups_walk(walkmode_t mode);
 static void	ups_status_set(void);
 static void	ups_alarm_set(void);
@@ -150,8 +166,8 @@ static void	qx_set_var(item_t *item);
 
 /* == Struct & data for status processing == */
 typedef struct {
-	const char	*status_str;	/* UPS status string */
-	const int	status_mask;	/* UPS status mask */
+	const char	*status_str;			/* UPS status string */
+	const unsigned int	status_mask;	/* UPS status mask */
 } status_lkp_t;
 
 static status_lkp_t	status_info[] = {
@@ -208,7 +224,8 @@ static struct {
 
 static time_t	battery_lastpoll = 0;
 
-/* Fill batt.volt.act and guesstimate the battery charge if it isn't already available. */
+/* Fill batt.volt.act and guesstimate the battery charge
+ * if it isn't already available. */
 static int	qx_battery(void)
 {
 	const char	*val = dstate_getinfo("battery.voltage");
@@ -220,7 +237,7 @@ static int	qx_battery(void)
 
 	batt.volt.act = batt.packs * strtod(val, NULL);
 
-	if (batt.chrg.act == -1 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+	if (d_equal(batt.chrg.act, -1) && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
 		batt.chrg.act = 100 * (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
 
@@ -282,8 +299,10 @@ static void	qx_initbattery(void)
 			batt.volt.nom = strtod(val, NULL);
 		}
 
-		/* If no values are available for both battery.voltage.{low,high} either from the UPS or provided by the user in ups.conf, try to guesstimate them, but announce it! */
-		if (batt.volt.nom != -1 && (batt.volt.low == -1 || batt.volt.high == -1)) {
+		/* If no values are available for both battery.voltage.{low,high}
+		 * either from the UPS or provided by the user in ups.conf,
+		 * try to guesstimate them, but announce it! */
+		if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
 
 			upslogx(LOG_INFO, "No values for battery high/low voltages");
 
@@ -295,7 +314,8 @@ static void	qx_initbattery(void)
 			dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
 			dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
 
-			upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+			upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!",
+				batt.volt.low, batt.volt.high);
 
 		}
 
@@ -305,13 +325,15 @@ static void	qx_initbattery(void)
 		} else {
 
 			/* qx_battery -> batt.volt.act */
-			if (!qx_battery() && batt.volt.nom != -1) {
+			if (!qx_battery() && (!d_equal(batt.volt.nom, -1))) {
 
 				const double	packs[] = { 120, 100, 80, 60, 48, 36, 30, 24, 18, 12, 8, 6, 4, 3, 2, 1, 0.5, -1 };
 				int		i;
 
-				/* The battery voltage will quickly return to at least the nominal value after discharging them.
-				 * For overlapping battery.voltage.low/high ranges therefor choose the one with the highest multiplier. */
+				/* The battery voltage will quickly return to
+				 * at least the nominal value after discharging them.
+				 * For overlapping battery.voltage.low/high ranges
+				 * therefore choose the one with the highest multiplier. */
 				for (i = 0; packs[i] > 0; i++) {
 
 					if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
@@ -319,7 +341,9 @@ static void	qx_initbattery(void)
 					}
 
 					if (packs[i] * batt.volt.act < 0.8 * batt.volt.nom) {
-						upslogx(LOG_INFO, "Can't autodetect number of battery packs [%.0f/%.2f]", batt.volt.nom, batt.volt.act);
+						upslogx(LOG_INFO,
+							"Can't autodetect number of battery packs [%.0f/%.2f]",
+							batt.volt.nom, batt.volt.act);
 						break;
 					}
 
@@ -329,7 +353,9 @@ static void	qx_initbattery(void)
 				}
 
 			} else {
-				upslogx(LOG_INFO, "Can't autodetect number of battery packs [%.0f/%.2f]", batt.volt.nom, batt.volt.act);
+				upslogx(LOG_INFO,
+					"Can't autodetect number of battery packs [%.0f/%.2f]",
+					batt.volt.nom, batt.volt.act);
 			}
 
 		}
@@ -357,20 +383,23 @@ static void	qx_initbattery(void)
 			}
 
 			batt.runt.exp = log(rl / rh) / log(lh / ll);
-			upsdebugx(2, "%s: battery runtime exponent: %.3f", __func__, batt.runt.exp);
+			upsdebugx(2, "%s: battery runtime exponent: %.3f",
+				__func__, batt.runt.exp);
 
 			batt.runt.nom = rh * pow(lh / 100, batt.runt.exp);
-			upsdebugx(2, "%s: battery runtime nominal: %.1f", __func__, batt.runt.nom);
+			upsdebugx(2, "%s: battery runtime nominal: %.1f",
+				__func__, batt.runt.nom);
 
 		} else {
 
-			upslogx(LOG_INFO, "Battery runtime will not be calculated (runtimecal not set)");
+			upslogx(LOG_INFO, "Battery runtime will not be calculated "
+				"(runtimecal not set)");
 			return;
 
 		}
 
 		val = dstate_getinfo("battery.charge");
-		if (!val && batt.volt.nom != -1) {
+		if (!val && (!d_equal(batt.volt.nom, -1))) {
 			batt.volt.low = batt.volt.nom;
 			batt.volt.high = 1.15 * batt.volt.nom;
 
@@ -382,7 +411,8 @@ static void	qx_initbattery(void)
 
 		if (val) {
 			batt.runt.est = batt.runt.nom * strtod(val, NULL) / 100;
-			upsdebugx(2, "%s: battery runtime estimate: %.1f", __func__, batt.runt.est);
+			upsdebugx(2, "%s: battery runtime estimate: %.1f",
+				__func__, batt.runt.est);
 		} else {
 			fatalx(EXIT_FAILURE, "Initial battery charge undetermined");
 		}
@@ -395,9 +425,13 @@ static void	qx_initbattery(void)
 				fatalx(EXIT_FAILURE, "Charge time out of range [1..s]");
 			}
 
-			upsdebugx(2, "%s: battery charge time: %ld", __func__, batt.chrg.time);
+			upsdebugx(2, "%s: battery charge time: %ld",
+				__func__, batt.chrg.time);
 		} else {
-			upslogx(LOG_INFO, "No charge time specified, using built in default [%ld seconds]", batt.chrg.time);
+			upslogx(LOG_INFO,
+				"No charge time specified, "
+				"using built in default [%ld seconds]",
+				batt.chrg.time);
 		}
 
 		val = getval("idleload");
@@ -408,9 +442,13 @@ static void	qx_initbattery(void)
 				fatalx(EXIT_FAILURE, "Idle load out of range [0..100]");
 			}
 
-			upsdebugx(2, "%s: minimum load used (idle): %.3f", __func__, load.low);
+			upsdebugx(2,
+				"%s: minimum load used (idle): %.3f",
+				__func__, load.low);
 		} else {
-			upslogx(LOG_INFO, "No idle load specified, using built in default [%.1f %%]", 100 * load.low);
+			upslogx(LOG_INFO,
+				"No idle load specified, using built in default [%.1f %%]",
+				100 * load.low);
 		}
 	}
 }
@@ -432,22 +470,34 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 {
 	char	tmp[SMALLBUF];
 	size_t	tmplen;
-	int	ret;
+	int	ret = 0;
 	size_t	i;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
 	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
 	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < tmplen; i += ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, &tmp[i], 8, 5000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0,
+			(usb_ctrl_charbuf)&tmp[i], 8, 5000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
 			return ret;
 		}
 
@@ -458,25 +508,139 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 8, 1000);
 
-		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
 			return ret;
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
 
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
+}
+
+/* SGS communication subdriver */
+static int	sgs_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	char	tmp[SMALLBUF];
+	int	ret = 0;
+	size_t  i;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	/* Send command */
+	for (i = 0; i < cmdlen; i += (size_t)ret) {
+
+		memset(tmp, 0, sizeof(tmp));
+
+		/* i and cmdlen are size_t nominally, but diff is not large */
+		ret = (int)((cmdlen - i) < 7 ? (cmdlen - i) : 7);
+
+		/* ret is between 0 and 7 */
+		tmp[0] = (char)ret;
+		memcpy(&tmp[1], &cmd[i], (unsigned char)ret);
+
+		/* Write data in 8-byte chunks */
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE,
+			0x09, 0x200, 0,
+			(usb_ctrl_charbuf)tmp, 8, 5000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		ret--;
+
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Read reply */
+	memset(buf, 0, buflen);
+
+	for (i = 0; i <= buflen - 8; i += (size_t)ret) {
+
+		memset(tmp, 0, sizeof(tmp));
+
+		/* Read data in 8-byte chunks */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)tmp, 8, 1000);
+
+		/* No error!!! */
+		/* if (ret == -110) */
+		if (ret == ERROR_TIMEOUT)
+			break;
+
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		/* Every call to read returns 8 bytes
+		 * -> actually returned bytes: */
+		ret = tmp[0] <= 7 ? tmp[0] : 7;
+
+		if (ret > 0)
+			memcpy(&buf[i], &tmp[1], (unsigned char)ret);
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
+
+	}
+
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (i && memchr(buf, '\r', i) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (i < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[i++] = '\r';
+			buf[i] = 0;
+		}
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 /* Phoenix communication subdriver */
@@ -487,28 +651,42 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	int	ret;
 	size_t	i;
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	for (i = 0; i < 8; i++) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)tmp, 8, 1000);
 
 		/* This USB to serial implementation is crappy.
-		 * In order to read correct replies we need to flush the output buffers of the converter until we get no more data (ie, it times out). */
+		 * In order to read correct replies we need to flush the
+		 * output buffers of the converter until we get no more
+		 * data (e.g. it times out). */
 		switch (ret)
 		{
-		case -EPIPE:		/* Broken pipe */
+		case ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
-		case -ETIMEDOUT:	/* Connection timed out */
+			break;
+
+		case ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
 
 		if (ret < 0) {
-			upsdebugx(3, "flush: %s (%d)", usb_strerror(), ret);
+			upsdebugx(3, "flush: %s (%d)",
+				nut_usb_strerror(ret), ret);
 			break;
 		}
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebug_hex(4, "dump", tmp, (size_t)ret);
 
 	}
 
@@ -517,14 +695,17 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
 	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < tmplen; i += ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, &tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -535,25 +716,35 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 8, 1000);
 
-		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
 
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		return -1;
+	}
+	return (int)i;
 }
 
 /* Ippon communication subdriver */
@@ -564,18 +755,29 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	int	ret;
 	size_t	i, len;
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
 	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
 	memcpy(tmp, cmd, tmplen);
 
-	for (i = 0; i < tmplen; i += ret) {
+	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, &tmp[i], 8, 1000);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
+			upsdebugx(3, "send: %s (%d)",
+				(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				ret);
 			return ret;
 		}
 
@@ -584,16 +786,25 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	/* Read all 64 bytes of the reply in one large chunk */
-	ret = usb_interrupt_read(udev, 0x81, tmp, sizeof(tmp), 1000);
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)tmp, sizeof(tmp), 1000);
 
-	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+	/* Any errors here mean that we are unable to read a reply
+	 * (which will happen after successfully writing a command
+	 * to the UPS) */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
+		upsdebugx(3, "read: %s (%d)",
+			(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			ret);
 		return ret;
 	}
 
-	/* As Ippon will always return 64 bytes in response, we have to calculate and return length of actual response data here.
-	 * Empty response will look like 0x00 0x0D, otherwise it will be data string terminated by 0x0D. */
+	/* As Ippon will always return 64 bytes in response,
+	 * we have to calculate and return length of actual
+	 * response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise
+	 * it will be data string terminated by 0x0D. */
 
 	for (i = 0, len = 0; i < (size_t)ret; i++) {
 
@@ -609,7 +820,7 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	if (!len)
 		len = strlen(tmp);
 
-	upsdebug_hex(5, "read", tmp, (int)len);
+	upsdebug_hex(5, "read", tmp, (size_t)len);
 	upsdebugx(3, "read: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	len = len < buflen ? len : buflen - 1;
@@ -617,7 +828,74 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	memset(buf, 0, buflen);
 	memcpy(buf, tmp, len);
 
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (len && memchr(buf, '\r', len) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (len < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[len++] = '\r';
+			buf[len] = 0;
+		}
+	}
+
+	if (len > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%zu)", __func__, len);
+		return -1;
+	}
 	return (int)len;
+}
+
+static int 	hunnox_protocol(int asking_for)
+{
+	char	buf[1030];
+
+	int langid_fix_local = 0x0409;
+
+	if (langid_fix != -1) {
+		langid_fix_local = langid_fix;
+	}
+
+	switch (hunnox_step) {
+		case 0:
+			upsdebugx(3, "asking for: %02X", 0x00);
+			usb_get_string(udev, 0x00,
+				langid_fix_local, (usb_ctrl_charbuf)buf, 1026);
+			usb_get_string(udev, 0x00,
+				langid_fix_local, (usb_ctrl_charbuf)buf, 1026);
+			usb_get_string(udev, 0x01,
+				langid_fix_local, (usb_ctrl_charbuf)buf, 1026);
+			usleep(10000);
+			break;
+		case 1:
+			if (asking_for != 0x0d) {
+				upsdebugx(3, "asking for: %02X", 0x0d);
+				usb_get_string(udev, 0x0d,
+					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
+			}
+			break;
+		case 2:
+			if (asking_for != 0x03) {
+				upsdebugx(3, "asking for: %02X", 0x03);
+				usb_get_string(udev, 0x03,
+					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
+			}
+			break;
+		case 3:
+			if (asking_for != 0x0c) {
+				upsdebugx(3, "asking for: %02X", 0x0c);
+				usb_get_string(udev, 0x0c,
+					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
+			}
+			break;
+		default:
+			hunnox_step = 0;
+	}
+	hunnox_step++;
+	if (hunnox_step > 3) {
+		hunnox_step = 1;
+	}
+
+	return 0;
 }
 
 /* Krauler communication subdriver */
@@ -639,12 +917,19 @@ static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		{ "Q\r", 0x07, '\r' },
 		{ "C\r", 0x0b, '\r' },
 		{ "CT\r", 0x0b, '\r' },
-		{ NULL }
+		{ NULL, 0, '\0' }
 	};
 
 	int	i;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	for (i = 0; command[i].str; i++) {
 
@@ -660,13 +945,18 @@ static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
-				ret = usb_get_string(udev, command[i].index, langid_fix, buf, buflen);
+				ret = usb_get_string(udev,
+					command[i].index, langid_fix,
+					(usb_ctrl_charbuf)buf, buflen);
 			} else {
-				ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+				ret = usb_get_string_simple(udev,
+					command[i].index,
+					(usb_ctrl_charbuf)buf, buflen);
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+				upsdebugx(3, "read: %s (%d)",
+					ret ? nut_usb_strerror(ret) : "timeout", ret);
 				return ret;
 			}
 
@@ -684,7 +974,7 @@ static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int	di, si, size = buf[0];
+				unsigned int	di, si, size = (unsigned int)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 
 					if (di >= (buflen - 1))
@@ -697,12 +987,26 @@ static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 
 				}
 
+				/* Note: effective range of di should be unsigned char */
 				buf[di] = 0;
-				ret = di;
+				ret = (int)di;
+			}
+
+			/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+			if (ret && memchr(buf, '\r', ret) == NULL) {
+				upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+				if ((size_t)ret < buflen - 1) {
+					upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+					buf[ret++] = '\r';
+					buf[ret] = 0;
+				}
 			}
 
 			/* "UPS No Ack" has a special meaning */
-			if (!strcasecmp(buf, "UPS No Ack")) {
+			if (
+				strcspn(buf, "\r") == 10 &&
+				!strncasecmp(buf, "UPS No Ack", 10)
+			) {
 				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 				continue;
 			}
@@ -710,7 +1014,7 @@ static int	krauler_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
-			upsdebug_hex(5, "read", buf, ret);
+			upsdebug_hex(5, "read", buf, (size_t)ret);
 			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 			return ret;
@@ -738,11 +1042,18 @@ static int	fabula_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		{ "I\r",	0x0c, },	/* Vendor infos */
 		{ "Q\r",	0x07, },	/* Beeper toggle */
 		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
-		{ NULL }
+		{ NULL, 0 }
 	};
 	int	i, ret, index = 0;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
 
 	for (i = 0; commands[i].str; i++) {
 
@@ -768,8 +1079,10 @@ static int	fabula_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			double	delay;
 
 			/* 0x(1+)0 -> shutdown.stayoff (SnR0000)
-			 * 0x(1+)8 -> shutdown.return (Sn[Rm], m != 0) [delay before restart is always 10 seconds]
-			 * +0x10 (16dec) = next megatec delay (min .5 = hex 0x1*; max 10 = hex 0xF*) -> n < 1 ? -> n += .1; n >= 1 ? -> n += 1 */
+			 * 0x(1+)8 -> shutdown.return (Sn[Rm], m != 0)
+			 *   [delay before restart is always 10 seconds]
+			 * +0x10 (16dec) = next megatec delay
+			 *   (min .5 = hex 0x1*; max 10 = hex 0xF*) -> n < 1 ? -> n += .1; n >= 1 ? -> n += 1 */
 
 			/* delay: [.5..10] (-> seconds: [30..600]) */
 			delay = val1 < .5 ? .5 : val1 > 10 ? 10 : val1;
@@ -797,20 +1110,207 @@ static int	fabula_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 	upsdebugx(4, "command index: 0x%02x", index);
 
 	/* Send command/Read reply */
-	ret = usb_get_string_simple(udev, index, buf, buflen);
+	ret = usb_get_string_simple(udev, index, (usb_ctrl_charbuf)buf, buflen);
 
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		upsdebugx(3, "read: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
-	upsdebug_hex(5, "read", buf, ret);
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (memchr(buf, '\r', ret) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if ((size_t)ret < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[ret++] = '\r';
+			buf[ret] = 0;
+		}
+	}
+
+	upsdebug_hex(5, "read", buf, (size_t)ret);
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
-	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
-	if (!strcasecmp(buf, "UPS No Ack"))
-		/* ..because of that, always return 0 (as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
+	/* The UPS always replies "UPS No Ack" when a supported command
+	 * is issued (either if it fails or if it succeeds).. */
+	if (
+		strcspn(buf, "\r") == 10 &&
+		!strncasecmp(buf, "UPS No Ack", 10)
+	) {
+		/* ..because of that, always return 0 (with buf empty,
+		 * as if it was a timeout): queries will see it as a failure,
+		 * instant commands ('megatec' protocol) as a success */
+		memset(buf, 0, buflen);
 		return 0;
+	}
+
+	return ret;
+}
+
+/* Hunnox communication subdriver, based on Fabula code above so repeats
+ * much of it currently. Possible future optimization is to refactor shared
+ * code into new routines to be called from both (or more) methods.*/
+static int	hunnox_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	/* The hunnox_patch was an argument in initial implementation of PR #638
+	 * which added "hunnox" support; keeping it fixed here helps to visibly
+	 * track the modifications compared to original fabula_command() e.g. to
+	 * facilitate refactoring commented above, in the future.
+	 */
+/*	char hunnox_patch = 1; */
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* Fabula string index for this command */
+	} commands[] = {
+		{ "Q1\r",	0x03, },	/* Status */
+		{ "F\r",	0x0d, },	/* Ratings */
+		{ "I\r",	0x0c, },	/* Vendor infos */
+		{ "Q\r",	0x07, },	/* Beeper toggle */
+		{ "C\r",	0x0a, },	/* Cancel shutdown/Load on [0x(0..F)A]*/
+		{ NULL, 0 }
+	};
+	int	i, ret, index = 0;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	for (i = 0; commands[i].str; i++) {
+
+		if (strncmp(cmd, commands[i].str, cmdlen))
+			continue;
+
+		index = commands[i].index;
+		break;
+
+	}
+
+	if (!index) {
+
+		int	val2 = -1;
+		double	val1 = -1;
+
+		/* Shutdowns */
+		if (
+			sscanf(cmd, "S%lfR%d\r", &val1, &val2) == 2 ||
+			sscanf(cmd, "S%lf\r", &val1) == 1
+		) {
+
+			double	delay;
+
+			/* 0x(1+)0 -> shutdown.stayoff (SnR0000)
+			 * 0x(1+)8 -> shutdown.return (Sn[Rm], m != 0)
+			 *   [delay before restart is always 10 seconds]
+			 * +0x10 (16dec) = next megatec delay
+			 *   (min .5 = hex 0x1*; max 10 = hex 0xF*) -> n < 1 ? -> n += .1; n >= 1 ? -> n += 1 */
+
+			/* delay: [.5..10] (-> seconds: [30..600]) */
+			delay = val1 < .5 ? .5 : val1 > 10 ? 10 : val1;
+
+			if (delay < 1)
+				index = 16 + round((delay - .5) * 10) * 16;
+			else
+				index = 96 + (delay - 1) * 16;
+
+			/* shutdown.return (Sn[Rm], m != 0) */
+			if (val2)
+				index += 8;
+
+		/* Unknown commands */
+		} else {
+
+			/* Echo the unknown command back */
+			upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+
+		}
+
+	}
+
+	upsdebugx(4, "command index: 0x%02x", index);
+
+/*	if (hunnox_patch) { */
+		/* Enable lock-step protocol for Hunnox */
+		if (hunnox_protocol(index) != 0) {
+			return 0;
+		}
+
+		/* Seems that if we inform a large buffer, the USB locks.
+		 * This value was captured from the Windows "official" client.
+		 * Note this should not be a problem programmatically: it just
+		 * means that the caller reserved a longer buffer that we need
+		 * in practice to write a response into.
+		 */
+		if (buflen > 102) {
+			buflen = 102;
+		}
+/*	} */
+
+	/* Send command/Read reply */
+	if (langid_fix != -1) {
+		ret = usb_get_string(udev,
+			index, langid_fix, (usb_ctrl_charbuf)buf, buflen);
+	} else {
+		ret = usb_get_string_simple(udev,
+			index, (usb_ctrl_charbuf)buf, buflen);
+	}
+
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout",
+			ret);
+		return ret;
+	}
+
+/*	if (hunnox_patch) { */
+		if (langid_fix != -1) {
+			/* Limit this check, at least for now */
+			/* Invalid receive size - message corrupted */
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				return 0;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+			 * FIXME: this code is at least shared with mge-shut/libshut
+			 * Create a common function? */
+			unsigned int	di, si, size = (unsigned int)buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+			}
+
+			/* Note: effective range of di should be unsigned char */
+			buf[di] = 0;
+			ret = (int)di;
+		}
+/*	} */
+
+	upsdebug_hex(5, "read", buf, (size_t)ret);
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	/* The UPS always replies "UPS No Ack" when a supported command
+	 * is issued (either if it fails or if it succeeds).. */
+	if (
+		strcspn(buf, "\r") == 10 &&
+		!strncasecmp(buf, "UPS No Ack", 10)
+	) {
+		/* ..because of that, always return 0 (with buf empty,
+		 * as if it was a timeout): queries will see it as a failure,
+		 * instant commands ('megatec' protocol) as a success */
+		memset(buf, 0, buflen);
+		return 0;
+	}
 
 	return ret;
 }
@@ -821,21 +1321,31 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
 			read[SMALLBUF] = "";
-	int		ret, answer_len, val2;
+	int		ret, val2;
+	unsigned char	answer_len;
 	double		val1;
 	size_t		i;
 	const struct {
 		const char	*command;	/* Megatec command */
-		const int	answer_len;	/* Expected length of the answer to the ongoing query */
+		const unsigned char	answer_len;	/* Expected length of the answer
+										 * to the ongoing query */
 	} query[] = {
 		{ "Q1",	47 },
 		{ "F",	22 },
 		{ "I",	39 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
 	/*
-	 * Queries (b1..b8) sent (as a 8-bytes interrupt) to the UPS adopt the following scheme:
+	 * Queries (b1..b8) sent (as a 8-bytes interrupt) to the UPS
+	 * adopt the following scheme:
 	 *
 	 *	b1:		0x80
 	 *	b2:		0x06
@@ -849,9 +1359,12 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	 *	<LEN>		Length (in Hex) of the command (without the trailing CR) + 1
 	 *	<COMMAND>	Command/query (without the trailing CR)
 	 *	[<PADDING>]	0x00 padding to the 7th byte
-	 *	<ANSWER_LEN>	Expected length (in Hex) of the answer to the ongoing query (0 when no reply is expected, i.e. commands)
+	 *	<ANSWER_LEN>	Expected length (in Hex) of the answer to the ongoing
+	 *	                query (0 when no reply is expected, i.e. commands)
 	 *
-	 * Replies to queries (commands are followed by action without any reply) are sent from the UPS (in 8-byte chunks) with 0x00 padding after the trailing CR to full 8 bytes.
+	 * Replies to queries (commands are followed by action without
+	 * any reply) are sent from the UPS (in 8-byte chunks) with
+	 * 0x00 padding after the trailing CR to full 8 bytes.
 	 *
 	 */
 
@@ -860,9 +1373,13 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	/* Remove the CR */
 	snprintf(command, sizeof(command), "%.*s", (int)strcspn(cmd, "\r"), cmd);
 
-	/* Length of the command that will be sent to the UPS can be at most: 8 - 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) = 3.
-	 * As a consequence also 'SnRm' commands (shutdown.{return,stayoff} and load.off) are not supported.
-	 * So, map all the 'SnRm' shutdown.returns (m != 0) as the corresponding 'Sn' commands, meanwhile ignoring ups.delay.start and making the UPS turn on the load as soon as power is back. */
+	/* Length of the command that will be sent to the UPS can be
+	 * at most: 8 - 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) = 3.
+	 * As a consequence also 'SnRm' commands (shutdown.{return,stayoff}
+	 * and load.off) are not supported.
+	 * So, map all the 'SnRm' shutdown.returns (m != 0) as the
+	 * corresponding 'Sn' commands, meanwhile ignoring ups.delay.start
+	 * and making the UPS turn on the load as soon as power is back. */
 	if (sscanf(cmd, "S%lfR%d\r", &val1, &val2) == 2 && val2) {
 		upsdebugx(4, "%s: trimming '%s' to '%.*s'", __func__, command, 3, command);
 		command[3] = 0;
@@ -871,10 +1388,11 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	if (strlen(command) > 3) {
 		/* Be 'megatec-y': echo the unsupported command back */
 		upsdebugx(3, "%s: unsupported command %s", __func__, command);
-		return snprintf(buf, buflen, "%s", cmd);
+		return snprintf(buf, buflen, "%.*s", (int)cmdlen, cmd);
 	}
 
-	/* Expected length of the answer to the ongoing query (0 when no reply is expected, i.e. commands) */
+	/* Expected length of the answer to the ongoing query
+	 * (0 when no reply is expected, i.e. commands) */
 	answer_len = 0;
 	for (i = 0; query[i].command; i++) {
 
@@ -892,8 +1410,8 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	tmp[0] = 0x80;
 	/* 0x06 */
 	tmp[1] = 0x06;
-	/* <LEN> */
-	tmp[2] = strlen(command) + 1;
+	/* <LEN>; per above under 3 */
+	tmp[2] = (unsigned char)strlen(command) + 1;
 	/* 0x03 */
 	tmp[3] = 0x03;
 	/* <COMMAND> */
@@ -904,10 +1422,14 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	upsdebug_hex(4, "command", (char *)tmp, 8);
 
 	/* Write data */
-	ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)tmp, 8, USB_TIMEOUT);
+	ret = usb_interrupt_write(udev,
+		USB_ENDPOINT_OUT | 2,
+		(const usb_ctrl_charbuf)tmp,
+		8, USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		upsdebugx(3, "send: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
@@ -917,19 +1439,24 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
-		ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			USB_ENDPOINT_IN | 1,
+			(usb_ctrl_charbuf)&buf[i], 8, 1000);
 
-		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
 		snprintf(read, sizeof(read), "read [%3d]", (int)i);
-		upsdebug_hex(5, read, &buf[i], ret);
+		upsdebug_hex(5, read, &buf[i], (size_t)ret);
 
 	}
 
@@ -939,39 +1466,498 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	return (int)strlen(buf);
 }
 
+/* Phoenixtec (Masterguard) communication subdriver */
+static int	phoenixtec_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	int ret;
+	char *p, *e = NULL;
+	char *l[] = { "T", "TL", "S", "C", "CT", "M", "N", "O", "SRC", "FCLR", "SS", "TUD", "SSN", NULL }; /* commands that don't return an answer */
+	char **lp;
+
+	if (cmdlen > INT_MAX) {
+		upsdebugx(3, "%s: requested command is too long (%zu)",
+			__func__, cmdlen);
+		return 0;
+	}
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	if ((ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT | USB_TYPE_VENDOR | USB_RECIP_ENDPOINT,
+			0x0d, 0, 0, (usb_ctrl_charbuf)cmd, (int)cmdlen, 1000)) <= 0
+	) {
+		upsdebugx(3, "send: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout",
+			ret);
+		*buf = '\0';
+		return ret;
+	}
+
+	for (lp = l; *lp != NULL; lp++) {
+		const char *q;
+		int b;
+
+		p = *lp; q = cmd; b = 1;
+		while (*p != '\0') {
+			if (*p++ != *q++) {
+				b = 0;
+				break;
+			}
+		}
+		if (b && *q >= 'A' && *q <= 'Z') b = 0; /* "M" not to match "MSO" */
+		if (b) {
+			upsdebugx(4, "command %s returns no answer", *lp);
+			*buf = '\0';
+			return 0;
+		}
+	}
+
+	for (p = buf; p < buf + buflen; p += ret) {
+		/* buflen constrained to INT_MAX above, so we can cast: */
+		if ((ret = usb_interrupt_read(udev,
+				USB_ENDPOINT_IN | 1,
+				(usb_ctrl_charbuf)p, (int)(buf + buflen - p), 1000)) <= 0
+		) {
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			*buf = '\0';
+			return ret;
+		}
+		if ((e = memchr(p, '\r', (size_t)ret)) != NULL) break;
+	}
+	if (e != NULL && ++e < buf + buflen) {
+		*e = '\0';
+		/* buflen constrained to INT_MAX above, so we can cast: */
+		return (int)(e - buf);
+	} else {
+		upsdebugx(3, "read: buflen %zu too small", buflen);
+		*buf = '\0';
+		return 0;
+	}
+}
+
+/* SNR communication subdriver */
+static int	snr_command(const char *cmd, char *buf, size_t buflen)
+{
+	/*ATTENTION: This subdriver uses short buffer with length 102 byte*/
+	const struct {
+		const char	*str;	/* Megatec command */
+		const int	index;	/* String index for this command */
+		const char	prefix;	/* Character to replace the first byte in reply */
+	} command[] = {
+		{ "Q1\r", 0x03, '(' },
+		{ "F\r", 0x0d, '#' },
+		{ "I\r", 0x0c, '#' },
+		{ NULL, 0, '\0' }
+	};
+
+	int	i;
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	if (buflen < 102) {
+		upsdebugx(4, "size of buf less than 102 byte!");
+		return 0;
+	}
+
+	/* Prepare SNR-UPS for communication.
+	 * Without the interrupt UPS returns zeros for some time,
+	 * and afterwards NUT returns a communications error.
+	 */
+	usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)buf, 102, 1000);
+
+	for (i = 0; command[i].str; i++) {
+
+		int	retry;
+
+		if (strcmp(cmd, command[i].str)) {
+			continue;
+		}
+
+		for (retry = 0; retry < 10; retry++) {
+
+			int	ret;
+
+			ret = usb_get_string(udev,
+				command[i].index, langid_fix,
+				(usb_ctrl_charbuf)buf, 102);
+
+			if (ret <= 0) {
+				upsdebugx(3, "read: %s (%d)",
+					ret ? nut_usb_strerror(ret) : "timeout",
+					ret);
+				return ret;
+			}
+
+			/* This may serve in the future */
+			upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				continue;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+				* FIXME: this code is at least shared with mge-shut/libshut
+				* Create a common function? */
+			unsigned int	di, si, size = (unsigned int)buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+
+			}
+
+			/* Note: effective range of di should be unsigned char */
+			buf[di] = 0;
+			ret = (int)di;
+
+			/* "UPS No Ack" has a special meaning */
+			if (
+				strcspn(buf, "\r") == 10 &&
+				!strncasecmp(buf, "UPS No Ack", 10)
+			) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+				continue;
+			}
+
+			/* Replace the first byte of what we received with the correct one */
+			buf[0] = command[i].prefix;
+
+			upsdebug_hex(5, "read", buf, (size_t)ret);
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+			return ret;
+
+		}
+
+		return 0;
+
+	}
+
+	/* Echo the unknown command back */
+	upsdebugx(3, "read: %.*s", (int)strcspn(cmd, "\r"), cmd);
+	return snprintf(buf, buflen, "%s", cmd);
+}
+
+static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	int iii;
+	int	len;
+	int idx;
+	char	tmp[64];
+	char	tmpryy[64];
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	int	retry;
+
+	for (retry = 0; retry < 3; retry++) {
+		int	ret;
+
+		memset(buf, 0, buflen);
+		tmp[0] = 0x05;
+		tmp[1] = 0;
+		tmp[2] = 1 + (char)strcspn(cmd, "\r");
+
+		for (iii = 0 ; iii < tmp[2] ; iii++)
+		{
+			tmp[3+iii] = cmd[iii];
+		}
+
+		ret = usb_control_msg(udev,
+			0x21,
+			0x09, 0x305, 0,
+			(usb_ctrl_charbuf)tmp, 47, 1000);
+
+		upsdebugx(3, "R11 read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+
+		usleep(500000);
+		tmpryy[0] = 0x05;
+		ret = usb_control_msg(udev,
+			0xA1,
+			0x01, 0x305, 0,
+			(usb_ctrl_charbuf)tmpryy, 47, 1000);
+		upsdebugx(3, "R2 read%d: %.*s", ret, ret, tmpryy);
+
+		len = 0;
+		for (idx = 0 ; idx < 47 ; idx++)
+		{
+			buf[idx] = tmpryy[idx];
+			if (tmpryy[idx] == '\r')
+			{
+				len = idx;
+				break;
+			}
+		}
+		upsdebugx(3, "R3 read%d: %.*s", len, len, tmpryy);
+
+		if (len > 0) {
+			len ++;
+		}
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
+			return ret;
+		}
+
+		upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+		if ((!strcasecmp(cmd, "Q1\r")) && len != 47) continue;
+		if ((!strcasecmp(cmd, "I\r")) && len != 39) continue;
+		if ((!strcasecmp(cmd, "F\r")) && len != 22) continue;
+		if ((!strcasecmp(cmd, "Q5\r")) && len != 22)
+		{
+			buf[0] = '(';
+			for (idx = 1 ; idx < 47 ; idx++)
+			{
+				buf[idx] = 0;
+			}
+			upsdebugx(3, "read Q5 Fail...");
+			return 22;
+		}
+
+		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+		return len;
+	}
+
+	return 0;
+}
+
+static void	*ablerex_subdriver_fun(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &ablerex_command;
+	return NULL;
+}
+
+/* Armac communication subdriver
+ *
+ * This reproduces a communication protocol used by an old PowerManagerII
+ * software, which doesn't seem to be Armac specific. The banner is: "2004
+ * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
+ * would work with this - better than with the richcomm_usb driver.
+ */
+static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	char	tmpbuf[6];
+	int	ret = 0;
+	size_t	i, bufpos;
+
+	/* UPS ignores (doesn't echo back) unsupported commands which makes
+	 * the initialization long. List commands tested to be unsupported:
+	 */
+	const char *unsupported[] = {
+		"QGS\r",
+		"QS\r",
+		"QPI\r",
+		"M\r",
+		"D\r",
+		NULL
+	};
+
+	for (i = 0; unsupported[i] != NULL; i++) {
+		if (strcmp(cmd, unsupported[i]) == 0) {
+			upsdebugx(2,
+				"armac: unsupported cmd: %.*s",
+				(int)strcspn(cmd, "\r"), cmd);
+			return snprintf(buf, buflen, "%s", cmd);
+		}
+	}
+	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
+	 * parameterized tests. */
+	for (i = 0; i < cmdlen;) {
+		const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
+		memset(tmpbuf, 0, sizeof(tmpbuf));
+		tmpbuf[0] = 0xa0 + bytes_to_send;
+		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0,
+			(usb_ctrl_charbuf)tmpbuf, 4, 5000);
+		i += bytes_to_send;
+	}
+
+	if (ret <= 0) {
+		upsdebugx(1,
+			"send control: %s (%d)",
+			ret ? nut_usb_strerror(ret) : "timeout",
+			ret);
+		return ret;
+	}
+
+	memset(buf, 0, buflen);
+
+	bufpos = 0;
+	while (bufpos + 6 < buflen) {
+		size_t bytes_available;
+
+		/* Read data in 6-byte chunks */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)tmpbuf, 6, 1000);
+
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret != 6) {
+			upsdebugx(1,
+				"interrupt read error: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		upsdebugx(4,
+			"read: ret %d buf %02hhx: %02hhx %02hhx %02hhx %02hhx %02hhx  >%c%c%c%c%c<",
+			ret,
+			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
+			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
+
+		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
+		if (bytes_available == 0) {
+			/* End of transfer */
+			break;
+		}
+
+		memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
+		bufpos += bytes_available;
+
+		if (bytes_available <= 2) {
+			/* Slow down, let the UPS buffer more bytes */
+			usleep(15000);
+		}
+	}
+
+	if (bufpos + 6 >= buflen) {
+		upsdebugx(2, "Protocol error, too much data read.");
+		return -1;
+	}
+
+	upsdebugx(3, "armac command %.*s response read: '%.*s'",
+		(int)strcspn(cmd, "\r"), cmd,
+		(int)strcspn(buf, "\r"), buf
+		);
+
+	return (int)bufpos;
+}
+
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
+	return NULL;
+}
+
+static void	*sgs_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &sgs_command;
 	return NULL;
 }
 
 static void	*ippon_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
 static void	*krauler_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
 static void	*phoenix_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &phoenix_command;
 	return NULL;
 }
 
 static void	*fabula_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fabula_command;
+	return NULL;
+}
+
+static void	*phoenixtec_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &phoenixtec_command;
+	return NULL;
+}
+
+/* Note: the "hunnox_subdriver" name is taken by the subdriver_t structure */
+static void *fabula_hunnox_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &hunnox_command;
 	return NULL;
 }
 
 static void	*fuji_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fuji_command;
+	return NULL;
+}
+
+static void	*snr_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &snr_command;
+	return NULL;
+}
+
+static void	*armac_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &armac_command;
 	return NULL;
 }
 
@@ -987,8 +1973,10 @@ typedef struct {
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
+	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(0x06da, 0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
 	{ USB_DEVICE(0x06da, 0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
@@ -997,9 +1985,13 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
+	{ USB_DEVICE(0x0925, 0x1234),	NULL,		NULL,					&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
@@ -1020,11 +2012,17 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 		if (usbdev->productID != device->ProductID)
 			continue;
 
-		if (usbdev->vendor && (!device->Vendor || strcasecmp(usbdev->vendor, device->Vendor)))
+		if (usbdev->vendor
+		&& (!device->Vendor || strcasecmp(usbdev->vendor, device->Vendor))
+		) {
 			continue;
+		}
 
-		if (usbdev->product && (!device->Product || strcasecmp(usbdev->product, device->Product)))
+		if (usbdev->product
+		&& (!device->Product || strcasecmp(usbdev->product, device->Product))
+		) {
 			continue;
+		}
 
 		/* Call the specific handler, if it exists */
 		if (usbdev->fun != NULL)
@@ -1039,6 +2037,8 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 
 static int	device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -1073,17 +2073,21 @@ int	instcmd(const char *cmdname, const char *extradata)
 
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* Compatibility mode for old command */
-		upslogx(LOG_WARNING, "The 'beeper.off' command has been renamed to 'beeper.disable'");
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
 		return instcmd("beeper.disable", NULL);
 	}
 
 	if (!strcasecmp(cmdname, "beeper.on")) {
 		/* Compatibility mode for old command */
-		upslogx(LOG_WARNING, "The 'beeper.on' command has been renamed to 'beeper.enable'");
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upslogx(LOG_INFO, "%s(%s, %s)", __func__, cmdname, extradata ? extradata : "[NULL]");
+	upslogx(LOG_INFO, "%s(%s, %s)",
+		__func__, cmdname,
+		extradata ? extradata : "[NULL]");
 
 	/* Retrieve item by command name */
 	item = find_nut_info(cmdname, QX_FLAG_CMD, QX_FLAG_SKIP);
@@ -1116,7 +2120,8 @@ int	instcmd(const char *cmdname, const char *extradata)
 				return ret;
 			}
 
-			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+			return instcmd("load.off.delay",
+				dstate_getinfo("ups.delay.shutdown"));
 
 		}
 
@@ -1137,7 +2142,8 @@ int	instcmd(const char *cmdname, const char *extradata)
 				return ret;
 			}
 
-			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+			return instcmd("load.off.delay",
+				dstate_getinfo("ups.delay.shutdown"));
 
 		}
 
@@ -1145,12 +2151,15 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	/* If extradata is empty, use the default value from the QX to NUT table, if any */
+	/* If extradata is empty, use the default value
+	 * from the QX to NUT table, if any */
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
 	/* Preprocess command */
-	if (item->preprocess != NULL && item->preprocess(item, value, sizeof(value))) {
+	if (item->preprocess != NULL
+	&&  item->preprocess(item, value, sizeof(value))
+	) {
 		/* Something went wrong */
 		upslogx(LOG_ERR, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
@@ -1167,10 +2176,15 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_FAILED;
 	}
 
-	/* We got a reply from the UPS: either subdriver->accepted (-> command handled) or the command itself echoed back (-> command failed) */
+	/* We got a reply from the UPS:
+	 * either subdriver->accepted (-> command handled)
+	 * or the command itself echoed back (-> command failed)
+	 */
 	if (strlen(item->value) > 0) {
 
-		if (subdriver->accepted != NULL && !strcasecmp(item->value, subdriver->accepted)) {
+		if (subdriver->accepted != NULL
+		&& !strcasecmp(item->value, subdriver->accepted)
+		) {
 			upslogx(LOG_INFO, "%s: SUCCEED", __func__);
 			/* Set the status so that SEMI_STATIC vars are polled */
 			data_has_changed = TRUE;
@@ -1205,30 +2219,37 @@ int	setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 	}
 
-	/* No NUT variable is available for this item, so we're handling a one-time setvar from ups.conf */
+	/* No NUT variable is available for this item, so we're handling
+	 * a one-time setvar from ups.conf */
 	if (item->qxflags & QX_FLAG_NONUT) {
 
 		const char	*userval;
 
 		/* Nothing to do */
 		if (!testvar(item->info_type)) {
-			upsdebugx(2, "%s: nothing to do.. [%s]", __func__, item->info_type);
+			upsdebugx(2, "%s: nothing to do... [%s]",
+				__func__, item->info_type);
 			return STAT_SET_HANDLED;
 		}
 
 		userval = getval(item->info_type);
 
-		upslogx(LOG_INFO, "%s(%s, %s)", __func__, varname, userval ? userval : "[NULL]");
+		upslogx(LOG_INFO, "%s(%s, %s)",
+			__func__, varname,
+			userval ? userval : "[NULL]");
 
 		snprintf(value, sizeof(value), "%s", userval ? userval : "");
 
 	/* This item is available in NUT */
 	} else {
 
-		upslogx(LOG_INFO, "%s(%s, %s)", __func__, varname, strlen(val) ? val : "[NULL]");
+		upslogx(LOG_INFO, "%s(%s, %s)",
+			__func__, varname,
+			strlen(val) ? val : "[NULL]");
 
 		if (!strlen(val)) {
-			upslogx(LOG_ERR, "%s: value not given for %s", __func__, item->info_type);
+			upslogx(LOG_ERR, "%s: value not given for %s",
+				__func__, item->info_type);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
 
@@ -1236,7 +2257,8 @@ int	setvar(const char *varname, const char *val)
 
 		/* Nothing to do */
 		if (!strcasecmp(dstate_getinfo(item->info_type), value)) {
-			upslogx(LOG_INFO, "%s: nothing to do.. [%s]", __func__, item->info_type);
+			upslogx(LOG_INFO, "%s: nothing to do... [%s]",
+				__func__, item->info_type);
 			return STAT_SET_HANDLED;
 		}
 
@@ -1245,22 +2267,25 @@ int	setvar(const char *varname, const char *val)
 	/* Check if given value is in the range of accepted values (range) */
 	if (item->qxflags & QX_FLAG_RANGE) {
 
-		int	valuetoset, min, max;
+		long	valuetoset, min, max;
 
 		if (strspn(value, "0123456789 .") != strlen(value)) {
-			upslogx(LOG_ERR, "%s: non numerical value [%s: %s]", __func__, item->info_type, value);
+			upslogx(LOG_ERR, "%s: non numerical value [%s: %s]",
+				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
 
 		valuetoset = strtol(value, NULL, 10);
 
-		/* No NUT var is available for this item, so take its range from qx2nut table */
+		/* No NUT var is available for this item, so
+		 * take its range from qx2nut table */
 		if (item->qxflags & QX_FLAG_NONUT) {
 
 			info_rw_t	*rvalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s", __func__, item->info_type);
+				upslogx(LOG_ERR, "%s: value not given for %s",
+					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
 
@@ -1269,8 +2294,11 @@ int	setvar(const char *varname, const char *val)
 			/* Loop on all existing values */
 			for (rvalue = item->info_rw; rvalue != NULL && strlen(rvalue->value) > 0; rvalue++) {
 
-				if (rvalue->preprocess && rvalue->preprocess(rvalue->value, sizeof(rvalue->value)))
+				if (rvalue->preprocess
+				&&  rvalue->preprocess(rvalue->value, sizeof(rvalue->value))
+				) {
 					continue;
+				}
 
 				if (min < 0) {
 					min = strtol(rvalue->value, NULL, 10);
@@ -1290,14 +2318,16 @@ int	setvar(const char *varname, const char *val)
 
 			}
 
-		/* We have a NUT var for this item, so check given value against the already set range */
+		/* We have a NUT var for this item, so check given value
+		 * against the already set range */
 		} else {
 
 			const range_t	*range = state_getrangelist(root, item->info_type);
 
 			/* Unable to find tree node for var */
 			if (!range) {
-				upsdebugx(2, "%s: unable to find tree node for %s", __func__, item->info_type);
+				upsdebugx(2, "%s: unable to find tree node for %s",
+					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;
 			}
 
@@ -1317,28 +2347,34 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]", __func__, item->info_type, value);
+			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
 
 	/* Check if given value is in the range of accepted values (enum) */
 	} else if (item->qxflags & QX_FLAG_ENUM) {
 
-		/* No NUT var is available for this item, so take its range from qx2nut table */
+		/* No NUT var is available for this item, so
+		 * take its range from qx2nut table */
 		if (item->qxflags & QX_FLAG_NONUT) {
 
 			info_rw_t	*envalue;
 
 			if (!strlen(value)) {
-				upslogx(LOG_ERR, "%s: value not given for %s", __func__, item->info_type);
+				upslogx(LOG_ERR, "%s: value not given for %s",
+					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 			}
 
 			/* Loop on all existing values */
 			for (envalue = item->info_rw; envalue != NULL && strlen(envalue->value) > 0; envalue++) {
 
-				if (envalue->preprocess && envalue->preprocess(envalue->value, sizeof(envalue->value)))
+				if (envalue->preprocess
+				&&  envalue->preprocess(envalue->value, sizeof(envalue->value))
+				) {
 					continue;
+				}
 
 				if (strcasecmp(envalue->value, value))
 					continue;
@@ -1349,14 +2385,16 @@ int	setvar(const char *varname, const char *val)
 
 			}
 
-		/* We have a NUT var for this item, so check given value against the already set range */
+		/* We have a NUT var for this item, so check given value
+		 * against the already set range */
 		} else {
 
 			const enum_t	*enumlist = state_getenumlist(root, item->info_type);
 
 			/* Unable to find tree node for var */
 			if (!enumlist) {
-				upsdebugx(2, "%s: unable to find tree node for %s", __func__, item->info_type);
+				upsdebugx(2, "%s: unable to find tree node for %s",
+					__func__, item->info_type);
 				return STAT_SET_UNKNOWN;
 			}
 
@@ -1376,30 +2414,39 @@ int	setvar(const char *varname, const char *val)
 		}
 
 		if (!ok) {
-			upslogx(LOG_ERR, "%s: value out of range [%s: %s]", __func__, item->info_type, value);
+			upslogx(LOG_ERR, "%s: value out of range [%s: %s]",
+				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
 
 	/* Check if given value is not too long (string) */
 	} else if (item->info_flags & ST_FLAG_STRING) {
 
-		const int	aux = state_getaux(root, item->info_type);
+		const long	aux = state_getaux(root, item->info_type);
 
 		/* Unable to find tree node for var */
 		if (aux < 0) {
-			upsdebugx(2, "%s: unable to find tree node for %s", __func__, item->info_type);
+			upsdebugx(2, "%s: unable to find tree node for %s",
+				__func__, item->info_type);
 			return STAT_SET_UNKNOWN;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int)strlen(value)) {
-			upslogx(LOG_ERR, "%s: value is too long [%s: %s]", __func__, item->info_type, value);
+			upslogx(LOG_ERR, "%s: value is too long [%s: %s]",
+				__func__, item->info_type, value);
 			return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 		}
 
 	}
 
 	/* Preprocess value: from NUT-compliant to UPS-compliant */
-	if (item->preprocess != NULL && item->preprocess(item, value, sizeof(value))) {
+	if (item->preprocess != NULL
+	&&  item->preprocess(item, value, sizeof(value))
+	) {
 		/* Something went wrong */
 		upslogx(LOG_ERR, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
@@ -1407,7 +2454,8 @@ int	setvar(const char *varname, const char *val)
 
 	/* Handle server side variable */
 	if (item->qxflags & QX_FLAG_ABSENT) {
-		upsdebugx(2, "%s: setting server side variable %s", __func__, item->info_type);
+		upsdebugx(2, "%s: setting server side variable %s",
+			__func__, item->info_type);
 		dstate_setinfo(item->info_type, "%s", value);
 		upslogx(LOG_INFO, "%s: SUCCEED", __func__);
 		return STAT_SET_HANDLED;
@@ -1424,10 +2472,14 @@ int	setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
 	}
 
-	/* We got a reply from the UPS: either subdriver->accepted (-> command handled) or the command itself echoed back (-> command failed) */
+	/* We got a reply from the UPS:
+	 * either subdriver->accepted (-> command handled)
+	 * or the command itself echoed back (-> command failed) */
 	if (strlen(item->value) > 0) {
 
-		if (subdriver->accepted != NULL && !strcasecmp(item->value, subdriver->accepted)) {
+		if (subdriver->accepted != NULL
+		&&  !strcasecmp(item->value, subdriver->accepted)
+		) {
 			upslogx(LOG_INFO, "%s: SUCCEED", __func__);
 			/* Set the status so that SEMI_STATIC vars are polled */
 			data_has_changed = TRUE;
@@ -1447,6 +2499,9 @@ int	setvar(const char *varname, const char *val)
 }
 
 /* Try to shutdown the UPS */
+void	upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
 void	upsdrv_shutdown(void)
 {
 	int		retry;
@@ -1533,14 +2588,53 @@ void	upsdrv_shutdown(void)
 
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %s seconds", dstate_getinfo("ups.delay.shutdown"));
+		fatalx(EXIT_SUCCESS, "Shutting down in %s seconds",
+			dstate_getinfo("ups.delay.shutdown"));
 	}
 
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
+#ifdef QX_USB
+	#ifndef TESTING
+		static const struct {
+			const char	*name;
+			int		(*command)(const char *cmd, char *buf, size_t buflen);
+		} usbsubdriver[] = {
+			{ "cypress", &cypress_command },
+			{ "phoenixtec", &phoenixtec_command },
+			{ "phoenix", &phoenix_command },
+			{ "ippon", &ippon_command },
+			{ "krauler", &krauler_command },
+			{ "fabula", &fabula_command },
+			{ "hunnox", &hunnox_command },
+			{ "fuji", &fuji_command },
+			{ "sgs", &sgs_command },
+			{ "snr", &snr_command },
+			{ "ablerex", &ablerex_command },
+			{ "armac", &armac_command },
+			{ NULL, NULL }
+		};
+	#endif
+#endif
+
+
 void	upsdrv_help(void)
 {
+#ifdef QX_USB
+	#ifndef TESTING
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
+
+	for (i = 0; usbsubdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", usbsubdriver[i].name);
+	}
+	printf("\n\n");
+	#endif
+#endif
+
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
@@ -1552,30 +2646,42 @@ void	upsdrv_makevartable(void)
 
 	upsdebugx(1, "%s...", __func__);
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, QX_VAR_OFFDELAY, temp);
 
-	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
+	snprintf(temp, sizeof(temp),
+		"Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, QX_VAR_ONDELAY, temp);
 
-	addvar(VAR_FLAG, "stayoff", "If invoked the UPS won't return after a shutdown when FSD arises");
+	addvar(VAR_FLAG, "stayoff",
+		"If invoked the UPS won't return after a shutdown when FSD arises");
 
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)", DEFAULT_POLLFREQ);
+	snprintf(temp, sizeof(temp),
+		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
+			 DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, QX_VAR_POLLFREQ, temp);
 
-	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol",
+		"Preselect communication protocol (skip autodetection)");
 
 	/* battery.{charge,runtime} guesstimation */
-	addvar(VAR_VALUE, "runtimecal", "Parameters used for runtime calculation");
-	addvar(VAR_VALUE, "chargetime", "Nominal charge time for UPS battery");
-	addvar(VAR_VALUE, "idleload", "Minimum load to be used for runtime calculation");
+	addvar(VAR_VALUE, "runtimecal",
+		"Parameters used for runtime calculation");
+	addvar(VAR_VALUE, "chargetime",
+		"Nominal charge time for UPS battery");
+	addvar(VAR_VALUE, "idleload",
+		"Minimum load to be used for runtime calculation");
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
-	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
+	addvar(VAR_VALUE, "langid_fix",
+		"Apply the language ID workaround to the krauler subdriver "
+		"(0x409 or 0x4095)");
+	addvar(VAR_FLAG, "noscanlangid", "Don't autoscan valid range for langid");
 #endif	/* QX_USB */
 
 #ifdef QX_SERIAL
@@ -1604,7 +2710,8 @@ void	upsdrv_updateinfo(void)
 	/* Clear status buffer before beginning */
 	status_init();
 
-	/* Do a full update (polling) every pollfreq or upon data change (i.e. setvar/instcmd) */
+	/* Do a full update (polling) every pollfreq or upon data change
+	 * (i.e. setvar/instcmd) */
 	if ((now > (lastpoll + pollfreq)) || (data_has_changed == TRUE)) {
 
 		upsdebugx(1, "Full update...");
@@ -1617,7 +2724,8 @@ void	upsdrv_updateinfo(void)
 		if (qx_ups_walk(QX_WALKMODE_FULL_UPDATE) == FALSE) {
 
 			if (retry < MAXTRIES || retry == MAXTRIES) {
-				upsdebugx(1, "Communications with the UPS lost: status read failed!");
+				upsdebugx(1,
+					"Communications with the UPS lost: status read failed!");
 				retry++;
 			} else {
 				dstate_datastale();
@@ -1640,7 +2748,8 @@ void	upsdrv_updateinfo(void)
 		if (qx_ups_walk(QX_WALKMODE_QUICK_UPDATE) == FALSE) {
 
 			if (retry < MAXTRIES || retry == MAXTRIES) {
-				upsdebugx(1, "Communications with the UPS lost: status read failed!");
+				upsdebugx(1,
+					"Communications with the UPS lost: status read failed!");
 				retry++;
 			} else {
 				dstate_datastale();
@@ -1702,12 +2811,16 @@ void	upsdrv_initinfo(void)
 
 	}
 
-	if (!find_nut_info("load.off", QX_FLAG_CMD, QX_FLAG_SKIP) && find_nut_info("load.off.delay", QX_FLAG_CMD, QX_FLAG_SKIP)) {
+	if (!find_nut_info("load.off", QX_FLAG_CMD, QX_FLAG_SKIP)
+	&&  find_nut_info("load.off.delay", QX_FLAG_CMD, QX_FLAG_SKIP)
+	) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
 	}
 
-	if (!find_nut_info("load.on", QX_FLAG_CMD, QX_FLAG_SKIP) && find_nut_info("load.on.delay", QX_FLAG_CMD, QX_FLAG_SKIP)) {
+	if (!find_nut_info("load.on", QX_FLAG_CMD, QX_FLAG_SKIP)
+	&&  find_nut_info("load.on.delay", QX_FLAG_CMD, QX_FLAG_SKIP)
+	) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.on");
 	}
@@ -1717,7 +2830,7 @@ void	upsdrv_initinfo(void)
 	if (val)
 		pollfreq = strtol(val, NULL, 10);
 
-	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
+	dstate_setinfo("driver.parameter.pollfreq", "%ld", pollfreq);
 
 	time(&lastpoll);
 
@@ -1776,7 +2889,7 @@ void	upsdrv_initups(void)
 			{ "reverse",	0, 1 },
 			{ "both",	1, 1 },
 			{ "none",	0, 0 },
-			{ NULL }
+			{ NULL, 0, 0 }
 		};
 
 		int		i;
@@ -1837,24 +2950,12 @@ void	upsdrv_initups(void)
 /* USB */
 #ifdef QX_USB
 
+	warn_if_bad_usb_port_filename(device_path);
+
 	#ifndef TESTING
-
-		const struct {
-			const char	*name;
-			int		(*command)(const char *cmd, size_t cmdlen, char *buf, size_t buflen);
-		} usbsubdriver[] = {
-			{ "cypress", &cypress_command },
-			{ "phoenix", &phoenix_command },
-			{ "ippon", &ippon_command },
-			{ "krauler", &krauler_command },
-			{ "fabula", &fabula_command },
-			{ "fuji", &fuji_command },
-			{ NULL }
-		};
-
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
-		char	*regex_array[6];
+		char	*regex_array[7];
 
 		char	*subdrv = getval("subdriver");
 
@@ -1864,14 +2965,21 @@ void	upsdrv_initups(void)
 		regex_array[3] = getval("product");
 		regex_array[4] = getval("serial");
 		regex_array[5] = getval("bus");
+		regex_array[6] = getval("device");
 
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
 			/* Skip "0x" prefix and set back to hexadecimal */
-			if (sscanf(getval("langid_fix") + 2, "%x", &langid_fix) != 1) {
+			unsigned int u_langid_fix;
+			if ( (sscanf(getval("langid_fix") + 2, "%x", &u_langid_fix) != 1)
+			||   (u_langid_fix > INT_MAX)
+			) {
 				upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 			} else {
-				upsdebugx(2, "Language ID workaround enabled (using '0x%x')", langid_fix);
+				langid_fix = (int)u_langid_fix;
+				upsdebugx(2,
+					"Language ID workaround enabled (using '0x%x')",
+					langid_fix);
 			}
 		}
 
@@ -1881,7 +2989,9 @@ void	upsdrv_initups(void)
 			int	i;
 
 			if (!regex_array[0] || !regex_array[1]) {
-				fatalx(EXIT_FAILURE, "When specifying a subdriver, 'vendorid' and 'productid' are mandatory.");
+				fatalx(EXIT_FAILURE,
+					"When specifying a subdriver, "
+					"'vendorid' and 'productid' are mandatory.");
 			}
 
 			for (i = 0; usbsubdriver[i].name; i++) {
@@ -1900,7 +3010,9 @@ void	upsdrv_initups(void)
 
 		}
 
-		ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+		ret = USBNewRegexMatcher(&regex_matcher,
+			regex_array,
+			REG_ICASE | REG_EXTENDED);
 		switch (ret)
 		{
 		case -1:
@@ -1908,7 +3020,9 @@ void	upsdrv_initups(void)
 		case 0:
 			break;	/* All is well */
 		default:
-			fatalx(EXIT_FAILURE, "Invalid regular expression: %s", regex_array[ret]);
+			fatalx(EXIT_FAILURE,
+				"Invalid regular expression: %s",
+				 regex_array[ret]);
 		}
 
 		/* Link the matchers */
@@ -1917,10 +3031,14 @@ void	upsdrv_initups(void)
 		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 		if (ret < 0) {
 			fatalx(EXIT_FAILURE,
-				"No supported devices found. Please check your device availability with 'lsusb'\n"
-				"and make sure you have an up-to-date version of NUT. If this does not help,\n"
-				"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
-				"options specified. Please refer to the man page for details about these options\n"
+				"No supported devices found. "
+				"Please check your device availability with 'lsusb'\n"
+				"and make sure you have an up-to-date version of NUT. "
+				"If this does not help,\n"
+				"try running the driver with at least 'subdriver', "
+				"'vendorid' and 'productid'\n"
+				"options specified. Please refer to the man page "
+				"for details about these options\n"
 				"(man 8 nutdrv_qx).\n");
 		}
 
@@ -1941,17 +3059,25 @@ void	upsdrv_initups(void)
 		dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 
 		/* Check for language ID workaround (#2) */
-		if (langid_fix != -1) {
+		if ((langid_fix != -1) && (!getval("noscanlangid"))) {
 			/* Future improvement:
-			 *   Asking for the zero'th index is special - it returns a string descriptor that contains all the language IDs supported by the device.
+			 *   Asking for the zero'th index is special - it returns
+			 *       a string descriptor that contains all the language
+			 *       IDs supported by the device.
 			 *   Typically there aren't many - often only one.
-			 *   The language IDs are 16 bit numbers, and they start at the third byte in the descriptor.
-			 *   See USB 2.0 specification, section 9.6.7, for more information on this.
+			 *   The language IDs are 16 bit numbers, and they start at
+			 *       the third byte in the descriptor.
+			 *   See USB 2.0 specification, section 9.6.7, for more
+			 *       information on this.
 			 * This should allow automatic application of the workaround */
-			ret = usb_get_string(udev, 0, 0, tbuf, sizeof(tbuf));
+			ret = usb_get_string(udev, 0, 0,
+				(usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 			if (ret >= 4) {
-				langid = tbuf[2] | (tbuf[3] << 8);
-				upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
+				langid = ((uint8_t)tbuf[2]) | (((uint8_t)tbuf[3]) << 8);
+				upsdebugx(1,
+					"First supported language ID: 0x%x "
+					"(please report to the NUT maintainer!)",
+					langid);
 			}
 		}
 
@@ -2003,6 +3129,7 @@ void	upsdrv_cleanup(void)
 		free(usbdevice.Product);
 		free(usbdevice.Serial);
 		free(usbdevice.Bus);
+		free(usbdevice.Device);
 
 	#ifdef QX_SERIAL
 	}	/* is_usb */
@@ -2019,18 +3146,25 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
-static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
+/* NOTE: Could not find in which ifdef-ed codepath, but clang complained
+ * about unused parameters here. Reference them just in case...
+ */
+	NUT_UNUSED_VARIABLE(cmd);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+
 #ifndef TESTING
 
-	int	ret = -1;
+	ssize_t	ret = -1;
 
-#ifdef QX_USB
+# ifdef QX_USB
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	/* Communication: USB */
 	if (is_usb) {
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL (&& QX_USB)*/
 
 		if (udev == NULL) {
 			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
@@ -2048,77 +3182,108 @@ static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 
 		switch (ret)
 		{
-		case -EBUSY:		/* Device or resource busy */
+		case ERROR_BUSY:	/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
 
+	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
+#endif
+	#endif	/* WITH_LIBUSB_0_1 */
 
-		case -EPIPE:		/* Broken pipe */
+		case ERROR_PIPE:	/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-	#ifdef ETIME
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
+			goto fallthrough_case_ETIME;
 		case -ETIME:		/* Timer expired */
-	#endif	/* ETIME */
+		fallthrough_case_ETIME:
+#endif	/* ETIME && WITH_LIBUSB_0_1 */
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
-		case -ENODEV:		/* No such device */
-		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+			goto fallthrough_case_reconnect;
+		case ERROR_NO_DEVICE:	/* No such device */
+		case ERROR_ACCESS:	/* Permission denied */
+		case ERROR_IO:		/* I/O error */
+#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
-		case -ENOENT:		/* No such file or directory */
+#endif	/* WITH_LIBUSB_0_1 */
+		case ERROR_NOT_FOUND:	/* No such file or directory */
+		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
 			break;
 
-		case -ETIMEDOUT:	/* Connection timed out */
-		case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+		case ERROR_TIMEOUT:	/* Connection timed out */
+		case ERROR_OVERFLOW:	/* Value too large for defined data type */
+#if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
 #endif
 		default:
 			break;
 		}
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	/* Communication: serial */
 	} else {	/* !is_usb */
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL (&& QX_USB) */
 
-#endif	/* QX_USB */
+# endif	/* QX_USB (&& TESTING) */
 
-#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 
 		ser_flush_io(upsfd);
 
 		ret = ser_send_buf(upsfd, cmd, cmdlen);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? strerror(errno) : "timeout", ret);
+			upsdebugx(3, "send: %s (%zd)",
+				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
-		upsdebugx(3, "send: '%.*s'", (int)strcspn(cmd, "\r"), cmd);
+		upsdebugx(3, "send: '%.*s'",
+			(int)strcspn(cmd, "\r"), cmd);
 
 		ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? strerror(errno) : "timeout", ret);
+			upsdebugx(3, "read: %s (%zd)",
+				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
-		upsdebug_hex(5, "read", buf, ret);
+		upsdebug_hex(5, "read", buf, (size_t)ret);
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	}	/* !is_usb */
-	#endif	/* QX_USB */
+#  endif	/* QX_USB (&& QX_SERIAL) */
 
-#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL (&& TESTING) */
 
 	return ret;
 
@@ -2137,7 +3302,9 @@ static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 			continue;
 		}
 
-		upsdebugx(3, "read: '%.*s'", (int)strcspn(testing[i].answer, "\r"), testing[i].answer);
+		upsdebugx(3, "read: '%.*s'",
+			(int)strcspn(testing[i].answer, "\r"),
+			testing[i].answer);
 
 		/* If requested to do so and this is the case, try to preserve inner '\0's (treat answer as a sequence of bytes) */
 		if (testing[i].answer_len > 0 && strlen(testing[i].answer) < (size_t)testing[i].answer_len) {
@@ -2162,7 +3329,9 @@ static int	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 	if (subdriver->rejected != NULL) {
 
 		/* ..fulfill its expectations.. */
-		upsdebugx(3, "read: '%.*s'", (int)strcspn(subdriver->rejected, "\r"), subdriver->rejected);
+		upsdebugx(3, "read: '%.*s'",
+			(int)strcspn(subdriver->rejected, "\r"),
+			subdriver->rejected);
 		return snprintf(buf, buflen, "%s", subdriver->rejected);
 
 	/* ..otherwise.. */
@@ -2205,7 +3374,8 @@ void	update_status(const char *value)
 		return;
 	}
 
-	upsdebugx(5, "%s: Warning! %s not in list of known values", __func__, value);
+	upsdebugx(5, "%s: Warning! %s not in list of known values",
+		__func__, value);
 }
 
 /* Choose subdriver */
@@ -2225,10 +3395,13 @@ static int	subdriver_matcher(void)
 			char	subdrv_name[SMALLBUF];
 
 			/* Get rid of subdriver version */
-			snprintf(subdrv_name, sizeof(subdrv_name), "%.*s", (int)strcspn(subdriver_list[i]->name, " "), subdriver_list[i]->name);
+			snprintf(subdrv_name, sizeof(subdrv_name), "%.*s",
+				(int)strcspn(subdriver_list[i]->name, " "),
+				subdriver_list[i]->name);
 
 			if (strcasecmp(subdrv_name, protocol)) {
-				upsdebugx(2, "Skipping protocol %s", subdriver_list[i]->name);
+				upsdebugx(2, "Skipping protocol %s",
+					subdriver_list[i]->name);
 				continue;
 			}
 
@@ -2281,8 +3454,11 @@ static void	qx_set_var(item_t *item)
 		/* Loop on all existing values */
 		for (envalue = item->info_rw; envalue != NULL && strlen(envalue->value) > 0; envalue++) {
 
-			if (envalue->preprocess && envalue->preprocess(envalue->value, sizeof(envalue->value)))
+			if (envalue->preprocess
+			&&  envalue->preprocess(envalue->value, sizeof(envalue->value))
+			) {
 				continue;
+			}
 
 			/* This item is not available yet in NUT, so publish these data in the logs */
 			if (item->qxflags & QX_FLAG_NONUT) {
@@ -2299,7 +3475,9 @@ static void	qx_set_var(item_t *item)
 		}
 
 		if (item->qxflags & QX_FLAG_NONUT)
-			upslogx(LOG_INFO, "%s, settable values:%s", item->info_type, strlen(buf) > 0 ? buf : " none");
+			upslogx(LOG_INFO, "%s, settable values:%s",
+				item->info_type,
+				strlen(buf) > 0 ? buf : " none");
 
 	}
 
@@ -2312,8 +3490,11 @@ static void	qx_set_var(item_t *item)
 		/* Loop on all existing values */
 		for (rvalue = item->info_rw; rvalue != NULL && strlen(rvalue->value) > 0; rvalue++) {
 
-			if (rvalue->preprocess && rvalue->preprocess(rvalue->value, sizeof(rvalue->value)))
+			if (rvalue->preprocess
+			&&  rvalue->preprocess(rvalue->value, sizeof(rvalue->value))
+			) {
 				continue;
+			}
 
 			if (!from) {
 				from = rvalue;
@@ -2322,17 +3503,26 @@ static void	qx_set_var(item_t *item)
 
 			to = rvalue;
 
-			/* This item is not available yet in NUT, so publish these data in the logs */
+			/* This item is not available yet in NUT, so
+			 * publish these data in the logs */
 			if (item->qxflags & QX_FLAG_NONUT) {
 
-				upslogx(LOG_INFO, "%s, settable range: %s..%s", item->info_type, from->value, to->value);
+				upslogx(LOG_INFO, "%s, settable range: %s..%s",
+					item->info_type, from->value, to->value);
 				ok++;
 
 			/* This item is available in NUT, add its range to the variable */
 			} else {
+				long lFrom = strtol(from->value, NULL, 10),
+					lTo = strtol(to->value, NULL, 10);
 
-				dstate_addrange(item->info_type, strtol(from->value, NULL, 10), strtol(to->value, NULL, 10));
-
+				if (lFrom > INT_MAX || lTo > INT_MAX) {
+					upslogx(LOG_INFO,
+						"%s, settable range exceeds INT_MAX: %ld..%ld",
+						item->info_type, lFrom, lTo);
+				} else {
+					dstate_addrange(item->info_type, (int)lFrom, (int)lTo);
+				}
 			}
 
 			from = NULL;
@@ -2340,7 +3530,8 @@ static void	qx_set_var(item_t *item)
 
 		}
 
-		/* This item is not available yet in NUT and we weren't able to get its range; let people know it */
+		/* This item is not available yet in NUT and we weren't able to
+		 * get its range; let people know it */
 		if ((item->qxflags & QX_FLAG_NONUT) && !ok)
 			upslogx(LOG_INFO, "%s, settable range: none", item->info_type);
 
@@ -2363,7 +3554,8 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	memset(previous_item.command, 0, sizeof(previous_item.command));
 	memset(previous_item.answer, 0, sizeof(previous_item.answer));
 
-	/* 3 modes: QX_WALKMODE_INIT, QX_WALKMODE_QUICK_UPDATE and QX_WALKMODE_FULL_UPDATE */
+	/* 3 modes: QX_WALKMODE_INIT, QX_WALKMODE_QUICK_UPDATE
+	 *      and QX_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk */
 	for (item = subdriver->qx2nut; item->info_type != NULL; item++) {
@@ -2396,8 +3588,11 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 			}
 
 			/* Allow duplicates for these NUT variables */
-			if (!strncmp(item->info_type, "ups.alarm", 9) || !strncmp(item->info_type, "ups.status", 10))
+			if (!strncmp(item->info_type, "ups.alarm", 9)
+			||  !strncmp(item->info_type, "ups.status", 10)
+			) {
 				break;
+			}
 
 			/* This one doesn't exist yet */
 			if (dstate_getinfo(item->info_type) == NULL)
@@ -2420,14 +3615,41 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 				continue;
 
 			/* These need to be polled after user changes (setvar / instcmd) */
-			if ((item->qxflags & QX_FLAG_SEMI_STATIC) && (data_has_changed == FALSE))
+			if ((item->qxflags & QX_FLAG_SEMI_STATIC)
+			&&  (data_has_changed == FALSE)
+			) {
 				continue;
+			}
 
 			break;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 		default:
-
 			fatalx(EXIT_FAILURE, "%s: unknown update mode!", __func__);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 
 		}
 
@@ -2449,10 +3671,15 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 		}
 
-		/* Check whether the previous item uses the same command and then use its answer, if available.. */
-		if (strlen(previous_item.command) > 0 && strlen(previous_item.answer) > 0 && !strcasecmp(previous_item.command, item->command)) {
+		/* Check whether the previous item uses the same command
+		 * and then use its answer, if available.. */
+		if (strlen(previous_item.command) > 0
+		&&  strlen(previous_item.answer) > 0
+		&&  !strcasecmp(previous_item.command, item->command)
+		) {
 
-			snprintf(item->answer, sizeof(item->answer), "%s", previous_item.answer);
+			snprintf(item->answer, sizeof(item->answer), "%s",
+				previous_item.answer);
 
 			/* Process the answer */
 			retcode = qx_process_answer(item, strlen(item->answer));
@@ -2465,8 +3692,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 		}
 
 		/* Record item as previous_item */
-		snprintf(previous_item.command, sizeof(previous_item.command), "%s", item->command);
-		snprintf(previous_item.answer, sizeof(previous_item.answer), "%s", item->answer);
+		snprintf(previous_item.command, sizeof(previous_item.command), "%s",
+			item->command);
+		snprintf(previous_item.answer, sizeof(previous_item.answer), "%s",
+			item->answer);
 
 		if (retcode) {
 
@@ -2486,7 +3715,8 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 		}
 
-		/* Process the value we got back (set status bits and set the value of other parameters) */
+		/* Process the value we got back (set status bits
+		 * and set the value of other parameters) */
 		retcode = ups_infoval_set(item);
 
 		/* Clear data from the item */
@@ -2503,7 +3733,8 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 		}
 
-		/* Set var flags/range/enum (not for ups.{alarm.status}, hence the retcode check) */
+		/* Set var flags/range/enum (not for ups.{alarm.status},
+		 * hence the retcode check) */
 		if (retcode && mode == QX_WALKMODE_INIT) {
 			qx_set_var(item);
 		}
@@ -2511,7 +3742,9 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	}
 
 	/* Update battery guesstimation */
-	if (mode == QX_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
+	if (mode == QX_WALKMODE_FULL_UPDATE
+	&&  (d_equal(batt.runt.act, -1) || d_equal(batt.chrg.act, -1))
+	) {
 
 		if (getval("runtimecal")) {
 
@@ -2537,11 +3770,53 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			}
 
-			if (batt.chrg.act == -1)
-				dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
+			const char	*val = dstate_getinfo("battery.voltage");
 
-			if (batt.runt.act == -1 && !qx_load())
-				dstate_setinfo("battery.runtime", "%.0f", batt.runt.est / load.eff);
+			if (!val) {
+				upsdebugx(2, "%s: unable to get battery.voltage", __func__);
+			} else {
+				/* For age-corrected estimates below,
+				 * see theory and experimental graphs at
+				 * https://github.com/networkupstools/nut/pull/1027
+				 */
+
+				batt.volt.act = batt.packs * strtod(val, NULL);
+
+				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
+
+					double voltage_battery_charge = (batt.volt.act - batt.volt.low) / (batt.volt.high - batt.volt.low);
+
+					if (voltage_battery_charge < 0) {
+						voltage_battery_charge = 0;
+					}
+
+					if (voltage_battery_charge > 1) {
+						voltage_battery_charge = 1;
+					}
+
+					/* Correct estimated runtime remaining for old batteries:
+					 * this value replacement only happens if the actual
+					 * voltage_battery_charge is smaller than expected by
+					 * previous (load-based) estimation, thus adapting to a
+					 * battery too old and otherwise behaving non-linearly
+					 */
+					if (voltage_battery_charge < (batt.runt.est / batt.runt.nom)) {
+						double estPrev = batt.runt.est;
+						batt.runt.est = voltage_battery_charge * batt.runt.nom;
+						upsdebugx(3, "%s: updating batt.runt.est from '%g' to '%g'",
+							__func__, estPrev, batt.runt.est);
+					}
+
+				}
+			}
+
+			if (d_equal(batt.chrg.act, -1))
+				dstate_setinfo("battery.charge", "%.0f",
+					100 * batt.runt.est / batt.runt.nom);
+
+			if (d_equal(batt.runt.act, -1) && !qx_load())
+				dstate_setinfo("battery.runtime", "%.0f",
+					batt.runt.est / load.eff);
 
 			battery_lastpoll = battery_now;
 
@@ -2634,35 +3909,44 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 
 /* Process the answer we got back from the UPS
  * Return -1 on errors, 0 on success */
-static int	qx_process_answer(item_t *item, const int len)
+static int	qx_process_answer(item_t *item, const size_t len)
 {
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
-		upsdebugx(2, "%s: query rejected by the UPS (%s)", __func__, item->info_type);
+		upsdebugx(2, "%s: query rejected by the UPS (%s)",
+			__func__, item->info_type);
 		return -1;
 	}
 
 	/* Short reply */
 	if (item->answer_len && len < item->answer_len) {
-		upsdebugx(2, "%s: short reply (%s) %d>%d", __func__, item->info_type, len, item->answer_len);
+		upsdebugx(2, "%s: short reply (%s) %d<%d",
+			__func__, item->info_type, len, item->answer_len);
 		return -1;
 	}
 
 	/* Wrong leading character */
 	if (item->leading && item->answer[0] != item->leading) {
-		upsdebugx(2, "%s: %s - invalid start character [%02x], expected [%02x]", __func__, item->info_type, item->answer[0], item->leading);
+		upsdebugx(2,
+			"%s: %s - invalid start character [%02x], expected [%02x]",
+			__func__, item->info_type, item->answer[0], item->leading);
 		return -1;
 	}
 
 	/* Check boundaries */
 	if (item->to && item->to < item->from) {
-		upsdebugx(1, "%s: in %s, starting char's position (%d) follows ending char's one (%d)", __func__, item->info_type, item->from, item->to);
+		upsdebugx(1,
+			"%s: in %s, starting char's position (%d) "
+			"follows ending char's one (%d)",
+			__func__, item->info_type, item->from, item->to);
 		return -1;
 	}
 
 	/* Get value */
 	if (strlen(item->answer)) {
-		snprintf(item->value, sizeof(item->value), "%.*s", item->to ? 1 + item->to - item->from : (int)strcspn(item->answer, "\r") - item->from, item->answer + item->from);
+		snprintf(item->value, sizeof(item->value), "%.*s",
+			item->to ? 1 + item->to - item->from : (int)strcspn(item->answer, "\r") - item->from,
+			item->answer + item->from);
 	} else {
 		snprintf(item->value, sizeof(item->value), "%s", "");
 	}
@@ -2673,21 +3957,31 @@ static int	qx_process_answer(item_t *item, const int len)
 /* See header file for details. */
 int	qx_process(item_t *item, const char *command)
 {
-	char	buf[sizeof(item->answer) - 1] = "",
-		cmd[command ? (strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) : (item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF)];
-	int	len;
-	int	cmd_len;
+	char	buf[sizeof(item->answer) - 1] = "", *cmd;
+	ssize_t	len;
+	size_t cmdlen = command ?
+		(strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) :
+		(item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF);
+	size_t cmdsz = (sizeof(char) * cmdlen); /* in bytes, to be pedantic */
+	size_t cmd_len;
+
+	if ( !(cmd = xmalloc(cmdsz)) ) {
+		upslogx(LOG_ERR, "qx_process() failed to allocate buffer");
+		return -1;
+	}
 
 	/* Prepare the command to be used */
-	memset(cmd, 0, sizeof(cmd));
-	snprintf(cmd, sizeof(cmd), "%s%n", command ? command : item->command, &cmd_len);
+	memset(cmd, 0, cmdsz);
+	snprintf(cmd, cmdsz, "%s%n", command ? command : item->command, &cmd_len);
 
 	/* Preprocess the command */
 	if (
 		item->preprocess_command != NULL &&
-		(cmd_len = item->preprocess_command(item, cmd, sizeof(cmd))) == -1
+		(cmd_len = item->preprocess_command(item, cmd, cmdsz)) == -1
 	) {
-		upsdebugx(4, "%s: failed to preprocess command [%s]", __func__, item->info_type);
+		upsdebugx(4, "%s: failed to preprocess command [%s]",
+			__func__, item->info_type);
+		free (cmd);
 		return -1;
 	}
 
@@ -2695,21 +3989,34 @@ int	qx_process(item_t *item, const char *command)
 	len = qx_command(cmd, cmd_len, buf, sizeof(buf));
 
 	memset(item->answer, 0, sizeof(item->answer));
+
+	if (len < 0 || len > INT_MAX) {
+		upsdebugx(4, "%s: failed to preprocess answer [%s]",
+			__func__, item->info_type);
+		free (cmd);
+		return -1;
+	}
+
 	memcpy(item->answer, buf, sizeof(buf));
 
 	/* Preprocess the answer */
 	if (item->preprocess_answer != NULL) {
-		len = item->preprocess_answer(item, len);
-		if (len == -1) {
-			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
-			/* Clear answer, preventing it from being reused by next items with same command */
+		len = item->preprocess_answer(item, (int)len);
+		if (len < 0 || len > INT_MAX) {
+			upsdebugx(4, "%s: failed to preprocess answer [%s]",
+				__func__, item->info_type);
+			/* Clear the failed answer, preventing it from
+			 * being reused by next items with same command */
 			memset(item->answer, 0, sizeof(item->answer));
+			free (cmd);
 			return -1;
 		}
 	}
 
+	free (cmd);
+
 	/* Process the answer to get the value */
-	return qx_process_answer(item, len);
+	return qx_process_answer(item, (size_t)len);
 }
 
 /* See header file for details. */
@@ -2722,7 +4029,8 @@ int	ups_infoval_set(item_t *item)
 
 		/* Process the value returned by the UPS to NUT standards */
 		if (item->preprocess(item, value, sizeof(value))) {
-			upsdebugx(4, "%s: failed to preprocess value [%s: %s]", __func__, item->info_type, item->value);
+			upsdebugx(4, "%s: failed to preprocess value [%s: %s]",
+				__func__, item->info_type, item->value);
 			return -1;
 		}
 
@@ -2744,18 +4052,32 @@ int	ups_infoval_set(item_t *item)
 
 		snprintf(value, sizeof(value), "%s", item->value);
 
-		/* Cover most of the cases: either left/right filled with hashes, spaces or a mix of both */
+		/* Cover most of the cases: either left/right filled with hashes,
+		 * spaces or a mix of both */
 		if (item->qxflags & QX_FLAG_TRIM)
-			rtrim_m(ltrim_m(value, "# "), "# ");
+			str_trim_m(value, "# ");
 
 		if (strcasecmp(item->dfl, "%s")) {
 
 			if (strspn(value, "0123456789 .") != strlen(value)) {
-				upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, value);
+				upsdebugx(2, "%s: non numerical value [%s: %s]",
+					__func__, item->info_type, value);
 				return -1;
 			}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 			snprintf(value, sizeof(value), item->dfl, strtod(value, NULL));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		}
 
 	}
@@ -2766,7 +4088,8 @@ int	ups_infoval_set(item_t *item)
 	}
 
 	if (!strlen(value)) {
-		upsdebugx(1, "%s: non significant value [%s]", __func__, item->info_type);
+		upsdebugx(1, "%s: non significant value [%s]",
+			__func__, item->info_type);
 		return -1;
 	}
 
@@ -2782,7 +4105,7 @@ int	ups_infoval_set(item_t *item)
 }
 
 /* See header file for details. */
-int	qx_status(void)
+unsigned int	qx_status(void)
 {
 	return ups_status;
 }

@@ -1,6 +1,6 @@
 /*
  * powerpanel.c - Model specific routines for CyberPower text/binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -36,7 +36,7 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -102,7 +102,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int	i, ret;
+	int	i, ret = -1;
 
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power
@@ -125,7 +125,7 @@ void upsdrv_shutdown(void)
 		}
 	}
 
-	if (ret) {
+	if (ret > 0) {
 		/*
 		 * When on battery, the 'shutdown.stayoff' command will make
 		 * the UPS switch back on when the power returns.
@@ -134,7 +134,7 @@ void upsdrv_shutdown(void)
 			upslogx(LOG_INFO, "Waiting for power to return...");
 			return;
 		}
-	} else {
+	} else if (ret == 0) {
 		/*
 		 * Apparently, the power came back already, so we just need to reboot.
 		 */

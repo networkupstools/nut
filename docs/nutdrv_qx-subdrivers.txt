@@ -15,11 +15,11 @@ Adding support for a new UPS device is easy, because it requires only the creati
 Creating a subdriver
 ~~~~~~~~~~~~~~~~~~~~
 
-In order to develop a new subdriver for a specific UPS you have to know the idiom spoken by that device.
+In order to develop a new subdriver for a specific UPS you have to know the "idiom" (dialect of the protocol) spoken by that device.
 
 This kind of devices speaks idioms that can be summed up as follows:
 
-- We send the UPS a query for one or more informations
+- We send the UPS a query for one or more information
 
  * If the query is supported by the device, we'll get a reply that is mostly of a fixed length, therefore, in most cases, each information starts and ends always at the same indexes
 
@@ -56,7 +56,7 @@ typedef struct {
 Where:
 
 *+name+*::
-Name of this subdriver: name of the +protocol+ that will need to be set in +ups.conf+ to use this subdriver plus the internal version of it separated by a space (e.g. "++Megatec 0.01++").
+Name of this subdriver: name of the +protocol+ that will need to be set in the +ups.conf+ file to use this subdriver plus the internal version of it separated by a space (e.g. "++Megatec 0.01++").
 
 *+claim+*::
 This function allows the subdriver to "claim" a device: return +1+ if the device is supported by this subdriver, else +0+.
@@ -114,7 +114,7 @@ Answer length:
 - if set to +-1+ -> auto calculate answer length (treat +answer+ as a null-terminated string),
 - otherwise -> use the provided length (if reasonable) and preserve inner ++\0++s (treat +answer+ as a sequence of bytes till the +item_t+'s +preprocess_answer()+ function gets called).
 
-For more informations, see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>.
+For more information, see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>.
 --
 
 
@@ -183,12 +183,12 @@ This function will be given +value+ and its +size_t+ and must return either +0+ 
 --
 
 *+command+*::
-Command sent to the UPS to get answer/to execute a instant command/to set a variable.
+Command sent to the UPS to get answer, or to execute an instant command, or to set a variable.
 
 *+answer+*::
 Answer from the UPS, filled at runtime.
 +
-NOTE: If you expect a nonvalid C string (e.g.: inner ++\0++s) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a +preprocess_answer()+ function.
+NOTE: If you expect a non-valid C string (e.g.: inner ++\0++s) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a +preprocess_answer()+ function.
 
 *+answer_len+*::
 Expected minimum length of the answer.
@@ -402,11 +402,11 @@ Filled at runtime
 +dfl+::
 +%s+
 +
-Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want -- like here -- we can use it in our +preprocess+ function.
 
 +qxflags+::
 +QX_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
-Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
+Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it and it will set +datastale+.
 
 +preprocess_command+::
 +NULL+
@@ -475,10 +475,10 @@ Filled at runtime
 +dfl+::
 +%s+
 +
-Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want -- like here -- we can use it in our +preprocess+ function.
 
 +qxflags+::
-+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++QX_FLAG_SEMI_STATIC+ -> this item changes -- and will therefore be updated -- only when we send a command/setvar to the UPS
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
 
@@ -493,7 +493,7 @@ Since a +preprocess+ function is defined for this item, this could have been +NU
 +
 This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will check if the value is in the range and then publish the human readable form of it (i.e. +Li+, +Flooded+ or +AGM+).
 
-We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeded or +(NAK\r+ if the command is rejected.
+We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeeded or +(NAK\r+ if the command is rejected.
 
 ----
 > [PBTnn\r]		nn = 00/01/02
@@ -519,7 +519,7 @@ Here's the +item_t+:
 +info_rw+::
 +voltronic_e_batt_type+
 +
-The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want - like here - we can use it in our +preprocess+ function.
+The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want -- like here -- we can use it in our +preprocess+ function.
 
 +command+::
 +PBT%02.0f\r+
@@ -629,8 +629,8 @@ Not used for +QX_FLAG_CMD+
 This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will check if the value is in the accepted range and then fill +value+ (the second argument passed to the +preprocess+ function) with +command+ and the given value.
 
 
-Informations absent in the device
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Information absent in the device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to set the server-side var +ups.delay.start+, that will be then used by the driver, we have to provide the following +item_t+:
 
@@ -692,19 +692,19 @@ Not used for +QX_FLAG_ABSENT+
 +preprocess+::
 +voltronic_process_setvar+
 +
-This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the neareset settable interval.
+This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the nearest settable interval.
 
 
-Informations not yet available in NUT
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Information not yet available in NUT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If your UPS reports some informations that are not yet available as NUT variables and you need to process them, you can add them in +item_t+ data structure adding the +QX_FLAG_NONUT+ flag to its +qxflags+: the info will then be printed to the logs.
+If your UPS reports some data items that are not yet available as NUT variables and you need to process them, you can add them in +item_t+ data structure adding the +QX_FLAG_NONUT+ flag to its +qxflags+: the info will then be printed to the logs.
 
 So we know that the UPS reports actual input/output phase angles when queried for +QPD\r+:
 
 ----
 > [QPD\r]
-< [(000 120\r]	<- Input Phase Angle - Output Phase Angle
+< [(000 120\r]	<- Input Phase Angle -- Output Phase Angle
    012345678
    0
 ----
@@ -787,7 +787,7 @@ This information will be used to print the value we got back from the UPS in the
 +info_flags+::
 +ST_FLAG_RW+
 +
-This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars - also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +QX_FLAG_SETVAR+ counterpart to use it.
+This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars -- also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +QX_FLAG_SETVAR+ counterpart to use it.
 
 +info_rw+::
 +voltronic_e_phase+
@@ -823,7 +823,7 @@ If there's no +preprocess+ function, the format is used to print the value to th
 Here instead it's used by the +preprocess+ function.
 
 +qxflags+::
-+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++QX_FLAG_SEMI_STATIC+ -> this item changes -- and will therefore be updated -- only when we send a command/setvar to the UPS
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
 +
@@ -957,22 +957,24 @@ Return +-1+ on failure, +0+ for a status update and +1+ in all other cases.
 Return the currently processed status so that it can be checked with one of the +status_bit_t+ passed to the +STATUS()+ macro (see +nutdrv_qx.h+).
 
 *+void	update_status(const char *nutvalue)+*::
-If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); preceed them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
+If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); prefix them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
 
 
 Notes
 ~~~~~
 
 You must put the generated files into the +drivers/+ subdirectory, with the name of your subdriver preceded by +nutdrv_qx_+, and update +nutdrv_qx.c+ by adding the appropriate +#include+ line and by updating the definition of +subdriver_list+.
-Please, make sure to add your driver in that list in a smart way: if your device supports also the basic commands used by the other subdrivers to claim a device, add something that is unique (i.e. not supported by the other subdrivers) to your device in your claim function and then add it on top of the slighty supported ones in that list.
 
-You must also add the subdriver to +NUTDRV_QX_SUBDRIVERS+ in +drivers/Makefile.am+ and call "++autoreconf++" and/or "++./configure++" from the top level NUT directory.
+Please, make sure to add your driver in that list in a smart way: if your device supports also the basic commands used by the other subdrivers to claim a device, add something that is unique (i.e. not supported by the other subdrivers) to your device in your claim function and then add it on top of the slightly supported ones in that list.
+
+You must also add the subdriver to +NUTDRV_QX_SUBDRIVERS+ list variable in the +drivers/Makefile.am+ and call "++autoreconf++" and/or "++./configure++" from the top level NUT directory.
 
 You can then recompile +nutdrv_qx+, and start experimenting with the new subdriver.
 
-For more informations, have a look at the currently available subdrivers:
+For more details, have a look at the currently available subdrivers:
 
 - +nutdrv_qx_bestups.+{+c+,+h+}
+- +nutdrv_qx_masterguard.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}
 - +nutdrv_qx_megatec.+{+c+,+h+}
 - +nutdrv_qx_megatec-old.+{+c+,+h+}
@@ -982,4 +984,5 @@ For more informations, have a look at the currently available subdrivers:
 - +nutdrv_qx_voltronic-qs.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs-hex.+{+c+,+h+}
 - +nutdrv_qx_zinto.+{+c+,+h+}
+- +nutdrv_qx_ablerex.+{+c+,+h+}
 

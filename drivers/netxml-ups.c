@@ -1,4 +1,4 @@
-/* netxml-ups.c	Driver routines for network XML UPS units 
+/* netxml-ups.c	Driver routines for network XML UPS units
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -39,8 +39,10 @@
 #include <ne_auth.h>
 #include <ne_socket.h>
 
+#include "nut_stdint.h"
+
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.40"
+#define DRIVER_VERSION	"0.44"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -174,7 +176,7 @@ static object_entry_t *set_object_add(
 /**
  *  \brief  SET_OBJECT: RAW POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -184,7 +186,7 @@ static object_query_t *set_object_raw(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: FORM POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return \c NULL (FORM POST mode resp. is ignored by specification)
  */
@@ -194,7 +196,7 @@ static object_query_t *set_object_form(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -222,19 +224,20 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle);
 
 
 /* FIXME:
- * "built with neon library %s" LIBNEON_VERSION 
+ * "built with neon library %s" LIBNEON_VERSION
  * subdrivers (limited to MGE only ATM) */
 
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
-int			shutdown_duration = 120;
+int		shutdown_duration = 120;
 static int		shutdown_timer = 0;
 static time_t		lastheard = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
 static ne_uri		uri;
+static char	*product_page = NULL;
 
 /* Support functions */
 static void netxml_alarm_set(void);
@@ -261,7 +264,7 @@ void upsdrv_initinfo(void)
 {
 	char	*page, *last = NULL;
 	char	buf[SMALLBUF];
-	
+
 	snprintf(buf, sizeof(buf), "%s", subdriver->initinfo);
 
 	for (page = strtok_r(buf, " ", &last); page != NULL; page = strtok_r(NULL, " ", &last)) {
@@ -269,6 +272,8 @@ void upsdrv_initinfo(void)
 		if (netxml_get_page(page) != NE_OK) {
 			continue;
 		}
+		/* store product page, for later use */
+		product_page = xstrdup(page);
 
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
@@ -292,7 +297,8 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int	ret, errors = 0;
+	ssize_t	ret;
+	int	errors = 0;
 
 	/* We really should be dealing with alarms through a separate callback, so that we can keep the
 	 * processing of alarms and polling for data separated. Currently, this isn't supported by the
@@ -308,7 +314,7 @@ void upsdrv_updateinfo(void)
 			/* alarm message received */
 
 			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
+			upsdebugx(2, "%s: ne_sock_read(%zd bytes) => %s", __func__, ret, buf);
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
@@ -324,7 +330,7 @@ void upsdrv_updateinfo(void)
 
 			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
 
-			upsdebugx(2, "%s: ne_sock_read(%d) => %s", __func__, ret, ne_sock_error(sock));
+			upsdebugx(2, "%s: ne_sock_read(%zd) => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
@@ -346,6 +352,12 @@ void upsdrv_updateinfo(void)
 	}
 
 	ret = netxml_get_page(subdriver->summary);
+	if (ret != NE_OK) {
+		errors++;
+	}
+
+	/* also refresh the product information, at least for firmware information */
+	ret = netxml_get_page(product_page);
 	if (ret != NE_OK) {
 		errors++;
 	}
@@ -436,9 +448,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
-
 */
-	upslogx(LOG_NOTICE, "%s: unknown command [%s]", __func__, cmdname);
+
+	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -513,6 +525,9 @@ void upsdrv_makevartable(void)
 		snprintf(buf, sizeof(buf), "shutdown timer in second (default: none)");
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
+
+	/* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
+	addvar(VAR_FLAG, "do_convert_deci", "enable legacy convert_deci() for certain measurements 10x too large");
 }
 
 void upsdrv_initups(void)
@@ -556,7 +571,7 @@ void upsdrv_initups(void)
 		shutdown_timer = atoi(val);
 
 		if (shutdown_timer < 0) {
-			fatalx(EXIT_FAILURE, "shutdwon timer must be greater than or equal to 0");
+			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
 	}
 
@@ -575,7 +590,7 @@ void upsdrv_initups(void)
 	if (uri.scheme == NULL) {
 		uri.scheme = strdup("http");
 	}
- 
+
 	if (uri.host == NULL) {
 		uri.host = strdup(device_path);
 	}
@@ -587,7 +602,7 @@ void upsdrv_initups(void)
 	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
-	
+
 	/* timeout if we can't (re)connect to the UPS */
 #ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);
@@ -638,6 +653,7 @@ void upsdrv_cleanup(void)
 	free(subdriver->summary);
 	free(subdriver->getobject);
 	free(subdriver->setobject);
+	free(product_page);
 
 	if (sock) {
 		ne_sock_close(sock);
@@ -656,33 +672,36 @@ void upsdrv_cleanup(void)
 
 static int netxml_get_page(const char *page)
 {
-	int		ret;
+	int		ret = NE_ERROR;
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(2, "%s: %s", __func__, page);
+	upsdebugx(2, "%s: %s", __func__, (page != NULL)?page:"(null)");
 
-	request = ne_request_create(session, "GET", page);
+	if (page != NULL) {
+		request = ne_request_create(session, "GET", page);
 
-	parser = ne_xml_create();
+		parser = ne_xml_create();
 
-	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = netxml_dispatch_request(request, parser);
+		ret = netxml_dispatch_request(request, parser);
 
-	if (ret) {
-		upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		if (ret) {
+			upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		}
+
+		ne_xml_destroy(parser);
+		ne_request_destroy(request);
 	}
-
-	ne_xml_destroy(parser);
-	ne_request_destroy(request);
-
 	return ret;
 }
 
 static int netxml_alarm_subscribe(const char *page)
 {
-	int	ret, port = -1, secret = -1;
+	ssize_t	ret;
+	int	secret = -1;
+	unsigned int	port = 0;
 	char	buf[LARGEBUF], *s;
 	ne_request	*request;
 	ne_sock_addr	*addr;
@@ -759,18 +778,37 @@ static int netxml_alarm_subscribe(const char *page)
 	/* due to different formats used by the various NMCs, we need to\
 	   break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);
 
-		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
+		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%lli", &tmp_port) != 1)) {
 			return NE_RETRY;
 		}
 
-		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%u", &secret) != 1)) {
+		/* FIXME? Does a port==0 make sense here? Or should the test below be for port<1?
+		 * Legacy code until a fix here used sscanf() above to get a '%u' value...
+		 */
+		if (tmp_port < 0 || tmp_port > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad port value", __func__);
 			return NE_RETRY;
 		}
+
+		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%lli", &tmp_secret) != 1)) {
+			return NE_RETRY;
+		}
+
+		if (tmp_secret < 0 || tmp_secret > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad secret value", __func__);
+			return NE_RETRY;
+		}
+
+		/* Range of valid values constrained above */
+		port = (unsigned int)tmp_port;
+		secret = (int)tmp_secret;
+
 	}
 
-	if ((port == -1) || (secret == -1)) {
+	if ((port < 1) || (secret == -1)) {
 		upsdebugx(2, "%s: parsing initial subcription failed", __func__);
 		return NE_RETRY;
 	}
@@ -874,6 +912,8 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 /* Supply the 'login' and 'password' when authentication is required */
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+
 	char	*val;
 
 	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
@@ -980,6 +1020,9 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("FSD");		/* shutdown imminent */
 	}
+	if (STATUS_BIT(CAL)) {
+		status_set("CAL");		/* calibrating */
+	}
 }
 
 
@@ -1030,7 +1073,7 @@ static void set_object_req_destroy(set_object_req_t *req) {
 /**
  *  \brief  SET_OBJECT response list entry destructor
  *
- *  \param  req  SET_OBJECT response list entry
+ *  \param  resp  SET_OBJECT response list entry
  */
 static void set_object_resp_destroy(set_object_resp_t *resp) {
 	assert(NULL != resp);
@@ -1199,8 +1242,8 @@ static object_entry_t *set_object_add(
  *  \param  buff   Buffer
  *  \param  entry  SET_OBJECT request entry
  *
- *  \retval OBJECT_OK    on success
- *  \retval OBJECT_ERROR otherwise
+ *  \return OBJECT_OK    on success
+ *  \return OBJECT_ERROR otherwise
  */
 static object_query_status_t set_object_serialise_entries(ne_buffer *buff, object_entry_t *entry) {
 	object_query_status_t status = OBJECT_OK;
@@ -1480,6 +1523,9 @@ static int set_object_raw_resp_end_element(
 	const char *nspace,
 	const char *name)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
+
 	/* OBJECT (as a SET_OBJECT child) */
 	if (NE_XML_STATEROOT + 2 == state) {
 		assert(0 == strcasecmp(name, "OBJECT"));
@@ -1538,9 +1584,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *
  *  The function creates HTTP request, sends it and reads-out the response.
  *
- *  \param[in]   session    HTTP session
+ *  \param[in]   argsession HTTP session
  *  \param[in]   method     Request method
- *  \param[in]   uri        Request URI
+ *  \param[in]   arguri     Request URI
  *  \param[in]   ct         Request content type (optional, \c NULL accepted)
  *  \param[in]   req_body   Request body (optional, \c NULL is accepted)
  *  \param[out]  resp_body  Response body (optional, \c NULL is accepted)
@@ -1548,9 +1594,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *  \return HTTP status code if response was sent, 0 on send error
  */
 static int send_http_request(
-	ne_session *session,
+	ne_session *argsession,
 	const char *method,
-	const char *uri,
+	const char *arguri,
 	const char *ct,
 	ne_buffer  *req_body,
 	ne_buffer  *resp_body)
@@ -1560,7 +1606,7 @@ static int send_http_request(
 	ne_request *req = NULL;
 
 	/* Create request */
-	req = ne_request_create(session, method, uri);
+	req = ne_request_create(argsession, method, arguri);
 
 	/* Neon claims that request creation is always successful */
 	assert(NULL != req);
@@ -1606,7 +1652,7 @@ static int send_http_request(
 				break;
 
 			if (NULL != resp_body)
-				ne_buffer_append(resp_body, buff, read);
+				ne_buffer_append(resp_body, buff, (size_t)read);
 		}
 
 		if (NE_OK != status) {

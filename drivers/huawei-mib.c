@@ -21,90 +21,95 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.1"
+#define HUAWEI_MIB_VERSION  "0.4"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
+#define HUAWEI_OID_MODEL_NAME ".1.3.6.1.4.1.2011.6.174.1.2.100.1.2.1"
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * static info_lkp_t huawei_onbatt_info[] = {
+ * 	{ 1, "OB", NULL, NULL },
+ * 	{ 2, "OL", NULL, NULL },
+ * 	{ 0, NULL, NULL, NULL }
  * };
  */
 
-static info_lkp_t supplymethod_info[] = {
-	{ 1, "" },		/* no supply */
-	{ 2, "OL BYPASS" },
-	{ 3, "OL" },
-	{ 4, "OB" },
-	{ 5, "" },		/* combined */
-	{ 6, "OL ECO" },
-	{ 7, "OB ECO" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_supplymethod_info[] = {
+	{ 1, "", NULL, NULL },		/* no supply */
+	{ 2, "OL BYPASS", NULL, NULL },
+	{ 3, "OL", NULL, NULL },
+	{ 4, "OB", NULL, NULL },
+	{ 5, "", NULL, NULL },		/* combined */
+	{ 6, "OL ECO", NULL, NULL },
+	{ 7, "OB ECO", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t battstate_info[] = {
-	{ 1, "" },		/* not connected */
-	{ 2, "" },		/* not charging or discharging */
-	{ 3, "" },		/* hibernation */
-	{ 4, "" },		/* float */
-	{ 5, "CHRG" },		/* equalized charging */
-	{ 6, "DISCHRG" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_battstate_info[] = {
+	{ 1, "", NULL, NULL },		/* not connected */
+	{ 2, "", NULL, NULL },		/* not charging or discharging */
+	{ 3, "", NULL, NULL },		/* hibernation */
+	{ 4, "", NULL, NULL },		/* float */
+	{ 5, "CHRG", NULL, NULL },		/* equalized charging */
+	{ 6, "DISCHRG", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t phase_info[] = {
-	{ 1, "1" },
-	{ 2, "3" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_phase_info[] = {
+	{ 1, "1", NULL, NULL },
+	{ 2, "3", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t voltrating_info[] = {
-	{ 1, "200" },
-	{ 2, "208" },
-	{ 3, "220" },
-	{ 4, "380" },
-	{ 5, "400" },
-	{ 6, "415" },
-	{ 7, "480" },
-	{ 8, "600" },
-	{ 9, "690" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_voltrating_info[] = {
+	{ 1, "200", NULL, NULL },
+	{ 2, "208", NULL, NULL },
+	{ 3, "220", NULL, NULL },
+	{ 4, "380", NULL, NULL },
+	{ 5, "400", NULL, NULL },
+	{ 6, "415", NULL, NULL },
+	{ 7, "480", NULL, NULL },
+	{ 8, "600", NULL, NULL },
+	{ 9, "690", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t freqrating_info[] = {
-	{ 1, "50" },
-	{ 2, "60" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_freqrating_info[] = {
+	{ 1, "50", NULL, NULL },
+	{ 2, "60", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t pwrrating_info[] = {
-	{ 1, "80000" },
-	{ 2, "100000" },
-	{ 3, "120000" },
-	{ 4, "160000" },
-	{ 5, "200000" },
-	{ 6, "30000" },
-	{ 7, "40000" },
-	{ 8, "60000" },
-	{ 9, "2400000" },
-	{ 10, "2500000" },
-	{ 11, "2800000" },
-	{ 12, "3000000" },
-	{ 0, "NULL" }
+static info_lkp_t huawei_pwrrating_info[] = {
+	{ 1, "80000", NULL, NULL },
+	{ 2, "100000", NULL, NULL },
+	{ 3, "120000", NULL, NULL },
+	{ 4, "160000", NULL, NULL },
+	{ 5, "200000", NULL, NULL },
+	{ 6, "30000", NULL, NULL },
+	{ 7, "40000", NULL, NULL },
+	{ 8, "60000", NULL, NULL },
+	{ 9, "2400000", NULL, NULL },
+	{ 10, "2500000", NULL, NULL },
+	{ 11, "2800000", NULL, NULL },
+	{ 12, "3000000", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+/* Note: This is currently identical to ietf_test_result_info from IETF MIB
+ * We rename it here to a) allow evolution that may become incompatible;
+ * b) avoid namespace conflicts, especially with DMF loader of named objects
+ */
+static info_lkp_t huawei_test_result_info[] = {
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 
@@ -122,20 +127,24 @@ static snmp_info_t huawei_mib[] = {
 	 *	dfl: default value
 	 *	flags: snmp-ups internal flags (FIXME: ...)
 	 *	oid2info: lookup table between OID and NUT values
-	 *	setvar: variable to set for SU_FLAG_SETINT
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, huawei_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t huawei_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* UPS page */
 
@@ -148,16 +157,16 @@ static snmp_info_t huawei_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.3.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.5.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.1.1", NULL, SU_FLAG_OK, supplymethod_info },
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.3.1", NULL, SU_STATUS_BATT | SU_FLAG_OK, battstate_info },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.1.1", NULL, SU_FLAG_OK, huawei_supplymethod_info },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.3.1", NULL, SU_STATUS_BATT | SU_FLAG_OK, huawei_battstate_info },
 
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, ietf_test_result_info },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, huawei_test_result_info },
 
 
 	/* Input page */
 
 	/* hwUpsCtrlInputStandard listed in MIB but not present on tested UPS5000-E */
-	{ "input.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.8", "3", SU_FLAG_ABSENT | SU_FLAG_OK, phase_info },
+	{ "input.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.8", "3", SU_FLAG_ABSENT | SU_FLAG_OK, huawei_phase_info },
 
 	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.3.100.1.1.1", NULL, SU_FLAG_OK, NULL },
 	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.3.100.1.2.1", NULL, SU_FLAG_OK, NULL },
@@ -183,7 +192,7 @@ static snmp_info_t huawei_mib[] = {
 	/* Output page */
 
 	/* hwUpsCtrlOutputStandard listed in MIB but not present on tested UPS5000-E */
-	{ "output.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.9", "3", SU_FLAG_ABSENT | SU_FLAG_OK, phase_info },
+	{ "output.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.9", "3", SU_FLAG_ABSENT | SU_FLAG_OK, huawei_phase_info },
 
 	{ "output.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.1.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.2.1", NULL, SU_FLAG_OK, NULL },
@@ -207,9 +216,9 @@ static snmp_info_t huawei_mib[] = {
 	{ "output.L2.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.15.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L3.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.16.1", NULL, SU_FLAG_OK, NULL },
 
-	{ "output.voltage.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.17.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, voltrating_info },
-	{ "output.frequency.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.18.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, freqrating_info },
-	{ "output.power.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.6.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, pwrrating_info },
+	{ "output.voltage.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.17.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_voltrating_info },
+	{ "output.frequency.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.18.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_freqrating_info },
+	{ "output.power.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.6.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_pwrrating_info },
 
 	{ "output.L1.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.19.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.20.1", NULL, SU_FLAG_OK, NULL },
@@ -231,4 +240,4 @@ static snmp_info_t huawei_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, NULL, huawei_mib, HUAWEI_SYSOID };
+mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, HUAWEI_OID_MODEL_NAME, huawei_mib, HUAWEI_SYSOID, NULL };

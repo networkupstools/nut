@@ -27,21 +27,22 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "hidparser.h" /* for FindObject_with_ID_Node() */
 #include "usbhid-ups.h"
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.95"
+#define APC_HID_VERSION "APC HID 0.98"
 
 /* APC */
 #define APC_VENDORID 0x051d
 
 /* Tweaks */
-char * tweak_max_report[] = {
+static char * tweak_max_report[] = {
 	/* Back-UPS ES 700 does NOT overflow. */
 	/* Back-UPS ES 725 does NOT overflow. */
 	/* Back-UPS ES 525 overflows on ReportID 0x0c
-		 (UPS.PowerSummary.RemainingCapacity).*/
+	   (UPS.PowerSummary.RemainingCapacity). */
 	"Back-UPS ES 525",
 	/* Back-UPS CS 650 overflows on ReportID 0x46 */
 	"Back-UPS CS",
@@ -50,7 +51,10 @@ char * tweak_max_report[] = {
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
 static void *disable_interrupt_pipe(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (use_interrupt_pipe == TRUE) {
+		/* FIXME? Suggest data from "device" to help the setup below? */
 		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
 		use_interrupt_pipe= FALSE;
 	}
@@ -61,6 +65,11 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 static void *general_apc_check(USBDevice_t *device)
 {
 	int i = 0;
+
+	if (!device->Product) {
+		upslogx(LOG_WARNING, "device->Product is NULL so it is not possible to determine whether to activate max_report_size workaround");
+		return NULL;
+	}
 
 	/* Some models of Back-UPS overflow on some ReportID.
 	 * This results in some data not being exposed and IO errors on
@@ -87,7 +96,7 @@ static usb_device_id_t apc_usb_device_table[] = {
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -119,53 +128,69 @@ static const char *apc_date_conversion_fun(double value)
 	return buf;
 }
 
-info_lkp_t apc_date_conversion[] = {
-	{ 0, NULL, apc_date_conversion_fun }
+static double apc_date_conversion_reverse(const char *date_string)
+{
+	int year, month, day;
+	long date;
+
+	sscanf(date_string, "%04d/%02d/%02d", &year, &month, &day);
+	if(year >= 2070 || month > 12 || day > 31)
+		return 0;
+	year %= 100;
+	date = ((year / 10 & 0x0F) << 4) + (year % 10);
+	date += ((month / 10 & 0x0F) << 20) + ((month % 10) << 16);
+	date += ((day / 10 & 0x0F) << 12) + ((day % 10) << 8);
+
+	return (double) date;
+}
+
+static info_lkp_t apc_date_conversion[] = {
+	{ 0, NULL, apc_date_conversion_fun, apc_date_conversion_reverse }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500 */
 static info_lkp_t apcstatusflag_info[] = {
-	{ 8, "!off", NULL },  /* Normal operation */
-	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
-	{ 0, "off", NULL },
-	{ 0, NULL, NULL }
+	{ 8, "!off", NULL, NULL },	/* Normal operation */
+	{ 16, "!off", NULL, NULL },	/* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 0, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Reason of the last battery transfer (from apcupsd) */
 static info_lkp_t apc_linefailcause_vrange_info[] = {
-	{ 1, "vrange", NULL },	/* Low line voltage */
-	{ 2, "vrange", NULL },	/* High line voltage */
-	{ 4, "vrange", NULL },	/* notch, spike, or blackout */
-	{ 8, "vrange", NULL },	/* Notch or blackout */
-	{ 9, "vrange", NULL },	/* Spike or blackout */
-	{ 0, "!vrange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 1, "vrange", NULL, NULL },	/* Low line voltage */
+	{ 2, "vrange", NULL, NULL },	/* High line voltage */
+	{ 4, "vrange", NULL, NULL },	/* notch, spike, or blackout */
+	{ 8, "vrange", NULL, NULL },	/* Notch or blackout */
+	{ 9, "vrange", NULL, NULL },	/* Spike or blackout */
+	{ 0, "!vrange", NULL, NULL },	/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t apc_linefailcause_frange_info[] = {
-	{ 7, "frange", NULL },		/* Input frequency out of range */
-	{ 0, "!frange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 7, "frange", NULL, NULL },		/* Input frequency out of range */
+	{ 0, "!frange", NULL, NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 #if 0
 /* these input.transfer.reason can't be mapped at the moment... */
-	{ 3, "ripple", NULL },		/* Ripple */
-	{ 5, "self test", NULL },	/* Self Test or Discharge Calibration commanded
-								 * Test usage, front button, or 2 week self test */
-	{ 6, "forced", NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
-	{ 10, "forced", NULL },		/* Graceful shutdown by accessories */
-	{ 11, "self test", NULL },	/* Test usage invoked */
-	{ 12, "self test", NULL },	/* Front button initiated self test */
-	{ 13, "self test", NULL },	/* 2 week self test */
-	{ 0, NULL, NULL }
+	{ 3, "ripple", NULL, NULL },		/* Ripple */
+	{ 5, "self test", NULL, NULL },	/* Self Test or Discharge Calibration commanded
+	                                 * Test usage, front button, or 2 week self test */
+	{ 6, "forced", NULL, NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
+	{ 10, "forced", NULL, NULL },		/* Graceful shutdown by accessories */
+	{ 11, "self test", NULL, NULL },	/* Test usage invoked */
+	{ 12, "self test", NULL, NULL },	/* Front button initiated self test */
+	{ 13, "self test", NULL, NULL },	/* 2 week self test */
+	{ 0, NULL, NULL, NULL }
 #endif
 
 static info_lkp_t apc_sensitivity_info[] = {
-	{ 0, "low", NULL },
-	{ 1, "medium", NULL },
-	{ 2, "high", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "low", NULL, NULL },
+	{ 1, "medium", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -309,7 +334,7 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
-  { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", 0, date_conversion },
+  { "battery.mfr.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_SEMI_STATIC, date_conversion },
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
   { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", 0, apc_date_conversion }, /* Observed values: 0x0 on Back-UPS ES 650, 0x92501 on Back-UPS BF500 whose manufacture date was 2005/01/20 - this makes little sense but at least it's a valid date. */
 
@@ -377,7 +402,7 @@ static hid_info_t apc_hid2nut[] = {
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
-  
+
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", 0, NULL },
@@ -390,7 +415,7 @@ static hid_info_t apc_hid2nut[] = {
 /*
   { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe2.Temperature", NULL, "%.1f", 0, kelvin_celsius_conversion },
   { "ambient.humidity", 0, 0, "UPS.APCEnvironment.APCProbe2.Humidity", NULL, "%.1f", 0, NULL },
- */
+*/
 
   /* instant commands. */
   /* test.* split into subset while waiting for extradata support
@@ -424,7 +449,7 @@ static hid_info_t apc_hid2nut[] = {
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   /* used by APC BackUPS CS */
   { "shutdown.return", 0, 0, "UPS.Output.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
-  
+
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
@@ -491,6 +516,73 @@ static int apc_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* apc_fix_report_desc
+ *
+ * The Back-UPS XS 1400U reports incorrect logical min/max values for the
+ * UPS.Input.ConfigVoltage and UPS.Input.Voltage when operating in a
+ * 220-240V region.  Detect this and fix it.
+ * This same fix may be applicable to other APC UPS units as well, though
+ * the report IDs may be different.
+ */
+static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
+	HIDData_t *pData;
+	int res = 0;
+
+	int vendorID = pDev->VendorID;
+	int productID = pDev->ProductID;
+	if (vendorID != APC_VENDORID || productID != 0x0002) {
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+
+	/* Look at the High Voltage Transfer logical max value:
+	 * If the HVT logmax is greater than the configured or input voltage limit
+	 * then the configured/input voltage limits are probably incorrect.
+	 * Arbitrarily set the input voltage logical min/max to 0 .. 2*HVT logmax and the
+	 * configured (nominal) input voltage logical max to 255 (it's a single byte value)
+
+	 * Path: UPS.Input.ConfigVoltage, Type: Feature, ReportID: 0x30, Offset: 0, Size: 8
+	 * Path: UPS.Input.Voltage, Type: Feature, ReportID: 0x31, Offset: 0, Size: 16
+	 * Path: UPS.Input.HighVoltageTransfer, Type: Feature, ReportID: 0x33, Offset: 0, Size: 16
+	 */
+
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x33, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
+		long hvt_logmin = pData->LogMin;
+		long hvt_logmax = pData->LogMax;
+		upsdebugx(4, "Report Descriptor: highVoltageTransfer LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x31, USAGE_POW_VOLTAGE))) {
+			long voltage_logmin = pData->LogMin;
+			long voltage_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: voltage LogMin: %ld LogMax: %ld",
+					voltage_logmin, voltage_logmax);
+
+			if (hvt_logmax > voltage_logmax) {
+				pData->LogMin = 0; /* a reasonable lower limit for voltage */
+				pData->LogMax = hvt_logmax * 2; /* it may be smoking at this point */
+				upsdebugx(3, "Fixing Report Descriptor. Set voltage LogMin = %ld, LogMax = %ld",
+							pData->LogMin , pData->LogMax);
+				res = 1;
+			}
+		}
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 0x30, USAGE_POW_CONFIG_VOLTAGE))) {
+			long cvoltage_logmin = pData->LogMin;
+			long cvoltage_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: configVoltage LogMin: %ld LogMax: %ld",
+					cvoltage_logmin, cvoltage_logmax);
+
+			if (hvt_logmax > cvoltage_logmax) {
+				pData->LogMax = 255;
+				upsdebugx(3, "Fixing Report Descriptor. Set configVoltage LogMin = %ld, LogMax = %ld",
+							pData->LogMin , pData->LogMax);
+				res = 1;
+			}
+		}
+	}
+	return res;
+}
+
 subdriver_t apc_subdriver = {
 	APC_HID_VERSION,
 	apc_claim,
@@ -499,4 +591,5 @@ subdriver_t apc_subdriver = {
 	apc_format_model,
 	apc_format_mfr,
 	apc_format_serial,
+	apc_fix_report_desc,
 };

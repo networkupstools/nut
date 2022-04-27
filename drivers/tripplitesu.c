@@ -125,7 +125,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -215,10 +215,11 @@ static struct {
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
-static int do_command(char type, const char *command, const char *parameters, char *response)
+static ssize_t do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count, ret;
+	size_t	count;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -234,7 +235,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		return -1;
 	}
 
-	upsdebugx(3, "do_command: %d bytes sent [%s] -> OK", ret, buffer);
+	upsdebugx(3, "do_command: %zd bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
 	if (ret < 0) {
@@ -247,7 +248,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 	}
 
 	buffer[ret] = '\0';
-	upsdebugx(3, "do_command: %d byted read [%s]", ret, buffer);
+	upsdebugx(3, "do_command: %zd byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
 
@@ -262,9 +263,15 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		buffer[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, buffer);
+		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, buffer);
 
-		count = atoi(buffer);
+		int c = atoi(buffer);
+		if (c < 0) {
+			upsdebugx(3, "do_command: response not expected to be a negative count!");
+			return -1;
+		}
+
+		count = (size_t)c;
 		if (count >= MAX_RESPONSE_LENGTH) {
 			upsdebugx(3, "do_command: response exceeds expected size!");
 			return -1;
@@ -290,13 +297,13 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		response[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, response);
+		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
 		   I don't like that, so I remove them.  This is safe to
 		   do with all responses for this protocol, so I just
 		   do that here. */
-		rtrim(response, ' ');
+		str_rtrim(response, ' ');
 
 		return ret;
 	}
@@ -432,7 +439,7 @@ static void set_sensitivity(const char *val) {
 
 	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			snprintf(parm, sizeof(parm), "%d", i);
+			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}
@@ -514,7 +521,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -548,10 +555,15 @@ static int setvar(const char *varname, const char *val)
 
 static int init_comm(void)
 {
-	int i, bit;
+	size_t i, bit;
 	char response[MAX_RESPONSE_LENGTH];
 
 	ups.commands_available = 0;
+	/* Repeat enumerate command 2x, firmware bug on some units garbles 1st response */
+	if (do_command(POLL, AVAILABLE, "", response) <= 0){
+		upslogx(LOG_NOTICE, "init_comm: Initial response malformed, retrying in 300ms");
+		usleep(3E5);
+	}
 	if (do_command(POLL, AVAILABLE, "", response) <= 0)
 		return 0;
 	i = strlen(response);
@@ -603,17 +615,29 @@ void upsdrv_initinfo(void)
 			dstate_setinfo("battery.voltage.nominal", "%d",
 			               atoi(ptr));
 		ptr = field(response, 10);
-		if (ptr)
-			min_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 9);
-		if (ptr)
-			max_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 12);
-		if (ptr)
-			min_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_high_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 11);
-		if (ptr)
-			max_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_high_transfer = (unsigned int)ipv;
+		}
 	}
 	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0)
 		ups.outlet_banks = atoi(response);
@@ -718,15 +742,15 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 3);
 	if (ptr)
 		dstate_setinfo("output.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 1);
 	if (ptr)
 		dstate_setinfo("output.frequency", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 4);
 	if (ptr)
 		dstate_setinfo("output.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 
 	low_battery = 0;
 	if (do_command(POLL, STATUS_BATTERY, "", response) <= 0) {
@@ -753,11 +777,11 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 6);
 	if (ptr)
 		dstate_setinfo("battery.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 7);
 	if (ptr)
 		dstate_setinfo("battery.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+		               (double) (atoi(ptr)) / 10.0);
 	if (low_battery)
 		status_set("LB");
 
@@ -773,11 +797,11 @@ void upsdrv_updateinfo(void)
 		ptr = field(response, 2);
 		if (ptr)
 			dstate_setinfo("input.voltage", "%03.1f",
-			               (double) atoi(ptr) / 10.0);
+			               (double) (atoi(ptr)) / 10.0);
 		ptr = field(response, 1);
 		if (ptr)
-			dstate_setinfo("input.frequency",
-				       "%03.1f", (double) atoi(ptr) / 10.0);
+			dstate_setinfo("input.frequency", "%03.1f",
+			               (double) (atoi(ptr)) / 10.0);
 	}
 
 	if (do_command(POLL, TEST_RESULT, "", response) > 0) {
@@ -785,7 +809,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) / 
+		trsize = sizeof(test_result_names) /
 			sizeof(test_result_names[0]);
 
 		if ((r < 0) || (r >= (int) trsize))

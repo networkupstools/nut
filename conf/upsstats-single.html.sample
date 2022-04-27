@@ -17,8 +17,8 @@
 @UPSSTATSPATH upsstats.cgi@
 @UPSIMAGEPATH upsimage.cgi@
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-	"http://www.w3.org/TR/REC-html40/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 
 <head>
@@ -26,10 +26,16 @@
 @REFRESH@
 <title>@HOSTDESC@ : @VAR ups.model@ on @HOST@</title>
 <!-- LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/nut/nut.css" / -->
+<style type="text/css">
+body{color:#00fc00; background:#808080; font-family:"Times New Roman", Times, serif;}
+a:link{color:#00e;}
+a:visited{color:#551a8b;}
+table{background:#000;}
+</style>
 </head>
-<body BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
+<body>
 
-<table BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
+<table style="margin:auto" BORDER="1" CELLSPACING="0" CELLPADDING="10">
 
 <tr>
 <th COLSPAN="20">Network UPS Tools upsstats @VERSION@ - @HOSTDESC@ - @VAR ups.model@ on @HOST@</th>
@@ -51,7 +57,7 @@
 
 <tr>
 
-<td BGCOLOR="#000000" VALIGN="TOP">
+<td VALIGN="TOP">
 
 <table BORDER="0">	<!-- table 2 -->
 
@@ -195,7 +201,7 @@
 
 @IFSUPP ambient.temperature@
 @IFSUPP ambient.humidity@
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 <td ALIGN="CENTER">Temperature<br>@IMG ambient.temperature tempmin=0 tempmax=50 width=90@</td>
 <td ALIGN="CENTER">Humidity<br>@IMG ambient.humidity width=90@</td>
@@ -203,21 +209,21 @@
 </td>
 @ELSE@
 @IFSUPP ambient.temperature@
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 <td ALIGN="CENTER">Temperature<br>@IMG ambient.temperature tempmin=0 tempmax=50@</td>
 </tr></table>
 </td>
 @ELSE@
 @IFSUPP ambient.humidity@
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 <td ALIGN="CENTER">Humidity<br>@IMG ambient.humidity@</td>
 </tr></table>
 </td>
 @ENDIF@
 
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 @IFSUPP battery.charge@
 @IFSUPP battery.voltage@
@@ -232,7 +238,7 @@
 </tr></table>
 </td>
 
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 @IFSUPP input.L2-L3.voltage@
 <td ALIGN="CENTER">L1-L2<br>@IMG input.L1-L2.voltage width=68@</td>
@@ -249,7 +255,7 @@
 </tr></table>
 </td>
 
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 @IFSUPP output.L2-L3.voltage@
 <td ALIGN="CENTER">L1-L2<br>@IMG output.L1-L2.voltage width=68@</td>
@@ -266,7 +272,7 @@
 </tr></table>
 </td>
 
-<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP">
 <table BORDER="0"><tr>
 @IFSUPP output.L2.power.percent@
 <td ALIGN="CENTER">L1<br>@IMG output.L1.power.percent width=68@</td>
@@ -286,9 +292,12 @@
 </tr>
 
 </table>
-<a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
-        src="http://www.w3.org/Icons/valid-html40"
-        alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
-
+<div><a href="https://jigsaw.w3.org/css-validator/check/referer"><img
+      style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss"
+      alt="Valid CSS" title="Valid CSS" height="31" width="88"></a>
+<a href="https://validator.w3.org/check?uri=referer"><img
+      style="float:right" src="https://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01 Strict" title="Valid HTML 4.01 Strict"
+      height="31" width="88"></a></div>
 </body>
 </html>

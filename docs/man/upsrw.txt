@@ -9,11 +9,11 @@ upsrw - UPS variable administration tool
 SYNOPSIS
 --------
 
-*upsrw* 'ups'
+*upsrw* [-l] 'ups'
 
 *upsrw* -h
 
-*upsrw* -s 'variable' [-u 'username'] [-p 'password'] 'ups'
+*upsrw* -s 'variable' [-u 'username'] [-p 'password'] [-w] [-t <timeout>] 'ups'
 
 DESCRIPTION
 -----------
@@ -48,6 +48,12 @@ length limit.  Others are enumerated types and can only be set to one of
 those values.  Others may be within an allowed range of values. Refer to
 the list to know what's available in your hardware.
 
+*-l*::
+Just display the list of the variables and their possible values.
++
+Same as default activity without '-s' argument, provided for CLI similarity
+with other tools.
+
 *-u* 'username'::
 Set the NUT username for the connection to the server.  This is optional,
 and you will be prompted for this when using the -s option if you don't
@@ -56,7 +62,18 @@ linkman:upsd.users[5], and are not linked to system usernames.
 
 *-p* 'password'::
 Set the password to authenticate to the server.  This is also optional
-like -u, and you will be prompted for it if necessary.  
+like -u, and you will be prompted for it if necessary.
+
+*-w*::
+Wait for the completion of setting execution by the driver and return its
+actual result from the device. Note that this feature requires that both upsd
+and the driver support TRACKING (NUT version 2.8.0 or higher) or it will
+otherwise fail.
+The command will also block until an actual result is provided from the driver,
+or the timeout is reached (see *-t*).
+
+*-t* 'seconds'::
+Set a timeout when using *-w*. Defaults to 10 seconds.
 
 'ups'::
 View or change the settings on this UPS.  The format for this option is
@@ -84,6 +101,15 @@ username and password.  If you get "access denied" errors, make sure
 that your linkman:upsd.users[5] has an entry for you, and that the
 username you are using has permissions to SET variables.
 
+VALUE FORMAT
+------------
+
+When using *upsrw* to modify a numeric float value, that values must be given
+using decimal (base 10) english-based representation, so using a dot, in
+non-scientific notation.  So hexadecimal, exponents, and comma for thousands
+separator are forbidden.
+For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
+
 HISTORY
 -------
 
@@ -92,8 +118,10 @@ confusing.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upscmd[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

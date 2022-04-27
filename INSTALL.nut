@@ -1,11 +1,13 @@
 Installation instructions
 =========================
 
-This chapter describe the various methods for installing Network UPS Tools.
+This chapter describes the various methods for installing Network UPS Tools.
 
 Whenever it is possible, prefer <<Installing_packages, installing from packages>>.
 Packagers have done an excellent and hard work at improving NUT integration into
-their system.
+their system.  On the other hand, distributions and appliances tend to package
+"official releases" of projects such as NUT, and so do not deliver latest and
+greatest fixes, new drivers, bugs and other features.
 
 [[Installing_source]]
 Installing from source
@@ -15,6 +17,13 @@ These are the essential steps for compiling and installing this software.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
+
+The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+document suggests prerequisite packages with tools and dependencies
+available and needed to build and test as much as possible of NUT on
+numerous platforms, written from perspective of CI testing (if you
+are interested in getting updated drivers for a particular device,
+you might select a sub-set of those suggestions).
 
 [NOTE]
 .Keep in mind that...
@@ -52,7 +61,7 @@ long as you are consistent.
 The process for doing this varies from one system to the next, and
 explaining how to add users is beyond the scope of this document.
 
-For the purposes of this document, the user name and group name 
+For the purposes of this document, the user name and group name
 will be 'ups' and 'nut' respectively.
 
 Be sure the new user is a member of the new group!  If you forget to
@@ -87,7 +96,7 @@ docs/configure.txt or './configure --help' for all the available
 options.
 
 If you alter paths with additional switches, be sure to use those
-new paths while reading the rest of the steps.    
+new paths while reading the rest of the steps.
 
 Reference: <<Configure_options,Configure options>> from the
 User Manual.
@@ -100,7 +109,7 @@ Build the programs
 
 This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
-selected during <<Configuration,configuration>> step above. 
+selected during <<Configuration,configuration>> step above.
 
 
 Installation
@@ -175,7 +184,7 @@ permissions for the USB device, you may need to set up (operating
 system dependent) hotplugging scripts.  Sample scripts and
 information are provided in the scripts/hotplug and
 scripts/udev directories. For most users, the hotplugging scripts
-will be installed automatically by "make install". 
+will be installed automatically by "make install".
 
 (If you want to try if a driver works without setting up
 hotplugging, you can add the "-u root" option to upsd, upsmon, and
@@ -207,8 +216,8 @@ Debian, Ubuntu and other derivatives
 NOTE: NUT is packaged and well maintained in these systems.
 The official Debian packager is part of the NUT Team.
 
-Using your prefered method (apt-get, aptitude, Synaptic, ...), install
-the 'nut' package, and optionaly the following:
+Using your preferred method (apt-get, aptitude, Synaptic, ...), install
+the 'nut' package, and optionally the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-snmp', if you need the snmp-ups driver,
@@ -233,32 +242,32 @@ Mandriva
 NOTE: NUT is packaged and well maintained in these systems.
 The official Mandriva packager is part of the NUT Team.
 
-Using your prefered method (urpmi, RPMdrake, ...), install one of the two below
+Using your preferred method (urpmi, RPMdrake, ...), install one of the two below
 packages:
 
 - 'nut-server' if you have a 'standalone' or 'netserver' installation,
 - 'nut' if you have a 'netclient' installation.
 
-Optionaly, you can also install the following:
+Optionally, you can also install the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-devel', if you need the development files.
 
 
-[[Suse]]
-Suse / Opensuse
+[[SUSE]]
+SUSE / openSUSE
 ~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Suse packager is part of the NUT Team.
+The official SUSE packager is part of the NUT Team.
 
-Install the 'nut-classic' package, and optionaly the following:
+Install the 'nut-classic' package, and optionally the following:
 
 - 'nut-drivers-net', if you need the snmp-ups or the netxml-ups drivers,
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-devel', if you need the development files,
 
-NOTE: Suse and Opensuse users can use the
+NOTE: SUSE and openSUSE users can use the
 link:http://software.opensuse.org/search?baseproject=ALL&p=1&q=nut[one-click install method]
 to install NUT.
 
@@ -270,13 +279,13 @@ Red Hat, Fedora and CentOS
 NOTE: NUT is packaged and well maintained in these systems.
 The official Red Hat packager is part of the NUT Team.
 
-Using your prefered method (yum, Add/Remove Software, ...), install one of the
+Using your preferred method (yum, Add/Remove Software, ...), install one of the
 two below packages:
 
 - 'nut' if you have a 'standalone' or 'netserver' installation,
 - 'nut-client' if you have a 'netclient' installation.
 
-Optionaly, you can also install the following:
+Optionally, you can also install the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-xml', if you need the netxml-ups driver,
@@ -292,25 +301,47 @@ You can either install NUT as a binary package or as a port.
 Binary package
 ^^^^^^^^^^^^^^
 
-To install the main component, use the following command:
+To install NUT as a package execute:
 
-	# pkg_add -r nut
+	# pkg install nut
 
 Port
 ^^^^
 
-The port is located under /usr/ports/sysutils/nut. 
-To install it, use the following command:
+The port is located under +sysutils/nut+.
+Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
+To install it, use:
 
-	# cd /usr/ports/sysutils/nut/ && make install clean
+	# make install clean
 
-You have to define WITH_NUT_CGI to build the optional CGI scripts.
+USB UPS on FreeBSD
+^^^^^^^^^^^^^^^^^^
 
-Optionaly, you can also install the following ports:
+For USB UPS devices the NUT package/port installs devd rules in +/usr/local/etc/devd/nut-usb.conf+ to set USB device permissions. 'devd' needs to be restarted  for these rules to apply:
 
-- sysutils/nut-snmp, for the SNMP driver,
-- sysutils/nut-usb, for the USB drivers,
-- sysutils/nut-libupsclient, for the upsclient library.
+	# service devd restart
+
+(Re-)connect the device after restarting 'devd' and check that the USB device has the proper
+permissions. Check the last entries of the system message buffer. You should
+find an entry like
+
+	# dmesg | tail
+	[...]
+	ugen0.2: <INNO TECH USB to Serial> at usbus0
+
+The device file must be owned by group +uucp+ and must be group
+read-/writable. In the example from above this would be
+
+	# ls -Ll /dev/ugen0.2
+	crw-rw----  1 root  uucp  0xa5 Mar 12 10:33 /dev/ugen0.2
+
+If the permissions are not correct, verify that your device is registered in
++/usr/local/etc/devd/nut-usb.conf+. The vendor and product id can be found
+using:
+
+	# usbconfig -u 0 -a 2 dump_device_desc
+
+where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 
 
 You are now ready to configure NUT, and start testing and using it.

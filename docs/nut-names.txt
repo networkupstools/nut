@@ -1,21 +1,68 @@
 ifndef::external_title[]
-NUT command and variable naming scheme
-======================================
+NUT variable names and instant commands
+=======================================
 endif::external_title[]
 
-This is a dump of the standard variables and command names used in NUT.
-Don't use a name with any of the dstate functions unless it exists here.
+[NOTE]
+.RFC xxxx Recording Document
+====
+This document is defined by (pending) RFC xxxx and is referenced as the
+document of record for the variable names and the instant commands used
+in the protocol described by the RFC.
 
-If you need a new variable or command name, contact the Development Team
-first.
+On behalf of the RFC, this document records the names of variables
+describing the abstracted state of an UPS or similar power distribution
+device, and the instant commands sent to the UPS using command `INSTCMD`,
+as used in commands and messages between the Attachment Daemon (the `upsd`
+in case of NUT implementation of the standard) and the clients.
+====
 
-Put another way: if you make up a name that's not in this list and it
-gets into the tree, and then we come up with a better name later, clients
-that use the undocumented variable will break when it is changed.
+This document defines the standard names of NUT commands and variables.
+Developers should use the names recorded here, with dstate functions and
+data mappings provided in NUT drivers for interactions with power devices.
 
-NOTE: "opaque" means programs should not attempt to parse the value for
-that variable as it may vary greatly from one UPS to the next. These
-strings are best handled directly by the user.
+If you need to express a state which cannot be described by any existing
+name, please make a request to the NUT developers' mailing list for
+definition and assignment of a new name.  Clients using unrecorded names
+risk breaking at a future update.  If you wish to experiment with new
+concepts before obtaining your requested variable name, you should use
+a name of the form `experimental.x.y` for those states.
+
+Put another way: if you make up a name that is not in this list and it
+gets into the source code tree, and then the NUT community comes up with
+a better name later, clients that already use the undocumented variable
+will break when it is eventually changed.  An explicitly "experimental"
+data point is less surprising in this regard.
+
+NOTE: In the descriptions, "opaque" means programs should not attempt to
+parse the value for that variable as it may vary greatly from one UPS
+(or similar device) to the next.  These strings are best handled directly
+by the user.
+
+
+Time and Date format
+--------------------
+
+When possible, dates should be expressed in ISO 8601 and RFC 3339 compatible
+Calendar format, that is to say "YYYY-MM-DD", or otherwise a Combined Date
+and Time representation (`<date>T<time>`, so "YYYY-MM-DDThh:mm").
+Separators for the date (hyphen) and time (colon) components are required
+to conform to both ISO 8601 "extended" format and RFC 3339 required format.
+
+In the case of Date and Time representation, a timezone can be added as per
+RFC 3339 and the newer revisions of the ISO 8601 standard (which allow for
+negative offsets):
+
+* by appending the letter `Z` for UTC (e.g. "YYYY-MM-DDThh:mmZ"), or
+* by appending the complete "hours:minutes" positive or negative time
+  offsets from UTC (e.g. "YYYY-MM-DDThh:mm+03:00").
+
+For more details see examples at
+link:https://en.wikipedia.org/wiki/ISO_8601[Wikipedia page on ISO 8601]
+and the publicly available RFC at
+link:http://tools.ietf.org/html/rfc3339[RFC 3339].
+
+Other representations from those specifications are not necessarily supported.
 
 Variables
 ---------
@@ -32,14 +79,22 @@ during a transition period. The ups.* data will then be removed.
 | device.model        | Device model                               | BladeUPS
 | device.mfr          | Device manufacturer                        | Eaton
 | device.serial       | Device serial number (opaque string)       | WS9643050926
-| device.type         | Device type (ups, pdu, scd, psu)           | ups
+| device.type         | Device type (ups, pdu, scd, psu, ats)      | ups
 | device.description  | Device description (opaque string)         | Some ups
 | device.contact      | Device administrator name (opaque string)  | John Doe
 | device.location     | Device physical location (opaque string)   | 1st floor
 | device.part         | Device part number (opaque string)         | 123456789
-| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27
 | device.uptime       | Device uptime in seconds                   | 1782
-|=====================================================================================
+| device.count        | Total number of daisychained devices       | 1
+|====================================================================================
+
+[NOTE]
+======
+When present, `device.count` implies daisychain support.  For more
+information, refer to the <<daisychain,NUT daisychain support notes>> chapter
+of the user manual and developer guide.
+======
 
 ups: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,7 +112,7 @@ ups: General unit information
 | ups.mfr               | UPS manufacturer             | APC
 | ups.mfr.date          | UPS manufacturing date
                           (opaque string)              | 10/17/96
-| ups.serial            | UPS serial number (opaque    
+| ups.serial            | UPS serial number (opaque
                           string)                      | WS9643050926
 | ups.vendorid          | Vendor ID for USB devices    | 0463
 | ups.productid         | Product ID for USB devices   | 0001
@@ -120,62 +175,85 @@ ups: General unit information
                           shutdown ability (poweroff)  | enabled
 |===============================================================================
 
-NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
-commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
-to the right value before issuing the command. That is, shutdown.stayoff will first
-set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
+NOTE: When present, the value of `ups.start.auto` has an impact on
+`shutdown.*` commands. For the sake of coherence, shutdown commands
+will set `ups.start.auto` to the right value before issuing the command.
+That is, `shutdown.stayoff` will first set `ups.start.auto` to `no`,
+while `shutdown.return` will set it to `yes`.
+
+NOTE: When possible, time-stamps and dates should be expressed as detailed
+above in the Time and Date format chapter.
 
 input: Incoming line/power information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 [options="header"]
-|===============================================================================
-| Name                      | Description                    | Example value
-| input.voltage             | Input voltage                  | 121.5
-| input.voltage.maximum     | Maximum incoming voltage seen  | 130
-| input.voltage.minimum     | Minimum incoming voltage seen  | 100
-| input.voltage.nominal     | Nominal input voltage          | 120
-| input.voltage.extended    | Extended input voltage range   | no
-| input.transfer.delay      | Delay before transfer to mains
-                              (seconds)                      | 60
-| input.transfer.reason     | Reason for last transfer
-                              to battery (*** opaque)        | T
-| input.transfer.low        | Low voltage transfer point     | 91
-| input.transfer.high       | High voltage transfer point    | 132
-| input.transfer.low.min    | smallest settable low
-                              voltage transfer point         | 85
-| input.transfer.low.max    | greatest settable low
-                              voltage transfer point         | 95
-| input.transfer.high.min   | smallest settable high
-                              voltage transfer point         | 131
-| input.transfer.high.max   | greatest settable high
-                              voltage transfer point         | 136
-| input.sensitivity         | Input power sensitivity        | H (high)
-| input.quality             | Input power quality (***
-                              opaque)                        | FF
-| input.current             | Input current (A)              | 4.25
-| input.current.nominal     | Nominal input current (A)      | 5.0
-| input.frequency           | Input line frequency (Hz)      | 60.00
-| input.frequency.nominal   | Nominal input line
-                              frequency (Hz)                 | 60
-| input.frequency.low       | Input line frequency low (Hz)  | 47
-| input.frequency.high      | Input line frequency high (Hz) | 63
-| input.frequency.extended  | Extended input frequency range | no
-| input.transfer.boost.low  | Low voltage boosting
-                              transfer point                 | 190
-| input.transfer.boost.high | High voltage boosting
-                              transfer point                 | 210
-| input.transfer.trim.low   | Low voltage trimming
-                              transfer point                 | 230
-| input.transfer.trim.high  | High voltage trimming
-                              transfer point                 | 240
-| input.load                | Load on (ePDU) input (percent
-                              of full)                       | 25
-| input.realpower           | Current sum value of all (ePDU)
-                              phases real power (W)          | 300
-| input.power               | Current sum value of all (ePDU)
-                              phases apparent power (VA)     | 500
-|===============================================================================
+|=================================================================================
+| Name                        | Description                       | Example value
+| input.voltage               | Input voltage (V)                 | 121.5
+| input.voltage.maximum       | Maximum incoming voltage seen (V) | 130
+| input.voltage.minimum       | Minimum incoming voltage seen (V) | 100
+| input.voltage.status        | Status relative to the
+                                thresholds                        | critical-low
+| input.voltage.low.warning   | Low warning threshold (V)         | 205
+| input.voltage.low.critical  | Low critical threshold (V)        | 200
+| input.voltage.high.warning  | High warning threshold (V)        | 230
+| input.voltage.high.critical | High critical threshold (V)       | 240
+| input.voltage.nominal       | Nominal input voltage (V)         | 120
+| input.voltage.extended      | Extended input voltage range      | no
+| input.transfer.delay        | Delay before transfer to mains
+                                (seconds)                         | 60
+| input.transfer.reason       | Reason for last transfer
+                                to battery (*** opaque)           | T
+| input.transfer.low          | Low voltage transfer point (V)    | 91
+| input.transfer.high         | High voltage transfer point (V)   | 132
+| input.transfer.low.min      | smallest settable low
+                                voltage transfer point (V)        | 85
+| input.transfer.low.max      | greatest settable low
+                                voltage transfer point (V)        | 95
+| input.transfer.high.min     | smallest settable high
+                                voltage transfer point (V)        | 131
+| input.transfer.high.max     | greatest settable high
+                                voltage transfer point (V)        | 136
+| input.sensitivity           | Input power sensitivity           | H (high)
+| input.quality               | Input power quality (***
+                                opaque)                           | FF
+| input.current               | Input current (A)                 | 4.25
+| input.current.nominal       | Nominal input current (A)         | 5.0
+| input.current.status        | Status relative to the
+                                thresholds                        | critical-high
+| input.current.low.warning   | Low warning threshold (A)         | 4
+| input.current.low.critical  | Low critical threshold (A)        | 2
+| input.current.high.warning  | High warning threshold (A)        | 10
+| input.current.high.critical | High critical threshold (A)       | 12
+| input.frequency             | Input line frequency (Hz)         | 60.00
+| input.frequency.nominal     | Nominal input line
+                                frequency (Hz)                    | 60
+| input.frequency.status      | Frequency status                  | out-of-range
+| input.frequency.low         | Input line frequency low (Hz)     | 47
+| input.frequency.high        | Input line frequency high (Hz)    | 63
+| input.frequency.extended    | Extended input frequency range    | no
+| input.transfer.boost.low    | Low voltage boosting
+                                transfer point (V)                | 190
+| input.transfer.boost.high   | High voltage boosting
+                                transfer point (V)                | 210
+| input.transfer.trim.low     | Low voltage trimming
+                                transfer point (V)                | 230
+| input.transfer.trim.high    | High voltage trimming
+                                transfer point (V)                | 240
+| input.load                  | Load on (ePDU) input (percent
+                                of full)                          | 25
+| input.realpower             | Current sum value of all (ePDU)
+                                phases real power (W)             | 300
+| input.realpower.nominal     | Nominal sum value of all (ePDU)
+                                phases real power (W)             | 850
+| input.power                 | Current sum value of all (ePDU)
+                                phases apparent power (VA)        | 500
+| input.source                | The current input power source    | 1
+| input.source.preferred      | The preferred power source        | 1
+| input.phase.shift           | Voltage dephasing between input
+                                sources (degrees)                 | 181
+|=================================================================================
 
 output: Outgoing power/inverter information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,21 +278,24 @@ broken down to their base components.
 
 Phase Count Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-input.phases (3 for three-phase, absent or 1 for 1phase)
-output.phases (as for input.phases)
+
+`input.phases` (3 for three-phase, absent or 1 for 1phase)
+
+`output.phases` (as for `input.phases`)
 
 DOMAINs
 ^^^^^^^
+
 Any input or output is considered a valid DOMAIN.
 
-input (should really be called input.mains, but keep this for compat)
-input.bypass
-input.servicebypass
+* input (should really be called input.mains, but keep this for compat)
+** input.bypass
+** input.servicebypass
 
-output (should really be called output.load, but keep this for compat)
-output.bypass
-output.inverter
-output.servicebypass
+* output (should really be called output.load, but keep this for compat)
+** output.bypass
+** output.inverter
+** output.servicebypass
 
 Specification (SPEC)
 ^^^^^^^^^^^^^^^^^^^^
@@ -223,6 +304,7 @@ Voltage, current, frequency, etc are considered to be a specification of
 the measurement.
 
 With this notation, the old 1phase naming scheme becomes DOMAIN.SPEC
+
 Example: `input.current`
 
 CONTEXT
@@ -233,22 +315,23 @@ measurements in more detail. We call this the CONTEXT.
 
 With this notation, the naming scheme becomes DOMAIN.CONTEXT.SPEC when
 in three-phase mode.
+
 Example: `input.L1.current`
 
 Valid CONTEXTs
 ^^^^^^^^^^^^^^
 
- L1-L2  \
- L2-L3   \
- L3-L1    for voltage measurements
- L1-N    /
- L2-N   /
- L3-N  /
+    L1-L2  \
+    L2-L3   \
+    L3-L1    for voltage measurements
+    L1-N    /
+    L2-N   /
+    L3-N  /
 
- L1  \
- L2  for current and power measurements
- L3  /
- N  - for current measurement
+    L1  \
+    L2  for current and power measurements
+    L3  /
+    N  - for current measurement
 
 Valid SPECs
 ^^^^^^^^^^^
@@ -258,14 +341,25 @@ Valid with/without context (i.e. per phase or aggregated/averaged)
 [options="header"]
 |===============================================================================
 | Name                  | Description
+| alarm                 | Alarms for phases, published in ups.alarm
 | current               | Current (A)
 | current.maximum       | Maximum seen current (A)
 | current.minimum       | Minimum seen current (A)
+| current.status        | Status relative to the thresholds
+| current.low.warning   | Low warning threshold (A)
+| current.low.critical  | Low critical threshold (A)
+| current.high.warning  | High warning threshold (A)
+| current.high.critical | High critical threshold (A)
 | current.peak          | Peak current
 | voltage               | Voltage (V)
 | voltage.nominal       | Nominal voltage (V)
 | voltage.maximum       | Maximum seen voltage (V)
 | voltage.minimum       | Minimum seen voltage (V)
+| voltage.status        | Status relative to the thresholds
+| voltage.low.warning   | Low warning threshold (V)
+| voltage.low.critical  | Low critical threshold (V)
+| voltage.high.warning  | High warning threshold (V)
+| voltage.high.critical | High critical threshold (V)
 | power                 | Apparent power (VA)
 | power.maximum         | Maximum seen apparent power (VA)
 | power.minimum         | Minimum seen apparent power (VA)
@@ -292,7 +386,7 @@ Valid without context (i.e. aggregation of all phases):
 EXAMPLES
 ~~~~~~~~
 
-Partial Three phase - Three phase example:
+Partial Three phase -- Three phase example:
 
 	input.phases: 3
 	input.frequency: 50.0
@@ -302,7 +396,7 @@ Partial Three phase - Three phase example:
 	output.L1.power: 35700
 	output.powerfactor: 0.82
 
-Partial Three phase - One phase example:
+Partial Three phase -- One phase example:
 
 	input.phases: 3
 	input.L2.current: 48.2
@@ -321,33 +415,52 @@ battery: Any battery details
 |===============================================================================
 | Name                         | Description                         | Example value
 | battery.charge               | Battery charge (percent)            | 100.0
+| battery.charge.approx        | Rough approximation of battery
+                                 charge (opaque, percent)            | <85
 | battery.charge.low           | Remaining battery level when
                                  UPS switches to LB (percent)        | 20
 | battery.charge.restart       | Minimum battery level for
                                  UPS restart after power-off         | 20
 | battery.charge.warning       | Battery level when UPS switches
                                  to "Warning" state (percent)        | 50
+| battery.charger.status       | Status of the battery charger
+                                 (see the note below)                | charging
 | battery.voltage              | Battery voltage (V)                 | 24.84
+| battery.voltage.cell.max     | Maximum battery voltage seen of the
+                                 Li-ion cell (V)                     | 3.44
+| battery.voltage.cell.min     | Minimum battery voltage seen of the
+                                 Li-ion cell (V)                     | 3.41
 | battery.voltage.nominal      | Nominal battery voltage (V)         | 024
 | battery.voltage.low          | Minimum battery voltage, that
                                  triggers FSD status                 | 21,52
 | battery.voltage.high         | Maximum battery voltage
                                  (i.e. battery.charge = 100)         | 26,9
 | battery.capacity             | Battery capacity (Ah)               | 7.2
+| battery.capacity.nominal     | Nominal battery capacity (Ah)       | 8.0
 | battery.current              | Battery current (A)                 | 1.19
 | battery.current.total        | Total battery current (A)           | 1.19
+| battery.status               | Health status of the battery
+                                 (opaque string)                     | ok
 | battery.temperature          | Battery temperature (degrees C)     | 050.7
+| battery.temperature.cell.max | Maximum battery temperature seen
+                                 of the Li-ion cell (degrees C)      | 25.85
+| battery.temperature.cell.min | Minimum battery temperature seen
+                                 of the Li-ion cell (degrees C)      | 24.85
 | battery.runtime              | Battery runtime (seconds)           | 1080
 | battery.runtime.low          | Remaining battery runtime when
                                  UPS switches to LB (seconds)        | 180
 | battery.runtime.restart      | Minimum battery runtime for UPS
                                  restart after power-off (seconds)   | 120
 | battery.alarm.threshold      | Battery alarm threshold             | 0 (immediate)
-| battery.date                 | Battery change date (opaque string) | 11/14/00
-| battery.mfr.date             | Battery manufacturing date 
+| battery.date                 | Battery installation or last change
+                                 date (opaque string)                | 11/14/20
+| battery.date.maintenance     | Battery next change or maintenance
+                                 date (opaque string)                | 11/13/24
+| battery.mfr.date             | Battery manufacturing date
                                  (opaque string)                     | 2005/04/02
-| battery.packs                | Number of battery packs             | 001
-| battery.packs.bad            | Number of bad battery packs         | 000
+| battery.packs                | Number of internal battery packs    | 1
+| battery.packs.bad            | Number of bad battery packs         | 0
+| battery.packs.external       | Number of external battery packs    | 1
 | battery.type                 | Battery chemistry (opaque
                                  string)                             | PbAc
 | battery.protection           | Prevent deep discharge of
@@ -362,6 +475,19 @@ battery: Any battery details
                                  and load level lower (Watts)        | 10
 |===============================================================================
 
+NOTE:
+`battery.charger.status` replaces the historic flags `CHRG` and `DISCHRG`
+that were exposed through `ups.status`.
+The `battery.charger.status` can have one of the following values:
+
+- `charging`: battery is charging,
+- `discharging`: battery is discharging,
+- `floating`: battery has completed its charge cycle,
+   and waiting to go to resting mode,
+- `resting`: the battery is fully charged, and not charging nor discharging.
+
+NOTE: When possible, time-stamps and dates should be expressed as detailed
+above in the Time and Date format chapter.
 
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -374,65 +500,99 @@ from '1' to 'n'. For example: 'ambient.1.temperature' for the first external
 sensor temperature.
 
 [options="header"]
-|===============================================================================
-| Name                              | Description                | Example value
-| ambient.n.temperature             | Ambient temperature
-                                      (degrees C)                | 25.40
-| ambient.n.temperature.alarm       | Temperature alarm
-                                      (enabled/disabled)         | enabled
-| ambient.n.temperature.high        | Temperature threshold high
-                                      (degrees C)                | 40
-| ambient.n.temperature.low         | Temperature threshold low
-                                      (degrees C)                | 5
-| ambient.n.temperature.maximum     | Maximum temperature seen
-                                      (degrees C)                | 37.6
-| ambient.n.temperature.minimum     | Minimum temperature seen
-                                      (degrees C)                | 18.1
-| ambient.n.humidity                | Ambient relative humidity
-                                      (percent)                  | 038.8
-| ambient.n.humidity.alarm          | Relative humidity alarm
-                                      (enabled/disabled)         | enabled
-| ambient.n.humidity.high           | Relative humidity
-                                      threshold high (percent)   | 80
-| ambient.n.humidity.low            | Relative humidity
-                                      threshold high (percent)   | 10
-| ambient.n.humidity.maximum        | Maximum relative humidity
-                                      seen (percent)             | 60
-| ambient.n.humidity.minimum        | Minimum relative humidity
-                                      seen (percent)             | 13
-|===============================================================================
+|==================================================================================
+| Name                                | Description                 | Example value
+| ambient.n.present                   | Ambient sensor presence     | yes
+| ambient.n.temperature               | Ambient temperature
+                                        (degrees C)                 | 25.40
+| ambient.n.temperature.alarm         | Temperature alarm
+                                        (enabled/disabled)          | enabled
+| ambient.n.temperature.status        | Ambient temperature status
+                                        relative to the thresholds  | warning-low
+| ambient.n.temperature.high          | Temperature threshold high
+                                        (degrees C)                 | 60
+| ambient.n.temperature.high.warning  | Temperature threshold high
+                                        warning (degrees C)         | 40
+| ambient.n.temperature.high.critical | Temperature threshold high
+                                        critical (degrees C)        | 60
+| ambient.n.temperature.low           | Temperature threshold low
+                                        (degrees C)                 | 5
+| ambient.n.temperature.low.warning   | Temperature threshold low
+                                        warning (degrees C)         | 10
+| ambient.n.temperature.low.critical  | Temperature threshold low
+                                        critical (degrees C)        | 5
+| ambient.n.temperature.maximum       | Maximum temperature seen
+                                        (degrees C)                 | 37.6
+| ambient.n.temperature.minimum       | Minimum temperature seen
+                                        (degrees C)                 | 18.1
+| ambient.n.humidity                  | Ambient relative humidity
+                                        (percent)                   | 038.8
+| ambient.n.humidity.alarm            | Relative humidity alarm
+                                        (enabled/disabled)          | enabled
+| ambient.n.humidity.status           | Ambient humidity status
+                                        relative to the thresholds  | warning-low
+| ambient.n.humidity.high             | Relative humidity
+                                        threshold high (percent)    | 80
+| ambient.n.humidity.high.warning     | Relative humidity threshold
+                                        high warning (percent)      | 70
+| ambient.n.humidity.high.critical    | Relative humidity threshold
+                                        high critical (percent)     | 80
+| ambient.n.humidity.low              | Relative humidity
+                                        threshold low (percent)     | 10
+| ambient.n.humidity.low.warning      | Relative humidity threshold
+                                        low warning (percent)       | 20
+| ambient.n.humidity.low.critical     | Relative humidity threshold
+                                        low critical (percent)      | 10
+| ambient.n.humidity.maximum          | Maximum relative humidity
+                                        seen (percent)              | 60
+| ambient.n.humidity.minimum          | Minimum relative humidity
+                                        seen (percent)              | 13
+| ambient.n.contacts.x.status         | State of the dry contact
+                                        sensor x                    | open
+|==================================================================================
 
 
 outlet: Smart outlet management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: *n* stands for the outlet index. For more information, refer to the
-NUT outlets management and PDU notes chapter of the user manual.
-A special case is "outlet.0" which is equivalent to "outlet", and
-represent the whole set of outlets of the device.
+NOTE: *n* stands for the outlet index. A special case is "outlet.0" which is
+equivalent to "outlet" (without index), and represent the whole set of outlets
+of the device. The most important data is "outlet.count", used to iterate over
+the whole set of outlets.
+For more information, refer to the NUT outlets management and PDU notes chapter
+of the user manual.
 
 [options="header"]
 |===============================================================================
-| Name                           | Description                | Example value
+| Name                           | Description                 | Example value
+| outlet.count                   | Total number of outlets     | 12
+| outlet.switchable              | General outlet switch ability
+                                   of the unit (yes/no)        | yes
 | outlet.n.id                    | Outlet system identifier
-                                   (opaque string)            | 1
+                                   (opaque string)             | 1
+| outlet.n.name                  | Outlet name (opaque string) | A1
 | outlet.n.desc                  | Outlet description
-                                   (opaque string)            | Main outlet
+                                   (opaque string)             | Main outlet
+| outlet.n.groupid               | Identifier of the group to
+                                   which the outlet belongs to | 1
 | outlet.n.switch                | Outlet switch control
-                                   (on/off)                   | on
+                                   (on/off)                    | on
 | outlet.n.status                | Outlet switch status
-                                   (on/off)                   | on
+                                   (on/off)                    | on
+| outlet.n.alarm                 | Alarms for outlets and PDU,
+                                   published in ups.alarm      | outlet 1 low
+                                                                 voltage warning
 | outlet.n.switchable            | Outlet switch ability
-                                   (yes/no)                   | yes
+                                   (yes/no)                    | yes
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
-                                   (percent)                  | 80
+                                   (percent)                   | 80
 | outlet.n.battery.charge.low    | Remaining battery level to
                                    power off this outlet
-                                   (percent)                  | 80
+                                   (percent)                   | 80
 | outlet.n.delay.shutdown        | Interval to wait before
                                    shutting down this outlet
-                                   (seconds)                  | 180
+                                   (seconds)                   | 180
 | outlet.n.delay.start           | Interval to wait before
                                    restarting this outlet
                                    (seconds)                   | 120
@@ -440,19 +600,78 @@ represent the whole set of outlets of the device.
                                    will be shutdown (seconds)  | 20
 | outlet.n.timer.start           | Time before the outlet load
                                    will be started (seconds)   | 30
-| outlet.n.current               | Current (A)                | 0.19
-| outlet.n.current.maximum       | Maximum seen current (A)   | 0.56
+| outlet.n.current               | Current (A)                 | 0.19
+| outlet.n.current.maximum       | Maximum seen current (A)    | 0.56
+| outlet.n.current.status        | Current status relative to
+                                   the thresholds              | good
+| outlet.n.current.low.warning   | Low warning threshold (A)   | 0.10
+| outlet.n.current.low.critical  | Low critical threshold (A)  | 0.05
+| outlet.n.current.high.warning  | High warning threshold (A)  | 0.30
+| outlet.n.current.high.critical | High critical threshold (A) | 0.40
 | outlet.n.realpower             | Current value of real
-                                   power (W)                  | 28
-| outlet.n.voltage               | Voltage (V)                | 247.0
-| outlet.n.powerfactor           | Power Factor
-                                   (dimensionless value
-                                   between 0 and 1)           | 0.85
-| outlet.n.crestfactor           | Crest Factor
-                                   (dimensionless, equal
-                                   to or greater than 1)      | 1.41
-| outlet.n.power                 | Apparent power (VA)        | 46
+                                   power (W)                   | 28
+| outlet.n.voltage               | Voltage (V)                 | 247.0
+| outlet.n.voltage.status        | Voltage status relative to
+                                   the thresholds              | good
+| outlet.n.voltage.low.warning   | Low warning threshold (V)   | 205
+| outlet.n.voltage.low.critical  | Low critical threshold (V)  | 200
+| outlet.n.voltage.high.warning  | High warning threshold (V)  | 230
+| outlet.n.voltage.high.critical | High critical threshold (V) | 240
+| outlet.n.powerfactor           | Power Factor (dimensionless,
+                                   value between 0 and 1)      | 0.85
+| outlet.n.crestfactor           | Crest Factor (dimensionless,
+                                   equal to or greater than 1) | 1.41
+| outlet.n.power                 | Apparent power (VA)         | 46
+| outlet.n.type                  | Physical outlet type        | french
 |===============================================================================
+
+outlet.group: groups of smart outlets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is a refinement of the outlet collection, providing grouped
+management for a set of outlets. The same principles and data than the
+outlet collection apply to outlet.group, especially for the indexing 'n'
+and "outlet.group.count".
+
+Most of the data published for outlets also apply to outlet.group,
+including: id, name (similar as outlet "desc"), status, current and
+voltage (including status, alarm and thresholds).
+
+Some specific data to outlet groups exists:
+
+[options="header"]
+|=================================================================================
+| Name                           | Description                    | Example value
+| outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
+| outlet.group.n.color           | Color-coding of the outlets
+                                   in this group (OPAQUE)         | yellow
+| outlet.group.n.count           | Number of outlets in the group | 12
+| outlet.group.n.phase           | Electrical phase to which the
+                                   physical outlet group (Gang) is
+                                   connected to                   | L1
+|=================================================================================
+
+Example:
+
+	outlet.group.1.current: 0.00
+	outlet.group.1.current.high.critical: 16.00
+	outlet.group.1.current.high.warning: 12.80
+	outlet.group.1.current.low.warning: 0.00
+	outlet.group.1.current.nominal: 16.00
+	outlet.group.1.current.status: good
+	outlet.group.1.id: 1
+	outlet.group.1.name: Branch Circuit A
+	outlet.group.1.phase: L1
+	outlet.group.1.status: on
+	outlet.group.1.voltage: 244.23
+	outlet.group.1.voltage.high.critical: 265.00
+	outlet.group.1.voltage.high.warning: 255.00
+	outlet.group.1.voltage.low.critical: 180.00
+	outlet.group.1.voltage.low.warning: 190.00
+	outlet.group.1.voltage.status: good
+	...
+	outlet.group.count: 3.00
+
 
 driver: Internal driver information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,6 +684,7 @@ driver: Internal driver information
 | driver.version.internal | Internal driver version      | 1.23.45
 | driver.version.data     | Version of the internal data
                             mapping, for generic drivers | Eaton HID 1.31
+| driver.version.usb      | USB library version          | libusb-1.0.21
 | driver.parameter.xxx    | Parameter xxx (ups.conf or
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or
@@ -490,9 +710,9 @@ Instant commands
 | Name                     | Description
 | load.off                 | Turn off the load immediately
 | load.on                  | Turn on the load immediately
-| load.off.delay           | Turn off the load possibly after a delay 
-| load.on.delay            | Turn on the load possibly after a delay 
-| shutdown.return          | Turn off the load possibly after a delay 
+| load.off.delay           | Turn off the load possibly after a delay
+| load.on.delay            | Turn on the load possibly after a delay
+| shutdown.return          | Turn off the load possibly after a delay
                              and return when power is back
 | shutdown.stayoff         | Turn off the load possibly after a delay
                              and remain off even if power returns
@@ -519,7 +739,7 @@ Instant commands
 | beeper.disable           | Disable UPS beeper/buzzer
 | beeper.mute              | Temporarily mute UPS beeper/buzzer
 | beeper.toggle            | Toggle UPS beeper/buzzer
-| outlet.n.shutdown.return | Turn off the outlet possibly after a delay 
+| outlet.n.shutdown.return | Turn off the outlet possibly after a delay
                              and return when power is back
 | outlet.n.load.off        | Turn off the outlet immediately
 | outlet.n.load.on         | Turn on the outlet immediately

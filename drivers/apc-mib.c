@@ -26,10 +26,14 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.2"
+#define APCC_MIB_VERSION	"1.6"
+
+#define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
+/* FIXME: Find a better oid_auto_check vs sysOID for this one? */
+#define APC_UPS_SYSOID	APC_UPS_DEVICE_MODEL
 
 /* Other APC sysOID:
- * 
+ *
  * examples found on the Net and other sources:
  *   'enterprises.apc.products.system.smartUPS.smartUPS700'
  *  - from fence agents
@@ -43,7 +47,7 @@
  *   .1.3.6.1.4.1.318.1.3.2.8
  */
 
-/* TODO: find the right sysOID for this MIB 
+/* TODO: find the right sysOID for this MIB
  * Ie ".1.3.6.1.4.1.318.1.1.1" or ".1.3.6.1.4.1.318" or? */
 
 /*     .1.3.6.1.4.1.318.1.1.1
@@ -60,75 +64,75 @@
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
 static info_lkp_t apcc_batt_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" },	/* batteryLow */
-	{ 0, "NULL" }
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "", NULL, NULL },	/* batteryNormal */
+	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 0, NULL, NULL, NULL }
 } ;
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
 static info_lkp_t apcc_pwr_info[] = {
-    { 1, "" },          /* unknown  */
-    { 2, "OL" },        /* onLine */
-    { 3, "OB" },        /* onBattery */
-    { 4, "OL BOOST" },     /* onSmartBoost */
-    { 5, "OFF" },       /* timedSleeping */
-    { 6, "OFF" },       /* softwareBypass  */
-    { 7, "OFF" },       /* off */
-    { 8, "" },          /* rebooting */
-    { 9, "BYPASS" },    /* switchedBypass */
-    { 10, "BYPASS" },   /* hardwareFailureBypass */
-    { 11, "OFF" },      /* sleepingUntilPowerReturn */
-    { 12, "OL TRIM" },     /* onSmartTrim */
-    { 0, "NULL" }
+    { 1, "", NULL, NULL },          /* unknown  */
+    { 2, "OL", NULL, NULL },        /* onLine */
+    { 3, "OB", NULL, NULL },        /* onBattery */
+    { 4, "OL BOOST", NULL, NULL },     /* onSmartBoost */
+    { 5, "OFF", NULL, NULL },       /* timedSleeping */
+    { 6, "OFF", NULL, NULL },       /* softwareBypass  */
+    { 7, "OFF", NULL, NULL },       /* off */
+    { 8, "", NULL, NULL },          /* rebooting */
+    { 9, "BYPASS", NULL, NULL },    /* switchedBypass */
+    { 10, "BYPASS", NULL, NULL },   /* hardwareFailureBypass */
+    { 11, "OFF", NULL, NULL },      /* sleepingUntilPowerReturn */
+    { 12, "OL TRIM", NULL, NULL },     /* onSmartTrim */
+    { 0, NULL, NULL, NULL }
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
 static info_lkp_t apcc_cal_info[] = {
-    { 1, "" },          /* Calibration Successful */
-    { 2, "" },          /* Calibration not done, battery capacity below 100% */
-    { 3, "CAL" },       /* Calibration in progress */
-    { 0, "NULL" }
+    { 1, "", NULL, NULL },          /* Calibration Successful */
+    { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
+    { 3, "CAL", NULL, NULL },       /* Calibration in progress */
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
 static info_lkp_t apcc_battrepl_info[] = {
-    { 1, "" },          /* No battery needs replacing */
-    { 2, "RB" },        /* Batteries need to be replaced */
-    { 0, "NULL" }
+    { 1, "", NULL, NULL },          /* No battery needs replacing */
+    { 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
 static info_lkp_t apcc_testdiag_results[] = {
-    { 1, "Ok" },
-    { 2, "Failed" },
-    { 3, "InvalidTest" },
-    { 4, "TestInProgress"},
-    { 0, "NULL" }
+    { 1, "Ok", NULL, NULL },
+    { 2, "Failed", NULL, NULL },
+    { 3, "InvalidTest", NULL, NULL },
+    { 4, "TestInProgress", NULL, NULL },
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
 static info_lkp_t apcc_sensitivity_modes[] = {
-    { 1, "auto" },
-    { 2, "low" },
-    { 3, "medium" },
-    { 4, "high" },
-    { 0, "NULL" }
+    { 1, "auto", NULL, NULL },
+    { 2, "low", NULL, NULL },
+    { 3, "medium", NULL, NULL },
+    { 4, "high", NULL, NULL },
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
 static info_lkp_t apcc_transfer_reasons[] = {
-    { 1, "noTransfer" },
-    { 2, "highLineVoltage" },
-    { 3, "brownout" },
-    { 4, "blackout" },
-    { 5, "smallMomentarySag" },
-    { 6, "deepMomentarySag" },
-    { 7, "smallMomentarySpike" },
-    { 8, "largeMomentarySpike" },
-    { 9, "selfTest" },
-    { 10, "rateOfVoltageChange" }
+    { 1, "noTransfer", NULL, NULL },
+    { 2, "highLineVoltage", NULL, NULL },
+    { 3, "brownout", NULL, NULL },
+    { 4, "blackout", NULL, NULL },
+    { 5, "smallMomentarySag", NULL, NULL },
+    { 6, "deepMomentarySag", NULL, NULL },
+    { 7, "smallMomentarySpike", NULL, NULL },
+    { 8, "largeMomentarySpike", NULL, NULL },
+    { 9, "selfTest", NULL, NULL },
+    { 10, "rateOfVoltageChange", NULL, NULL }
 };
 
 /* --- */
@@ -146,6 +150,11 @@ static info_lkp_t apcc_transfer_reasons[] = {
 
 
 static snmp_info_t apcc_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* info elements. */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC",
@@ -183,8 +192,10 @@ static snmp_info_t apcc_mib[] = {
 	{ "input.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.4.0", "", SU_FLAG_OK, NULL },
 	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.3.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
-    { "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
+	{ "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
 	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, apcc_sensitivity_modes },
+	{ "ups.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.9.0", "", SU_FLAG_OK, NULL },
+	{ "ups.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.8.0", "", SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_POWER_STATUS, "OFF",
 		SU_FLAG_OK | SU_STATUS_PWR, apcc_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_BATT_STATUS, "",
@@ -198,8 +209,8 @@ static snmp_info_t apcc_mib[] = {
 	{ "ups.load", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.3.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "ups.load", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.3.0", "", SU_FLAG_OK, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, 16, ".1.3.6.1.4.1.318.1.1.1.1.2.1.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.10.0", "", SU_FLAG_OK, NULL },
-	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.9.0", "", SU_FLAG_OK, NULL },
+	{ "ups.delay.shutdown", ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.10.0", "", SU_TYPE_TIME | SU_FLAG_OK, NULL },
+	{ "ups.delay.start", ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.9.0", "", SU_TYPE_TIME | SU_FLAG_OK, NULL },
 	{ "battery.charge", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.1.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.1.0", "", SU_FLAG_OK, NULL },
 	{ "battery.charge.restart", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.6.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
@@ -213,10 +224,10 @@ static snmp_info_t apcc_mib[] = {
 	{ "battery.current.total", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.6.0", "", SU_FLAG_OK, NULL },
 	{ "battery.packs", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.5.0", "", SU_FLAG_OK, NULL },
 	{ "battery.packs.bad", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.6.0", "", SU_FLAG_OK, NULL },
-	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
-	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
+	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
+	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, apcc_testdiag_results },
-	{ "ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
+	{ "ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.1.0", "", SU_FLAG_OK | SU_FLAG_UNIQUE, NULL },
 	{ "output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.1.0", "", SU_FLAG_OK, NULL },
 	{ "output.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
@@ -265,38 +276,32 @@ static snmp_info_t apcc_mib[] = {
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
-
-	/* IEM ambient variables */
 /* IEM: integrated environment monitor probe */
-#define APCC_OID_IEM_TEMP       ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.4.1"
-#define APCC_OID_IEM_TEMP_UNIT  ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.5.1"
-#define APCC_IEM_FAHRENHEIT	    2
-#define APCC_OID_IEM_HUMID      ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.6.1"
 	{ "ambient.temperature", 0, 1, APCC_OID_IEM_TEMP, "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 
 	/* instant commands. */
-	{ "load.off", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "load.on", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "shutdown.stayoff", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.off", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 /*	{ CMD_SDRET, 0, APCC_REBOOT_GRACEFUL, APCC_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
 
-	{ "shutdown.return", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.failure.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.panel.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "bypass.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "bypass.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.battery.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.2.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "reset.input.minmax", 0, 2, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.panel.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.stop", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.2.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.stop", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "reset.input.minmax", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, ".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib };
+mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcc_mib, APC_UPS_SYSOID, NULL };
 
 /*
 vim:ts=4:sw=4:et:

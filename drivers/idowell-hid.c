@@ -23,12 +23,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "idowell-hid.h"
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.1"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* iDowell */
@@ -40,7 +42,7 @@ static usb_device_id_t idowell_usb_device_table[] = {
 	{ USB_DEVICE(IDOWELL_VENDORID, 0x0300), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -102,7 +104,7 @@ static hid_info_t idowell_hid2nut[] = {
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	
+
 	/* input page */
 	{ "input.transfer.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.transfer.low", 0, 0, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -166,4 +168,5 @@ subdriver_t idowell_subdriver = {
 	idowell_format_model,
 	idowell_format_mfr,
 	idowell_format_serial,
+	fix_report_desc,
 };
