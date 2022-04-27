@@ -1,3 +1,9 @@
+nut (2.8.0-1) UNRELEASED; urgency=high
+
+  * Upstream update
+
+ -- Arnaud Quette <ArnaudQuette@eaton.com> Wed Apr 27 11:50:06 2022 +0200
+
 nut (2.7.4-14) UNRELEASED; urgency=high
 
   * Ported packaging recipes over upstream NUT, commented away DMF
