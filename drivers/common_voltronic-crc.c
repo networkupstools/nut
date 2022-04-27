@@ -63,8 +63,9 @@ static void	common_voltronic_crc_init(void)
 /* See header file for details */
 unsigned short	common_voltronic_crc_compute(const char *input, const size_t len)
 {
-	unsigned short	byte, crc, crc_MSB, crc_LSB;
+	unsigned short	crc, crc_MSB, crc_LSB;
 	unsigned long	remainder = 0;
+	size_t		byte;
 
 	/* Make sure all is ready */
 	if (!initialized)
