@@ -28,6 +28,7 @@ linkman:genericups[8] driver.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5] file:
 
@@ -39,6 +40,7 @@ Change shutdown delay time from 0 second default.
 
 INSTANT COMMANDS
 ----------------
+
 This driver supports the following Instant Commands.
 (See linkman:upscmd[8])
 
@@ -97,6 +99,7 @@ Mutes the UPS beeper/buzzer for the current alarm condition(s).
 
 Writable Variables
 ------------------
+
 See linkman:upsrw[8] to see what variables are writable for the UPS.
 
 NOTE: If your UPS supports writing battery.runtime.low, the new set value
@@ -108,18 +111,21 @@ those values are used to create an allowable output range.  The UPS
 will do what it can to keep the output voltage value within the
 defined range (for example: tap change or switch to inverter).
 
-AUTHOR
-------
-Bill Elliot <bill@wreassoc.com>,
-Eric Lawson <elawson@inficad.com>
+AUTHORS
+-------
+
+* Bill Elliot <bill@wreassoc.com>
+* Eric Lawson <elawson@inficad.com>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

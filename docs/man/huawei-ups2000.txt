@@ -342,20 +342,23 @@ Guide.
 
 AUTHOR
 ------
+
 Yifeng Li <tomli@tomli.me>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-Huawei UPS2000-A (1 kVA-3 kVA) User Manual: https://support.huawei.com/enterprise/en/doc/EDOC1000084260
-
-Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide: https://support.huawei.com/enterprise/en/doc/EDOC1000110696
-
-libmodbus home page: http://libmodbus.org
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* Huawei UPS2000-A (1 kVA-3 kVA) User Manual:
+  https://support.huawei.com/enterprise/en/doc/EDOC1000084260
+* Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:
+  https://support.huawei.com/enterprise/en/doc/EDOC1000110696
+* libmodbus home page: http://libmodbus.org

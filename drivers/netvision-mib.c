@@ -25,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.42"
+#define NETVISION_MIB_VERSION			"0.44"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -115,6 +115,12 @@ static info_lkp_t netvision_output_info[] = {
 
 /* Snmp2NUT lookup table */
 static snmp_info_t netvision_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_UPSIDENTAGENTSWVERSION, "SOCOMEC SICON UPS",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_UPSIDENTMODEL,

@@ -2,7 +2,7 @@
 path_classifiers:
   template:
     - exclude: "**/*.py.in"
-    - exclude: "**/NUT-Monitor.in"
+    - exclude: "**/NUT-Monitor*.in"
 
 queries:
 - exclude: cpp/fixme-comment
@@ -17,4 +17,4 @@ extraction:
     index:
       filters:
         - include: "**/*.py.in"
-        - include: "**/NUT-Monitor.in"
+        - include: "**/NUT-Monitor*.in"

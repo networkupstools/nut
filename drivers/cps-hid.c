@@ -25,11 +25,12 @@
 
 #include "main.h"     /* for getval() */
 #include "nut_float.h"
+#include "hidparser.h" /* for FindObject_with_ID_Node() */
 #include "usbhid-ups.h"
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.5"
+#define CPS_HID_VERSION      "CyberPower HID 0.6"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -276,29 +277,6 @@ static int cps_claim(HIDDevice_t *hd) {
  * voltage limits as being more appropriate.
  */
 
-static HIDData_t *FindReport(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t node)
-{
-	size_t	i;
-
-	for (i = 0; i < pDesc_arg->nitems; i++) {
-		HIDData_t *pData = &pDesc_arg->item[i];
-
-		if (pData->ReportID != ReportID) {
-			continue;
-		}
-
-		HIDPath_t * pPath = &pData->Path;
-		uint8_t size = pPath->Size;
-		if (size == 0 || pPath->Node[size-1] != node) {
-			continue;
-		}
-
-		return pData;
-	}
-
-	return NULL;
-}
-
 static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
 
@@ -315,12 +293,12 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	 * To fix it Set both the input and output voltages to pre-defined settings.
 	 */
 
-	if ((pData=FindReport(pDesc_arg, 16, (PAGE_POWER_DEVICE<<16)+USAGE_HIGHVOLTAGETRANSFER))) {
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
 		long hvt_logmin = pData->LogMin;
 		long hvt_logmax = pData->LogMax;
 		upsdebugx(4, "Report Descriptor: hvt input LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
 
-		if ((pData=FindReport(pDesc_arg, 18, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18, USAGE_POW_VOLTAGE))) {
 			long output_logmin = pData->LogMin;
 			long output_logmax = pData->LogMax;
 			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld",
@@ -331,7 +309,7 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				pData->LogMax = CPS_VOLTAGE_LOGMAX;
 				upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %d, LogMax = %d",
 							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
-				if ((pData=FindReport(pDesc_arg, 15, (PAGE_POWER_DEVICE<<16)+USAGE_VOLTAGE))) {
+				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15, USAGE_POW_VOLTAGE))) {
 					long input_logmin = pData->LogMin;
 					long input_logmax = pData->LogMax;
 					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld",

@@ -10,14 +10,45 @@
 ################################################################################
 
 set -e
+SCRIPTDIR="`dirname "$0"`"
+SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
 # or to quickly hit the first-found errors in a larger matrix
 # (and then easily `make` to iterate fixes), like this:
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
+#
+# For out-of-tree builds you can specify a CI_BUILDDIR (absolute or relative
+# to SCRIPTDIR - not current path), or just call .../ci_build.sh while being
+# in a different directory and then it would be used with a warning. This may
+# require that you `make distclean` the original source checkout first:
+#   CI_BUILDDIR=obj BUILD_TYPE=default-all-errors ./ci_build.sh
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
+    fightwarn-all)
+        # This recipe allows to test with different (default-named)
+        # compiler suites if available. Primary goal is to see whether
+        # everything is building ok on a given platform, with one shot.
+        TRIED_BUILD=false
+        if (command -v gcc) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-gcc "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-gcc: compiler not found" >&2
+        fi
+        if (command -v clang) >/dev/null ; then
+            TRIED_BUILD=true
+            BUILD_TYPE=fightwarn-clang "$0" || exit
+        else
+            echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
+        fi
+        if ! $TRIED_BUILD ; then
+            echo "FAILED to run: no default-named compilers were found" >&2
+            exit 1
+        fi
+        exit 0
+        ;;
     fightwarn-gcc)
         CC="gcc"
         CXX="g++"
@@ -36,20 +67,26 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # For CFLAGS/CXXFLAGS keep caller or compiler defaults
     # (including C/C++ revision)
     BUILD_TYPE=default-all-errors
-    BUILD_WARNFATAL=yes
+    #BUILD_WARNFATAL=yes
+    #   configure => "yes" except for antique compilers
+    BUILD_WARNFATAL=auto
 
-    # Current fightwarn goal is to have no warnings at preset level below:
+    # Current fightwarn goal is to have no warnings at preset level below,
+    # or at the level defaulted with configure.ac (perhaps considering the
+    # compiler version, etc.):
     #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=hard
-    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #[ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=medium
+    #   configure => default to medium, detect by compiler type
+    [ -n "$BUILD_WARNOPT" ] || BUILD_WARNOPT=auto
 
     # Eventually this constraint would be removed to check all present
     # SSL implementations since their ifdef-driven codebases differ and
     # emit varied warnings. But so far would be nice to get the majority
     # of shared codebase clean first:
-    [ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+    #[ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
 
     # Similarly for libusb implementations with varying support
-    [ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
+    #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
 # Set this to enable verbose profiling
@@ -82,7 +119,36 @@ esac
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
-[ -n "$MAKE" ] || MAKE=make
+# By default we configure and build in the same directory as source;
+# and a `make distcheck` handles how we build from a tarball.
+# However there are also cases where source is prepared (autogen) once,
+# but is built in various directories with different configurations.
+# This is something to test via CI, that recipes are not broken for
+# such use-case. Note the path should be in .gitignore, e.g. equal to
+# or under ./tmp/ or ./obj/ for the CI_REQUIRE_GOOD_GITIGNORE sanity
+# checks to pass.
+case "${CI_BUILDDIR-}" in
+    "") # Not set, likeliest case
+        CI_BUILDDIR="`pwd`"
+        if [ x"${SCRIPTDIR}" = x"${CI_BUILDDIR}" ] ; then
+            CI_BUILDDIR="."
+        else
+            echo "=== WARNING: This build will use '${CI_BUILDDIR}'"
+            echo "=== for an out-of-tree build of NUT with sources located"
+            echo "=== in '${SCRIPTDIR}'"
+            echo "=== PRESS CTRL+C NOW if you did not mean this! (Sleeping 5 sec)"
+
+            sleep 5
+        fi
+        ;;
+    ".") ;; # Is SCRIPTDIR, in-tree build
+    /*)  ;; # Absolute path located somewhere else
+    *) # Non-trivial, relative to SCRIPTDIR, may not exist yet
+        CI_BUILDDIR="${SCRIPTDIR}/${CI_BUILDDIR}"
+        ;;
+esac
+
+[ -n "$MAKE" ] || [ "$1" = spellcheck ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -184,15 +250,31 @@ done
 if [ -z "$CI_OS_NAME" ]; then
     # Check for dynaMatrix node labels support and map into a simple
     # classification styled after (compatible with) that in Travis CI
-    for CI_OS_HINT in "$OS_FAMILY-$OS_DISTRO" "`uname -o`" "`uname -s -r -v`" "`uname -a`" ; do
+    for CI_OS_HINT in \
+        "$OS_FAMILY-$OS_DISTRO" \
+        "`grep = /etc/os-release 2>/dev/null`" \
+        "`cat /etc/release 2>/dev/null`" \
+        "`uname -o 2>/dev/null`" \
+        "`uname -s -r -v 2>/dev/null`" \
+        "`uname -a`" \
+        "`uname`" \
+    ; do
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
     case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
-        *debian*|*linux*)
+        *openbsd*)
+            CI_OS_NAME="openbsd" ;;
+        *netbsd*)
+            CI_OS_NAME="netbsd" ;;
+        *debian*|*ubuntu*)
             CI_OS_NAME="debian" ;;
+        *centos*|*fedora*|*redhat*|*rhel*)
+            CI_OS_NAME="centos" ;;
+        *linux*)
+            CI_OS_NAME="linux" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
@@ -234,11 +316,20 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     # See also below for some compiler-dependent decisions
 fi
 
+if [ -z "${PKG_CONFIG-}" ]; then
+    # Default to using one from PATH, if any - mostly for config tuning done
+    # below in this script
+    # DO NOT "export" it here so configure script can find one for the build
+    PKG_CONFIG="pkg-config"
+fi
+
 configure_nut() {
-    local CONFIGURE_SCRIPT=./configure
+    local CONFIGURE_SCRIPT="configure"
+    cd "$SCRIPTDIR"
+
     if [[ "$CI_OS_NAME" == "windows" ]] ; then
         find . -ls
-        CONFIGURE_SCRIPT=./configure.bat
+        CONFIGURE_SCRIPT="configure.bat"
     fi
 
     if [ ! -s "$CONFIGURE_SCRIPT" ]; then
@@ -252,6 +343,15 @@ configure_nut() {
         else
             $CI_TIME ./autogen.sh ### 2>/dev/null
         fi || exit
+    fi
+
+    if [ "${CI_BUILDDIR}" != "." ]; then
+        # Per above, we always start this routine in absolute $SCRIPTDIR
+        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
+        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
+        CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
+    else
+        CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
@@ -275,9 +375,9 @@ configure_nut() {
             # Real-life story from the trenches: there are weird systems
             # which fail ./configure in random spots not due to script's
             # quality. Then we'd just loop here.
-            echo "WOULD BE FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
+            echo "WOULD BE FATAL: FAILED ($RES_CFG) to $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]} -- but asked to loop trying" >&2
         else
-            echo "FATAL: FAILED ($RES_CFG) to ./configure ${CONFIG_OPTS[*]}" >&2
+            echo "FATAL: FAILED ($RES_CFG) to $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}" >&2
             echo "If you are sure this is not a fault of scripting or config option, try" >&2
             echo "    CI_SHELL_IS_FLAKY=true $0"
             exit $RES_CFG
@@ -376,7 +476,7 @@ check_gitignore() {
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
-            git diff -- "${FILE_GLOB}" || true
+            PAGER=cat git diff -- "${FILE_GLOB}" || true
         fi
         echo "==="
         return 1
@@ -446,6 +546,16 @@ optional_dist_clean_check() {
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
+    if [ -z "${MAKE-}" ] ; then
+        if (command -v gmake) >/dev/null 2>/dev/null ; then
+            # GNU make processes quiet mode better, which helps with this use-case
+            MAKE=gmake
+        else
+            # Use system default, there should be one
+            MAKE=make
+        fi
+        export MAKE
+    fi
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
         build_to_only_catch_errors_target spellcheck ; exit
@@ -458,7 +568,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -512,11 +622,25 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     EXTRA_CXXFLAGS=""
 
     is_gnucc() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
     }
 
     is_clang() {
-        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    }
+
+    filter_version() {
+        # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+        # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+        sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+    }
+
+    ver_gnucc() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+    }
+
+    ver_clang() {
+        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
     }
 
     COMPILER_FAMILY=""
@@ -529,6 +653,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             export CC CXX
         fi
     else
+        # Generally we prefer GCC unless it is very old so we can't impact
+        # its warnings and complaints.
         if is_gnucc "gcc" && is_gnucc "g++" ; then
             # Autoconf would pick this by default
             COMPILER_FAMILY="GCC"
@@ -540,17 +666,45 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             [ -n "$CC" ] || CC=cc
             [ -n "$CXX" ] || CXX=c++
             export CC CXX
-        elif is_clang "clang" && is_clang "clang++" ; then
-            # Autoconf would pick this by default
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=clang
-            [ -n "$CXX" ] || CXX=clang++
-            export CC CXX
-        elif is_clang "cc" && is_clang "c++" ; then
-            COMPILER_FAMILY="CLANG"
-            [ -n "$CC" ] || CC=cc
-            [ -n "$CXX" ] || CXX=c++
-            export CC CXX
+        fi
+
+        if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
+            case "`ver_gnucc "$CC"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac && \
+            case "`ver_gnucc "$CXX"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac
+        ) ; then
+            echo "NOTE: default GCC here is very old, do we have a CLANG instead?.." >&2
+            COMPILER_FAMILY="GCC_OLD"
+        fi
+
+        if [ -z "$COMPILER_FAMILY" ] || [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            if is_clang "clang" && is_clang "clang++" ; then
+                # Autoconf would pick this by default
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=clang
+                [ -n "$CXX" ] || CXX=clang++
+                export CC CXX
+            elif is_clang "cc" && is_clang "c++" ; then
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=cc
+                [ -n "$CXX" ] || CXX=c++
+                export CC CXX
+            fi
+        fi
+
+        if [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            COMPILER_FAMILY="GCC"
         fi
     fi
 
@@ -635,6 +789,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    # TODO: Consider `--enable-maintainer-mode` to add recipes that
+    # would quickly regenerate Makefile(.in) if you edit Makefile.am
+    # TODO: Resolve port-collision reliably (for multi-executor agents)
+    # and enable the test for CI runs. Bonus for making it quieter.
+    CONFIG_OPTS+=("--enable-check-NIT=no")
+
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
@@ -654,6 +814,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
         echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
         CONFIG_OPTS+=("--with-valgrind=no")
+    fi
+
+    if [ -n "${CI_CROSSBUILD_TARGET-}" ] || [ -n "${CI_CROSSBUILD_HOST-}" ] ; then
+        # at least one is e.g. "arm-linux-gnueabihf"
+        [ -z "${CI_CROSSBUILD_TARGET-}" ] && CI_CROSSBUILD_TARGET="${CI_CROSSBUILD_HOST}"
+        [ -z "${CI_CROSSBUILD_HOST-}" ] && CI_CROSSBUILD_HOST="${CI_CROSSBUILD_TARGET}"
+        echo "NOTE: Cross-build was requested, passing options to configure this for target '${CI_CROSSBUILD_TARGET}' host '${CI_CROSSBUILD_HOST}' (note you may need customized PKG_CONFIG_PATH)" >&2
+        CONFIG_OPTS+=("--host=${CI_CROSSBUILD_HOST}")
+        CONFIG_OPTS+=("--target=${CI_CROSSBUILD_TARGET}")
     fi
 
     # This flag is primarily linked with (lack of) docs generation enabled
@@ -728,7 +897,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if pkg-config --exists libgd || pkg-config --exists libgd2 || pkg-config --exists libgd3 || pkg-config --exists gdlib ; then
+                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
@@ -879,7 +1048,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
-        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
+        # This should be done in scratch containers...
+        echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
 
@@ -970,15 +1140,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Technically, let caller provide this setting explicitly
             if [ -z "$NUT_SSL_VARIANTS" ] ; then
                 NUT_SSL_VARIANTS="auto"
-                if pkg-config --exists nss && pkg-config --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+                if $PKG_CONFIG --exists nss && $PKG_CONFIG --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
                     # Try builds for both cases as they are ifdef-ed
                     # TODO: Extend if we begin to care about different
                     # major versions of openssl (with their APIs), etc.
                     NUT_SSL_VARIANTS="openssl nss"
                 else
                     if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                        pkg-config --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
-                        pkg-config --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
+                        $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
+                        $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
                     fi  # else leave at "auto", if we skipped building
                         # two variants while having two possibilities
                 fi
@@ -991,12 +1161,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             if [ -z "$NUT_USB_VARIANTS" ] ; then
                 # Check preferred version first, in case BUILD_USB_ONCE==true
-                if pkg-config --exists libusb-1.0 ; then
+                if $PKG_CONFIG --exists libusb-1.0 ; then
                     NUT_USB_VARIANTS="1.0"
                 fi
 
                 # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
-                if pkg-config --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
+                if $PKG_CONFIG --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
                     if [ -z "$NUT_USB_VARIANTS" ] ; then
                         NUT_USB_VARIANTS="0.1"
                     else
@@ -1101,11 +1271,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
                 echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
@@ -1183,8 +1358,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         # Quietly build one scenario, whatever we can (or not)
                         # configure regarding USB and other features
                         NUT_USB_VARIANT=auto
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb")
                           configure_nut
@@ -1192,8 +1369,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     no)
                         echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--without-usb")
                           configure_nut
@@ -1201,8 +1380,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     libusb-*)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
                           configure_nut
@@ -1210,8 +1391,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     *)
                         echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--without-all")
-                          CONFIG_OPTS+=("--without-ssl")
+                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
+                              CONFIG_OPTS+=("--without-all")
+                              CONFIG_OPTS+=("--without-ssl")
+                          fi
                           CONFIG_OPTS+=("--with-serial=auto")
                           CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
                           configure_nut
@@ -1221,11 +1404,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
                 echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 } || {
@@ -1302,6 +1490,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
                 echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+            else
+                echo "(and no build scenarios had failed)" >&2
             fi
 
             echo "Initially estimated ${BUILDSTODO_INITIAL} variations for BUILD_TYPE='$BUILD_TYPE'" >&2
@@ -1364,6 +1554,8 @@ bindings)
         sleep 5
     fi
     echo ""
+
+    cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
@@ -1373,13 +1565,24 @@ bindings)
 
     ./autogen.sh
 
+    if [ "${CI_BUILDDIR}" != "." ]; then
+        # Per above, we always start this routine in absolute $SCRIPTDIR
+        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
+        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
+        CONFIGURE_SCRIPT="${SCRIPTDIR}/configure"
+    else
+        CONFIGURE_SCRIPT="./configure"
+    fi
+
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so
     # enable whatever is auto-detectable (except docs), and highlight
-    # any warnings if we can:
-    #./configure
-    ./configure --enable-Wcolor --with-all=auto --with-cgi=auto --with-serial=auto --with-dev=auto --with-doc=skip
+    # any warnings if we can.
+    ${CONFIGURE_SCRIPT} --enable-Wcolor \
+        --with-all=auto --with-cgi=auto --with-serial=auto \
+        --with-dev=auto --with-doc=skip \
+        --enable-check-NIT --enable-maintainer-mode
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE

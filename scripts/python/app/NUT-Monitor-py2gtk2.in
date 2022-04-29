@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!@PYTHON2@
 # -*- coding: utf-8 -*-
 
 # 2009-12-27 David Goncalves - Version 1.2
@@ -76,7 +76,7 @@ class interface :
         ( cmd_opts, args ) = opt_parser.parse_args()
 
 
-        self.__glade_file = os.path.join( os.path.dirname( sys.argv[0] ), "gui-1.3.glade" )
+        self.__glade_file = os.path.join( os.path.dirname( sys.argv[0] ), "ui/gui-1.3.glade" )
 
         self.__widgets["interface"]                   = gtk.glade.XML( self.__glade_file, "window1", APP )
         self.__widgets["main_window"]                 = self.__widgets["interface"].get_widget("window1")

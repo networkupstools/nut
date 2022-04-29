@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.83"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.84"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 

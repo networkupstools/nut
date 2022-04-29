@@ -5,14 +5,18 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
-PLANNED: Release notes for NUT 2.7.7 - what's new since 2.7.6:
+PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1:
+
+https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly [Ported from 42ITy project]
 
 ---------------------------------------------------------------------------
-PLANNED: Release notes for NUT 2.7.6 - what's new since 2.7.5:
+PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
+
+https://github.com/networkupstools/nut/milestone/8
 
  - (expected) clean-up of libusb API variants support [#300 and follow-ups]
 
@@ -26,7 +30,15 @@ PLANNED: Release notes for NUT 2.7.6 - what's new since 2.7.5:
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.7.5
 
 ---------------------------------------------------------------------------
-Release notes for NUT 2.7.5 - what's new since 2.7.4:
+Release notes for NUT 2.8.0 - what's new since 2.7.4:
+
+NOTE: Earlier discussions (mailing list threads, GitHub issues, etc.) could
+refer to this change set (too long in the making) as NUT 2.7.5.
+
+ - New (optional) keywords for configuration files were added,
+   so existing NUT 2.7.x builds would not accept them if some
+   deployments switch versions back and forth -- due to this,
+   semantically the version was bumped to NUT 2.8.x.
 
  - Add support for openssl-1.1.0 (Arjen de Korte)
 
@@ -43,11 +55,33 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    server initially without any device configurations and reloading it later
    to apply config changes on the fly [PR #766]
 
+ - Add support for `debug_min=NUM` setting (ups.conf, upsd.conf, upsmon.conf)
+   to specify the minimum debug verbosity for daemons. This allows "in-vivo"
+   troubleshooting of service daemons without editing init scripts or service
+   unit definitions.
+
  - Improve support for upsdrvctl for managing of numerous device configs,
    including default "maxretry=3" and a "nowait" option to complete the
    "start of everything" mode after triggering the drivers and not waiting
    for them to complete initializing. This matters on systems that monitor
    from dozens to hundreds of devices.
+
+ - Drivers support a new value for `synchronous` setting, which is the
+   new default now: `auto`.  Initially after driver start-up this mode
+   acts as the older default `off`, but would fall back to `on` in case
+   the driver fails to send reports to `upsd` by overflowing the socket
+   buffer in async mode -- so the next connections of this driver uptime
+   would be synchronized (potentially slower, but safer -- blocking on
+   writes to the data server).  This adaptation would primarily impact
+   and benefit devices with many (hundreds of) data points, such as
+   ePDUs and daisy chains. [issue #1309, PR #1315]
+
+ - Daemons such as upsd, upsmon, upslog, and device drivers previously
+   implied that enabled debugging (or upslog to stdout) means foreground
+   running, otherwise the daemon was always sent to the background.
+   Now there are explicit options for this (`-F`/`-B`), although default
+   behavior is retained. This change is used for simplified service unit
+   definitions.
 
  - Improvements for device discovery or driver "lock-picking", including
    general support for:
@@ -66,6 +100,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
    * Emerson Avocent PM3000 PDU (SNMP)
    * HPE ePDU (SNMP)
+
+ - nutdrv_qx: enhanced estimation of remaining battery runtime based
+   on speed of voltage drop, which varies as they age [PR #1027]
 
  - nutdrv_qx: several subdrivers added or improved, including:
    * "snr" subdriver with USB connection, for SNR-UPS-LID-XXXX [PR #1008].
@@ -98,6 +135,14 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - huawei-ups2000: added new driver for USB (Linux 5.12+ so far) and Serial
    RS-232 Modbus device support of Huawei UPS2000/2000A (1kVA-3kVA) series,
    and possibly some related FSP UPS models. [PR #954]
+
+ - socomec_jbus: added new driver for modbus-based JBUS protocol over serial
+   RS-232 for Socomec UPS (tested with a DIGYS 3/3 15kVA model, working
+   on Linux x86-64 and Raspberry Pi 3 ARM). [PR #1313]
+
+ - adelsystem_cbi: added new driver for ADELSYSTEM CBI2801224A, an all-in-one
+   12/24Vdc DC-UPS, which supports the modbus RTU communication protocol
+   [PR #1282]
 
  - generic_modbus: added new driver for TCP and Serial Modbus device support.
    The driver has been tested against PULS UPS (model UB40.241) via
@@ -135,6 +180,12 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - Added Russian translation for NUT-Monitor GUI client [PR #806]
 
+ - Separated NUT-Monitor UI into two applications, NUT-Monitor-py2gtk2 and
+   NUT-Monitor-py3qt5, suitable for two generations of Python ecosystem
+   with their great differences; `NUT-Monitor` name is retained for wrapper
+   script which calls one of these, such that the current system can execute
+   [PRs #1310, #1354]
+
  - Various USB driver families: expanded device-matching with "device" in
    addition to "bus" and generic USB fields. This is needed to support
    multiple attached devices that seem identical by other fields (e.g.
@@ -152,9 +203,18 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      subdriver rather than polluting the main code with UPS specific
      exceptions, and applied fixes for known mistakes in (some releases
      of firmware for) CyberPower CPS*EPFCLCD [issue #439, PR #1245]
+   * added `onlinedischarge` option for UPSes that report `OL+DISCHRG`
+     when wall power is lost [PR #811]
+   * changed detection of VendorID 0x06da handling of which is claimed
+     by Liebert/Phoenixtec HID historically, and MGE HID (for AEG PROTECT
+     NAS UPSes) since NUT 2.7.4, so that the higher-priority MGE subdriver
+     would not grab each and all of the devices exposing that ID [PR #1357]
    * CPS HID: add input.frequency and output.frequency
    * OpenUPS2: only check OEM Information string once (fewer log messages)
    * Liebert GXT4 USB VID:PID [10AF:0000]
+   * add battery voltage and input/output transfer voltage and frequency
+     in Liebert/Phoenixtec HID mapping, to support PowerWalker VFI 2000 TGS
+     better [PR #564, issue #560]
    * add a little delay between multicommands [PR #1228]
    * fix Eaton/MGE mapping for beeper handling
    * add IBM USB VID
@@ -170,6 +230,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * add Arduino HID device support with new arduino-hid subdriver [PR #1044]
    * add new salicru-hid subdriver, tested with Salicru SPS Home 850 VA
      [PR #1199, issue #732]
+   * add new ever-hid subdriver to support EVER UPS devices (Sinline RT Series,
+     Sinline RT XL Series, ECO PRO AVR CDS Series) [PR #431]
+   * add ability to set `battery.mfr.date` for APC HID UPS [PR #1318]
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
@@ -195,6 +258,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
      for CyberPower, as well as shutdown and other instant commands
    * several rounds of updates for Eaton devices, including new ATS and ePDU
      hardware families
+   * fixed bit mask values for flags to surely use different numbers behind
+     logical items (inevitably changing some of those macro symbols) [PR #1180]
 
  - snmp-ups and nut-scanner should now support more SNMPv3 Auth and Priv
    protocols, as available at NUT build time [PRs #1165, #1172]
@@ -227,6 +292,8 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    and in particular to manage power separately on one or two outlet groups
    [PR #1048]
 
+ - tripplite_usb: updated to recognize the "3005" protocol [PR #584]
+
  - libnutclient: introduce getDevicesVariableValues() to improve performances
    when querying many devices (up to 15 times faster)
 
@@ -249,12 +316,20 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - upsrw: display the variable type beside ENUM / RANGE
 
+ - Added `PROTVER` as alias to `NETVER` to report the protocol version in use.
+   Note that NUT codebase itself does not use this value and handles commands
+   and reported errors individually [issue #1347]
+
  - Implement status tracking for instant commands (instcmd) and variables
    settings (setvar): this allows to get the actual execution status from the
    driver, and is available in libraries and upscmd / upsrw [PR #659]
 
  - Add support for extra parameter for instant commands, both in library and
    in upscmd
+
+ - dummy-ups can now specify `mode` as a driver argument, and separates the
+   notion of `dummy-once` (new default for `*.dev` files that do not change)
+   vs. `dummy-loop` (legacy default for `*.seq` and others) [issue #1385]
 
  - new protocol variables:
    * `input.phase.shift`
@@ -280,11 +355,25 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
       ISO 8601 Calendar date "YYYY-MM-DD" was added to snmp-ups.c [PR #1078]
 
  - Master/Slave terminology was deprecated in favor of Primary/Secondary
-   modes of upsmon client. Respective keywords in the configuration are
-   supported as backwards-compatible settings, but obsoleted values are
-   no longer documented. [For details see issue #840 and several pull
-   requests referenced from it, and discussions on NUT mailing lists]
-   * Note: protocol keyword support currently was not updated
+   modes of `upsmon` client:
+   * Respective keywords in the configuration files (`upsd.users` and
+     `upsmon.conf`) are supported as backwards-compatible settings,
+     but the obsoleted values are no longer documented.
+   * Protocol keyword support was similarly updated, with `upsmon` now
+     first trying to elevate privileges with `PRIMARY <ups>` request,
+     and falling back to `MASTER <ups>` just in case it talks to an
+     older build of an `upsd` server.
+   * For the principle of least surprise, NUT codebase still exposes the
+     `net_master()` (as handler for `MASTER` net command) in header and
+     C code for the sake of existing linked binaries, and returns the
+     `OK MASTER-GRANTED` line to the older client that invoked it.
+   * Newly introduced `net_primary()` (as handler for `PRIMARY` net command)
+     calls the exact same application logic, but returns `OK PRIMARY-GRANTED`
+     line to the client.
+   * Python binding updated to handle both cases, as the only found in-tree
+     protocol consumer of the full-line text.
+   * For more details see issue #840 and several pull requests referenced
+     from it, and discussions on NUT mailing lists.
 
  - Build fixes:
    * In general, numerous fixes were applied to ensure portability and avoid
@@ -340,7 +429,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    few changes also happened in header files installed for builds configured
    `--with-dev` and so may impact `upsclient` and `nutclient` (C++) consumers.
    At the very least, binaries for those consumers should be rebuilt to remain
-   stable with NUT 2.7.5 and not mismatch int-type sizes and other arguments.
+   stable with NUT 2.8.0 and not mismatch int-type sizes and other arguments.
 
  - As usual, more bugfixes, cleanup and improvements, on both source code
    and documentation.

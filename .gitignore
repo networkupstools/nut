@@ -10,6 +10,7 @@
 .libs/
 .inst/
 /tmp/
+/obj/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
@@ -63,3 +64,5 @@ __pycache__/
 # Debuggers and IDEs
 .gdb_history
 /nbproject
+/.idea
+/*.iml

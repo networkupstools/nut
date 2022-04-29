@@ -197,9 +197,10 @@ static void do_cmd(char **argv, const int argc)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 	/* From the check above, we know that we have exactly UUID4_LEN chars
-	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
 	 */
-	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
@@ -269,7 +270,8 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];

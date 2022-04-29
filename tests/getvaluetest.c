@@ -10,6 +10,7 @@
  *
  * Copyright (C)
  *      2021    Nick Briggs <nicholas.h.briggs@gmail.com>
+ *      2022    Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hidtypes.h"
+#include "usb-common.h"
 #include "common.h"
 
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
@@ -125,6 +127,106 @@ static int RunBuiltInTests(char *argv[]) {
 			exitStatus = 1;
 		}
 	}
+
+	/* Emulate rdlen calculations in libusb{0,1}.c or
+	 * langid calculations in nutdrv_qx.c; in these
+	 * cases we take two bytes (cast from usb_ctrl_char
+	 * type, may be signed depending on used API version)
+	 * from the protocol buffer, and build a platform
+	 * dependent representation of a two-byte word.
+	 */
+	usb_ctrl_char	bufC[2];
+	signed char	bufS[2];
+	unsigned char	bufU[2];
+	int rdlen;
+
+	/* Example from issue https://github.com/networkupstools/nut/issues/1261
+	 * where resulting length 0x01a9 should be "425" but ended up "-87" */
+	bufC[0] = (usb_ctrl_char)0xa9;
+	bufC[1] = (usb_ctrl_char)0x01;
+
+	bufS[0] = (signed char)0xa9;
+	bufS[1] = (signed char)0x01;
+
+	bufU[0] = (unsigned char)0xa9;
+	bufU[1] = (unsigned char)0x01;
+
+	/* Check different conversion methods and hope current build CPU,
+	 * C implementation etc. do not mess up bit-shifting vs rotation,
+	 * zeroing high bits, int type width extension et al. If something
+	 * is mismatched below, the production NUT code may need adaptations
+	 * for that platform to count stuff correctly!
+	 */
+	printf("\nTesting bit-shifting approaches used in codebase to get 2-byte int lengths from wire bytes:\n");
+	printf("(Expected correct value is '425', incorrect '-87' or other)\n");
+
+#define REPORT_VERDICT(expected) { if (expected) { printf(" - PASS\n"); } else { printf(" - FAIL\n"); exitStatus = 1; } }
+
+	rdlen = bufC[0] | (bufC[1] << 8);
+	printf(" * reference: no casting, usb_ctrl_char :\t%d\t(depends on libusb API built against)", rdlen);
+	REPORT_VERDICT (rdlen == 425 || rdlen == -87)
+
+	rdlen = bufS[0] | (bufS[1] << 8);
+	printf(" * reference: no casting, signed char   :\t%d\t(expected '-87' here)", rdlen);
+	REPORT_VERDICT (rdlen == -87)
+
+	rdlen = bufU[0] | (bufU[1] << 8);
+	printf(" * reference: no casting, unsigned char :\t%d\t(expected '425')", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+
+	rdlen = (uint8_t)bufC[0] | ((uint8_t)bufC[1] << 8);
+	printf(" * uint8_t casting, usb_ctrl_char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = (uint8_t)bufS[0] | ((uint8_t)bufS[1] << 8);
+	printf(" * uint8_t casting, signed char   :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = (uint8_t)bufU[0] | ((uint8_t)bufU[1] << 8);
+	printf(" * uint8_t casting, unsigned char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+
+	rdlen = ((uint8_t)bufC[0]) | (((uint8_t)bufC[1]) << 8);
+	printf(" * uint8_t casting with parentheses, usb_ctrl_char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = ((uint8_t)bufS[0]) | (((uint8_t)bufS[1]) << 8);
+	printf(" * uint8_t casting with parentheses, signed char   :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = ((uint8_t)bufU[0]) | (((uint8_t)bufU[1]) << 8);
+	printf(" * uint8_t casting with parentheses, unsigned char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+
+	rdlen = ((uint16_t)(bufC[0]) & 0x00FF) | (((uint16_t)(bufC[1]) & 0x00FF) << 8);
+	printf(" * uint16_t casting with 8-bit mask, usb_ctrl_char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = ((uint16_t)(bufS[0]) & 0x00FF) | (((uint16_t)(bufS[1]) & 0x00FF) << 8);
+	printf(" * uint16_t casting with 8-bit mask, signed char   :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = ((uint16_t)(bufU[0]) & 0x00FF) | (((uint16_t)(bufU[1]) & 0x00FF) << 8);
+	printf(" * uint16_t casting with 8-bit mask, unsigned char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+
+	rdlen = 256 * (uint8_t)(bufC[1]) + (uint8_t)(bufC[0]);
+	printf(" * uint8_t casting with multiplication, usb_ctrl_char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = 256 * (uint8_t)(bufS[1]) + (uint8_t)(bufS[0]);
+	printf(" * uint8_t casting with multiplication, signed char   :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+	rdlen = 256 * (uint8_t)(bufU[1]) + (uint8_t)(bufU[0]);
+	printf(" * uint8_t casting with multiplication, unsigned char :\t%d", rdlen);
+	REPORT_VERDICT (rdlen == 425)
+
+
 	return (exitStatus);
 }
 

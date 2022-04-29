@@ -24,20 +24,26 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.3"
+#define CYBERPOWER_MIB_VERSION		"0.51"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
+/* https://www.cyberpowersystems.com/products/software/mib-files/ */
+/* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL", NULL, NULL },
-	{ 3, "OB", NULL, NULL },
-	{ 4, "OL BOOST", NULL, NULL },
-	{ 5, "OFF", NULL, NULL },
-	{ 7, "OL", NULL, NULL },
-	{ 1, "NULL", NULL, NULL },
-	{ 6, "OFF", NULL, NULL },
+	{ 1, "NULL", NULL, NULL },	/* unknown */
+	{ 2, "OL", NULL, NULL },	/* onLine */
+	{ 3, "OB", NULL, NULL },	/* onBattery */
+	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
+	{ 5, "OFF", NULL, NULL },	/* onSleep */
+	{ 6, "OFF", NULL, NULL },	/* off */
+	{ 7, "OL", NULL, NULL },	/* rebooting */
+	{ 8, "OL", NULL, NULL },	/* onECO */
+	{ 9, "OL BYPASS", NULL, NULL },	/* onBypass */
+	{ 10, "OL TRIM", NULL, NULL },	/* onBuck */
+	{ 11, "OL OVER", NULL, NULL },	/* onOverload */
 	{ 0, NULL, NULL, NULL }
 } ;
 
@@ -63,6 +69,12 @@ static info_lkp_t cyberpower_battrepl_status[] = {
 
 /* Snmp2NUT lookup table for CyberPower MIB */
 static snmp_info_t cyberpower_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ups",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

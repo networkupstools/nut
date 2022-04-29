@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.52"
+#define IETF_MIB_VERSION	"1.54"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -111,6 +111,12 @@ static info_lkp_t ietf_beeper_status_info[] = {
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 static snmp_info_t ietf_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* The Device Identification group */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.1.0", "Generic", SU_FLAG_STATIC, NULL }, /* upsIdentManufacturer */
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.2.0", "Generic SNMP UPS", SU_FLAG_STATIC, NULL }, /* upsIdentModel */

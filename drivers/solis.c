@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.67"
+#define DRIVER_VERSION	"0.68"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

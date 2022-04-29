@@ -60,6 +60,7 @@ in memory and file descriptor leaks in your program.
 
 ERROR HANDLING
 --------------
+
 In the event of an error, linkman:upscli_strerror[3] will provide
 human-readable details on what happened.  linkman:upscli_upserror[3] may
 also be used to retrieve the error number.  These numbers are defined in
@@ -67,6 +68,7 @@ also be used to retrieve the error number.  These numbers are defined in
 
 SEE ALSO
 --------
+
 linkman:libupsclient-config[1],
 linkman:upscli_init[3], linkman:upscli_cleanup[3], linkman:upscli_add_host_cert[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3], linkman:upscli_fd[3],

@@ -31,6 +31,7 @@ At the present time, usbhid-ups supports:
  - some Belkin models,
  - some Cyber Power Systems models,
  - some Powercom models,
+ - some PowerWalker models,
  - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
@@ -88,6 +89,12 @@ variables.  The default value is 30 (in seconds).
 If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
+
+*onlinedischarge*::
+If this flag is set, the driver will treat `OL+DISCHRG` status as offline.
+For most devices this combination means calibration or similar maintenance;
+however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
+wall power is lost -- and need this option to handle shutdowns.
 
 *vendor*='regex'::
 *product*='regex'::
@@ -236,6 +243,33 @@ If you do the same without mains present, it should do the same, but in
 this case, the outputs shall remain off until mains power is applied
 again.
 
+UPS cuts power too soon
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that many Cyber Power Systems (CPS) models tend to divide `offdelay`
+by 60 and round down, so the minimum advisable value is 60 (seconds) to avoid
+powering off immediately after NUT sends the shutdown command to the UPS.
+
+UPS does not set battery.charge.low but says OK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that many Cyber Power Systems (CPS) models tend to allow only certain
+values for `battery.charge.low` and anything outside of the set of allowed
+values are rounded or ignored.
+
+A shell loop like this can help you map out the allowed values:
+
+====
+    for i in `seq 90 -1 0`; do echo "set to $i"; \
+        upsrw -s battery.charge.low=$i -u * -p * cps-big; \
+        sleep 1; upsc cps-big battery.charge.low; echo ""; \
+    done
+====
+
+For example, for CPS PR1000LCDRTXL2U model, the only allowed values are
+`[60,55,50,45,40,35,30,25,20]` and in some cases, your UPS may effectively
+not support a value of 10 for the `battery.charge.low` setting.
+
 HISTORY
 -------
 
@@ -246,16 +280,22 @@ AUTHORS
 -------
 
 Originally sponsored by MGE UPS SYSTEMS.
+
 Now sponsored by Eaton <http://opensource.eaton.com>
-Arnaud Quette, Peter Selinger, Arjen de Korte
+
+* Arnaud Quette
+* Peter Selinger
+* Arjen de Korte
 
 SEE ALSO
 --------
 
 The core driver
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -121,11 +121,38 @@ Possible values are :
 - '1' to require to all clients a certificate
 - '2' to require to all clients a valid certificate
 
+"DISABLE_WEAK_SSL 'BOOLEAN'"::
+
+Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+With relatively recent versions of OpenSSL or NSS it will be restricted
+to TLSv1.2 or better.
+Unless you have really ancient clients, you probably want to enable this.
+Currently disabled by default to ensure compatibility with existing setups.
+
+"DEBUG_MIN 'INTEGER'"::
+
+Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly. Command-line option `-D` can only increase this
+verbosity level.
++
+NOTE: if the running daemon receives a `reload` command, presence of the
+`DEBUG_MIN NUMBER` value in the configuration file can be used to tune
+debugging verbosity in the running service daemon (it is recommended to
+comment it away or set the minimum to explicit zero when done, to avoid
+huge journals and I/O system abuse). Keep in mind that for this run-time
+tuning, the `DEBUG_MIN` value *present* in *reloaded* configuration files
+is applied instantly and overrides any previously set value, from file
+or CLI options, regardless of older logging level being higher or lower
+than the newly found number; a missing (or commented away) value however
+does not change the previously active logging verbosity.
+
 SEE ALSO
 --------
 
 linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsd.users[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -8,6 +8,7 @@ upsdrvctl - UPS driver controller
 
 SYNOPSIS
 --------
+
 *upsdrvctl* -h
 
 *upsdrvctl* ['OPTIONS'] {start | stop | shutdown} ['ups']
@@ -57,6 +58,9 @@ This may be set in ups.conf with "user" in the global section.
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
 
+*-d*::
+Pass the selected debug level from `upsdrvctl` to launched drivers.
+
 COMMANDS
 --------
 
@@ -100,8 +104,10 @@ background.
 
 SEE ALSO
 --------
+
 linkman:upsdrvsvcctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -61,6 +61,11 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
 
 AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
 [
+dnl Note: with this line uncommented, builds report
+dnl   sed: 0: conftest.c: No such file or directory
+dnl so seemingly try to parse the method without args:
+    dnl### AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])
+
 dnl Note: per https://stackoverflow.com/questions/52557417/how-to-check-support-compile-flag-in-autoconf-for-clang
 dnl the -Werror below is needed to detect "warnings" about unsupported options
     COMPILERFLAG="$1"
@@ -73,7 +78,7 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_LANG_PUSH([C])
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
         [CFLAGS="$CFLAGS ${COMPILERFLAG}"
-         AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
+         AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [], [CFLAGS="$SAVED_CFLAGS"])
         ], [], [-Werror])
     AC_LANG_POP([C])
@@ -81,7 +86,7 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_LANG_PUSH([C++])
     AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
         [CXXFLAGS="$CXXFLAGS ${COMPILERFLAG}"
-         AC_RUN_IFELSE([AC_LANG_PROGRAM([],[])],
+         AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [], [CXXFLAGS="$SAVED_CXXFLAGS"])
         ], [], [-Werror])
     AC_LANG_POP([C++])
@@ -102,13 +107,11 @@ dnl -fdiagnostics-color=ARG: help find where bugs are in the wall of text (gcc)
     dnl First check for this to avoid failing on unused include paths etc:
     NUT_CHECK_COMPILE_FLAG([-Qunused-arguments])
 
-dnl # Future: test for something else?
-dnl    m4_foreach_w([TESTCOMPILERFLAG], [
-dnl        -Qunused-arguments
-dnl        -Wno-unknown-warning-option
-dnl    ], [
-dnl        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
-dnl    ])
+    m4_foreach_w([TESTCOMPILERFLAG], [
+        -Wno-reserved-identifier
+    ], [
+        NUT_CHECK_COMPILE_FLAG([TESTCOMPILERFLAG])
+    ])
 
     dnl Note: each m4_foreach_w arg must be named uniquely
     dnl Note: Seems -fcolor-diagnostics is clang-only and sometimes
@@ -142,11 +145,24 @@ dnl    AS_IF([test "x$GCC" = xyes], [CFLAGS="$CFLAGS -Wno-unknown-warning"])
 dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
 dnl # There should be no need to include standard system paths (and possibly
-dnl # confuse the compiler assumptions - along with its provided headers):
-dnl #    AS_IF([test "x$CLANGCC" = xyes -o  "x$GCC" = xyes],
-dnl #        [CFLAGS="-isystem /usr/include -isystem /usr/local/include $CFLAGS"])
-dnl #    AS_IF([test "x$CLANGXX" = xyes -o  "x$GXX" = xyes],
-dnl #        [CXXFLAGS="-isystem /usr/include -isystem /usr/local/include $CXXFLAGS"])
+dnl # confuse the compiler assumptions - along with its provided headers)...
+dnl # ideally; in practice however cppunit, net-snmp and some system include
+dnl # files do cause grief to picky compiler settings (more so from third
+dnl # party packages shipped via /usr/local/... namespace):
+    AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
+        AS_IF([test -d /usr/local/include],
+            [CFLAGS="-isystem /usr/local/include $CFLAGS"])
+        AS_IF([test -d /usr/pkg/include],
+            [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
+    ])
+    AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
+        AS_IF([test -d /usr/local/include],
+            [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
+        AS_IF([test -d /usr/pkg/include],
+            [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+    ])
 
 dnl # Default to avoid noisy warnings on older compilers
 dnl # (gcc-4.x, clang-3.x) due to their preference of

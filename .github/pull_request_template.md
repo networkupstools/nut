@@ -45,7 +45,7 @@
   (several vendors do use same interface chips for unrelated protocols).
 
 - [ ] For new USB devices, built and committed the changes for the
-  `scripts/upower/95-upower-hid.rules` file
+  `scripts/upower/95-upower-hid.hwdb` file
 
 - [ ] Proposed NUT data mapping is aligned with existing `docs/nut-names.txt`
   file. If the device exposes useful data points not listed in the file, the
@@ -88,6 +88,7 @@ Also note below, a point about PR posting for NUT DDL
 - [ ] Updated `docs/acknowledgements.txt` (for vendor-backed device support)
 
 - [ ] Added or updated manual page information in `docs/man/*.txt` files
+  and corresponding recipe lists in `docs/man/Makefile.am` for new pages
 
 - [ ] Passed `make spellcheck`, updated spell-checking dictionary in the
   `docs/nut.dict` file if needed (did not remove any words -- the `make`

@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2022  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
+#include <sys/un.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -293,7 +294,9 @@ void writepid(const char *name)
 	pidf = fopen(fn, "w");
 
 	if (pidf) {
-		fprintf(pidf, "%d\n", (int) getpid());
+		intmax_t pid = (intmax_t)getpid();
+		upsdebugx(1, "Saving PID %jd into %s", pid, fn);
+		fprintf(pidf, "%jd\n", pid);
 		fclose(pidf);
 	} else {
 		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);
@@ -302,38 +305,17 @@ void writepid(const char *name)
 	umask(mask);
 }
 
-/* open pidfn, get the pid, then send it sig */
-int sendsignalfn(const char *pidfn, int sig)
+/* send sig to pid, returns -1 for error, or
+ * zero for a successfully sent signal
+ */
+int sendsignalpid(pid_t pid, int sig)
 {
-	char	buf[SMALLBUF];
-	FILE	*pidf;
-	pid_t	pid = -1;
 	int	ret;
 
-	pidf = fopen(pidfn, "r");
-	if (!pidf) {
-		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
-		return -1;
-	}
-
-	if (fgets(buf, sizeof(buf), pidf) == NULL) {
-		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
-		fclose(pidf);
-		return -1;
-	}
-
-	{ /* scoping */
-		intmax_t _pid = strtol(buf, (char **)NULL, 10); /* assuming 10 digits for a long */
-		if (_pid <= get_max_pid_t()) {
-			pid = (pid_t)_pid;
-		} else {
-			upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
-		}
-	}
-
-	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %" PRIdMAX, (intmax_t) pid);
-		fclose(pidf);
+	if (pid < 2 || pid > get_max_pid_t()) {
+		upslogx(LOG_NOTICE,
+			"Ignoring invalid pid number %" PRIdMAX,
+			(intmax_t) pid);
 		return -1;
 	}
 
@@ -342,21 +324,78 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
-		fclose(pidf);
 		return -1;
 	}
 
-	/* now actually send it */
-	ret = kill(pid, sig);
+	if (sig != 0) {
+		/* now actually send it */
+		ret = kill(pid, sig);
 
-	if (ret < 0) {
-		perror("kill");
+		if (ret < 0) {
+			perror("kill");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+/* parses string buffer into a pid_t if it passes
+ * a few sanity checks; returns -1 on error
+ */
+pid_t parsepid(const char *buf)
+{
+	pid_t	pid = -1;
+
+	/* assuming 10 digits for a long */
+	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	if (_pid <= get_max_pid_t()) {
+		pid = (pid_t)_pid;
+	} else {
+		upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+	}
+
+	return pid;
+}
+
+/* open pidfn, get the pid, then send it sig
+ * returns negative codes for errors, or
+ * zero for a successfully sent signal
+ */
+int sendsignalfn(const char *pidfn, int sig)
+{
+	char	buf[SMALLBUF];
+	FILE	*pidf;
+	pid_t	pid = -1;
+	int	ret = -1;
+
+	pidf = fopen(pidfn, "r");
+	if (!pidf) {
+		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		return -3;
+	}
+
+	if (fgets(buf, sizeof(buf), pidf) == NULL) {
+		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
-		return -1;
+		return -2;
+	}
+	/* TOTHINK: Original code only closed pidf before
+	 * exiting the method, on error or "normally".
+	 * Why not here? Do we want an (exclusive?) hold
+	 * on it while being active in the method?
+	 */
+
+	/* this method actively reports errors, if any */
+	pid = parsepid(buf);
+
+	if (pid >= 0) {
+		/* this method actively reports errors, if any */
+		ret = sendsignalpid(pid, sig);
 	}
 
 	fclose(pidf);
-	return 0;
+	return ret;
 }
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
@@ -531,6 +570,27 @@ const char * altpidpath(void)
 /* We assume, here and elsewhere, that at least STATEPATH is always defined */
 	return STATEPATH;
 #endif
+}
+
+/* Die with a standard message if socket filename is too long */
+void check_unix_socket_filename(const char *fn) {
+	struct sockaddr_un	ssaddr;
+	if (strlen(fn) < sizeof(ssaddr.sun_path))
+		return;
+
+	/* Avoid useless truncated pathnames that
+	 * other driver instances would conflict
+	 * with, and upsd can not discover.
+	 * Note this is quite short on many OSes
+	 * varying 104-108 bytes (UNIX_PATH_MAX)
+	 * as opposed to PATH_MAX or MAXPATHLEN
+	 * typically of a kilobyte range.
+	 */
+	fatalx(EXIT_FAILURE,
+		"Can't create a unix domain socket: pathname '%s' "
+		"is too long (%zu) for 'struct sockaddr_un->sun_path' "
+		"on this system (%zu)",
+		fn, strlen(fn), sizeof(ssaddr.sun_path));
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */

@@ -15,6 +15,7 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 The *belkin* driver is known to support the Regulator Pro 525 (F6C525-SER).
 Other similar models such as the 425 and 625 should also work.
 
@@ -46,10 +47,12 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other Belkin drivers:
 ~~~~~~~~~~~~~~~~~~~~~
+
 linkman:belkinunv[8],
 linkman:blazer_ser[8],
 linkman:blazer_usb[8],
@@ -57,4 +60,5 @@ linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

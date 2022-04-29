@@ -3,15 +3,18 @@ GENERICUPS(8)
 
 NAME
 ----
+
 genericups - Driver for contact-closure UPS equipment
 
 NOTE
 ----
+
 This man page only documents the specific features of the genericups
 driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports hardware from many different manufacturers as it only
 uses the very simplest of signaling schemes.  Contact closure refers to a
 kind of interface where basic high/low signals are provided to indicate
@@ -23,11 +26,13 @@ a smarter UPS.
 
 CABLING
 -------
+
 Cabling is different for every kind of UPS.  See the table below for
 information on what is known to work with a given UPS type.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following settings in the linkman:ups.conf[5]:
 
 upstype='type'::
@@ -89,6 +94,7 @@ recognizes a low battery condition when DCD is not held high.
 
 TYPE INFORMATION
 ----------------
+
 The essence of a UPS definition in this driver is how it uses the serial
 lines that are available.  These are the abbreviations you will see below:
 
@@ -392,8 +398,10 @@ SEE ALSO
 
 The core driver
 ~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
-Internet resources
-~~~~~~~~~~~~~~~~~~
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

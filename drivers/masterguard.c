@@ -4,6 +4,11 @@
 
    masterguard.c created on 15.8.2001
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -23,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -412,7 +417,7 @@ static ssize_t ups_ident( void )
 			printf( "Old (broken) WH found\n" );
 		parseOldWH( buf );
 	}
-	else if( ret == 3 && strncmp(buf, "NAK", 3) == 0 )
+	else if( ret == 3 && strcmp(buf, "NAK") == 0 )
 	{
 		if( DEBUG )
 			printf( "WH was NAKed\n" );
@@ -561,6 +566,15 @@ void upsdrv_initups(void)
 	int     count = 0;
 	int     fail  = 0;
 	int     good  = 0;
+
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
 
 	/* setup serial port */
 	upsfd = ser_open(device_path);

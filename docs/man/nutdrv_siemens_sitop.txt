@@ -3,16 +3,19 @@ NUTDRV_SIEMENS_SITOP(8)
 
 NAME
 ----
+
 nutdrv_siemens_sitop - driver for the Siemens SITOP UPS500 series UPS
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 *nutdrv_siemens_sitop* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 *nutdrv_siemens_sitop* supports Siemens UPS models from the SITOP UPS500 series.
 Some models have a serial port, others have a USB port.
 The models with USB port actually contain a serial-over-USB chip,
@@ -26,6 +29,7 @@ with USB port (Siemens product number 6EP1933-2EC41).
 
 DEVICE SETTINGS
 ---------------
+
 The UPS is configured via DIP-switches.
 For correct functioning in combination with NUT, set the DIP-switches
 to the following:
@@ -54,6 +58,7 @@ supply power from its batteries.
 
 USB driver
 ----------
+
 The USB-versions of the UPS contain an FTDI USB-to-serial converter chip.
 It is programmed with a non-standard product ID (for example _0403:e0e3_),
 but can still be used with the normal ftdi_sio driver.
@@ -85,6 +90,7 @@ SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="tty
 
 POLLING
 -------
+
 The UPS does not have a special 'get status' command. Instead, it continuously
 sends out status update messages (tens of messages per second).
 Every *pollinterval*, these messages are read from the serial port buffer.
@@ -94,6 +100,7 @@ value is 1 (second).
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings:
 
 *max_polls_without_data*='num'::
@@ -126,6 +133,7 @@ has been removed for at least 1 second, and has been re-applied.
 
 INSTALLATION
 ------------
+
 Make sure that your operating system has created a serial device for the UPS.
 See the section *USB driver* for more information.
 
@@ -136,6 +144,7 @@ or by adding the NUT user to a user group that can access serial devices
 
 DIAGNOSTICS
 -----------
+
 You can verify the correct functioning of the hardware, by monitoring the
 serial port with a terminal program, for example picocom:
 
@@ -156,6 +165,7 @@ To exit picocom, use Ctrl-A Ctrl-X.
 
 KNOWN ISSUES AND BUGS
 ---------------------
+
 *Untested models*::
 As mentioned under *Supported hardware*, this driver has not been tested
 with all models in the SITOP UPS500 series.
@@ -172,8 +182,9 @@ During normal operation, no commands are sent to the UPS at all
 usability.
 It is not sure if the serial models are affected by this issue as well.
 
-AUTHORS
--------
+AUTHOR
+------
+
 Matthijs H. ten Berge
 
 SEE ALSO
@@ -181,8 +192,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

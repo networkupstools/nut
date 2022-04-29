@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.35"
+#define USB_DRIVER_VERSION	"0.43"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -46,6 +46,7 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
+#define MAX_RETRY               3
 
 static void libusb_close(usb_dev_handle *udev);
 
@@ -166,9 +167,7 @@ static int libusb_open(usb_dev_handle **udevp,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
-#endif
 	usb_ctrl_charbufsize rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
@@ -181,6 +180,9 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_char *p;
 	char string[256];
 	int i;
+	int count_open_EACCESS = 0;
+	int count_open_errors = 0;
+	int count_open_attempts = 0;
 
 	/* report descriptor */
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
@@ -202,6 +204,8 @@ static int libusb_open(usb_dev_handle **udevp,
 		for (dev = bus->devices; dev; dev = dev->next) {
 			/* int	if_claimed = 0; */
 
+			count_open_attempts++;
+
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)",
 				dev->descriptor.idVendor, dev->descriptor.idProduct,
 				bus->dirname, dev->filename);
@@ -212,10 +216,30 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* open the device */
 			*udevp = udev = usb_open(dev);
 			if (!udev) {
+				/* It seems that with libusb-0.1 API we
+				 * can only evaluate the string value of
+				 * usb_strerror() return values - in the
+				 * library source there is magic about
+				 * tracking errors in their string buffer
+				 * or as a printable errno, and no reliably
+				 * usable way to learn of an EACCESS or
+				 * other situation diagnostics otherwise.
+				 * So we have to search for sub-strings
+				 * and hope for locale to be right...
+				 */
+				char *libusb_error = usb_strerror();
 				upsdebugx(1, "Failed to open device (%04X/%04X), skipping: %s",
 					dev->descriptor.idVendor,
 					dev->descriptor.idProduct,
-					usb_strerror());
+					libusb_error);
+
+				count_open_errors++;
+				if (strcasestr(libusb_error, "Access denied")
+				||  strcasestr(libusb_error, "insufficient permissions")
+				) {
+					count_open_EACCESS++;
+				}
+
 				continue;
 			}
 
@@ -239,26 +263,44 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
-					string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Vendor = xstrdup(string);
+				retries = MAX_RETRY;
+				while (retries > 0) {
+					ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
+						string, sizeof(string));
+					if (ret > 0) {
+						curDevice->Vendor = xstrdup(string);
+						break;
+					}
+					retries--;
+					upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-					string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Product = xstrdup(string);
+				retries = MAX_RETRY;
+				while (retries > 0) {
+					ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
+						string, sizeof(string));
+					if (ret > 0) {
+						curDevice->Product = xstrdup(string);
+						break;
+					}
+					retries--;
+					upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-					string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Serial = xstrdup(string);
+				retries = MAX_RETRY;
+				while (retries > 0) {
+					ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
+						string, sizeof(string));
+					if (ret > 0) {
+						curDevice->Serial = xstrdup(string);
+						break;
+					}
+					retries--;
+					upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
 				}
 			}
 
@@ -307,7 +349,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* this method requires at least libusb 0.1.8:
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
-			retries = 3;
+			retries = MAX_RETRY;
 			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
 				upsdebugx(2, "failed to claim USB device: %s",
@@ -377,7 +419,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 				upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
-				rdlen1 = buf[7] | (buf[8] << 8);
+				rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);
 			}
 
 			if (rdlen1 < -1) {
@@ -407,7 +449,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				) {
 					p = (usb_ctrl_char *)&iface->extra[i];
 					upsdebug_hex(3, "HID descriptor, method 2", p, 9);
-					rdlen2 = p[7] | (p[8] << 8);
+					rdlen2 = ((uint8_t)p[7]) | (((uint8_t)p[8]) << 8);
 					break;
 				}
 			}
@@ -505,6 +547,20 @@ static int libusb_open(usb_dev_handle **udevp,
 	*udevp = NULL;
 	upsdebugx(2, "libusb0: No appropriate HID device found");
 	fflush(stdout);
+
+	if (count_open_attempts == 0) {
+		upslogx(LOG_WARNING,
+			"libusb0: Could not open any HID devices: "
+			"no USB buses found");
+	}
+	else
+	if (count_open_errors > 0
+	&&  count_open_errors == count_open_EACCESS
+	) {
+		upslogx(LOG_WARNING,
+			"libusb0: Could not open any HID devices: "
+			"insufficient permissions on everything");
+	}
 
 	return -1;
 }

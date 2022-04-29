@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.06"
+#define DRIVER_VERSION	"1.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,57 +53,57 @@ static	int	inverted_bypass_bit = 0;
 
 static void model_set(const char *abbr, const char *rating)
 {
-	if (!strncmp(abbr, "FOR", 3)) {
+	if (!strcmp(abbr, "FOR")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "FTC", 3)) {
+	if (!strcmp(abbr, "FTC")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Fortress Telecom %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "PRO", 3)) {
+	if (!strcmp(abbr, "PRO")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strncmp(abbr, "PR2", 3)) {
+	if (!strcmp(abbr, "PR2")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Patriot Pro II %s", rating);
 		inverted_bypass_bit = 1;
 		return;
 	}
 
-	if (!strncmp(abbr, "325", 3)) {
+	if (!strcmp(abbr, "325")) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 325 %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "520", 3)) {
+	if (!strcmp(abbr, "520")) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 520 %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "610", 3)) {
+	if (!strcmp(abbr, "610")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "610 %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "620", 3)) {
+	if (!strcmp(abbr, "620")) {
 		dstate_setinfo("ups.mfr", "%s", "Sola Australia");
 		dstate_setinfo("ups.model", "Sola 620 %s", rating);
 		return;
 	}
 
-	if (!strncmp(abbr, "AX1", 3)) {
+	if (!strcmp(abbr, "AX1")) {
 		dstate_setinfo("ups.mfr", "%s", "Best Power");
 		dstate_setinfo("ups.model", "Axxium Rackmount %s", rating);
 		return;
@@ -436,6 +436,15 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 }

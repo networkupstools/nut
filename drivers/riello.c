@@ -645,42 +645,42 @@ void riello_parse_re(uint8_t* buffer, TRielloData* data)
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout1W = pom_word;
+	data->Pout1W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout2W = pom_word;
+	data->Pout2W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout3W = pom_word;
+	data->Pout3W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout1VA = pom_word;
+	data->Pout1VA = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout2VA = pom_word;
+	data->Pout2VA = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout3VA = pom_word;
+	data->Pout3VA = pom_long;
 }
 
 void riello_parse_rc(uint8_t* buffer, TRielloData* data)

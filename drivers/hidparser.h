@@ -63,6 +63,7 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc_arg, HIDPath_t *Path, uint8_t T
 
 HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Offset, uint8_t Type);
 
+HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t Node);
 /*
  * GetValue
  * -------------------------------------------------------------------------- */

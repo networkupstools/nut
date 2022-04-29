@@ -15,7 +15,14 @@ if [ -n "${PYTHON-}" ] ; then
 	}
 else
 	PYTHON=""
-	for P in python python3 python2 ; do
+	for P in python python3 python2 \
+		python-3.10 python3.10 \
+		python-3.9 python3.9 \
+		python-3.7 python3.7 \
+		python-3.5 python3.5 \
+		python-3.4 python3.4 \
+		python-2.7 python2.7 \
+	; do
 		if (command -v "$P" >/dev/null) && $P -c "import re,glob,codecs" ; then
 			PYTHON="$P"
 			break
@@ -45,6 +52,7 @@ then
 			touch scripts/augeas/nutupsconf.aug.in scripts/augeas/nutupsconf.aug.in.AUTOGEN_WITHOUT
 		else
 			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_AUGEAS=true   and re-run" >&2
+			echo "or better yet,    export PYTHON=python-x.y   and re-run" >&2
 			exit 1
 		fi
 	fi

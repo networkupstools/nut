@@ -177,8 +177,8 @@ Besides, if upsmon were rolled into upsd, upsd would get even
 bigger than it is now.  You'd have one less process, but the
 RAM consumption would be pretty close to now.
 
-See the "Data Room" section in docs/config-notes.txt for more configuration
-ideas and explanations.
+See the "Data Room" section in link:docs/config-notes.txt[] for
+more configuration ideas and explanations.
 
 *Answer 2*
 
@@ -305,7 +305,10 @@ that point.  You *want* the system to die without reaching the
 part where the kernel tells it to shut down.  A possible script
 might look like this:
 
+------
 	# other shutdown stuff here (mount -o remount,ro ...)
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
 
 	if (test -f /etc/killpower)
 	then
@@ -318,6 +321,7 @@ might look like this:
 	fi
 
 	halt -p
+------
 
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
@@ -349,14 +353,15 @@ cat some magic characters at /dev/adb to enable "server mode".
 This would instruct the system to reboot while unattended.
 
 From Usenet post <6boftzxz51.fsf@ecc-office.sp.cs.cmu.edu>:
-
+------
 	# Send packet over the ADB bus to the PowerMac CUDA chip
 	# telling it to reboot automatically when power is restored
 	# after a power failure.
 
 	cat /etc/local/autoboot.adb > /dev/adb
 
-    autoboot.adb contains these three bytes (in hex):  01 13 01
+    # autoboot.adb contains these three bytes (in hex):  01 13 01
+------
 
 Later PowerPC Macs with a PMU and the appropriate kernel driver can achieve the
 same effect with the following command:
@@ -442,7 +447,7 @@ update your startup scripts so it uses this procedure on your next
 boot.
 
 If you like this, you'll probably also find the chroot process to
-be useful and interesting.  See security.txt for more details.
+be useful and interesting.  See link:security.txt[] for more details.
 
 == What's the point of that 'security domains' concept above?
 
@@ -452,8 +457,8 @@ to that one user account.  Direct access to the serial device is
 not possible, since that is owned by another user.
 
 There is also the possibility of running the drivers and upsd in a
-chroot jail.  See the chroot.txt provided in the source
-distribution for an example implementation.
+chroot jail.  See the chroot option in link:security.txt[], `upsd`
+and driver documentation.
 
 Why give would-be vandals any sort of help?
 
@@ -465,8 +470,8 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at scheduling.txt or the upssched(8) man
-page for some ideas.
+the next entry), then look at link:scheduling.txt[] or the
+linkman:upssched[8] man page for some ideas.
 
 /////////////////////////////////////////////////////////////////
 TODO: figure out how to link to the upssched man page above.
@@ -494,7 +499,7 @@ with no visible interruption in service.
 If you purposely shut down early, you guarantee an interruption in
 service by bringing down the box.
 
-See upssched.txt for information on how you can shutdown early if
+See link:upssched.txt[] for information on how you can shutdown early if
 this is what you really want to do.
 
 == The CGI programs report 'access to that host is not authorized' --  what's going on?
@@ -544,12 +549,36 @@ There are several driver to support USB models.
 - usbhid-ups supports various manufacturers complying to the HID Power Device Class (PDC) standard,
 - tripplite_usb supports various older Tripp-Lite units (with USB ProductID 0001)
 - bcmxcp_usb supports various Powerware units,
-- nutdrv_qx and blazer_usb support various manufacturers that use the Megatec / Q1 protocol.
+- blazer_usb supports various manufacturers that use the Megatec / Q1 protocol.
+- nutdrv_qx supports various manufacturers that use the Megatec / Q* protocol
+  family. This is the driver slated to receive all further development in this
+  area, it was specially designed to support many more sub-drivers and has
+  added a lot over time, so please do try it first nowadays.
 
 Refer to the 'driver-name' (8) man page for more information.
 
 You can also consult the Hardware Compatibility List (HCL) and filter on USB:
 http://www.networkupstools.org/stable-hcl.html?connection=USB
+
+== My USB UPS has a bogus Vendor ID 0x0001 and Product ID 0x0000, what driver supports it?
+
+Unfortunately, many devices are made without registering as a Vendor with
+the corresponding standards body, and use generic USB chips for interfacing
+with a computer (roughly similar to using a network interface card with a
+random MAC address and PCI ID, and thus poorly identifiable device specifics
+needed to automatically load some certain driver). Often they also lack a
+unique serial number field, so monitoring several devices is problematic.
+
+One frequent case is with devices identifying as "Fry's Electronics" and/or
+"MEC0003", if those data are served at all, or plain "0001/0000" in ID field.
+In some cases they are accompanied by "UPSmart" software with a "MEGA(USB)"
+connection option that works for Windows users.
+
+Your best bet is to search for community discussions of issues on NUT GitHub
+at https://github.com/networkupstools/nut/issues?q=is%3Aissue and try options
+there. Devices with these chips were known to connect with drivers for such
+unrelated protocols as Megatec Q* (different sub-drivers, often `fabula` or
+`hunnox`), ATCL, or USB-HID.
 
 == My USB UPS is supported but doesn't work!
 
@@ -603,6 +632,79 @@ This can be a symptom of a source install conflicting with a package install.
 There is a rudimentary locking mechanism in NUT, but there is a chance that the
 packages might not use the same directory as the NUT default, and the conflict
 will be reported by the kernel.
+
+== Why does my (Eaton 5E) USB UPS on Linux connect but quickly disconnects soon?
+
+This issue was extensively investigated by NUT community members in
+https://github.com/networkupstools/nut/issues/630 and resulted in a
+chain of distribution bugs logged such as
+https://bugzilla.redhat.com/show_bug.cgi?id=1715504
+
+The gist of it is that some versions of Linux kernel used an "USB HID quirk"
+for certain devices, see Linux kernel source `drivers/hid/hid-quirks.c` file,
+including MGE/Eaton vendor ID (0x0463) based on an older device a contributor
+had issues with. Firmware in newer devices no longer had the bug which needed
+the "quirk" and misbehaved when it was enabled. While newer (and much older)
+Linux kernels should not have the problem, with the quirk removed according
+to https://lkml.org/lkml/2018/11/26/580 having the issue in the field really
+depends on the combination of Linux kernel and device firmware that meet.
+
+Either way, it seems that problematic combinations preclude Linux from seeing
+the device as a `hid-generic` first, to hand it over to a NUT driver.
+
+This quirk can be tuned with a kernel boot parameter (via GRUB etc.):
+
+	usbhid.quirks=0x0463:0xffff:0x08
+
+to re-enable the NOGET quirk.
+
+For context, according to https://bugzilla.redhat.com/show_bug.cgi?id=1875532
+the symptoms for the problem look like this:
+
+	# Plug in the UPS and observe the dmesg logs,
+	# the following continuously appears:
+	[   93.568082] usb 1-6: new full-speed USB device number 9 using xhci_hcd
+	[   94.311469] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[   94.311475] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[   94.311483] usb 1-6: Product: 5E
+	[   94.311486] usb 1-6: Manufacturer: EATON
+	[   96.269989] hid-generic 0003:0463:FFFF.000A: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  107.369425] hid-generic 0003:0463:FFFF.000A: usb_submit_urb(ctrl) failed: -1
+	[  107.369469] hid-generic 0003:0463:FFFF.000A: timeout initializing reports
+	[  112.828826] usb 1-6: USB disconnect, device number 9
+	[  113.284452] usb 1-6: new full-speed USB device number 10 using xhci_hcd
+	[  114.027693] usb 1-6: New USB device found, idVendor=0463, idProduct=ffff, bcdDevice= 0.01
+	[  114.027698] usb 1-6: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+	[  114.027701] usb 1-6: Product: 5E
+	[  114.027704] usb 1-6: Manufacturer: EATON
+	[  115.984222] hid-generic 0003:0463:FFFF.000B: hiddev96,hidraw2: USB HID v1.10 Device [EATON 5E] on usb-0000:00:14.0-6/input0
+	[  126.825756] hid-generic 0003:0463:FFFF.000B: usb_submit_urb(ctrl) failed: -1
+	[  126.825775] hid-generic 0003:0463:FFFF.000B: timeout initializing reports
+	[  132.527809] usb 1-6: USB disconnect, device number 10
+
+A similar report on the driver side may look like:
+
+	usbhid-ups[4554]: libusb_get_report: Input/output error
+	upsd[4591]: Data for UPS [eaton] is stale - check driver
+	usbhid-ups[4554]: Can't claim USB device [0463:ffff]: No such file or directory
+	upsd[4591]: Can't connect to UPS [eaton] (usbhid-ups-eaton): No such file or directory
+	upsmon[5148]: Poll UPS [eaton@localhost] failed - Driver not connected
+	upsmon[5148]: Communications with UPS eaton@localhost lost
+
+Other similar looking issues may include improper setup of udev, upower
+and similar frameworks to hand over the device from the OS to a driver
+daemon; competition with other software probing USB devices (ModemManager
+was mentioned in this context), including running several copies of the
+NUT drivers trying to use same port (e.g. one started by services and
+another manually as you tried to debug the problems).
+
+Software quirks aside, please do test with a different USB cable and/or port
+on the computer. These were known to cause grief beyond what can be fixed
+with a few key words ;)
+
+Finally, sometimes the issue is on the OS side (and/or USB chipset), to
+the point that the USB driver can not be unloaded and re-attached until
+you power cycle the system.
 
 == Why doesn't my package work?
 
@@ -940,6 +1042,10 @@ they won't be stuck in the halted state with the UPS running on line power.
 
 Implement this by modifying your shutdown script like this:
 
+------
+	# `upsmon -K` if available on still mounted filesystems
+	# at this point is more portable than the `test` below
+
 	if (test -f /etc/killpower)
 	then
 		/sbin/upsdrvctl shutdown
@@ -949,3 +1055,4 @@ Implement this by modifying your shutdown script like this:
 		# uh oh, we never got shut down! (power race?)
 		reboot
 	fi
+------

@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -570,6 +570,8 @@ void upsdrv_initups(void)
 {
 	char	reply[REPLY_PACKETSIZE];
 	int	i;
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 

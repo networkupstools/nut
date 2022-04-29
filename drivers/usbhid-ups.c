@@ -1,7 +1,7 @@
 /* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  *
  * Copyright (C)
- *   2003-2012 Arnaud Quette <arnaud.quette@gmail.com>
+ *   2003-2022 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005      John Stamp <kinsayder@hotmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.44"
+#define DRIVER_VERSION		"0.47"
 
 #include "main.h"
 #include "libhid.h"
@@ -47,6 +47,7 @@
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "delta_ups-hid.h"
+	#include "ever-hid.h"
 	#include "idowell-hid.h"
 	#include "legrand-hid.h"
 	#include "liebert-hid.h"
@@ -69,6 +70,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&delta_ups_subdriver,
+	&ever_subdriver,
 	&idowell_subdriver,
 	&legrand_subdriver,
 	&liebert_subdriver,
@@ -145,7 +147,14 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static time_t lastpoll; /* Timestamp the last polling */
-hid_dev_handle_t udev;
+hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
+
+/**
+ * CyberPower UT series sometime need a bit of help deciding their online status.
+ * This quirk is to enable the special handling of OL & DISCHRG at the same time
+ * as being OB (on battery power/no mains power). Enabled by device config flag.
+ */
+static int onlinedischarge = 0;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -434,9 +443,23 @@ static const char *date_conversion_fun(double value)
 	return buf;
 }
 
-/* FIXME? Do we need an inverse "nuf()" here? */
+static double date_conversion_reverse(const char* date_string)
+{
+	long year, month, day;
+	long date;
+
+	sscanf(date_string, "%04ld/%02ld/%02ld", &year, &month, &day);
+	if(year - 1980 > 127 || month > 12 || day > 31)
+		return 0;
+	date = (year - 1980) << 9;
+	date += month << 5;
+	date += day;
+
+	return (double) date;
+}
+
 info_lkp_t date_conversion[] = {
-	{ 0, NULL, date_conversion_fun, NULL }
+	{ 0, NULL, date_conversion_fun, date_conversion_reverse }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -555,26 +578,30 @@ int instcmd(const char *cmdname, const char *extradata)
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
-			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+			"The 'beeper.off' command has been "
+			"renamed to 'beeper.disable'");
 		return instcmd("beeper.disable", NULL);
 	}
 
 	if (!strcasecmp(cmdname, "beeper.on")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
-			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+			"The 'beeper.on' command has been "
+			"renamed to 'beeper.enable'");
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
+	upsdebugx(1, "instcmd(%s, %s)",
+		cmdname,
+		extradata ? extradata : "[NULL]");
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
-		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives",
+		upsdebugx(3, "%s: cmdname '%s' not found; "
+			"checking for alternatives",
 			__func__, cmdname);
 
 		if (!strcasecmp(cmdname, "load.on")) {
@@ -588,7 +615,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int	ret;
 
-			/* Ensure "ups.start.auto" is set to "yes", if supported */
+			/* Ensure "ups.start.auto" is set to "yes",
+			 * if supported */
 			if (dstate_getinfo("ups.start.auto")) {
 				setvar("ups.start.auto", "yes");
 			}
@@ -631,7 +659,10 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
+	upsdebugx(3, "%s: using Path '%s'",
+		__func__,
+		(hidups_item->hidpath ? hidups_item->hidpath : "[NULL]")
+	);
 
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
@@ -772,6 +803,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+
+	addvar(VAR_FLAG, "onlinedischarge",
+		"Set to treat discharging while online as being offline");
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
@@ -983,6 +1017,7 @@ void upsdrv_initups(void)
 	char *regex_array[7];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+	warn_if_bad_usb_port_filename(device_path);
 
 	subdriver_matcher = &subdriver_matcher_struct;
 
@@ -1046,6 +1081,12 @@ void upsdrv_initups(void)
 	if (testvar("interruptonly")) {
 		interrupt_only = 1;
 	}
+
+	/* Activate Cyberpower tweaks */
+	if (testvar("onlinedischarge")) {
+		onlinedischarge = 1;
+	}
+
 	val = getval("interruptsize");
 	if (val) {
 		int ipv = atoi(val);
@@ -1528,6 +1569,10 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
+	/* Try to close the previous handle */
+	if (udev)
+		comm_driver->close(udev);
+
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
 
 	if (ret > 0) {
@@ -1597,10 +1642,27 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
-	if (ups_status & STATUS(ONLINE)) {
-		status_set("OL");		/* on line */
-	} else {
+
+	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
+	} else if ((ups_status & STATUS(DISCHRG))) {
+			/* if online */
+		if (onlinedischarge) {
+			/* if we treat OL+DISCHRG as being offline */
+			status_set("OB");	/* on battery */
+		} else {
+			if (!(ups_status & STATUS(CAL))) {
+				/* if in OL+DISCHRG unknowingly, warn user */
+				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
+				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
+				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
+				__func__, upsname);
+			}
+			/* if we're calibrating */
+			status_set("OL");	/* on line */
+		}
+	} else if ((ups_status & STATUS(ONLINE))) {
+		status_set("OL");
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {

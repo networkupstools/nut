@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -507,6 +507,10 @@ static void decode_v(const unsigned char *value)
 			  input_voltage_scaled  = 230;
 			  break;
 
+		case 6: input_voltage_nominal =
+			  input_voltage_scaled  = 230;
+			  break;
+
 		default:
 			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
 			  break;
@@ -743,10 +747,11 @@ static int soft_shutdown(void)
 static int hard_shutdown(void)
 {
 	int ret;
-	char buf[256], cmd_N[]="N\0x", cmd_K[] = "K\0";
+	unsigned char buf[256], cmd_N[]="N\0x", cmd_K[] = "K\0";
 
-	cmd_N[2] = offdelay;
-	cmd_N[1] = offdelay >> 8;
+	/* FIXME: Assumes memory layout / endianness? */
+	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
+	cmd_N[1] = (unsigned char)(offdelay >> 8);
 	upsdebugx(3, "hard_shutdown(offdelay=%d): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
@@ -945,7 +950,7 @@ static int setvar(const char *varname, const char *val)
 		index = atoi(index_str);
 		upslogx(LOG_DEBUG, "outlet.%d.switch = %s", index, val);
 
-		if(!strncasecmp(val, "on", 2) || !strncmp(val, "1", 1)) {
+		if(!strcasecmp(val, "on") || !strcmp(val, "1")) {
 			state = 1;
 		} else {
 			state = 0;
@@ -1442,7 +1447,7 @@ void upsdrv_updateinfo(void)
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 || tl_model == TRIPP_LITE_SMART_3005) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */
@@ -1560,6 +1565,8 @@ void upsdrv_initups(void)
 	char *regex_array[7];
 	char *value;
 	int r;
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	/* process the UPS selection options */
 	regex_array[0] = NULL; /* handled by USB IDs device table */

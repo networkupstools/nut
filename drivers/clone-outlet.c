@@ -20,13 +20,14 @@
 
 #include "main.h"
 #include "parseconf.h"
+#include "nut_stdint.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #define DRIVER_NAME	"clone outlet UPS Driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -124,7 +125,7 @@ static int parse_args(size_t numargs, char **arg)
 		}
 
 		if (!strcasecmp(arg[1], prefix.status)) {
-			outlet.status = strncasecmp(arg[2], "off", 3);
+			outlet.status = strcasecmp(arg[2], "off");
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {
@@ -143,13 +144,27 @@ static int parse_args(size_t numargs, char **arg)
 static int sstate_connect(void)
 {
 	ssize_t	ret;
-	int	fd;
+	int	fd, len;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
-	snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+	len = snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+
+	if (len < 0) {
+		fatalx(EXIT_FAILURE, "Can't create a unix domain socket: "
+			"failed to prepare the pathname");
+	}
+	if ((uintmax_t)len >= (uintmax_t)sizeof(sa.sun_path)) {
+		fatalx(EXIT_FAILURE,
+			"Can't create a unix domain socket: pathname '%s/%s' "
+			"is too long (%zu) for 'struct sockaddr_un->sun_path' "
+			"on this system (%zu)",
+			dflt_statepath(), device_path,
+			strlen(dflt_statepath()) + 1 + strlen(device_path),
+			sizeof(sa.sun_path));
+	}
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 

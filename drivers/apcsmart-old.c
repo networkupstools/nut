@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.1"
+#define DRIVER_VERSION	"2.2"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -238,7 +238,7 @@ static ssize_t poll_data(apc_vartab_t *vt)
 	}
 
 	/* no longer supported by the hardware somehow */
-	if (!strncmp(tmp, "NA", 2)) {
+	if (!strcmp(tmp, "NA")) {
 		dstate_delinfo(vt->name);
 		return 1;
 	}
@@ -292,7 +292,7 @@ static int query_ups(const char *var, int first)
 
 	ser_comm_good();
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)))		/* not supported */
+	if ((ret < 1) || (!strcmp(temp, "NA")))		/* not supported */
 		return 0;
 
 	vt->flags |= APC_PRESENT;
@@ -333,7 +333,7 @@ static void do_capabilities(void)
 	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 		MINIGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
 		/* Early Smart-UPS, not as smart as later ones */
 		/* This should never happen since we only call
@@ -446,7 +446,7 @@ static int update_status(void)
 
 	ret = read_buf(buf, sizeof(buf));
 
-	if ((ret < 1) || (!strncmp(buf, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		dstate_datastale();
 		return 0;
 	}
@@ -536,7 +536,7 @@ static void protocol_verify(unsigned char cmd)
 	if (found)
 		return;
 
-	if (isprint(cmd))
+	if (isprint((size_t)cmd))
 		upsdebugx(1, "protocol_verify: 0x%02x [%c] unrecognized",
 			cmd, cmd);
 	else
@@ -566,7 +566,7 @@ static int firmware_table_lookup(void)
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
 	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
-	if ((ret < 1) || (!strncmp(buf, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		upsdebugx(1, "Attempting firmware lookup using command 'b'");
 		ret = ser_send_char(upsfd, 'b');
 
@@ -646,7 +646,7 @@ static void getbaseinfo(void)
 	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS,
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		oldapcsetup();
 		return;
@@ -698,7 +698,7 @@ static int do_cal(int start)
 	ret = read_buf(temp, sizeof(temp));
 
 	/* if we can't check the current calibration status, bail out */
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 
 	tval = strtol(temp, 0, 16);
@@ -723,7 +723,7 @@ static int do_cal(int start)
 
 		ret = read_buf(temp, sizeof(temp));
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)) || (!strncmp(temp, "NO", 2))) {
+		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 			upslogx(LOG_WARNING, "Stop calibration failed: %s",
 				temp);
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
@@ -750,7 +750,7 @@ static int do_cal(int start)
 
 	ret = read_buf(temp, sizeof(temp));
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)) || (!strncmp(temp, "NO", 2))) {
+	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_WARNING, "Start calibration failed: %s", temp);
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
@@ -778,7 +778,7 @@ static int smartmode(void)
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret > 0)
-			if (!strncmp(temp, "SM", 2))
+			if (!strcmp(temp, "SM"))
 				return 1;	/* success */
 
 		sleep(1);	/* wait before trying again */
@@ -810,7 +810,7 @@ static long sdok(void)
 	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 	upsdebugx(4, "sdok: got \"%s\"", temp);
 
-	if (!strncmp(temp, "*", 1) || !strncmp(temp, "OK", 2)) {
+	if (!strcmp(temp, "*") || !strcmp(temp, "OK")) {
 		upsdebugx(4, "Last issued shutdown command succeeded");
 		return 1;
 	}
@@ -1077,7 +1077,7 @@ void upsdrv_shutdown(void)
 		status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && strncasecmp(getval("advorder"), "no", 2))
+	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
 		upsdrv_shutdown_advanced(status);
 	else
 		upsdrv_shutdown_simple(status);
@@ -1144,7 +1144,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	ret = read_buf(orig, sizeof(orig));
 
-	if ((ret < 1) || (!strncmp(orig, "NA", 2)))
+	if ((ret < 1) || (!strcmp(orig, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 	ptr = convert_data(vt, orig);
@@ -1168,13 +1168,13 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		/* this should return either OK (if rotated) or NO (if not) */
 		ret = read_buf(temp, sizeof(temp));
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 		/* sanity checks */
-		if (!strncmp(temp, "NO", 2))
+		if (!strcmp(temp, "NO"))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
-		if (strncmp(temp, "OK", 2) != 0)
+		if (strcmp(temp, "OK") != 0)
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 		/* see what it rotated onto */
@@ -1187,7 +1187,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		ret = read_buf(temp, sizeof(temp));
 
-		if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 		ptr = convert_data(vt, temp);
@@ -1238,7 +1238,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	ret = read_buf(temp, sizeof(temp));
 
-	if ((ret < 1) || (!strncmp(temp, "NA", 2)))
+	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 	/* suppress redundant changes - easier on the eeprom */
@@ -1288,7 +1288,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
-	if (!strncmp(temp, "NO", 2)) {
+	if (!strcmp(temp, "NO")) {
 		upslogx(LOG_ERR, "setvar_string: got NO at final read");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
@@ -1356,7 +1356,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	if (ret < 1)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
 
-	if (strncmp(buf, "OK", 2) != 0) {
+	if (strcmp(buf, "OK") != 0) {
 		upslogx(LOG_WARNING, "Got [%s] after command [%s]",
 			buf, ct->name);
 

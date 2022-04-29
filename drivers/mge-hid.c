@@ -38,7 +38,7 @@
 #include "mge-hid.h"
 #include "nut_float.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.44"
+#define MGE_HID_VERSION		"MGE HID 1.46"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -56,6 +56,8 @@
 /* AEG */
 #define AEG_VENDORID 0x2b2d
 
+/* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
+ * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC 0x06da
 
@@ -1566,6 +1568,21 @@ static int mge_claim(HIDDevice_t *hd) {
 				 * not a UPS, so don't use possibly_supported here
 				 */
 				return 0;
+
+			case PHOENIXTEC:
+				/* The vendorid 0x06da is primarily handled by
+				 * liebert-hid, except for (maybe) AEG PROTECT NAS
+				 * branded devices */
+				if (hd->Vendor && strstr(hd->Vendor, "AEG")) {
+					return 1;
+				}
+				if (hd->Product && strstr(hd->Product, "AEG")) {
+					return 1;
+				}
+
+				/* Let liebert-hid grab this */
+				return 0;
+
 			default: /* Valid for Eaton */
 				/* by default, reject, unless the productid option is given */
 				if (getval("productid")) {
@@ -1576,6 +1593,21 @@ static int mge_claim(HIDDevice_t *hd) {
 		}
 
 	case SUPPORTED:
+
+		switch (hd->VendorID)
+		{
+			case PHOENIXTEC: /* see comments above */
+				if (hd->Vendor && strstr(hd->Vendor, "AEG")) {
+					return 1;
+				}
+				if (hd->Product && strstr(hd->Product, "AEG")) {
+					return 1;
+				}
+
+				/* Let liebert-hid grab this */
+				return 0;
+		}
+
 		return 1;
 
 	case NOT_SUPPORTED:

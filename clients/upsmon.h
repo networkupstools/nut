@@ -49,7 +49,7 @@ typedef struct {
 	char	*sys;			/* raw system name from .conf	*/
 	char	*upsname;		/* just upsname			*/
 	char	*hostname;		/* just hostname		*/
-	int	port;			/* just the port		*/
+	uint16_t	port;			/* just the port		*/
 
 	unsigned int	pv;			/* power value from conf	*/
 	char	*un;			/* username (optional for now)	*/

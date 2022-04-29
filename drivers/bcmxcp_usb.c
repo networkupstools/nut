@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.26"
+#define SUBDRIVER_VERSION "0.27"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -499,6 +499,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	int            ret = 0;
 
 	upsdebugx(1, "entering nutusb_open()");
+	warn_if_bad_usb_port_filename(device_path);
 
 	/* Initialize Libusb */
 #if WITH_LIBUSB_1_0

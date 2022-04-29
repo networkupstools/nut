@@ -9,7 +9,7 @@ upsrw - UPS variable administration tool
 SYNOPSIS
 --------
 
-*upsrw* 'ups'
+*upsrw* [-l] 'ups'
 
 *upsrw* -h
 
@@ -48,6 +48,12 @@ length limit.  Others are enumerated types and can only be set to one of
 those values.  Others may be within an allowed range of values. Refer to
 the list to know what's available in your hardware.
 
+*-l*::
+Just display the list of the variables and their possible values.
++
+Same as default activity without '-s' argument, provided for CLI similarity
+with other tools.
+
 *-u* 'username'::
 Set the NUT username for the connection to the server.  This is optional,
 and you will be prompted for this when using the -s option if you don't
@@ -61,7 +67,7 @@ like -u, and you will be prompted for it if necessary.
 *-w*::
 Wait for the completion of setting execution by the driver and return its
 actual result from the device. Note that this feature requires that both upsd
-and the driver support TRACKING (NUT version 2.7.5 or higher) or it will
+and the driver support TRACKING (NUT version 2.8.0 or higher) or it will
 otherwise fail.
 The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
@@ -112,8 +118,10 @@ confusing.
 
 SEE ALSO
 --------
+
 linkman:upsd[8], linkman:upscmd[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

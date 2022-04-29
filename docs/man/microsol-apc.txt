@@ -15,6 +15,7 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports the following UPS models:
 
  * APC Back-UPS BZ1500-BR
@@ -51,19 +52,22 @@ real values, needing model-specific post-processing by the driver. Monitoring
 of UPS state (on-battery/on-line, critical battery) should work for other
 models, but is untested.
 
-AUTHOR
-------
-Ygor A. S. Regados <ygorre@tutanota.com>,
-Roberto P. Velloso <rvelloso@gmail.com>,
-Silvino B. Magalhães <sbm2yk@gmail.com>
+AUTHORS
+-------
+
+* Ygor A. S. Regados <ygorre@tutanota.com>
+* Roberto P. Velloso <rvelloso@gmail.com>
+* Silvino B. Magalhães <sbm2yk@gmail.com>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
