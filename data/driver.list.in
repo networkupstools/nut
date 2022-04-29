@@ -98,7 +98,7 @@
 
 "Apollo"	"ups"	"1"	"1000A"	""	"genericups upstype=4"
 "Apollo"	"ups"	"1"	"1000F"	""	"genericups upstype=4"
-"Apollo"	"ups"	"2"	"850VA"	""	"blazer_usb"
+"Apollo"	"ups"	"2"	"850VA"	"USB"	"blazer_usb"
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
@@ -181,13 +181,13 @@
 "Best Power"	"ups"	"1"	"Micro-Ferrups"	""	"bestuferrups"
 "Best Power"	"ups"	"1"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Borri"	"ups"	"2"	"B400-010-B/B400-020-B/B400-030-B/B400-010-C/B400-020-C/B400-030-C"	""	"blazer_usb"
-"Borri"	"ups"	"2"	"B400-R010-B/B400-R020-B/B400-R030-B/B400-R010-C/B400-R020-C/B400-R030-C"	""	"blazer_usb"
-"Borri"	"ups"	"2"	"B500-060-B/B500-100-B/B500-060-C/B500-100-C"	""	"blazer_usb"
-"Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	""	"blazer_usb"
-"Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B400-010-B/B400-020-B/B400-030-B/B400-010-C/B400-020-C/B400-030-C"	"USB"	"blazer_usb"
+"Borri"	"ups"	"2"	"B400-R010-B/B400-R020-B/B400-R030-B/B400-R010-C/B400-R020-C/B400-R030-C"	"USB"	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-060-B/B500-100-B/B500-060-C/B500-100-C"	"USB"	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	"USB"	"blazer_usb"
+"Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	"USB"	"blazer_usb"
 
-"CABAC"	"ups"	"2"	"UPS-1700DV2"	""	"blazer_usb"
+"CABAC"	"ups"	"2"	"UPS-1700DV2"	"USB"	"blazer_usb"
 
 "Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"blazer_ser"
 
@@ -200,9 +200,9 @@
 "Compaq"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "Compaq"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
 
-"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K"	""	"blazer_usb"
-"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	""	"blazer_usb"
-"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	""	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K"	"USB"	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	"USB"	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	"USB"	"blazer_usb"
 
 "CPC"	"ups"	"2"	"RACK850VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
@@ -361,7 +361,7 @@
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"SNMP/Web card"	"netxml-ups"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
-"Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"blazer_usb"
+"Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	"USB"	"blazer_usb"
 "Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"blazer_ser"	# http://www.eaton.com/Eaton/ESeriesUPS/DXUPS/
 "Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
@@ -458,7 +458,7 @@
 "Gamatronic"	"ups"	"5"	"MS"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"µPS3/1"	""	"gamatronic"
 
-"GE Digital Energy"	"ups"	"2"	"EP Series"	""	"blazer_usb"
+"GE Digital Energy"	"ups"	"2"	"EP Series"	"USB"	"blazer_usb"
 "GE Digital Energy"	"ups"	"2"	"GT Series 1000/1500/2000/3000 VA Rack/Tower"	"UL-version"	"blazer_ser"
 
 "Geek Squad"	"ups"	"3"	"GS1285U"	"USB"	"usbhid-ups"
@@ -470,8 +470,8 @@
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1080
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1080
 
-"Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	""	"blazer_usb"
-"Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	""	"blazer_usb"
+"Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	"USB"	"blazer_usb"
+"Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	"USB"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"USB port"	"blazer_usb"
 "Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"USB port"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"Serial port"	"blazer_ser"
@@ -534,7 +534,7 @@
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
 
-"IPAR"	"ups"	"2"	"Mini Energy ME 800"	""	"blazer_usb"
+"IPAR"	"ups"	"2"	"Mini Energy ME 800"	"USB"	"blazer_usb"
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
@@ -550,7 +550,7 @@
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"(various)"	"USB"	"blazer_usb"
-"Ippon"	"ups"	"2"	"INNOVA RT 1K/1.5K/2K/3K"	""	"blazer_usb"
+"Ippon"	"ups"	"2"	"INNOVA RT 1K/1.5K/2K/3K"	"USB"	"blazer_usb"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
@@ -564,17 +564,17 @@
 "Kebo"	"ups"	"2"	"UPS-1000D (UPS-1000VA)"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/981
 "Kebo"	"ups"	"2"	"UPS-650VA"	"USB"	"megatec_usb"
 
-"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
-"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K XL TOWER"	""	"blazer_usb"
-"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K RACK"	""	"blazer_usb"
-"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K XL RACK"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	"USB"	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K XL TOWER"	"USB"	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K RACK"	"USB"	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K XL RACK"	"USB"	"blazer_usb"
 
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
 
 "Lacerda"	"ups"	"2"	"New Orion 800VA"	"USB"	"blazer_usb"
 
-"LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
+"LDLC"	"ups"	"2"	"UPS-1200D"	"USB"	"blazer_usb langid_fix=0x4095"
 
 "Legrand"	"ups"	"2"	"Daker DK"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Daker DK"	"USB"	"nutdrv_qx"
@@ -630,7 +630,7 @@
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
 "Lyonn"	"ups"	"2"	"CTB-800V"	""	"nutdrv_qx"
-"Lyonn"	"ups"	"2"	"CTB-1200"	""	"blazer_usb"
+"Lyonn"	"ups"	"2"	"CTB-1200"	"USB"	"blazer_usb"
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
@@ -827,10 +827,10 @@
 "MicroDowell"	"ups"	"5"	"Enterprise N60"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise HiBox ST"	""	"microdowell"
 
-"Microline"	"ups"	"2"	"C-Lion Innova RT 2K/3K"	""	"blazer_usb"
-"Microline"	"ups"	"2"	"C-Lion Innova RT 6K/10K (Parallel)"	""	"blazer_usb"
-"Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	""	"blazer_usb"
-"Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova RT 2K/3K"	"USB"	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova RT 6K/10K (Parallel)"	"USB"	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	"USB"	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	"USB"	"blazer_usb"
 
 "Micropower"	"ups"	"2"	"LCD 1000"	"USB"	"blazer_usb"
 
@@ -900,9 +900,9 @@
 "Oneac"	"ups"	"1"	"ON2000XIU"	"advanced interface"	"oneac"
 
 "Online"	"ups"	"1"	"P-Series"	""	"genericups upstype=14"
-"Online"	"ups"	"2"	"Zinto A"	""	"blazer_usb"
+"Online"	"ups"	"2"	"Zinto A"	"USB"	"blazer_usb"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
-"Online"	"ups"	"2"	"Yunto YQ450"	""	"blazer_usb"
+"Online"	"ups"	"2"	"Yunto YQ450"	"USB"	"blazer_usb"
 "Online"	"ups"	"2"	"Xanto S700"	"/dev/ttyUSB0"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1279
 
 "OnLite"	"ups"	"2"	"AQUA"	"50"	"blazer_ser"
@@ -912,7 +912,7 @@
 "Opti-UPS"	"ups"	"1"	"Power Series"	"PS1500E"	"blazer_usb"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
-"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
+"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	"USB"	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 "Phasak"	"ups"	"2"	"9465 or P6N"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1187 => Voltronic-QS-Hex protocol detected
@@ -954,7 +954,7 @@
 "Powercool"	"ups"	"2"	"1500VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537 - e.g. battery percentage is not being returned
 "Powercool"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
-"POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
+"POWEREX"	"ups"	"2"	"VI 1000 LED"	"USB"	"blazer_usb"
 
 "PowerGuard"	"ups"	"2"	"PG-600"	""	"blazer_ser"
 
@@ -965,7 +965,7 @@
 "PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"blazer_ser"
 "PowerMan"	"ups"	"1"	"BackPro"	""	"genericups upstype=4"
 
-"PowerShield"	"ups"	"2"	"Defender 1200VA"	""	"blazer_usb"
+"PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
@@ -973,13 +973,13 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"blazer_ser"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 600 SE"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 800 SE"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 2000"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	""	"blazer_usb"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 600 SE"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 800 SE"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 2000"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	"USB"	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	"USB"	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
 "PowerWalker"	"ups"	"3"	"VFI 2000 TGS"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/560 and https://github.com/networkupstools/nut/pull/564
 "PowerWalker"	"ups"	"3"	"VI 650 SH"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/483
@@ -998,8 +998,8 @@
 "Powerware"	"ups"	"4"	"5119, 5125"	""	"genericups upstype=15"
 "Powerware"	"ups"	"4"	"5119 RM"	""	"genericups upstype=20"
 "Powerware"	"ups"	"5"	"5119 RM"	""	"upscode2"
-"Powerware"	"ups"	"5"	"PW3105"	""	"bcmxcp_usb"
-"Powerware"	"ups"	"5"	"PW5110"	""	"bcmxcp_usb"
+"Powerware"	"ups"	"5"	"PW3105"	"USB"	"bcmxcp_usb"
+"Powerware"	"ups"	"5"	"PW5110"	"USB"	"bcmxcp_usb"
 "Powerware"	"ups"	"5"	"PW5115"	"Serial port"	"bcmxcp"
 "Powerware"	"ups"	"5"	"PW5115"	"USB port"	"bcmxcp_usb"
 "Powerware"	"ups"	"5"	"PW5125"	""	"bcmxcp"
@@ -1031,21 +1031,21 @@
 
 "Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
-"Riello"	"ups"	"4"	"IPG 600/800"	""	"riello_usb"
-"Riello"	"ups"	"5"	"WPG 400/600/800"	""	"riello_usb"
-"Riello"	"ups"	"5"	"NPW 600/800/1000/1500/2000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"DVT 500/800/1100/1500/2000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"DVR 500/800/1100"	""	"riello_usb"
-"Riello"	"ups"	"5"	"DVD 1500/2200/3000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"VST 800/1100/1500/2000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"VSD 1100/1500/2200/3000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"SEP 700/1000/1500/2200/3000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"SDH 1000/1500/2200/3000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"SDL 3300/4000/5000/6000/6500/8000/10000"	""	"riello_usb"
-"Riello"	"ups"	"5"	"SPW"	""	"riello_usb"
-"Riello"	"ups"	"5"	"SPT"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	"USB"	"riello_usb"
+"Riello"	"ups"	"4"	"IPG 600/800"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"WPG 400/600/800"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"NPW 600/800/1000/1500/2000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"DVT 500/800/1100/1500/2000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"DVR 500/800/1100"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"DVD 1500/2200/3000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"VST 800/1100/1500/2000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"VSD 1100/1500/2200/3000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SEP 700/1000/1500/2200/3000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SDH 1000/1500/2200/3000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SDL 3300/4000/5000/6000/6500/8000/10000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SPW"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SPT"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"DVT 500/800/1100/1500/2000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"DVR 500/800/1100"	""	"riello_ser"
