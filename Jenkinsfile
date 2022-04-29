@@ -1,8 +1,5 @@
 @Library('etn-ipm2-jenkins') _
 
-// Would be populated below with configure options for DMF if enabled
-String configureOptionalDMF = ""
-
 pipeline {
     agent {
         docker {
@@ -53,10 +50,6 @@ pipeline {
             defaultValue: false,
             description: 'Attempt "make distcheck" in this run?',
             name: 'DO_TEST_DISTCHECK')
-        booleanParam (
-            defaultValue: false,
-            description: 'Attempt "make distcheck-dmf-all-yes" in this run?',
-            name: 'DO_TEST_DISTCHECK_DMF_ALL_YES')
         booleanParam (
             defaultValue: false,
             description: 'Attempt a "make install" check in this run?',
@@ -136,11 +129,7 @@ pipeline {
 
         stage ('configure') {
                     steps {
-                        script {
-                            if (params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                                configureOptionalDMF = ' --with-lua=yes --with-snmp_dmf_lua=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes'
-                        }
-                        sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' + configureOptionalDMF
+                        sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; ./configure --with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes '
                     }
         }
 
@@ -163,9 +152,6 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                                 stash (name: 'built', includes: '**/*')
                             }
@@ -219,9 +205,6 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                       script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                             dir("tmp/test-check") {
                                 deleteDir()
@@ -278,9 +261,6 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-memcheck") {
                                 deleteDir()
@@ -337,9 +317,6 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-distcheck") {
                                 deleteDir()
@@ -348,7 +325,7 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                                 unstash 'built'
                                 timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' +
-                                        configureOptionalDMF + ' distcheck'
+                                        ' distcheck'
                                 }
                                 sh """ set +x
 echo "Are GitIgnores good after make distcheck? (should have no output below)"
@@ -372,69 +349,10 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                             } else {
                                 timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-snmp=yes --with-dev --with-doc=html-single=auto,man=yes ' +
-                                        configureOptionalDMF + ' distcheck'
+                                        ' distcheck'
                                 }
                                 sh """ set +x
 echo "Are GitIgnores good after make distcheck? (should have no output below)"
-OUT="`git status -s`" && [ -z "\$OUT" ] \\
-|| { echo "\$OUT" >&2
-    if [ "${params.CI_REQUIRE_GOOD_GITIGNORE}" = false ]; then
-        echo "WARNING GitIgnore tests found newly changed or untracked files:" >&2
-        exit 0
-    else
-        echo "FAILED GitIgnore tests" >&2
-        git diff >&2
-        exit 1
-    fi
-}"""
-                            }
-                        }
-                    }
-                }
-
-                stage ('make distcheck-dmf-all-yes') {
-                    when { expression { return ( params.DO_TEST_DISTCHECK_DMF_ALL_YES ) } }
-                    steps {
-                        script {
-                          if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
-                               (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                             ) {
-                              dir("tmp/test-distcheck-dmf-all-yes") {
-                                deleteDir()
-                              }
-                              dir("tmp/test-distcheck-dmf-all-yes") {
-                                unstash 'built'
-                                timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
-                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make distcheck-dmf-all-yes'
-                                }
-                                sh """ set +x
-echo "Are GitIgnores good after make distcheck-dmf-all-yes? (should have no output below)"
-OUT="`git status -s`" && [ -z "\$OUT" ] \\
-|| { echo "\$OUT" >&2
-    if [ "${params.CI_REQUIRE_GOOD_GITIGNORE}" = false ]; then
-        echo "WARNING GitIgnore tests found newly changed or untracked files:" >&2
-        exit 0
-    else
-        echo "FAILED GitIgnore tests" >&2
-        git diff >&2
-        exit 1
-    fi
-}"""
-                                script {
-                                    if ( params.DO_CLEANUP_AFTER_BUILD ) {
-                                        deleteDir()
-                                    }
-                                }
-                              }
-                            } else {
-                                timeout (time: "${params.USE_TEST_TIMEOUT}".toInteger(), unit: 'MINUTES') {
-                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make distcheck-dmf-all-yes'
-                                }
-                                sh """ set +x
-echo "Are GitIgnores good after make distcheck-dmf-all-yes? (should have no output below)"
 OUT="`git status -s`" && [ -z "\$OUT" ] \\
 || { echo "\$OUT" >&2
     if [ "${params.CI_REQUIRE_GOOD_GITIGNORE}" = false ]; then
@@ -457,9 +375,6 @@ OUT="`git status -s`" && [ -z "\$OUT" ] \\
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
-                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
-                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-install-check") {
                                 deleteDir()
