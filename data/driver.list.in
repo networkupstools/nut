@@ -58,8 +58,8 @@
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
 "AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
-"AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	""	"usbhid-ups"
-"AEG Power Solutions"	"ups"	"3"	"PROTECT B"	""	"usbhid-ups"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	"USB"	"usbhid-ups"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT B"	"USB"	"usbhid-ups"
 
 "APC"	"ups"	"3"	"APC AP9584 Serial-to-USB kit"	"USB"	"usbhid-ups"	# Allows USB connections to Serial-port APC devices, https://github.com/networkupstools/nut/pull/181
 "APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
@@ -255,7 +255,7 @@
 "Cyber Power Systems"	"ups"	"3"	"OR500LCDRM1U"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/or500lcdrm1u/ https://github.com/networkupstools/nut/issues/578
 "Cyber Power Systems"	"ups"	"3"	"RT650EI"	"USB"	"usbhid-ups"	# http://www.cyberpowersystems.de/produkte/backup-usv-serien/rt-serie.html https://github.com/networkupstools/nut/issues/453
 "Cyber Power Systems"	"ups"	"3"	"UT2200E"	"USB"	"usbhid-ups"	# https://www.cyberpower.com/ww/en/product/sku/UT2200E https://github.com/networkupstools/nut/issues/556
-"Cyber Power Systems"	"ups"	"3"	"PR1500RT2U"	""	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/new-smart-app-sinewave/pr1500rt2u/ https://github.com/networkupstools/nut/issues/1191
+"Cyber Power Systems"	"ups"	"3"	"PR1500RT2U"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/new-smart-app-sinewave/pr1500rt2u/ https://github.com/networkupstools/nut/issues/1191
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR2200LCDRT2U"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
@@ -317,7 +317,7 @@
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"3"	"DX-800U"	"USB"	"usbhid-ups"
 
-"Eaton"	"ups"	"5"	"3S"	""	"usbhid-ups"
+"Eaton"	"ups"	"5"	"3S"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
@@ -378,7 +378,7 @@
 "Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
-"Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Powerware 5130"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Serial Pass-through mode"	"bcmxcp"
@@ -489,14 +489,14 @@
 "HP"	"ups"	"3"	"T500 / T750"	"older models, USB port"	"bcmxcp_usb"
 "HP"	"ups"	"3"	"R/T3000"	"Serial port"	"mge-shut"
 "HP"	"ups"	"3"	"R5000 / R7000"	"Serial port"	"mge-shut"
-"HP"	"ups"	"3"	"T750 INTL"	""	"usbhid-ups"
-"HP"	"ups"	"3"	"T1000 INTL"	""	"usbhid-ups"
-"HP"	"ups"	"3"	"T1500 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"T750 INTL"	"USB"	"usbhid-ups"
+"HP"	"ups"	"3"	"T1000 INTL"	"USB"	"usbhid-ups"
+"HP"	"ups"	"3"	"T1500 INTL"	"USB"	"usbhid-ups"
 "HP"	"ups"	"3"	"T750 G2"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"T1000 G3"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"T1500 G3"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"R1500 G2 INTL"	"USB port"	"usbhid-ups"
-"HP"	"ups"	"3"	"R/T 2200 G2"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"R/T 2200 G2"	"USB"	"usbhid-ups"
 "HP"	"ups"	"3"	"R/T3000"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"R5000 / R7000"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
@@ -515,7 +515,7 @@
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
-"iDowell"	"ups"	"3"	"iBox UPS"	""	"usbhid-ups"
+"iDowell"	"ups"	"3"	"iBox UPS"	"USB"	"usbhid-ups"
 
 "INELT"	"ups"	"2"	"Monolith 1000LT"	""	"blazer_ser"
 "INELT"	"ups"	"2"	"Monolith 3000RT"	""	"blazer_ser"
@@ -1068,7 +1068,7 @@
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 202 SNMP Card"	"snmp-ups"
 
-"Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
+"Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	"USB"	"usbhid-ups"
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
