@@ -7,6 +7,12 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.8.0 to 2.8.1
+---------------------------
+
+- PLANNED: Keep track of any further API clean-up?
+
+
 Changes from 2.7.4 to 2.8.0
 ---------------------------
 
