@@ -1080,6 +1080,7 @@
 "Salicru"	"ups"	"3"	"SLC-1500-TWIN PRO3"	"usb"	"usbhid-ups (experimental)" # https://github.com/networkupstools/nut/issues/1142
 "Salicru"	"ups"	"3"	"SLC TWINPRO3"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SLC TWIN RT3"	"usb"	"usbhid-ups (experimental)"
+"Salicru"	"ups"	"3"	"SPS 850 ADV T"	"usb"	"usbhid-ups (experimental)" # https://www.salicru.com/sps-850-adv-t.html
 
 "Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
 "Santak"	"ups"	"2"	"MT*-PRO"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
