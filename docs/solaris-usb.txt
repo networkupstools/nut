@@ -403,5 +403,7 @@ Another is more complicated and involves some custom scripting:
     0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-solaris.sh
 
 ...where the script would be a copy (customized to your device(s) and
-connection points!) of one from `scripts/Solaris/reset-ups-usb-solaris.sh`
-in the NUT sources.
+connection points!) of `reset-ups-usb-solaris.sh.sample` from either
+`scripts/Solaris/` directory in the NUT sources, or a copy which may be
+available in your system, e.g. under the `/usr/share/nut/solaris-init/`
+data directory.

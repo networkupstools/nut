@@ -30,7 +30,8 @@ SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
 solarisinitscriptdir = @datadir@/solaris-init
-solarisinitscript_SCRIPTS = nut
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+EXTRA_DIST += reset-ups-usb-solaris.sh.sample
 
 SOLARIS_PACKAGE_TARGETS =
 
