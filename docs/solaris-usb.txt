@@ -400,53 +400,8 @@ service if its earlier startup failed (repetitively) so SMF gave up:
 
 Another is more complicated and involves some custom scripting:
 
-    0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-smf.sh
+    0,5,10,15,20,25,30,35,40,45,50,55 * * * * MODE=optional /etc/nut/reset-ups-usb-solaris.sh
 
-...where the script (customized to your device(s) and connection points!)
-would be like:
-
-./etc/nut/reset-ups-usb-smf.sh
-----
-#!/bin/sh
-
-# Copyright (C) 2020,2022 by Jim Klimov <jimklimov+nut@gmail.com>
-# Licensed according to GPLv2+ for the NUT project
-
-# TODO: Parse CLI args?
-[ -n "$MODE" ] || MODE='always'
-[ -n "$DEVICE" ] || DEVICE='innotech'
-[ -n "$CFGADM_APID" ] || CFGADM_APID="usb10/1"
-[ -n "$UGEN_DRV_ID" ] || UGEN_DRV_ID='"usb665,5161.2"'
-
-if [ "$MODE" = optional ]; then
-    if upsc "$DEVICE" 2>&1 | grep -i 'Data stale' ; then : ; else exit 0 ; fi
-fi
-
-date
-svcs -p "$DEVICE" ; upsc "$DEVICE"
-
-DO_SVC=false
-if [ "`svcs -Hostate "$DEVICE"`" = "online" ]; then
-    DO_SVC=true
-    svcadm disable -ts "$DEVICE"
-fi
-upsdrvctl stop "$DEVICE" || true
-
-echo "Soft-resetting connection of '${CFGADM_APID}':"
-cfgadm -lv | ggrep -A2 "${CFGADM_APID}"
-
-cfgadm -c disconnect -y "${CFGADM_APID}"
-rem_drv ugen ; sleep 3
-cfgadm -c configure -y "${CFGADM_APID}"; sleep 3
-add_drv -i "$UGEN_DRV_ID" -m '* 0666 root sys' ugen
-
-sleep 3
-cfgadm -lv | ggrep -A2 "${CFGADM_APID}"
-
-if $DO_SVC ; then svcadm enable "$DEVICE" ; fi
-svcadm clear "$DEVICE" 2>/dev/null
-
-dmesg | tail -n 20
-date
-svcs -p "$DEVICE" ; upsc "$DEVICE"
-----
+...where the script would be a copy (customized to your device(s) and
+connection points!) of one from `scripts/Solaris/reset-ups-usb-solaris.sh`
+in the NUT sources.
