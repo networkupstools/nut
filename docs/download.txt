@@ -51,6 +51,13 @@ following script in the directory you just checked out:
 
 	$ ./autogen.sh
 
+NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
+generate some files included into the `configure` script, presence is checked
+by autotools when it is generated. Neutered files can be just "touched" to
+pass the `autogen.sh` if these interpreters are not available, and effectively
+skip those parts of the build later on -- `autogen.sh` will then advise which
+special environment variables to `export` in your situation and re-run it.
+
 Then refer to the
 ifdef::website[]
 link:docs/user-manual.chunked/index.html[NUT user manual]
