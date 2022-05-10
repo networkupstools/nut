@@ -32,7 +32,13 @@ jobs:
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl #binutils
+
+      - run:
+          name: "homebrew-libtool"
+          command: |-
+            find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             brew unlink libtool && brew link libtool
+            find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
 
       - restore_cache:
           keys:
