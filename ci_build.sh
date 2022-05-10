@@ -588,7 +588,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -d "./.inst/" ]; then
         rm -rf ./.inst/
     fi
-    mkdir -p tmp/ .inst/
+
+    # Pre-create locations; tmp/lib in particular to avoid (on MacOS xcode):
+    #   ld: warning: directory not found for option '-L/Users/distiller/project/tmp/lib'
+    mkdir -p tmp/lib .inst/
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
