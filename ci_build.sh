@@ -357,6 +357,17 @@ configure_nut() {
         CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
     fi
 
+    # Note: maintainer-clean checks remove this, and then some systems'
+    # build toolchains noisily complain about missing LD path candidate
+    if [ -n "$BUILD_PREFIX" ]; then
+        # tmp/lib/
+        mkdir -p "$BUILD_PREFIX"/lib
+    fi
+    if [ -n "$INST_PREFIX" ]; then
+        # .inst/
+        mkdir -p "$INST_PREFIX"
+    fi
+
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
@@ -591,6 +602,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # Pre-create locations; tmp/lib in particular to avoid (on MacOS xcode):
     #   ld: warning: directory not found for option '-L/Users/distiller/project/tmp/lib'
+    # Note that maintainer-clean checks can remove these directory trees,
+    # so we re-create them just in case in the configure_nut() method too.
     mkdir -p tmp/lib .inst/
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
