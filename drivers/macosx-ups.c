@@ -109,7 +109,7 @@ void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	char device_name[80] = "";
+	char device_name_buf[80] = "";
 	CFStringRef device_type_cfstr, device_name_cfstr;
 	CFPropertyListRef power_dictionary;
 	CFNumberRef max_capacity;
@@ -136,13 +136,13 @@ void upsdrv_initinfo(void)
 
 	CFRetain(device_name_cfstr);
 
-	CFStringGetCString(device_name_cfstr, device_name, sizeof(device_name), kCFStringEncodingUTF8);
-	upsdebugx(2, "Got name: %s", device_name);
+	CFStringGetCString(device_name_cfstr, device_name_buf, sizeof(device_name_buf), kCFStringEncodingUTF8);
+	upsdebugx(2, "Got name: %s", device_name_buf);
 
 	CFRelease(device_name_cfstr);
 
-	dstate_setinfo("device.model", "%s", device_name);
-	dstate_setinfo("ups.model", "%s", device_name);
+	dstate_setinfo("device.model", "%s", device_name_buf);
+	dstate_setinfo("ups.model", "%s", device_name_buf);
 
 	max_capacity = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSMaxCapacityKey));
 	if(max_capacity) {
