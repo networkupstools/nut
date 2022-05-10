@@ -50,7 +50,7 @@ static usb_device_id_t salicru_usb_device_table[] = {
 	/* Salicru SPS 850 HOME per https://github.com/networkupstools/nut/pull/1199 */
 	/* https://www.salicru.com/sps-home.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
-  /* Salicru SPS 850 ADV T */
+  /* Salicru SPS 850 ADV T, see https://github.com/networkupstools/nut/issues/1416 */
   /* https://www.salicru.com/sps-850-adv-t.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0302), NULL },
 
