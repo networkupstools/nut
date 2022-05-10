@@ -198,7 +198,7 @@ void upsdrv_updateinfo(void)
 
 	/* Retrieve CHRG state */
 	is_charging = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSIsChargingKey));
-        if(is_charging) {
+	if(is_charging) {
 		Boolean is_charging_value;
 
 		is_charging_value = CFBooleanGetValue(is_charging);
@@ -251,7 +251,7 @@ void upsdrv_updateinfo(void)
 	/* TODO: it should be possible to set poll_interval (and maxage in the
 	 * server) to an absurdly large value, and use notify(3) to get
 	 * updates.
-         */
+	 */
 
 	/*
 	 * poll_interval = 2;
@@ -272,8 +272,8 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* NOTE: Mac OS X already has shutdown routines - this driver is more
-           for monitoring and notification purposes. Still, there is a key that
-           might be useful to set in SystemConfiguration land. */
+	   for monitoring and notification purposes. Still, there is a key that
+	   might be useful to set in SystemConfiguration land. */
 	fatalx(EXIT_FAILURE, "shutdown not supported");
 
 	/* you may have to check the line status since the commands
@@ -350,7 +350,7 @@ void upsdrv_initups(void)
 	CFStringRef potential_key, potential_model;
 	char *model_name; /* regex(3) */
 	char potential_model_name[256];
-        regex_t model_regex;
+	regex_t model_regex;
 	int ret;
 
 	upsdebugx(3, "upsdrv_initups(): Power Sources blob:");
@@ -363,15 +363,18 @@ void upsdrv_initups(void)
 
 	if(nut_debug_level >= 3) CFShow(power_blob);
 
-/* The CFDictionary through 10.9 has changed to a CFArray, so this part is no longer applicable: */
+/* The CFDictionary through 10.9 has changed to a CFArray,
+ * so this part is no longer applicable: */
 #if 0
+	/* Note: original value of device_name is derived from
+	 * device_path (value of port parameter) in main.c */
 	if(!strcmp(device_name, "auto")) {
 		device_name = "/UPS";
 	}
 
 	upsdebugx(2, "Matching power supply key names against regex '%s'", device_name);
 
-        ret = regcomp(&name_regex, device_name, REG_EXTENDED|REG_NOSUB|REG_ICASE);
+	ret = regcomp(&name_regex, device_name, REG_EXTENDED|REG_NOSUB|REG_ICASE);
 
 	if(ret) {
 		fatalx(EXIT_FAILURE,
