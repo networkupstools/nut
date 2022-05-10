@@ -32,6 +32,7 @@ jobs:
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl #binutils
+            brew unlink libtool && brew link libtool
 
       - restore_cache:
           keys:
