@@ -851,3 +851,32 @@ library and binary paths can be architecture bitness-dependent):
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
+
+
+MacOS with homebrew
+~~~~~~~~~~~~~~~~~~~
+
+Some CI tests happen on MacOS using a mix of their default xcode environment
+for compilers, and Homebrew community packaging for dependencies (including
+`bash` since the system one is too old for `ci_build.sh` script syntax).
+
+See `.travis.yml` and `.circleci/config.yml` for practical details of the
+setup.
+
+Currently known dependencies for basic build include:
+----
+# Optional for a quick spin:
+:; HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE
+
+# Required:
+:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl
+----
+
+Note that ccache is installed in a different location than expected by default
+in the `ci_build.sh` script, so if your system allows to add the symbolic link
+to `/usr/local/opt/ccache/libexec` as `/usr/lib/ccache` -- please do so as the
+easiest way out. Alternatively, to prepare building sessions with `ci_build.sh`
+you can:
+----
+:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
+----
