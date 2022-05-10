@@ -31,9 +31,6 @@ jobs:
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache gd bash #binutils
-            if ! test -e /usr/lib/ccache ; then
-                mkdir -p /usr/lib && ln -s /usr/local/opt/ccache/libexec /usr/lib/ccache
-            fi
 
       - restore_cache:
           keys:
@@ -47,6 +44,7 @@ jobs:
       - run:
           name: "ci_build"
           command: |-
+            CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
             PATH="/usr/local/opt/ccache/libexec:$PATH" \
             BUILD_TYPE=default-all-errors \
             CFLAGS="-std=gnu17" \
