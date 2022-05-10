@@ -347,11 +347,11 @@ void upsdrv_initups(void)
 	CFIndex num_keys, index;
 	CFDictionaryRef power_dictionary;
 	CFTypeRef power_blob;
-	CFStringRef potential_key, potential_model;
+	CFStringRef potential_key, potential_model = NULL;
 	char *model_name; /* regex(3) */
 	char potential_model_name[256];
 	regex_t model_regex;
-	int ret;
+	int ret = 0;
 
 	upsdebugx(3, "upsdrv_initups(): Power Sources blob:");
 	/* upsfd = ser_open(device_path); */
