@@ -77,7 +77,12 @@ you may need to address some nuances:
   failure-prone in 2.7.4 and earlier releases
 ======
 
-For intensive rebuilds, `ccache` is recommended.
+For intensive rebuilds, `ccache` is recommended. Note that instructions
+below detail how to provide its directory with symlinks as `/usr/lib/ccache`
+which is not the default case in all OS distributions. Recent versions of
+the NUT `ci_build.sh` script allow to override the location by using the
+`CI_CCACHE_SYMLINKDIR` environment variable, which is cumbersome and only
+recommended for build agents with immutable system areas, etc.
 
 
 Build prerequisites to make NUT from scratch on various Operating Systems
