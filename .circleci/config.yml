@@ -45,13 +45,15 @@ jobs:
       # TODO: Move -Wno-poison-system-directories into configure.ac to set
       # optionally just on detected cross-build attempts (*X*code after all)
       # and verifying that the compiler supports it?
+      # TODO: Relocate or address -Wno-deprecated-declarations (reported for
+      # uses of sem_init() and sem_destroy() in nut-scanner.c)
       - run:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
             PATH="/usr/local/opt/ccache/libexec:$PATH" \
             BUILD_TYPE=default-all-errors \
-            CFLAGS="-std=gnu17 -Wno-poison-system-directories" \
+            CFLAGS="-std=gnu17 -Wno-poison-system-directories -Wno-deprecated-declarations" \
             CXXFLAGS="-std=gnu++17 -Wno-poison-system-directories" \
             CC=clang CXX=clang++ \
             ./ci_build.sh
