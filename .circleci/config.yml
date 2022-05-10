@@ -42,14 +42,17 @@ jobs:
 #          name: "check shell"
 #          command: /usr/bin/env bash --version || true; command -v bash || true
 
+      # TODO: Move -Wno-poison-system-directories into configure.ac to set
+      # optionally just on detected cross-build attempts (*X*code after all)
+      # and verifying that the compiler supports it?
       - run:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
             PATH="/usr/local/opt/ccache/libexec:$PATH" \
             BUILD_TYPE=default-all-errors \
-            CFLAGS="-std=gnu17" \
-            CXXFLAGS="-std=gnu++17" \
+            CFLAGS="-std=gnu17 -Wno-poison-system-directories" \
+            CXXFLAGS="-std=gnu++17 -Wno-poison-system-directories" \
             CC=clang CXX=clang++ \
             ./ci_build.sh
 
