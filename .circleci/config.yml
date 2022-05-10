@@ -36,9 +36,9 @@ jobs:
       - run:
           name: "homebrew-libtool"
           command: |-
-            find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             brew unlink libtool && brew link libtool
-            find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
 
       - restore_cache:
           keys:
