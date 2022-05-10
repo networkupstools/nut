@@ -168,7 +168,8 @@ void upsdrv_updateinfo(void)
 	CFNumberRef battery_voltage, battery_runtime;
 	CFNumberRef current_capacity;
 	CFBooleanRef is_charging;
-	double max_capacity_value = 100.0, current_capacity_value;
+	/* double max_capacity_value = 100.0; */
+	double current_capacity_value;
 
 	upsdebugx(1, "upsdrv_updateinfo()");
 
