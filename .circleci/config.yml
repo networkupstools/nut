@@ -1,0 +1,67 @@
+# Content modeled after settings tested with .travis.yml
+# TODO: Implement a similar envvar-based matrix
+# TODO: save_cache installed brew dependencies?
+# TODO: Windows eventually?
+
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  gnu17-clang-xcode12_5_1:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    macos:
+      xcode: 12.5.1 # indicate your selected version of Xcode
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+
+#      - run:
+#          name: "check shell"
+#          command: /usr/bin/env bash --version || true; command -v bash || true
+
+      # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
+      # Brew brings /usr/local/bin/bash 5.x as of this writing
+      - run:
+          name: "homebrew"
+          command: |-
+            HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
+            brew install ccache gd bash #binutils
+            if ! test -e /usr/lib/ccache ; then
+                mkdir -p /usr/lib && ln -s /usr/local/opt/ccache/libexec /usr/lib/ccache
+            fi
+
+      - restore_cache:
+          keys:
+            - ccache-{{ .Branch }}-{{ arch }}
+            - ccache-master-{{ arch }}
+
+#      - run:
+#          name: "check shell"
+#          command: /usr/bin/env bash --version || true; command -v bash || true
+
+      - run:
+          name: "ci_build"
+          command: |-
+            PATH="/usr/local/opt/ccache/libexec:$PATH" \
+            BUILD_TYPE=default-all-errors \
+            CFLAGS="-std=gnu17" \
+            CXXFLAGS="-std=gnu++17" \
+            CC=clang CXX=clang++ \
+            ./ci_build.sh
+
+      - save_cache:
+          paths:
+            - ~/.ccache
+          key: ccache-{{ .Branch }}-{{ arch }}
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  xcode-workflow:
+    jobs:
+      - gnu17-clang-xcode12_5_1
