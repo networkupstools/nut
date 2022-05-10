@@ -152,7 +152,7 @@ void upsdrv_initinfo(void)
 		CFRelease(max_capacity);
 
 		upsdebugx(3, "Max Capacity = %.f units (usually 100)", max_capacity_value);
-		if(max_capacity_value != 100) {
+		if(max_capacity_value != 100.0) {
 			upsdebugx(1, "Max Capacity: %f != 100", max_capacity_value);
 		}
 	}
