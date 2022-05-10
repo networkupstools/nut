@@ -62,6 +62,7 @@ jobs:
             BUILD_TYPE=default-all-errors \
             CFLAGS="-std=gnu17 -Wno-poison-system-directories -Wno-deprecated-declarations" \
             CXXFLAGS="-std=gnu++17 -Wno-poison-system-directories" \
+            LDFLAGS="-L/usr/local/lib" \
             CC=clang CXX=clang++ \
             ./ci_build.sh
 
