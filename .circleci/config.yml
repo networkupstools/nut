@@ -26,11 +26,12 @@ jobs:
 
       # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
       # Brew brings /usr/local/bin/bash 5.x as of this writing
+      # TODO: Are Binutils needed?
       - run:
           name: "homebrew"
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
-            brew install ccache gd bash #binutils
+            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl #binutils
 
       - restore_cache:
           keys:
