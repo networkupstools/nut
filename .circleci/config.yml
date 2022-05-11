@@ -10,19 +10,37 @@ version: 2.1
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+#      https://circleci.com/docs/2.0/configuration-reference/#parameters-requires-version-21
 jobs:
-  gnu17-clang-xcode12_5_1:
+  osx-xcode:
+    parameters:
+      XCODE_VER:
+        type: string
+        default: "12.5.1"
+      CC:
+        type: string
+        default: "" # e.g. "clang"
+      CXX:
+        type: string
+        default: "" # e.g. "clang++"
+      CC_STDVER:
+        type: string
+        default: "" # e.g. "-std=gnu17"
+      CXX_STDVER:
+        type: string
+        default: "" # e.g. "-std=gnu++17"
+
     environment:
-      ENV_NAME: gnu17-clang-xcode12_5_1
-      XCODE_VER: 12.5.1
-      CC: clang
-      CXX: clang++
-      CC_STDVER: -std=gnu17
-      CXX_STDVER: -std=gnu++17
+      CC: << parameters.CC >>
+      CXX: << parameters.CXX >>
+      CC_STDVER: << parameters.CC_STDVER >>
+      CXX_STDVER: << parameters.CXX_STDVER >>
+
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     macos:
-      xcode: 12.5.1 # indicate your selected version of Xcode (literally, no envvars)
+      xcode: << parameters.XCODE_VER >>
+
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
@@ -82,4 +100,10 @@ jobs:
 workflows:
   xcode-workflow:
     jobs:
-      - gnu17-clang-xcode12_5_1
+      - osx-xcode:
+          name: "gnu17-clang-xcode12_5_1"
+          XCODE_VER: "12.5.1"
+          CC: "clang"
+          CXX: "clang++"
+          CC_STDVER: "-std=gnu17"
+          CXX_STDVER: "-std=gnu++17"
