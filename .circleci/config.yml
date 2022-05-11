@@ -76,6 +76,10 @@ jobs:
 #          name: "check shell"
 #          command: /usr/bin/env bash --version || true; command -v bash || true
 
+      - run:
+          name: "ccache stats before build"
+          command: ccache -s || true
+
       # TODO: Move -Wno-poison-system-directories into configure.ac to set
       # optionally just on detected cross-build attempts (*X*code after all)
       # and verifying that the compiler supports it?
@@ -90,6 +94,10 @@ jobs:
             CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
             LDFLAGS="-L/usr/local/lib" \
             ./ci_build.sh
+
+      - run:
+          name: "ccache stats after build"
+          command: ccache -s || true
 
       - save_cache:
           paths:
