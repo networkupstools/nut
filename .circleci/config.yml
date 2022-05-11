@@ -107,3 +107,15 @@ workflows:
           CXX: "clang++"
           CC_STDVER: "-std=gnu17"
           CXX_STDVER: "-std=gnu++17"
+      - osx-xcode:
+          name: "gnu11-gcc10-xcode12_5_1"
+          CC: "gcc-10"
+          CXX: "g++-10"
+          CC_STDVER: "-std=gnu11"
+          CXX_STDVER: "-std=gnu++11"
+      - osx-xcode:
+          name: "c99-cxx11-gcc5-xcode12_5_1"
+          CC: "gcc-5"
+          CXX: "g++-5"
+          CC_STDVER: "-std=c99"
+          CXX_STDVER: "-std=c++11"
