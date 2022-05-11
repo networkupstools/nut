@@ -1,6 +1,7 @@
 # Content modeled after settings tested with .travis.yml
 # TODO: Implement a similar envvar-based matrix
-# TODO: save_cache installed brew dependencies?
+#   https://circleci.com/docs/2.0/env-vars/#circleci-environment-variable-descriptions
+# TODO: save_cache installed brew dependencies? => seems not possible to reliably cache/restore outside user homedir
 # TODO: Windows eventually?
 
 # Use the latest 2.1 version of CircleCI pipeline process engine.
