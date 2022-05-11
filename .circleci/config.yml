@@ -12,10 +12,17 @@ version: 2.1
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   gnu17-clang-xcode12_5_1:
+    environment:
+      ENV_NAME: gnu17-clang-xcode12_5_1
+      XCODE_VER: 12.5.1
+      CC: clang
+      CXX: clang++
+      CC_STDVER: -std=gnu17
+      CXX_STDVER: -std=gnu++17
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     macos:
-      xcode: 12.5.1 # indicate your selected version of Xcode
+      xcode: 12.5.1 # indicate your selected version of Xcode (literally, no envvars)
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
@@ -43,8 +50,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - ccache-{{ .Branch }}-{{ arch }}
-            - ccache-master-{{ arch }}
+            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.ENV_NAME }}
+            - ccache-master-{{ arch }}-{{ .Environment.ENV_NAME }}
 
 #      - run:
 #          name: "check shell"
@@ -60,16 +67,15 @@ jobs:
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
             BUILD_TYPE=default-all-errors \
-            CFLAGS="-std=gnu17 -Wno-poison-system-directories -Wno-deprecated-declarations" \
-            CXXFLAGS="-std=gnu++17 -Wno-poison-system-directories" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
             LDFLAGS="-L/usr/local/lib" \
-            CC=clang CXX=clang++ \
             ./ci_build.sh
 
       - save_cache:
           paths:
             - ~/.ccache
-          key: ccache-{{ .Branch }}-{{ arch }}
+          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.ENV_NAME }}
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
