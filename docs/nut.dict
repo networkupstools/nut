@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2956 utf-8
+personal_ws-1.1 en 2965 utf-8
 AAS
 ABI
 ACFAIL
@@ -1068,6 +1068,7 @@ STARTTLS
 STB
 STESTI
 STI
+STIME
 STO
 STP
 SUNWlibusbugen
@@ -1638,6 +1639,7 @@ cr
 crestfactor
 crlf
 cron
+crontab
 crossbuild
 crt
 crw
@@ -1690,6 +1692,7 @@ deschis
 descr
 desde
 dev
+devctl
 devd
 devel
 devscan
@@ -1752,6 +1755,7 @@ echoback
 eco
 edb
 edl
+ef
 ei
 el
 emacs
@@ -1957,6 +1961,7 @@ initinfo
 initscripts
 initups
 inline
+innotech
 installcheck
 instcmd
 instcmds
@@ -2425,7 +2430,9 @@ proc
 productid
 prog
 prtconf
+ps
 psu
+pts
 pty
 pulizzi
 pw
@@ -2666,6 +2673,7 @@ suseconds
 sv
 svc
 svcadm
+svcs
 svn
 sw
 symlink
@@ -2769,6 +2777,7 @@ ul
 un
 uname
 uncomment
+unconfigure
 unconfigured
 undefine
 undervoltage
