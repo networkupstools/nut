@@ -59,7 +59,6 @@ jobs:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
-            PATH="/usr/local/opt/ccache/libexec:$PATH" \
             BUILD_TYPE=default-all-errors \
             CFLAGS="-std=gnu17 -Wno-poison-system-directories -Wno-deprecated-declarations" \
             CXXFLAGS="-std=gnu++17 -Wno-poison-system-directories" \
