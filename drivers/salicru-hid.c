@@ -6,6 +6,7 @@
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *  2021 Francois Lacroix <xbgmsharp@gmail.com>
+ *  2022 Abel Gomez <abel@gomez.llana.me>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -49,6 +50,9 @@ static usb_device_id_t salicru_usb_device_table[] = {
 	/* Salicru SPS 850 HOME per https://github.com/networkupstools/nut/pull/1199 */
 	/* https://www.salicru.com/sps-home.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
+  /* Salicru SPS 850 ADV T, see https://github.com/networkupstools/nut/issues/1416 */
+  /* https://www.salicru.com/sps-850-adv-t.html */
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0302), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
