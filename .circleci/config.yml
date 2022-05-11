@@ -50,8 +50,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.ENV_NAME }}
-            - ccache-master-{{ arch }}-{{ .Environment.ENV_NAME }}
+            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
 #      - run:
 #          name: "check shell"
@@ -75,7 +75,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.ENV_NAME }}
+          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
