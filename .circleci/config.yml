@@ -101,6 +101,8 @@ jobs:
 workflows:
   xcode-workflow:
     jobs:
+      # Note: while "ccache" lists hordes of symlinks to gcc-XXX versions,
+      # in practice these toolkits are not installed (by default)
       - osx-xcode:
           name: "gnu17-clang-xcode12_5_1"
           XCODE_VER: "12.5.1"
@@ -109,14 +111,21 @@ workflows:
           CC_STDVER: "-std=gnu17"
           CXX_STDVER: "-std=gnu++17"
       - osx-xcode:
-          name: "gnu11-gcc10-xcode12_5_1"
-          CC: "gcc-10"
-          CXX: "g++-10"
+          name: "c17-clang-xcode12_5_1"
+          XCODE_VER: "12.5.1"
+          CC: "clang"
+          CXX: "clang++"
+          CC_STDVER: "-std=c17"
+          CXX_STDVER: "-std=c++17"
+      - osx-xcode:
+          name: "gnu11-gcc-xcode12_5_1"
+          CC: "gcc"
+          CXX: "g++"
           CC_STDVER: "-std=gnu11"
           CXX_STDVER: "-std=gnu++11"
       - osx-xcode:
-          name: "c99-cxx11-gcc5-xcode12_5_1"
-          CC: "gcc-5"
-          CXX: "g++-5"
+          name: "c99-cxx11-gcc-xcode12_5_1"
+          CC: "gcc"
+          CXX: "g++"
           CC_STDVER: "-std=c99"
           CXX_STDVER: "-std=c++11"
