@@ -33,6 +33,9 @@ jobs:
       BUILD_TYPE:
         type: string
         default: "default-all-errors"
+      CI_BUILDDIR:
+        type: string
+        default: "" # e.g. "obj" for out-of-tree build tests
 
     environment:
       CC: << parameters.CC >>
@@ -40,6 +43,7 @@ jobs:
       CC_STDVER: << parameters.CC_STDVER >>
       CXX_STDVER: << parameters.CXX_STDVER >>
       BUILD_TYPE: << parameters.BUILD_TYPE >>
+      CI_BUILDDIR: << parameters.CI_BUILDDIR >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -136,6 +140,8 @@ workflows:
           CXX: "g++"
           CC_STDVER: "-std=gnu11"
           CXX_STDVER: "-std=gnu++11"
+          # Try an out-of-tree build:
+          CI_BUILDDIR: "obj"
       - osx-xcode:
           name: "c99-cxx11-gcc-xcode12_5_1"
           CC: "gcc"
