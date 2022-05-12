@@ -228,6 +228,16 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
 
+        # Some workers (presumably where several executors or separate
+        # Jenkins agents) are enabled randomly fail NIT tests, once in
+        # a hundred runs or so. This option allows isolated workers to
+        # proclaim they are safe places to "make check-NIT" (and we can
+        # see if that is true, over time).
+        "NUT_BUILD_CAPS=NIT=no")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=no ;;
+        "NUT_BUILD_CAPS=NIT"|"NUT_BUILD_CAPS=NIT=yes")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
@@ -812,7 +822,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    CONFIG_OPTS+=("--enable-check-NIT=no")
+    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+        CONFIG_OPTS+=("--enable-check-NIT")
+    else
+        echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
+        CONFIG_OPTS+=("--disable-check-NIT")
+    fi
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
