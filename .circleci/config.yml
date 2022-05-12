@@ -93,10 +93,13 @@ jobs:
       # and verifying that the compiler supports it?
       # TODO: Relocate or address -Wno-deprecated-declarations (reported for
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
+      # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
+      # do not have a problem with it.
       - run:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
+            CANBUILD_NIT_TESTS=yes \
             CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
             CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
             LDFLAGS="-L/usr/local/lib" \
