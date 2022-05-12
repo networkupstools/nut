@@ -144,3 +144,7 @@ workflows:
           CXX_STDVER: "-std=c++11"
           # Try usual and distchecked build:
           BUILD_TYPE: "default"
+      - osx-xcode:
+          name: "fightwarn-all-xcode12_5_1"
+          # Run "default-all-errors" with both compiler families:
+          BUILD_TYPE: "fightwarn-all"
