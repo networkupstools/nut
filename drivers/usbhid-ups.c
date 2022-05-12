@@ -116,6 +116,11 @@ typedef enum {
  #define ERROR_TIMEOUT -ETIMEDOUT
  #define ERROR_OVERFLOW -EOVERFLOW
  #define ERROR_PIPE -EPIPE
+ #define ERROR_NO_MEM -ENOMEM
+ #define ERROR_INVALID_PARAM -EINVAL
+ #define ERROR_INTERRUPTED -EINTR
+ #define ERROR_NOT_SUPPORTED -ENOSYS
+ #define ERROR_OTHER -ERANGE
 #else /* for libusb 1.0 */
  #define ERROR_BUSY	LIBUSB_ERROR_BUSY
  #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
@@ -125,6 +130,11 @@ typedef enum {
  #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
  #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
  #define ERROR_PIPE LIBUSB_ERROR_PIPE
+ #define ERROR_NO_MEM LIBUSB_ERROR_NO_MEM
+ #define ERROR_INVALID_PARAM LIBUSB_ERROR_INVALID_PARAM
+ #define ERROR_INTERRUPTED LIBUSB_ERROR_INTERRUPTED
+ #define ERROR_NOT_SUPPORTED LIBUSB_ERROR_NOT_SUPPORTED
+ #define ERROR_OTHER LIBUSB_ERROR_OTHER
 #endif
 
 /* pointer to the active subdriver object (changed in callback() function) */
@@ -878,10 +888,11 @@ void upsdrv_updateinfo(void)
 		case ERROR_NO_DEVICE: /* No such device */
 		case ERROR_ACCESS:    /* Permission denied */
 		case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-		case -ENXIO:		/* No such device or address */
+#if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
+		case -ENXIO:		    /* No such device or address */
 #endif
 		case ERROR_NOT_FOUND: /* No such file or directory */
+		case ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
@@ -1487,10 +1498,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case ERROR_NO_DEVICE: /* No such device */
 		case ERROR_ACCESS:    /* Permission denied */
 		case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-		case -ENXIO:		/* No such device or address */
+#if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
+		case -ENXIO:		    /* No such device or address */
 #endif
 		case ERROR_NOT_FOUND: /* No such file or directory */
+		case ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
@@ -1510,6 +1522,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
+		   upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
 			continue;
 		}
 
