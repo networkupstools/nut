@@ -30,12 +30,16 @@ jobs:
       CXX_STDVER:
         type: string
         default: "" # e.g. "-std=gnu++17"
+      BUILD_TYPE:
+        type: string
+        default: "default-all-errors"
 
     environment:
       CC: << parameters.CC >>
       CXX: << parameters.CXX >>
       CC_STDVER: << parameters.CC_STDVER >>
       CXX_STDVER: << parameters.CXX_STDVER >>
+      BUILD_TYPE: << parameters.BUILD_TYPE >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -89,7 +93,6 @@ jobs:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
-            BUILD_TYPE=default-all-errors \
             CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
             CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
             LDFLAGS="-L/usr/local/lib" \
