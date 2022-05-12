@@ -192,6 +192,7 @@ usb:v2E66p0201*
 usb:v2E66p0202*
 usb:v2E66p0203*
 usb:v2E66p0300*
+usb:v2E66p0302*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Salicru
 
