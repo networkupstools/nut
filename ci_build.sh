@@ -58,7 +58,11 @@ case "$BUILD_TYPE" in
     fightwarn-clang)
         CC="clang"
         CXX="clang++"
-        CPP="clang-cpp"
+        if (command -v clang-cpp) >/dev/null 2>/dev/null ; then
+            CPP="clang-cpp"
+        else
+            CPP="clang -E"
+        fi
         BUILD_TYPE=fightwarn
         ;;
 esac
@@ -227,6 +231,16 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=no ;;
         "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
+
+        # Some workers (presumably where several executors or separate
+        # Jenkins agents) are enabled randomly fail NIT tests, once in
+        # a hundred runs or so. This option allows isolated workers to
+        # proclaim they are safe places to "make check-NIT" (and we can
+        # see if that is true, over time).
+        "NUT_BUILD_CAPS=NIT=no")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=no ;;
+        "NUT_BUILD_CAPS=NIT"|"NUT_BUILD_CAPS=NIT=yes")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=yes ;;
 
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
@@ -582,7 +596,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -728,10 +742,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ -n "$CPP" ] ; then
-        [ -x "$CPP" ] && export CPP
+        # Note: can be a multi-token name like "clang -E" or just not a full pathname
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
         if is_gnucc "cpp" ; then
             CPP=cpp && export CPP
+        else
+            case "$COMPILER_FAMILY" in
+                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            esac
         fi
     fi
 
@@ -812,7 +831,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    CONFIG_OPTS+=("--enable-check-NIT=no")
+    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+        CONFIG_OPTS+=("--enable-check-NIT")
+    else
+        echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
+        CONFIG_OPTS+=("--disable-check-NIT")
+    fi
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
