@@ -58,7 +58,11 @@ case "$BUILD_TYPE" in
     fightwarn-clang)
         CC="clang"
         CXX="clang++"
-        CPP="clang-cpp"
+        if (command -v clang-cpp) >/dev/null 2>/dev/null ; then
+            CPP="clang-cpp"
+        else
+            CPP="clang -E"
+        fi
         BUILD_TYPE=fightwarn
         ;;
 esac
@@ -592,7 +596,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -738,10 +742,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ -n "$CPP" ] ; then
-        [ -x "$CPP" ] && export CPP
+        # Note: can be a multi-token name like "clang -E" or just not a full pathname
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
         if is_gnucc "cpp" ; then
             CPP=cpp && export CPP
+        else
+            case "$COMPILER_FAMILY" in
+                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            esac
         fi
     fi
 
