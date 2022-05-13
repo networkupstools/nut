@@ -36,6 +36,9 @@ jobs:
       CI_BUILDDIR:
         type: string
         default: "" # e.g. "obj" for out-of-tree build tests
+      BREW_MORE:
+        type: string
+        default: "" # e.g. "avahi" for all-driver tests
 
     environment:
       CC: << parameters.CC >>
@@ -44,6 +47,7 @@ jobs:
       CXX_STDVER: << parameters.CXX_STDVER >>
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
+      BREW_MORE: << parameters.BREW_MORE >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -66,7 +70,7 @@ jobs:
           name: "homebrew"
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
-            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl #binutils
+            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl $BREW_MORE #binutils
 
 #      - run:
 #          name: "homebrew-libtool"
