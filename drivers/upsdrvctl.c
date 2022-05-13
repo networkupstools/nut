@@ -199,6 +199,9 @@ static void stop_driver(const ups_t *ups)
 		for (i = 0; i < 5 ; i++) {
 			if (sendsignalfn(pidfn, 0) != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+				// While a TERMinated driver cleans up,
+				// a stuck and KILLed one does not, so:
+				unlink(pidfn);
 				return;
 			}
 			sleep(1);
