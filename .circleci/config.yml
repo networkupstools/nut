@@ -141,6 +141,7 @@ workflows:
           CXX_STDVER: "-std=c++17"
           # Try all drivers, and a distcheck:
           BUILD_TYPE: "default-alldrv"
+          BREW_MORE: "avahi powerman"
       - osx-xcode:
           name: "gnu11-gcc-xcode12_5_1-out-of-tree"
           CC: "gcc"
