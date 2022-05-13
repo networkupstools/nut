@@ -113,6 +113,13 @@ jobs:
           name: "ccache stats after build"
           command: ccache -s || true
 
+      # NOTE: Detailed key name allows every scenario to only track its
+      # own ccache objects, which makes sense for different compilers
+      # and their command-line flags which make an object unique.
+      # However if we were to build many scenarios with overlapping
+      # settings (e.g. same C standards with same compilers), it could
+      # be beneficial to instead share the cache between jobs; more so
+      # while we are on free CircleCI tier and run them sequentially.
       - save_cache:
           paths:
             - ~/.ccache
