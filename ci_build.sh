@@ -154,6 +154,9 @@ esac
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
 
+# This is where many symlinks like "gcc" => "../bin/ccache" reside:
+[ -n "$CI_CCACHE_SYMLINKDIR" ] || CI_CCACHE_SYMLINKDIR="/usr/lib/ccache"
+
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
@@ -352,6 +355,17 @@ configure_nut() {
         CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
     else
         CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
+    fi
+
+    # Note: maintainer-clean checks remove this, and then some systems'
+    # build toolchains noisily complain about missing LD path candidate
+    if [ -n "$BUILD_PREFIX" ]; then
+        # tmp/lib/
+        mkdir -p "$BUILD_PREFIX"/lib
+    fi
+    if [ -n "$INST_PREFIX" ]; then
+        # .inst/
+        mkdir -p "$INST_PREFIX"
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
@@ -585,7 +599,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -d "./.inst/" ]; then
         rm -rf ./.inst/
     fi
-    mkdir -p tmp/ .inst/
+
+    # Pre-create locations; tmp/lib in particular to avoid (on MacOS xcode):
+    #   ld: warning: directory not found for option '-L/Users/distiller/project/tmp/lib'
+    # Note that maintainer-clean checks can remove these directory trees,
+    # so we re-create them just in case in the configure_nut() method too.
+    mkdir -p tmp/lib .inst/
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
@@ -603,12 +622,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         $CXX --version || true
     fi
 
-    PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
+    PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
     CCACHE_PATH="$PATH"
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
@@ -948,10 +967,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
-        PATH="/usr/lib/ccache:$PATH"
+        PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
         export PATH
         if [ -n "$CC" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
@@ -961,13 +980,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CC="/usr/lib/ccache/`basename "$CC"`"
+            CC="${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`"
           else
             CC="ccache $CC"
           fi
         fi
         if [ -n "$CXX" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
@@ -977,12 +996,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CXX="/usr/lib/ccache/`basename "$CXX"`"
+            CXX="${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`"
           else
             CXX="ccache $CXX"
           fi
         fi
-        if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
+        if [ -n "$CPP" ] && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
                 */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
@@ -992,7 +1011,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CPP="/usr/lib/ccache/`basename "$CPP"`"
+            CPP="${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`"
         else
             : # CPP="ccache $CPP"
         fi

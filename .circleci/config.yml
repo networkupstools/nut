@@ -1,0 +1,139 @@
+# Content modeled after settings tested with .travis.yml
+# TODO: Implement a similar envvar-based matrix
+#   https://circleci.com/docs/2.0/env-vars/#circleci-environment-variable-descriptions
+# TODO: save_cache installed brew dependencies? => seems not possible to reliably cache/restore outside user homedir
+# TODO: Windows eventually?
+# TODO: yaml-aliases to define steps once? => https://circleci.com/blog/decrease-your-build-times-by-running-jobs-in-parallel-with-workflows/
+
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+#      https://circleci.com/docs/2.0/configuration-reference/#parameters-requires-version-21
+jobs:
+  osx-xcode:
+    parameters:
+      XCODE_VER:
+        type: string
+        default: "12.5.1"
+      CC:
+        type: string
+        default: "" # e.g. "clang"
+      CXX:
+        type: string
+        default: "" # e.g. "clang++"
+      CC_STDVER:
+        type: string
+        default: "" # e.g. "-std=gnu17"
+      CXX_STDVER:
+        type: string
+        default: "" # e.g. "-std=gnu++17"
+
+    environment:
+      CC: << parameters.CC >>
+      CXX: << parameters.CXX >>
+      CC_STDVER: << parameters.CC_STDVER >>
+      CXX_STDVER: << parameters.CXX_STDVER >>
+
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    macos:
+      xcode: << parameters.XCODE_VER >>
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+
+#      - run:
+#          name: "check shell"
+#          command: /usr/bin/env bash --version || true; command -v bash || true
+
+      # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
+      # Brew brings /usr/local/bin/bash 5.x as of this writing
+      # TODO: Are Binutils needed?
+      - run:
+          name: "homebrew"
+          command: |-
+            HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
+            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl #binutils
+
+#      - run:
+#          name: "homebrew-libtool"
+#          command: |-
+#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+#            brew unlink libtool && brew link libtool
+#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+
+      - restore_cache:
+          keys:
+            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+
+#      - run:
+#          name: "check shell"
+#          command: /usr/bin/env bash --version || true; command -v bash || true
+
+      - run:
+          name: "ccache stats before build"
+          command: ccache -s || true
+
+      # TODO: Move -Wno-poison-system-directories into configure.ac to set
+      # optionally just on detected cross-build attempts (*X*code after all)
+      # and verifying that the compiler supports it?
+      # TODO: Relocate or address -Wno-deprecated-declarations (reported for
+      # uses of sem_init() and sem_destroy() in nut-scanner.c)
+      - run:
+          name: "ci_build"
+          command: |-
+            CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
+            BUILD_TYPE=default-all-errors \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
+            LDFLAGS="-L/usr/local/lib" \
+            ./ci_build.sh
+
+      - run:
+          name: "ccache stats after build"
+          command: ccache -s || true
+
+      - save_cache:
+          paths:
+            - ~/.ccache
+          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  xcode-workflow:
+    jobs:
+      # Note: while "ccache" lists hordes of symlinks to gcc-XXX versions,
+      # in practice these toolkits are not installed (by default)
+      - osx-xcode:
+          name: "gnu17-clang-xcode12_5_1"
+          XCODE_VER: "12.5.1"
+          CC: "clang"
+          CXX: "clang++"
+          CC_STDVER: "-std=gnu17"
+          CXX_STDVER: "-std=gnu++17"
+      - osx-xcode:
+          name: "c17-clang-xcode12_5_1"
+          XCODE_VER: "12.5.1"
+          CC: "clang"
+          CXX: "clang++"
+          CC_STDVER: "-std=c17"
+          CXX_STDVER: "-std=c++17"
+      - osx-xcode:
+          name: "gnu11-gcc-xcode12_5_1"
+          CC: "gcc"
+          CXX: "g++"
+          CC_STDVER: "-std=gnu11"
+          CXX_STDVER: "-std=gnu++11"
+      - osx-xcode:
+          name: "c99-cxx11-gcc-xcode12_5_1"
+          CC: "gcc"
+          CXX: "g++"
+          CC_STDVER: "-std=c99"
+          CXX_STDVER: "-std=c++11"
