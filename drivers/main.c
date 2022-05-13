@@ -890,6 +890,28 @@ int main(int argc, char **argv)
 			sleep(5);
 		}
 
+		if (i > 0) {
+			struct stat	st;
+			if (stat(buffer, &st) == 0) {
+				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", buffer);
+				if (sendsignalfn(buffer, SIGKILL) == 0) {
+					sleep(5);
+					if (sendsignalfn(buffer, 0) == 0) {
+						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
+						/* TODO: Should we writepid() below in this case?
+						 * Or if driver init fails, restore the old content
+						 * for that running sibling? */
+					} else {
+						upslogx(LOG_WARNING, "Could not signal the other driver after kill, either its process is finally dead or owned by another user!");
+					}
+				} else {
+					upslogx(LOG_WARNING, "Could not signal the other driver, either its process is dead or owned by another user!");
+				}
+				/* Note: PID file would remain here, but invalid
+				 * as far as further killers would be concerned */
+			}
+		}
+
 		/* Only write pid if we're not just dumping data, for discovery */
 		if (!dump_data) {
 			pidfn = xstrdup(buffer);
