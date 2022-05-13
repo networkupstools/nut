@@ -126,14 +126,14 @@ workflows:
       # Note: while "ccache" lists hordes of symlinks to gcc-XXX versions,
       # in practice these toolkits are not installed (by default)
       - osx-xcode:
-          name: "gnu17-clang-xcode12_5_1"
+          name: "gnu17-clang-xcode12_5_1-default-all-errors"
           XCODE_VER: "12.5.1"
           CC: "clang"
           CXX: "clang++"
           CC_STDVER: "-std=gnu17"
           CXX_STDVER: "-std=gnu++17"
       - osx-xcode:
-          name: "c17-clang-xcode12_5_1"
+          name: "c17-clang-xcode12_5_1-alldrv"
           XCODE_VER: "12.5.1"
           CC: "clang"
           CXX: "clang++"
@@ -142,7 +142,7 @@ workflows:
           # Try all drivers, and a distcheck:
           BUILD_TYPE: "default-alldrv"
       - osx-xcode:
-          name: "gnu11-gcc-xcode12_5_1"
+          name: "gnu11-gcc-xcode12_5_1-out-of-tree"
           CC: "gcc"
           CXX: "g++"
           CC_STDVER: "-std=gnu11"
@@ -150,7 +150,7 @@ workflows:
           # Try an out-of-tree build:
           CI_BUILDDIR: "obj"
       - osx-xcode:
-          name: "c99-cxx11-gcc-xcode12_5_1"
+          name: "c99-cxx11-gcc-xcode12_5_1-default-distcheck"
           CC: "gcc"
           CXX: "g++"
           CC_STDVER: "-std=c99"
@@ -158,6 +158,6 @@ workflows:
           # Try usual and distchecked build:
           BUILD_TYPE: "default"
       - osx-xcode:
-          name: "fightwarn-all-xcode12_5_1"
+          name: "stdDefault-xcode12_5_1-fightwarn-all"
           # Run "default-all-errors" with both compiler families:
           BUILD_TYPE: "fightwarn-all"
