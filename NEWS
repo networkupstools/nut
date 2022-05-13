@@ -29,6 +29,10 @@ https://github.com/networkupstools/nut/milestone/8
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.7.5
 
+ - Regular CI coverage for NUT codebase enhanced with CircleCI running some
+   scenarios on MacOS, might add Windows in the future. Fixed some build
+   issues for MacOS that had crept into NUT v2.8.0 release [#1415, #1421]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
