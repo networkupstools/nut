@@ -133,16 +133,6 @@ workflows:
           CC_STDVER: "-std=gnu17"
           CXX_STDVER: "-std=gnu++17"
       - osx-xcode:
-          name: "c17-clang-xcode12_5_1-alldrv"
-          XCODE_VER: "12.5.1"
-          CC: "clang"
-          CXX: "clang++"
-          CC_STDVER: "-std=c17"
-          CXX_STDVER: "-std=c++17"
-          # Try all drivers, and a distcheck:
-          BUILD_TYPE: "default-alldrv"
-          BREW_MORE: "avahi powerman"
-      - osx-xcode:
           name: "gnu11-gcc-xcode12_5_1-out-of-tree"
           CC: "gcc"
           CXX: "g++"
@@ -162,3 +152,16 @@ workflows:
           name: "stdDefault-xcode12_5_1-fightwarn-all"
           # Run "default-all-errors" with both compiler families:
           BUILD_TYPE: "fightwarn-all"
+
+### This does not work due to missing dependencies built for MacOS in homebrew:
+### TODO? Evaluate other packagers (MacPorts, fink...)?
+#      - osx-xcode:
+#          name: "c17-clang-xcode12_5_1-alldrv"
+#          XCODE_VER: "12.5.1"
+#          CC: "clang"
+#          CXX: "clang++"
+#          CC_STDVER: "-std=c17"
+#          CXX_STDVER: "-std=c++17"
+#          # Try all drivers, and a distcheck:
+#          BUILD_TYPE: "default-alldrv"
+#          BREW_MORE: "avahi powerman"
