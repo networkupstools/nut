@@ -879,12 +879,12 @@ int main(int argc, char **argv)
 				break;
 			}
 
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
+
 			if (sendsignalfn(buffer, SIGTERM) != 0) {
 				/* Can't send signal to PID, assume invalid file */
 				break;
 			}
-
-			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
 
 			/* Allow driver some time to quit */
 			sleep(5);
