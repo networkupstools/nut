@@ -170,6 +170,11 @@
  #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
  #define ERROR_PIPE			LIBUSB_ERROR_PIPE
  #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
+ #define ERROR_NO_MEM   LIBUSB_ERROR_NO_MEM
+ #define ERROR_INVALID_PARAM  LIBUSB_ERROR_INVALID_PARAM
+ #define ERROR_INTERRUPTED    LIBUSB_ERROR_INTERRUPTED
+ #define ERROR_NOT_SUPPORTED  LIBUSB_ERROR_NOT_SUPPORTED
+ #define ERROR_OTHER          LIBUSB_ERROR_OTHER
 
  /* Functions, including range-checks to convert data types of the two APIs.
   * Follows an example from libusb-1.0 headers that liberally cast int args
