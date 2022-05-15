@@ -405,10 +405,10 @@ int upscli_init(int certverify, const char *certpath,
 	PK11_SetPasswordFunc(nss_password_callback);
 
 	if (certpath) {
-		upslogx(LOG_INFO, "Init SSL with cerificate database located at %s", certpath);
+		upslogx(LOG_INFO, "Init SSL with certificate database located at %s", certpath);
 		status = NSS_Init(certpath);
 	} else {
-		upslogx(LOG_NOTICE, "Init SSL without certificate database");
+		upsdebugx(1, "Init SSL without certificate database");
 		status = NSS_NoDB_Init(NULL);
 	}
 	if (status != SECSuccess) {
