@@ -77,7 +77,12 @@ you may need to address some nuances:
   failure-prone in 2.7.4 and earlier releases
 ======
 
-For intensive rebuilds, `ccache` is recommended.
+For intensive rebuilds, `ccache` is recommended. Note that instructions
+below detail how to provide its directory with symlinks as `/usr/lib/ccache`
+which is not the default case in all OS distributions. Recent versions of
+the NUT `ci_build.sh` script allow to override the location by using the
+`CI_CCACHE_SYMLINKDIR` environment variable, which is cumbersome and only
+recommended for build agents with immutable system areas, etc.
 
 
 Build prerequisites to make NUT from scratch on various Operating Systems
@@ -846,3 +851,32 @@ library and binary paths can be architecture bitness-dependent):
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
+
+
+MacOS with homebrew
+~~~~~~~~~~~~~~~~~~~
+
+Some CI tests happen on MacOS using a mix of their default xcode environment
+for compilers, and Homebrew community packaging for dependencies (including
+`bash` since the system one is too old for `ci_build.sh` script syntax).
+
+See `.travis.yml` and `.circleci/config.yml` for practical details of the
+setup.
+
+Currently known dependencies for basic build include:
+----
+# Optional for a quick spin:
+:; HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE
+
+# Required:
+:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl
+----
+
+Note that ccache is installed in a different location than expected by default
+in the `ci_build.sh` script, so if your system allows to add the symbolic link
+to `/usr/local/opt/ccache/libexec` as `/usr/lib/ccache` -- please do so as the
+easiest way out. Alternatively, to prepare building sessions with `ci_build.sh`
+you can:
+----
+:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
+----

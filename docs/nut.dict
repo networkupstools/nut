@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2956 utf-8
+personal_ws-1.1 en 2971 utf-8
 AAS
 ABI
 ACFAIL
@@ -170,6 +170,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CircleCI
 CLANGVER
 CLI
 CLOCAL
@@ -425,6 +426,7 @@ HIDIOCINITREPORT
 HITRANS
 HMAC
 HNX
+HOMEBREW
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -447,6 +449,7 @@ HiFreq
 HighBatt
 Hlavinka
 Holger
+Homebrew
 Hoogervorst
 Hough
 Hunnox
@@ -1068,6 +1071,7 @@ STARTTLS
 STB
 STESTI
 STI
+STIME
 STO
 STP
 SUNWlibusbugen
@@ -1078,6 +1082,7 @@ SUSE
 SX
 SXI
 SXL
+SYMLINKDIR
 SafeNet
 Salicru
 Salvia
@@ -1638,6 +1643,7 @@ cr
 crestfactor
 crlf
 cron
+crontab
 crossbuild
 crt
 crw
@@ -1690,6 +1696,7 @@ deschis
 descr
 desde
 dev
+devctl
 devd
 devel
 devscan
@@ -1752,6 +1759,7 @@ echoback
 eco
 edb
 edl
+ef
 ei
 el
 emacs
@@ -1899,6 +1907,7 @@ hidtypes
 hidups
 highbattery
 highfrequency
+homebrew
 hoster
 hostname
 hostnames
@@ -1957,6 +1966,7 @@ initinfo
 initscripts
 initups
 inline
+innotech
 installcheck
 instcmd
 instcmds
@@ -2425,7 +2435,9 @@ proc
 productid
 prog
 prtconf
+ps
 psu
+pts
 pty
 pulizzi
 pw
@@ -2666,6 +2678,7 @@ suseconds
 sv
 svc
 svcadm
+svcs
 svn
 sw
 symlink
@@ -2769,6 +2782,7 @@ ul
 un
 uname
 uncomment
+unconfigure
 unconfigured
 undefine
 undervoltage
@@ -2921,6 +2935,7 @@ xZZZZ
 xa
 xaabbcc
 xcalloc
+xcode
 xd
 xe
 xferdelay
