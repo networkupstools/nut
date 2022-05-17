@@ -30,3 +30,4 @@ CLEANFILES = winevent.rc winevent.o winevent.h
 
 endif HAVE_MINGW_RESGEN
 
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
