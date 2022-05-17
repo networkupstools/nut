@@ -47,7 +47,7 @@
 	#include <sslerr.h>
 	#include <sslproto.h>
 #endif /* WITH_NSS */
-Hchar	*certfile = NULL;
+char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
 
