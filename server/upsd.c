@@ -31,26 +31,27 @@
 #include "upsconf.h"
 
 #ifndef WIN32
-#include <sys/un.h>
-#include <sys/socket.h>
-#include <netdb.h>
+# include <sys/un.h>
+# include <sys/socket.h>
+# include <netdb.h>
 
-#ifdef HAVE_SYS_SIGNAL_H
-#include <sys/signal.h>
-#endif
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
+# ifdef HAVE_SYS_SIGNAL_H
+#  include <sys/signal.h>
+# endif
+# ifdef HAVE_SIGNAL_H
+#  include <signal.h>
 /* #include <poll.h> */
+# endif
 #else
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
-#include <ws2tcpip.h>
-#include <wspiapi.h>
+# include <ws2tcpip.h>
+# include <wspiapi.h>
 /* This override network system calls to adapt to Windows specificity */
-#define W32_NETWORK_CALL_OVERRIDE
-#include "wincompat.h"
-#undef W32_NETWORK_CALL_OVERRIDE
-#include <getopt.h>
+# define W32_NETWORK_CALL_OVERRIDE
+# include "wincompat.h"
+# undef W32_NETWORK_CALL_OVERRIDE
+# include <getopt.h>
 #endif
 
 #include "user.h"
@@ -1057,7 +1058,6 @@ static void set_reload_flag(int sig)
 /* service requests and check on new data */
 static void mainloop(void)
 {
-	int     nfds = 0;
 #ifndef WIN32
 	int	ret;
 	nfds_t	i, nfds = 0;
