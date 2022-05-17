@@ -1045,7 +1045,6 @@ int nut_uuid_v4(char *uuid_str)
 
 static void set_exit_flag(int sig)
 {
-	NUT_UNUSED_VARIABLE(sig);
 	exit_flag = sig;
 }
 
