@@ -207,8 +207,9 @@ void background(void)
 #else /* WIN32 */
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
-	upslogx(LOG_INFO, "Startup successful");
 #endif
+
+	upslogx(LOG_INFO, "Startup successful");
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
