@@ -226,6 +226,7 @@ static int sstate_connect(void)
 		return -1;
 	}
 
+	/* continued below... */
 #else
 HANDLE sstate_connect(void)
 {
@@ -270,18 +271,20 @@ HANDLE sstate_connect(void)
 	/* Start a read IO so we could wait on the event associated with it */
 	ReadFile(fd,read_buf,sizeof(read_buf)-1,NULL,&(read_overlapped)); /*-1 to be sure to have a trailling 0 */
 #endif
-		pconf_init(&sock_ctx, NULL);
 
-		time(&last_heard);
+	/* sstate_connect() continued for both platforms: */
+	pconf_init(&sock_ctx, NULL);
 
-		dumpdone = 0;
+	time(&last_heard);
 
-		/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-		dstate_setinfo("ups.status", "WAIT");
+	dumpdone = 0;
 
-		upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
-		return fd;
-	}
+	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
+	dstate_setinfo("ups.status", "WAIT");
+
+	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
+	return fd;
+}
 
 
 static void sstate_disconnect(void)
