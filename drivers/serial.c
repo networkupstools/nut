@@ -333,28 +333,12 @@ int ser_close(TYPE_FD fd, const char *port)
 	return 0;
 }
 
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_send_char(int fd, unsigned char ch)
-#else
-ssize_t ser_send_char(HANDLE fd, unsigned char ch)
-#endif
-=======
-int ser_send_char(TYPE_FD fd, unsigned char ch)
->>>>>>> First implementation of termios functions
+ssize_t ser_send_char(TYPE_FD fd, unsigned char ch)
 {
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
-<<<<<<< HEAD
-#ifndef WIN32
-static ssize_t send_formatted(int fd, const char *fmt, va_list va, useconds_t d_usec)
-#else
-static ssize_t send_formatted(HANDLE fd, const char *fmt, va_list va, useconds_t d_usec)
-#endif
-=======
-static int send_formatted(TYPE_FD fd, const char *fmt, va_list va, unsigned long d_usec)
->>>>>>> First implementation of termios functions
+static ssize_t send_formatted(TYPE_FD fd, const char *fmt, va_list va, useconds_t d_usec)
 {
 	int	ret;
 	char	buf[LARGEBUF];
@@ -381,15 +365,7 @@ static int send_formatted(TYPE_FD fd, const char *fmt, va_list va, unsigned long
 }
 
 /* send the results of the format string with d_usec delay after each char */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_send_pace(int fd, useconds_t d_usec, const char *fmt, ...)
-#else
-ssize_t ser_send_pace(HANDLE fd, useconds_t d_usec, const char *fmt, ...)
-#endif
-=======
-int ser_send_pace(TYPE_FD fd, unsigned long d_usec, const char *fmt, ...)
->>>>>>> First implementation of termios functions
+ssize_t ser_send_pace(TYPE_FD fd, useconds_t d_usec, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -416,15 +392,7 @@ int ser_send_pace(TYPE_FD fd, unsigned long d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_send(int fd, const char *fmt, ...)
-#else
-ssize_t ser_send(HANDLE fd, const char *fmt, ...)
-#endif
-=======
-int ser_send(TYPE_FD fd, const char *fmt, ...)
->>>>>>> First implementation of termios functions
+ssize_t ser_send(TYPE_FD fd, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -451,25 +419,13 @@ int ser_send(TYPE_FD fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
-#else
-ssize_t ser_send_buf(HANDLE fd, const void *buf, size_t buflen)
-#endif
-=======
-int ser_send_buf(TYPE_FD fd, const void *buf, size_t buflen)
->>>>>>> First implementation of termios functions
+ssize_t ser_send_buf(TYPE_FD fd, const void *buf, size_t buflen)
 {
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-<<<<<<< HEAD
-ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
-=======
-int ser_send_buf_pace(TYPE_FD fd, unsigned long d_usec, const void *buf,
->>>>>>> First implementation of termios functions
+ssize_t ser_send_buf_pace(TYPE_FD fd, useconds_t d_usec, const void *buf,
 	size_t buflen)
 {
 	ssize_t	ret = 0;
@@ -491,19 +447,7 @@ int ser_send_buf_pace(TYPE_FD fd, unsigned long d_usec, const void *buf,
 	return sent;
 }
 
-<<<<<<< HEAD
-	return sent;
-}
-#endif
-
-#ifndef WIN32
-ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
-#else
-ssize_t ser_get_char(HANDLE fd, void *ch, time_t d_sec, useconds_t d_usec)
-#endif
-=======
-int ser_get_char(TYPE_FD fd, void *ch, long d_sec, long d_usec)
->>>>>>> First implementation of termios functions
+ssize_t ser_get_char(TYPE_FD fd, void *ch, time_t d_sec, useconds_t d_usec)
 {
 	/* Per standard below, we can cast here, because required ranges are
 	 * effectively the same (and signed -1 for suseconds_t), and at most long:
@@ -512,15 +456,7 @@ int ser_get_char(TYPE_FD fd, void *ch, long d_sec, long d_usec)
 	return select_read(fd, ch, 1, d_sec, (suseconds_t)d_usec);
 }
 
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
-#else
-ssize_t ser_get_buf(HANDLE fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
-#endif
-=======
-int ser_get_buf(TYPE_FD fd, void *buf, size_t buflen, long d_sec, long d_usec)
->>>>>>> First implementation of termios functions
+ssize_t ser_get_buf(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	memset(buf, '\0', buflen);
 
@@ -528,15 +464,7 @@ int ser_get_buf(TYPE_FD fd, void *buf, size_t buflen, long d_sec, long d_usec)
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
-#else
-ssize_t ser_get_buf_len(HANDLE fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
-#endif
-=======
-int ser_get_buf_len(TYPE_FD fd, void *buf, size_t buflen, long d_sec, long d_usec)
->>>>>>> First implementation of termios functions
+ssize_t ser_get_buf_len(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	ssize_t	ret;
 	ssize_t	recv;
@@ -561,21 +489,9 @@ int ser_get_buf_len(TYPE_FD fd, void *buf, size_t buflen, long d_sec, long d_use
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line_alert(TYPE_FD fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch),
 	time_t d_sec, useconds_t d_usec)
-#else
-ssize_t ser_get_line_alert(HANDLE fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, const char *alertset, void handler(char ch),
-	time_t d_sec, useconds_t d_usec)
-#endif
-=======
-int ser_get_line_alert(TYPE_FD fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, const char *alertset, void handler(char ch), 
-	long d_sec, long d_usec)
->>>>>>> First implementation of termios functions
 {
 	ssize_t	i, ret;
 	char	tmp[64];
@@ -618,32 +534,14 @@ int ser_get_line_alert(TYPE_FD fd, void *buf, size_t buflen, char endchar,
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line(TYPE_FD fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, time_t d_sec, useconds_t d_usec)
-#else
-ssize_t ser_get_line(HANDLE fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, time_t d_sec, useconds_t d_usec)
-#endif
-=======
-int ser_get_line(TYPE_FD fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, long d_sec, long d_usec)
->>>>>>> First implementation of termios functions
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
 }
 
-<<<<<<< HEAD
-#ifndef WIN32
-ssize_t ser_flush_in(int fd, const char *ignset, int verbose)
-#else
-ssize_t ser_flush_in(HANDLE fd, const char *ignset, int verbose)
-#endif
-=======
-int ser_flush_in(TYPE_FD fd, const char *ignset, int verbose)
->>>>>>> First implementation of termios functions
+ssize_t ser_flush_in(TYPE_FD fd, const char *ignset, int verbose)
 {
 	ssize_t	ret, extra = 0;
 	char	ch;
