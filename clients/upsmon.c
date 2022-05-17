@@ -2430,6 +2430,14 @@ int main(int argc, char *argv[])
 
 	loadconfig();
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in upsmon.conf. Note that non-zero debug_min does not impact
+	 * foreground running mode.
+	 */
+	if (nut_debug_level_global > nut_debug_level)
+		nut_debug_level = nut_debug_level_global;
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+
 	if (checking_flag)
 		exit(check_pdflag());
 
