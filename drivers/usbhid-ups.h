@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include "config.h"
 #include "libhid.h"
-#include "libshut.h"
 
 extern hid_dev_handle_t	udev;
 extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should not be used */
