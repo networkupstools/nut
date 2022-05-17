@@ -658,7 +658,7 @@ static void exit_cleanup(void)
 #endif
 }
 
-void set_exit_flag(int sig)
+static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
