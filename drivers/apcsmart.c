@@ -35,9 +35,7 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
-#ifndef WIN32
-#define INVALID_HANDLE_VALUE -1
-#else
+#ifdef WIN32
 #define ECANCELED ERROR_CANCELLED
 #endif
 
@@ -580,7 +578,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 {
 	ssize_t ret;
 	errno = 0;
-	if (upsfd == INVALID_HANDLE_VALUE)
+	if (upsfd == ERROR_FD)
 		return 0;
 
 	ret = ser_send_char(upsfd, code);
