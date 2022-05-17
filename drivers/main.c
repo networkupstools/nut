@@ -1153,13 +1153,9 @@ int main(int argc, char **argv)
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
-<<<<<<< HEAD
 	/* however, avoid to "pollute" data dump output! */
 	if (!dump_data)
 		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
-=======
-	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
->>>>>>> More changes after rebase
 
 	exit(EXIT_SUCCESS);
 }
