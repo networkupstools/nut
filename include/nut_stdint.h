@@ -39,7 +39,6 @@
 #  include <stdint.h>
 #endif
 
-<<<<<<< HEAD
 #if defined HAVE_LIMITS_H
 #  include <limits.h>
 #endif
@@ -69,6 +68,4 @@
 # endif
 #endif /* format for size_t and ssize_t */
 
-=======
->>>>>>> Merge with trunk
 #endif	/* NUT_STDINT_H_SEEN */
