@@ -326,7 +326,6 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		usb_close(*handlep);
 #endif
 
-<<<<<<< HEAD
 #if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
