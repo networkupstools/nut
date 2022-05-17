@@ -27,6 +27,9 @@
 #ifndef NUT_LIBSHUT_H_SEEN
 #define NUT_LIBSHUT_H_SEEN 1
 
+#include "main.h"	/* for subdrv_info_t and TYPE_FD via "common.h" */
+#include "nut_stdint.h"	/* for uint16_t, size_t, PRIsize etc. */
+
 extern upsdrv_info_t comm_upsdrv_info;
 
 /* These typedefs are also named in usb-common.h (=> nut_libusb.h), adhering
