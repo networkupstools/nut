@@ -1360,4 +1360,9 @@ speed_t cfgetospeed(const struct termios *t)
 	return t->c_ospeed;
 }
 
+#else
+
+/* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
+extern int errno;
+
 #endif
