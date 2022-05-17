@@ -102,7 +102,7 @@
  * The MIN/MAX definitions here are primarily to generalize range-check
  * code (especially if anything is done outside the libraries).
  * FIXME: It may make sense to constrain the limits to lowest common
- * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+ * denominator that should fit all of libusb-0.1, libusb-1.0 and libshut,
  * so that any build of the practical (driver) code knows to not exceed
  * any use-case.
  */
@@ -374,7 +374,7 @@
  /* Structures */
  /* See detailed comments above, in libusb-1.0 definitions
   * FIXME: It may make sense to constrain the limits to lowest common
-  * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+  * denominator that should fit all of libusb-0.1, libusb-1.0 and libshut,
   * so that any build of the practical (driver) code knows to not exceed
   * any use-case.
   */
