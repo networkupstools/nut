@@ -34,7 +34,7 @@ dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
 if HAVE_WINDOWS_SOCKETS
   sbin_PROGRAMS += message
-endif !HAVE_WINDOWS_SOCKETS
+endif
 
 lib_LTLIBRARIES = libupsclient.la
 if HAVE_WINDOWS_SOCKETS
@@ -43,8 +43,8 @@ else
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
   lib_LTLIBRARIES += libnutclientstub.la
-endif !HAVE_CXX11
-endif !HAVE_WINDOWS_SOCKETS
+endif
+endif
 
 if WITH_DEV
  include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h nutclient.h nutclientmem.h
