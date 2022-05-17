@@ -669,7 +669,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 # endif
 		upsdebugx(2, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return 0;
-#endi/* WIN32 */
+#endif /* WIN32 */
 
 	case LIBUSB_ERROR_OTHER:     /** Other error */
 	default:                     /** Undetermined, log only */
