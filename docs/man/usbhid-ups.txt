@@ -157,7 +157,7 @@ The default value is 0 (in seconds)
 Note : for instance, it was found that Eaton MGE Ellipse Max 1500 FR ups firmware
 stops responding every few hours, which causes usbhid-ups driver to detect an
 insufficient memory error (ERROR_NO_MEM); in this case, trying to reconnect too
-early, sometimes lead the ups firmware to crash and turn load off immediatly !!!
+early, sometimes lead the ups firmware to crash and turn load off immediately !!!
 Setting this parameter to 30 seconds solve this problem. (20 seconds not enough)
 
 INSTALLATION
