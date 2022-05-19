@@ -235,7 +235,7 @@ void upsdrv_updateinfo(void)
 					memset(&datafile_stat, 0, sizeof(struct stat));
 					next_update = 1;
 				} else {
-					if (datafile_stat.st_mtim.tv_sec != fs.st_mtim.tv_sec) {
+					if (datafile_stat.st_mtime != fs.st_mtime) {
 						upsdebugx(2, "upsdrv_updateinfo: input file was already read once to the end, but changed later - re-reading");
 						/* updated file => retry ASAP */
 						next_update = 1;

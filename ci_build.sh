@@ -58,7 +58,11 @@ case "$BUILD_TYPE" in
     fightwarn-clang)
         CC="clang"
         CXX="clang++"
-        CPP="clang-cpp"
+        if (command -v clang-cpp) >/dev/null 2>/dev/null ; then
+            CPP="clang-cpp"
+        else
+            CPP="clang -E"
+        fi
         BUILD_TYPE=fightwarn
         ;;
 esac
@@ -154,6 +158,9 @@ esac
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
 
+# This is where many symlinks like "gcc" => "../bin/ccache" reside:
+[ -n "$CI_CCACHE_SYMLINKDIR" ] || CI_CCACHE_SYMLINKDIR="/usr/lib/ccache"
+
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
@@ -224,6 +231,16 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=no ;;
         "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
+
+        # Some workers (presumably where several executors or separate
+        # Jenkins agents) are enabled randomly fail NIT tests, once in
+        # a hundred runs or so. This option allows isolated workers to
+        # proclaim they are safe places to "make check-NIT" (and we can
+        # see if that is true, over time).
+        "NUT_BUILD_CAPS=NIT=no")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=no ;;
+        "NUT_BUILD_CAPS=NIT"|"NUT_BUILD_CAPS=NIT=yes")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=yes ;;
 
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
@@ -352,6 +369,17 @@ configure_nut() {
         CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
     else
         CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
+    fi
+
+    # Note: maintainer-clean checks remove this, and then some systems'
+    # build toolchains noisily complain about missing LD path candidate
+    if [ -n "$BUILD_PREFIX" ]; then
+        # tmp/lib/
+        mkdir -p "$BUILD_PREFIX"/lib
+    fi
+    if [ -n "$INST_PREFIX" ]; then
+        # .inst/
+        mkdir -p "$INST_PREFIX"
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
@@ -568,7 +596,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -585,7 +613,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -d "./.inst/" ]; then
         rm -rf ./.inst/
     fi
-    mkdir -p tmp/ .inst/
+
+    # Pre-create locations; tmp/lib in particular to avoid (on MacOS xcode):
+    #   ld: warning: directory not found for option '-L/Users/distiller/project/tmp/lib'
+    # Note that maintainer-clean checks can remove these directory trees,
+    # so we re-create them just in case in the configure_nut() method too.
+    mkdir -p tmp/lib .inst/
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
@@ -603,12 +636,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         $CXX --version || true
     fi
 
-    PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
+    PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
     CCACHE_PATH="$PATH"
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
     HAVE_CCACHE=no
-    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
+    if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" ; then
         HAVE_CCACHE=yes
     fi
     mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
@@ -709,10 +742,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ -n "$CPP" ] ; then
-        [ -x "$CPP" ] && export CPP
+        # Note: can be a multi-token name like "clang -E" or just not a full pathname
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
         if is_gnucc "cpp" ; then
             CPP=cpp && export CPP
+        else
+            case "$COMPILER_FAMILY" in
+                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            esac
         fi
     fi
 
@@ -793,7 +831,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    CONFIG_OPTS+=("--enable-check-NIT=no")
+    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+        CONFIG_OPTS+=("--enable-check-NIT")
+    else
+        echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
+        CONFIG_OPTS+=("--disable-check-NIT")
+    fi
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
@@ -948,10 +991,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
-        PATH="/usr/lib/ccache:$PATH"
+        PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
         export PATH
         if [ -n "$CC" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
@@ -961,13 +1004,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CC="/usr/lib/ccache/`basename "$CC"`"
+            CC="${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`"
           else
             CC="ccache $CC"
           fi
         fi
         if [ -n "$CXX" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
@@ -977,12 +1020,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CXX="/usr/lib/ccache/`basename "$CXX"`"
+            CXX="${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`"
           else
             CXX="ccache $CXX"
           fi
         fi
-        if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
+        if [ -n "$CPP" ] && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
                 */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
@@ -992,7 +1035,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                     ;;
             esac
-            CPP="/usr/lib/ccache/`basename "$CPP"`"
+            CPP="${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`"
         else
             : # CPP="ccache $CPP"
         fi
