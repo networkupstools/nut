@@ -149,16 +149,17 @@ INPUT flagged objects. Some Powercom units need this option.
 Limit the number of bytes to read from interrupt pipe. For some Powercom units
 this option should be equal to 8.
 
-*waitbeforereconnect*::
-The driver automatically tries to reconnect to the ups on unexpected error.
-This parameter allow to wait before attempting the reconnection.
-The default value is 0 (in seconds)
+*waitbeforereconnect*='num'::
+The driver automatically tries to reconnect to the UPS on unexpected error.
+This parameter (in seconds) allows it to wait before attempting the reconnection.
+The default value is 0.
 +
-Note : for instance, it was found that Eaton MGE Ellipse Max 1500 FR ups firmware
+NOTE: for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
 stops responding every few hours, which causes usbhid-ups driver to detect an
-libusb insufficient memory error; in this case, trying to reconnect too
-early, sometimes lead the ups firmware to crash and turn load off immediately !!!
-Setting this parameter to 30 seconds solve this problem. (20 seconds not enough)
+libusb insufficient memory error; in this case, when the usbhid-ups driver tries
+to reconnect too early, the activity sometimes led the UPS firmware to crash and
+turn off the load immediately! Setting this parameter to 30 seconds solved this
+problem (while 20 seconds were not enough).
 
 INSTALLATION
 ------------
