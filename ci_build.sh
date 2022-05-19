@@ -275,6 +275,12 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="centos" ;;
         *linux*)
             CI_OS_NAME="linux" ;;
+        *msys2*)
+            CI_OS_NAME="windows-msys2" ;;
+        *mingw*64*)
+            CI_OS_NAME="windows-mingw64" ;;
+        *mingw*32*)
+            CI_OS_NAME="windows-mingw32" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
