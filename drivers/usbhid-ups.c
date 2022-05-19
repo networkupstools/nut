@@ -1595,22 +1595,19 @@ static int reconnect_ups(void)
 	if (udev)
 		comm_driver->close(udev);
 
+	upsdebugx(4, "===================================================================");
 	if (wait_before_reconnect > 0 ) {
-		upsdebugx(4, "===================================================================");
 		upsdebugx(4, " device has been disconnected, trying to reconnect in %i seconds", wait_before_reconnect);
-		upsdebugx(4, "===================================================================");
 		sleep(wait_before_reconnect);
 		upsdebugx(4, " trying to reconnect");
-		upsdebugx(4, "===================================================================");
 	}else{
-		upsdebugx(4, "==================================================");
-		upsdebugx(4, "= device has been disconnected, try to reconnect =");
-		upsdebugx(4, "==================================================");
+		upsdebugx(4, " device has been disconnected, try to reconnect");
 	}
+	upsdebugx(4, "===================================================================");
 
-   upsdebugx(4, "Opening comm_driver ...");
+	upsdebugx(4, "Opening comm_driver ...");
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
-   upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
+	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
 		return 1;
 	}
