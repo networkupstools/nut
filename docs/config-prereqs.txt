@@ -846,3 +846,117 @@ library and binary paths can be architecture bitness-dependent):
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
+
+
+Windows builds
+~~~~~~~~~~~~~~
+
+There have been several attempts to adjust NUT codebase to native builds
+for Windows, as well as there are many projects helping to produce portable
+programs.
+
+Further TODO for Windows would include:
+
+* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+  https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
+
+* libusb-0.1 vs libusb-1.0
+
+
+Windows with mingw
+------------------
+
+See `scripts/Windows/README` for original recommendations for the effort,
+including possibilities of cross-builds with mingw available in Linux.
+
+Unfortunately these did not work for me at the time of testing, yielding
+some issues downloading mingw both in Windows and Linux environments.
+So I explored other downloads, as detailed below.
+
+See also:
+
+* https://winlibs.com/
+* https://azrael.digipen.edu/~mmead/www/public/mingw/
+* https://www.mingw-w64.org/downloads/
+
+
+Windows with MSYS2
+------------------
+
+The MSYS2 ecosystem is available at https://www.msys2.org/ and builds upon
+earlier work by MinGW-w64 (in turn a fork of MinGW-w32) and Cygwin projects.
+It also includes `pacman` similar to that in Arch Linux for easier dependency
+installation, and many packages are available "out of the box" this way.
+
+The project is currently sponsored by Microsoft and seems to be supported by
+Visual Studio Code IDE for building and debugging projects, for more details
+see https://code.visualstudio.com/docs/cpp/config-mingw
+
+Notable pages of the project include:
+
+* https://www.msys2.org/ with current download link and first-installation
+  instructions
+* https://www.msys2.org/wiki/MSYS2-introduction/ for general overview
+* https://packages.msys2.org/search?t=binpkg for search in package repository
+
+After downloading and installing MSYS2 archive for the first time, they
+suggest to start by updating the base ecosystem (using their terminal):
+----
+:; pacman -Syu
+----
+
+Wait for metadata and base package downloads, agree that all MSYS2 programs
+including your terminal would be closed/restarted, and wait for this stage
+to complete.
+
+Run it again to refresh more of the ecosystem, now without restarting it:
+----
+:; pacman -Syu
+----
+
+Finally, install tools and prerequisites for building NUT; note that some
+of the recommended package names are "umbrellas" for several implementations,
+and the `pacman` would ask you which (or "all") to install in those cases:
+
+----
+# This covers most of the common FOSS development baseline, including
+# python, perl, autotools, gcc, clang, git, binutils, make, pkgconf...
+:; pacman -S --needed \
+    base-devel mingw-w64-x86_64-toolchain \
+    autoconf-wrapper automake-wrapper libtool \
+    clang gcc \
+    git aspell \
+    vim ccache python
+
+# NOT SURE if explicit installs would be needed also, e.g.:
+# pacman -S --needed autoconf2.71 automake1.16
+
+# PThreads come as an extra feature; note there are many variants,
+# see https://packages.msys2.org/search?t=binpkg&q=pthread
+:; pacman -S --needed \
+    mingw-w64-x86_64-winpthreads-git \
+    mingw-w64-clang-x86_64-winpthreads-git
+
+# Note that MSYS2 includes libusb-1.0 "natively"
+# The NUT codebase adjustments for Windows might at this moment expect older
+# ecosystem via https://github.com/mcuee/libusb-win32 -- subject to fix then.
+:; pacman -S --needed mingw-w64-x86_64-libusb
+
+# This also pulls *-devel of several other projects:
+:; pacman -S --needed \
+    libneon-devel
+----
+
+Notable packages not found in the repo:
+
+* snmp
+* regex (C version)
+* augeas
+
+Not installed above (yet?):
+
+* https://packages.msys2.org/search?t=binpkg&q=serial --
+  need to first check if termios is part of baseline
+
+Note that `ccache` symlinks for MSYS2 are installed into `/usr/lib/ccache/bin`
+directory (not plain `/usr/lib/ccache` as elsewhere).
