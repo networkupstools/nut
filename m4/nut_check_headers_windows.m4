@@ -20,7 +20,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
 #endif
 #include <windows.h>
       ]],[[
-#if defined(__CYGWIN__) || defined(__CEGCC__)
+#if (defined(__CYGWIN__) || defined(__CEGCC__)) && !(defined(__MINGW32__) || defined(__MINGW32CE__))
         HAVE_WINDOWS_H shall not be defined.
 #else
         int dummy=2*WINVER;
@@ -92,7 +92,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK], [
 #include <windows.h>
 #include <winsock.h>
       ]],[[
-#if defined(__CYGWIN__) || defined(__CEGCC__)
+#if (defined(__CYGWIN__) || defined(__CEGCC__)) && !(defined(__MINGW32__) || defined(__MINGW32CE__))
         HAVE_WINSOCK_H shall not be defined.
 #else
         int dummy=WSACleanup();
@@ -131,7 +131,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK2], [
 #include <windows.h>
 #include <winsock2.h>
       ]],[[
-#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
+#if (defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)) && !(defined(__MINGW32__))
         HAVE_WINSOCK2_H shall not be defined.
 #else
         int dummy=2*IPPROTO_ESP;
@@ -171,7 +171,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
 #include <winsock2.h>
 #include <ws2tcpip.h>
       ]],[[
-#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
+#if (defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)) && !(defined(__MINGW32__))
         HAVE_WS2TCPIP_H shall not be defined.
 #else
         int dummy=2*IP_PKTINFO;
