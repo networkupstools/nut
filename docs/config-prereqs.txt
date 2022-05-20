@@ -918,7 +918,9 @@ Windows with MSYS2
 ------------------
 
 The MSYS2 ecosystem is available at https://www.msys2.org/ and builds upon
-earlier work by MinGW-w64 (in turn a fork of MinGW-w32) and Cygwin projects.
+earlier work by link:https://www.mingw-w64.org[MinGW-w64] (in turn a fork
+of link:https://sourceforge.net/projects/mingw/[MinGW.org (aka mingw-w32)])
+and link:http://cygwin.com/[Cygwin] projects, to name a few related efforts.
 It also includes `pacman` similar to that in Arch Linux for easier dependency
 installation, and many packages are available "out of the box" this way.
 
