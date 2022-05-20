@@ -29,7 +29,12 @@
 /* TODO : support "open" flags */
 # define O_NONBLOCK 0
 # define O_NOCTTY 0
-#endif
+
+/* Builds on Windows MSYS2 environment did not recognize this macro: */
+# ifndef TIOCM_ST
+#  define TIOCM_ST	0x008
+# endif
+#endif	/* WIN32 */
 
 TYPE_FD ser_open_nf(const char *port);
 TYPE_FD ser_open(const char *port);
