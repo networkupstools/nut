@@ -17,10 +17,11 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
 #ifdef WIN32
 
+#include "config.h"	/* should be first */
 #include "common.h"
-#include "config.h"
 #include "winevent.h"
 #include "wincompat.h"
 
@@ -637,4 +638,10 @@ int main(int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
+
+#else
+
+/* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
+extern int errno;
+
 #endif  /* WIN32 */
