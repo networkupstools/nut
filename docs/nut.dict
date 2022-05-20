@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2965 utf-8
+personal_ws-1.1 en 2971 utf-8
 AAS
 ABI
 ACFAIL
@@ -170,6 +170,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CircleCI
 CLANGVER
 CLI
 CLOCAL
@@ -425,6 +426,7 @@ HIDIOCINITREPORT
 HITRANS
 HMAC
 HNX
+HOMEBREW
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -447,6 +449,7 @@ HiFreq
 HighBatt
 Hlavinka
 Holger
+Homebrew
 Hoogervorst
 Hough
 Hunnox
@@ -1079,6 +1082,7 @@ SUSE
 SX
 SXI
 SXL
+SYMLINKDIR
 SafeNet
 Salicru
 Salvia
@@ -1903,6 +1907,7 @@ hidtypes
 hidups
 highbattery
 highfrequency
+homebrew
 hoster
 hostname
 hostnames
@@ -2930,6 +2935,7 @@ xZZZZ
 xa
 xaabbcc
 xcalloc
+xcode
 xd
 xe
 xferdelay

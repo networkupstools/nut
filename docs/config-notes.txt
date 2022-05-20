@@ -171,7 +171,7 @@ NOTE: On Windows systems, the second serial port (COM2), equivalent to
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
 linkman:bcmxcp_usb[8],
-linkman:blazer[8],
+linkman:blazer_usb[8],
 linkman:nutdrv_qx[8],
 linkman:richcomm_usb[8],
 linkman:riello_usb[8],

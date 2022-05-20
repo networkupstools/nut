@@ -150,7 +150,8 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
-	int	ret;
+	int	ret, i;
+	struct stat	fs;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
@@ -189,10 +190,40 @@ static void stop_driver(const ups_t *ups)
 #endif
 
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
-		exec_error++;
-		return;
+		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
+		ret = sendsignalfn(pidfn, SIGKILL);
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+			exec_error++;
+			return;
+		}
 	}
+
+	for (i = 0; i < 5 ; i++) {
+		if (sendsignalfn(pidfn, 0) != 0) {
+			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+			return;
+		}
+		sleep(1);
+	}
+
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
+	ret = sendsignalfn(pidfn, SIGKILL);
+	if (ret == 0) {
+		for (i = 0; i < 5 ; i++) {
+			if (sendsignalfn(pidfn, 0) != 0) {
+				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+				// While a TERMinated driver cleans up,
+				// a stuck and KILLed one does not, so:
+				unlink(pidfn);
+				return;
+			}
+			sleep(1);
+		}
+	}
+
+	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+	exec_error++;
 }
 
 #ifndef WIN32
