@@ -1,9 +1,9 @@
 #ifndef SERIAL_H_SEEN
 #define SERIAL_H_SEEN 1
 
-#include "attribute.h"
+#include "config.h"	/* should be first */
 
-#include "config.h"
+#include "attribute.h"
 
 #include "common.h" /* for TYPE_FD */
 #ifndef WIN32
