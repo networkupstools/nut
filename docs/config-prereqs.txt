@@ -981,18 +981,41 @@ of default `msvcrt`), poke the repository search to see what is available.
 # Note that MSYS2 includes libusb-1.0 "natively"
 # The NUT codebase adjustments for Windows might at this moment expect older
 # ecosystem via https://github.com/mcuee/libusb-win32 -- subject to fix then.
-:; pacman -S --needed mingw-w64-x86_64-libusb
+:; pacman -S --needed \
+    mingw-w64-x86_64-libusb \
+    mingw-w64-clang-x86_64-libusb
+
+# Seems that the older libusb-win32 (libusb-0.1) is also available as:
+:; pacman -S --needed \
+    mingw-w64-x86_64-libusb-win32 \
+    mingw-w64-clang-x86_64-libusb-win32
+
+# Alternately there is libusb-compat (libusb-1.0 codebase exposing the older
+# libusb-0.1 API) which SHOULD NOT be installed along with the real libusb-0.1:
+# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git mingw-w64-clang-x86_64-libusb-compat-git
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
     libneon-devel
+
+# Other dependencies:
+:; pacman -S --needed \
+    mingw-w64-x86_64-libmodbus-git \
+    mingw-w64-clang-x86_64-libmodbus-git \
+    mingw-w64-x86_64-libgd \
+    mingw-w64-clang-x86_64-libgd
 ----
 
 Notable packages not found in the repo:
 
-* snmp
-* regex (C version)
+* snmp (net-snmp, ucd-snmp)
+* libregex (C version, direct NUT `configure` script support was added by
+  the Windows branch); MSYS2 however includes `libpcre` pulled by some
+  of the dependencies above...
 * augeas
+* avahi
+* powerman
+* ipmi
 
 Not installed above (yet?):
 
