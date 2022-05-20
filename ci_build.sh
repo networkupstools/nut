@@ -1626,6 +1626,17 @@ bindings)
     fi
     echo ""
 
+    if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
+        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
+	    echo "INFO: Using ccache via ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export CCACHE_PATH CCACHE_DIR PATH
+        fi
+    fi
+
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
