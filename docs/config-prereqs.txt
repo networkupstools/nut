@@ -952,7 +952,12 @@ Run it again to refresh more of the ecosystem, now without restarting it:
 
 Finally, install tools and prerequisites for building NUT; note that some
 of the recommended package names are "umbrellas" for several implementations,
-and the `pacman` would ask you which (or "all") to install in those cases:
+and the `pacman` would ask you which (or "all") to install in those cases.
+
+NOTE: Suggestions below use `x86_64` generic variants where possible, and
+`clang` where available to try both build toolkits on the platform. If you
+want to build `i686` (32-bit) or alternate backends (e.g. `ucrt` instead
+of default `msvcrt`), poke the repository search to see what is available.
 
 ----
 # This covers most of the common FOSS development baseline, including
