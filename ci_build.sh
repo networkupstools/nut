@@ -158,8 +158,30 @@ esac
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
 
-# This is where many symlinks like "gcc" => "../bin/ccache" reside:
-[ -n "$CI_CCACHE_SYMLINKDIR" ] || CI_CCACHE_SYMLINKDIR="/usr/lib/ccache"
+# This is where many symlinks like "gcc -> ../bin/ccache" reside:
+if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+    for D in \
+        "/usr/lib/ccache" \
+        "/usr/lib64/ccache" \
+        "/usr/libexec/ccache" \
+        "/usr/lib/ccache/bin" \
+        "/usr/local/lib/ccache" \
+    ; do
+        if [ -d "$D" ] ; then
+	    if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) ; then
+	        CI_CCACHE_SYMLINKDIR="$D" && break
+	    else
+	        echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
+	    fi
+	fi
+    done
+
+    if [ -n "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+        echo "INFO: Detected CI_CCACHE_SYMLINKDIR='$CI_CCACHE_SYMLINKDIR'; specify another explicitly if desired" >&2
+    else
+        echo "WARNING: Did not find any CI_CCACHE_SYMLINKDIR; specify one explicitly if desired" >&2
+    fi
+fi
 
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
