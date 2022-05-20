@@ -151,7 +151,6 @@ static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
 	int	ret, i;
-	struct stat	fs;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
