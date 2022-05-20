@@ -348,6 +348,9 @@ where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 Windows
 ~~~~~~~
 
+Windows binary package
+^^^^^^^^^^^^^^^^^^^^^^
+
 NUT binary package built for Windows platform comes in a `.msi` file.
 
 If you are using Windows 95, 98 or Me, you should install
@@ -373,6 +376,17 @@ have Windows support out of the box (but it was not explored for NUT yet).
 If you have selected default directory, all configuration files are located in
 `C:\Program Files\NUT\ups\etc`
 
+Building for Windows
+^^^^^^^^^^^^^^^^^^^^
+
+For suggestions about setting up the NUT build environment variants
+for Windows, please see link:docs/config-prereqs.txt and/or
+link:scripts/Windows/README files. Note this is rather experimental
+at this point.
+
+
+Runtime configuration
+~~~~~~~~~~~~~~~~~~~~~
 
 You are now ready to configure NUT, and start testing and using it.
 
