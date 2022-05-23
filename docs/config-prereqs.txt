@@ -1004,7 +1004,7 @@ export PATH
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \
-    libneon-devel
+    mingw-w64-x86_64-neon libneon-devel
 
 # Other dependencies:
 :; pacman -S --needed \
