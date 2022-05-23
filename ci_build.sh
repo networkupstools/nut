@@ -185,6 +185,11 @@ if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
     else
         echo "WARNING: Did not find any CI_CCACHE_SYMLINKDIR; specify one explicitly if desired" >&2
     fi
+else
+    if [ x"${CI_CCACHE_SYMLINKDIR-}" = x- ] ; then
+        echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
+        CI_CCACHE_SYMLINKDIR=""
+    fi
 fi
 
 # For two-phase builds (quick parallel make first, sequential retry if failed)
