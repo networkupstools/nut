@@ -1668,6 +1668,7 @@ bindings)
     ${CONFIGURE_SCRIPT} --enable-Wcolor \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
+        --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode
 
     # NOTE: Currently parallel builds are expected to succeed (as far
