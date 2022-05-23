@@ -1763,6 +1763,33 @@ else
 	AC_MSG_RESULT([none (manpages disabled)])
 fi
 
+dnl By default as we iterate (and git commit) the codebase during development,
+dnl prerequisites for that header file change and cause much of the C code
+dnl to be rebuilt and re-linked. For developers fixing one small part of the
+dnl project after another (*and* committing fixes as they go on), the version
+dnl string reported by their new binaries may be of lesser consequence than
+dnl iterating *quickly* and rebuiding just what "really" changed!
+dnl Still, this speed-up is not default to avoid surprises for core team.
+AC_MSG_CHECKING(whether to force nut_version.h generation for every make run)
+dnl Value is "FORCE" or empty, substituted into Makefile.am rule:
+FORCE_NUT_VERSION="FORCE"
+AC_ARG_ENABLE(force-nut-version-header,
+	AS_HELP_STRING([--enable-force-nut-version-header], [Force nut_version.h generation for every make run (yes)]),
+[
+	case "${enableval}" in
+	no)
+		AC_MSG_RESULT(no)
+                FORCE_NUT_VERSION=""
+		;;
+	*)
+		AC_MSG_RESULT(yes)
+		;;
+	esac
+], [
+	AC_MSG_RESULT(no)
+])
+
+
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
 	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
@@ -2472,6 +2499,7 @@ AC_SUBST(now)
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
+AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_REQUIRES)
