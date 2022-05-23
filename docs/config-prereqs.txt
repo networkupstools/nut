@@ -959,6 +959,14 @@ NOTE: Suggestions below use `x86_64` generic variants where possible, and
 want to build `i686` (32-bit) or alternate backends (e.g. `ucrt` instead
 of default `msvcrt`), poke the repository search to see what is available.
 
+To avoid toolkit variant mismatches, you may require to use their specific
+builds preferentially:
+----
+PATH="/mingw64/bin:$PATH"
+export PATH
+----
+...and also add these lines to the `~/.bashrc` file.
+
 ----
 # This covers most of the common FOSS development baseline, including
 # python, perl, autotools, gcc, clang, git, binutils, make, pkgconf...
