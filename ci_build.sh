@@ -162,13 +162,17 @@ esac
 if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
     for D in \
         "/usr/lib/ccache" \
+        "/mingw64/lib/ccache/bin" \
+        "/mingw32/lib/ccache/bin" \
         "/usr/lib64/ccache" \
         "/usr/libexec/ccache" \
         "/usr/lib/ccache/bin" \
         "/usr/local/lib/ccache" \
     ; do
         if [ -d "$D" ] ; then
-	    if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) ; then
+	    if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
+	    || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+	    ; then
 	        CI_CCACHE_SYMLINKDIR="$D" && break
 	    else
 	        echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
