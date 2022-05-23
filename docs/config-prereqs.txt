@@ -974,8 +974,9 @@ export PATH
     base-devel mingw-w64-x86_64-toolchain \
     autoconf-wrapper automake-wrapper libtool \
     clang gcc \
+    ccache mingw-w64-x86_64-ccache \
     git aspell \
-    vim ccache python
+    vim python
 
 # NOT SURE if explicit installs would be needed also, e.g.:
 # pacman -S --needed autoconf2.71 automake1.16
@@ -1013,6 +1014,26 @@ export PATH
     mingw-w64-x86_64-libgd \
     mingw-w64-clang-x86_64-libgd
 ----
+
+
+`ccache` wrapper scripts are available as e.g. `/mingw64/lib/ccache/bin/gcc`
+and lack a set for `clang` tools; easy-peasy fix with:
+
+----
+:; cd /mingw64/lib/ccache/bin
+:; for T in clang clang++ clang-cpp ; do sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
+----
+
+Note that default `ccache` seems quirky on Windows MSYS2, possibly due to
+mixing of the path separator characters and/or embedding and choking on
+the `C:` in path names. Overall it seems unable to create the cache files
+after it has created the cache directory tree (though you might have to
+pre-create the `${HOME}/.ccache` anyway, as NUT `ci_build.sh` script does.
+As found in experimentation, setting the `PATH` consistently for toolkits
+involved is very important.
+
+* https://github.com/ccache/ccache/discussions/784
+* https://sourceforge.net/p/msys2/tickets/253/
 
 Notable packages not found in the repo:
 
