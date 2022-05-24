@@ -147,7 +147,15 @@ int sktclose(int fh)
 	return ret;
 }
 
-const char* inet_ntop(int af, const void* src, char* dst, int cnt){
+#if ! HAVE_INET_NTOP
+# if (0)
+/* Some old winapi? or just sloppy original commits? */
+const char* inet_ntop(int af, const void* src, char* dst, int cnt)
+# else
+const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
+# endif
+#endif
+{
 	struct sockaddr_in srcaddr;
 
 	memset(&srcaddr, 0, sizeof(struct sockaddr_in));

@@ -73,7 +73,17 @@ int sktread(int fh, char *buf, int size);
 int sktwrite(int fh, char *buf, int size);
 int sktclose(int fh);
 
+#if ! HAVE_INET_NTOP
+# if (0)
+/* Some old winapi? or just sloppy original commits?
+ * Why is this here at all if there's something per ws2tcpip.h -
+ * maybe should be configure-detected?
+ */
 const char* inet_ntop(int af, const void* src, char* dst, int cnt);
+# else
+const char* inet_ntop(int af, const void* src, char* dst, size_t cnt);
+# endif
+#endif
 
 /* from the MSDN getaddrinfo documentation : */
 #define EAI_AGAIN	WSATRY_AGAIN
