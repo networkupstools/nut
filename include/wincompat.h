@@ -29,8 +29,11 @@
 
 /* This value is defined in the error.h file of the libusb-win32 sources
  * FIXME: Should only be relevant for builds WITH_LIBUSB_0_1 - #ifdef it so?
+ * Conflicts with e.g. /msys64/mingw64/include/errno.h which defines it as 138
  */
-#define ETIMEDOUT 116
+#ifndef ETIMEDOUT
+# define ETIMEDOUT 116
+#endif
 
 #define random() rand()
 typedef const char * uid_t;
