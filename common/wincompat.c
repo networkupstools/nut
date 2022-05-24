@@ -18,6 +18,7 @@
 */
 #ifdef WIN32
 #include "wincompat.h"
+#include "nut_stdint.h"
 
 extern int errno;
 
@@ -230,7 +231,7 @@ void syslog(int priority, const char *fmt, ...)
 	va_end(ap);
 
 	/* Add progname to the formated message */
-	snprintf(buf2,sizeof(buf2),"%s - %s",EventLogName,buf1);
+	snprintf(buf2, sizeof(buf2), "%s - %s", EventLogName, buf1);
 
 	/* Create the frame */
 	/* first 4 bytes are priority */
@@ -282,7 +283,8 @@ void pipe_create(const char * pipe_name)
 		named_pipe_name = pipe_name;
 	}
 
-	snprintf(pipe_full_name,sizeof(pipe_full_name),"\\\\.\\pipe\\%s",named_pipe_name);
+	snprintf(pipe_full_name, sizeof(pipe_full_name),
+		"\\\\.\\pipe\\%s", named_pipe_name);
 
 	if( pipe_connection_overlapped.hEvent != 0 ) {
 		CloseHandle(pipe_connection_overlapped.hEvent);
@@ -302,8 +304,9 @@ void pipe_create(const char * pipe_name)
 			NULL);  /* FIXME: default security attribute */
 
 	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR,"Error creating named pipe");
-		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+		upslogx(LOG_ERR, "Error creating named pipe");
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
@@ -312,7 +315,7 @@ void pipe_create(const char * pipe_name)
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
 	if(pipe_connection_overlapped.hEvent == NULL ) {
-		upslogx(LOG_ERR,"Error creating event");
+		upslogx(LOG_ERR, "Error creating event");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
@@ -347,7 +350,9 @@ void pipe_connect()
 		return;
 	}
 
-	ReadFile (conn->handle,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->overlapped)); /* -1 to be sure to have a trailling 0 */
+	ReadFile (conn->handle, conn->buf,
+		sizeof(conn->buf)-1, /* -1 to be sure to have a trailling 0 */
+		NULL, &(conn->overlapped));
 
 	if (pipe_connhead) {
 		conn->next = pipe_connhead;
@@ -365,7 +370,9 @@ void pipe_disconnect(pipe_conn_t *conn)
 	}
 	if( conn->handle != INVALID_HANDLE_VALUE) {
 		if ( DisconnectNamedPipe(conn->handle) == 0 ) {
-			upslogx(LOG_ERR,"DisconnectNamedPipe error : %d",(int)GetLastError());
+			upslogx(LOG_ERR,
+				"DisconnectNamedPipe error : %d",
+				(int)GetLastError());
 		}
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;
@@ -504,7 +511,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 
 	w4 = sh->io_status.hEvent;
 
-	upsdebugx(4,"w32_serial_read : ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
+	upsdebugx(4,
+		"w32_serial_read : ulen %" PRIsize ", vmin_ %d, vtime_ %d, hEvent %p",
+		ulen, sh->vmin_, sh->vtime_, sh->io_status.hEvent);
 	if (!sh->overlapped_armed) {
 		SetCommMask (sh->handle, EV_RXCHAR);
 		ResetEvent (sh->io_status.hEvent);
@@ -533,7 +542,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			goto err;
 		}
 		else if (ev) {
-			upsdebugx(4,"w32_serial_read : error detected %x", (int)ev);
+			upsdebugx(4,
+				"w32_serial_read : error detected %x",
+				(int)ev);
 		}
 		else if (st.cbInQue) {
 			inq = st.cbInQue;
@@ -553,19 +564,22 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			}
 			else {
 				sh->overlapped_armed = 1;
-				switch (WaitForSingleObject (w4,timeout)) {
+				switch (WaitForSingleObject (w4, timeout)) {
 					case WAIT_OBJECT_0:
 						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE)) {
 							goto err;
 						}
-						upsdebugx(4,"w32_serial_read : characters are available on input buffer");
+						upsdebugx(4,
+							"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
 						if(!tot) {
 							CancelIo(sh->handle);
 							sh->overlapped_armed = 0;
 							ResetEvent (sh->io_status.hEvent);
-							upsdebugx(4,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
+							upsdebugx(4,
+								"w32_serial_read : timeout %d ms elapsed",
+								(int)timeout);
 							SetLastError(WAIT_TIMEOUT);
 							errno = 0;
 							return 0;
@@ -581,7 +595,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		if (inq > ulen) {
 			inq = ulen;
 		}
-		upsdebugx(4,"w32_serial_read : Reading %d characters", (int)inq);
+		upsdebugx(4,
+			"w32_serial_read : Reading %d characters",
+			(int)inq);
 		if (ReadFile (sh->handle, ptr, min (inq, ulen), &num, &sh->io_status)) {
 			/* Got something */;
 		}
@@ -593,7 +609,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		}
 
 		tot += num;
-		upsdebugx(4,"w32_serial_read : total characters read = %d", tot);
+		upsdebugx(4,
+			"w32_serial_read : total characters read = %d",
+			tot);
 		if (sh->vtime_ || !sh->vmin_ || !num) {
 			break;
 		}
@@ -601,7 +619,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 
 err:
 		PurgeComm (sh->handle, PURGE_RXABORT);
-		upsdebugx(4,"w32_serial_read : err %d",(int)GetLastError());
+		upsdebugx(4,
+			"w32_serial_read : err %d",
+			(int)GetLastError());
 		if (GetLastError () == ERROR_OPERATION_ABORTED) {
 			num = 0;
 		}
@@ -667,17 +687,21 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 
 	errno = 0;
 
-	upslogx(LOG_INFO,"w32_serial_open (%s)",name);
+	upslogx(LOG_INFO, "w32_serial_open (%s)", name);
 
 	serial_handler_t * sh;
 
 	sh = xmalloc(sizeof(serial_handler_t));
 	memset(sh,0,sizeof(serial_handler_t));
 
-	sh->handle = CreateFile(name,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,0);
+	sh->handle = CreateFile(name,
+		GENERIC_READ|GENERIC_WRITE,
+		0, 0, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+		0);
 
 	if(sh->handle == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR,"could not open %s",name);
+		upslogx(LOG_ERR, "could not open %s", name);
 		errno = EPERM;
 		return NULL;
 	}
@@ -694,7 +718,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	 */
 	DCB state;
 	GetCommState (sh->handle, &state);
-	upslogx (LOG_INFO,"setting initial state on %s",name);
+	upslogx (LOG_INFO, "setting initial state on %s", name);
 	state.BaudRate = CBR_9600;
 	state.ByteSize = 8;
 	state.StopBits = ONESTOPBIT;
@@ -717,12 +741,17 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	state.fDsrSensitivity = FALSE; /* don't assert DSR */
 	state.fAbortOnError = TRUE;
 
-	if (!SetCommState (sh->handle, &state))
-		upslogx (LOG_ERR,"couldn't set initial state for %s",name);
+	if (!SetCommState (sh->handle, &state)) {
+		upslogx (LOG_ERR,
+			"couldn't set initial state for %s",
+			name);
+	}
 
 	SetCommMask (sh->handle, EV_RXCHAR);
 
-	upslogx (LOG_INFO,"%p = w32_serial_open (%s)",sh->handle,name);
+	upslogx (LOG_INFO,
+		"%p = w32_serial_open (%s)",
+		sh->handle, name);
 	return sh;
 }
 
@@ -766,7 +795,7 @@ int tcsendbreak (serial_handler_t * sh, int duration)
 		return -1;
 	}
 
-	upslogx(LOG_DEBUG,"0 = tcsendbreak (%d)", duration);
+	upslogx(LOG_DEBUG, "0 = tcsendbreak (%d)", duration);
 
 	return 0;
 }
@@ -793,7 +822,7 @@ int tcflow (serial_handler_t * sh, int action)
 
 	errno = 0;
 
-	upslogx(LOG_DEBUG,"action %d", action);
+	upslogx(LOG_DEBUG, "action %d", action);
 
 	switch (action)
 	{
@@ -875,7 +904,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	if ((action == TCSADRAIN) || (action == TCSAFLUSH))
 	{
 		FlushFileBuffers (sh->handle);
-		upslogx(LOG_DEBUG,"flushed file buffers");
+		upslogx(LOG_DEBUG, "flushed file buffers");
 	}
 	if (action == TCSAFLUSH)
 		PurgeComm (sh->handle, (PURGE_RXABORT | PURGE_RXCLEAR));
@@ -933,7 +962,9 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 			break;
 		default:
 			/* Unsupported baud rate! */
-			upslogx(LOG_ERR,"Invalid t->c_ospeed %d", t->c_ospeed);
+			upslogx(LOG_ERR,
+				"Invalid t->c_ospeed %d",
+				t->c_ospeed);
 			errno = EINVAL;
 			return -1;
 	}
@@ -956,8 +987,9 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 			break;
 		default:
 			/* Unsupported byte size! */
-			upslogx(LOG_ERR,"Invalid t->c_cflag byte size %d",
-					t->c_cflag & CSIZE);
+			upslogx(LOG_ERR,
+				"Invalid t->c_cflag byte size %d",
+				t->c_cflag & CSIZE);
 			errno = EINVAL;
 			return -1;
 	}
@@ -1124,7 +1156,9 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		sh->vmin_ = t->c_cc[VMIN];
 	}
 
-	upslogx(LOG_DEBUG,"vtime %d, vmin %d\n", sh->vtime_, sh->vmin_);
+	upslogx(LOG_DEBUG,
+		"vtime %d, vmin %d\n",
+		sh->vtime_, sh->vmin_);
 
 	if (ovmin == sh->vmin_ && ovtime == sh->vtime_) {
 		errno = EINVAL;
@@ -1160,12 +1194,18 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		to.ReadIntervalTimeout = MAXDWORD;
 	}
 
-	upslogx(LOG_DEBUG,"ReadTotalTimeoutConstant %d, ReadIntervalTimeout %d, ReadTotalTimeoutMultiplier %d",
-			(int)to.ReadTotalTimeoutConstant, (int)to.ReadIntervalTimeout, (int)to.ReadTotalTimeoutMultiplier);
+	upslogx(LOG_DEBUG,
+		"ReadTotalTimeoutConstant %d, "
+		"ReadIntervalTimeout %d, "
+		"ReadTotalTimeoutMultiplier %d",
+		(int)to.ReadTotalTimeoutConstant,
+		(int)to.ReadIntervalTimeout,
+		(int)to.ReadTotalTimeoutMultiplier);
+
 	int res = SetCommTimeouts(sh->handle, &to);
 	if (!res)
 	{
-		upslogx(LOG_ERR,"SetCommTimeout failed");
+		upslogx(LOG_ERR, "SetCommTimeout failed");
 		errno = EIO;
 		return -1;
 	}
@@ -1232,7 +1272,9 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 			break;
 		default:
 			/* Unsupported baud rate! */
-			upslogx(LOG_ERR,"Invalid baud rate %d", (int)state.BaudRate);
+			upslogx(LOG_ERR,
+				"Invalid baud rate %d",
+				(int)state.BaudRate);
 			errno = EINVAL;
 			return -1;
 	}
@@ -1255,7 +1297,9 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 			break;
 		default:
 			/* Unsupported byte size! */
-			upslogx(LOG_ERR,"Invalid byte size %d", state.ByteSize);
+			upslogx(LOG_ERR,
+				"Invalid byte size %d",
+				state.ByteSize);
 			errno = EINVAL;
 			return -1;
 	}
@@ -1326,7 +1370,9 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 	if (!sh->w_binary)
 		t->c_oflag |= ONLCR;
 
-	upslogx (LOG_DEBUG,"vmin_ %d, vtime_ %d", sh->vmin_, sh->vtime_);
+	upslogx (LOG_DEBUG,
+		"vmin_ %d, vtime_ %d",
+		sh->vmin_, sh->vtime_);
 	if (sh->vmin_ == MAXDWORD)
 	{
 		t->c_lflag |= ICANON;

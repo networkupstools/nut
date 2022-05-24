@@ -53,16 +53,16 @@
 
 /* Printing format for size_t and ssize_t */
 #ifndef PRIsize
-# if defined(__MINGW32__)
-#  define PRIsize "u"
+# if defined(__MINGW32__) || defined (WIN32)
+#  define PRIsize "llu"
 # else
 #  define PRIsize "zu"
 # endif
 #endif
 
 #ifndef PRIssize
-# if defined(__MINGW32__)
-#  define PRIssize "d"
+# if defined(__MINGW32__) || defined (WIN32)
+#  define PRIssize "lld"
 # else
 #  define PRIssize "zd"
 # endif
