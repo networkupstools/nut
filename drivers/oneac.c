@@ -89,7 +89,7 @@ static ssize_t OneacGetResponse (char* chBuff, const size_t BuffSize, int Expect
 			break;
 
 		upsdebugx (3,
-			"!OneacGetResponse retry (%zd, %d)...",
+			"!OneacGetResponse retry (%" PRIiSIZE ", %d)...",
 			return_val, Retries);
 
 	} while (--Retries > 0);

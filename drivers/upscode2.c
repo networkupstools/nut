@@ -1052,7 +1052,7 @@ static ssize_t upscrecv(char *buf)
 	} else {
 		/* Note: s should end up same as buf */
 		char *s = str_rtrim(buf, ENDCHAR);
-		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, s);
+		upsdebugx(3, "upscrecv: %" PRIiSIZE " bytes:\t'%s'", res-1, s);
 	}
 
 	return res;

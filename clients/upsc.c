@@ -87,7 +87,7 @@ static void printvar(const char *var)
 	}
 
 	if (numa < numq) {
-		fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least %zu)", numa, numq);
+		fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
 	}
 
 	printf("%s\n", answer[3]);
@@ -120,7 +120,7 @@ static void list_vars(void)
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("%s: %s\n", answer[2], answer[3]);
@@ -152,7 +152,7 @@ static void list_upses(int verbose)
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		if(verbose) {
@@ -189,7 +189,7 @@ static void list_clients(const char *devname)
 
 		/* CLIENT <upsname> <address> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		printf("%s\n", answer[2]);

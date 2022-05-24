@@ -198,7 +198,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
 			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
@@ -239,7 +239,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	if (rbuf->len[id] != r) {
 		/* e.g. if maxreportsize flag was set */
 		upsdebugx(2,
-			"%s: expected %zu bytes, but got %zu instead",
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]",
 			(usb_ctrl_charbuf)rbuf->data[id], r);
@@ -311,7 +311,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
 			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
 			"item setting will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
@@ -362,7 +362,7 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t bufl
 
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2,
-			"%s: expected %zu bytes, but got %zu instead",
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 	} else {
@@ -421,7 +421,7 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 		return;
 	}
 
-	upsdebugx(1, "%zu HID objects found", pDesc->nitems);
+	upsdebugx(1, "%" PRIuSIZE " HID objects found", pDesc->nitems);
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
@@ -590,7 +590,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 
 	if ((uintmax_t)buflen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
 			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
 			"index string will be constrained",
 			__func__, buflen,
@@ -722,7 +722,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		/* FIXME: Should we try here, or plain abort? */
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
 			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);

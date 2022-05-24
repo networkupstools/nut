@@ -333,7 +333,7 @@ static void ups2000_device_identification(void)
 
 		if (ptr + IDENT_RESPONSE_HEADER_LEN > ident_response_end) {
 			fatalx(EXIT_FAILURE, "response header too short! "
-					     "expected %d, received %zu.",
+					     "expected %d, received %" PRIuSIZE ".",
 					     IDENT_RESPONSE_HEADER_LEN, ident_response_len);
 		}
 

@@ -426,7 +426,7 @@ static ssize_t ups_ident( void )
 	else if( ret > 0 )
 	{
 		if( DEBUG )
-			printf( "WH says <%s> with length %zi\n", buf, ret );
+			printf( "WH says <%s> with length %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_INFO,
 			"New WH String found. Please report to maintainer\n" );
 	}
@@ -507,7 +507,7 @@ void upsdrv_updateinfo(void)
 	if( ret != lenRSP )
 	{
 		if( DEBUG )
-			printf( "buf = %s len = %zi\n", buf, ret );
+			printf( "buf = %s len = %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_ERR, "Error in UPS response " );
 		dstate_datastale();
 		return;
