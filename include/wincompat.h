@@ -89,7 +89,9 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt);
 #define EAI_SOCKTYPE	WSAESOCKTNOSUPPORT
 /* not from MS docs : */
 #define EAI_SYSTEM	WSANO_RECOVERY
-#define EAFNOSUPPORT	WSAEAFNOSUPPORT
+#ifndef EAFNOSUPPORT
+# define EAFNOSUPPORT	WSAEAFNOSUPPORT
+#endif
 
 /* "system" function */
 int win_system(const char * command);
