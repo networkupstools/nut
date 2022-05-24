@@ -685,6 +685,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 {
 	/* flags are currently ignored, it's here just to have the same
 	   interface as POSIX open */
+	NUT_UNUSED_VARIABLE(flags);
 	COMMTIMEOUTS to;
 
 	errno = 0;
