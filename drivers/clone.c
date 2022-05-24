@@ -184,8 +184,8 @@ static int sstate_connect(void)
 	if ((uintmax_t)len >= (uintmax_t)sizeof(sa.sun_path)) {
 		fatalx(EXIT_FAILURE,
 			"Can't create a unix domain socket: pathname '%s/%s' "
-			"is too long (%" PRIsize ") for 'struct sockaddr_un->sun_path' "
-			"on this system (%" PRIsize ")",
+			"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
+			"on this system (%" PRIuSIZE ")",
 			dflt_statepath(), device_path,
 			strlen(dflt_statepath()) + 1 + strlen(device_path),
 			sizeof(sa.sun_path));

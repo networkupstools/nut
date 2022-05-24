@@ -208,7 +208,7 @@ static void show_usage()
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIsize ").\n", max_threads);
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
 #endif
@@ -582,7 +582,7 @@ int main(int argc, char *argv[])
 							"thread count %s (%ld) exceeds the "
 							"current file descriptor count limit "
 							"(minus reservation), constraining "
-							"to %" PRIsize "\n",
+							"to %" PRIuSIZE "\n",
 							optarg, val, max_threads);
 					} else
 # endif /* HAVE_SYS_RESOURCE_H */
@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr,
 						"WARNING: Requested max scanning "
 						"thread count %s (%ld) is out of range, "
-						"using default %" PRIsize "\n",
+						"using default %" PRIuSIZE "\n",
 						optarg, val, max_threads);
 				}
 #else

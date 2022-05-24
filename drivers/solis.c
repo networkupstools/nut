@@ -765,13 +765,13 @@ static void get_base_info(void) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
-		upsdebugx(4, "%s: requesting %" PRIsize " bytes from ser_get_buf_len()", __func__, packet_size);
+		upsdebugx(4, "%s: requesting %" PRIuSIZE " bytes from ser_get_buf_len()", __func__, packet_size);
 		tam = ser_get_buf_len(upsfd, packet, packet_size, 3, 0);
 		if (tam < 0) {
-			upsdebugx(0, "%s: Error (%" PRIssize ") reading from ser_get_buf_len()", __func__, tam);
+			upsdebugx(0, "%s: Error (%" PRIiSIZE ") reading from ser_get_buf_len()", __func__, tam);
 			fatalx(EXIT_FAILURE, NO_SOLIS);
 		}
-		upsdebugx(2, "%s: received %" PRIssize " bytes from ser_get_buf_len()", __func__, tam);
+		upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 		if (tam > 0 && nut_debug_level >= 4) {
 			upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 		}
@@ -875,15 +875,15 @@ static void get_update_info(void) {
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
 
-	upsdebugx(3, "%s: requesting %" PRIsize " bytes from ser_get_buf_len()", __func__, packet_size);
+	upsdebugx(3, "%s: requesting %" PRIuSIZE " bytes from ser_get_buf_len()", __func__, packet_size);
 	tam = ser_get_buf_len(upsfd, temp, packet_size, 3, 0);
 
 	if (tam < 0) {
-		upsdebugx(0, "%s: Error (%" PRIssize ") reading from ser_get_buf_len()", __func__, tam);
+		upsdebugx(0, "%s: Error (%" PRIiSIZE ") reading from ser_get_buf_len()", __func__, tam);
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	}
 
-	upsdebugx(2, "%s: received %" PRIssize " bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if(tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 

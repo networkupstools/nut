@@ -518,7 +518,7 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 	}
 
 	if (io_len > IO_LEN_MAX) {
-		upsdebugx(3, "nob too big\t(%" PRIsize " > %i)", io_len, IO_LEN_MAX);
+		upsdebugx(3, "nob too big\t(%" PRIuSIZE " > %i)", io_len, IO_LEN_MAX);
 		return -1;		/* too much data claimed */
 	}
 
@@ -572,7 +572,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIssize ")",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIiSIZE ")",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -580,7 +580,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 
 	/* extract the data */
 	if (io_buf->buf_size < io_head->len)	{
-		upsdebugx(3, "%s: too much data to fit in io_buf\t(%" PRIsize " > %" PRIsize ")",
+		upsdebugx(3, "%s: too much data to fit in io_buf\t(%" PRIuSIZE " > %" PRIuSIZE ")",
 				__func__, io_head->len, io_buf->buf_size);
 		return -1;		/* too much data to fit in io_buf	*/
 	}
@@ -891,7 +891,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.begin -= 1;  /* restore STX */
 
-	upsdebugx(4, "\t\t--> addr: 0x%zx  len: 0x%zx", io->addr, io->len);
+	upsdebugx(4, "\t\t--> addr: 0x%" PRIxSIZE "  len: 0x%" PRIxSIZE "", io->addr, io->len);
 
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
@@ -905,7 +905,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%" PRIssize " (!= %" PRIssize ")", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%" PRIiSIZE " (!= %" PRIiSIZE ")", err, io->len+2);
 		ret = -1; goto out;
 	}
 
@@ -1005,7 +1005,7 @@ static int al175_read(byte_t *dst, size_t addr, size_t count)
 		return -1;
 
 	if ( (io.addr != addr) || (io.len != count) ) {
-		upsdebugx(3, "%s: io_head mismatch\t(%zx,%zx != %zx,%zx)",
+		upsdebugx(3, "%s: io_head mismatch\t(%" PRIxSIZE ",%" PRIxSIZE " != %" PRIxSIZE ",%" PRIxSIZE ")",
 				__func__, io.addr, io.len, addr, count);
 		return -1;
 	}

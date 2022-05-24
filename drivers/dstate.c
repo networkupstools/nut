@@ -290,8 +290,8 @@ static void send_to_all(const char *fmt, ...)
 #endif
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
-			upsdebugx(0, "WARNING: %s: write %" PRIssize " bytes to "
-				"socket %d failed (ret=%" PRIssize "), disconnecting: %s",
+			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
 				__func__, buflen, (int)conn->fd, ret, strerror(errno));
 			upsdebugx(6, "failed write: %s", buf);
 
@@ -308,8 +308,8 @@ static void send_to_all(const char *fmt, ...)
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
-			upsdebugx(6, "%s: write %" PRIssize " bytes to socket %d succeeded "
-				"(ret=%" PRIssize "): %s",
+			upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+				"(ret=%" PRIiSIZE "): %s",
 				__func__, buflen, conn->fd, ret, buf);
 		}
 	}
@@ -359,7 +359,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
 /*
-	upsdebugx(0, "%s: writing %" PRIssize " bytes to socket %d: %s",
+	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d: %s",
 		__func__, buflen, conn->fd, buf);
 */
 
@@ -378,8 +378,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIssize " bytes to socket %d "
-			"(ret=%" PRIssize ", errno=%d, strerror=%s): %s",
+			"writing %" PRIiSIZE " bytes to socket %d "
+			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
 			__func__, buflen, conn->fd,
 			ret, errno, strerror(errno),
 			buf);
@@ -391,8 +391,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
-		upsdebugx(0, "WARNING: %s: write %" PRIssize " bytes to "
-			"socket %d failed (ret=%" PRIssize "), disconnecting: %s",
+		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
 			__func__, buflen, (int)conn->fd, ret, strerror(errno));
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
@@ -410,8 +410,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	} else {
-		upsdebugx(6, "%s: write %" PRIssize " bytes to socket %d succeeded "
-			"(ret=%" PRIssize "): %s",
+		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
 	}
 
@@ -644,7 +644,7 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
-	upsdebugx(6, "Driver on %s is now handling %s with %" PRIsize " args",
+	upsdebugx(6, "Driver on %s is now handling %s with %" PRIuSIZE " args",
 		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
 
 	if (numarg < 1) {
@@ -1544,7 +1544,7 @@ void alarm_set(const char *buf)
 			}
 		}
 		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
-			"alarm_buf (limited to %" PRIsize " bytes), with message: %s%s",
+			"alarm_buf (limited to %" PRIuSIZE " bytes), with message: %s%s",
 			__func__, sizeof(alarm_buf), alarm_tmp,
 			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" ));
 	}

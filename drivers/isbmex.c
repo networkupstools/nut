@@ -188,7 +188,7 @@ static const char *getpacket(int *we_know){
 		return NULL;
 	}
 #endif
-	D(printf("%" PRIssize " bytes read: ",r);)
+	D(printf("%" PRIiSIZE " bytes read: ",r);)
 
 	buf[r]=0;
 	if (bytes_per_packet && r < bytes_per_packet){

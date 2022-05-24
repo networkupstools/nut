@@ -1554,7 +1554,7 @@ static int sdcmd_AT(const void *str)
 	/* Range-check: padto is 2 or 3 per above */
 	if (ret != (ssize_t)padto + 1) {
 		upslogx(LOG_ERR,
-			"issuing [%s] with %" PRIsize " digits failed",
+			"issuing [%s] with %" PRIuSIZE " digits failed",
 			prtchr(APC_CMD_GRACEDOWN), padto);
 		return STAT_INSTCMD_FAILED;
 	}

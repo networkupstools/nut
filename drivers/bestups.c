@@ -353,13 +353,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %" PRIssize " bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %" PRIiSIZE " bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %" PRIssize " bytes)",
+		ser_comm_fail("Poll failed: response too long (got %" PRIiSIZE " bytes)",
 			ret);
 		dstate_datastale();
 		return;

@@ -117,7 +117,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIsize " args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,

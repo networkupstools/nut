@@ -471,7 +471,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -530,7 +530,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%" PRIsize ")", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -544,7 +544,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	size_t  cmdlen, i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -635,7 +635,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%" PRIsize ")", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -649,7 +649,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -737,7 +737,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%" PRIsize ")", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -751,7 +751,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i, len;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -832,7 +832,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	if (len > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%" PRIsize ")", __func__, len);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, len);
 		return -1;
 	}
 	return (int)len;
@@ -918,7 +918,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1042,7 +1042,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1167,7 +1167,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1330,7 +1330,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	};
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1469,13 +1469,13 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	size_t cmdlen = strlen(cmd);
 
 	if (cmdlen > INT_MAX) {
-		upsdebugx(3, "%s: requested command is too long (%" PRIsize ")",
+		upsdebugx(3, "%s: requested command is too long (%" PRIuSIZE ")",
 			__func__, cmdlen);
 		return 0;
 	}
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1530,7 +1530,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 		/* buflen constrained to INT_MAX above, so we can cast: */
 		return (int)(e - buf);
 	} else {
-		upsdebugx(3, "read: buflen %" PRIsize " too small", buflen);
+		upsdebugx(3, "read: buflen %" PRIuSIZE " too small", buflen);
 		*buf = '\0';
 		return 0;
 	}
@@ -1556,7 +1556,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1666,7 +1666,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%" PRIsize "), reducing buflen to (INT_MAX-1)",
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
 	}
@@ -3255,7 +3255,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_send(upsfd, "%s", cmd);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%" PRIssize ")",
+			upsdebugx(3, "send: %s (%" PRIiSIZE ")",
 				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
@@ -3266,7 +3266,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%" PRIssize ")",
+			upsdebugx(3, "read: %s (%" PRIiSIZE ")",
 				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}

@@ -657,7 +657,7 @@ static void log_unknown(size_t numarg, char **arg)
 	upslogx(LOG_INFO, "Unknown command on socket: ");
 
 	for (i = 0; i < numarg; i++)
-		upslogx(LOG_INFO, "arg %" PRIsize ": %s", i, arg[i]);
+		upslogx(LOG_INFO, "arg %" PRIuSIZE ": %s", i, arg[i]);
 }
 
 static int sock_read(conn_t *conn)

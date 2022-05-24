@@ -514,7 +514,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 	w4 = sh->io_status.hEvent;
 
 	upsdebugx(4,
-		"w32_serial_read : ulen %" PRIsize ", vmin_ %d, vtime_ %d, hEvent %p",
+		"w32_serial_read : ulen %" PRIuSIZE ", vmin_ %d, vtime_ %d, hEvent %p",
 		ulen, sh->vmin_, sh->vtime_, sh->io_status.hEvent);
 	if (!sh->overlapped_armed) {
 		SetCommMask (sh->handle, EV_RXCHAR);

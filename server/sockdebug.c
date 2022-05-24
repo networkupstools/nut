@@ -35,7 +35,7 @@ static void sock_arg(size_t numarg, char **arg)
 {
 	size_t	i;
 
-	printf("numarg=%" PRIsize " : ", numarg);
+	printf("numarg=%" PRIuSIZE " : ", numarg);
 
 	for (i = 0; i < numarg; i++)
 		printf("[%s] ", arg[i]);

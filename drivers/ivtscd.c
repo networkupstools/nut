@@ -115,7 +115,7 @@ static ssize_t ivt_status(void)
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
 
-	upsdebugx(3, "Parsed %" PRIssize " parameters from reply", ret);
+	upsdebugx(3, "Parsed %" PRIiSIZE " parameters from reply", ret);
 	return ret;
 }
 

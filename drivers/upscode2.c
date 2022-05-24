@@ -1050,7 +1050,7 @@ static ssize_t upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %" PRIssize " bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		upsdebugx(3, "upscrecv: %" PRIiSIZE " bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
 	}
 
 	return res;

@@ -270,7 +270,7 @@ void upsdrv_updateinfo(void)
 			}
 		} while (temp[2] == 0);
 
-		upsdebugx(1, "upsdrv_updateinfo: received %" PRIssize " bytes (try %i)", recv, retry);
+		upsdebugx(1, "upsdrv_updateinfo: received %" PRIiSIZE " bytes (try %i)", recv, retry);
 		upsdebug_hex(5, "buffer", temp, (size_t)recv);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */

@@ -706,8 +706,8 @@ void check_unix_socket_filename(const char *fn) {
 	 */
 	fatalx(EXIT_FAILURE,
 		"Can't create a unix domain socket: pathname '%s' "
-		"is too long (%" PRIsize ") for 'struct sockaddr_un->sun_path' "
-		"on this system (%" PRIsize ")",
+		"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
+		"on this system (%" PRIuSIZE ")",
 		fn, strlen(fn), sizeof(ssaddr.sun_path));
 }
 
@@ -846,7 +846,7 @@ void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len)
 	int n;	/* number of characters currently in line */
 	size_t i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%" PRIsize " bytes) =>", msg, len);
+	n = snprintf(line, sizeof(line), "%s: (%" PRIuSIZE " bytes) =>", msg, len);
 	if (n < 0) goto failed;
 
 	for (i = 0; i < len; i++) {

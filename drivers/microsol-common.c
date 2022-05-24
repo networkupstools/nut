@@ -575,7 +575,7 @@ static void get_base_info(void)
 
 	upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, packet, PACKET_SIZE, 3, 0);
-	upsdebugx(2, "%s: received %" PRIssize " bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4) {
 		upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 	}
@@ -639,7 +639,7 @@ static void get_updated_info(void)
 	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, PACKET_SIZE);
 	tam = ser_get_buf_len(upsfd, temp, PACKET_SIZE, 3, 0);
 
-	upsdebugx(2, "%s: received %" PRIssize " bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if (tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 

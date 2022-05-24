@@ -411,7 +411,7 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %" PRIsize " args, need at least 3)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 3)\n", numa);
 
 			return;
 		}
@@ -698,7 +698,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %" PRIsize " args, need at least 4)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 4)\n", numa);
 
 			free(val);
 			return;
