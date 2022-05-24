@@ -17,6 +17,8 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #ifdef WIN32
+#include "config.h" /* should be first */
+
 #include "wincompat.h"
 #include "nut_stdint.h"
 
