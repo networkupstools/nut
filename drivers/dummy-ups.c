@@ -571,7 +571,7 @@ static int upsclient_update_vars(void)
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4)
 		{
-			upsdebugx(1, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			upsdebugx(1, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		upsdebugx(5, "Received: %s %s %s %s",

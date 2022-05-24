@@ -101,7 +101,7 @@ static ssize_t sec_cmd(const char mode, const char *command, char *msgbuf, ssize
 	upsdebugx(1, "PC-->UPS: \"%s\"",msg);
 	ret = ser_send(upsfd, "%s", msg);
 
-	upsdebugx(1, " send returned: %zd",ret);
+	upsdebugx(1, " send returned: %" PRIiSIZE "",ret);
 
 	if (ret == -1) return -1;
 
@@ -368,7 +368,7 @@ static void setup_serial(const char *port)
 		exit (1);
 	}
 	else
-		printf("Connected to UPS on %s baudrate: %zu\n",
+		printf("Connected to UPS on %s baudrate: %" PRIuSIZE "\n",
 			port, baud_rates[i].name);
 }
 

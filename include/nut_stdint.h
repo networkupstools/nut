@@ -52,19 +52,35 @@
 #endif
 
 /* Printing format for size_t and ssize_t */
-#ifndef PRIsize
-# if defined(__MINGW32__)
-#  define PRIsize "u"
+#ifndef PRIuSIZE
+# ifdef PRIsize
+#  define PRIuSIZE PRIsize
 # else
-#  define PRIsize "zu"
+#  if defined(__MINGW32__) || defined (WIN32)
+#   define PRIuSIZE "llu"
+#  else
+#   define PRIuSIZE "zu"
+#  endif
 # endif
 #endif
 
-#ifndef PRIssize
-# if defined(__MINGW32__)
-#  define PRIssize "d"
+#ifndef PRIxSIZE
+#  if defined(__MINGW32__) || defined (WIN32)
+#   define PRIxSIZE "llx"
+#  else
+#   define PRIxSIZE "zx"
+#  endif
+#endif
+
+#ifndef PRIiSIZE
+# ifdef PRIssize
+#  define PRIiSIZE PRIssize
 # else
-#  define PRIssize "zd"
+#  if defined(__MINGW32__) || defined (WIN32)
+#   define PRIiSIZE "lld"
+#  else
+#   define PRIiSIZE "zd"
+#  endif
 # endif
 #endif /* format for size_t and ssize_t */
 
