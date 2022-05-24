@@ -498,7 +498,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 	int tot;
 	DWORD num;
 	HANDLE w4;
-	DWORD minchars = sh->vmin_ ?: ulen;
+	DWORD minchars = sh->vmin_ ? sh->vmin_ : ulen;
 
 	errno = 0;
 
