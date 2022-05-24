@@ -1,5 +1,5 @@
 #ifndef NUT_WINCOMPAT_H
-#define NUT_WINCOMPAT_H
+#define NUT_WINCOMPAT_H 1
 
 /*
    Copyright (C) 2001 Andrew Delpha (delpha@computer.org)
@@ -318,4 +318,4 @@ speed_t cfgetospeed(const struct termios *t);
 #define TIOCM_DSR	MS_DSR_ON /* 0x0020*/
 #define TIOCM_RNG	MS_RING_ON /*0x0040*/
 #define TIOCM_CD	MS_RLSD_ON /*0x0080*/
-#endif
+#endif /* NUT_WINCOMPAT_H */
