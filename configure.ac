@@ -505,6 +505,39 @@ NUT_TYPE_SOCKLEN_T
 NUT_CHECK_SOCKETLIB
 NUT_FUNC_GETNAMEINFO_ARGTYPES
 
+AC_CACHE_CHECK([for inet_ntop()],
+    [ac_cv_func_inet_ntop],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#ifdef WIN32
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+#else
+# include <arpa/inet.h>
+#endif
+#include <stdio.h>
+]],
+            [[/* const char* inet_ntop(int af, const void* src, char* dst, size_t cnt); */
+char buf[128];
+printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_inet_ntop=yes], [ac_cv_func_inet_ntop=no]
+    )])
+AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
+    [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
+    [AC_MSG_WARN([Required C library routine inet_ntop() not found])]
+    )
+
 dnl ----------------------------------------------------------------------
 dnl Check for python binary program names per language version
 dnl to embed into scripts and Make rules
