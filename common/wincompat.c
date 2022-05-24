@@ -22,7 +22,9 @@
 #include "wincompat.h"
 #include "nut_stdint.h"
 
+#if (0)
 extern int errno;
+#endif
 
 const char * EventLogName = NULL;
 
@@ -1412,6 +1414,6 @@ speed_t cfgetospeed(const struct termios *t)
 #else
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
-extern int errno;
+static int dummy = 0;
 
 #endif

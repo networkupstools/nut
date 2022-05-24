@@ -642,6 +642,6 @@ int main(int argc, char **argv)
 #else
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
-extern int errno;
+static int dummy = 0;
 
 #endif  /* WIN32 */
