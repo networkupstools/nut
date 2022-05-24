@@ -322,7 +322,7 @@ void upsdrv_updateinfo(void)
 			/* alarm message received */
 
 			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%zd bytes) => %s", __func__, ret, buf);
+			upsdebugx(2, "%s: ne_sock_read(%" PRIssize " bytes) => %s", __func__, ret, buf);
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
@@ -338,7 +338,7 @@ void upsdrv_updateinfo(void)
 
 			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
 
-			upsdebugx(2, "%s: ne_sock_read(%zd) => %s", __func__, ret, ne_sock_error(sock));
+			upsdebugx(2, "%s: ne_sock_read(%" PRIssize ") => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {

@@ -430,7 +430,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%zu] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%" PRIsize "] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
 	if (res < 0 || len != (size_t)res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
@@ -817,7 +817,7 @@ static void poll_reload(void)
 	size_t maxalloc = SIZE_MAX / sizeof(void *);
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
-			"You requested %jd as maximum number of connections, but we can only allocate %zu.\n"
+			"You requested %jd as maximum number of connections, but we can only allocate %" PRIsize ".\n"
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn, maxalloc);
 	}
 

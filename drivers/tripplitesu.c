@@ -235,7 +235,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		return -1;
 	}
 
-	upsdebugx(3, "do_command: %zd bytes sent [%s] -> OK", ret, buffer);
+	upsdebugx(3, "do_command: %" PRIssize " bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
 	if (ret < 0) {
@@ -248,7 +248,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	}
 
 	buffer[ret] = '\0';
-	upsdebugx(3, "do_command: %zd byted read [%s]", ret, buffer);
+	upsdebugx(3, "do_command: %" PRIssize " byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
 
@@ -263,7 +263,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		}
 
 		buffer[ret] = '\0';
-		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, buffer);
+		upsdebugx(3, "do_command: %" PRIssize " bytes read [%s]", ret, buffer);
 
 		int c = atoi(buffer);
 		if (c < 0) {
@@ -297,7 +297,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		}
 
 		response[ret] = '\0';
-		upsdebugx(3, "do_command: %zd bytes read [%s]", ret, response);
+		upsdebugx(3, "do_command: %" PRIssize " bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
 		   I don't like that, so I remove them.  This is safe to

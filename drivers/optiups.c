@@ -157,7 +157,7 @@ static inline ssize_t optireadline(void)
 		}
 	}
 	else
-		upsdebugx(1, "READ ERROR: %zd", r );
+		upsdebugx(1, "READ ERROR: %" PRIssize "", r );
 	return r;
 }
 

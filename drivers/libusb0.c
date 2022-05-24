@@ -501,7 +501,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			if ((uintmax_t)rdlen > sizeof(rdbuf)) {
 				upsdebugx(2,
 					"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-					" (max %zu)",
+					" (max %" PRIsize ")",
 					rdlen, sizeof(rdbuf));
 				goto next_device;
 			}

@@ -518,7 +518,7 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 	}
 
 	if (io_len > IO_LEN_MAX) {
-		upsdebugx(3, "nob too big\t(%zu > %i)", io_len, IO_LEN_MAX);
+		upsdebugx(3, "nob too big\t(%" PRIsize " > %i)", io_len, IO_LEN_MAX);
 		return -1;		/* too much data claimed */
 	}
 
@@ -572,7 +572,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %zi)",
+		upsdebugx(3, "%s: corrupt sentence\t(%i != %" PRIssize ")",
 				__func__, (int)(raw_reply.end - raw_reply.begin), 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -580,7 +580,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 
 	/* extract the data */
 	if (io_buf->buf_size < io_head->len)	{
-		upsdebugx(3, "%s: too much data to fit in io_buf\t(%zu > %zu)",
+		upsdebugx(3, "%s: too much data to fit in io_buf\t(%" PRIsize " > %" PRIsize ")",
 				__func__, io_head->len, io_buf->buf_size);
 		return -1;		/* too much data to fit in io_buf	*/
 	}
@@ -905,7 +905,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 	/* 5:  receive tail of the frame */
 	err = get_buf(reply.end, io->len + 2);
 	if (err!=(int)(io->len+2)) {
-		upsdebugx(4, "rx_tail failed, err=%zi (!= %zi)", err, io->len+2);
+		upsdebugx(4, "rx_tail failed, err=%" PRIssize " (!= %" PRIssize ")", err, io->len+2);
 		ret = -1; goto out;
 	}
 

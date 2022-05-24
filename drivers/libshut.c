@@ -586,7 +586,7 @@ static int libshut_open(
 #endif
 		upsdebugx(2,
 			"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-			" (max %zu)",
+			" (max %" PRIsize ")",
 			rdlen, sizeof(rdbuf));
 		return -1;
 	}

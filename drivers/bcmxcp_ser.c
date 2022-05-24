@@ -102,7 +102,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 
 			if (res != 1) {
 				upsdebugx(1,
-					"Receive error (PW_COMMAND_START_BYTE): %zd, cmd=%x!!!\n",
+					"Receive error (PW_COMMAND_START_BYTE): %" PRIssize ", cmd=%x!!!\n",
 					res, command);
 				return -1;
 			}
@@ -120,7 +120,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		res = ser_get_char(upsfd, my_buf + 1, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (Block number): %zd!!!\n", res);
+			ser_comm_fail("Receive error (Block number): %" PRIssize "!!!\n", res);
 			return -1;
 		}
 
@@ -149,7 +149,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		res = ser_get_char(upsfd, my_buf + 2, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (length): %zd!!!\n", res);
+			ser_comm_fail("Receive error (length): %" PRIssize "!!!\n", res);
 			return -1;
 		}
 
@@ -164,7 +164,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		res = ser_get_char(upsfd, my_buf + 3, 1, 0);
 
 		if (res != 1) {
-			ser_comm_fail("Receive error (sequence): %zd!!!\n", res);
+			ser_comm_fail("Receive error (sequence): %" PRIssize "!!!\n", res);
 			return -1;
 		}
 
@@ -184,12 +184,12 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Try to read all the remaining bytes */
 		res = ser_get_buf_len(upsfd, my_buf + 4, length, 1, 0);
 		if (res < 0) {
-			ser_comm_fail("%s(): ser_get_buf_len() returned error code %zd", __func__, res);
+			ser_comm_fail("%s(): ser_get_buf_len() returned error code %" PRIssize "", __func__, res);
 			return res;
 		}
 
 		if ((size_t)res != length) {
-			ser_comm_fail("Receive error (data): got %zd bytes instead of %zu!!!\n", res, length);
+			ser_comm_fail("Receive error (data): got %" PRIssize " bytes instead of %" PRIsize "!!!\n", res, length);
 			return -1;
 		}
 
@@ -397,11 +397,11 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %" PRIsize "", port, pw_baud_rates[i].name);
 			return;
 		}
 
-		upsdebugx(2, "No response from UPS on %s with baudrate %zu", port, pw_baud_rates[i].name);
+		upsdebugx(2, "No response from UPS on %s with baudrate %" PRIsize "", port, pw_baud_rates[i].name);
 	}
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);

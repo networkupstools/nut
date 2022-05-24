@@ -201,7 +201,7 @@ void upsdrv_initinfo(void)
 		}
 
 		buf[i<<1] = 0;
-		upsdebugx(1, "return: %zd (8=success)", ret);
+		upsdebugx(1, "return: %" PRIssize " (8=success)", ret);
 
 		if (ret == 8) { /* last command successful */
 			dstate_setinfo(vartab[vari].var,"%s",buf);

@@ -343,8 +343,8 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		if (curr_threads >= max_threads
 		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 		) {
-			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %zu), "
+			upsdebugx(2, "%s: already running %" PRIsize " scanning threads "
+				"(launched overall: %" PRIsize "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads
@@ -360,12 +360,12 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
-							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
+							upsdebugx(5, "%s: Was thread #%" PRIsize " joined earlier?", __func__, i);
 							break;
 						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%" PRIsize "", __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -374,13 +374,13 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 							thread_array[i].active = FALSE;
 							break;
 						case EBUSY:     /* actively running */
-							upsdebugx(6, "%s: thread #%zu still busy (%i)",
+							upsdebugx(6, "%s: thread #%" PRIsize " still busy (%i)",
 								__func__, i, ret);
 							break;
 						case EDEADLK:   /* Errors with thread interactions... bail out? */
 						case EINVAL:    /* Errors with thread interactions... bail out? */
 						default:        /* new pthreads abilities? */
-							upsdebugx(5, "%s: thread #%zu reported code %i",
+							upsdebugx(5, "%s: thread #%" PRIsize " reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -466,7 +466,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIsize " to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						if (max_threads_scantype > 0)
@@ -519,7 +519,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIsize "",
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "

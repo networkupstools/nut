@@ -120,7 +120,7 @@ static ssize_t get_belkin_reply(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %zd bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIssize " bytes", ret);
 		return -1;
 	}
 
@@ -147,7 +147,7 @@ static ssize_t get_belkin_reply(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIssize " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -168,7 +168,7 @@ static ssize_t do_broken_rat(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %zd bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIssize " bytes", ret);
 		return -1;
 	}
 
@@ -200,7 +200,7 @@ static ssize_t do_broken_rat(char *buf)
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %zd bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIssize " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 

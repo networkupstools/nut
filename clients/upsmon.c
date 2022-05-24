@@ -775,7 +775,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %zu args, need at least %zu)",
+			"(got %" PRIsize " args, need at least %" PRIsize ")",
 			var, numa, numq);
 		return -1;
 	}

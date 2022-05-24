@@ -401,7 +401,7 @@ static void do_enum(const char *varname, const int vartype, const long len)
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIsize " args, need at least 4)", numa);
 		}
 
 		printf("Option: \"%s\"", answer[3]);
@@ -454,7 +454,7 @@ static void do_range(const char *varname)
 		/* RANGE <upsname> <varname> <min> <max> */
 
 		if (numa < 5) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIsize " args, need at least 4)", numa);
 		}
 
 		min = atoi(answer[3]);
@@ -597,7 +597,7 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIsize " args, need at least 4)", numa);
 		}
 
 		/* sock this entry away for later */

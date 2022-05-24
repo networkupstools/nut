@@ -395,7 +395,7 @@ void upsdrv_updateinfo(void)
 	if (len != 21) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Data command failed: [%zd] bytes != 21 bytes.", len);
+			ser_comm_fail("Data command failed: [%" PRIssize "] bytes != 21 bytes.", len);
 			dstate_datastale();
 		}
 		return;

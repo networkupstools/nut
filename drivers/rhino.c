@@ -394,7 +394,7 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 	if( size == 37 )
 		Waiting = 0;
 
-	printf("CommReceive size = %zd waiting = %d\n", size, Waiting );
+	printf("CommReceive size = %" PRIssize " waiting = %d\n", size, Waiting );
 
 	switch( Waiting )
 	{

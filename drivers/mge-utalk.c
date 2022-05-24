@@ -956,7 +956,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %zd byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: received %" PRIssize " byte(s)", bytes_rcvd);
 
 	return bytes_rcvd;
 }
