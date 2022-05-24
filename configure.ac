@@ -320,6 +320,27 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CACHE_CHECK([for suseconds_t],
+    [ac_cv_type_suseconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <sys/types.h>
+        ]],
+            [[suseconds_t us = 1000000;
+              signed long int l = 1000000;
+              if (l != (signed long int)us) return 1;
+
+	      l = -1; us = -1;
+              if (l != (signed long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_suseconds_t=yes], [ac_cv_type_suseconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_suseconds_t}" = xyes],
+    [AC_DEFINE([HAVE_SUSECONDS_T], 1, [defined if standard library has, and C standard allows, the suseconds_t type])],
+    [AC_MSG_WARN([Required C library type suseconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
 AC_CACHE_CHECK([for useconds_t],
     [ac_cv_type_useconds_t],
     [AC_COMPILE_IFELSE(

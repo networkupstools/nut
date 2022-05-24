@@ -31,7 +31,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <sys/types.h>
+#include <sys/types.h>	/* suseconds_t among other things */
 #include <sys/stat.h>
 
 #ifdef HAVE_SYS_SIGNAL_H
@@ -61,6 +61,14 @@
 #include <unistd.h>	/* useconds_t */
 #ifndef HAVE_USECONDS_T
 # define useconds_t	unsigned long int
+#endif
+#ifndef HAVE_SUSECONDS_T
+/* Note: WIN32 may have this defined as just "long" which should
+ * hopefully be identical to the definition below, which we test
+ * in our configure script. See also struct timeval fields for a
+ * platform, if in doubt.
+ */
+# define suseconds_t	signed long int
 #endif
 
 #include <assert.h>
