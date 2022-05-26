@@ -21,6 +21,8 @@
 
 #ifndef WIN32
 #include <sys/ioctl.h>
+#else
+#include "wincompat.h"
 #endif
 
 #include "main.h"
