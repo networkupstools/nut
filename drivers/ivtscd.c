@@ -21,6 +21,7 @@
 #include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"

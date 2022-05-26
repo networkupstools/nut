@@ -26,6 +26,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
 #define DRIVER_VERSION	"0.25"

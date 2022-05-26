@@ -26,6 +26,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
 #define DRIVER_VERSION	"1.07"
