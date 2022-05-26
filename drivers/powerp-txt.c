@@ -30,6 +30,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #include "powerp-txt.h"
 

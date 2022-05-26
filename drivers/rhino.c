@@ -34,6 +34,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
 #define DRIVER_NAME		"Microsol Rhino UPS driver"

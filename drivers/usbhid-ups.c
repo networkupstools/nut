@@ -31,6 +31,7 @@
 #define DRIVER_VERSION		"0.47"
 
 #include "main.h"
+#include "nut_stdint.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"

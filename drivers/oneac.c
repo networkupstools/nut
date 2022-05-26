@@ -41,6 +41,7 @@
 #include "main.h"
 #include "serial.h"
 #include "oneac.h"
+#include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);

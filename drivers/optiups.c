@@ -25,6 +25,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
 #define DRIVER_VERSION "1.02"
