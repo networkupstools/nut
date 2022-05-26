@@ -26,6 +26,7 @@
 #include "main.h"
 #include "serial.h"
 #include "belkin.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
 #define DRIVER_VERSION	"0.25"

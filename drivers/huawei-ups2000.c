@@ -47,6 +47,7 @@
 #include <modbus.h>
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
 #define DRIVER_VERSION	"0.03"
