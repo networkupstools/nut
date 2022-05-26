@@ -22,6 +22,13 @@
 
 #include "config.h"		/* must be the first header */
 
+#ifdef WIN32
+# ifndef __POSIX_VISIBLE
+/* for fcntl() and its flags in MSYS2 */
+#  define __POSIX_VISIBLE 200809
+# endif
+#endif
+
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
 #pragma alloca
