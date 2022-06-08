@@ -56,8 +56,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	export CFLAGS+="-D_POSIX=1 -I/usr/$ARCH/include/"
 	export LDFLAGS+="-L/usr/$ARCH/lib/"
-	./configure $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR
-	make 1>/dev/null
+	./configure $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR --without-pkg-config --with-all=auto
+	make -k 1>/dev/null
 	make install
 	cd ..
 else
