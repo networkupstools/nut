@@ -32,6 +32,9 @@ You will also need pthread and mingw regex libraries.
 [NOTE]
 ================================================================================
 
+If you use script `./build-mingw-nut.sh` mentioned below, skip setting these
+environment variables wen building NUT.
+
 When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
 and CC, CFLAGS, LDFLAGS and PREFIX:
 
