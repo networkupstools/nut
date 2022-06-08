@@ -391,7 +391,7 @@ int sendsignalpid(pid_t pid, int sig)
 #else
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
-	upslogx(LOG_ERROR,
+	upslogx(LOG_ERR,
 		"%s: not implemented for Win32 and "
 		"should not have been called directly!",
 		__func__);
