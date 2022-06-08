@@ -10,7 +10,7 @@ TOP_DIR=$WINDIR/../..
 BUILD_DIR=$WINDIR/nut_build
 INSTALL_DIR=$WINDIR/nut_install
 
-VER_OPT=2.6.5
+#VER_OPT=2.8.0.1
 DEBUG=true
 
 # default to 32bits build
@@ -31,13 +31,14 @@ fi
 # In-place version (no download)
 rm -rf $BUILD_DIR $INSTALL_DIR
 cd ../..
-rm -f nut-?.?.?.tar.gz
+rm -f nut-?.?.?*.tar.gz
+[ -s Makefile ] || { ./autogen.sh && ./configure; }
 make dist
-SRC_ARCHIVE=$(ls nut-?.?.?.tar.gz)
+SRC_ARCHIVE=$(ls -1 nut-?.?.?*.tar.gz | sort -n | tail -1)
 cd scripts/Windows
 tar -xzf ../../$SRC_ARCHIVE
-mv nut-?.?.? $BUILD_DIR
-cd $BUILD_DIR
+mv nut-?.?.?* $BUILD_DIR
+cd $BUILD_DIR || exit
 
 if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
 	ARCH="x86_64-w64-mingw32"
