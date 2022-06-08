@@ -21,7 +21,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <poll.h>
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 #include <sys/ioctl.h>
 
 #include "main.h"

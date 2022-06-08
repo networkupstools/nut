@@ -209,6 +209,10 @@ getrlimit(RLIMIT_NOFILE, &limit);
     ]
 )
 
+AC_CHECK_HEADER([poll.h],
+    [AC_DEFINE([HAVE_POLL_H], [1],
+        [Define to 1 if you have <poll.h>.])])
+
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])

@@ -40,7 +40,11 @@
 #include "timehead.h"
 
 #include <sys/file.h>
-#include <poll.h> /* nfds_t */
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 
 #include "parseconf.h"
 #include "nut_ctype.h"
