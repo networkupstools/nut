@@ -61,6 +61,9 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    --without-systemdsystemunitdir
 	make 1>/dev/null
 	make install
+	# Note: lib*snmp*.dll not listed below, it is
+	# statically linked into binaries that use it
+	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb}*.dll .) || true
 	cd ..
 else
 	echo "Usage:"
