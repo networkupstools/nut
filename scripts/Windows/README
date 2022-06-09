@@ -86,10 +86,49 @@ You can compile it  using:
 	$ make
 	$ sudo make install
 
+libusb
+^^^^^^
+
+* libusb-1.0
+
+	$ wget https://sourceforge.net/projects/libusb/files/libusb-1.0/libusb-1.0.26/libusb-1.0.26.tar.bz2
+	$ tar xjf libusb-1.0.26.tar.bz2
+	$ cd libusb-1.0.26
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+* libusb-compat-0.1 (API translation layer for older codebase, uses libusb-1.0)
+
+	$ wget https://github.com/libusb/libusb-compat-0.1/archive/refs/heads/master.zip -O libusb-compat-0.1-master.zip
+	$ unzip libusb-compat-0.1-master.zip
+	$ cd libusb-compat-0.1-master
+	$ ./bootstrap.sh
+	$ PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+net-snmp
+^^^^^^^^
+
+	$ wget https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz
+	$ tar xzf net-snmp-5.9.1.tar.gz
+	$ cd net-snmp-5.9.1
+	$ yes "" | PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig ./configure --prefix=$PREFIX $HOST_FLAG \
+	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
+	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
+	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
+	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks
+	# NOTE: ./configure script may ask a few questions, or may just print
+	# a banner that it would; hopefully all replies needed for current
+	# version are covered above
+	$ make
+	$ sudo make install
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-libusb, Net SNMP, ...
+libneon (xml), gd (cgi), avahi, ipmi, ssl, ltdl (nut-scanner)...
 
 Building NUT
 ~~~~~~~~~~~~
