@@ -39,7 +39,7 @@ When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
 and CC, CFLAGS, LDFLAGS and PREFIX:
 
 - prefer to export ARCH="x86_64-w64-mingw32" or ARCH="i686-w64-mingw32"
-- HOST_FLAG="--host=$ARCH"
+- export HOST_FLAG="--host=$ARCH"
 - PREFIX=/usr/$ARCH
 
 - BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
