@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT(nut, 2.6.5-5)
+AC_INIT(nut, 2.6.5)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -11,7 +11,7 @@ AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(subdir-objects)
 
 dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
