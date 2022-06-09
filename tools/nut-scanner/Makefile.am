@@ -32,9 +32,14 @@ endif
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
 endif
+# Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
-endif
+if    HAVE_WINDOWS
+    # MinGW builds of libnetsnmp are static-only, so we link it in:
+    libnutscan_la_LIBADD += $(LIBNETSNMP_LIBS)
+endif HAVE_WINDOWS
+endif WITH_SNMP
 if WITH_NEON
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
 endif
