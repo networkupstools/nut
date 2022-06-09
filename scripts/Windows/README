@@ -68,7 +68,7 @@ https://fedoraproject.org/wiki/Packaging:MinGW_Old
 You can also compile it using:
 
 	$ wget http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz
-	$ make -f GNUmakefile "CROSS=i686-w64-mingw32-" $BUILD_FLAG GC-inlined
+	$ make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
 	$ cp *.dll /usr/i686-w64-mingw32/pthreads/lib/
 	$ cp *.a /usr/i686-w64-mingw32/lib/
 	$ cp pthread.h sched.h semaphore.h /usr/i686-w64-mingw32/pthreads/include
@@ -82,7 +82,7 @@ You can compile it  using:
 	$ wget http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
 	$ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
 	$ cd mingw-libgnurx-2.5.1
-	$ ./configure --prefix=/usr/i686-w64-mingw32/ --host=i686-w64-mingw32
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
 	$ make
 	$ make install
 
