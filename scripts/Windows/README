@@ -157,19 +157,28 @@ libneon (xml), gd (cgi), avahi, ipmi, ssl...
 Building NUT
 ~~~~~~~~~~~~
 
-Use the following to compile NUT with an existing source tarball:
+Use the following to compile NUT with:
 
+* an existing source tarball (can be fetched from NUT website):
+
+	$ export SOURCEMODE=stable
+	### Optionally: export VER_OPT=2.8.0
 	$ cd scripts/Windows/
 	$ ./build-mingw-nut.sh
+
+* out-of-tree from git source (easier to iterate for development, so default):
+
+	(cd scripts/Windows/ && ./build-mingw-nut.sh all64)
+
+* To (re-)build from scratch with a dist tarball, e.g. testing how a stable
+release would fare, starting from a git checkout, use this:
+
+	$ ./autogen.sh && ./configure && make dist && \
+	    (cd scripts/Windows/ && SOURCEMODE=dist ./build-mingw-nut.sh all64)
 
 If everything goes fine, you will find a NUT installation tree in 'nut_install'
 sub-directory. Note the script accepts some parameters e.g. for 32/64 bit build
 targets.
-
-To (re-)build from scratch, e.g. from a git checkout, use this:
-
-	$ ./autogen.sh && ./configure && make dist && \
-	    (cd scripts/Windows/ && ./build-mingw-nut.sh all64)
 
 NOTE: For other ways of building and packaging, it might make sense for
 a packaged delivery to also `make install DESTDIR=.../nut_install` from
