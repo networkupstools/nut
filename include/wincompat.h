@@ -28,7 +28,9 @@
 #include "common.h"
 
 /* This value is defined in the error.h file of the libusb-win32 sources */
+#ifndef ETIMEDOUT
 #define ETIMEDOUT 116
+#endif
 
 #define random() rand()
 typedef const char * uid_t;
@@ -84,7 +86,9 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt);
 #define EAI_SOCKTYPE	WSAESOCKTNOSUPPORT
 /* not from MS docs : */
 #define EAI_SYSTEM	WSANO_RECOVERY
+#ifndef EAFNOSUPPORT
 #define EAFNOSUPPORT	WSAEAFNOSUPPORT
+#endif
 
 /* "system" function */
 int win_system(const char * command);
