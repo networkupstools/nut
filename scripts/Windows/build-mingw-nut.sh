@@ -59,6 +59,11 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    --without-systemdsystemunitdir
 	make 1>/dev/null
 	make install
+	# Be sure upsmon can run even if at cost of some duplication
+	# (maybe even do "cp -pf" if some system dislikes "ln"); also
+	# on a modern Windows one could go to their installed "sbin" to
+	#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
+	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
 	# Note: lib*snmp*.dll not listed below, it is
 	# statically linked into binaries that use it
 	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb}*.dll .) || true
