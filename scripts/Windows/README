@@ -72,9 +72,9 @@ You can also compile it using:
 
 	$ wget http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz
 	$ make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
-	$ cp *.dll /usr/i686-w64-mingw32/pthreads/lib/
-	$ cp *.a /usr/i686-w64-mingw32/lib/
-	$ cp pthread.h sched.h semaphore.h /usr/i686-w64-mingw32/pthreads/include
+	$ sudo cp *.dll /usr/$ARCH/pthreads/lib/
+	$ sudo cp *.a /usr/$ARCH/lib/
+	$ sudo cp pthread.h sched.h semaphore.h /usr/$ARCH/pthreads/include
 
 
 MinGW regex library
@@ -87,7 +87,7 @@ You can compile it  using:
 	$ cd mingw-libgnurx-2.5.1
 	$ ./configure --prefix=$PREFIX $HOST_FLAG
 	$ make
-	$ make install
+	$ sudo make install
 
 Other requirements
 ^^^^^^^^^^^^^^^^^^
