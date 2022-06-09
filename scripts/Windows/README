@@ -96,6 +96,16 @@ You can compile it  using:
 	$ make
 	$ sudo make install
 
+libtool (libltdl)
+^^^^^^^^^^^^^^^^^
+
+	$ wget https://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz
+	$ tar xzf libtool-2.4.6.tar.gz
+	$ cd libtool-2.4.6
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
 libusb
 ^^^^^^
 
@@ -135,10 +145,11 @@ net-snmp
 	$ make
 	$ sudo make install
 
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-libneon (xml), gd (cgi), avahi, ipmi, ssl, ltdl (nut-scanner)...
+libneon (xml), gd (cgi), avahi, ipmi, ssl...
 
 Building NUT
 ~~~~~~~~~~~~

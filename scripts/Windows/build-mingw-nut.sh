@@ -66,7 +66,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
 	# Note: lib*snmp*.dll not listed below, it is
 	# statically linked into binaries that use it
-	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb}*.dll .) || true
+	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
+	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
 	cd ..
 else
 	echo "Usage:"
