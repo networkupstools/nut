@@ -14,6 +14,13 @@ The following chapters will guide you through setting up up a
 link:http://mingw-w64.sourceforge.net[MinGW-w64] build environment and
 compiling NUT.
 
+Beside MinGW detailed below, you would need the usual dependencies to
+configure and build NUT (if you would bootstrap it from github sources
+rather than a tarball -- without a pre-generated `configure` script).
+Notably, `asciidoc` with its many dependencies may be required for
+generation of man pages into the intermediate tarball used by script
+referenced below.
+
 MinGW-w64 build environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,9 +140,16 @@ libneon (xml), gd (cgi), avahi, ipmi, ssl, ltdl (nut-scanner)...
 Building NUT
 ~~~~~~~~~~~~
 
-Use the following to compile NUT:
+Use the following to compile NUT with an existing source tarball:
 
 	$ cd scripts/Windows/
 	$ ./build-mingw-nut.sh
 
-If everything goes fine, you will find a NUT installation tree in 'nut_install'.
+If everything goes fine, you will find a NUT installation tree in 'nut_install'
+sub-directory. Note the script accepts some parameters e.g. for 32/64 bit build
+targets.
+
+To (re-)build from scratch, e.g. from a git checkout, use this:
+
+	$ ./autogen.sh && ./configure && make dist && \
+	    (cd scripts/Windows/ && ./build-mingw-nut.sh all64)
