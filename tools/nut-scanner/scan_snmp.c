@@ -110,6 +110,43 @@ static oid * (*nut_usmDESPrivProtocol);
 /* return 0 on error */
 int nutscan_load_snmp_library()
 {
+#ifdef WIN32
+	/* With MinGW, the netsnmp library may be linked statically (no dll) */
+	/* Assignments were parsed from code below with:
+	 *   grep -A1 dlsym tools/nut-scanner/scan_snmp.c | egrep 'dlsym|")' | sed -e 's| *lt_dlsym(dl_handle, *| |' -e 's,");,;,' -e 's,",,' -e 's,= *$,=,'
+	 */
+	*(void **) (&nut_init_snmp) = init_snmp;
+	*(void **) (&nut_snmp_sess_init) =
+				snmp_sess_init;
+	*(void **) (&nut_snmp_sess_open) =
+				snmp_sess_open;
+	*(void **) (&nut_snmp_sess_close) =
+				snmp_sess_close;
+	*(void **) (&nut_snmp_sess_session) =
+				snmp_sess_session;
+	*(void **) (&nut_snmp_parse_oid) =
+				snmp_parse_oid;
+	*(void **) (&nut_snmp_pdu_create) =
+				snmp_pdu_create;
+	*(void **) (&nut_snmp_add_null_var) =
+				snmp_add_null_var;
+	*(void **) (&nut_snmp_sess_synch_response) =
+			snmp_sess_synch_response;
+	*(void **) (&nut_snmp_oid_compare) =
+				snmp_oid_compare;
+	*(void **) (&nut_snmp_free_pdu) = snmp_free_pdu;
+	*(void **) (&nut_generate_Ku) = generate_Ku;
+	*(void **) (&nut_snmp_api_errstring) =
+				snmp_api_errstring;
+	*(void **) (&nut_snmp_errno) = snmp_errno;
+	*(void **) (&nut_usmAESPrivProtocol) =
+	*(void **) (&nut_usmHMACMD5AuthProtocol) =
+			usmHMACMD5AuthProtocol;
+	*(void **) (&nut_usmHMACSHA1AuthProtocol) =
+			usmHMACSHA1AuthProtocol;
+	*(void **) (&nut_usmDESPrivProtocol) =
+			usmDESPrivProtocol;
+#else
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
 		if( dl_handle == (void *)1 ) {
@@ -234,6 +271,7 @@ int nutscan_load_snmp_library()
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
+#endif /* WIN32 */
 
 	return 1;
 err:

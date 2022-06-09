@@ -26,7 +26,12 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
+#ifndef WIN32
 static char * libname = "libupsclient";
+#else
+/* TODO: Detect DLL name at build time */
+static char * libname = "libupsclient-3";
+#endif
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 

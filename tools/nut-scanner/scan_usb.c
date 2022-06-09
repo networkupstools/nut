@@ -28,7 +28,12 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
+#ifndef WIN32
 static char * libname = "libusb";
+#else
+/* TODO: Detect DLL name at build time */
+static char * libname = "libusb-0-1-4";
+#endif
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static int (*nut_usb_close)(usb_dev_handle *dev);
