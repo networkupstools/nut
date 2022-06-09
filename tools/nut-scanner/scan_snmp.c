@@ -68,8 +68,10 @@
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
 #define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
+#define USMAESPRIVPROTOCOL_PTR usmAES128PrivProtocol
 #else
 #define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
+#define USMAESPRIVPROTOCOL_PTR usmAESPrivProtocol
 #endif
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
@@ -155,6 +157,80 @@ int nutscan_load_snmp_library(const char *libname_path);
 
 int nutscan_load_snmp_library(const char *libname_path)
 {
+#ifdef WITH_SNMP_STATIC
+	/* With MinGW, the netsnmp library may be linked statically (no dll) */
+	NUT_UNUSED_VARIABLE(libname_path);
+
+	/* Assignments were parsed from code below with:
+	 *   grep -A1 dlsym tools/nut-scanner/scan_snmp.c | egrep 'dlsym|")' | sed -e 's| *lt_dlsym(dl_handle, *| |' -e 's,");,;,' -e 's,",,' -e 's,= *$,=,'
+	 */
+
+	*(void **) (&nut_init_snmp) = init_snmp;
+	*(void **) (&nut_snmp_sess_init) =
+				snmp_sess_init;
+	*(void **) (&nut_snmp_sess_open) =
+				snmp_sess_open;
+	*(void **) (&nut_snmp_sess_close) =
+				snmp_sess_close;
+	*(void **) (&nut_snmp_sess_session) =
+				snmp_sess_session;
+	*(void **) (&nut_snmp_parse_oid) =
+				snmp_parse_oid;
+	*(void **) (&nut_snmp_pdu_create) =
+				snmp_pdu_create;
+	*(void **) (&nut_snmp_add_null_var) =
+				snmp_add_null_var;
+	*(void **) (&nut_snmp_sess_synch_response) =
+			snmp_sess_synch_response;
+	*(void **) (&nut_snmp_oid_compare) =
+				snmp_oid_compare;
+	*(void **) (&nut_snmp_free_pdu) = snmp_free_pdu;
+	*(void **) (&nut_generate_Ku) = generate_Ku;
+	*(void **) (&nut_snmp_out_toggle_options) =
+				snmp_out_toggle_options;
+	*(void **) (&nut_snmp_api_errstring) =
+				snmp_api_errstring;
+	*(void **) (&nut_snmp_errno) = snmp_errno;
+#if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+	*(void **) (&nut_usmAESPrivProtocol) =
+				USMAESPRIVPROTOCOL_PTR;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+	*(void **) (&nut_usmHMACMD5AuthProtocol) =
+			usmHMACMD5AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+	*(void **) (&nut_usmHMACSHA1AuthProtocol) =
+			usmHMACSHA1AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+	*(void **) (&nut_usmDESPrivProtocol) =
+			usmDESPrivProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
+# if NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+	*(void **) (&nut_usmAES192PrivProtocol) =
+			usmAES192PrivProtocol;
+# endif
+# if NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+	*(void **) (&nut_usmAES256PrivProtocol) =
+			usmAES256PrivProtocol;
+# endif
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+	*(void **) (&nut_usmHMAC192SHA256AuthProtocol) =
+			usmHMAC192SHA256AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+	*(void **) (&nut_usmHMAC256SHA384AuthProtocol) =
+			usmHMAC256SHA384AuthProtocol;
+#endif
+#if NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+	*(void **) (&nut_usmHMAC384SHA512AuthProtocol) =
+			usmHMAC384SHA512AuthProtocol;
+#endif
+
+#else	/* not WITH_SNMP_STATIC */
 	if (dl_handle != NULL) {
 		/* if previous init failed */
 		if (dl_handle == (void *)1) {
@@ -340,6 +416,8 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
+
+#endif	/* WITH_SNMP_STATIC */
 
 	return 1;
 

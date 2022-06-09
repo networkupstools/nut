@@ -30,6 +30,12 @@
 #include <string.h>
 #include "nut-scan.h"
 
+#ifndef WIN32
+#define SOEXT ".so"
+#else
+#define SOEXT ".dll"
+#endif
+
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
 int nutscan_avail_nut = 0;
@@ -138,12 +144,19 @@ void nutscan_init(void)
 	char *libname = NULL;
 #ifdef WITH_USB
  #if WITH_LIBUSB_1_0
-	libname = get_libname("libusb-1.0.so");
+	libname = get_libname("libusb-1.0" SOEXT);
  #else
-	libname = get_libname("libusb-0.1.so");
+	libname = get_libname("libusb-0.1" SOEXT);
+  #ifdef WIN32
+	/* TODO: Detect DLL name at build time, or rename it at install time? */
+	/* libusb-compat built for mingw per NUT instructions */
+	if (!libname) {
+		libname = get_libname("libusb-0-1-4" SOEXT);
+	}
+  #endif
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
-		libname = get_libname("libusb.so");
+		libname = get_libname("libusb" SOEXT);
 	}
  #endif
 	if (libname) {
@@ -152,16 +165,16 @@ void nutscan_init(void)
 	}
 #endif
 #ifdef WITH_SNMP
-	libname = get_libname("libnetsnmp.so");
+	libname = get_libname("libnetsnmp" SOEXT);
 	if (libname) {
 		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
 		free(libname);
 	}
 #endif
 #ifdef WITH_NEON
-	libname = get_libname("libneon.so");
+	libname = get_libname("libneon" SOEXT);
 	if (!libname) {
-		libname = get_libname("libneon-gnutls.so");
+		libname = get_libname("libneon-gnutls" SOEXT);
 	}
 	if (libname) {
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
@@ -169,20 +182,26 @@ void nutscan_init(void)
 	}
 #endif
 #ifdef WITH_AVAHI
-	libname = get_libname("libavahi-client.so");
+	libname = get_libname("libavahi-client" SOEXT);
 	if (libname) {
 		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
 		free(libname);
 	}
 #endif
 #ifdef WITH_FREEIPMI
-	libname = get_libname("libfreeipmi.so");
+	libname = get_libname("libfreeipmi" SOEXT);
 	if (libname) {
 		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
 		free(libname);
 	}
 #endif
-	libname = get_libname("libupsclient.so");
+	libname = get_libname("libupsclient" SOEXT);
+#ifdef WIN32
+	/* TODO: Detect DLL name at build time, or rename it at install time? */
+	if (!libname) {
+		libname = get_libname("libupsclient-3" SOEXT);
+	}
+#endif
 	if (libname) {
 		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
 		free(libname);
