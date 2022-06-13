@@ -240,6 +240,10 @@ extern int optind;
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
 
+/* Not all platforms support the flag; this method abstracts
+ * its use (or not) to simplify calls in the actual codebase */
+void set_close_on_exec(int fd);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

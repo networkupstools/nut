@@ -1638,7 +1638,7 @@ static int try_connect(utype_t *ups)
 	setflag(&ups->status, ST_CONNECTED);
 
 	/* prevent connection leaking to NOTIFYCMD */
-	fcntl(upscli_fd(&ups->conn), F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(upscli_fd(&ups->conn));
 
 	/* now try to authenticate to upsd */
 
@@ -1945,7 +1945,7 @@ static void start_pipe(void)
 	close(pipefd[0]);
 
 	/* prevent pipe leaking to NOTIFYCMD */
-	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(pipefd[1]);
 }
 
 static void delete_ups(utype_t *target)

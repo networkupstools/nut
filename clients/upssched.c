@@ -301,7 +301,7 @@ static int open_sock(void)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
 	/* don't leak socket to CMDSCRIPT */
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(fd);
 
 	return fd;
 }
@@ -400,7 +400,7 @@ static void conn_add(int sockfd)
 	}
 
 	/* don't leak connection to CMDSCRIPT */
-	fcntl(acc, F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(acc);
 
 	/* enable nonblocking I/O */
 
