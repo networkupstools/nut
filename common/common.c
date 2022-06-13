@@ -700,8 +700,17 @@ const char * altpidpath(void)
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
+	size_t len = strlen(fn);
+#ifdef UNIX_PATH_MAX
+	size_t max = UNIX_PATH_MAX;
+#else
+	size_t max = PATH_MAX;
+#endif
+#ifndef WIN32
 	struct sockaddr_un	ssaddr;
-	if (strlen(fn) < sizeof(ssaddr.sun_path))
+	max = sizeof(ssaddr.sun_path);
+#endif
+	if (len < max)
 		return;
 
 	/* Avoid useless truncated pathnames that
@@ -716,7 +725,7 @@ void check_unix_socket_filename(const char *fn) {
 		"Can't create a unix domain socket: pathname '%s' "
 		"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
 		"on this system (%" PRIuSIZE ")",
-		fn, strlen(fn), sizeof(ssaddr.sun_path));
+		fn, len, max);
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */
