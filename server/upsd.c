@@ -1492,13 +1492,13 @@ int main(int argc, char **argv)
 	int	i, cmdret = 0, foreground = -1;
 #ifndef WIN32
 	int	cmd = 0;
+	pid_t	oldpid = -1;
 #else
 	const char * cmd = NULL;
 #endif
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
-	pid_t	oldpid = -1;
 
 	progname = xbasename(argv[0]);
 
