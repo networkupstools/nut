@@ -2256,9 +2256,9 @@ int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
-	pid_t	oldpid = -1;
 
 #ifndef WIN32
+	pid_t	oldpid = -1;
 	int cmd = 0;
 #else
 	const char * cmd = NULL;
