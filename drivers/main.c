@@ -27,7 +27,9 @@
 #include "dstate.h"
 #include "attribute.h"
 
-#include <grp.h>
+#ifndef WIN32
+# include <grp.h>
+#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -658,12 +660,12 @@ static void exit_cleanup(void)
 #endif
 }
 
+#ifndef WIN32
 static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
 
-#ifndef WIN32
 static void setup_signals(void)
 {
 	struct sigaction	sa;
@@ -1062,6 +1064,7 @@ int main(int argc, char **argv)
 		if (strcmp(group, RUN_AS_GROUP)
 		||  strcmp(user,  RUN_AS_USER)
 		) {
+#ifndef WIN32
 			int allOk = 1;
 			/* Tune group access permission to the pipe,
 			 * so that upsd can access it (using the
@@ -1123,7 +1126,9 @@ int main(int argc, char **argv)
 					"the device: %s",
 					sockname);
 			}
-
+#else	/* not WIN32 */
+			upsdebugx(1, "Options for alternate user/group are not implemented on this platform");
+#endif	/* WIN32 */
 		}
 		free(sockname);
 	}
