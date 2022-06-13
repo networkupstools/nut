@@ -272,11 +272,12 @@ char *xstrdup(const char *string);
 /* Note: different method signatures instead of TYPE_FD due to "const" */
 #ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
-#else
-ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
-#endif
-/* Note: currently not implemented de-facto for Win32 */
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+#else
+ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+/* Note: currently not implemented de-facto for Win32 */
+ssize_t select_write(serial_handler_t * fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+#endif
 
 char * get_libname(const char* base_libname);
 

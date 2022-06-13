@@ -1073,11 +1073,11 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 	return read(fd, buf, buflen);
 }
 #else
-ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	/* This function is only called by serial drivers right now */
 	/* TODO: Assert below that resulting values fit in ssize_t range */
-	DWORD bytes_read;
+	/* DWORD bytes_read; */
 	int res;
 	DWORD timeout;
 	COMMTIMEOUTS TOut;
@@ -1099,9 +1099,9 @@ ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const t
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
+#ifndef WIN32
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
-#ifndef WIN32
 	int		ret;
 	fd_set		fds;
 	struct timeval	tv;
@@ -1119,10 +1119,19 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const t
 	}
 
 	return write(fd, buf, buflen);
-#else
-	return 0;
-#endif
 }
+#else
+/* Note: currently not implemented de-facto for Win32 */
+ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+{
+	NUT_UNUSED_VARIABLE(fd);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+	NUT_UNUSED_VARIABLE(d_sec);
+	NUT_UNUSED_VARIABLE(d_usec);
+	return 0;
+}
+#endif
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
  * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
