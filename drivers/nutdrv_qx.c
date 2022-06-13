@@ -176,7 +176,7 @@ static status_lkp_t	status_info[] = {
 	{ "CHRG", STATUS(CHRG) },
 	{ "DISCHRG", STATUS(DISCHRG) },
 	{ "BYPASS", STATUS(BYPASS) },
-	{ "CAL", STATUS(CAL) },
+	{ "CAL", STATUS(CALIB) },
 	{ "OFF", STATUS(OFF) },
 	{ "OVER", STATUS(OVER) },
 	{ "TRIM", STATUS(TRIM) },
@@ -3871,7 +3871,7 @@ static void	ups_status_set(void)
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* UPS is off */
 	}
-	if (ups_status & STATUS(CAL)) {
+	if (ups_status & STATUS(CALIB)) {
 		status_set("CAL");		/* Calibration */
 	}
 	if (ups_status & STATUS(FSD)) {
