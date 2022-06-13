@@ -548,7 +548,7 @@ static const char *mge_sensitivity_info(const char *arg_val)
 
 static const char *mge_test_result_info(const char *arg_val)
 {
-	STATUS_CLR(CAL);
+	STATUS_CLR(CALIB);
 	switch (atoi(arg_val))
 	{
 	case 1:
@@ -560,7 +560,7 @@ static const char *mge_test_result_info(const char *arg_val)
 	case 4:
 		return "aborted";
 	case 5:
-		STATUS_SET(CAL);
+		STATUS_SET(CALIB);
 		return "in progress";
 	case 6:
 		return "no test initiated";
