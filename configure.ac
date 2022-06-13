@@ -2813,9 +2813,27 @@ AS_CASE(["${nut_enable_warnings}"],
         ]
 )
 
+AS_IF([test x"${nut_enable_warnings}" != xno || test x"${nut_enable_Werror}" != xno],
+    [AS_IF([test "x${CLANGCC}" = "xyes" || test "x${GCC}" = "xyes"],
+        [AS_CASE(["${target_os}"],
+            [*mingw*], [
+                AC_MSG_NOTICE(
+[GCC on WIN32 builds warns about '%lld' etc. via PRId64 etc.
+even though modern libraries support long-long printing
+in practice (older ones did not - hence the warning).
+Forcing "-Wno-format" into warnings options.
+])
+                CFLAGS="${CFLAGS} -Wno-format"
+                CXXFLAGS="${CXXFLAGS} -Wno-format"
+            ]
+        )
+    ])
+])
+
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
+
         CFLAGS="${CFLAGS} -Werror"
         CXXFLAGS="${CXXFLAGS} -Werror"
         ],
