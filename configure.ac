@@ -526,9 +526,14 @@ NUT_FUNC_GETNAMEINFO_ARGTYPES
 
 AC_CACHE_CHECK([for inet_ntop()],
     [ac_cv_func_inet_ntop],
-    [AX_RUN_OR_LINK_IFELSE(
+    [AC_LANG_PUSH([C])
+    dnl e.g. add "-lws2_32" for mingw builds
+    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+    SAVED_LIBS="$LIBS"
+    LIBS="$LIBS $NETLIBS"
+    AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([[
-#ifdef WIN32
+#if HAVE_WINDOWS_H
 # undef inline
 # ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
@@ -551,7 +556,10 @@ printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_inet_ntop=yes], [ac_cv_func_inet_ntop=no]
-    )])
+    )
+    AC_LANG_POP([C])
+    LIBS="$SAVED_LIBS"
+])
 AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
     [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
     [AC_MSG_WARN([Required C library routine inet_ntop() not found])]

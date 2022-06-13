@@ -80,7 +80,11 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	export CC="$ARCH-gcc"
 	export PATH=/usr/$ARCH/bin:$PATH
 
-	export CFLAGS+="-D_POSIX=1 -I/usr/$ARCH/include/"
+	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
+	# and the value 0xffff is anyway forced into some components at least
+	# by netsnmp cflags.
+	export CFLAGS+="-D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
+	export CXXFLAGS+="$CFLAGS"
 	export LDFLAGS+="-L/usr/$ARCH/lib/"
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR \
 	    --without-pkg-config --with-all=auto \

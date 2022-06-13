@@ -160,7 +160,6 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt)
 # else
 const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 # endif
-#endif
 {
 	struct sockaddr_in srcaddr;
 
@@ -174,6 +173,7 @@ const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 	}
 	return dst;
 }
+#endif	/* HAVE_INET_NTOP */
 
 /* "system" call seems to handle path with blank name incorrectly */
 int win_system(const char * command)
