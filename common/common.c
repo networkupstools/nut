@@ -32,6 +32,9 @@
 #endif
 
 #include <dirent.h>
+#if !HAVE_REALPATH
+# include <sys/stat.h>
+#endif
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -1222,11 +1225,25 @@ char * get_libname(const char* base_libname)
 		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
 		while ((dirp = readdir(dp)) != NULL)
 		{
+#if !HAVE_REALPATH
+			struct stat	st;
+#endif
+
 			upsdebugx(5,"Comparing lib %s with dirpath %s", base_libname, dirp->d_name);
 			int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
 			if(compres == 0) {
 				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
+#if HAVE_REALPATH
 				libname_path = realpath(current_test_path, NULL);
+#else
+				/* Just check if candidate name is (points to?) valid file */
+				libname_path = NULL;
+				if (stat(current_test_path, &st)) {
+					if (st.st_size > 0) {
+						libname_path = xstrdup(current_test_path);
+					}
+				}
+#endif
 				upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)", base_libname, current_test_path, (libname_path!=NULL)?libname_path:"NULL");
 				if (libname_path != NULL)
 					break;
