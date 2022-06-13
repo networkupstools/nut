@@ -1077,3 +1077,19 @@ char * get_libname(const char* base_libname)
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }
+
+/* TODO: Extend for TYPE_FD and WIN32 eventually? */
+void set_close_on_exec(int fd) {
+	/* prevent fd leaking to child processes */
+#ifndef FD_CLOEXEC
+	/* Find a way, if possible at all old platforms */
+	NUT_UNUSED_VARIABLE(fd);
+#else
+# ifdef WIN32
+	/* Find a way, if possible at all (WIN32: get INT fd from the HANDLE?) */
+	NUT_UNUSED_VARIABLE(fd);
+# else
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+# endif
+#endif
+}
