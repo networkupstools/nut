@@ -1059,12 +1059,13 @@ static void mainloop(void)
 {
 #ifndef WIN32
 	int	ret;
-	nfds_t	i, nfds = 0;
+	nfds_t	i;
 #else
 	DWORD	ret;
 	pipe_conn_t * conn;
 #endif
 
+	nfds_t	nfds = 0;
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
 	stype_t		*server;
