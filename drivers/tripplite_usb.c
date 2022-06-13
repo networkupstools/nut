@@ -543,7 +543,7 @@ static void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case ERROR_BUSY:
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING,
 				"%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
@@ -1017,7 +1017,7 @@ void upsdrv_initinfo(void)
 	if(tl_model != TRIPP_LITE_SMARTPRO ) {
 		ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 		if(ret <= 0) {
-			if(ret == ERROR_PIPE) {
+			if(ret == LIBUSB_ERROR_PIPE) {
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
