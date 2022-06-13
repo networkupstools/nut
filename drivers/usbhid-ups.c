@@ -185,7 +185,7 @@ static status_lkp_t status_info[] = {
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "off", STATUS(OFF) },
-	{ "cal", STATUS(CAL) },
+	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
 	{ "commfault", STATUS(COMMFAULT) },
 	{ "depleted", STATUS(DEPLETED) },
@@ -1654,7 +1654,7 @@ static void ups_status_set(void)
 			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
 		} else {
-			if (!(ups_status & STATUS(CAL))) {
+			if (!(ups_status & STATUS(CALIB))) {
 				/* if in OL+DISCHRG unknowingly, warn user */
 				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
 				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
@@ -1696,7 +1696,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
-	if (ups_status & STATUS(CAL)) {
+	if (ups_status & STATUS(CALIB)) {
 		status_set("CAL");		/* calibration */
 	}
 }
