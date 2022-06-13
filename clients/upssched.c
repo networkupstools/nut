@@ -459,7 +459,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		ret = (ssize_t)bytesWritten;
 	}
 
-	if ((ret < 1) || (ret != buflen)) {
+	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 		upsdebugx(2, "write to fd %p failed", conn->fd);
 		/* FIXME not sure this is the right way to close a connection */
 		if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
