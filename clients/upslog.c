@@ -85,7 +85,6 @@ static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
-#endif
 
 static void set_print_now_flag(int sig)
 {
@@ -93,6 +92,7 @@ static void set_print_now_flag(int sig)
 
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
+#endif
 
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
