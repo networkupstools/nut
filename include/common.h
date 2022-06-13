@@ -350,4 +350,7 @@ char * getfullpath(char * relative_path);
 int __cdecl usleep(useconds_t useconds);
 #endif /* HAVE_USLEEP */
 
+/* TODO: Extend for TYPE_FD and WIN32 eventually? */
+void set_close_on_exec(int fd);
+
 #endif /* NUT_COMMON_H_SEEN */
