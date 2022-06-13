@@ -1482,6 +1482,8 @@ void check_perms(const char *fn)
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
 		upslogx(LOG_WARNING, "%s is world readable", fn);
 	}
+#else
+	NUT_UNUSED_VARIABLE(fn);
 #endif
 }
 
