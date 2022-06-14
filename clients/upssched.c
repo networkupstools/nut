@@ -422,7 +422,16 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		/* Can't compare buflen to ret */
 		upsdebugx(2, "send_to_one(): buffered message too large");
 
+#ifndef WIN32
 		close(conn->fd);
+#else
+		if (conn->fd != INVALID_HANDLE_VALUE) {
+			FlushFileBuffers(conn->fd);
+			CloseHandle(conn->fd);
+			conn->fd = INVALID_HANDLE_VALUE;
+		}
+#endif
+
 		conn_del(conn);
 
 		return 0;	/* failed */
