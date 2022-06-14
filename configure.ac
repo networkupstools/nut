@@ -320,6 +320,44 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
     [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
     )
 
+AC_CACHE_CHECK([for strlwr(s)],
+    [ac_cv_func_strlwr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strlwr("Some STR1 text") == NULL) return 1])],
+        [ac_cv_func_strlwr=yes], [ac_cv_func_strlwr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strlwr}" = xyes],
+    [AC_DEFINE([HAVE_STRLWR], 1, [defined if standard library has, and C standard allows, the strlwr(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strlwr not found])]
+    )
+
+AC_CACHE_CHECK([for strstr(s1,s2)],
+    [ac_cv_func_strstr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strstr("Some str1 text", "str1") != 0) return 1])],
+        [ac_cv_func_strstr=yes], [ac_cv_func_strstr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strstr}" = xyes],
+    [AC_DEFINE([HAVE_STRSTR], 1, [defined if standard library has, and C standard allows, the strstr(s1,s2) method])],
+    [AC_MSG_ERROR([Required C library routine strstr not found])]
+    )
+
+AC_CACHE_CHECK([for strcasestr(s1,s2)],
+    [ac_cv_func_strcasestr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strcasestr("Some STR1 text", "str1") != 0) return 1])],
+        [ac_cv_func_strcasestr=yes], [ac_cv_func_strcasestr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strcasestr}" = xyes],
+    [AC_DEFINE([HAVE_STRCASESTR], 1, [defined if standard library has, and C standard allows, the strcasestr(s1,s2) method])],
+    [AS_IF([test x"${ac_cv_func_strlwr}" = xyes && test x"${ac_cv_func_strstr}" = xyes],
+        [AC_MSG_WARN([Optional C library routine strcasestr not found; a simple wrapper will be built in])]
+        [AC_MSG_WARN([Required C library routine strcasestr not found; try adding _GNU_SOURCE])]
+    )])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
