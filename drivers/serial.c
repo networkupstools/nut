@@ -100,8 +100,13 @@ static void lock_set(TYPE_FD fd, const char *port)
 {
 	int	ret;
 
-	if (fd == ERROR_FD)
-		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", PRINT_FD(fd));
+	if (fd == ERROR_FD) {
+#ifndef WIN32
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
+#else
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: handle = %p", fd);
+#endif
+	}
 
 	if (do_lock_port == 0)
 		return;
@@ -319,8 +324,13 @@ int ser_flush_io(TYPE_FD fd)
 
 int ser_close(TYPE_FD fd, const char *port)
 {
-	if (fd == ERROR_FD)
-		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", PRINT_FD(fd), port);
+	if (fd == ERROR_FD) {
+#ifndef WIN32
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
+#else
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: handle=%p port=%s", fd, port);
+#endif
+	}
 
 	if (close(fd) != 0)
 		return -1;

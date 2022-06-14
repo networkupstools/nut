@@ -96,7 +96,6 @@ extern "C" {
 # define TYPE_FD int
 # define ERROR_FD (-1)
 # define VALID_FD(a) (a>0)
-# define PRINT_FD(x) x
 #else
 typedef struct serial_handler_s {
 	HANDLE handle;
@@ -112,8 +111,6 @@ typedef struct serial_handler_s {
 # define TYPE_FD serial_handler_t *
 # define ERROR_FD (NULL)
 # define VALID_FD(a) (a!=NULL)
-/* FIXME: HANDLE is not guaranteed to be an int(-sized memory area), right? */
-# define PRINT_FD(x) (int)x->handle
 
 /* difftime returns erroneous value so we use this macro */
 # undef difftime
