@@ -1047,6 +1047,8 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
         struct timeval  now;
 	DWORD   timeout_ms;
 
+	/* FIXME: Should such table (and limit) be used in reality? */
+	NUT_UNUSED_VARIABLE(extrafd);
 /*
 	if (extrafd != -1) {
 		rfds[maxfd] = extrafd;
