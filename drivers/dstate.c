@@ -31,7 +31,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #else
-#include <stdio.h>
 #include <strings.h>
 #include "wincompat.h"
 #endif
