@@ -336,7 +336,7 @@ AC_CACHE_CHECK([for strstr(s1,s2)],
     [ac_cv_func_strstr],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
-            [if (strstr("Some str1 text", "str1") != 0) return 1])],
+            [if (strstr("Some str1 text", "str1") == NULL) return 1])],
         [ac_cv_func_strstr=yes], [ac_cv_func_strstr=no]
     )])
 AS_IF([test x"${ac_cv_func_strstr}" = xyes],
@@ -348,7 +348,7 @@ AC_CACHE_CHECK([for strcasestr(s1,s2)],
     [ac_cv_func_strcasestr],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
-            [if (strcasestr("Some STR1 text", "str1") != 0) return 1])],
+            [if (strcasestr("Some STR1 text", "str1") == NULL) return 1])],
         [ac_cv_func_strcasestr=yes], [ac_cv_func_strcasestr=no]
     )])
 AS_IF([test x"${ac_cv_func_strcasestr}" = xyes],
@@ -376,7 +376,7 @@ AC_CACHE_CHECK([for strptime(s1,s2,tm)],
             [struct tm tm;
 char *date = "12/30/1999";
 char *p = strptime(date, "%m/%d/%Y", &tm);
-if (p == NULL || *p == '\0') return 1])],
+if (p == NULL || *p != '\0') return 1])],
         [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
     )])
 AS_IF([test x"${ac_cv_func_strptime}" = xyes],
