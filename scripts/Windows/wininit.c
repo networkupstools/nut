@@ -502,13 +502,15 @@ static void close_all(void)
 
 static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 {
-
 	DWORD	ret;
 	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];
 	int	maxhandle = 0;
 	pipe_conn_t	*conn;
 	DWORD priority;
 	char * buf;
+
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 
 	if(service_flag) {
 		SvcStart(SVCNAME);
