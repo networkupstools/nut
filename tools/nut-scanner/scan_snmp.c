@@ -196,7 +196,10 @@ int nutscan_load_snmp_library(const char *libname_path)
 				snmp_out_toggle_options;
 	*(void **) (&nut_snmp_api_errstring) =
 				snmp_api_errstring;
-	*(void **) (&nut_snmp_errno) = snmp_errno;
+
+	/* Note: this one is an (int) exposed by netsnmp, not a function! */
+	nut_snmp_errno = &snmp_errno;
+
 #if NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol || NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
 	*(void **) (&nut_usmAESPrivProtocol) =
 				USMAESPRIVPROTOCOL_PTR;
