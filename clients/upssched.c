@@ -441,7 +441,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = write(conn->fd, buf, buflen);
 
 	if ((ret < 1) || (ret != (ssize_t) buflen)) {
-		upsdebugx(2, "write to fd %d failed", conn->fd);
+		upsdebugx(2, "write failed on socket %d, disconnecting", conn->fd);
 		close(conn->fd);
 		conn_del(conn);
 
@@ -453,7 +453,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0) {
-		upsdebugx(2, "write failed on %d, disconnecting", (int)conn->fd);
+		upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
 		/* FIXME not sure this is the right way to close a connection */
 		if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 			CloseHandle(conn->read_overlapped.hEvent);
