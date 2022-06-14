@@ -421,12 +421,14 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 	return 1;
 
+#ifndef WITH_SNMP_STATIC
 err:
 	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
+#endif	/* not WITH_SNMP_STATIC */
 }
 /* end of dynamic link library stuff */
 
