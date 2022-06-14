@@ -477,7 +477,7 @@ void kick_login_clients(const char *upsname)
 /* make sure a UPS is sane - connected, with fresh data */
 int ups_available(const upstype_t *ups, nut_ctype_t *client)
 {
-	if (ups->sock_fd < 0) {
+	if (!VALID_FD(ups->sock_fd)) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
 		return 0;
 	}
