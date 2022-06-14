@@ -89,9 +89,11 @@ static pthread_mutex_t dev_mutex;
 #endif
 static useconds_t g_usec_timeout ;
 
+#ifndef WITH_SNMP_STATIC
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+#endif
 
 static void (*nut_init_snmp)(const char *type);
 static void (*nut_snmp_sess_init)(netsnmp_session * session);
