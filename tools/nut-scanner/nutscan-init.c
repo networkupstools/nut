@@ -95,7 +95,11 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 
 #ifdef WIN32
 /* Stub for libupsclient */
-void do_upsconf_args(char *confupsname, char *var, char *val) {;};
+void do_upsconf_args(char *confupsname, char *var, char *val) {
+	NUT_UNUSED_VARIABLE(confupsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
+}
 #endif
 
 void nutscan_init(void)
