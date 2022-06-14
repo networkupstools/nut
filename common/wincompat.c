@@ -1422,6 +1422,6 @@ speed_t cfgetospeed(const struct termios *t)
 #else
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
-static int dummy = 0;
+int main (int argc, char ** argv);
 
 #endif
