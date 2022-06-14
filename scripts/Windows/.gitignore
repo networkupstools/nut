@@ -3,3 +3,5 @@
 winevent.h
 winevent.rc
 MSG00409.bin
+/nut_build/
+/nut_install/
