@@ -195,9 +195,16 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
-#ifdef WIN32
+
 	struct usb_bus *busses;
+#ifdef WIN32
 	busses = usb_get_busses();
+#else
+	/* libusb built-in; not sure why original NUT for WIN32
+	 * code differed or if it is actually better? Or why
+	 * this was not tackled in a few other files for USB?..
+	 */
+	busses = usb_busses;
 #endif
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
@@ -207,7 +214,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 	upsdebugx(3, "usb_busses=%p", (void*)usb_busses);
 
-	for (bus = usb_busses; bus; bus = bus->next) {
+	for (bus = busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
 			/* int	if_claimed = 0; */
 
