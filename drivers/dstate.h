@@ -29,6 +29,10 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
+#ifdef WIN32
+# include "wincompat.h"
+#endif
+
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
