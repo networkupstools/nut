@@ -277,7 +277,7 @@ static void send_to_all(const char *fmt, ...)
 
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
-			upsdebugx(2, "write failed on %d, disconnecting", (int)conn->fd);
+			upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
 			sock_disconnect(conn);
 			continue;
 		}
@@ -287,9 +287,15 @@ static void send_to_all(const char *fmt, ...)
 #endif
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
+#ifndef WIN32
 			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
 				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
 				__func__, buflen, (int)conn->fd, ret, strerror(errno));
+#else
+			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
+				__func__, buflen, conn->fd, ret, strerror(errno));
+#endif
 			upsdebugx(6, "failed write: %s", buf);
 
 			sock_disconnect(conn);
@@ -374,23 +380,48 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
+#ifndef WIN32
 		upsdebugx(1, "%s: had to throttle down to retry "
 			"writing %" PRIiSIZE " bytes to socket %d "
+			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
+			__func__, buflen, (int)conn->fd,
+			ret, errno, strerror(errno),
+			buf);
+#else
+		upsdebugx(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to handle %p "
 			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
 			__func__, buflen, conn->fd,
 			ret, errno, strerror(errno),
 			buf);
+#endif
 		usleep(200);
+#ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
+#else
+		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+		if( result == 0 ) {
+			ret = 0;
+		}
+		else  {
+			ret = (ssize_t)bytesWritten;
+		}
+#endif
 		if (ret == (ssize_t)buflen) {
 			upsdebugx(1, "%s: throttling down helped", __func__);
 		}
 	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
+#ifndef WIN32
 		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
 			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
 			__func__, buflen, (int)conn->fd, ret, strerror(errno));
+#else
+		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
+			__func__, buflen, conn->fd, ret, strerror(errno));
+#endif
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
 
@@ -407,9 +438,15 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	} else {
+#ifndef WIN32
 		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
+#else
+		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to handle %p succeeded "
+			"(ret=%" PRIiSIZE "): %s",
+			__func__, buflen, conn->fd, ret, buf);
+#endif
 	}
 
 	return 1;	/* OK */
@@ -543,7 +580,7 @@ static void sock_connect(HANDLE sock)
 
 	connhead = conn;
 
-	upsdebugx(3, "new connection on fd %d", (int)sock);
+	upsdebugx(3, "new connection on handle %p", sock);
 #endif
 
 }
@@ -898,7 +935,11 @@ char * dstate_init(const char *prog, const char *devname)
 
 	sockfd = sock_open(sockname);
 
+#ifndef WIN32
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, (int)sockfd);
+#else
+	upsdebugx(2, "dstate_init: sock %s open on handle %p", sockname, sockfd);
+#endif
 
 	/* NOTE: Caller must free this string */
 	return xstrdup(sockname);
