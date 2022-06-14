@@ -543,7 +543,7 @@ static void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case ERROR_BUSY:
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING,
 				"%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");

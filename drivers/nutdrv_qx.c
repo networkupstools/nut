@@ -597,7 +597,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 		/* No error!!! */
 		/* if (ret == -110) */
-		if (ret == ERROR_TIMEOUT)
+		if (ret == LIBUSB_ERROR_TIMEOUT)
 			break;
 
 		/* Any errors here mean that we are unable to read a reply
@@ -769,7 +769,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%d)",
-				(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 				ret);
 			return ret;
 		}
@@ -788,7 +788,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * to the UPS) */
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s (%d)",
-			(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 			ret);
 		return ret;
 	}

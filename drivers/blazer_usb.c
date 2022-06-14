@@ -207,7 +207,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
+			upsdebugx(3, "send: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 			return ret;
 		}
 	}
@@ -224,7 +224,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * will happen after successfully writing a command to the UPS)
 	 */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
+		upsdebugx(3, "read: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 		return ret;
 	}
 
