@@ -388,7 +388,9 @@ AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
-        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
             [[int res = 0;
 char *t = "Test";
 char *s = strdup(t);
