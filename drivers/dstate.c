@@ -678,6 +678,10 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
+#ifdef WIN32
+	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
+#endif
+
 	upsdebugx(6, "Driver on %s is now handling %s with %" PRIuSIZE " args",
 		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
 
@@ -930,7 +934,7 @@ char * dstate_init(const char *prog, const char *devname)
 #else
 	/* upsname (and so devname) is now mandatory so no need to test it */
 	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
-	pipename = strdup(sockname);
+	pipename = xstrdup(sockname);
 #endif
 
 	sockfd = sock_open(sockname);
