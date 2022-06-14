@@ -1102,10 +1102,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	ssize_t	ret;
 	size_t	enclen, buflen;
 	char buf[SMALLBUF], enc[SMALLBUF + 8];
+#ifndef WIN32
 	int	ret_s;
 	struct	timeval tv;
 	fd_set	fdread;
-#ifndef WIN32
 	int pipefd;
 #else
 	DWORD bytesWritten = 0;
