@@ -377,16 +377,23 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CHECK_HEADER([sys/select.h],
+    [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
+        [Define to 1 if you have <sys/select.h>.])])
+
 AC_CACHE_CHECK([for suseconds_t],
     [ac_cv_type_suseconds_t],
     [AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM([[#include <sys/types.h>
+#if HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
         ]],
             [[suseconds_t us = 1000000;
               signed long int l = 1000000;
               if (l != (signed long int)us) return 1;
 
-	      l = -1; us = -1;
+              l = -1; us = -1;
               if (l != (signed long int)us) return 1
 /* autoconf adds ";return 0;" */
 /* we hope the code above fails if type is not defined or range is not sufficient */

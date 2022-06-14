@@ -5,7 +5,7 @@
 
 #include "attribute.h"
 
-#include "common.h" /* for TYPE_FD */
+#include "common.h" /* for TYPE_FD, possibly fallback suseconds_t */
 #ifndef WIN32
 # if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
@@ -18,7 +18,9 @@
 
 #include <unistd.h>             /* for usleep() and useconds_t, latter also might be via <sys/types.h> */
 #include <sys/types.h>
+#if defined(HAVE_SYS_SELECT_H)
 #include <sys/select.h>         /* for suseconds_t */
+#endif
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
 #define SER_ERR_LIMIT 10	/* start limiting after 10 in a row  */
