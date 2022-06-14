@@ -29,6 +29,8 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
+#include "main.h"
+
 #ifdef WIN32
 # include "wincompat.h"
 #endif

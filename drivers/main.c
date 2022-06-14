@@ -660,12 +660,12 @@ static void exit_cleanup(void)
 #endif
 }
 
-#ifndef WIN32
-static void set_exit_flag(int sig)
+void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
 
+#ifndef WIN32
 static void setup_signals(void)
 {
 	struct sigaction	sa;

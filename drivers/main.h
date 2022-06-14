@@ -29,6 +29,8 @@ void upsdrv_help(void);		/* tack on anything useful for the -h text */
 void upsdrv_banner(void);	/* print your version information */
 void upsdrv_cleanup(void);	/* free any resources before shutdown */
 
+void set_exit_flag(int sig);
+
 /* --- details for the variable/value sharing --- */
 
 /* main calls this driver function - it needs to call addvar */

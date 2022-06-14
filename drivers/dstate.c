@@ -801,10 +801,6 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	return 0;
 }
 
-#ifdef WIN32
-void set_exit_flag(int sig);
-#endif
-
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
