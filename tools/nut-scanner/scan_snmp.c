@@ -165,6 +165,10 @@ int nutscan_load_snmp_library(const char *libname_path)
 	 *   grep -A1 dlsym tools/nut-scanner/scan_snmp.c | egrep 'dlsym|")' | sed -e 's| *lt_dlsym(dl_handle, *| |' -e 's,");,;,' -e 's,",,' -e 's,= *$,=,'
 	 */
 
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wpedantic"
+# endif
 	*(void **) (&nut_init_snmp) = init_snmp;
 	*(void **) (&nut_snmp_sess_init) =
 				snmp_sess_init;
@@ -229,6 +233,10 @@ int nutscan_load_snmp_library(const char *libname_path)
 	*(void **) (&nut_usmHMAC384SHA512AuthProtocol) =
 			usmHMAC384SHA512AuthProtocol;
 #endif
+
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP)
+#  pragma GCC diagnostic pop
+# endif
 
 #else	/* not WITH_SNMP_STATIC */
 	if (dl_handle != NULL) {
