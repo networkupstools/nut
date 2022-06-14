@@ -189,8 +189,13 @@ static void stop_driver(const ups_t *ups)
 #endif
 
 	if (ret < 0) {
+#ifndef WIN32
 		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
 		ret = sendsignalfn(pidfn, SIGKILL);
+#else
+		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
+		ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
 		if (ret < 0) {
 			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 			exec_error++;
@@ -206,8 +211,13 @@ static void stop_driver(const ups_t *ups)
 		sleep(1);
 	}
 
+#ifndef WIN32
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
 	ret = sendsignalfn(pidfn, SIGKILL);
+#else
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
 	if (ret == 0) {
 		for (i = 0; i < 5 ; i++) {
 			if (sendsignalfn(pidfn, 0) != 0) {
