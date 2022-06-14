@@ -2,6 +2,7 @@
 
 AM_CFLAGS = -I$(top_srcdir)/include
 AM_LDFLAGS = -no-undefined
+EXTRA_DIST =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 libparseconf_la_SOURCES = parseconf.c
@@ -35,6 +36,14 @@ nodist_libcommon_la_SOURCES = common.c
 nodist_libcommonclient_la_SOURCES = common.c
 CLEANFILES = $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
+endif
+
+if HAVE_STRPTIME
+EXTRA_DIST += strptime.c
+else
+# fall back to NetBSD implem
+libcommon_la_SOURCES += strptime.c
+libcommonclient_la_SOURCES += strptime.c
 endif
 
 # TODO: libnutwincompat.la?

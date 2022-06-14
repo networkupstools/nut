@@ -33,4 +33,9 @@
 # endif
 #endif
 
+#ifndef HAVE_STRPTIME
+/* Use fallback implementation provided in e.g. libcommon(client).la: */
+char * strptime(const char *buf, const char *fmt, struct tm *tm);
+#endif
+
 #endif	/* NUT_TIMEHEAD_H_SEEN */

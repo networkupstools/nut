@@ -255,7 +255,7 @@ sem_destroy(&semaphore);
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
-AC_CHECK_FUNCS(on_exit strptime setlogmask)
+AC_CHECK_FUNCS(on_exit setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
@@ -357,6 +357,33 @@ AS_IF([test x"${ac_cv_func_strcasestr}" = xyes],
         [AC_MSG_WARN([Optional C library routine strcasestr not found; a simple wrapper will be built in])]
         [AC_MSG_WARN([Required C library routine strcasestr not found; try adding _GNU_SOURCE])]
     )])
+
+AC_CACHE_CHECK([for strptime(s1,s2,tm)],
+    [ac_cv_func_strptime],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+],
+            [struct tm tm;
+char *date = "12/30/1999";
+char *p = strptime(date, "%m/%d/%Y", &tm);
+if (p == NULL || *p == '\0') return 1])],
+        [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
+    )])
+AS_IF([test x"${ac_cv_func_strptime}" = xyes],
+    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
