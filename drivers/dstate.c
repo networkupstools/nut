@@ -46,7 +46,7 @@
 	static int	sockfd = -1;
 	static char	*sockfn = NULL;
 #else
-	static HANDLE 	sockfd = INVALID_HANDLE_VALUE;
+	static HANDLE	sockfd = INVALID_HANDLE_VALUE;
 	static OVERLAPPED connect_overlapped;
 	static char	*pipename = NULL;
 #endif
@@ -192,9 +192,7 @@ static HANDLE sock_open(const char *fn)
 
 	/* Wait for a connection */
 	ConnectNamedPipe(fd,&connect_overlapped);
-
 #endif
-
 
 	return fd;
 }
