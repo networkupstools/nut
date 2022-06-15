@@ -1022,6 +1022,13 @@ getspeed(&baudrate);
      CFLAGS="${CFLAGS_SAVED_SERIAL}"
 
      AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_CASE(["${target_os}"],
+        [*mingw*], [
+             AS_IF([test "${nut_have_serial_types}" != yes],
+                [AC_MSG_WARN([not with system includes, but can try with our fallback for the target platform])
+                 nut_have_serial_types=yes]
+             )
+        ])
      AS_IF([test "${nut_have_serial_types}" = yes],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
