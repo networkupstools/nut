@@ -366,7 +366,7 @@ Run `NUT-Installer.msi` and follow the wizard indications.
 
 If you plan to use an UPS which is locally connected to an USB port, you have to install
 link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
-on your system. Then you must install your device via libUSB's "Inf Wizard".
+on your system. Then you must install your device via libusb's "Inf Wizard".
 
 NOTE: If you intend to build from source, relevant sources may be available at
 https://github.com/mcuee/libusb-win32 and keep in mind that it is a variant of

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2971 utf-8
+personal_ws-1.1 en 2992 utf-8
 AAS
 ABI
 ACFAIL
@@ -170,7 +170,6 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
-CircleCI
 CLANGVER
 CLI
 CLOCAL
@@ -212,6 +211,7 @@ Checksum
 Chiou
 Chu
 Cichowski
+CircleCI
 Claesson
 CodingStyle
 Collver
@@ -342,6 +342,7 @@ FIPS
 FIXME
 FO
 FOREACHUPS
+FOSS
 FPT
 FREEADDRINFO
 FREHn
@@ -629,6 +630,8 @@ MQ
 MSI
 MSII
 MSIII
+MSVCRT
+MSYS
 MX
 MacKenzie's
 MacOS
@@ -837,6 +840,7 @@ PPP
 PPPPPPPPPP
 PR
 PR'ed
+PROGRA
 PROGS
 PROTVER
 PRs
@@ -849,6 +853,7 @@ PSSENTR
 PSUs
 PSW
 PSX
+PThreads
 PULS
 PV
 PWLv
@@ -1059,6 +1064,7 @@ SOCKLEN
 SOFF
 SOLA
 SOLA's
+SOMECO
 SOV
 SPARC
 SPC
@@ -1156,6 +1162,7 @@ Sysgration
 SyslogIdentifier
 SystemIO
 Systeme
+Syu
 Szady
 TBD
 TBR
@@ -1216,6 +1223,7 @@ TxHS
 UB
 UBD
 UBR
+UCRT
 UDP
 UHV
 UI
@@ -1467,12 +1475,14 @@ awd
 awk
 bAlternateSetting
 backend
+backends
 backgrounding
 backport
 backported
 backupspro
 badpassword
 baseurl
+bashrc
 batchable
 batt
 battcap
@@ -1796,6 +1806,7 @@ everups
 everyone's
 everything's
 evilhack
+exe
 executables
 executeCommand
 execve
@@ -2061,9 +2072,11 @@ libnutclient
 libnutclientsub
 libnutconfig
 libnutscan
+libpcre
 libpng
 libpowerman
 libre
+libregex
 libs
 libsnmp
 libssl
@@ -2175,6 +2188,7 @@ minacvi
 minacvo
 mincharge
 mindcv
+mingw
 minicol
 minruntime
 mins
@@ -2202,6 +2216,8 @@ monuser
 morbo
 mozilla
 msec
+msi
+msvcrt
 multi
 multicommands
 multilib
@@ -2361,6 +2377,7 @@ pcs
 pdf
 pdu
 pe
+peasy
 peername
 pem
 perl
@@ -2487,6 +2504,7 @@ referencenominal
 regex
 regtype
 relicensing
+repo
 reposurgeon
 repotec
 req
@@ -2772,6 +2790,8 @@ ua
 ubuntu
 uc
 ucb
+ucd
+ucrt
 udev
 udevadm
 ufw
@@ -2915,6 +2935,7 @@ wget
 whitespace
 wiki
 winnutclient
+winpthreads
 wmNUT
 wmnut
 wordformat
