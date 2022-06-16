@@ -121,6 +121,7 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 #ifndef TESTING
+#ifndef WIN32 /* TODO : Correctly set the port parameters for WIN32 */
 	const struct {
 		const char	*val;
 		const int	dtr;
@@ -137,7 +138,6 @@ void upsdrv_initups(void)
 
 	const char	*val;
 
-#ifndef WIN32 /* TODO : Correctly set the port parameters for WIN32 */
 	struct termios		tio;
 
 	/*
