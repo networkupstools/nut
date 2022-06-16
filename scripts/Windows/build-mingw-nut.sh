@@ -78,7 +78,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# FIXME: find something more generic
 	BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
 	export CC="$ARCH-gcc"
-	export PATH=/usr/$ARCH/bin:$PATH
+	export PATH="/usr/$ARCH/bin:$PATH"
 
 	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
 	# and the value 0xffff is anyway forced into some components at least
