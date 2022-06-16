@@ -23,6 +23,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
+# ifndef INVALID_SOCKET
+#  define INVALID_SOCKET -1
+# endif
 #else
 #include "wincompat.h"
 #endif
@@ -184,7 +187,7 @@ static int getdata(void)
 		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
-	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
+	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==INVALID_SOCKET)
 	{
 		upsdebugx(1,"socket error");
 		return -1;
