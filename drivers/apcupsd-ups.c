@@ -169,12 +169,16 @@ static void process(char *item,char *data)
 static int getdata(void)
 {
 	ssize_t x;
-	int fd_flags;
 	uint16_t n;
 	char *item;
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
+#ifndef WIN32
+	long fd_flags;
+#else
+	HANDLE event = NULL;
+#endif
 
 	for(x=0;nut_data[x].info_type;x++)
 		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
@@ -193,6 +197,7 @@ static int getdata(void)
 		return -1;
 	}
 
+#ifndef WIN32
 	fd_flags = fcntl(p.fd, F_GETFL);
 	fd_flags |= O_NONBLOCK;
 	if(fcntl(p.fd, F_SETFL, fd_flags))
@@ -201,6 +206,17 @@ static int getdata(void)
 		close(p.fd);
 		return -1;
 	}
+#else
+	event = CreateEvent(
+		NULL,  /* Security */
+		FALSE, /* auto-reset */
+		FALSE, /* initial state */
+		NULL); /* no name */
+
+	/* Associate socket event to the socket via its Event object */
+	WSAEventSelect( p.fd, event, FD_CONNECT );
+	CloseHandle(event);
+#endif
 
 	p.events=POLLIN;
 
