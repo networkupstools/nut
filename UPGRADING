@@ -12,6 +12,9 @@ Changes from 2.8.0 to 2.8.1
 
 - PLANNED: Keep track of any further API clean-up?
 
+- NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
+  serial drivers in respective Makefile and configure script options - this
+  may impact packaging decisions on some distributions going forward [#1446]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------
