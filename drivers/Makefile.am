@@ -13,7 +13,7 @@ LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libpar
 LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
-# most targets are drivers, so make this the default
+# most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
@@ -35,12 +35,13 @@ if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
 
+NUTSW_DRIVERLIST = dummy-ups clone clone-outlet
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
- bestfortress bestuferrups bestups dummy-ups etapro everups 	\
+ bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
+ blazer_ser ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -59,12 +60,13 @@ IPMI_DRIVERLIST = nut-ipmipsu
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
+EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
  driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
 else
- driverexec_PROGRAMS =
+ driverexec_PROGRAMS = $(NUTSW_DRIVERLIST)
 if WITH_SERIAL
   driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 else
@@ -163,7 +165,7 @@ riello_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
-# dummy
+# dummy (in NUTSW_DRIVERLIST)
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
@@ -172,7 +174,7 @@ if WITH_SSL
   dummy_ups_LDADD += $(LIBSSL_LIBS)
 endif
 
-# Clone drivers
+# Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
 
