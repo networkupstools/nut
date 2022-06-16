@@ -442,7 +442,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	ssize_t	ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
 			return ret;
@@ -493,7 +493,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
@@ -647,7 +647,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -703,7 +703,7 @@ void upsdrv_initinfo(void)
 void upsdrv_cleanup(void)
 {
 #ifndef TESTING
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);

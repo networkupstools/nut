@@ -3023,7 +3023,7 @@ void	upsdrv_initups(void)
 		/* Link the matchers */
 		regex_matcher->next = &device_matcher;
 
-		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+		ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 		if (ret < 0) {
 			fatalx(EXIT_FAILURE,
 				"No supported devices found. "
@@ -3117,7 +3117,7 @@ void	upsdrv_cleanup(void)
 
 #ifdef QX_USB
 
-		usb->close(udev);
+		usb->close_dev(udev);
 		USBFreeExactMatcher(reopen_matcher);
 		USBFreeRegexMatcher(regex_matcher);
 		free(usbdevice.Vendor);
@@ -3162,7 +3162,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #  endif	/* QX_SERIAL (&& QX_USB)*/
 
 		if (udev == NULL) {
-			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+			ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 			if (ret < 1) {
 				return ret;
@@ -3228,7 +3228,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		case LIBUSB_ERROR_NOT_FOUND:	/* No such file or directory */
 		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
-			usb->close(udev);
+			usb->close_dev(udev);
 			udev = NULL;
 			break;
 
