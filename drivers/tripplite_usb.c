@@ -329,7 +329,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, NULL);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1589,7 +1589,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 * expression */
-	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, NULL);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
@@ -1642,7 +1642,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	comm_driver->close(udev);
+	comm_driver->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(curDevice.Vendor);

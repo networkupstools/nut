@@ -350,7 +350,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
@@ -406,7 +406,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
@@ -894,7 +894,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, &driver_callback);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -1216,7 +1216,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_cleanup(void)
 {
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);

@@ -1052,7 +1052,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
+	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
 	if (ret < 1)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
@@ -1131,7 +1131,7 @@ void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "upsdrv_cleanup...");
 
-	comm_driver->close(udev);
+	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
 #ifndef SHUT_MODE
@@ -1563,20 +1563,20 @@ static int reconnect_ups(void)
 	upsdebugx(4, "Closing comm_driver previous handle");
 	/* Try to close the previous handle */
 	if (udev)
-		comm_driver->close(udev);
+		comm_driver->close_dev(udev);
 
 	upsdebugx(4, "===================================================================");
 	if (wait_before_reconnect > 0 ) {
 		upsdebugx(4, " device has been disconnected, trying to reconnect in %i seconds", wait_before_reconnect);
 		sleep(wait_before_reconnect);
 		upsdebugx(4, " trying to reconnect");
-	}else{
+	} else {
 		upsdebugx(4, " device has been disconnected, try to reconnect");
 	}
 	upsdebugx(4, "===================================================================");
 
 	upsdebugx(4, "Opening comm_driver ...");
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
 	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
 		return 1;
