@@ -18,19 +18,25 @@
 
 #include "config.h"
 
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sys/ioctl.h>
+#else
+#include "wincompat.h"
+#endif
+
 #ifdef HAVE_POLL_H
 # include <poll.h> /* nfds_t */
 #else
 typedef unsigned long int nfds_t;
 #endif
-#include <sys/ioctl.h>
 
 #include "main.h"
 #include "apcupsd-ups.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
 #define DRIVER_VERSION	"0.6"
