@@ -411,7 +411,7 @@ static int sstate_dead(int maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (upsfd < 0) {
+	if (!VALID_FD(upsfd)) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", device_path);
 		return -1;	/* dead */
 	}
