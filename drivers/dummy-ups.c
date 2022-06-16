@@ -236,7 +236,17 @@ void upsdrv_updateinfo(void)
 				else
 					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
+				/* Determine if file modification timestamp has changed
+				 * since last use (so we would want to re-read it) */
+#ifndef WIN32
+				/* Either successful stat is OK to fill the "fs" struct */
 				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
+#else
+				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+				 */
+				if (0 != stat (fn, &fs)) {
+#endif
 					upsdebugx(2, "Can't open %s currently", fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
@@ -461,7 +471,16 @@ void upsdrv_initups(void)
 		else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
+		/* Update file modification timestamp (and other data) */
+#ifndef WIN32
+		/* Either successful stat is OK to fill the "datafile_stat" struct */
 		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
+#else
+		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+		 */
+		if (0 != stat (device_path, &datafile_stat)) {
+#endif
 			upsdebugx(2, "Can't open %s currently", device_path);
 		}
 	}
