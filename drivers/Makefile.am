@@ -35,13 +35,13 @@ if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
 
-NUTSW_DRIVERLIST = dummy-ups clone clone-outlet
+NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
- safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
+ safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -178,12 +178,12 @@ endif
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
 
-# apcupsd client driver
+# apcupsd client driver (in NUTSW_DRIVERLIST)
 apcupsd_ups_SOURCES = apcupsd-ups.c
 apcupsd_ups_CFLAGS = $(AM_CFLAGS)
 apcupsd_ups_LDADD = $(LDADD_DRIVERS)
 
-# sample skeleton driver
+# sample skeleton driver (in NUTSW_DRIVERLIST)
 
 skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
