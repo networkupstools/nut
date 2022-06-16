@@ -2120,7 +2120,7 @@ void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
-	if (upsfd == -1)
+	if (!VALID_FD(upsfd))
 		return;
 
 	apc_flush(0);
