@@ -332,5 +332,6 @@ speed_t cfgetospeed(const struct termios *t);
 #define TIOCM_CTS	MS_CTS_ON /* 0x0010*/
 #define TIOCM_DSR	MS_DSR_ON /* 0x0020*/
 #define TIOCM_RNG	MS_RING_ON /*0x0040*/
+#define TIOCM_RI	TIOCM_RNG /* at least that's the definition in Linux */
 #define TIOCM_CD	MS_RLSD_ON /*0x0080*/
 #endif /* NUT_WINCOMPAT_H */
