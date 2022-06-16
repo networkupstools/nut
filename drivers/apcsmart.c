@@ -36,7 +36,9 @@
 #include "apcsmart_tabs.h"
 
 #ifdef WIN32
-#define ECANCELED ERROR_CANCELLED
+# ifndef ECANCELED
+#  define ECANCELED ERROR_CANCELLED
+# endif
 #endif
 
 /* driver description structure */
