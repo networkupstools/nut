@@ -67,11 +67,14 @@ static struct {
 static int	dumpdone = 0;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_heard = 0, last_ping = 0, last_connfail = 0;
+static time_t	last_heard = 0, last_ping = 0;
 
 #ifdef WIN32
 static char     	read_buf[SMALLBUF];
 static OVERLAPPED	read_overlapped;
+#else
+/* TODO: Why not built in WIN32? */
+static time_t	last_connfail = 0;
 #endif
 
 static int parse_args(size_t numargs, char **arg)
