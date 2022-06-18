@@ -180,6 +180,11 @@ static int getdata(void)
 #ifndef WIN32
 	long fd_flags;
 #else
+	/* Note: while the code below uses "pollfd" for simplicity as it is
+	 * available in mingw headers (although poll() method usually is not),
+	 * WIN32 builds use WaitForMultipleObjects(); see also similar code
+	 * in upsd.c for networking.
+	 */
 	HANDLE event = NULL;
 #endif
 
@@ -233,7 +238,11 @@ static int getdata(void)
 	x=write(p.fd,"status",6);
 
 	/* TODO: double-check for poll() in configure script */
+#ifndef WIN32
 	while(poll(&p,1,15000)==1)
+#else
+	while (WaitForMultipleObjects(1, &event, FALSE, 15000) == WAIT_TIMEOUT)
+#endif
 	{
 		if(read(p.fd,&n,2)!=2)
 		{
@@ -269,7 +278,11 @@ static int getdata(void)
 			return -1;
 		}
 
+#ifndef WIN32
 		if(poll(&p,1,15000)!=1)break;
+#else
+		if (WaitForMultipleObjects(1, &event, FALSE, 15000) != WAIT_OBJECT_0) break;
+#endif
 
 		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
@@ -352,6 +365,12 @@ void upsdrv_initups(void)
 {
 	char *p;
 	struct hostent *h;
+
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
 
 	if(device_path&&*device_path)
 	{
