@@ -159,12 +159,12 @@ static void process(char *item,char *data)
 static int getdata(void)
 {
 	ssize_t x;
-	int fd_flags;
 	uint16_t n;
 	char *item;
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
+	int fd_flags;
 
 	for(x=0;nut_data[x].info_type;x++)
 		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
@@ -184,8 +184,13 @@ static int getdata(void)
 	}
 
 	fd_flags = fcntl(p.fd, F_GETFL);
+	if (fd_flags == -1) {
+		upsdebugx(1,"unexpected fcntl(fd, F_GETFL) failure");
+		close(p.fd);
+		return -1;
+	}
 	fd_flags |= O_NONBLOCK;
-	if(fcntl(p.fd, F_SETFL, fd_flags))
+	if(fcntl(p.fd, F_SETFL, fd_flags) == -1)
 	{
 		upsdebugx(1,"unexpected fcntl(fd, F_SETFL, fd_flags|O_NONBLOCK) failure");
 		close(p.fd);
