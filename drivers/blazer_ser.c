@@ -188,6 +188,8 @@ void upsdrv_initups(void)
 	 * Allow some time to settle for the cablepower
 	 */
 	usleep(100000);
+#else
+	upsdebugx(0, "blazer_ser: upsdrv_init(): serial port setup for WIN32 currently has not been ported (TODO)");
 #endif /* WIN32 */
 #endif /* TESTING */
 	blazer_initups();
