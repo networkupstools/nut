@@ -224,7 +224,6 @@ static int getdata(void)
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( p.fd, event, FD_CONNECT );
-	CloseHandle(event);
 #endif
 
 	p.events=POLLIN;
@@ -240,12 +239,18 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
 		if(!(x=ntohs(n)))
 		{
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return 0;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
@@ -258,6 +263,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
@@ -267,6 +275,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
@@ -276,6 +287,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
@@ -283,6 +297,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 		while(*data==' '||*data=='\t'||*data==':')data++;
@@ -292,6 +309,9 @@ static int getdata(void)
 
 	upsdebugx(1,"unexpected connection close by apcupsd");
 	close(p.fd);
+#ifdef WIN32
+	CloseHandle(event);
+#endif
 	return -1;
 }
 
