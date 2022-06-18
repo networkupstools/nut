@@ -201,9 +201,15 @@ static int getdata(void)
 	}
 
 #ifndef WIN32
+	/* WSAEventSelect automatically sets the socket to nonblocking mode */
 	fd_flags = fcntl(p.fd, F_GETFL);
+	if (fd_flags == -1) {
+		upsdebugx(1,"unexpected fcntl(fd, F_GETFL) failure");
+		close(p.fd);
+		return -1;
+	}
 	fd_flags |= O_NONBLOCK;
-	if(fcntl(p.fd, F_SETFL, fd_flags))
+	if(fcntl(p.fd, F_SETFL, fd_flags) == -1)
 	{
 		upsdebugx(1,"unexpected fcntl(fd, F_SETFL, fd_flags|O_NONBLOCK) failure");
 		close(p.fd);
