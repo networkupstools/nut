@@ -19,7 +19,7 @@ SUPPORTED HARDWARE
 
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power'
+'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power', 'SKE'
 (rebranded by many, many - have I said many? - others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
