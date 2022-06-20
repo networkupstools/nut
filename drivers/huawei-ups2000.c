@@ -1,33 +1,21 @@
 /*
  * huawei-ups2000.c - Driver for Huawei UPS2000 (1kVA-3kVA)
  *
- * Note: Huawei UPS2000 (1kVA-3kVA) can be accessed via RS-232,
- * USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
- * RS-232 and USB are supported, RS-485 is not.
+ * Note: If you're trying to debug the driver because it doesn't work,
+ * please BE SURE to read the manual in "docs/man/huawei-ups2000.txt"
+ * first! Otherwise you are guaranteed to waste your time!
  *
- * The USB port on the UPS is implemented via a MaxLinear RX21V1410
- * USB-to-serial converter, and can be recongized as a standard
- * USB-CDC serial device. Unfortunately, the generic USB-CDC driver
- * is incompatible with the specific chip configuration and cannot
- * be used. A device-specific driver, "xr_serial", must be used.
- *
- * The driver has only been merged to Linux 5.12 or later, via the
- * "xr_serial" kernel module. When the UPS2000 is connected via USB
- * to a supported Linux system, you should see the following logs in
- * "dmesg".
- *
- *     xr_serial 1-1.2:1.1: xr_serial converter detected
- *     usb 1-1.2: xr_serial converter now attached to ttyUSB0
- *
- * The driver must be "xr_serial". If your system doesn't have the
- * necessary device driver, you will get this message instead:
- *
- *     cdc_acm 1-1.2:1.0: ttyACM0: USB ACM device
- *
- * On other operating systems, USB cannot be used due to the absence
- * of the driver. You must use connect UPS2000 to your computer via
- * RS-232, either directly or using an USB-to-RS-232 converter supported
- * by your Linux or BSD kernel.
+ * Long story short, Huawei UPS2000 (1kVA-3kVA) can be accessed via
+ * RS-232, USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
+ * RS-232 and USB are supported, RS-485 is not. Also, for most UPS
+ * units, their USB ports are implemented via the MaxLinear RX21V1410
+ * USB-to-serial converter, and they DO NOT WORK without a special
+ * "xr_serial" driver, only available on Linux 5.12+ (not BSD or Solaris).
+ * Without this driver, the USB can still be recognized as a generic
+ * USB ACM device, but it DOES NOT WORK. Alternatively, some newer UPS
+ * units use the WCH CH341 chip, which should have better compatibility.
+ * Detailed information will not be repeated here, please read
+ * "docs/man/huawei-ups2000.txt".
  *
  * A document describing the protocol implemented by this driver can
  * be found online at:
@@ -36,7 +24,7 @@
  *
  * Huawei UPS2000 driver implemented by
  *   Copyright (C) 2020, 2021 Yifeng Li <tomli@tomli.me>
- *   The author is not affiliated to Huawei or other manufacturers.
+ *   The author is not affiliated with Huawei or other manufacturers.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
