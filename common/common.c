@@ -1228,8 +1228,10 @@ char * get_libname(const char* base_libname)
 	{
 		memset(current_test_path, 0, LARGEBUF);
 
-		if ((dp = opendir(search_paths[index])) == NULL)
+		if ((dp = opendir(search_paths[index])) == NULL) {
+			upsdebugx(5,"NOT looking for lib %s in unreachable directory #%d : %s", base_libname, index, search_paths[index]);
 			continue;
+		}
 
 		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
 		while ((dirp = readdir(dp)) != NULL)
