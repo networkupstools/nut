@@ -39,7 +39,11 @@
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
 int nutscan_avail_nut = 0;
+#ifdef WITH_SNMP_STATIC
+int nutscan_avail_snmp = 1;
+#else
 int nutscan_avail_snmp = 0;
+#endif
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
