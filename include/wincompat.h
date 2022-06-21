@@ -26,6 +26,7 @@
 */
 
 #include "common.h"
+#include <limits.h>
 
 /* This value is defined in the error.h file of the libusb-win32 sources
  * FIXME: Should only be relevant for builds WITH_LIBUSB_0_1 - #ifdef it so?
@@ -334,4 +335,12 @@ speed_t cfgetospeed(const struct termios *t);
 #define TIOCM_RNG	MS_RING_ON /*0x0040*/
 #define TIOCM_RI	TIOCM_RNG /* at least that's the definition in Linux */
 #define TIOCM_CD	MS_RLSD_ON /*0x0080*/
+
+#if !defined(PATH_MAX) && defined(MAX_PATH)
+/* PATH_MAX is the POSIX equivalent for Microsoft's MAX_PATH
+ * both should be defined in (mingw) limits.h
+ */
+# define PATH_MAX MAX_PATH
+#endif
+
 #endif /* NUT_WINCOMPAT_H */
