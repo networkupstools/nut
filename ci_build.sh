@@ -358,6 +358,41 @@ fi
 # CI builds on Travis
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
 
+case "${CI_OS_NAME}" in
+	windows*)
+		# At the moment WIN32 builds are quite particular in their
+		# desires, for headers to declare what is needed, and yet
+		# there is currently not much real variation in supportable
+		# build environment (mingw variants). Lest we hardcode
+		# stuff in configure script, define some here:
+		case "$CFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+
+		case "$CXXFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+		;;
+esac
+
 # Analyze some environmental choices
 if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     # No prereq dll and headers on win so far
