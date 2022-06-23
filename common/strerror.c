@@ -6,6 +6,11 @@
 #ifndef HAVE_STRERROR
 
 #include <errno.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h> /* for snprintf() */
+#else
+# include "proto.h"
+#endif
 
 char *strerror(int errnum)
 {
