@@ -188,7 +188,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 		throw nut::UnknownHostException();
 	}
 
-	snprintf(sport, sizeof(sport), "%ju", static_cast<uintmax_t>(port));
+	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;

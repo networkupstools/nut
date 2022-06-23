@@ -199,7 +199,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
@@ -312,7 +312,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"item setting will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
@@ -579,7 +579,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	) {
 		upsdebugx(2,
 			"%s: requested index number is out of range, "
-			"expected %jd < %i < %ju",
+			"expected %" PRIdMAX " < %i < %" PRIuMAX,
 			__func__,
 			(intmax_t)USB_CTRL_STRINDEX_MIN,
 			Index,
@@ -591,7 +591,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	if ((uintmax_t)buflen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"index string will be constrained",
 			__func__, buflen,
 			(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
@@ -723,7 +723,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 		/* FIXME: Should we try here, or plain abort? */
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 
@@ -938,7 +938,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
 				upsdebugx(5, "string_to_path: badvalue (pathcomp): "
-					"%ld negative or %ju too large",
+					"%ld negative or %" PRIuMAX " too large",
 					l, (uintmax_t)l);
 				goto badvalue;
 			}
@@ -952,7 +952,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			int l = atoi(token + 1); /* +1: skip the bracket */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
 				upsdebugx(5, "string_to_path: badvalue(indexed): "
-					"%d negative or %ju too large",
+					"%d negative or %" PRIuMAX " too large",
 					l, (uintmax_t)l);
 				goto badvalue;
 			}

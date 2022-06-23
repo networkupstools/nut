@@ -277,7 +277,7 @@ void upsdrv_initups(void) {
 	 */
 	if (poll_interval > 5) {
 		upslogx(LOG_NOTICE,
-			"Option poll_interval is recommended to be lower than 5 (found: %jd)",
+			"Option poll_interval is recommended to be lower than 5 (found: %" PRIdMAX ")",
 			(intmax_t)poll_interval);
 	}
 
