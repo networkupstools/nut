@@ -1062,3 +1062,20 @@ Not installed above (yet?):
 
 Note that `ccache` symlinks for MSYS2 are installed into `/usr/lib/ccache/bin`
 directory (not plain `/usr/lib/ccache` as elsewhere).
+
+NOTE: After you successfully build NUT (perhaps using `ci_build.sh`), if you
+install it into a prototype area by `make DESTDIR=... install` then you should
+add the third-party shared libraries invovled, for that file set to be usable.
+Something along these lines:
+------
+:; find "$DESTDIR" -name '*.exe' -type f  | while read F ; do ldd "$F" \
+   | grep ' /mingw64/' ; done  | awk '{print $3}' | sort | uniq \
+   | while read LIB ; do cp -pf "$LIB" "$DESTDIR/mingw64/bin/" ; done
+------
+Keep in mind that a similar trick (or links to `*.dll` -- and symlinks are
+problematic on that platform) may be needed in other directories, such as
+`sbin` and `cgi-bin`:
+------
+:; ( cd "$DESTDIR/mingw64/bin/" && ln *.dll ../sbin && ln *.dll ../cgi-bin )
+------
+
