@@ -982,10 +982,8 @@ export PATH
     clang gcc \
     ccache mingw-w64-x86_64-ccache \
     git aspell \
-    vim python
-
-# NOT SURE if explicit installs would be needed also, e.g.:
-# pacman -S --needed autoconf2.71 automake1.16
+    vim python \
+    mingw-w64-x86_64-python-pygments
 
 # PThreads come as an extra feature; note there are many variants,
 # see https://packages.msys2.org/search?t=binpkg&q=pthread
