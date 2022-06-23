@@ -821,14 +821,15 @@ static char *strcasestr(const char *haystack, const char *needle) {
 err:
 	if (dH != NULL) free(dH);
 	if (dN != NULL) free(dN);
-	if (lH != NULL) free(lH);
-	if (lN != NULL) free(lN);
+	/* Does this implementation of strlwr() change original buffer? */
+	if (lH != dH && lH != NULL) free(lH);
+	if (lN != dN && lN != NULL) free(lN);
 	if (first == NULL) {
 		return NULL;
 	}
 
 	/* Pointer to first char of the needle found in original haystack */
-	return (char *)haystack + (first - lH);
+	return (char *)(haystack + (first - lH));
 }
 #endif
 
