@@ -154,6 +154,10 @@ Other requirements
 
 libneon (xml), gd (cgi), avahi, ipmi, ssl...
 
+* https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
+* https://notroj.github.io/neon/neon-0.32.2.tar.gz
+* https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
+
 Building NUT
 ~~~~~~~~~~~~
 
