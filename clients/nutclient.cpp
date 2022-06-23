@@ -60,6 +60,8 @@ static inline void *xrealloc(void *ptr, size_t size){return realloc(ptr, size);}
 static inline char *xstrdup(const char *string){return strdup(string);}
 #endif /* HAVE_NUTCOMMON */
 
+#include "nut_stdint.h" /* PRIuMAX etc. */
+
 /* To stay in line with modern C++, we use nullptr (not numeric NULL
  * or shim __null on some systems) which was defined after C++98.
  * The NUT C++ interface is intended for C++11 and newer, so we
@@ -186,7 +188,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 		throw nut::UnknownHostException();
 	}
 
-	snprintf(sport, sizeof(sport), "%ju", static_cast<uintmax_t>(port));
+	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;

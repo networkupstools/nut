@@ -566,10 +566,10 @@ int main(int argc, char *argv[])
 					&& (uintmax_t)val > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
 					) {
 						upsdebugx(1, "Detected soft limit for "
-							"file descriptor count is %ju",
+							"file descriptor count is %" PRIuMAX,
 							(uintmax_t)nofile_limit.rlim_cur);
 						upsdebugx(1, "Detected hard limit for "
-							"file descriptor count is %ju",
+							"file descriptor count is %" PRIuMAX,
 							(uintmax_t)nofile_limit.rlim_max);
 
 						max_threads = (size_t)nofile_limit.rlim_cur;

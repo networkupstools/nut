@@ -295,8 +295,8 @@ void writepid(const char *name)
 
 	if (pidf) {
 		intmax_t pid = (intmax_t)getpid();
-		upsdebugx(1, "Saving PID %jd into %s", pid, fn);
-		fprintf(pidf, "%jd\n", pid);
+		upsdebugx(1, "Saving PID %" PRIdMAX " into %s", pid, fn);
+		fprintf(pidf, "%" PRIdMAX "\n", pid);
 		fclose(pidf);
 	} else {
 		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);

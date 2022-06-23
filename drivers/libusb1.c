@@ -564,7 +564,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		) {
 			upsdebugx(2,
 				"Report descriptor length is out of range on this device: "
-				"should be %ji < %d < %ju",
+				"should be %" PRIdMAX " < %d < %" PRIuMAX,
 					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
 					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 			goto next_device;

@@ -84,4 +84,77 @@
 # endif
 #endif /* format for size_t and ssize_t */
 
+/* Printing format for uintmax_t and intmax_t */
+#ifndef PRIuMAX
+# if defined(__MINGW32__) || defined (WIN32)
+#  if (SIZEOF_VOID_P == 8)
+#   ifdef PRIu64
+#    define PRIuMAX PRIu64
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIuMAX "llu"
+#   endif
+#  endif
+#  if (SIZEOF_VOID_P == 4)
+#   ifdef PRIu32
+#    define PRIuMAX PRIu32
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIuMAX "lu"
+#   endif
+#  endif
+# else
+/* assume new enough compiler and standard... check "%j" support via configure? */
+#  define PRIuMAX "ju"
+# endif
+#endif /* format for uintmax_t and intmax_t */
+
+#ifndef PRIdMAX
+# if defined(__MINGW32__) || defined (WIN32)
+#  if (SIZEOF_VOID_P == 8)
+#   ifdef PRId64
+#    define PRIdMAX PRId64
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIdMAX "lld"
+#   endif
+#  endif
+#  if (SIZEOF_VOID_P == 4)
+#   ifdef PRId32
+#    define PRIdMAX PRId32
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIdMAX "ld"
+#   endif
+#  endif
+# else
+/* assume new enough compiler and standard... check "%j" support via configure? */
+#  define PRIdMAX "jd"
+# endif
+#endif /* format for uintmax_t and intmax_t */
+
+#ifndef PRIxMAX
+# if defined(__MINGW32__) || defined (WIN32)
+#  if (SIZEOF_VOID_P == 8)
+#   ifdef PRIx64
+#    define PRIxMAX PRIx64
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIxMAX "llx"
+#   endif
+#  endif
+#  if (SIZEOF_VOID_P == 4)
+#   ifdef PRIx32
+#    define PRIxMAX PRIx32
+#   else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#    define PRIxMAX "lx"
+#   endif
+#  endif
+# else
+/* assume new enough compiler and standard... check "%j" support via configure? */
+#  define PRIxMAX "jx"
+# endif
+#endif /* format for uintmax_t and intmax_t */
+
 #endif	/* NUT_STDINT_H_SEEN */
