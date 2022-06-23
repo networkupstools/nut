@@ -896,6 +896,11 @@ Further TODO for Windows would include:
 
 * libusb-0.1 vs libusb-1.0
 
+NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
+interaction with antivirus software which holds executable files open and
+so not writable by the linker. This may cause random steps in the `configure`
+script or later during the build to fail. If that happens to you, disable the
+antivirus completely or exempt at least the NUT build area from protection.
 
 Windows with mingw
 ------------------
