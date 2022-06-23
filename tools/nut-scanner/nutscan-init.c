@@ -206,8 +206,12 @@ void nutscan_init(void)
 	libname = get_libname("libupsclient" SOEXT);
 #ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
+	/* e.g. see clients/Makefile.am for version-info value */
 	if (!libname) {
 		libname = get_libname("libupsclient-3" SOEXT);
+	}
+	if (!libname) {
+		libname = get_libname("libupsclient-6" SOEXT);
 	}
 #endif
 	if (libname) {
