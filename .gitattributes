@@ -1,0 +1,10 @@
+# Windows script files should be CR+LF always:
+*.bat text eol=crlf
+
+# Unix/Linux script files should be LF always:
+*.sh text eol=lf
+*.m4 text eol=lf
+*.ac text eol=lf
+*.am text eol=lf
+
+* text=auto
