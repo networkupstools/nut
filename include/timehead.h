@@ -53,4 +53,18 @@ static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
 # endif
 #endif
 
+#ifndef HAVE_GMTIME_R
+# ifdef HAVE_GMTIME_S
+#  define gmtime_r(timer, buf) gmtime_s(timer, buf)
+# else
+#  include <string.h> /* memcpy */
+static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
+        /* Note: not thread-safe per se! */
+        struct tm *tmp = gmtime (timer);
+        memcpy(buf, tmp, sizeof(struct tm));
+        return buf;
+}
+# endif
+#endif
+
 #endif	/* NUT_TIMEHEAD_H_SEEN */

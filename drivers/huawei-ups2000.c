@@ -60,6 +60,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_stdint.h"
+#include "timehead.h"
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
 #define DRIVER_VERSION	"0.02"
