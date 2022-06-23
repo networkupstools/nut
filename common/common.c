@@ -312,17 +312,17 @@ void chroot_start(const char *path)
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
-	char buf[SMALLBUF];
-	if ( GetModuleFileName(NULL,buf,SMALLBUF) == 0 ) {
+	char buf[MAX_PATH];
+	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
 		return NULL;
 	}
 
-	/* remove trailing executable name and its preceeding slash*/
-	char * last_slash = strrchr(buf,'\\');
-	*last_slash = 0;
+	/* remove trailing executable name and its preceeding slash */
+	char * last_slash = strrchr(buf, '\\');
+	*last_slash = '\0';
 
 	if( relative_path ) {
-		strncat(buf,relative_path,SMALLBUF);
+		strncat(buf, relative_path, sizeof(buf) - 1);
 	}
 
 	return(xstrdup(buf));
