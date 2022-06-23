@@ -918,7 +918,7 @@ See also:
 * https://azrael.digipen.edu/~mmead/www/public/mingw/
 * https://www.mingw-w64.org/downloads/
 
-NOTE: Seems the mingw installer has probelms with current authentication
+NOTE: Seems the mingw installer has problems with current authentication
 and redirect on SourceForge. You can download and unpack 7z archives from
 https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
 into e.g. `C:\Progra~1\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0`
@@ -1065,7 +1065,7 @@ directory (not plain `/usr/lib/ccache` as elsewhere).
 
 NOTE: After you successfully build NUT (perhaps using `ci_build.sh`), if you
 install it into a prototype area by `make DESTDIR=... install` then you should
-add the third-party shared libraries invovled, for that file set to be usable.
+add the third-party shared libraries involved, for that file set to be usable.
 Something along these lines:
 ------
 :; find "$DESTDIR" -name '*.exe' -type f  | while read F ; do ldd "$F" \
