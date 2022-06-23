@@ -986,7 +986,7 @@ export PATH
     autoconf-wrapper automake-wrapper libtool \
     clang gcc \
     ccache mingw-w64-x86_64-ccache \
-    git aspell \
+    git aspell aspell-en \
     vim python \
     mingw-w64-x86_64-python-pygments
 
