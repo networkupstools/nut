@@ -1212,6 +1212,14 @@ static const char * search_paths[] = {
 #  endif
 # endif
 #endif
+#ifdef WIN32
+	/* TODO: Track the binary program name (many platform-specific solutions,
+	 * or custom one to stash argv[0] in select programs, and derive its
+	 * dirname (with realpath and apparent path) as well as "../lib".
+	 * Perhaps a decent fallback idea for all platforms, not just WIN32.
+	 */
+	".",
+#endif
 	NULL
 };
 
