@@ -998,7 +998,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		return -1;
 	}
 
-	snprintf(sport, sizeof(sport), "%ju", (uintmax_t)port);
+	snprintf(sport, sizeof(sport), "%" PRIuMAX, (uintmax_t)port);
 
 	memset(&hints, 0, sizeof(hints));
 
