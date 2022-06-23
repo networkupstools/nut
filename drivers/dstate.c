@@ -947,7 +947,7 @@ char * dstate_init(const char *prog, const char *devname)
 
 #ifndef WIN32
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, int extrafd)
+int dstate_poll_fds(struct timeval timeout, int arg_extrafd)
 {
 	int	ret, maxfd, overrun = 0;
 	fd_set	rfds;
@@ -959,11 +959,11 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 
 	maxfd = sockfd;
 
-	if (extrafd != -1) {
-		FD_SET(extrafd, &rfds);
+	if (arg_extrafd != -1) {
+		FD_SET(arg_extrafd, &rfds);
 
-		if (extrafd > maxfd) {
-			maxfd = extrafd;
+		if (arg_extrafd > maxfd) {
+			maxfd = arg_extrafd;
 		}
 	}
 
@@ -1026,7 +1026,7 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 	}
 
 	/* tell the caller if that fd woke up */
-	if ((extrafd != -1) && (FD_ISSET(extrafd, &rfds))) {
+	if ((arg_extrafd != -1) && (FD_ISSET(arg_extrafd, &rfds))) {
 		return 1;
 	}
 
@@ -1034,7 +1034,7 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 }
 #else
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
+int dstate_poll_fds(struct timeval timeout, HANDLE arg_extrafd)
 {
 	DWORD	ret;
 	int	maxfd = 0, overrun = 0;
@@ -1044,10 +1044,10 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	DWORD   timeout_ms;
 
 	/* FIXME: Should such table (and limit) be used in reality? */
-	NUT_UNUSED_VARIABLE(extrafd);
+	NUT_UNUSED_VARIABLE(arg_extrafd);
 /*
-	if (extrafd != -1) {
-		rfds[maxfd] = extrafd;
+	if (arg_extrafd != -1) {
+		rfds[maxfd] = arg_extrafd;
 		maxfd++;
 	}
 */
@@ -1115,7 +1115,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 
 	/* tell the caller if that fd woke up */
 /*
-	if ((extrafd != -1) && (ret == extrafd)) {
+	if ((arg_extrafd != -1) && (ret == arg_extrafd)) {
 		return 1;
 	}
 */
