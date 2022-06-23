@@ -913,6 +913,12 @@ See also:
 * https://azrael.digipen.edu/~mmead/www/public/mingw/
 * https://www.mingw-w64.org/downloads/
 
+NOTE: Seems the mingw installer has probelms with current authentication
+and redirect on SourceForge. You can download and unpack 7z archives from
+https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
+into e.g. `C:\Progra~1\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0`
+location on your Windows system. Then for building further NUT dependencies
+see `scripts/Windows/README`.
 
 Windows with MSYS2
 ------------------
