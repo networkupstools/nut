@@ -1088,6 +1088,8 @@
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
 
+"SKE"		"ups"	"2"	"SK600"		"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 bus=003"
+
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
