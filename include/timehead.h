@@ -38,9 +38,19 @@
 char * strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
 
+#ifndef HAVE_LOCALTIME_R
+# ifdef HAVE_LOCALTIME_S
 /* A bit of a silly trick, but should help on MSYS2 builds it seems */
-#if (!defined(HAVE_LOCALTIME_R)) && (defined HAVE_LOCALTIME_S)
-# define localtime_r(timer, buf) localtime_s(timer, buf)
+#  define localtime_r(timer, buf) localtime_s(timer, buf)
+# else
+#  include <string.h> /* memcpy */
+static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
+	/* Note: not thread-safe per se! */
+	struct tm *tmp = localtime (timer);
+	memcpy(buf, tmp, sizeof(struct tm));
+	return buf;
+}
+# endif
 #endif
 
 #endif	/* NUT_TIMEHEAD_H_SEEN */
