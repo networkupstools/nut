@@ -38,4 +38,9 @@
 char * strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
 
+/* A bit of a silly trick, but should help on MSYS2 builds it seems */
+#if (!defined(HAVE_LOCALTIME_R)) && (defined HAVE_LOCALTIME_S)
+# define localtime_r(timer, buf) localtime_s(timer, buf)
+#endif
+
 #endif	/* NUT_TIMEHEAD_H_SEEN */
