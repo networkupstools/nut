@@ -459,6 +459,10 @@ NUT_CHECK_PYTHON3
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
+dnl Note: a few drivers are NUT software constructs (NUTSW_DRIVERLIST)
+dnl e.g. dummy-ups, clone and clone-outlet; they do not have a separate
+dnl toggle or dependency at the moment. Earlier NUT releases before 2.8.0
+dnl grouped them with serial drivers, which were enabled by default.
 
 dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs
 dnl (square brackets), so the help string depends on the version used
@@ -521,7 +525,7 @@ AC_ARG_WITH(drivers,
 		AS_IF([test -n "$DRIVER_BUILD_LIST"],
 			[dnl DRVLIST is occasionally synced with drivers/Makefile.am
 			 dnl NOTE: Currently "USB_DRIVERLIST" is not used standalone:
-			DRVLIST_NAMES="
+			DRVLIST_NAMES="NUTSW_DRIVERLIST
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
@@ -577,6 +581,9 @@ AC_ARG_WITH(drivers,
 							DRV_HITS="$DRV_HITS $DRVLIST_NAME"
 							AS_CASE(["$DRVLIST_NAME"],
 
+								[NUTSW_DRIVERLIST], [
+									AC_MSG_NOTICE([Building NUT-Software-only driver "$DRV"])
+									],
 								[SERIAL_DRIVERLIST], [
 									AS_IF([test -z "${with_serial}"],
 										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])

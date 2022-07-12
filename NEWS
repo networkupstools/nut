@@ -33,6 +33,9 @@ https://github.com/networkupstools/nut/milestone/8
    scenarios on MacOS, might add Windows in the future. Fixed some build
    issues for MacOS that had crept into NUT v2.8.0 release [#1415, #1421]
 
+ - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
+   serial drivers in respective Makefile and configure script options [#1446]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
