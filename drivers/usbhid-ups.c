@@ -28,7 +28,8 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.47"
+#define DRIVER_VERSION		"0.48"
+#define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"
 #include "nut_stdint.h"
@@ -62,7 +63,7 @@
 	#include "tripplite-hid.h"
 #endif
 
-/* Reference list of avaiable subdrivers */
+/* Reference list of available subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
@@ -801,6 +802,9 @@ void upsdrv_makevartable(void)
 		"Don't use polling, only use interrupt pipe");
 	addvar(VAR_VALUE, "interruptsize",
 		"Number of bytes to read from interrupt pipe");
+	addvar(VAR_VALUE, HU_VAR_WAITBEFORERECONNECT,
+		"Seconds to wait before trying to reconnect");
+
 #else
 	addvar(VAR_VALUE, "notification",
 		"Set notification type, (ignored, only for backward compatibility)");
@@ -1553,17 +1557,33 @@ static bool_t hid_ups_walk(walkmode_t mode)
 static int reconnect_ups(void)
 {
 	int ret;
+	char	*val;
+	int wait_before_reconnect = 0;
 
-	upsdebugx(4, "==================================================");
-	upsdebugx(4, "= device has been disconnected, try to reconnect =");
-	upsdebugx(4, "==================================================");
+	/* Init time to wait before trying to reconnect (seconds) */
+	val = getval(HU_VAR_WAITBEFORERECONNECT);
+	if (val) {
+		wait_before_reconnect = atoi(val);
+	}
 
+	upsdebugx(4, "Closing comm_driver previous handle");
 	/* Try to close the previous handle */
 	if (udev)
 		comm_driver->close_dev(udev);
 
-	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
+	upsdebugx(4, "===================================================================");
+	if (wait_before_reconnect > 0 ) {
+		upsdebugx(4, " device has been disconnected, trying to reconnect in %i seconds", wait_before_reconnect);
+		sleep(wait_before_reconnect);
+		upsdebugx(4, " trying to reconnect");
+	}else{
+		upsdebugx(4, " device has been disconnected, try to reconnect");
+	}
+	upsdebugx(4, "===================================================================");
 
+	upsdebugx(4, "Opening comm_driver ...");
+	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
+	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
 		return 1;
 	}

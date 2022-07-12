@@ -445,6 +445,7 @@ Harnhammar
 Havard
 Heavner
 Hessenflow
+Hirschler
 HiBox
 HiFreq
 HighBatt
@@ -457,6 +458,7 @@ Hunnox
 Hurd
 Håvard
 IANA
+IC
 ID's
 IDEN
 IDentifiers
@@ -927,6 +929,7 @@ PwrOut
 PyGTK
 PyNUT
 PyNUTClient
+QinHeng
 QBDR
 QBT
 QBV
@@ -1304,6 +1307,7 @@ Václav
 WALKMODE
 WARNFATAL
 WARNOPT
+WCH
 WELI
 WHAD
 WIPO
@@ -2613,6 +2617,7 @@ sio
 sitesearch
 sitop
 sizeof
+ske
 skel
 slavesync
 slewrate
@@ -2786,6 +2791,7 @@ tx
 txg
 txt
 typedef
+uart
 uA
 uD
 uM
@@ -2929,6 +2935,7 @@ vod
 voltronic
 von
 wDescriptorLength
+waitbeforereconnect
 wakeup
 wc
 wchar
