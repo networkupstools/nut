@@ -91,7 +91,7 @@ nfds_t	maxconn = 0;
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
 
-/* preloaded to NUT_DATADIR in main, can be overridden via upsd.conf */
+/* preloaded to NUT_DATADIR in main(), can be overridden via upsd.conf */
 char	*datapath = NULL;
 
 /* everything else */

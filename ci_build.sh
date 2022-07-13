@@ -158,7 +158,10 @@ esac
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
 
-# This is where many symlinks like "gcc -> ../bin/ccache" reside:
+# This is where many symlinks like "gcc -> ../bin/ccache" reside
+# (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
+# ccache may still be used via prefixing if the tool is found in
+# the PATH, unless you export CI_CCACHE_USE=no also):
 if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
     for D in \
         "/usr/lib/ccache" \
@@ -170,14 +173,14 @@ if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
         "/usr/local/lib/ccache" \
     ; do
         if [ -d "$D" ] ; then
-	    if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
-	    || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
-	    ; then
-	        CI_CCACHE_SYMLINKDIR="$D" && break
-	    else
-	        echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
-	    fi
-	fi
+            if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
+            || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+            ; then
+                CI_CCACHE_SYMLINKDIR="$D" && break
+            else
+                echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
+            fi
+        fi
     done
 
     if [ -n "${CI_CCACHE_SYMLINKDIR-}" ] ; then
@@ -708,15 +711,26 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         $CXX --version || true
     fi
 
-    PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
-    CCACHE_PATH="$PATH"
-    CCACHE_DIR="${HOME}/.ccache"
-    export CCACHE_PATH CCACHE_DIR PATH
-    HAVE_CCACHE=no
-    if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" ; then
-        HAVE_CCACHE=yes
+    if [ x"${CI_CCACHE_USE-}" = xno ]; then
+        HAVE_CCACHE=no
+        CI_CCACHE_SYMLINKDIR=""
+        echo "WARNING: Caller required to not use ccache even if available" >&2
+    else
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            # Tell ccache the PATH without itself in it, to avoid loops processing
+                PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        fi
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        export CCACHE_PATH CCACHE_DIR PATH
+        HAVE_CCACHE=no
+        if (command -v ccache || which ccache) \
+        && ( [ -z "${CI_CCACHE_SYMLINKDIR}" ] || ls -la "${CI_CCACHE_SYMLINKDIR}" ) \
+        ; then
+            HAVE_CCACHE=yes
+        fi
+        mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
     fi
-    mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
     ccache_stats "before"
 
@@ -1063,9 +1077,23 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
-        PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
-        export PATH
-        if [ -n "$CC" ]; then
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export PATH
+        else
+            case "$CC" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CC="ccache $CC" ;;
+            esac
+            case "$CXX" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CXX="ccache $CXX" ;;
+            esac
+            # No-op for CPP currently
+        fi
+        if [ -n "$CC" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
@@ -1081,7 +1109,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             CC="ccache $CC"
           fi
         fi
-        if [ -n "$CXX" ]; then
+        if [ -n "$CXX" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
@@ -1097,7 +1125,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             CXX="ccache $CXX"
           fi
         fi
-        if [ -n "$CPP" ] && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
+        if [ -n "$CPP" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
+        && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
                 */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
@@ -1675,7 +1704,7 @@ bindings)
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
-	    echo "INFO: Using ccache via ${CI_CCACHE_SYMLINKDIR}" >&2
+            echo "INFO: Using ccache via ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export CCACHE_PATH CCACHE_DIR PATH
         fi
