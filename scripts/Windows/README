@@ -6,6 +6,15 @@ Introduction
 
 NUT is now also available for the Microsoft Windows platform.
 
+This methodology (and Windows support in general) are currently experimental,
+so pull requests are welcome to tie up some loose ends (add more prerequisites,
+test and fix programs, re-enable some code just commented away by ifdefs...)
+
+NOTE: It is possible to prepare a Windows machine with tools and prerequisites
+for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
+handled by NUT common `ci_build.sh` script. Possibly, the instructions below
+would converge there over time to keep it simple.
+
 Cross compiling from Linux
 --------------------------
 
