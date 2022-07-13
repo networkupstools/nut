@@ -157,7 +157,7 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
-static uint16_t crc16(uint8_t *buffer, uint16_t buffer_length);
+static uint16_t crc16(uint8_t *buffer, size_t buffer_length);
 static time_t time_seek(time_t t, int seconds);
 
 /* rw variables function prototypes */
@@ -338,15 +338,8 @@ static void ups2000_device_identification(void)
 		}
 
 		/* step 3: check response CRC-16 */
-		crc16_recv = (uint16_t)((uint16_t)(ident_response_end[0]) << 8) | (uint16_t)(ident_response_end[1]);
-		if (ident_response_len < IDENT_RESPONSE_CRC_LEN
-		|| (((uintmax_t)(ident_response_len) - IDENT_RESPONSE_CRC_LEN) > UINT16_MAX)
-		) {
-			fatalx(EXIT_FAILURE, "response header shorter than CRC "
-					     "or longer than UINT16_MAX!");
-		}
-
-		crc16_calc = crc16(ident_response, (uint16_t)(ident_response_len - IDENT_RESPONSE_CRC_LEN));
+		crc16_recv = (uint16_t) ident_response_end[0] << 8 | ident_response_end[1];
+		crc16_calc = crc16(ident_response, ident_response_len - IDENT_RESPONSE_CRC_LEN);
 		if (crc16_recv == crc16_calc) {
 			crc16_fail = 0;
 			break;
@@ -1896,11 +1889,16 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 		else if (bytes == 0)
 			return total;  /* nothing to read */
 
+		if ((size_t) bytes > buf_len) {
+			/*
+			 * Assertion: This should never happen. bytes is always less or equal
+			 * to buf_len, and buf_len will never underflow under any circumstances.
+			 */
+			fatalx(EXIT_FAILURE, "ups2000_read_serial() reads too much!");
+		}
+
 		total += (size_t)bytes;        /* increment byte counter */
 		buf += bytes;                  /* advance buffer position */
-		if ((size_t)bytes > buf_len) {
-			fatalx(EXIT_FAILURE, "ups2000_read_serial() read too much!");
-		}
 		buf_len -= (size_t)bytes;      /* decrement limiter */
 	}
 	return 0;  /* buffer exhaustion */
@@ -2093,7 +2091,7 @@ static const uint8_t table_crc_lo[] = {
 };
 
 
-static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
+static uint16_t crc16(uint8_t * buffer, size_t buffer_length)
 {
 	uint8_t crc_hi = 0xFF;	/* high CRC byte initialized */
 	uint8_t crc_lo = 0xFF;	/* low CRC byte initialized */
@@ -2106,5 +2104,5 @@ static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
 		crc_lo = table_crc_lo[i];
 	}
 
-	return ((uint16_t)((uint16_t)(crc_hi) << 8) | (uint16_t)crc_lo);
+	return (uint16_t) crc_hi << 8 | crc_lo;
 }
