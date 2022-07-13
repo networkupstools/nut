@@ -58,6 +58,10 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+
+# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
+libnutscan_la_LDFLAGS = $(SERLIBS)
+
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -65,7 +69,7 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 2:0:0
+libnutscan_la_LDFLAGS += -version-info 2:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
