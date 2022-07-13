@@ -597,7 +597,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 		/* No error!!! */
 		/* if (ret == -110) */
-		if (ret == ERROR_TIMEOUT)
+		if (ret == LIBUSB_ERROR_TIMEOUT)
 			break;
 
 		/* Any errors here mean that we are unable to read a reply
@@ -669,11 +669,11 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 * data (e.g. it times out). */
 		switch (ret)
 		{
-		case ERROR_PIPE:	/* Broken pipe */
+		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
 			break;
 
-		case ERROR_TIMEOUT:	/* Connection timed out */
+		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
 
@@ -769,7 +769,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%d)",
-				(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 				ret);
 			return ret;
 		}
@@ -788,7 +788,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * to the UPS) */
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s (%d)",
-			(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 			ret);
 		return ret;
 	}
@@ -3177,7 +3177,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		switch (ret)
 		{
-		case ERROR_BUSY:	/* Device or resource busy */
+		case LIBUSB_ERROR_BUSY:	/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 # if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
@@ -3205,7 +3205,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #endif
 	#endif	/* WITH_LIBUSB_0_1 */
 
-		case ERROR_PIPE:	/* Broken pipe */
+		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
@@ -3219,21 +3219,21 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 				upsdebugx(1, "Device reset handled");
 			}
 			goto fallthrough_case_reconnect;
-		case ERROR_NO_DEVICE:	/* No such device */
-		case ERROR_ACCESS:	/* Permission denied */
-		case ERROR_IO:		/* I/O error */
+		case LIBUSB_ERROR_NO_DEVICE:	/* No such device */
+		case LIBUSB_ERROR_ACCESS:	/* Permission denied */
+		case LIBUSB_ERROR_IO:		/* I/O error */
 #if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
 #endif	/* WITH_LIBUSB_0_1 */
-		case ERROR_NOT_FOUND:	/* No such file or directory */
+		case LIBUSB_ERROR_NOT_FOUND:	/* No such file or directory */
 		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
 			break;
 
-		case ERROR_TIMEOUT:	/* Connection timed out */
-		case ERROR_OVERFLOW:	/* Value too large for defined data type */
+		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
+		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type */
 #if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
 #endif

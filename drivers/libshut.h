@@ -98,14 +98,19 @@ typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 #define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
 /* Same error-code definitions as in usb-common.h for libusb-0.1 API */
-#define ERROR_ACCESS		-EACCES
-#define ERROR_BUSY			-EBUSY
-#define ERROR_IO			-EIO
-#define ERROR_NO_DEVICE		-ENODEV
-#define ERROR_NOT_FOUND		-ENOENT
-#define ERROR_OVERFLOW		-EOVERFLOW
-#define ERROR_PIPE			-EPIPE
-#define ERROR_TIMEOUT		-ETIMEDOUT
+#define LIBUSB_ERROR_ACCESS		-EACCES
+#define LIBUSB_ERROR_BUSY			-EBUSY
+#define LIBUSB_ERROR_IO			-EIO
+#define LIBUSB_ERROR_NO_DEVICE		-ENODEV
+#define LIBUSB_ERROR_NOT_FOUND		-ENOENT
+#define LIBUSB_ERROR_OVERFLOW		-EOVERFLOW
+#define LIBUSB_ERROR_PIPE			-EPIPE
+#define LIBUSB_ERROR_TIMEOUT		-ETIMEDOUT
+#define LIBUSB_ERROR_NO_MEM		-ENOMEM
+#define LIBUSB_ERROR_INVALID_PARAM	-EINVAL
+#define LIBUSB_ERROR_INTERRUPTED	-EINTR
+#define LIBUSB_ERROR_NOT_SUPPORTED	-ENOSYS
+#define LIBUSB_ERROR_OTHER		-ERANGE
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
