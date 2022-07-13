@@ -1057,8 +1057,8 @@ Notable packages not found in the repo:
 
 Not installed above (yet?):
 
-* https://packages.msys2.org/search?t=binpkg&q=serial --
-  need to first check if termios is part of baseline
+* https://packages.msys2.org/search?t=binpkg&q=serial
+  -- for these need to first check if termios is part of baseline
 
 Note that `ccache` symlinks for MSYS2 are installed into `/usr/lib/ccache/bin`
 directory (not plain `/usr/lib/ccache` as elsewhere).
