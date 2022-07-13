@@ -646,11 +646,10 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-#ifndef WIN32
 	const char *path = getenv("NUT_CONFPATH");
-#else
-	static const char *path = NULL;
+#ifdef WIN32
 	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
 #endif
@@ -660,11 +659,10 @@ const char * confpath(void)
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-#ifndef WIN32
 	const char *path = getenv("NUT_STATEPATH");
-#else
-	static const char *path = NULL;
+#ifdef WIN32
 	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_VAR_RUN);
 	}
 #endif
