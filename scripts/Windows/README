@@ -16,6 +16,11 @@ compiling NUT.
 
 NOTE: These instructions were re-verified (and codebase slightly amended)
 with an Ubuntu 21.10 container as the dedicated build environment.
+Support was added to NUT common `ci_build.sh` script to call the helper
+`build-mingw-nut.sh` from this directory when cross-building on Linux
+for Windows in the specially crafted sandbox (conformance is assumed),
+if you use one of `BUILD_TYPE=cross-windows-mingw(-64|-32|)` as this
+made NUT CI farm integration easier.
 
 Beside MinGW detailed below, you would need the usual dependencies to
 configure and build NUT (if you would bootstrap it from github sources
