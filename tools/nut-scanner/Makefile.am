@@ -84,8 +84,7 @@ libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_ups
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
-nut_scanner_SOURCES = nut-scanner.c $(top_srcdir)/common/common.c \
-			$(top_srcdir)/common/wincompat.c
+nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
