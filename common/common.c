@@ -683,8 +683,15 @@ const char * altpidpath(void)
 	const char * path;
 
 	path = getenv("NUT_ALTPIDPATH");
-	if ( (path == NULL) || (*path == '\0') )
+	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+#ifdef WIN32
+		if (path == NULL) {
+			/* fall back to built-in pathname relative to binary/workdir */
+			path = getfullpath(PATH_VAR_RUN);
+		}
+#endif
+	}
 
 	if ( (path != NULL) && (*path != '\0') )
 		return path;
