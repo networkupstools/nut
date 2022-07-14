@@ -72,14 +72,14 @@ upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
-# not LDADD.
+# not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-#libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
-libupsclient_la_LIBADD = $(top_builddir)/common/libparseconf.la
-
 if HAVE_WINDOWS_SOCKETS
-  libupsclient_la_SOURCES += $(top_srcdir)/common/wincompat.c $(top_srcdir)/common/common.c
+  # The libcommon(client).la include libparseconf.la
+  libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
   libupsclient_la_LIBADD += -lws2_32
+else
+  libupsclient_la_LIBADD = $(top_builddir)/common/libparseconf.la
 endif
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
