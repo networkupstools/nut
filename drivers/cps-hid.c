@@ -269,7 +269,7 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
-/* CPS Models like CP900EPFCLCD return a syntactically legal but incorrect
+/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically legal but incorrect
  * Report Descriptor whereby the Input High Transfer Max/Min values
  * are used for the Output Voltage Usage Item limits.
  * Additionally the Input Voltage LogMax is set incorrectly for EU models.
@@ -282,7 +282,7 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
-	if (vendorID != CPS_VENDORID || productID != 0x0501) {
+	if (vendorID != CPS_VENDORID || (productID != 0x0501 && productID != 0x0601)) {
 		return 0;
 	}
 
