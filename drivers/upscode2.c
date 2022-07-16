@@ -1050,7 +1050,9 @@ static ssize_t upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		/* Note: s should end up same as buf */
+		char *s = str_rtrim(buf, ENDCHAR);
+		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, s);
 	}
 
 	return res;
