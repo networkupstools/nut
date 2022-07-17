@@ -21,11 +21,20 @@ serving as model + view) in order to keep the two parts independent.
 That class was subsequently renamed to `PyNUTClient` since version 1.1
 of the original project, allowing to develop other classes nearby later.
 
+Currently the module is regularly tested to work with Python interpreter
+versions 2.7, 3.4, 3.5 and 3.7.
+
 .List of methods in the class
 ------
 class PyNUTClient :
   def __init__( self, host='127.0.0.1', port=3493,
     login=None, password=None, debug=False, timeout=5 ) :
+
+  def help( self ) :
+
+  def ver( self ) :
+
+  def FSD( self, ups="") :
 
   def GetRWVars( self, ups='' ) :
 
@@ -35,10 +44,15 @@ class PyNUTClient :
 
   def GetUPSVars( self, ups='' ) :
 
+  def ListClients( self, ups = None ) :
+
   def RunUPSCommand( self, ups='', command='' ) :
 
   def SetRWVar( self, ups='', var='', value='' ) :
 ------
+
+The module also provides the `PyNUTError` class to represent any excpetions
+raised by `PyNUTClient` logic.
 
 Documentation
 -------------
@@ -52,6 +66,42 @@ the module.
 
 For more examples see the provided test script and the NUT-Monitor application
 in the NUT sources.
+
+Commands below are listed in alphabetic order.
+
+__init__
+~~~~~~~~
+
+When you initialize the class instance, it performs the connection to the NUT
+data server or raises a Python exception from the `__connect()` method called
+internally.
+
+
+help
+~~~~
+
+Sends the `HELP` command to the NUT data server and returns whatever bits of
+wizdom it has to offer.
+
+
+ver
+~~~
+
+Sends the `VER` command to the NUT data server and returns its self-reported
+identification such as version, product or distribution it may be bunded with.
+
+Note that the NUT client interactions should not rely on reported versions,
+but follow the protocol as defined.
+
+
+FSD
+~~~
+
+Send the FSD (Forced ShutDown) command to the specified UPS.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure, such as that this server does not allow to manage that UPS
+as a "primary" (or "master" before NUT 2.8.0).
 
 
 GetRWVars
@@ -179,6 +229,18 @@ of "variable"-"current value" pairs.
 -----
 
 See also: `GetRWVars()`
+
+
+ListClients
+~~~~~~~~~~~
+
+Returns the list of connected clients (such as the `NUT-Monitor` application
+or an `upsmon` service) from the NUT server, for a particular UPS or all of
+them by default.
+
+The result is a dictionary containing "upsname"-"client list" pairing 'UPSName'
+and a list of clients for each device if the information was retrieved from
+the NUT data server successfully, or an exception is raised otherwise.
 
 
 RunUPSCommand
