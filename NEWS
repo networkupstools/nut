@@ -58,6 +58,9 @@ https://github.com/networkupstools/nut/milestone/8
  - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
    serial drivers in respective Makefile and configure script options [#1446]
 
+ - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
+   `SIGKILL` [#1424]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
