@@ -43,6 +43,9 @@ https://github.com/networkupstools/nut/milestone/8
      logic from looking at all of its entries. Regression fixed for NUT
      v2.8.1 [#1432]
 
+ - huawei-ups2000 is now known to support more devices, noted in docs and
+   for auto-detection [#1448]
+
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
