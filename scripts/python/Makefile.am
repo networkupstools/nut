@@ -33,6 +33,11 @@ EXTRA_DIST = README \
 # TODO: Make py2/py3-only builds, delivered preferred symlinks, etc. optional:
 EXTRA_DIST += $(EXTRA_DIST_PY2GTK2)
 EXTRA_DIST += $(EXTRA_DIST_PY3QT5)
+# For now, we have a "dispatcher" script and applet manifest,
+# to select a functional choice of the GUI client, if possible:
+EXTRA_DIST += \
+			 app/NUT-Monitor \
+			 app/nut-monitor.desktop
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
