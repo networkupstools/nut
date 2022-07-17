@@ -38,6 +38,10 @@ https://github.com/networkupstools/nut/milestone/8
      program misbehaved. A known regression for `upscode2` driver; might
      be or not be a problem with `upsd` driver in NUT v2.8.0 release,
      fixed for NUT v2.8.1.
+   * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
+     arranged in NUT v2.8.0 release in a way that precluded the driver
+     logic from looking at all of its entries. Regression fixed for NUT
+     v2.8.1 [#1432]
 
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to
