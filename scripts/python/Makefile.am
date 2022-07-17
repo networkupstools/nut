@@ -38,7 +38,8 @@ NUT_MONITOR_COMMON = \
 	app/pixmaps/var-ro.png \
 	app/locale/fr/LC_MESSAGES/NUT-Monitor.mo \
 	app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
-	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
+	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo \
+	module/README
 
 # Note: we both distribute and install the generated *.mo translation files
 # so they are listed above and not in NUT_MONITOR_COMMON_GENERATED
