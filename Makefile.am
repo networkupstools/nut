@@ -17,6 +17,11 @@ libtool: $(LIBTOOL_DEPS)
 # COPYING is included automatically.
 EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
+# Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
+# but lack NUT magic logic to recreate the `configure` script if someone would
+# want to adapt it to their autotools or locally fix a tarball-based build.
+EXTRA_DIST += autogen.sh
+
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
