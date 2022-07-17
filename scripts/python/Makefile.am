@@ -5,7 +5,6 @@ NUT_MONITOR_PY2GTK2 = \
 	app/nut-monitor-py2gtk2.desktop
 
 NUT_MONITOR_PY2GTK2_TEMPLATE = \
-	app/ui/gui-1.3.glade.h \
 	app/NUT-Monitor-py2gtk2.in
 
 NUT_MONITOR_PY2GTK2_GENERATED = \
