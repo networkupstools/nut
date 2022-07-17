@@ -39,6 +39,11 @@ https://github.com/networkupstools/nut/milestone/8
      be or not be a problem with `upsd` driver in NUT v2.8.0 release,
      fixed for NUT v2.8.1.
 
+ - usbhid-ups updates:
+   * cps-hid subdriver now applies same report descriptor fixing logic to
+     devices with ProductID 0x0601 as done earlier for 0x0501, to get the
+     correct output voltage data [#1497]
+
  - Regular CI coverage for NUT codebase enhanced with CircleCI running some
    scenarios on MacOS, might add Windows in the future. Fixed some build
    issues for MacOS that had crept into NUT v2.8.0 release [#1415, #1421]
