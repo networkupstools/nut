@@ -7,6 +7,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         NUT_ARG_WITH([python], [Use a particular program name of the python interpeter], [auto])
 
         PYTHON=""
+        PYTHON_SITE_PACKAGES=""
         AS_CASE([${nut_with_python}],
             [auto|yes|""], [AC_CHECK_PROGS([PYTHON], [python python3 python2], [_python_runtime])],
             [no], [PYTHON="no"],
@@ -39,7 +40,14 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AC_MSG_RESULT([${PYTHON}])
         AC_SUBST([PYTHON], [${PYTHON}])
         AM_CONDITIONAL([HAVE_PYTHON], [test "${PYTHON}" != "no"])
-        AS_IF([test -n "${PYTHON}"], [export PYTHON])
+        AS_IF([test -n "${PYTHON}"], [
+            export PYTHON
+            AC_MSG_CHECKING([python site-packages location])
+            PYTHON_SITE_PACKAGES="`${PYTHON} -c "import site; print(site.getsitepackages()[0])"`"
+            AC_MSG_RESULT([${PYTHON_SITE_PACKAGES}])
+            ])
+        AC_SUBST([PYTHON_SITE_PACKAGES], [${PYTHON_SITE_PACKAGES}])
+        AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
     ])
 ])
 
@@ -49,6 +57,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         NUT_ARG_WITH([python2], [Use a particular program name of the python2 interpeter for code that needs that version and is not compatible with python3], [auto])
 
         PYTHON2=""
+        PYTHON2_SITE_PACKAGES=""
         AS_CASE([${nut_with_python2}],
             [auto|yes|""], [AC_CHECK_PROGS([PYTHON2], [python2 python2.7 python-2.7 python], [_python2_runtime])],
             [no], [PYTHON2="no"],
@@ -81,7 +90,14 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AC_MSG_RESULT([${PYTHON2}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
         AM_CONDITIONAL([HAVE_PYTHON2], [test "${PYTHON2}" != "no"])
-        AS_IF([test -n "${PYTHON2}"], [export PYTHON2])
+        AS_IF([test -n "${PYTHON2}"], [
+            export PYTHON2
+            AC_MSG_CHECKING([python2 site-packages location])
+            PYTHON2_SITE_PACKAGES="`${PYTHON2} -c "import site; print(site.getsitepackages()[0])"`"
+            AC_MSG_RESULT([${PYTHON2_SITE_PACKAGES}])
+            ])
+        AC_SUBST([PYTHON2_SITE_PACKAGES], [${PYTHON2_SITE_PACKAGES}])
+        AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
     ])
 ])
 
@@ -91,6 +107,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         NUT_ARG_WITH([python3], [Use a particular program name of the python3 interpeter for code that needs that version and is not compatible with python2], [auto])
 
         PYTHON3=""
+        PYTHON3_SITE_PACKAGES=""
         AS_CASE([${nut_with_python3}],
             [auto|yes|""], [AC_CHECK_PROGS([PYTHON3], [python3 python3.9 python-3.9 python3.7 python-3.7 python3.5 python-3.5 python], [_python3_runtime])],
             [no], [PYTHON3="no"],
@@ -123,6 +140,13 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AC_MSG_RESULT([${PYTHON3}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
         AM_CONDITIONAL([HAVE_PYTHON3], [test "${PYTHON3}" != "no"])
-        AS_IF([test -n "${PYTHON3}"], [export PYTHON3])
+        AS_IF([test -n "${PYTHON3}"], [
+            export PYTHON3
+            AC_MSG_CHECKING([python3 site-packages location])
+            PYTHON3_SITE_PACKAGES="`${PYTHON3} -c "import site; print(site.getsitepackages()[0])"`"
+            AC_MSG_RESULT([${PYTHON3_SITE_PACKAGES}])
+            ])
+        AC_SUBST([PYTHON3_SITE_PACKAGES], [${PYTHON3_SITE_PACKAGES}])
+        AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
     ])
 ])
