@@ -53,6 +53,11 @@ https://github.com/networkupstools/nut/milestone/8
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
      correct output voltage data [#1497]
+   * the `usbhid-ups` driver should now reconnect if `libusb` returned a
+     memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
+     Resource temporarily unavailable"), which can cause practical problems
+     in the field -- the driver otherwise interpreted the situation as
+     `ups.status` being `OL OFF` and cut the power supply.
 
  - Regular CI coverage for NUT codebase enhanced with CircleCI running some
    scenarios on MacOS, might add Windows in the future. Fixed some build
