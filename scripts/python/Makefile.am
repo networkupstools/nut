@@ -40,7 +40,13 @@ NUT_MONITOR_COMMON = \
 	app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
+# Note: we both distribute and install the generated *.mo translation files
+# so they are listed above and not in NUT_MONITOR_COMMON_GENERATED
 NUT_MONITOR_COMMON_TEMPLATE = \
+	app/locale/NUT-Monitor.pot \
+	app/locale/fr/fr.po \
+	app/locale/it/it.po \
+	app/locale/ru/ru.po \
 	module/PyNUT.py.in \
 	module/test_nutclient.py.in
 
