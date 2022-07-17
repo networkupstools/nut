@@ -12,6 +12,11 @@ Changes from 2.8.0 to 2.8.1
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Added support for `make install` of PyNUT module and NUT-Monitor desktop
+  application -- such activity was earlier done by packages directly; now
+  the packaging recipes may use NUT source-code facilities and package just
+  symlinks as relevant for each distro separately [#1462, #1504]
+
 - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]

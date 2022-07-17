@@ -674,7 +674,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, nut_monitor, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -708,6 +708,11 @@ AC_ARG_WITH(all,
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
+
+		dnl A Python GUI client application for the sysadmin desktop
+		dnl (not necessarily on the NUT server itself):
+		if test -z "${with_pynut}"; then with_pynut="${withval}"; fi
+		if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
 
 		AC_MSG_RESULT("${withval}")
 	else
@@ -770,6 +775,15 @@ NUT_CHECK_LIBMODBUS
 
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
+
+NUT_ARG_WITH([nut_monitor], [install the NUT-Monitor GUI files], [auto])
+NUT_ARG_WITH([pynut], [install the PyNUT module files (yes, no, app, auto)], [auto])
+dnl Note: we did NUT_CHECK_PYTHON2 NUT_CHECK_PYTHON3 etc above,
+dnl and if at all possible, we generate the files from .in templates
+dnl anyway by running this configure script. The question is about
+dnl installing these features or not.
+dnl Note: more for tests than other reasons, there is also an option
+dnl value to "force" the installation.
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
@@ -1197,6 +1211,224 @@ fi
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-pynut and --with-nut_monitor
+
+dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
+dnl python 3 qt5, or both
+AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+nut_with_nut_monitor_py2gtk2=""
+nut_with_nut_monitor_py3qt5=""
+nut_with_nut_monitor_desktop=""
+dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
+nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+if test x"${nut_with_nut_monitor}" != xno ; then
+    dnl While we might just install for "yes" request, in hopes user would
+    dnl get their python ecosystem in place later, we need some criteria to
+    dnl avoid installing it always :) Also, need to substitute the shebang.
+    if test -z "${PYTHON}${PYTHON2}${PYTHON3}" ; then
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="no" ;;
+            "yes")  AC_MSG_ERROR([No python 2/3 interpreter was found, required for NUT-Monitor desktop application])
+                ;;
+        esac
+    fi
+fi
+
+if test x"${nut_with_nut_monitor}" != xno ; then
+    dnl Note: no double-quoting for use, the command string may be multi-token
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        ; then
+            nut_with_nut_monitor_py2gtk2="yes"
+        fi
+    fi
+
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        ; then
+            nut_with_nut_monitor_py3qt5="yes"
+        fi
+    fi
+
+    dnl Fall back to default interpreter
+    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
+    && test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        ; then
+            nut_with_nut_monitor_py3qt5="yes"
+        fi
+
+        if ${PYTHON} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        ; then
+            nut_with_nut_monitor_py2gtk2="yes"
+        fi
+    fi
+
+    dnl Can we satisfy any NUT-Monitor installation request?
+    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="yes" ;;
+        esac
+    else
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="no" ;;
+            "yes")
+                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application])
+                ;;
+        esac
+    fi
+fi
+AC_MSG_RESULT([${nut_with_nut_monitor}])
+
+if test x"${nut_with_nut_monitor}" != xno ; then
+    if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
+        case "${nut_with_nut_monitor}" in
+            "auto"|"yes") nut_with_nut_monitor_desktop="desktop-file-install" ;;
+        esac
+    else
+        case "${nut_with_nut_monitor}" in
+            "yes")  AC_MSG_WARN([Current OS does not seem to provide desktop-file-install])
+                nut_with_nut_monitor_desktop="install"
+                ;;
+            "auto") nut_with_nut_monitor_desktop="install" ;;
+        esac
+    fi
+fi
+
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
+AC_MSG_CHECKING([if we can and should install PyNUT module])
+nut_with_pynut_py=""
+nut_with_pynut_py2=""
+nut_with_pynut_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py2="yes"
+        fi
+    fi
+
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py3="yes"
+        fi
+    fi
+
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
+    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
+    ; then
+        if ${PYTHON} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py="yes"
+        fi
+    fi
+fi
+
+if test -z "${nut_with_pynut_py}${nut_with_pynut_py2}${nut_with_pynut_py3}" ; then
+    dnl Not all prereqs are available...
+    case "${nut_with_pynut}" in
+        "auto"|"app")
+            if test "${nut_with_nut_monitor}" = yes ; then
+                AC_MSG_ERROR([Prerequisites for PyNUT not found, can't install as required for NUT-Monitor desktop application])
+            else
+                nut_with_pynut="no"
+            fi
+            ;;
+        "yes")
+            AC_MSG_ERROR([Prerequisites for PyNUT not found, can't install as required])
+            ;;
+    esac
+fi
+
+if test x"${nut_with_pynut}" != xno ; then
+    if test -n "${PYTHON_SITE_PACKAGES}${PYTHON2_SITE_PACKAGES}${PYTHON3_SITE_PACKAGES}" \
+    ; then
+        dnl retain "app" if requested by caller
+        case "${nut_with_pynut}" in
+            "auto")
+                nut_with_pynut="yes"
+                ;;
+        esac
+    else
+        case "${nut_with_pynut}" in
+            "auto")
+                if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
+                    nut_with_pynut="app"
+                else
+                    nut_with_pynut="no"
+                fi
+                ;;
+            "yes") dnl Note: this would die for --with-nut_monitor=yes but no site location
+                if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
+                    nut_with_pynut="app"
+                else
+                    AC_MSG_ERROR([python interpreter and/or its site-packages location not found, but required for PyNUT])
+                fi
+                ;;
+        esac
+    fi
+fi
+AC_MSG_RESULT([${nut_with_pynut}])
+
+dnl Note: do not move up to before pynut processing
+if test "${nut_with_nut_monitor}" = force ; then
+    AC_MSG_NOTICE([overriding nut_with_nut_monitor=yes because caller forced it])
+    nut_with_nut_monitor=yes
+    nut_with_nut_monitor_py2gtk2=yes
+    nut_with_nut_monitor_py3qt5=yes
+fi
+
+if test "${nut_with_pynut}" = force ; then
+    AC_MSG_NOTICE([overriding nut_with_pynut=yes because caller forced it])
+    if test "${nut_with_nut_monitor}" = yes ; then
+        nut_with_pynut=app
+    else
+        nut_with_pynut=yes
+    fi
+fi
+
+NUT_REPORT_FEATURE([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
+					[WITH_NUT_MONITOR], [Define to enable NUT-Monitor desktop application installation])
+
+NUT_REPORT_FEATURE([install PyNUT binding module], [${nut_with_pynut}], [],
+					[WITH_PYNUT], [Define to enable PyNUT module installation])
+
+dnl One or both of these may be installed:
+AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY2GTK2, test "${nut_with_nut_monitor_py2gtk2}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5, test "${nut_with_nut_monitor_py3qt5}" = "yes")
+dnl Install PyNUT as a globally usable module, or just as app internals?
+AM_CONDITIONAL(WITH_PYNUT_PY,  test "${nut_with_pynut_py}" = "yes"  -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_PY2, test "${nut_with_pynut_py2}" = "yes" -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_PY3, test "${nut_with_pynut_py3}" = "yes" -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_APP, test "${nut_with_pynut}" = "app")
+
+AC_SUBST([nut_with_nut_monitor_dir], [${nut_with_nut_monitor_dir}])
+AC_SUBST([nut_with_nut_monitor_py2gtk2], [${nut_with_nut_monitor_py2gtk2}])
+AC_SUBST([nut_with_nut_monitor_py3qt5], [${nut_with_nut_monitor_py3qt5}])
+AC_SUBST([nut_with_nut_monitor_desktop], [${nut_with_nut_monitor_desktop}])
+AC_SUBST([nut_with_nut_monitor], [${nut_with_nut_monitor}])
+AC_SUBST([nut_with_pynut], [${nut_with_pynut}])
+AC_SUBST([nut_with_pynut_py], [${nut_with_pynut_py}])
+AC_SUBST([nut_with_pynut_py2], [${nut_with_pynut_py2}])
+AC_SUBST([nut_with_pynut_py3], [${nut_with_pynut_py3}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-cppcheck
