@@ -55,6 +55,9 @@ NUT_MONITOR_COMMON = \
 	app/icons/256x256/nut-monitor.png \
 	app/icons/scalable/nut-monitor.svg \
 	app/README \
+	app/screenshots/nut-monitor-1.png \
+	app/screenshots/nut-monitor-2.png \
+	app/screenshots/nut-monitor-3.png \
 	app/pixmaps/on_battery.png \
 	app/pixmaps/on_line.png \
 	app/pixmaps/var-ro.png \
