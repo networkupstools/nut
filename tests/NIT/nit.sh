@@ -434,10 +434,17 @@ testcase_upsd_allow_no_device() {
         PASSED="`expr $PASSED + 1`"
 
         log_separator
-        log_info "Test that UPSD responds to UPSC"
-        OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
-        if [ -n "$OUT" ] ; then
-            log_error "got reply for upsc listing when none was expected: $OUT"
+        log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
+        if ! runcmd upsc -l localhost:$NUT_PORT ; then
+            if [ "$CMDERR" = "Error: Server disconnected" ]; then
+                log_warn "Retry once to rule out laggy systems"
+                sleep 3
+                runcmd upsc -l localhost:$NUT_PORT
+            fi
+            [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+        fi
+        if [ -n "$CMDOUT" ] ; then
+            log_error "got reply for upsc listing when none was expected: $CMDOUT"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
         else
