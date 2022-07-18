@@ -408,7 +408,7 @@ testcase_upsd_allow_no_device() {
 
         log_separator
         log_info "Test that UPSD responds to UPSC"
-        OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond ($?): $OUT"
+        OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
         if [ -n "$OUT" ] ; then
             log_error "got reply for upsc listing when none was expected: $OUT"
             FAILED="`expr $FAILED + 1`"
@@ -515,7 +515,7 @@ UPS2"
     fi
 
     log_info "Query listing from UPSD by UPSC (driver not running yet)"
-    OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond ($?): $OUT"
+    OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
     if [ x"$OUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
@@ -550,7 +550,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     sandbox_start_upsd
 
     sleep 5
-    upsc dummy@localhost:$NUT_PORT || die "upsd does not respond ($?)"
+    upsc dummy@localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?)"
 }
 
 testcase_sandbox_start_drivers_after_upsd() {
@@ -598,7 +598,7 @@ testcase_sandbox_start_drivers_after_upsd() {
 }
 
 testcase_sandbox_upsc_query_model() {
-    OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond ($?): $OUT"
+    OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
     if [ x"$OUT" != x"Dummy UPS" ] ; then
         log_error "got this reply for upsc query when 'Dummy UPS' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
@@ -628,16 +628,16 @@ testcase_sandbox_upsc_query_timer() {
     log_separator
     log_info "Test that dummy-ups TIMER action changes the reported state"
     # Driver is set up to flip ups.status every 5 sec, so check every 3
-    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond ($?): $OUT1" ; sleep 3
-    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond ($?): $OUT2"
+    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
+    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
-        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond ($?): $OUT3"
+        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
-            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond ($?): $OUT4"
+            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
         fi
     fi
     if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
