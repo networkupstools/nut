@@ -63,6 +63,29 @@ die() {
     exit 1
 }
 
+runcmd() {
+    # Re-uses a couple of files in test scratch area NUT_STATEPATH
+    # to store the stderr and stdout of the launched program.
+    # Prints the captured output back and returns the exit code.
+
+    [ -n "${NUT_STATEPATH}" -a -d "${NUT_STATEPATH}" -a -w "${NUT_STATEPATH}" ] \
+    || die "runcmd() called when NUT_STATEPATH was not yet set up"
+
+    # Values from variables below may be used until next runcmd():
+    CMDRES=0
+    CMDOUT=""
+    CMDERR=""
+
+    "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
+    CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
+    CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
+
+    [ "$RUNCMD_QUIET_OUT" = true ] || echo "$CMDOUT"
+    [ "$RUNCMD_QUIET_ERR" = true ] || echo "$CMDERR" >&2
+
+    return $CMDRES
+}
+
 # Note: current directory is assumed to be writeable for temporary
 # data, e.g. the $(builddir) from the Makefile. Static resources
 # from the source codebase are where the script resides, e.g.
