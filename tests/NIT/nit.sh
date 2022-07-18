@@ -345,6 +345,7 @@ isPidAlive() {
 }
 
 FAILED=0
+FAILED_FUNCS=""
 PASSED=0
 
 testcase_upsd_no_configs_at_all() {
@@ -354,6 +355,7 @@ testcase_upsd_no_configs_at_all() {
     if [ "$?" = 0 ]; then
         log_error "upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_at_all"
     else
         log_info "OK, upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
@@ -368,6 +370,7 @@ testcase_upsd_no_configs_driver_file() {
     if [ "$?" = 0 ]; then
         log_error "upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_driver_file"
     else
         log_info "OK, upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
@@ -383,6 +386,7 @@ testcase_upsd_no_configs_in_driver_file() {
     if [ "$?" = 0 ]; then
         log_error "upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_in_driver_file"
     else
         log_info "OK, upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
@@ -408,6 +412,7 @@ testcase_upsd_allow_no_device() {
         if [ -n "$OUT" ] ; then
             log_error "got reply for upsc listing when none was expected: $OUT"
             FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
         else
             log_info "OK, empty response as expected"
             PASSED="`expr $PASSED + 1`"
@@ -415,6 +420,7 @@ testcase_upsd_allow_no_device() {
     else
         log_error "upsd was expected to be running although no devices are defined"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
     fi
     kill -15 $PID_UPSD
     wait $PID_UPSD
@@ -513,6 +519,7 @@ UPS2"
     if [ x"$OUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     else
         PASSED="`expr $PASSED + 1`"
     fi
@@ -521,10 +528,12 @@ UPS2"
     OUT="`upsc dummy@localhost:$NUT_PORT 2>&1`" && {
         log_error "upsc was supposed to answer with error exit code: $OUT"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     }
     if ! echo "$OUT" | grep 'Error: Driver not connected' ; then
         log_error "got reply for upsc query when 'Error: Driver not connected' was expected: '$OUT'"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     else
         PASSED="`expr $PASSED + 1`"
     fi
@@ -593,6 +602,7 @@ testcase_sandbox_upsc_query_model() {
     if [ x"$OUT" != x"Dummy UPS" ] ; then
         log_error "got this reply for upsc query when 'Dummy UPS' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
         PASSED="`expr $PASSED + 1`"
     fi
@@ -603,10 +613,12 @@ testcase_sandbox_upsc_query_bogus() {
     OUT="`upsc dummy@localhost:$NUT_PORT ups.bogus.value 2>&1`" && {
         log_error "upsc was supposed to answer with error exit code: $OUT"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     if ! echo "$OUT" | grep 'Error: Variable not supported by UPS' ; then
         log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected: $OUT"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     else
         PASSED="`expr $PASSED + 1`"
     fi
@@ -634,6 +646,7 @@ testcase_sandbox_upsc_query_timer() {
     else
         log_error "ups.status did not flip over time"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
 }
 
@@ -660,6 +673,7 @@ testcase_sandbox_python_without_credentials() {
     else
         log_error "PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_without_credentials"
     fi
 }
 
@@ -682,6 +696,7 @@ testcase_sandbox_python_with_credentials() {
     else
         log_error "PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_credentials"
     fi
 }
 
@@ -717,6 +732,7 @@ testcase_sandbox_cppnit_without_creds() {
     else
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_without_creds"
     fi
 }
 
@@ -744,6 +760,7 @@ testcase_sandbox_cppnit_simple_admin() {
     else
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_simple_admin"
     fi
 }
 
@@ -765,6 +782,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
     else
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_primary"
     fi
 }
 
@@ -786,6 +804,7 @@ testcase_sandbox_cppnit_upsmon_master() {
     else
         log_error "cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_master"
     fi
 }
 
@@ -848,6 +867,9 @@ esac
 
 log_separator
 log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
+if [ -n "$FAILED_FUNCS" ]; then
+    for F in $FAILED_FUNCS ; do echo "$F" ; done | sort | uniq -c
+fi
 
 # Allow to leave the sandbox daemons running for a while,
 # to experiment with them interactively:
