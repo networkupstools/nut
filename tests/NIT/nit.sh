@@ -552,9 +552,9 @@ UPS2"
     fi
 
     log_info "Query listing from UPSD by UPSC (driver not running yet)"
-    OUT="`upsc -l localhost:$NUT_PORT`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
-    if [ x"$OUT" != x"$EXPECTED_UPSLIST" ] ; then
-        log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: $OUT"
+    runcmd upsc -l localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
+        log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     else
@@ -562,13 +562,13 @@ UPS2"
     fi
 
     log_info "Query driver state from UPSD by UPSC (driver not running yet)"
-    OUT="`upsc dummy@localhost:$NUT_PORT 2>&1`" && {
-        log_error "upsc was supposed to answer with error exit code: $OUT"
+    runcmd upsc dummy@localhost:$NUT_PORT && {
+        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     }
-    if ! echo "$OUT" | grep 'Error: Driver not connected' ; then
-        log_error "got reply for upsc query when 'Error: Driver not connected' was expected: '$OUT'"
+    if [ "$CMDERR" != 'Error: Driver not connected' ]; then
+        log_error "got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     else
@@ -599,10 +599,10 @@ testcase_sandbox_start_drivers_after_upsd() {
     COUNTDOWN=60
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
-        OUT="`upsc dummy@localhost:$NUT_PORT`" \
-        && case "$OUT" in
+        runcmd upsc dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
             "ups.status: WAIT") ;;
-            *) log_info "Got output:" ; echo "$OUT" ; break ;;
+            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
@@ -622,6 +622,7 @@ testcase_sandbox_start_drivers_after_upsd() {
         log_info "Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
             COUNTDOWN=60
+            # TODO: Convert to runcmd()?
             OUT=""
             while [ x"$OUT" = x"ups.status: WAIT" ] \
             || ! OUT="`upsc $U@localhost:$NUT_PORT ups.status`" \
@@ -642,9 +643,9 @@ testcase_sandbox_start_drivers_after_upsd() {
 }
 
 testcase_sandbox_upsc_query_model() {
-    OUT="`upsc dummy@localhost:$NUT_PORT device.model`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT"
-    if [ x"$OUT" != x"Dummy UPS" ] ; then
-        log_error "got this reply for upsc query when 'Dummy UPS' was expected: $OUT"
+    runcmd upsc dummy@localhost:$NUT_PORT device.model || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
+        log_error "got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
@@ -654,13 +655,13 @@ testcase_sandbox_upsc_query_model() {
 
 testcase_sandbox_upsc_query_bogus() {
     log_info "Query driver state from UPSD by UPSC for bogus info"
-    OUT="`upsc dummy@localhost:$NUT_PORT ups.bogus.value 2>&1`" && {
-        log_error "upsc was supposed to answer with error exit code: $OUT"
+    runcmd upsc dummy@localhost:$NUT_PORT ups.bogus.value && {
+        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
-    if ! echo "$OUT" | grep 'Error: Variable not supported by UPS' ; then
-        log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected: $OUT"
+    if [ "$CMDERR" != 'Error: Variable not supported by UPS' ]; then
+        log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     else
@@ -672,6 +673,7 @@ testcase_sandbox_upsc_query_timer() {
     log_separator
     log_info "Test that dummy-ups TIMER action changes the reported state"
     # Driver is set up to flip ups.status every 5 sec, so check every 3
+    # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
