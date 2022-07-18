@@ -63,6 +63,9 @@ die() {
     exit 1
 }
 
+# By default, keep stdout hidden but report the errors:
+[ -n "$RUNCMD_QUIET_OUT" ] || RUNCMD_QUIET_OUT=true
+[ -n "$RUNCMD_QUIET_ERR" ] || RUNCMD_QUIET_ERR=false
 runcmd() {
     # Re-uses a couple of files in test scratch area NUT_STATEPATH
     # to store the stderr and stdout of the launched program.
@@ -80,8 +83,8 @@ runcmd() {
     CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
     CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
 
-    [ "$RUNCMD_QUIET_OUT" = true ] || echo "$CMDOUT"
-    [ "$RUNCMD_QUIET_ERR" = true ] || echo "$CMDERR" >&2
+    [ "$RUNCMD_QUIET_OUT" = true ] || { [ -z "$CMDOUT" ] || echo "$CMDOUT" ; }
+    [ "$RUNCMD_QUIET_ERR" = true ] || { [ -z "$CMDERR" ] || echo "$CMDERR" >&2 ; }
 
     return $CMDRES
 }
