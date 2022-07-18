@@ -158,6 +158,8 @@ export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
     || NUT_PORT=34931
 }
 export NUT_PORT
+# Help track collisions in log, if someone else starts a test in same directory
+log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
 ### upsd.conf: ##################################################
 
