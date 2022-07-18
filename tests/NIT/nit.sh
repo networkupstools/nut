@@ -602,7 +602,7 @@ testcase_sandbox_start_drivers_after_upsd() {
         OUT="`upsc dummy@localhost:$NUT_PORT`" \
         && case "$OUT" in
             "ups.status: WAIT") ;;
-            *) echo "$OUT" ; break ;;
+            *) log_info "Got output:" ; echo "$OUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
@@ -626,7 +626,7 @@ testcase_sandbox_start_drivers_after_upsd() {
             while [ x"$OUT" = x"ups.status: WAIT" ] \
             || ! OUT="`upsc $U@localhost:$NUT_PORT ups.status`" \
             ; do
-                [ x"$OUT" = x"ups.status: WAIT" ] || echo "$OUT"
+                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "Got output:"; echo "$OUT"; break; }
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
                 # Systemic error, e.g. could not create socket file?
