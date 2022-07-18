@@ -550,17 +550,33 @@ testcase_sandbox_start_drivers_after_upsd() {
     sandbox_start_drivers
 
     log_info "Query driver state from UPSD by UPSC after driver startup"
-    upsc dummy@localhost:$NUT_PORT || {
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        # For query errors or known wait, keep looping
+        OUT="`upsc dummy@localhost:$NUT_PORT`" \
+        && case "$OUT" in
+            "ups.status: WAIT") ;;
+            *) echo "$OUT" ; break ;;
+        esac
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+    done
+
+    if [ "$COUNTDOWN" -le 1 ] ; then
         # Should not get to this, except on very laggy systems maybe
         log_error "Query failed, retrying with UPSD started after drivers"
         testcase_sandbox_start_upsd_after_drivers
-    }
+    fi
 
     if [ x"${TOP_SRCDIR}" != x ]; then
         log_info "Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
             COUNTDOWN=60
-            while ! upsc $U@localhost:$NUT_PORT ups.status ; do
+            OUT=""
+            while [ x"$OUT" = x"ups.status: WAIT" ] \
+            || ! OUT="`upsc $U@localhost:$NUT_PORT ups.status`" \
+            ; do
+                [ x"$OUT" = x"ups.status: WAIT" ] || echo "$OUT"
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
                 # Systemic error, e.g. could not create socket file?
