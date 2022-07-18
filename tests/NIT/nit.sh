@@ -50,6 +50,10 @@ log_info() {
     echo "[INFO] $@" >&2
 }
 
+log_warn() {
+    echo "[WARNING] $@" >&2
+}
+
 log_error() {
     echo "[ERROR] $@" >&2
 }
@@ -571,6 +575,10 @@ testcase_sandbox_start_drivers_after_upsd() {
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
 
+    if [ "$COUNTDOWN" -le 58 ] ; then
+        log_warn "Had to wait a few retries for the dummy driver to connect"
+    fi
+
     if [ "$COUNTDOWN" -le 1 ] ; then
         # Should not get to this, except on very laggy systems maybe
         log_error "Query failed, retrying with UPSD started after drivers"
@@ -591,6 +599,9 @@ testcase_sandbox_start_drivers_after_upsd() {
                 # Systemic error, e.g. could not create socket file?
                 [ "$COUNTDOWN" -lt 1 ] && die "Dummy driver did not start or respond in time"
             done
+            if [ "$COUNTDOWN" -le 58 ] ; then
+                log_warn "Had to wait a few retries for the $U driver to connect"
+            fi
         done
     fi
 
