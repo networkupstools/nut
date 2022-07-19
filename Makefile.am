@@ -25,13 +25,18 @@ EXTRA_DIST += autogen.sh
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
-# need to give augeas-lenses-dir, hotplug-dir and udev-dir, so that
-# staged install does not fail.
+# need to give augeas-lenses-dir, hotplug-dir and udev-dir, and request
+# PyNUT to be installed near the NUT-Monitor app (if feasible) so that
+# staged install does not fail. Note that by default PyNUT tries to go
+# into the system Python site-packages location, and autotools does not
+# tweak paths not using ${prefix} so `make distcheck` fails for it as
+# it does not play with a `DESTDIR` either.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
-DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g'
+DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g' --with-pynut=app --with-nut_monitor=force
 
+# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
@@ -39,7 +44,8 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
- --with-devd-dir='$${prefix}/etc/devd'
+ --with-devd-dir='$${prefix}/etc/devd'			\
+ --with-pynut=app --with-nut_monitor=force
 
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
