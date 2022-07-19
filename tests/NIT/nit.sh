@@ -432,7 +432,22 @@ testcase_upsd_allow_no_device() {
     upsd -F &
     PID_UPSD="$!"
     sleep 2
-    if isPidAlive "$PID_UPSD"; then
+
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        if isPidAlive "$PID_UPSD"; then break ; fi
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+    done
+
+    if [ "$COUNTDOWN" -le 50 ] ; then
+        # Should not get to this, except on very laggy systems maybe
+        log_warn "Had to wait a few retries for the UPSD process to appear"
+    fi
+
+    if [ "$COUNTDOWN" -gt 0 ] \
+    && isPidAlive "$PID_UPSD" \
+    ; then
         log_info "OK, upsd is running"
         PASSED="`expr $PASSED + 1`"
 
@@ -460,6 +475,7 @@ testcase_upsd_allow_no_device() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
     fi
+
     kill -15 $PID_UPSD
     wait $PID_UPSD
 }
