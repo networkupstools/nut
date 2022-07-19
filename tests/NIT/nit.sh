@@ -439,7 +439,8 @@ testcase_upsd_allow_no_device() {
         log_separator
         log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
         if ! runcmd upsc -l localhost:$NUT_PORT ; then
-            if [ "$CMDERR" = "Error: Server disconnected" ]; then
+            # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
                 log_warn "Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
@@ -567,12 +568,13 @@ UPS2"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
     }
-    if [ "$CMDERR" != 'Error: Driver not connected' ]; then
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
+        PASSED="`expr $PASSED + 1`"
+    else
         log_error "got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
-    else
-        PASSED="`expr $PASSED + 1`"
     fi
 }
 
@@ -660,12 +662,13 @@ testcase_sandbox_upsc_query_bogus() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
-    if [ "$CMDERR" != 'Error: Variable not supported by UPS' ]; then
-        log_error "got reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: $CMDOUT"
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
-    else
-        PASSED="`expr $PASSED + 1`"
     fi
 }
 
