@@ -43,7 +43,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AS_IF([test -n "${PYTHON}"], [
             export PYTHON
             AC_MSG_CHECKING([python site-packages location])
-            PYTHON_SITE_PACKAGES="`${PYTHON} -c "import site; print(site.getsitepackages().pop(0))"`"
+            PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON_SITE_PACKAGES}])
             ])
         AC_SUBST([PYTHON_SITE_PACKAGES], [${PYTHON_SITE_PACKAGES}])
@@ -93,7 +93,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AS_IF([test -n "${PYTHON2}"], [
             export PYTHON2
             AC_MSG_CHECKING([python2 site-packages location])
-            PYTHON2_SITE_PACKAGES="`${PYTHON2} -c "import site; print(site.getsitepackages().pop(0))"`"
+            PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON2_SITE_PACKAGES}])
             ])
         AC_SUBST([PYTHON2_SITE_PACKAGES], [${PYTHON2_SITE_PACKAGES}])
@@ -143,7 +143,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AS_IF([test -n "${PYTHON3}"], [
             export PYTHON3
             AC_MSG_CHECKING([python3 site-packages location])
-            PYTHON3_SITE_PACKAGES="`${PYTHON3} -c "import site; print(site.getsitepackages().pop(0))"`"
+            PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON3_SITE_PACKAGES}])
             ])
         AC_SUBST([PYTHON3_SITE_PACKAGES], [${PYTHON3_SITE_PACKAGES}])
