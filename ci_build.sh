@@ -886,8 +886,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
     # Even in scenarios that request --with-all, we do not want
-    # to choke on absence of desktop-related modules in Python:
-    CONFIG_OPTS+=("--with-nut_monitor=auto")
+    # to choke on absence of desktop-related modules in Python.
+    # Just make sure relevant install recipes are tested:
+    CONFIG_OPTS+=("--with-nut_monitor=force")
     CONFIG_OPTS+=("--with-pynut=auto")
 
     # Some OSes have broken cppunit support, it crashes either build/link
