@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2995 utf-8
+personal_ws-1.1 en 3005 utf-8
 AAS
 ABI
 ACFAIL
@@ -340,6 +340,7 @@ FHS
 FINALDELAY
 FIPS
 FIXME
+FMRI
 FO
 FOREACHUPS
 FOSS
@@ -1044,6 +1045,7 @@ SHUTDOWNCMD
 SIG
 SIGHUP
 SIGINT
+SIGKILL
 SIGPIPE
 SIGPWR
 SIGTERM
@@ -2336,6 +2338,7 @@ ol
 oldmac
 oldmge
 oldnut
+omnios
 onbatt
 onbattwarn
 onclick

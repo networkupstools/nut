@@ -5,7 +5,7 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
-PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1:
+PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2:
 
 https://github.com/networkupstools/nut/milestone/9
 
@@ -14,9 +14,9 @@ https://github.com/networkupstools/nut/milestone/9
    and modernized on the fly [Ported from 42ITy project]
 
 ---------------------------------------------------------------------------
-PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
+PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1:
 
-https://github.com/networkupstools/nut/milestone/8
+https://github.com/networkupstools/nut/milestone/10
 
  - (expected) clean-up of libusb API variants support [#300 and follow-ups]
 
@@ -27,7 +27,42 @@ https://github.com/networkupstools/nut/milestone/8
 
  - (expected) Porting of performance and bug fixes from 42ITy project
 
- - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.7.5
+ - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
+
+---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
+
+https://github.com/networkupstools/nut/milestone/8
+
+ - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0:
+   * The `upsdebugx()` and similar methods were converted to macros in #685
+     to avoid useless data manipulations and requests for logged information,
+     whose results would be ignored instantly because the debug level is
+     too low. As issue #1455 and PR #1495 found, in two cases the called
+     commands did "meaningfully" modify data -- so without debug logs the
+     program misbehaved. A known regression for `upscode2` driver; might
+     be or not be a problem with `upsd` driver in NUT v2.8.0 release,
+     fixed for NUT v2.8.1.
+   * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
+     arranged in NUT v2.8.0 release in a way that precluded the driver
+     logic from looking at all of its entries. Regression fixed for NUT
+     v2.8.1 [#1432]
+   * A change for file-change detection in `dummy-ups` driver for NUT
+     v2.8.0 release misfired on some platforms. Regression fixed for NUT
+     v2.8.1 [#1420]
+
+ - huawei-ups2000 is now known to support more devices, noted in docs and
+   for auto-detection [#1448]
+
+ - usbhid-ups updates:
+   * cps-hid subdriver now applies same report descriptor fixing logic to
+     devices with ProductID 0x0601 as done earlier for 0x0501, to get the
+     correct output voltage data [#1497]
+   * the `usbhid-ups` driver should now reconnect if `libusb` returned a
+     memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
+     Resource temporarily unavailable"), which can cause practical problems
+     in the field -- the driver otherwise interpreted the situation as
+     `ups.status` being `OL OFF` and cut the power supply.
 
  - Ability to build NUT for Windows, last tackled with a branch based on
    NUT v2.6.5 a decade ago, has been revived with the 2.8.x era codebase [#5]
@@ -38,6 +73,9 @@ https://github.com/networkupstools/nut/milestone/8
 
  - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
    serial drivers in respective Makefile and configure script options [#1446]
+
+ - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
+   `SIGKILL` [#1424]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:

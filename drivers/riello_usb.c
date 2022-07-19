@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
+ *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
