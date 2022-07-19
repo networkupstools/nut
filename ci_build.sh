@@ -885,6 +885,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
+    # Even in scenarios that request --with-all, we do not want
+    # to choke on absence of desktop-related modules in Python:
+    CONFIG_OPTS+=("--with-nut_monitor=auto")
+    CONFIG_OPTS+=("--with-pynut=auto")
 
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
@@ -1694,6 +1698,7 @@ bindings)
     ${CONFIGURE_SCRIPT} --enable-Wcolor \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
+        --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode
 
