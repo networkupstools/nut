@@ -674,7 +674,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, nut_monitor, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -709,10 +709,19 @@ AC_ARG_WITH(all,
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 
-		dnl A Python GUI client application for the sysadmin desktop
-		dnl (not necessarily on the NUT server itself):
-		if test -z "${with_pynut}"; then with_pynut="${withval}"; fi
-		if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
+		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
+		|| test x"${withval}" != xyes \
+		; then
+			dnl We expect Python to be available (augeas etc),
+			dnl so if it is present - try to provide the PyNUT
+			dnl binding module:
+			if test -z "${with_pynut}"; then with_pynut="${withval}"; fi
+
+			dnl However, do not let "--with-all" break builds
+			dnl on servers that lack some GUI modules in their
+			dnl Python installations; "auto" is defaulted below.
+			dnl # if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
+		fi
 
 		AC_MSG_RESULT("${withval}")
 	else
@@ -776,6 +785,8 @@ NUT_CHECK_LIBMODBUS
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
+dnl A Python GUI client application for the sysadmin desktop
+dnl (not necessarily on the NUT server itself):
 NUT_ARG_WITH([nut_monitor], [install the NUT-Monitor GUI files], [auto])
 NUT_ARG_WITH([pynut], [install the PyNUT module files (yes, no, app, auto)], [auto])
 dnl Note: we did NUT_CHECK_PYTHON2 NUT_CHECK_PYTHON3 etc above,
