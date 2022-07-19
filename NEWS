@@ -34,7 +34,8 @@ PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
 
 https://github.com/networkupstools/nut/milestone/8
 
- - Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0:
+ - Bug fixes for fallout possible due to "fightwarn" effort and other
+   evolution in NUT v2.8.0 release:
    * The `upsdebugx()` and similar methods were converted to macros in #685
      to avoid useless data manipulations and requests for logged information,
      whose results would be ignored instantly because the debug level is
@@ -50,6 +51,8 @@ https://github.com/networkupstools/nut/milestone/8
    * A change for file-change detection in `dummy-ups` driver for NUT
      v2.8.0 release misfired on some platforms. Regression fixed for NUT
      v2.8.1 [#1420]
+   * Fixed building of NUT man pages when just a few drivers are selected
+     by `configure` script for custom builds [#1467]
 
  - huawei-ups2000 is now known to support more devices, noted in docs and
    for auto-detection [#1448]

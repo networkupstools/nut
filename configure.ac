@@ -1745,6 +1745,7 @@ AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see 
 AC_MSG_RESULT(${LOGFACILITY})
 
 AC_MSG_CHECKING(which driver man pages to install)
+DRIVER_MAN_LIST_PAGES=""
 if test "${WITH_MANS}" = "yes"; then
 	if test "${DRIVER_BUILD_LIST}" = "all"; then
 		DRIVER_MAN_LIST=all
@@ -1752,8 +1753,10 @@ if test "${WITH_MANS}" = "yes"; then
 	else
 		DRIVER_MAN_LIST=""
 		for i in ${DRIVER_BUILD_LIST}; do
-			if test -f ${srcdir}/docs/man/$i.8; then
+		    dnl See if source or pre-generated (tarball) doc file exists:
+			if test -f ${srcdir}/docs/man/$i.txt -o -f ${srcdir}/docs/man/$i.8; then
 				DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
+				DRIVER_MAN_LIST_PAGES="${DRIVER_MAN_LIST_PAGES} $i.txt"
 			fi
 		done
 		AC_MSG_RESULT(${DRIVER_MAN_LIST})
@@ -2526,6 +2529,7 @@ AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
+AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
