@@ -67,6 +67,9 @@ https://github.com/networkupstools/nut/milestone/8
      in the field -- the driver otherwise interpreted the situation as
      `ups.status` being `OL OFF` and cut the power supply.
 
+ - Added support for `make install` of PyNUT module and NUT-Monitor desktop
+   application [#1462, #1504]
+
  - Regular CI coverage for NUT codebase enhanced with CircleCI running some
    scenarios on MacOS, might add Windows in the future. Fixed some build
    issues for MacOS that had crept into NUT v2.8.0 release [#1415, #1421]
