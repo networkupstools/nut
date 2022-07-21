@@ -58,6 +58,18 @@ log_error() {
     echo "[ERROR] $@" >&2
 }
 
+report_NUT_PORT() {
+    # Try to say which processes deal with current NUT_PORT
+    [ -n "${NUT_PORT}" ] || return
+
+    log_info "Trying to report users of NUT_PORT=${NUT_PORT}"
+    (netstat -anp | sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
+    || (lsof -i :"${NUT_PORT}") 2>/dev/null \
+    || true
+
+    [ -z "${PID_UPSD}" ] || log_info "UPSD was last known to start as PID ${PID_UPSD}"
+}
+
 die() {
     echo "[FATAL] $@" >&2
     exit 1
@@ -474,6 +486,7 @@ testcase_upsd_allow_no_device() {
         log_error "upsd was expected to be running although no devices are defined"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+        report_NUT_PORT
     fi
 
     kill -15 $PID_UPSD
@@ -623,6 +636,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     fi
 
     if [ "$COUNTDOWN" -le 1 ] ; then
+        report_NUT_PORT
         die "upsd does not respond on port ${NUT_PORT} ($?)"
     fi
 }
