@@ -671,7 +671,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
+set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -928,6 +928,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
+    # Even in scenarios that request --with-all, we do not want
+    # to choke on absence of desktop-related modules in Python.
+    # Just make sure relevant install recipes are tested:
+    CONFIG_OPTS+=("--with-nut_monitor=force")
+    CONFIG_OPTS+=("--with-pynut=auto")
 
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
@@ -1737,6 +1742,7 @@ bindings)
     ${CONFIGURE_SCRIPT} --enable-Wcolor \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
+        --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode
 

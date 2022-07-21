@@ -432,7 +432,22 @@ testcase_upsd_allow_no_device() {
     upsd -F &
     PID_UPSD="$!"
     sleep 2
-    if isPidAlive "$PID_UPSD"; then
+
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        if isPidAlive "$PID_UPSD"; then break ; fi
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+    done
+
+    if [ "$COUNTDOWN" -le 50 ] ; then
+        # Should not get to this, except on very laggy systems maybe
+        log_warn "Had to wait a few retries for the UPSD process to appear"
+    fi
+
+    if [ "$COUNTDOWN" -gt 0 ] \
+    && isPidAlive "$PID_UPSD" \
+    ; then
         log_info "OK, upsd is running"
         PASSED="`expr $PASSED + 1`"
 
@@ -460,6 +475,7 @@ testcase_upsd_allow_no_device() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
     fi
+
     kill -15 $PID_UPSD
     wait $PID_UPSD
 }
@@ -589,7 +605,26 @@ testcase_sandbox_start_upsd_after_drivers() {
     sandbox_start_upsd
 
     sleep 5
-    upsc dummy@localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?)"
+
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        # For query errors or known wait, keep looping
+        runcmd upsc dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
+            "ups.status: WAIT") ;;
+            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
+        esac
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+    done
+
+    if [ "$COUNTDOWN" -le 50 ] ; then
+        log_warn "Had to wait a few retries for the dummy driver to connect"
+    fi
+
+    if [ "$COUNTDOWN" -le 1 ] ; then
+        die "upsd does not respond on port ${NUT_PORT} ($?)"
+    fi
 }
 
 testcase_sandbox_start_drivers_after_upsd() {
