@@ -444,6 +444,7 @@ testcase_upsd_allow_no_device() {
     generatecfg_ups_trivial
     upsd -F &
     PID_UPSD="$!"
+    log_debug "Tried to start UPSD as PID $PID_UPSD"
     sleep 2
 
     COUNTDOWN=60
@@ -536,6 +537,7 @@ sandbox_start_upsd() {
     log_info "Starting UPSD for sandbox"
     upsd -F &
     PID_UPSD="$!"
+    log_debug "Tried to start UPSD as PID $PID_UPSD"
     sleep 5
 }
 
@@ -612,8 +614,10 @@ testcase_sandbox_start_upsd_after_drivers() {
     # Historically this is a fallback from testcase_sandbox_start_drivers_after_upsd
     kill -15 $PID_UPSD 2>/dev/null
     wait $PID_UPSD
+
     upsd -F &
     PID_UPSD="$!"
+    log_debug "Tried to start UPSD as PID $PID_UPSD"
 
     sandbox_start_drivers
     sandbox_start_upsd
