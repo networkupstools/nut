@@ -1768,10 +1768,26 @@ cross-windows-mingw)
             SOURCEMODE="out-of-tree" \
             ./build-mingw-nut.sh all${BITS}
             ;;
-        *)  # soup of the day:
-            SOURCEMODE="out-of-tree" \
-            ./build-mingw-nut.sh
-            ;;
+        *)  # Use other clues
+            case "${CFLAGS-}${CXXFLAGS-}${LDFLAGS-}" in
+		        *-m32*-m64*|*-m64*-m32*)
+			        echo "FATAL: Mismatched bitness requested in *FLAGS" >&2
+			        exit 1
+			        ;;
+		        *-m32*)
+		            SOURCEMODE="out-of-tree" \
+		            ./build-mingw-nut.sh all32
+		            ;;
+		        *-m64*)
+		            SOURCEMODE="out-of-tree" \
+		            ./build-mingw-nut.sh all64
+		            ;;
+		        *)  # soup of the day:
+	            SOURCEMODE="out-of-tree" \
+	            ./build-mingw-nut.sh
+	            ;;
+	        esac
+	        ;;
     esac
     ;;
 cross-windows-mingw-32)
