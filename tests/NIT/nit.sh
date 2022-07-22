@@ -994,6 +994,8 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
 fi
 
+stop_daemons
+
 if [ "$PASSED" = 0 ] || [ "$FAILED" != 0 ] ; then
     die "Some test scenarios failed!"
 else
