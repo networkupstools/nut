@@ -15,6 +15,16 @@ for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
 handled by NUT common `ci_build.sh` script. Possibly, the instructions below
 would converge there over time to keep it simple.
 
+For additional reference about prerequisite preparation and further ideas for
+the NUT for Windows effort, please see detailed report in the mailing list:
+
+* https://alioth-lists.debian.net/pipermail/nut-upsdev/2016-April/007171.html -
+  [Nut-upsdev] How to build NUT Windows Port
+
+* https://alioth-lists.debian.net/pipermail/nut-upsdev/2016-April/007172.html -
+  [Nut-upsdev] NUT Windows port sources review
+
+
 Cross compiling from Linux
 --------------------------
 
