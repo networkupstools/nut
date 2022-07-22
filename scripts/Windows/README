@@ -43,21 +43,24 @@ MinGW-w64 build environment
 
 You will first need to setup a MinGW-w64 build environment.
 
-On Debian systems, use:
+On Debian/Ubuntu and similar systems, use:
 
-	# apt-get mingw-w64
+	# apt-get update
+	# apt-get install mingw-w64
 
-On Redhat systems, use:
+On Redhat and similar systems, use:
 
 	# ???
 
-You will also need pthread and mingw regex libraries.
+You will also need pthread and mingw regex libraries, and other recommended
+dependencies as detailed below.
 
 [NOTE]
 ================================================================================
 
-If you use script `./build-mingw-nut.sh` mentioned below, skip setting these
-environment variables wen building NUT.
+If you use script `./build-mingw-nut.sh` mentioned below, you may skip setting
+these environment variables when building NUT. You would however need to use
+them once (per `ARCH`) to provide the prerequisites below if built from source.
 
 When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
 and CC, CFLAGS, LDFLAGS and PREFIX:
