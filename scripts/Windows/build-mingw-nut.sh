@@ -89,6 +89,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
+	    --with-pynut=app \
 	    --enable-Werror \
 	|| exit
 	make 1>/dev/null || exit
