@@ -181,6 +181,11 @@ stop_daemons() {
         kill -15 $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
         wait $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 || true
     fi
+
+    PID_UPSD=""
+    PID_DUMMYUPS=""
+    PID_DUMMYUPS1=""
+    PID_DUMMYUPS2=""
 }
 
 trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}" ; fi; exit $RES;' 0 1 2 3 15
