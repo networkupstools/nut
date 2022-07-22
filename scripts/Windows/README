@@ -70,12 +70,15 @@ and CC, CFLAGS, LDFLAGS and PREFIX:
 - PREFIX=/usr/$ARCH
 
 - BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
-Note that this is very Debian specific!
+
+  * Note that this bit is very Debian specific!
+    Hints for Redhat-style systems are wanted.
 
 - also export the following compilation flags:
 
-	export CFLAGS+="-D_POSIX=1 -I/usr/$ARCH/include/"
-	export LDFLAGS+="-L/usr/$ARCH/lib/"
+	export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
+	export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
+	export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
 
 ================================================================================
 
