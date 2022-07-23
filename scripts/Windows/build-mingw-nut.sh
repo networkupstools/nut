@@ -87,6 +87,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	export CXXFLAGS+=" $CFLAGS"
 	export LDFLAGS+=" -L/usr/$ARCH/lib/"
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR \
+	    PKG_CONFIG_PATH=/usr/$ARCH/lib/pkgconfig \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
