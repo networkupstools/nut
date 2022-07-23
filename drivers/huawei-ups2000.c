@@ -1424,7 +1424,8 @@ static int ups2000_delay_set(const char *var, const char *string)
  * used to handle commands that needs additional processing.
  * If "reg1" is not necessary or unsuitable, "-1" is used.
  */
-#define REG_NONE -1, -1
+#define REG_NULL  -1, -1
+#define FUNC_NULL NULL
 
 static struct ups2000_cmd_t {
 	const char *cmd;
@@ -1432,20 +1433,20 @@ static struct ups2000_cmd_t {
 	int (*const handler_func)(const uint16_t);
 } ups2000_cmd[] =
 {
-	{ "test.battery.start.quick", 2028,  1, REG_NONE, NULL },
-	{ "test.battery.start.deep",  2021,  1, REG_NONE, NULL },
-	{ "test.battery.stop",        2023,  1, REG_NONE, NULL },
-	{ "beeper.enable",            1046,  0, REG_NONE, NULL },
-	{ "beeper.disable",           1046,  1, REG_NONE, NULL },
-	{ "load.off",                 1045,  0, 1030, 1,  NULL },
-	{ "bypass.stop",              1029,  1, 1045, 0,  NULL },
-	{ "load.on",                  1029, -1, REG_NONE, ups2000_instcmd_load_on                  },
-	{ "bypass.start",             REG_NONE, REG_NONE, ups2000_instcmd_bypass_start             },
-	{ "beeper.toggle",            1046, -1, REG_NONE, ups2000_instcmd_beeper_toggle            },
-	{ "shutdown.stayoff",         1049, -1, REG_NONE, ups2000_instcmd_shutdown_stayoff         },
-	{ "shutdown.return",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_return          },
-	{ "shutdown.reboot",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot          },
-	{ "shutdown.reboot.graceful", REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot_graceful },
+	{ "test.battery.start.quick", 2028,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.start.deep",  2021,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.stop",        2023,  1, REG_NULL, FUNC_NULL },
+	{ "beeper.enable",            1046,  0, REG_NULL, FUNC_NULL },
+	{ "beeper.disable",           1046,  1, REG_NULL, FUNC_NULL },
+	{ "load.off",                 1045,  0, 1030, 1,  FUNC_NULL },
+	{ "bypass.stop",              1029,  1, 1045, 0,  FUNC_NULL },
+	{ "load.on",                  1029, -1, REG_NULL, ups2000_instcmd_load_on                  },
+	{ "bypass.start",             REG_NULL, REG_NULL, ups2000_instcmd_bypass_start             },
+	{ "beeper.toggle",            1046, -1, REG_NULL, ups2000_instcmd_beeper_toggle            },
+	{ "shutdown.stayoff",         1049, -1, REG_NULL, ups2000_instcmd_shutdown_stayoff         },
+	{ "shutdown.return",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_return          },
+	{ "shutdown.reboot",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot          },
+	{ "shutdown.reboot.graceful", REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot_graceful },
 	{ NULL, -1, -1, -1, -1, NULL },
 };
 
