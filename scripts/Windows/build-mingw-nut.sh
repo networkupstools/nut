@@ -90,6 +90,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
+	    --with-augeas-lenses-dir=$INSTALL_DIR/augeas-lenses \
 	    --enable-Werror \
 	|| exit
 	make 1>/dev/null || exit
