@@ -191,14 +191,47 @@ net-snmp
 	$ sudo make install
 
 
+gd (cgi)
+^^^^^^^^
+
+Note that for the general-case build libgd supports a huge dependency tree,
+so for the NUT purposes we are going for as little as possible.
+
+Initially the purpose is to have libgd installed to build/link against for
+the Windows target. Further refinement may be needed to have it actually
+usable for CGI web pages rendering.
+
+* https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz
+* https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
+* https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz
+* https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
+* https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
+
+	$ wget https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
+	$ tar xzf libgd-2.3.3.tar.gz
+	$ cd libgd-2.3.3
+	$ ./configure --prefix=$PREFIX $HOST_FLAG \
+	    --without-tiff --without-jpeg --without-xpm \
+	    --without-png --without-zlib \
+	    --without-fontconfig --without-freetype
+	# Note: currently we configure away almost all capabilities,
+	# to match the dependency binaries (and/or headers) present
+	# on the build system. Review resulting build recipes that
+	# they DO NOT refer to system /usr/include locations!
+	# In practice we would likely need the PNG, fontconfig
+	# and freetype pieces to work.
+	$ make
+	$ sudo make install
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-libneon (xml), gd (cgi), avahi, ipmi, ssl...
+libneon (xml), avahi, ipmi, ssl...
 
-* https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
 * https://notroj.github.io/neon/neon-0.32.2.tar.gz
 * https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
+* https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
+* https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_79_RTM/src/nss-3.79-with-nspr-4.34.tar.gz
 
 Building NUT
 ~~~~~~~~~~~~
