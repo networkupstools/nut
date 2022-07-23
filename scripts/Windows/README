@@ -75,7 +75,12 @@ them once (per `ARCH`) to provide the prerequisites below if built from source.
 When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
 and CC, CFLAGS, LDFLAGS and PREFIX:
 
-- prefer to export ARCH="x86_64-w64-mingw32" or ARCH="i686-w64-mingw32"
+- prefer either
+  to export ARCH="x86_64-w64-mingw32"
+  or export ARCH="i686-w64-mingw32"
+  (it can help to open two terminals and copy one ARCH into each
+  and then the lines below into both of them; be sure to use separate
+  directory trees for the unpacked build workspaces)
 - export HOST_FLAG="--host=$ARCH"
 - PREFIX=/usr/$ARCH
 
@@ -96,9 +101,14 @@ and CC, CFLAGS, LDFLAGS and PREFIX:
 pthread library
 ^^^^^^^^^^^^^^^
 
-On Debian, you can use the following packages repository:
+NOTE: The MinGW distribution in Ubuntu 21.10 already includes pthread files.
+
+On older Debian systems, you can use the following packages repository:
 
 	link:https://launchpad.net/~mingw-packages/+archive/ppa[MinGW PPA]
+
+However at the moment this PPA seems to be stale and serve very old packages,
+so it could be better to roll your own as detailed below.
 
 On Redhat: FIXME
 
@@ -111,6 +121,8 @@ https://fedoraproject.org/wiki/Packaging:MinGW_Old
 You can also compile it using:
 
 	$ wget http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz
+	$ tar xzf pthreads-w32-2-8-0-release.tar.gz
+	$ cd pthreads-w32-2-8-0-release/
 	$ make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
 	$ sudo cp *.dll /usr/$ARCH/pthreads/lib/
 	$ sudo cp *.a /usr/$ARCH/lib/
