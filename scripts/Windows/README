@@ -220,20 +220,54 @@ zlib
 	$ sudo make install
 
 
+xz (liblzma)
+^^^^^^^^^^^^
+
+	$ wget https://tukaani.org/xz/xz-5.2.5.tar.gz
+	$ tar xzf xz-5.2.5.tar.gz
+	$ cd xz-5.2.5
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+
+libxml2
+^^^^^^^
+
+Needed for libneon and fontconfig.
+
+	$ wget https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz
+	$ tar xzf libxml2-v2.9.14.tar.gz
+	$ cd libxml2-v2.9.14
+	$ ./autogen.sh --prefix=$PREFIX $HOST_FLAG --without-python
+	$ make
+	$ sudo make install
+
+
 gd (cgi)
 ^^^^^^^^
 
 Note that for the general-case build libgd supports a huge dependency tree,
 so for the NUT purposes we are going for as little as possible.
 
-Initially the purpose is to have libgd installed to build/link against for
-the Windows target. Further refinement may be needed to have it actually
-usable for CGI web pages rendering.
+Initially the purpose was to have libgd installed to build/link against for
+the Windows target. Subsequently more dependencies were documented, but still
+further refinement may be needed to have it actually usable for CGI web pages
+rendering.
 
-* See zlib above
-* https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
-* https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz
+Finally note that end-users would have to install a CGI-capable web server to
+use this feature in practice.
 
+* zlib: see above
+
+* freetype:
+
+	$ wget https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
+	$ tar xzf freetype-2.12.1.tar.gz
+	$ cd freetype-2.12.1
+	$ ./configure --prefix=$PREFIX $HOST_FLAG --without-brotli
+	$ make
+	$ sudo make install
 
 * libpng:
 
@@ -251,13 +285,12 @@ usable for CGI web pages rendering.
 	$ cd libgd-2.3.3
 	$ ./configure --prefix=$PREFIX $HOST_FLAG \
 	    --without-tiff --without-jpeg --without-xpm \
-	    --without-fontconfig --without-freetype
+	    --without-fontconfig
 	# Note: currently we configure away almost all capabilities,
 	# to match the dependency binaries (and/or headers) present
 	# on the build system. Review resulting build recipes that
 	# they DO NOT refer to system /usr/include locations!
-	# In practice we would likely need the fontconfig and freetype
-	# pieces to work.
+	# In practice we would likely need the fontconfig pieces to work.
 	$ make
 	$ sudo make install
 
