@@ -53,6 +53,11 @@ MinGW-w64 build environment
 
 You will first need to setup a MinGW-w64 build environment.
 
+NOTE: While adding `ccache` is optional, it is quite recommended especially
+if you plan to iterate many builds (whether of NUT or the dependencies).
+At least for Ubuntu 21.10 packaging, it is integrated with `mingw-w64`
+tool naming out of the box.
+
 On Debian/Ubuntu and similar systems, use:
 
 	# apt-get update
