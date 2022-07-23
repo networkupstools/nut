@@ -191,6 +191,30 @@ net-snmp
 	$ sudo make install
 
 
+zlib
+^^^^
+
+	$ wget -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz
+	$ tar xzf zlib-1.2.12.tar.gz
+	$ cd zlib-1.2.12
+
+	# Edit the `configure` script (not autotools generated) to
+	# neuter the MINGW `leave 1` line:
+	  MINGW* | mingw*)
+	# temporary bypass
+	        rm -f $test.[co] $test $test$shared_ext
+	        echo "Please use win32/Makefile.gcc instead." | tee -a configure.log
+	-       leave 1
+	+       ###leave 1
+	        LDSHARED=${LDSHARED-"$cc -shared"}
+	        LDSHAREDLIBC=""
+	        EXE='.exe' ;;
+
+	$ CHOST="$ARCH" ./configure --prefix=$PREFIX
+	$ make
+	$ sudo make install
+
+
 gd (cgi)
 ^^^^^^^^
 
@@ -201,25 +225,34 @@ Initially the purpose is to have libgd installed to build/link against for
 the Windows target. Further refinement may be needed to have it actually
 usable for CGI web pages rendering.
 
-* https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz
+* See zlib above
 * https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
 * https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz
-* https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
-* https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
+
+
+* libpng:
+
+	$ wget https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
+	$ tar xzf libpng-1.6.37.tar.gz
+	$ cd libpng-1.6.37
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+* libgd itself:
 
 	$ wget https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
 	$ tar xzf libgd-2.3.3.tar.gz
 	$ cd libgd-2.3.3
 	$ ./configure --prefix=$PREFIX $HOST_FLAG \
 	    --without-tiff --without-jpeg --without-xpm \
-	    --without-png --without-zlib \
 	    --without-fontconfig --without-freetype
 	# Note: currently we configure away almost all capabilities,
 	# to match the dependency binaries (and/or headers) present
 	# on the build system. Review resulting build recipes that
 	# they DO NOT refer to system /usr/include locations!
-	# In practice we would likely need the PNG, fontconfig
-	# and freetype pieces to work.
+	# In practice we would likely need the fontconfig and freetype
+	# pieces to work.
 	$ make
 	$ sudo make install
 
