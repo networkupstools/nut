@@ -365,6 +365,17 @@ Set aside a good part of an hour to get this built:
 	$ sudo make install
 
 
+libmodbus
+^^^^^^^^^
+
+	$ wget https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz
+	$ tar xzf libmodbus-3.1.7.tar.gz
+	$ cd libmodbus-3.1.7
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
