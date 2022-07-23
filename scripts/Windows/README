@@ -199,6 +199,8 @@ net-snmp
 zlib
 ^^^^
 
+Needed for libpng at least, but likely many others too.
+
 	$ wget -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz
 	$ tar xzf zlib-1.2.12.tar.gz
 	$ cd zlib-1.2.12
@@ -220,8 +222,13 @@ zlib
 	$ sudo make install
 
 
+/////////////////////////////////////////////////////////////////////////////
+// for fontconfig
+
 xz (liblzma)
 ^^^^^^^^^^^^
+
+Needed for libxml2.
 
 	$ wget https://tukaani.org/xz/xz-5.2.5.tar.gz
 	$ tar xzf xz-5.2.5.tar.gz
@@ -242,6 +249,9 @@ Needed for libneon and fontconfig.
 	$ ./autogen.sh --prefix=$PREFIX $HOST_FLAG --without-python
 	$ make
 	$ sudo make install
+
+// for fontconfig
+/////////////////////////////////////////////////////////////////////////////
 
 
 gd (cgi)
@@ -269,6 +279,66 @@ use this feature in practice.
 	$ make
 	$ sudo make install
 
+/////////////////////////////////////////////////////////////////////////////
+WIP - fontconfig not usable yet due to ICU failing to cross-build
+Maybe an older version of either would fare better?..
+
+* gperf is needed by fontconfig build routine as a tool usable on the build
+  system, so a packaged install should suffice, e.g. `apt-get install gperf`.
+  Otherwise, build one from source (and note that this may be needed e.g.
+  for native builds on Windows, but not "just" for using a cross-binary that
+  the build host can generate but not run natively).
+
+	$ wget http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz
+	$ tar xzf gperf-3.1.tar.gz
+	$ cd gperf-3.1
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+* iconv:
+
+	$ wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz
+	$ tar xzf libiconv-1.17.tar.gz
+	$ cd libiconv-1.17
+	$ ./configure --prefix=$PREFIX $HOST_FLAG
+	$ make
+	$ sudo make install
+
+* ICU:
+
+For a cross-build of ICU, you should first build and install a copy
+for the host system, then use it as a resource for the final build.
+Set aside a good part of an hour to get this built:
+
+	$ wget https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz
+
+	$ tar xzf icu4c-71_1-src.tgz
+	$ rm -rf icu-native || true
+	$ mv icu icu-native   # note, no version in the pathname
+	$ cd icu-native/source
+	$ ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
+	$ make
+	$ cd ..
+
+	$ tar xzf icu4c-71_1-src.tgz
+	$ cd icu/source
+	$ ./configure --prefix=$PREFIX $HOST_FLAG --with-cross-build=`pwd`/../../icu-native/source
+	$ make
+	$ sudo make install
+
+* fontconfig:
+
+	$ wget https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz
+	$ tar xzf fontconfig-2.14.0.tar.gz
+	$ cd fontconfig-2.14.0/
+	$ ./configure --prefix=$PREFIX $HOST_FLAG --enable-libxml2
+	$ make
+	$ sudo make install
+
+// for fontconfig
+/////////////////////////////////////////////////////////////////////////////
+
 * libpng:
 
 	$ wget https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
@@ -293,6 +363,7 @@ use this feature in practice.
 	# In practice we would likely need the fontconfig pieces to work.
 	$ make
 	$ sudo make install
+
 
 Other requirements
 ^^^^^^^^^^^^^^^^^^
