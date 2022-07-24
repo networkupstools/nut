@@ -1762,6 +1762,7 @@ bindings)
 # Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw)
+    ./autogen.sh
     cd scripts/Windows || exit
     case "${BITS-}" in
         32|64)
@@ -1791,11 +1792,13 @@ cross-windows-mingw)
     esac
     ;;
 cross-windows-mingw-32)
+    ./autogen.sh
     cd scripts/Windows || exit
     SOURCEMODE="out-of-tree" \
     ./build-mingw-nut.sh all32
     ;;
 cross-windows-mingw-64)
+    ./autogen.sh
     cd scripts/Windows || exit
     SOURCEMODE="out-of-tree" \
     ./build-mingw-nut.sh all64
