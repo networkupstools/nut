@@ -100,6 +100,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	)
 	AC_MSG_RESULT([${CFLAGS}])
 
+	myLIBS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP libs)
 	AC_ARG_WITH(snmp-libs,
 		AS_HELP_STRING([@<:@--with-snmp-libs=LIBS@:>@], [linker flags for the Net-SNMP library]),
@@ -109,21 +110,39 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-snmp-libs - see docs/configure.txt)
 			;;
 		*)
+			myLIBS_SOURCE="confarg"
 			LIBS="${withval}"
 			;;
 		esac
 	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"],
+		[LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"
+		 myLIBS_SOURCE="netsnmp-config"],
 		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"],
-			[LIBS="-lnetsnmp"])]
+			[LIBS="`$PKG_CONFIG --silence-errors --libs netsnmp 2>/dev/null`"
+			 myLIBS_SOURCE="pkg-config"],
+			[LIBS="-lnetsnmp"
+			 myLIBS_SOURCE="default"])]
 		)]
 	)
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl Check if the Net-SNMP library is usable
 	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(init_snmp, [], [nut_have_libnetsnmp=no])
+	AC_CHECK_FUNCS(init_snmp, [], [
+		dnl Probably is dysfunctional, except one case...
+		nut_have_libnetsnmp=no
+		AS_IF([test x"$myLIBS_SOURCE" = x"pkg-config"], [
+			AS_CASE(["${target_os}"],
+				[*mingw*], [
+					AC_MSG_NOTICE([mingw builds of net-snmp might provide only a static library - retrying for that])
+					LIBS="`$PKG_CONFIG --silence-errors --libs --static netsnmp 2>/dev/null`"
+					AS_UNSET([ac_cv_func_init_snmp])
+					AC_CHECK_FUNCS(init_snmp, [nut_have_libnetsnmp=yes])
+				]
+			)
+		])
+	])
+	AS_UNSET([myLIBS_SOURCE])
 
 	AS_IF([test "${nut_have_libnetsnmp}" = "yes"], [
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
