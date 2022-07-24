@@ -188,7 +188,8 @@ net-snmp
 	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
 	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
 	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
-	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks
+	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
+	    --enable-shared
 	# NOTE: ./configure script may ask a few questions, or may just print
 	# a banner that it would; hopefully all replies needed for current
 	# version are covered above
