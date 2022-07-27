@@ -326,7 +326,7 @@ AC_CACHE_CHECK([for usleep(us)],
         [AC_LANG_PROGRAM([[#include <unistd.h>
         ]],
             [[useconds_t us = 1000;
-if (usleep(us) != 0) return 1 /* per doc, no erros are returned actually*/
+if (usleep(us) != 0) return 1 /* per doc, no errors are returned actually */
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_usleep=yes], [ac_cv_func_usleep=no]
