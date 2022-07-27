@@ -369,7 +369,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = write(conn->fd, buf, buflen);
 
 	if ((ret < 1) || (ret != (ssize_t) buflen)) {
-		upsdebugx(2, "write to fd %d failed", conn->fd);
+		upsdebugx(2, "write failed on socket %d, disconnecting", conn->fd);
 
 		close(conn->fd);
 		conn_del(conn);
