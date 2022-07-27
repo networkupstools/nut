@@ -2183,7 +2183,7 @@ int main(int argc, char *argv[])
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
 		/* exit(EXIT_SUCCESS); */
-		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
