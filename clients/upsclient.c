@@ -1018,7 +1018,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			{
 			case EAFNOSUPPORT:
 			case EINVAL:
-                                break;
+				break;
 			default:
 				ups->upserror = UPSCLI_ERR_SOCKFAILURE;
 				ups->syserrno = errno;
@@ -1041,8 +1041,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 						timeout);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
-					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
-							&error,&error_size);
+					getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
+							&error, &error_size);
 					if( error == 0) {
 						/* connect successful */
 						v = 0;
@@ -1077,7 +1077,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		}
 
 		/* switch back to blocking operation */
-		if(timeout != NULL) {
+		if (timeout != NULL) {
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
