@@ -2091,8 +2091,9 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 	pid_t	oldpid = -1;
+	int	cmd = 0;
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
