@@ -2039,18 +2039,16 @@ static void runparent(int fd)
 	int	sret;
 	char	ch;
 
-#ifndef WIN32
 	/* handling signals is the child's job */
-# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wstrict-prototypes"
-# endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
-# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-#  pragma GCC diagnostic pop
-# endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
 #endif
 
 	ret = read(fd, &ch, 1);
