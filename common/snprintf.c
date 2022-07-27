@@ -685,10 +685,6 @@ static void fmtfp (char *buffer, size_t *currlen, size_t maxlen,
 #endif
 
 #ifndef HAVE_FCVT
-  long fracpart;
-  long intpart;
-  int caps = 0;
-
   intpart = (long)ufvalue;
 
   /*
