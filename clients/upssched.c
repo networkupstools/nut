@@ -1088,7 +1088,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	ret_s;
 	struct	timeval tv;
 	fd_set	fdread;
-	int pipefd;
+	int	pipefd;
 #else
 	DWORD bytesWritten = 0;
 	HANDLE pipefd;
