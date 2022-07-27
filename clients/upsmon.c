@@ -2263,9 +2263,7 @@ int main(int argc, char *argv[])
 #else
 	const char * cmd = NULL;
 	DWORD ret;
-#endif
 
-#ifdef WIN32
 	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
 	int		maxhandle = 0;
 	pipe_conn_t	*conn;
