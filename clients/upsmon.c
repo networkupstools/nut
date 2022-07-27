@@ -79,7 +79,10 @@ static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
-static	int	userfsd = 0, use_pipe = 1, pipefd[2];
+static	int	userfsd = 0, pipefd[2];
+	/* Should we run "all in one" (e.g. as root) or split
+	 * into two upsmon processes for some more security? */
+static	int	use_pipe = 1;
 
 static	utype_t	*firstups = NULL;
 
