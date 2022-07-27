@@ -698,6 +698,7 @@ const char * altpidpath(void)
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
+	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
 	return dflt_statepath();
 #endif
 }
