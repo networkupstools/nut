@@ -1036,7 +1036,12 @@ void *xmalloc(size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
-	memset(p,0,size);
+
+#ifdef WIN32
+	/* FIXME: This is what (x)calloc() is for! */
+	memset(p, 0, size);
+#endif
+
 	return p;
 }
 
@@ -1046,7 +1051,12 @@ void *xcalloc(size_t number, size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
-	memset(p,0,size*number);
+
+#ifdef WIN32
+	/* FIXME: calloc() above should have initialized this already! */
+	memset(p, 0, size * number);
+#endif
+
 	return p;
 }
 
