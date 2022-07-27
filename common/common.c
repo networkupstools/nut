@@ -340,9 +340,8 @@ void writepid(const char *name)
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
 		snprintf(fn, sizeof(fn), "%s", name);
-	else {
+	else
 		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
-	}
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
