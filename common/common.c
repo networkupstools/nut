@@ -1160,6 +1160,7 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
 	NUT_UNUSED_VARIABLE(buflen);
 	NUT_UNUSED_VARIABLE(d_sec);
 	NUT_UNUSED_VARIABLE(d_usec);
+	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
 	return 0;
 }
 #endif
