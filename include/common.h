@@ -308,12 +308,6 @@ extern int optind;
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
 
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-}
-/* *INDENT-ON* */
-#endif
-
 #ifdef WIN32
 /* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/
 #define LOG_ERR 	EVENTLOG_ERROR_TYPE
@@ -348,7 +342,15 @@ char * getfullpath(char * relative_path);
 int __cdecl usleep(useconds_t useconds);
 #endif /* HAVE_USLEEP */
 
+/* Not all platforms support the flag; this method abstracts
+ * its use (or not) to simplify calls in the actual codebase */
 /* TODO: Extend for TYPE_FD and WIN32 eventually? */
 void set_close_on_exec(int fd);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif /* NUT_COMMON_H_SEEN */
