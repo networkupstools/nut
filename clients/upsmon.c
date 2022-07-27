@@ -2259,7 +2259,7 @@ int main(int argc, char *argv[])
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
-	int cmd = 0;
+	int	cmd = 0;
 #else
 	const char * cmd = NULL;
 	DWORD ret;
