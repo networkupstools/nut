@@ -29,7 +29,7 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
-#include "main.h"
+#include "main.h"	/* for set_exit_flag() */
 
 #ifdef WIN32
 # include "wincompat.h"
