@@ -36,6 +36,7 @@
 #include "hidtypes.h"
 
 #include "timehead.h"
+
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t                   HIDDevice_t;
