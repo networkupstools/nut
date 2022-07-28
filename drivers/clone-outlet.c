@@ -292,11 +292,8 @@ HANDLE sstate_connect(void)
 
 static void sstate_disconnect(void)
 {
-#ifndef WIN32
-	if (upsfd < 0) {
-#else
-	if (upsfd == INVALID_HANDLE_VALUE) {
-#endif
+	if (!VALID_FD(upsfd)) {
+		/* Already disconnected... or not yet? ;) */
 		return;
 	}
 
@@ -316,11 +313,7 @@ static int sstate_sendline(const char *buf)
 {
 	ssize_t	ret;
 
-#ifndef WIN32
-	if (upsfd < 0) {
-#else
-	if (upsfd == INVALID_HANDLE_VALUE) {
-#endif
+	if (!VALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
