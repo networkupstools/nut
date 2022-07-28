@@ -217,4 +217,3 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 	}
 	return ports_list;
 }
-
