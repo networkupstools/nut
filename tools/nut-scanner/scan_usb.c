@@ -55,7 +55,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
-#else
+#else /* => WITH_LIBUSB_0_1 */
  #define USB_INIT_SYMBOL "usb_init"
  #define USB_OPEN_SYMBOL "usb_open"
  #define USB_CLOSE_SYMBOL "usb_close"
@@ -66,7 +66,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static struct usb_bus * (*nut_usb_busses);
  static int (*nut_usb_find_devices)(void);
  static char * (*nut_usb_strerror)(void);
-#endif
+#endif /* WITH_LIBUSB_1_0 */
 
 /* return 0 on error; visible externally */
 int nutscan_load_usb_library(const char *libname_path);
@@ -124,22 +124,26 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
-	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle, "libusb_get_device_list");
+	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle,
+					"libusb_get_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **) (&nut_usb_free_device_list) = lt_dlsym(dl_handle, "libusb_free_device_list");
+	*(void **) (&nut_usb_free_device_list) = lt_dlsym(dl_handle,
+					"libusb_free_device_list");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **) (&nut_usb_get_bus_number) = lt_dlsym(dl_handle, "libusb_get_bus_number");
+	*(void **) (&nut_usb_get_bus_number) = lt_dlsym(dl_handle,
+					"libusb_get_bus_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle, "libusb_get_device_descriptor");
+	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle,
+					"libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
@@ -150,17 +154,20 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 #else /* for libusb 0.1 */
-	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
+	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle,
+					"usb_find_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
+	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle,
+					"usb_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle, "usb_find_devices");
+	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,
+					"usb_find_devices");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
@@ -457,9 +464,13 @@ nutscan_device_t * nutscan_scan_usb()
 
 	return nutscan_rewind_device(current_nut_dev);
 }
+
 #else /* not WITH_USB */
+
+/* stub function */
 nutscan_device_t * nutscan_scan_usb()
 {
 	return NULL;
 }
+
 #endif /* WITH_USB */
