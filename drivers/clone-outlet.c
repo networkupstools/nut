@@ -369,8 +369,10 @@ static int sstate_readline(void)
 	}
 #else
 	if (upsfd == INVALID_HANDLE_VALUE) {
-		return -1;
+		return -1;	/* failed */
 	}
+
+	/* FIXME? I do not see this buf or read_buf filled below */
 	char *buf = read_buf;
 	DWORD bytesRead;
 	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
