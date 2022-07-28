@@ -229,6 +229,9 @@ void upsdrv_updateinfo(void)
 				else
 					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
+				/* Determine if file modification timestamp has changed
+				 * since last use (so we would want to re-read it) */
+				/* Either successful stat is OK to fill the "fs" struct */
 				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
 					upsdebugx(2, "Can't open %s currently", fn);
 					/* retry ASAP until we get a file */
@@ -454,6 +457,8 @@ void upsdrv_initups(void)
 		else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
+		/* Update file modification timestamp (and other data) */
+		/* Either successful stat is OK to fill the "datafile_stat" struct */
 		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
 			upsdebugx(2, "Can't open %s currently", device_path);
 		}
