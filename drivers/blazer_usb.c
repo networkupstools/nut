@@ -497,7 +497,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 		udev = NULL;
 		break;
 
-	case LIBUSB_ERROR_TIMEOUT:  /* Connection timed out */
+	case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
 	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
 #if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
