@@ -1540,6 +1540,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if (!(item->hidflags & HU_FLAG_ENUM) || !(item->info_flags & ST_FLAG_RW)) {
 				continue;
 			}
+
 			/* Loop on all existing values */
 			for (info_lkp = item->hid2info; info_lkp != NULL
 				&& info_lkp->nut_value != NULL; info_lkp++) {
@@ -1576,7 +1577,7 @@ static int reconnect_ups(void)
 		upsdebugx(4, " device has been disconnected, trying to reconnect in %i seconds", wait_before_reconnect);
 		sleep(wait_before_reconnect);
 		upsdebugx(4, " trying to reconnect");
-	}else{
+	} else {
 		upsdebugx(4, " device has been disconnected, try to reconnect");
 	}
 	upsdebugx(4, "===================================================================");
