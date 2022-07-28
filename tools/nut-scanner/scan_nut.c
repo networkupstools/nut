@@ -90,7 +90,7 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	lt_dlerror();      /* Clear any existing error */
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-													"upscli_splitaddr");
+						"upscli_splitaddr");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
@@ -120,8 +120,11 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	}
 
 	return 1;
+
 err:
-	fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname_path, dl_error);
+	fprintf(stderr,
+		"Cannot load NUT library (%s) : %s. NUT search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
