@@ -548,7 +548,7 @@ static int belkin_std_upsread(TYPE_FD fd, unsigned char *buf, int n) {
 		 * with 0ms timeout is non-blocking */
 		r = select_read(fd, buf, (size_t)(n-count), 0, 0);
 #endif
-		if (r==-1 && errno==EAGAIN) { 
+		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
 			tries++;
