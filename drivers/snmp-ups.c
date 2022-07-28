@@ -2370,6 +2370,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				}
 			}
 		}
+
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
 		if (su_info_p->flags & SU_OUTLET)
@@ -2381,6 +2382,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		else
 			device_template_index_base = base_index;
 	}
+
 	upsdebugx(3, "%s: template_index_base = %i", __func__, base_index);
 	return base_index;
 }
