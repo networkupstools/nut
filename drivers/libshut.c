@@ -182,6 +182,7 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int shut_get_descriptor(int upsfd, unsigned char type,
  *			   unsigned char index, void *buf, int size);
@@ -298,6 +299,7 @@ typedef union device_desc_data_t {
 #endif
 
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
+
 /* Expected evaluated types for the API after typedefs:
 static void setline(int upsfd, int set);
 static int shut_synchronise(int upsfd);
@@ -360,6 +362,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_device_path,
  *                  int (*callback)(int arg_upsfd, SHUTDevice_t *hd,
