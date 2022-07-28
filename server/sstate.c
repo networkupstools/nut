@@ -305,6 +305,8 @@ HANDLE sstate_connect(upstype_t *ups)
 	ReadFile(fd,ups->buf,sizeof(ups->buf)-1,NULL,&(ups->read_overlapped)); /*-1 to be sure to have a trailling 0 */
 #endif
 
+	/* sstate_connect() continued for both platforms: */
+
 	pconf_init(&ups->sock_ctx, NULL);
 
 	ups->dumpdone = 0;
