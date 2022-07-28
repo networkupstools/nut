@@ -103,7 +103,6 @@ typedef struct {
 	void		*data;
 } handler_t;
 
-
 /* Commands and settings status tracking */
 
 /* general enable/disable status info for commands and settings
@@ -1372,7 +1371,7 @@ int main(int argc, char **argv)
 		} else {
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
-		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
@@ -1520,4 +1519,3 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;
 }
-
