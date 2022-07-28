@@ -178,7 +178,7 @@ static int getdata(void)
 	struct pollfd p;
 	char bfr[1024];
 #ifndef WIN32
-	long fd_flags;
+	int fd_flags;
 #else
 	/* Note: while the code below uses "pollfd" for simplicity as it is
 	 * available in mingw headers (although poll() method usually is not),
