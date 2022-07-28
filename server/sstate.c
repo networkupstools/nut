@@ -369,6 +369,8 @@ void sstate_readline(upstype_t *ups)
 	if ((!ups) || (ups->sock_fd == INVALID_HANDLE_VALUE)) {
 		return;
 	}
+
+	/* FIXME? I do not see either buf filled below */
 	char *buf = ups->buf;
 	DWORD bytesRead;
 	GetOverlappedResult(ups->sock_fd, &ups->read_overlapped, &bytesRead, FALSE);
