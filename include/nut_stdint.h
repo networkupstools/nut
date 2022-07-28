@@ -72,15 +72,26 @@
 #  endif
 #endif
 
+/* Note: Windows headers are known to define at least "d" values,
+ * so macros below revolve around that and not "i" directly */
 #ifndef PRIiSIZE
 # ifdef PRIssize
 #  define PRIiSIZE PRIssize
 # else
-#  if defined(__MINGW32__) || defined (WIN32)
-#   define PRIiSIZE "lld"
+#  ifdef PRIdSIZE
+#   define PRIiSIZE PRIdSIZE
 #  else
-#   define PRIiSIZE "zd"
+#   if defined(__MINGW32__) || defined (WIN32)
+#    define PRIiSIZE "lld"
+#   else
+#    define PRIiSIZE "zd"
+#   endif
+#   define PRIdSIZE PRIiSIZE
 #  endif
+# endif
+#else
+# ifndef PRIdSIZE
+#  define PRIdSIZE PRIiSIZE
 # endif
 #endif /* format for size_t and ssize_t */
 
@@ -110,26 +121,35 @@
 #endif /* format for uintmax_t and intmax_t */
 
 #ifndef PRIdMAX
-# if defined(__MINGW32__) || defined (WIN32)
-#  if (SIZEOF_VOID_P == 8)
-#   ifdef PRId64
-#    define PRIdMAX PRId64
-#   else
-/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
-#    define PRIdMAX "lld"
-#   endif
-#  endif
-#  if (SIZEOF_VOID_P == 4)
-#   ifdef PRId32
-#    define PRIdMAX PRId32
-#   else
-/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
-#    define PRIdMAX "ld"
-#   endif
-#  endif
+# ifdef PRIiMAX
+#  define PRIdMAX PRIiMAX
 # else
+#  if defined(__MINGW32__) || defined (WIN32)
+#   if (SIZEOF_VOID_P == 8)
+#    ifdef PRId64
+#     define PRIdMAX PRId64
+#    else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#     define PRIdMAX "lld"
+#    endif
+#   endif
+#   if (SIZEOF_VOID_P == 4)
+#    ifdef PRId32
+#     define PRIdMAX PRId32
+#    else
+/* assume new enough compiler and standard, and no Windows %I64 etc... check "%ll" support via configure? */
+#     define PRIdMAX "ld"
+#    endif
+#   endif
+#  else
 /* assume new enough compiler and standard... check "%j" support via configure? */
-#  define PRIdMAX "jd"
+#   define PRIdMAX "jd"
+#  endif
+#  define PRIiMAX PRIdMAX
+# endif
+#else
+# ifndef PRIiMAX
+#  define PRIiMAX PRIdMAX
 # endif
 #endif /* format for uintmax_t and intmax_t */
 
