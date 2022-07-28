@@ -198,7 +198,7 @@ static const char *getpacket(int *we_know){
 #ifndef WIN32
 		tv.tv_sec = 2;
 		tv.tv_usec = 0;
-		ret = select(upsfd+1,  &readfds, NULL, NULL, &tv);
+		ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
 		if (!ret) return NULL;
 		/* Casting is okay since bytes_per_packet is small
 		 * and r is smaller, so 255-r is positive */
