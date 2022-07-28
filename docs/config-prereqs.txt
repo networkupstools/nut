@@ -988,7 +988,7 @@ export PATH
 # python, perl, autotools, gcc, clang, git, binutils, make, pkgconf...
 :; pacman -S --needed \
     base-devel mingw-w64-x86_64-toolchain \
-    autoconf-wrapper automake-wrapper libtool \
+    autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl \
     clang gcc \
     ccache mingw-w64-x86_64-ccache \
     git aspell aspell-en \
