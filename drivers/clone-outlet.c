@@ -279,13 +279,13 @@ static int sstate_readline(void)
 	if (ret < 0) {
 		switch(errno)
 		{
-		case EINTR:
-		case EAGAIN:
-			return 0;
+			case EINTR:
+			case EAGAIN:
+				return 0;
 
-		default:
-			upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
-			return -1;
+			default:
+				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
+				return -1;
 		}
 	}
 
@@ -293,19 +293,19 @@ static int sstate_readline(void)
 
 		switch (pconf_char(&sock_ctx, buf[i]))
 		{
-		case 1:
-			if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
-				time(&last_heard);
-			}
-			continue;
+			case 1:
+				if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
+					time(&last_heard);
+				}
+				continue;
 
-		case 0:
-			continue;	/* haven't gotten a line yet */
+			case 0:
+				continue;	/* haven't gotten a line yet */
 
-		default:
-			/* parse error */
-			upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
-			return -1;
+			default:
+				/* parse error */
+				upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
+				return -1;
 		}
 	}
 
