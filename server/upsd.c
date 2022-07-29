@@ -592,10 +592,10 @@ static void client_connect(stype_t *server)
 	client->tracking = 0;
 
 #ifdef WIN32
-	client->Event = CreateEvent(NULL, /*Security,*/
-				FALSE, /*auo-reset */
-				FALSE, /*initial state*/
-				NULL); /* no name */
+	client->Event = CreateEvent(NULL, /* Security, */
+				FALSE,    /* auto-reset */
+				FALSE,    /* initial state */
+				NULL);    /* no name */
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( client->sock_fd, client->Event, FD_READ );
@@ -617,7 +617,7 @@ static void client_connect(stype_t *server)
 	}
 
 	lastclient = client;
- */
+*/
 	upsdebugx(2, "Connect from %s", client->addr);
 }
 
