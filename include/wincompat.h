@@ -78,6 +78,16 @@ int sktwrite(int fh, char *buf, int size);
 int sktclose(int fh);
 
 #if ! HAVE_INET_NTOP
+/* NOTE: This fallback can get used on systems that do have inet_ntop()
+ * but their antivirus precluded the configure-script test program linking.
+ * A symptom of that would be:
+ *   warning: 'inet_ntop' redeclared without dllimport attribute:
+ *      previous dllimport ignored [-Wattributes]
+ * ...and adding the attributes would cause a conflict of private fallback
+ * and system DLL symbols. So the lesser of two evils, we use fallback.
+ * People who see the warning should however fix their build environment
+ * and use the native OS-provided implementation ;)
+ */
 # if (0)
 /* Some old winapi? or just sloppy original commits?
  * Why is this here at all if there's something per ws2tcpip.h -
