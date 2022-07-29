@@ -975,6 +975,12 @@ NOTE: Suggestions below use `x86_64` generic variants where possible, and
 want to build `i686` (32-bit) or alternate backends (e.g. `ucrt` instead
 of default `msvcrt`), poke the repository search to see what is available.
 
+NOTE: To build NUT with `ci_build.sh` (and generally -- to help `configure`
+script find the dependencies listed below), start the terminal session with
+"MSYS2 MinGW x64" shortcut. Other options set up the environment variables
+for toolkits listed in their shortcut names, and so tend to prefer "wrong"
+flags and paths to dependencies (if you have several variants installed).
+
 To avoid toolkit variant mismatches, you may require to use their specific
 builds preferentially:
 ----
