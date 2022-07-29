@@ -628,7 +628,7 @@ static ssize_t powpan_initups(void)
 		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		if (ret < 20) {
-			upsdebugx(2, "Expected 20 bytes but only got %" PRIiSIZE "", ret);
+			upsdebugx(2, "Expected 20 bytes but only got %" PRIiSIZE, ret);
 			continue;
 		}
 

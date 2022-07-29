@@ -184,7 +184,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Try to read all the remaining bytes */
 		res = ser_get_buf_len(upsfd, my_buf + 4, length, 1, 0);
 		if (res < 0) {
-			ser_comm_fail("%s(): ser_get_buf_len() returned error code %" PRIiSIZE "", __func__, res);
+			ser_comm_fail("%s(): ser_get_buf_len() returned error code %" PRIiSIZE, __func__, res);
 			return res;
 		}
 
@@ -397,11 +397,11 @@ static void pw_comm_setup(const char *port)
 		}
 
 		if (ret > 0) {
-			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %" PRIuSIZE "", port, pw_baud_rates[i].name);
+			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %" PRIuSIZE, port, pw_baud_rates[i].name);
 			return;
 		}
 
-		upsdebugx(2, "No response from UPS on %s with baudrate %" PRIuSIZE "", port, pw_baud_rates[i].name);
+		upsdebugx(2, "No response from UPS on %s with baudrate %" PRIuSIZE, port, pw_baud_rates[i].name);
 	}
 
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);

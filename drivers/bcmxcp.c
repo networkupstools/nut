@@ -794,11 +794,11 @@ bool_t init_command(int size)
 
 		res = answer[iIndex];
 		NumComms = (int)res; /* Number of commands implemented in this UPS */
-		upsdebugx(3, "Number of commands implemented in ups %" PRIiSIZE "", res);
+		upsdebugx(3, "Number of commands implemented in ups %" PRIiSIZE, res);
 		iIndex++;
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
-		upsdebugx(5, "bytes per command %" PRIiSIZE "", res);
+		upsdebugx(5, "bytes per command %" PRIiSIZE, res);
 
 		/* In case of debug - make explanation of values */
 		upsdebugx(2, "Index\tCmd byte\tDescription");
@@ -1043,7 +1043,7 @@ unsigned char init_outlet(unsigned char len)
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	else
-		upsdebugx(1, "init_outlet(%i), res=%" PRIiSIZE "", len, res);
+		upsdebugx(1, "init_outlet(%i), res=%" PRIiSIZE, len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %u", num_outlet);
