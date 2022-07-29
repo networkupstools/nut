@@ -587,10 +587,16 @@ testcase_sandbox_start_upsd_alone() {
         EXPECTED_UPSLIST="$EXPECTED_UPSLIST
 UPS1
 UPS2"
+        # For windows runners (strip CR if any):
+        EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
     fi
 
     log_info "Query listing from UPSD by UPSC (driver not running yet)"
     runcmd upsc -l localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    # For windows runners (printf can do wonders, so strip CR if any):
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
+    fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
