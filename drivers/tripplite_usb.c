@@ -622,7 +622,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE "",
+			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
 				ret, sizeof(buffer_out));
 			return ret;
 		}

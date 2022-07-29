@@ -756,7 +756,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE "",
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 				snmp_sess->securityAuthProtoLen);
 			return 0;
 		}
@@ -844,7 +844,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE "",
+			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 				snmp_sess->securityAuthProtoLen);
 			return 0;
 		}
@@ -1121,7 +1121,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE "", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE, __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -1258,7 +1258,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE "",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE,
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "

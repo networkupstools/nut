@@ -957,7 +957,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE "",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 
@@ -1025,7 +1025,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE "",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 

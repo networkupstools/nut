@@ -101,7 +101,7 @@ static ssize_t sec_cmd(const char mode, const char *command, char *msgbuf, ssize
 	upsdebugx(1, "PC-->UPS: \"%s\"",msg);
 	ret = ser_send(upsfd, "%s", msg);
 
-	upsdebugx(1, " send returned: %" PRIiSIZE "",ret);
+	upsdebugx(1, " send returned: %" PRIiSIZE, ret);
 
 	if (ret == -1) return -1;
 

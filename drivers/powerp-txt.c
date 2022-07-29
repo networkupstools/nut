@@ -577,7 +577,7 @@ static ssize_t powpan_initups(void)
 		}
 
 		if (ret < 46) {
-			upsdebugx(2, "Expected 46 bytes, but only got %" PRIiSIZE "", ret);
+			upsdebugx(2, "Expected 46 bytes, but only got %" PRIiSIZE, ret);
 			continue;
 		}
 
