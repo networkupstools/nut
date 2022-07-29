@@ -411,7 +411,7 @@ static int ups_getinfo(void)
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE "", c);
+			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE, c);
 	}
 
 	/* optional dump of raw data */
