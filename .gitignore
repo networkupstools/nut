@@ -69,3 +69,8 @@ __pycache__/
 /nbproject
 /.idea
 /*.iml
+
+# Coredumps
+*.stackdump
+*.core
+core
