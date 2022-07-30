@@ -1805,6 +1805,8 @@ int main(int argc, char **argv)
 		} else {
 			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
 		}
+	} else {
+		upslogx(LOG_INFO, "Found %d UPS defined in ups.conf", num_ups);
 	}
 
 	/* try to bring in the var/cmd descriptions */
