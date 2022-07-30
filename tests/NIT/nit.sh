@@ -88,7 +88,10 @@ isBusy_NUT_PORT() {
 		#   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
 		NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
 		NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_POR_HEX}\$"`" \
-		&& [ -n "$NUT_PORT_HITS" ] && return
+		&& [ -n "$NUT_PORT_HITS" ] && return 0
+
+		# We had a way to check, and the way said port is available
+		return 1
 	fi
 
     (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
