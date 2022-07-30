@@ -498,6 +498,12 @@ testcase_upsd_allow_no_device() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
         report_NUT_PORT
+
+        UPSD_RES=0
+        kill -15 $PID_UPSD
+        wait $PID_UPSD || UPSD_RES=$?
+        log_error "upsd exit-code was: $UPSD_RES"
+        return $UPSD_RES
     fi
 
     kill -15 $PID_UPSD
