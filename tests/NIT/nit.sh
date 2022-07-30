@@ -71,6 +71,40 @@ report_NUT_PORT() {
     [ -z "${PID_UPSD}" ] || log_info "UPSD was last known to start as PID ${PID_UPSD}"
 }
 
+isBusy_NUT_PORT() {
+    # Try to say if current NUT_PORT is busy (0 = true)
+    # or available (non-0 = false)
+    [ -n "${NUT_PORT}" ] || return
+
+    log_debug "Trying to report if NUT_PORT=${NUT_PORT} is used"
+	if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
+		# Assume Linux - hex-encoded
+		# IPv4:
+		#   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+		#   0: 0100007F:EE48 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 48881 1 00000000ec238d02 100 0 0 10 0
+		#   ^^^ 1.0.0.127 - note reversed byte order!
+		# IPv6:
+		#   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+		#   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
+		NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
+		NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_POR_HEX}\$"`" \
+		&& [ -n "$NUT_PORT_HITS" ] && return
+	fi
+
+    (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
+
+    (lsof -i :"${NUT_PORT}") 2>/dev/null && return
+
+	# Not busy... or no tools to confirm?
+	if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
+		# at least one tool is present, so not busy
+		return 1
+	fi
+
+	log_warn "isBusy_NUT_PORT() can not say, tools for checking NUT_PORT=$NUT_PORT are not available"
+	return 0
+}
+
 die() {
     echo "[FATAL] $@" >&2
     exit 1
