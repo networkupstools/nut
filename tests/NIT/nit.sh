@@ -231,15 +231,51 @@ NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
-[ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
-|| {
-    DELTA1="`date +%S`" || DELTA1=0
-    DELTA2="`expr $$ % 99`" || DELTA2=0
+if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
+	if isBusy_NUT_PORT ; then
+		log_warn "NUT_PORT=$NUT_PORT requested by caller seems occupied; tests may fail below"
+	fi
+else
+	COUNTDOWN=60
+	while [ "$COUNTDOWN" -gt 0 ] ; do
+	    DELTA1="`date +%S`" || DELTA1=0
+	    DELTA2="`expr $$ % 99`" || DELTA2=0
 
-    NUT_PORT="`expr 34931 + $DELTA1 + $DELTA2`" \
-    && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
-    || NUT_PORT=34931
-}
+	    NUT_PORT="`expr 34931 + $DELTA1 + $DELTA2`" \
+	    && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
+	    || NUT_PORT=34931
+
+		if ! isBusy_NUT_PORT ; then
+			break
+		fi
+
+		log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
+		COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+
+		[ "$COUNTDOWN" = 0 ] || sleep 2
+	done
+
+	if [ "$COUNTDOWN" = 0 ] ; then
+		COUNTDOWN=60
+		DELTA1=1025
+		while [ "$COUNTDOWN" -gt 0 ] ; do
+		    DELTA2="`expr $RANDOM % 64000`" \
+		    && [ "$DELTA2" -ge 0 ] || die "Can not pick random port"
+
+		    NUT_PORT="`expr $DELTA1 + $DELTA2`"
+			if ! isBusy_NUT_PORT ; then
+				break
+			fi
+
+			# Loop quickly, no sleep here
+			COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+		done
+
+		if [ "$COUNTDOWN" = 0 ] ; then
+			die "Can not pick random port"
+		fi
+	fi
+fi
 export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
