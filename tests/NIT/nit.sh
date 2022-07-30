@@ -63,7 +63,8 @@ report_NUT_PORT() {
     [ -n "${NUT_PORT}" ] || return
 
     log_info "Trying to report users of NUT_PORT=${NUT_PORT}"
-    (netstat -anp | sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
+    # Note: on Solarish systems, `netstat -anp` does not report PID info
+    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
     || (lsof -i :"${NUT_PORT}") 2>/dev/null \
     || true
 
