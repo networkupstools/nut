@@ -447,6 +447,7 @@ testcase_upsd_allow_no_device() {
     generatecfg_upsd_nodev
     generatecfg_upsdusers_trivial
     generatecfg_ups_trivial
+    ls -la "$NUT_CONFPATH/" || true
     upsd -F &
     PID_UPSD="$!"
     log_debug "Tried to start UPSD as PID $PID_UPSD"
@@ -455,6 +456,8 @@ testcase_upsd_allow_no_device() {
     COUNTDOWN=60
     while [ "$COUNTDOWN" -gt 0 ]; do
         if isPidAlive "$PID_UPSD"; then break ; fi
+        # FIXME: If we are here, even once, then PID_UPSD which we
+        # knew has already disappeared... wait() for its exit-code?
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
@@ -490,7 +493,8 @@ testcase_upsd_allow_no_device() {
             PASSED="`expr $PASSED + 1`"
         fi
     else
-        log_error "upsd was expected to be running although no devices are defined"
+        log_error "upsd was expected to be running although no devices are defined; is ups.conf populated?"
+        ls -la "$NUT_CONFPATH/" || true
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
         report_NUT_PORT
