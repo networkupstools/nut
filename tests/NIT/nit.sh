@@ -101,8 +101,9 @@ isBusy_NUT_PORT() {
 		return 1
 	fi
 
+	# Assume not busy to not preclude testing in 100% of the cases
 	log_warn "isBusy_NUT_PORT() can not say, tools for checking NUT_PORT=$NUT_PORT are not available"
-	return 0
+	return 1
 }
 
 die() {
