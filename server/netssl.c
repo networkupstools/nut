@@ -136,7 +136,7 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	int	e;
 
 	if (ret >= INT_MAX) {
-		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " would not fit in an int", ret);
 		return -1;
 	}
 	e = SSL_get_error(ssl, (int)ret);
@@ -144,23 +144,23 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upsdebugx(1, "ssl_error() EOF from client");
 		} else {
-			upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
+			upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
@@ -689,7 +689,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%zd", ret);
+	upsdebugx(5, "ssl_write ret=%" PRIiSIZE, ret);
 
 	return ret;
 }

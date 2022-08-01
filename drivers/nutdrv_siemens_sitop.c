@@ -110,7 +110,7 @@ static int check_for_new_data() {
 		num_received = ser_get_buf(upsfd, rx_buffer + rx_count, RX_BUFFER_SIZE - rx_count, 0, 0);
 		if (num_received < 0) {
 			/* comm error */
-			ser_comm_fail("error %zd while reading", num_received);
+			ser_comm_fail("error %" PRIiSIZE " while reading", num_received);
 			/* discard any remaining old data from the receive buffer: */
 			rx_count = 0;
 			/* try to re-open the serial port: */
@@ -277,7 +277,7 @@ void upsdrv_initups(void) {
 	 */
 	if (poll_interval > 5) {
 		upslogx(LOG_NOTICE,
-			"Option poll_interval is recommended to be lower than 5 (found: %jd)",
+			"Option poll_interval is recommended to be lower than 5 (found: %" PRIdMAX ")",
 			(intmax_t)poll_interval);
 	}
 

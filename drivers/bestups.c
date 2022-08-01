@@ -26,6 +26,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
 #define DRIVER_VERSION	"1.07"
@@ -353,13 +354,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %zd bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %" PRIiSIZE " bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %zd bytes)",
+		ser_comm_fail("Poll failed: response too long (got %" PRIiSIZE " bytes)",
 			ret);
 		dstate_datastale();
 		return;

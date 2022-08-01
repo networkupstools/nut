@@ -186,7 +186,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		libusb_device	*device = devlist[devnum];
 
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %zu of %zu (%04X/%04X)",
+		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIuSIZE " (%04X/%04X)",
 			devnum + 1, devcount,
 			dev_desc.idVendor, dev_desc.idProduct);
 
@@ -564,7 +564,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		) {
 			upsdebugx(2,
 				"Report descriptor length is out of range on this device: "
-				"should be %ji < %d < %ju",
+				"should be %" PRIdMAX " < %d < %" PRIuMAX,
 					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
 					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 			goto next_device;

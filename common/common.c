@@ -295,8 +295,8 @@ void writepid(const char *name)
 
 	if (pidf) {
 		intmax_t pid = (intmax_t)getpid();
-		upsdebugx(1, "Saving PID %jd into %s", pid, fn);
-		fprintf(pidf, "%jd\n", pid);
+		upsdebugx(1, "Saving PID %" PRIdMAX " into %s", pid, fn);
+		fprintf(pidf, "%" PRIdMAX "\n", pid);
 		fclose(pidf);
 	} else {
 		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);
@@ -588,8 +588,8 @@ void check_unix_socket_filename(const char *fn) {
 	 */
 	fatalx(EXIT_FAILURE,
 		"Can't create a unix domain socket: pathname '%s' "
-		"is too long (%zu) for 'struct sockaddr_un->sun_path' "
-		"on this system (%zu)",
+		"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
+		"on this system (%" PRIuSIZE ")",
 		fn, strlen(fn), sizeof(ssaddr.sun_path));
 }
 
@@ -728,7 +728,7 @@ void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len)
 	int n;	/* number of characters currently in line */
 	size_t i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%zu bytes) =>", msg, len);
+	n = snprintf(line, sizeof(line), "%s: (%" PRIuSIZE " bytes) =>", msg, len);
 	if (n < 0) goto failed;
 
 	for (i = 0; i < len; i++) {

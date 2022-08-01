@@ -28,7 +28,7 @@
 #define NUT_LIBSHUT_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
-#include "nut_stdint.h"	/* for uint16_t, size_t, PRIsize etc. */
+#include "nut_stdint.h"	/* for uint16_t, size_t, PRIuSIZE etc. */
 
 extern upsdrv_info_t comm_upsdrv_info;
 
@@ -91,7 +91,7 @@ typedef unsigned char usb_ctrl_char;
 typedef size_t usb_ctrl_charbufsize;	/*typedef int usb_ctrl_charbufsize;*/
 #define USB_CTRL_CHARBUFSIZE_MIN	0
 #define USB_CTRL_CHARBUFSIZE_MAX	SIZE_MAX
-#define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIsize
+#define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIuSIZE
 
 typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 #define USB_CTRL_TIMEOUTMSEC_MIN	INT_MIN

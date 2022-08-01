@@ -407,11 +407,11 @@ static int ups_getinfo(void)
 			types[type].num_of_bytes_from_ups, 3, 0);
 
 		if (c != (ssize_t)types[type].num_of_bytes_from_ups) {
-			upslogx(LOG_NOTICE, "data receiving error (%zd instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
+			upslogx(LOG_NOTICE, "data receiving error (%" PRIiSIZE " instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %zd", c);
+			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE, c);
 	}
 
 	/* optional dump of raw data */

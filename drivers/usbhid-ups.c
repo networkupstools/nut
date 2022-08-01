@@ -32,6 +32,7 @@
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"
+#include "nut_stdint.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"

@@ -390,7 +390,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	{ /* scoping */
 		char * s = str_rtrim(ans, '\n');
-		upsdebugx(2, "write: [destfd=%d] [len=%zu] [%s]", client->sock_fd, len, s);
+		upsdebugx(2, "write: [destfd=%d] [len=%" PRIuSIZE "] [%s]", client->sock_fd, len, s);
 	}
 
 	if (res < 0 || len != (size_t)res) {
@@ -738,13 +738,13 @@ static void poll_reload(void)
 	if ((intmax_t)ret < (intmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"Your system limits the maximum number of connections to %ld\n"
-			"but you requested %jd. The server won't start until this\n"
+			"but you requested %" PRIdMAX ". The server won't start until this\n"
 			"problem is resolved.\n", ret, (intmax_t)maxconn);
 	}
 
 	if (1 > maxconn) {
 		fatalx(EXIT_FAILURE,
-			"You requested %jd as maximum number of connections.\n"
+			"You requested %" PRIdMAX " as maximum number of connections.\n"
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn);
 	}
 
@@ -752,7 +752,7 @@ static void poll_reload(void)
 	size_t maxalloc = SIZE_MAX / sizeof(void *);
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
-			"You requested %jd as maximum number of connections, but we can only allocate %zu.\n"
+			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"
 			"The server won't start until this problem is resolved.\n", (intmax_t)maxconn, maxalloc);
 	}
 
@@ -1067,7 +1067,7 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	upsdebugx(2, "%s: polling %jd filedescriptors", __func__, (intmax_t)nfds);
+	upsdebugx(2, "%s: polling %" PRIdMAX " filedescriptors", __func__, (intmax_t)nfds);
 
 	ret = poll(fds, nfds, 2000);
 
