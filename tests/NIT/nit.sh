@@ -522,7 +522,9 @@ testcase_upsd_allow_no_device() {
     generatecfg_upsd_nodev
     generatecfg_upsdusers_trivial
     generatecfg_ups_trivial
-    ls -la "$NUT_CONFPATH/" || true
+    if shouldDebug ; then
+        ls -la "$NUT_CONFPATH/" || true
+    fi
     upsd -F &
     PID_UPSD="$!"
     log_debug "Tried to start UPSD as PID $PID_UPSD"
