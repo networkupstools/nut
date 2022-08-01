@@ -139,13 +139,13 @@ typedef struct shut_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;			/* version of this subdriver	*/
 
-	int (*open)(usb_dev_handle *upsfd,			/* try to open the next available	*/
+	int (*open_dev)(usb_dev_handle *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
 		int (*callback)(usb_dev_handle upsfd, SHUTDevice_t *hd,
 			usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen));
 
-	void (*close)(usb_dev_handle upsfd);
+	void (*close_dev)(usb_dev_handle upsfd);
 
 	int (*get_report)(usb_dev_handle upsfd, usb_ctrl_repindex ReportId,
 		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);
