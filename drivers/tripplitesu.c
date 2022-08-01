@@ -192,9 +192,9 @@ static struct {
 #define RELAY_OFF                    "ROF" /* set */
 #define RELAY_ON                     "RON" /* set */
 #define ATX_RESUME                   "RSM" /* set */
-#define SHUTDOWN_ACTION              "SDA" /* set */
-#define SHUTDOWN_RESTART             "SDR" /* set */
-#define SHUTDOWN_TYPE                "SDT" /* poll/set */
+#define TSU_SHUTDOWN_ACTION          "SDA" /* set */
+#define TSU_SHUTDOWN_RESTART         "SDR" /* set */
+#define TSU_SHUTDOWN_TYPE            "SDT" /* poll/set */
 #define RELAY_STATUS                 "SOL" /* poll/set */
 #define SELECT_OUTPUT_VOLTAGE        "SOV" /* poll/set */
 #define STATUS_ALARM                 "STA" /* poll */
@@ -486,31 +486,31 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "60", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "60", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #if 0 /* doesn't seem to work */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		auto_reboot(0);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
-		do_command(SET, SHUTDOWN_ACTION, "0", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -854,9 +854,9 @@ void upsdrv_shutdown(void)
 	/* in case the power is on, tell it to automatically reboot.  if
 	   it is off, this has no effect. */
 	snprintf(parm, sizeof(parm), "%d", 1); /* delay before reboot, in minutes */
-	do_command(SET, SHUTDOWN_RESTART, parm, NULL);
+	do_command(SET, TSU_SHUTDOWN_RESTART, parm, NULL);
 	snprintf(parm, sizeof(parm), "%d", 5); /* delay before shutdown, in seconds */
-	do_command(SET, SHUTDOWN_ACTION, parm, NULL);
+	do_command(SET, TSU_SHUTDOWN_ACTION, parm, NULL);
 }
 
 void upsdrv_help(void)

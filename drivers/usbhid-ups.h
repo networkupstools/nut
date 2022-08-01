@@ -134,7 +134,7 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
-	CAL,		/* calibration */
+	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
