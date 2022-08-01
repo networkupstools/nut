@@ -452,7 +452,7 @@ int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 	}
 
 	/* prevent fd leaking to child processes */
-	fcntl(fileno(ctx->f), F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(fileno(ctx->f));
 
 	return 1;	/* OK */
 }
