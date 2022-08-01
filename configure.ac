@@ -152,17 +152,32 @@ AC_CHECK_HEADER([float.h],
 AC_CHECK_HEADER([math.h],
     [AC_DEFINE([HAVE_MATH_H], [1],
         [Define to 1 if you have <math.h>.])])
+
 AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 [#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
 #ifdef HAVE_FLOAT_H
 # include <float.h>
-#endif])
+#endif
+])
 
 AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
+
+AC_CHECK_HEADER([stdlib.h],
+    [AC_DEFINE([HAVE_STDLIB_H], [1],
+        [Define to 1 if you have <stdlib.h>.])])
+
+AC_CHECK_FUNCS(realpath, [], [],
+[#ifdef HAVE_LIMITS_H
+# include <limits.h>
+#endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+])
 
 AC_CHECK_HEADER([signal.h],
     [AC_DEFINE([HAVE_SIGNAL_H], [1],
