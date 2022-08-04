@@ -79,7 +79,10 @@ static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
-static	int	userfsd = 0, use_pipe = 1, pipefd[2];
+static	int	userfsd = 0, pipefd[2];
+	/* Should we run "all in one" (e.g. as root) or split
+	 * into two upsmon processes for some more security? */
+static	int	use_pipe = 1;
 
 static	utype_t	*firstups = NULL;
 
@@ -2091,8 +2094,9 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 	pid_t	oldpid = -1;
+	int	cmd = 0;
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -2183,7 +2187,7 @@ int main(int argc, char *argv[])
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
 		/* exit(EXIT_SUCCESS); */
-		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.

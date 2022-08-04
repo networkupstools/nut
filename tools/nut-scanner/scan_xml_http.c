@@ -703,8 +703,9 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	return result;
 }
 
-#else /* WITH_NEON */
+#else /* not WITH_NEON */
 
+/* stub function */
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, useconds_t usec_timeout, nutscan_xml_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);

@@ -702,13 +702,14 @@ static int check_parent(const char *cmd, const char *arg2)
 
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
-	int	i, pipefd;
+	int	i;
 	ssize_t	ret;
 	size_t	enclen, buflen;
 	char buf[SMALLBUF], enc[SMALLBUF + 8];
 	int	ret_s;
 	struct	timeval tv;
 	fd_set	fdread;
+	int	pipefd;
 
 	/* insanity */
 	if (!arg1)

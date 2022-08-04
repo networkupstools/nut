@@ -319,7 +319,7 @@ int sendsignalpid(pid_t pid, int sig)
 		return -1;
 	}
 
-	/* see if this is going to work first */
+	/* see if this is going to work first - does the process exist? */
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
@@ -497,8 +497,9 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
 
-	if (use_strerror)
+	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+	}
 
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0, 0 };
@@ -523,6 +524,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
 }
+
 
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
@@ -558,8 +560,9 @@ const char * altpidpath(void)
 	const char * path;
 
 	path = getenv("NUT_ALTPIDPATH");
-	if ( (path == NULL) || (*path == '\0') )
+	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+	}
 
 	if ( (path != NULL) && (*path != '\0') )
 		return path;

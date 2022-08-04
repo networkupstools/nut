@@ -631,7 +631,9 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 
 	return nutscan_rewind_device(current_nut_dev);
 }
-#else /* WITH_IPMI */
+
+#else /* not WITH_IPMI */
+
 /* stub function */
 nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec)
 {
@@ -641,4 +643,5 @@ nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP,
 
 	return NULL;
 }
+
 #endif /* WITH_IPMI */

@@ -610,7 +610,7 @@ static LDOUBLE pow10 (int exp)
 
   return result;
 }
-# endif
+# endif /* HAVE_POW10 */
 
 # ifndef HAVE_ROUND
 static long round (LDOUBLE value)
@@ -624,7 +624,7 @@ static long round (LDOUBLE value)
 
   return intpart;
 }
-# endif
+# endif /* HAVE_ROUND */
 #endif /* HAVE_FCVT */
 
 static void fmtfp (char *buffer, size_t *currlen, size_t maxlen,

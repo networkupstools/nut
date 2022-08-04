@@ -150,8 +150,8 @@ void upsdrv_initinfo(void)
 static const char *getpacket(int *we_know){
 	fd_set readfds;
 	struct timeval tv;
-	int bytes_per_packet=0;
 	int ret;
+	int bytes_per_packet=0;
 	static const char *packet_id=NULL;
 	static char buf[256];
 	const char *s;
@@ -162,13 +162,14 @@ static const char *getpacket(int *we_know){
 
 	FD_ZERO(&readfds);
 	FD_SET(upsfd,&readfds);
+
 	/* Wait up to 2 seconds. */
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 
-	ret=select(upsfd+1, &readfds, NULL, NULL, &tv);
+	ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
 	if (!ret) {
-		s="Nothing received from UPS. Check cable conexion";
+		s = "Nothing received from UPS. Check cable conexion";
 		upslogx(LOG_ERR, "%s", s);
 		D(printf("%s\n",s);)
 		return NULL;
@@ -184,7 +185,7 @@ static const char *getpacket(int *we_know){
 		usleep(500000);
 		tv.tv_sec = 2;
 		tv.tv_usec = 0;
-		ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
+		ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
 		if (!ret) return NULL;
 		/* Casting is okay since bytes_per_packet is small
 		 * and r is smaller, so 255-r is positive */

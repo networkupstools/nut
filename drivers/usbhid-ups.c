@@ -158,7 +158,6 @@ static double interval(void);
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
 
-
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
 /* --------------------------------------------------------------- */
@@ -1466,6 +1465,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif

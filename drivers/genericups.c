@@ -435,4 +435,3 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
-
