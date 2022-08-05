@@ -41,6 +41,11 @@ for Windows in the specially crafted sandbox (conformance is assumed),
 if you use one of `BUILD_TYPE=cross-windows-mingw(-64|-32|)` as this
 made NUT CI farm integration easier.
 
+NOTE: The Ubuntu (20.04 or newer) environment provided by WSL2 also seems
+suitable for semi-native builds on a Windows system, following the same
+instructions. However, note that some builds may be broken or complicated
+by antivirus software (it really dislikes someone writing into EXE files).
+
 Beside MinGW detailed below, you would need the usual dependencies to
 configure and build NUT (if you would bootstrap it from github sources
 rather than a tarball -- without a pre-generated `configure` script).
@@ -306,6 +311,11 @@ use this feature in practice.
 * zlib: see above
 
 * freetype:
++
+NOTE: For some reason it won't build in an Ubuntu 20.04 running under WSL2 --
+blocks running an `apinames.exe` program that it has just built. May be a
+problem of the emulation layer (as it calls the EXE via `/tools/init`),
+and/or of the system antivirus interaction?..
 
 	:; ( cd "$DLDIR" && wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz )
 	:; cd "$WSDIR"
