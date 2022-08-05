@@ -125,11 +125,11 @@ or
 pthread library
 ^^^^^^^^^^^^^^^
 
-NOTE: The MinGW distribution in Ubuntu 21.10 already includes pthread files.
+NOTE: The MinGW distribution in Ubuntu 21.10 already includes pthread files,
+so the build instructions below were not relevant for this component.
 
 On older Debian systems, you can use the following packages repository:
-
-	link:https://launchpad.net/~mingw-packages/+archive/ppa[MinGW PPA]
+link:https://launchpad.net/~mingw-packages/+archive/ppa[MinGW PPA]
 
 However at the moment this PPA seems to be stale and serve very old packages,
 so it could be better to roll your own as detailed below.
@@ -142,7 +142,7 @@ https://fedoraproject.org/wiki/Packaging:MinGW?rd=Packaging:MinGW_Future
 https://fedoraproject.org/wiki/Packaging:MinGW_Old
 ////////////////////////////////////////////////////////////////////////////////
 
-You can also compile it using:
+You can also compile it (where that is still needed) using:
 
 	:; ( cd "$DLDIR" && wget -c http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz )
 	:; cd "$WSDIR"
