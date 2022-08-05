@@ -432,12 +432,32 @@ libmodbus
 	:; sudo make install
 
 
+libneon
+^^^^^^^
+
+As of release 0.32.2 libneon failed to build  -- neither in Windows MSYS2 nor
+in Linux mingw environments. Some tinkering was needed to make it happen, and
+was posted as https://github.com/notroj/neon/pull/84 (pull request sourced
+from https://github.com/jimklimov/neon/tree/fix-mingw-cross branch). Due to
+this, instructions below differ from others by setting up an out-of-tree build
+instead of a tarball download. Eventually it would hopefully suffice to fetch
+https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
+
+	:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
+	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
+	:; cd "$WSDIR"
+	:; rm -rf neon-git ; mkdir neon-git
+	:; cd neon-git
+	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG --enable-shared
+	:; make all docs
+	:; sudo make install
+
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-libneon (xml), avahi, ipmi, ssl...
+avahi, ipmi, ssl...
 
-* https://notroj.github.io/neon/neon-0.32.2.tar.gz
 * https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
 * https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
 * https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_79_RTM/src/nss-3.79-with-nspr-4.34.tar.gz
