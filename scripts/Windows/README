@@ -114,6 +114,7 @@ or
 :; export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
 :; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
 :; export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
+:; export PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig
 ------
 
 - prepare the download and build area, e.g. to match copy-paste instructions
@@ -203,7 +204,7 @@ libusb
 	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
 	:; cd libusb-compat-0.1-master
 	:; ./bootstrap.sh
-	:; PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
 
@@ -214,7 +215,7 @@ net-snmp
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/net-snmp-5.9.1.tar.gz
 	:; cd net-snmp-5.9.1
-	:; yes "" | PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig ./configure --prefix="$PREFIX" $HOST_FLAG \
+	:; yes "" | ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
 	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
 	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
