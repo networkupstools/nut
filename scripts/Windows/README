@@ -80,25 +80,44 @@ them once (per `ARCH`) to provide the prerequisites below if built from source.
 When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
 and CC, CFLAGS, LDFLAGS and PREFIX:
 
-- prefer either
-  to export ARCH="x86_64-w64-mingw32"
-  or export ARCH="i686-w64-mingw32"
-  (it can help to open two terminals and copy one ARCH into each
+- prefer either to
+------
+:; export ARCH="x86_64-w64-mingw32"
+------
+or
+------
+:; export ARCH="i686-w64-mingw32"
+------
+(it can help to open two terminals and copy one ARCH into each
   and then the lines below into both of them; be sure to use separate
   directory trees for the unpacked build workspaces)
-- export HOST_FLAG="--host=$ARCH"
-- PREFIX=/usr/$ARCH
+- for either-ARCH build environment further set:
+------
+:; export HOST_FLAG="--host=$ARCH"
+:; PREFIX="/usr/$ARCH"
+------
 
-- BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
-
+- on Debian/Ubuntu style systems also:
+------
+:; BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
+------
   * Note that this bit is very Debian specific!
     Hints for Redhat-style systems are wanted.
 
 - also export the following compilation flags:
+------
+:; export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
+:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
+:; export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
+------
 
-	export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-	export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-	export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
+- prepare the download and build area, e.g. to match copy-paste instructions
+  below, it would be like:
+------
+:; mkdir -p ~/nut-win-deps/"$ARCH"
+:; DLDIR=~/nut-win-deps
+:; WSDIR=~/nut-win-deps/"$ARCH"
+------
 
 ================================================================================
 
@@ -125,13 +144,14 @@ https://fedoraproject.org/wiki/Packaging:MinGW_Old
 
 You can also compile it using:
 
-	$ wget http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz
-	$ tar xzf pthreads-w32-2-8-0-release.tar.gz
-	$ cd pthreads-w32-2-8-0-release/
-	$ make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
-	$ sudo cp *.dll /usr/$ARCH/pthreads/lib/
-	$ sudo cp *.a /usr/$ARCH/lib/
-	$ sudo cp pthread.h sched.h semaphore.h /usr/$ARCH/pthreads/include
+	:; ( cd "$DLDIR" && wget -c http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
+	:; cd pthreads-w32-2-8-0-release/
+	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
+	:; sudo cp *.dll /usr/$ARCH/pthreads/lib/
+	:; sudo cp *.a /usr/$ARCH/lib/
+	:; sudo cp pthread.h sched.h semaphore.h /usr/$ARCH/pthreads/include
 
 
 MinGW regex library
@@ -139,52 +159,57 @@ MinGW regex library
 
 You can compile it  using:
  
-	$ wget http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
-	$ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
-	$ cd mingw-libgnurx-2.5.1
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/mingw-libgnurx-2.5.1-src.tar.gz
+	:; cd mingw-libgnurx-2.5.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 libtool (libltdl)
 ^^^^^^^^^^^^^^^^^
 
-	$ wget https://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz
-	$ tar xzf libtool-2.4.6.tar.gz
-	$ cd libtool-2.4.6
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libtool-2.4.6.tar.gz
+	:; cd libtool-2.4.6
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 libusb
 ^^^^^^
 
 * libusb-1.0
 
-	$ wget https://sourceforge.net/projects/libusb/files/libusb-1.0/libusb-1.0.26/libusb-1.0.26.tar.bz2
-	$ tar xjf libusb-1.0.26.tar.bz2
-	$ cd libusb-1.0.26
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/libusb/files/libusb-1.0/libusb-1.0.26/libusb-1.0.26.tar.bz2 )
+	:; cd "$WSDIR"
+	:; tar xjf "$DLDIR"/libusb-1.0.26.tar.bz2
+	:; cd libusb-1.0.26
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 * libusb-compat-0.1 (API translation layer for older codebase, uses libusb-1.0)
 
-	$ wget https://github.com/libusb/libusb-compat-0.1/archive/refs/heads/master.zip -O libusb-compat-0.1-master.zip
-	$ unzip libusb-compat-0.1-master.zip
-	$ cd libusb-compat-0.1-master
-	$ ./bootstrap.sh
-	$ PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://github.com/libusb/libusb-compat-0.1/archive/refs/heads/master.zip -O libusb-compat-0.1-master.zip )
+	:; cd "$WSDIR"
+	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
+	:; cd libusb-compat-0.1-master
+	:; ./bootstrap.sh
+	:; PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 net-snmp
 ^^^^^^^^
 
-	$ wget https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz
-	$ tar xzf net-snmp-5.9.1.tar.gz
-	$ cd net-snmp-5.9.1
-	$ yes "" | PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig ./configure --prefix=$PREFIX $HOST_FLAG \
+	:; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/net-snmp-5.9.1.tar.gz
+	:; cd net-snmp-5.9.1
+	:; yes "" | PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
 	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
 	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
@@ -193,8 +218,8 @@ net-snmp
 	# NOTE: ./configure script may ask a few questions, or may just print
 	# a banner that it would; hopefully all replies needed for current
 	# version are covered above
-	$ make
-	$ sudo make install
+	:; make
+	:; sudo make install
 
 NOTE: net-snmp tends to only build a static-linking library for Windows.
 In this case consumers must link not only with `-lnetsnmp` but also its
@@ -208,9 +233,10 @@ zlib
 
 Needed for libpng at least, but likely many others too.
 
-	$ wget -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz
-	$ tar xzf zlib-1.2.12.tar.gz
-	$ cd zlib-1.2.12
+	:; ( cd "$DLDIR" && wget -c -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/zlib-1.2.12.tar.gz
+	:; cd zlib-1.2.12
 
 	# Edit the `configure` script (not autotools generated) to
 	# neuter the MINGW `leave 1` line:
@@ -224,9 +250,9 @@ Needed for libpng at least, but likely many others too.
 	        LDSHAREDLIBC=""
 	        EXE='.exe' ;;
 
-	$ CHOST="$ARCH" ./configure --prefix=$PREFIX
-	$ make
-	$ sudo make install
+	:; CHOST="$ARCH" ./configure --prefix="$PREFIX"
+	:; make
+	:; sudo make install
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -237,12 +263,13 @@ xz (liblzma)
 
 Needed for libxml2.
 
-	$ wget https://tukaani.org/xz/xz-5.2.5.tar.gz
-	$ tar xzf xz-5.2.5.tar.gz
-	$ cd xz-5.2.5
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://tukaani.org/xz/xz-5.2.5.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/xz-5.2.5.tar.gz
+	:; cd xz-5.2.5
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 
 libxml2
@@ -250,12 +277,13 @@ libxml2
 
 Needed for libneon and fontconfig.
 
-	$ wget https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz
-	$ tar xzf libxml2-v2.9.14.tar.gz
-	$ cd libxml2-v2.9.14
-	$ ./autogen.sh --prefix=$PREFIX $HOST_FLAG --without-python
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
+	:; cd libxml2-v2.9.14
+	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
+	:; make
+	:; sudo make install
 
 // for fontconfig
 /////////////////////////////////////////////////////////////////////////////
@@ -279,12 +307,13 @@ use this feature in practice.
 
 * freetype:
 
-	$ wget https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
-	$ tar xzf freetype-2.12.1.tar.gz
-	$ cd freetype-2.12.1
-	$ ./configure --prefix=$PREFIX $HOST_FLAG --without-brotli
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/freetype-2.12.1.tar.gz
+	:; cd freetype-2.12.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --without-brotli
+	:; make
+	:; sudo make install
 
 /////////////////////////////////////////////////////////////////////////////
 WIP - fontconfig not usable yet due to ICU failing to cross-build
@@ -296,21 +325,23 @@ Maybe an older version of either would fare better?..
   for native builds on Windows, but not "just" for using a cross-binary that
   the build host can generate but not run natively).
 
-	$ wget http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz
-	$ tar xzf gperf-3.1.tar.gz
-	$ cd gperf-3.1
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/gperf-3.1.tar.gz
+	:; cd gperf-3.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 * iconv:
 
-	$ wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz
-	$ tar xzf libiconv-1.17.tar.gz
-	$ cd libiconv-1.17
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
+	:; cd libiconv-1.17
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 * ICU:
 
@@ -318,49 +349,55 @@ For a cross-build of ICU, you should first build and install a copy
 for the host system, then use it as a resource for the final build.
 Set aside a good part of an hour to get this built:
 
-	$ wget https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz
+	:; ( cd "$DLDIR" && wget -c https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz )
 
-	$ tar xzf icu4c-71_1-src.tgz
-	$ rm -rf icu-native || true
-	$ mv icu icu-native   # note, no version in the pathname
-	$ cd icu-native/source
-	$ ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
-	$ make
-	$ cd ..
+	# This one is built for native host architecture and provides
+	# some resources to ARCH builds later on:
+	:; cd "$DLDIR"
+	:; tar xzf icu4c-71_1-src.tgz
+	:; rm -rf icu-native || true
+	:; mv icu icu-native   # note, no version in the pathname
+	:; cd icu-native/source
+	:; ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
+	:; make
 
-	$ tar xzf icu4c-71_1-src.tgz
-	$ cd icu/source
-	$ ./configure --prefix=$PREFIX $HOST_FLAG --with-cross-build=`pwd`/../../icu-native/source
-	$ make
-	$ sudo make install
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/icu4c-71_1-src.tgz
+	:; cd icu/source
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --with-cross-build="$DLDIR"/icu-native/source
+	:; make
+	:; sudo make install
 
 * fontconfig:
 
-	$ wget https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz
-	$ tar xzf fontconfig-2.14.0.tar.gz
-	$ cd fontconfig-2.14.0/
-	$ ./configure --prefix=$PREFIX $HOST_FLAG --enable-libxml2
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/fontconfig-2.14.0.tar.gz
+	:; cd fontconfig-2.14.0/
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-libxml2
+	:; make
+	:; sudo make install
 
 // for fontconfig
 /////////////////////////////////////////////////////////////////////////////
 
 * libpng:
 
-	$ wget https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
-	$ tar xzf libpng-1.6.37.tar.gz
-	$ cd libpng-1.6.37
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libpng-1.6.37.tar.gz
+	:; cd libpng-1.6.37
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 * libgd itself:
 
-	$ wget https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz
-	$ tar xzf libgd-2.3.3.tar.gz
-	$ cd libgd-2.3.3
-	$ ./configure --prefix=$PREFIX $HOST_FLAG \
+	:; ( cd "$DLDIR" && wget -c https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
+	:; cd libgd-2.3.3
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --without-tiff --without-jpeg --without-xpm \
 	    --without-fontconfig
 	# Note: currently we configure away almost all capabilities,
@@ -368,19 +405,20 @@ Set aside a good part of an hour to get this built:
 	# on the build system. Review resulting build recipes that
 	# they DO NOT refer to system /usr/include locations!
 	# In practice we would likely need the fontconfig pieces to work.
-	$ make
-	$ sudo make install
+	:; make
+	:; sudo make install
 
 
 libmodbus
 ^^^^^^^^^
 
-	$ wget https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz
-	$ tar xzf libmodbus-3.1.7.tar.gz
-	$ cd libmodbus-3.1.7
-	$ ./configure --prefix=$PREFIX $HOST_FLAG
-	$ make
-	$ sudo make install
+	:; ( cd "$DLDIR" && wget -c https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libmodbus-3.1.7.tar.gz
+	:; cd libmodbus-3.1.7
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
 
 
 Other requirements
@@ -400,10 +438,10 @@ Use the following to compile NUT with:
 
 * an existing source tarball (can be fetched from NUT website):
 
-	$ export SOURCEMODE=stable
+	:; export SOURCEMODE=stable
 	### Optionally: export VER_OPT=2.8.0
-	$ cd scripts/Windows/
-	$ ./build-mingw-nut.sh
+	:; cd scripts/Windows/
+	:; ./build-mingw-nut.sh
 
 * out-of-tree from git source (easier to iterate for development, so default):
 
@@ -412,7 +450,7 @@ Use the following to compile NUT with:
 * To (re-)build from scratch with a dist tarball, e.g. testing how a stable
 release would fare, starting from a git checkout, use this:
 
-	$ ./autogen.sh && ./configure && make dist && \
+	:; ./autogen.sh && ./configure && make dist && \
 	    (cd scripts/Windows/ && SOURCEMODE=dist ./build-mingw-nut.sh all64)
 
 If everything goes fine, you will find a NUT installation tree in 'nut_install'
