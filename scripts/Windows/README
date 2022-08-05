@@ -225,7 +225,7 @@ NOTE: net-snmp tends to only build a static-linking library for Windows.
 In this case consumers must link not only with `-lnetsnmp` but also its
 dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
 your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
-Builds can extract this info with `pkg-config --lbs --static netsnmp`
+Builds can extract this info with `pkg-config --libs --static netsnmp`
 as NUT scenarios do (for mingw, if shared-linking attempt fails).
 
 zlib
