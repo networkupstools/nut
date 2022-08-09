@@ -1668,7 +1668,7 @@ int main(int argc, char **argv)
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
 #else
-		cmdret = sendsignal(UPSD_PIPE_NAME,cmd);
+		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
 #endif
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}

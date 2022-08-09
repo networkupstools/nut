@@ -598,6 +598,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 
 	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
@@ -646,12 +647,16 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 const char * confpath(void)
 {
 	const char *path = getenv("NUT_CONFPATH");
+
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
 #endif
+
+	/* We assume, here and elsewhere, that
+	 * at least CONFPATH is always defined */
 	return (path != NULL && *path != '\0') ? path : CONFPATH;
 }
 
@@ -659,6 +664,7 @@ const char * confpath(void)
 const char * dflt_statepath(void)
 {
 	const char *path = getenv("NUT_STATEPATH");
+
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
@@ -684,6 +690,7 @@ const char * altpidpath(void)
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+
 #ifdef WIN32
 		if (path == NULL) {
 			/* fall back to built-in pathname relative to binary/workdir */
@@ -715,6 +722,7 @@ void check_unix_socket_filename(const char *fn) {
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
 #endif
+
 	if (len < max)
 		return;
 
@@ -1290,7 +1298,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 					libname_path = xstrdup(current_test_path);
 				}
 			}
-#ifdef WIN32
+
+# ifdef WIN32
 			if (!libname_path) {
 				for (char *p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
 					if (*p == '/') *p = '\\';
@@ -1315,8 +1324,9 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 					}
 				}
 			}
-#endif /* WIN32 */
-#endif
+# endif /* WIN32 */
+#endif  /* HAVE_REALPATH */
+
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
 				(libname_path!=NULL)?libname_path:"NULL");
