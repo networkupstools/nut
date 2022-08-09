@@ -1198,7 +1198,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 		ret = WriteFile(pipefd, enc, enclen, &bytesWritten, NULL);
-		if (ret == 0 || bytesWritten != (ssize_t)enclen) {
+		if (ret == 0 || bytesWritten != enclen) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			CloseHandle(pipefd);
 			continue;
