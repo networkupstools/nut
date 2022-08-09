@@ -1357,6 +1357,18 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 			break;
 	}
 
+#ifdef WIN32
+	/* Note: with mingw, the ":" separator above might have been resolvable */
+	if (!libname_path) {
+		onedir = NULL; /* probably is NULL already, but better ensure this */
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+			if (libname_path != NULL)
+				break;
+		}
+	}
+#endif  /* WIN32 */
+
 	return libname_path;
 }
 
