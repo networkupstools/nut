@@ -1407,6 +1407,16 @@ char * get_libname(const char* base_libname)
 			break;
 	}
 
+#ifdef WIN32
+	/* TODO: Need a reliable cross-platform way to get the full path
+	 * of current executable -- possibly stash it when starting NUT
+	 * programs... consider some way for `nut-scanner` too */
+	if (!libname_path) {
+		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+	}
+#endif  /* WIN32 */
+
 found:
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
