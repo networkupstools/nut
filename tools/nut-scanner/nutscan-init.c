@@ -146,6 +146,16 @@ void nutscan_init(void)
 	if (libname) {
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+ #if WITH_LIBUSB_1_0
+		nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
+ #else
+		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+ #endif
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
+		}
 	}
 #endif
 #ifdef WITH_SNMP
@@ -153,6 +163,9 @@ void nutscan_init(void)
 	if (libname) {
 		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
 	}
 #endif
 #ifdef WITH_NEON
@@ -163,6 +176,12 @@ void nutscan_init(void)
 	if (libname) {
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
+		}
 	}
 #endif
 #ifdef WITH_AVAHI
@@ -170,6 +189,9 @@ void nutscan_init(void)
 	if (libname) {
 		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
 	}
 #endif
 #ifdef WITH_FREEIPMI
@@ -177,12 +199,18 @@ void nutscan_init(void)
 	if (libname) {
 		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
 	}
 #endif
 	libname = get_libname("libupsclient" SOEXT);
 	if (libname) {
 		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
 		free(libname);
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
 	}
 }
 
