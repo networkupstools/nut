@@ -137,7 +137,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
 	# Steam-roll over all executables/libs we have here and copy
 	# over resolved dependencies from the cross-build environment:
-	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ) || true
+	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 	cd ..
 else
 	echo "Usage:"
