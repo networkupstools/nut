@@ -1,10 +1,11 @@
 #ifndef SERIAL_H_SEEN
 #define SERIAL_H_SEEN 1
 
+#include "config.h"	/* should be first */
+
 #include "attribute.h"
 
-#include "config.h"
-
+#include "common.h" /* for possibly fallback suseconds_t */
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
 #else

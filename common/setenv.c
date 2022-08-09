@@ -1,4 +1,6 @@
 /* setenv.c Ben Collver <collver@softhome.net> */
+#include "config.h" /* must be first */
+
 #ifndef HAVE_SETENV
 #include <stdlib.h>
 #include <string.h>

@@ -76,6 +76,8 @@
  *
  */
 
+#include "config.h" /* should be first */
+
 #include "common.h"
 
 #include <ctype.h>

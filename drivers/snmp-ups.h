@@ -51,6 +51,8 @@
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
+#include "nut_stdint.h"	/* uint32_t */
+
 /* FIXME: still needed?
  * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
