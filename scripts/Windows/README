@@ -276,6 +276,38 @@ a nuance to address for mingw builds:
 	:; sudo make install
 
 
+openssl
+^^^^^^^
+
+OpenSSL is an optional dependency for NUT itself (it or Mozilla NSS can
+be used to protect the networking communications), and for libneon below
+(OpenSSL or GnuTLS).
+
+Note the non-standard `config` script bundled along, and hoops to jump
+through...
+
+	:; ( cd "$DLDIR" && wget -c https://www.openssl.org/source/openssl-1.1.1q.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/openssl-1.1.1q.tar.gz
+	:; cd openssl-1.1.1q
+	# Build options partially lifted from OBS packaging, see:
+	# https://build.opensuse.org/package/view_file/windows:mingw:win32/mingw32-openssl-1_1/mingw32-openssl-1_1.spec?expand=1
+	:; ( case "$ARCH" in
+	     *x86_64*) SYSTEM=MINGW64 ;;
+	     *i?86*) SYSTEM=MINGW32 ;;
+	     *) SYSTEM=MINGW ;;
+	     esac
+	     export SYSTEM
+	     ./config \
+	        no-idea enable-rfc3779 zlib shared \
+	        -fno-common \
+	        --prefix="$PREFIX" --cross-compile-prefix="/usr/bin/$ARCH-" \
+	        -DPURIFY -D__USE_GNU
+	   )
+	:; make
+	:; sudo make install
+
+
 /////////////////////////////////////////////////////////////////////////////
 // for fontconfig
 
@@ -463,7 +495,8 @@ https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
 	:; cd "$WSDIR"
 	:; rm -rf neon-git ; mkdir neon-git
 	:; cd neon-git
-	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG --enable-shared
+	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
+	    --enable-shared --with-ssl=openssl
 	:; make all docs
 	:; sudo make install
 
@@ -471,7 +504,7 @@ https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-avahi, ipmi, ssl...
+avahi, ipmi, ssl with Mozilla NSS...
 
 * https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
 * https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
