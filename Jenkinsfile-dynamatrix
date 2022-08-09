@@ -1201,7 +1201,7 @@ set | sort -n """
                 excludedNodelabels: [],
 
                 dynamatrixAxesVirtualLabelsMap: [
-                    'BITS': [64], // TODO: add 32 when cross-windows-mingw-32 becomes warnings-clean
+                    'BITS': [64, 32],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
                     'CSTDVARIANT': ['c', 'gnu'],
                     ],
