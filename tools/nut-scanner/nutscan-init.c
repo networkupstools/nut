@@ -176,6 +176,11 @@ void nutscan_init(void)
 		nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
  #else
 		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+  #ifdef WIN32
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+		}
+  #endif
  #endif
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
@@ -245,6 +250,14 @@ void nutscan_init(void)
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+#ifdef WIN32
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
+		}
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
+		}
+#endif
 	}
 }
 
