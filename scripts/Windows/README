@@ -173,6 +173,7 @@ You can compile it  using:
 	:; make
 	:; sudo make install
 
+
 libtool (libltdl)
 ^^^^^^^^^^^^^^^^^
 
@@ -183,6 +184,7 @@ libtool (libltdl)
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
+
 
 libusb
 ^^^^^^
@@ -207,6 +209,7 @@ libusb
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
+
 
 net-snmp
 ^^^^^^^^
@@ -233,6 +236,7 @@ dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
 your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
 Builds can extract this info with `pkg-config --libs --static netsnmp`
 as NUT scenarios do (for mingw, if shared-linking attempt fails).
+
 
 zlib
 ^^^^
