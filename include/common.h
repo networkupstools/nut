@@ -332,6 +332,7 @@ char * getfullpath(char * relative_path);
 #define PATH_SHARE "\\..\\share"
 #define PATH_BIN "\\..\\bin"
 #define PATH_SBIN "\\..\\sbin"
+#define PATH_LIB "\\..\\lib"
 #endif /* WIN32*/
 
 #ifndef HAVE_USLEEP

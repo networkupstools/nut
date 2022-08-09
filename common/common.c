@@ -1411,6 +1411,12 @@ char * get_libname(const char* base_libname)
 	/* TODO: Need a reliable cross-platform way to get the full path
 	 * of current executable -- possibly stash it when starting NUT
 	 * programs... consider some way for `nut-scanner` too */
+# ifdef PATH_LIB
+	if (!libname_path) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
+	}
+# endif
+
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
