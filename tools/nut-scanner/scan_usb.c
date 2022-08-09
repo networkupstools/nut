@@ -96,6 +96,7 @@ int nutscan_load_usb_library(const char *libname_path)
 			dl_error = lt_dlerror();
 			goto err;
 	}
+	lt_dlerror();      /* Clear any existing error */
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -107,7 +108,6 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
-	lt_dlerror();      /* Clear any existing error */
 	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, USB_CLOSE_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
