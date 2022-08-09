@@ -161,16 +161,45 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt)
 const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 # endif
 {
-	struct sockaddr_in srcaddr;
+/* Instead of WSAAddressToString() consider getnameinfo() if this would in fact
+ * return decorated addresses (brackets, ports...) as discussed below:
+ * https://users.ipv6.narkive.com/RXpR5aML/windows-and-inet-ntop-vs-wsaaddresstostring
+ * https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getnameinfo
+ * https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsaaddresstostringa
+ */
+	switch (af) {
+	case AF_INET:
+		{
+			struct sockaddr_in srcaddr;
+			memset(&srcaddr, 0, sizeof(struct sockaddr_in));
+			memcpy(&(srcaddr.sin_addr), src, sizeof(srcaddr.sin_addr));
+			srcaddr.sin_family = af;
+			if (WSAAddressToString((struct sockaddr*) &srcaddr, sizeof(struct sockaddr_in), 0, dst, (LPDWORD) &cnt) != 0) {
+				WSAGetLastError();
+				return NULL;
+			}
+		}
+		break;
 
-	memset(&srcaddr, 0, sizeof(struct sockaddr_in));
-	memcpy(&(srcaddr.sin_addr), src, sizeof(srcaddr.sin_addr));
+	case AF_INET6:
+		/* NOTE: Since WinXP SP1, with IPv6 installed on the system */
+		{
+			struct sockaddr_in6 srcaddr;
+			memset(&srcaddr, 0, sizeof(struct sockaddr_in6));
+			memcpy(&(srcaddr.sin6_addr), src, sizeof(srcaddr.sin6_addr));
+			srcaddr.sin6_family = af;
+			if (WSAAddressToString((struct sockaddr*) &srcaddr, sizeof(struct sockaddr_in6), 0, dst, (LPDWORD) &cnt) != 0) {
+				WSAGetLastError();
+				return NULL;
+			}
+		}
+		break;
 
-	srcaddr.sin_family = af;
-	if (WSAAddressToString((struct sockaddr*) &srcaddr, sizeof(struct sockaddr_in), 0, dst, (LPDWORD) &cnt) != 0) {
-		WSAGetLastError();
+	default:
+		errno = EAFNOSUPPORT;
 		return NULL;
-	}
+	} /* switch */
+
 	return dst;
 }
 #endif	/* HAVE_INET_NTOP */

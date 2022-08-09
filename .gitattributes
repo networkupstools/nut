@@ -6,6 +6,7 @@
 *.m4 text eol=lf
 *.ac text eol=lf
 *.am text eol=lf
+*.hwdb text eol=lf
 
 # Some files are binary always:
 *.png bin

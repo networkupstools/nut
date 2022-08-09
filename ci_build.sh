@@ -1761,47 +1761,34 @@ bindings)
 # in that script (ARCH, CFLAGS, ...).
 # Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
 # on any other supported platform (more details in docs/config-prereqs.txt).
-cross-windows-mingw)
+cross-windows-mingw*)
     ./autogen.sh
     cd scripts/Windows || exit
-    case "${BITS-}" in
-        32|64)
-            SOURCEMODE="out-of-tree" \
-            ./build-mingw-nut.sh all${BITS}
-            ;;
-        *)  # Use other clues
-            case "${CFLAGS-}${CXXFLAGS-}${LDFLAGS-}" in
-                *-m32*-m64*|*-m64*-m32*)
-                    echo "FATAL: Mismatched bitness requested in *FLAGS" >&2
-                    exit 1
+
+    cmd="" # default soup of the day, as defined in the called script
+    case "$BUILD_TYPE" in
+        cross-windows-mingw32|cross-windows-mingw-32) cmd="all32" ;;
+        cross-windows-mingw64|cross-windows-mingw-64) cmd="all64" ;;
+        cross-windows-mingw) # make a difficult guess
+            case "${BITS-}" in
+                32|64) cmd="all${BITS}"
                     ;;
-                *-m32*)
-                    SOURCEMODE="out-of-tree" \
-                    ./build-mingw-nut.sh all32
-                    ;;
-                *-m64*)
-                    SOURCEMODE="out-of-tree" \
-                    ./build-mingw-nut.sh all64
-                    ;;
-                *)  # soup of the day:
-                    SOURCEMODE="out-of-tree" \
-                    ./build-mingw-nut.sh
+                *)  # Use other clues
+                    case "${CFLAGS-}${CXXFLAGS-}${LDFLAGS-}" in
+                        *-m32*-m64*|*-m64*-m32*)
+                            echo "FATAL: Mismatched bitness requested in *FLAGS" >&2
+                            exit 1
+                            ;;
+                        *-m32*) cmd="all32" ;;
+                        *-m64*) cmd="all64" ;;
+                    esac
                     ;;
             esac
             ;;
     esac
-    ;;
-cross-windows-mingw-32)
-    ./autogen.sh
-    cd scripts/Windows || exit
+
     SOURCEMODE="out-of-tree" \
-    ./build-mingw-nut.sh all32
-    ;;
-cross-windows-mingw-64)
-    ./autogen.sh
-    cd scripts/Windows || exit
-    SOURCEMODE="out-of-tree" \
-    ./build-mingw-nut.sh all64
+    ./build-mingw-nut.sh $cmd
     ;;
 
 *)

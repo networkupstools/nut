@@ -592,10 +592,10 @@ static void client_connect(stype_t *server)
 	client->tracking = 0;
 
 #ifdef WIN32
-	client->Event = CreateEvent(NULL, /*Security,*/
-				FALSE, /*auo-reset */
-				FALSE, /*initial state*/
-				NULL); /* no name */
+	client->Event = CreateEvent(NULL, /* Security, */
+				FALSE,    /* auto-reset */
+				FALSE,    /* initial state */
+				NULL);    /* no name */
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( client->sock_fd, client->Event, FD_READ );
@@ -617,7 +617,7 @@ static void client_connect(stype_t *server)
 	}
 
 	lastclient = client;
- */
+*/
 	upsdebugx(2, "Connect from %s", client->addr);
 }
 
@@ -1349,7 +1349,10 @@ static void mainloop(void)
 
 	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
 
+	/* https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects */
 	ret = WaitForMultipleObjects(nfds,fds,FALSE,2000);
+
+	upsdebugx(6, "%s: wait for filedescriptors done: %" PRIu64, __func__, ret);
 
 	if (ret == WAIT_TIMEOUT) {
 		upsdebugx(2, "%s: no data available", __func__);
@@ -1358,28 +1361,69 @@ static void mainloop(void)
 
 	if (ret == WAIT_FAILED) {
 		DWORD err = GetLastError();
-		err =err; /* remove compile time warning */
+		err = err; /* remove compile time warning */
 		upslog_with_errno(LOG_ERR, "%s", __func__);
+		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64, __func__, err);
 		return;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + nfds - 1) {
+		/* One abandoned mutex object that satisfied the wait? */
+		ret = ret - WAIT_ABANDONED_0;
+		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64, __func__, nfds, ret);
+		/* FIXME: Should this be handled somehow? Cleanup? Abort?.. */
+	} else
+	if (ret >= WAIT_OBJECT_0 && ret <= WAIT_OBJECT_0 + nfds - 1) {
+		/* Which one handle was triggered this time? */
+		/* Note: WAIT_OBJECT_0 may be currently defined as 0,
+		 * but docs insist on checking and shifting the range */
+		ret = ret - WAIT_OBJECT_0;
+		upsdebugx(5, "%s: got event on FD array item: %" PRIu64, __func__, nfds, ret);
+	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	if (ret >= nfds) {
+		/* Array indexes are [0..nfds-1] */
+		upsdebugx(2, "%s: unexpected response to query about data available: %" PRIu64, __func__, ret);
+		return;
+	}
+
+	upsdebugx(6, "%s: requesting handler[%" PRIu64 "]", __func__, ret);
+	upsdebugx(6, "%s: handler.type=%d handler.data=%p", __func__, handler[ret].type, handler[ret].data);
+
 	switch(handler[ret].type) {
 		case DRIVER:
+			upsdebugx(4, "%s: calling sstate_readline() for DRIVER", __func__);
 			sstate_readline((upstype_t *)handler[ret].data);
 			break;
 		case CLIENT:
+			upsdebugx(4, "%s: calling client_readline() for CLIENT", __func__);
 			client_readline((nut_ctype_t *)handler[ret].data);
 			break;
 		case SERVER:
+			upsdebugx(4, "%s: calling client_connect() for SERVER", __func__);
 			client_connect((stype_t *)handler[ret].data);
 			break;
 		case NAMED_PIPE:
 			/* a new pipe connection has been signaled */
 			if (fds[ret] == pipe_connection_overlapped.hEvent) {
+				upsdebugx(4, "%s: calling pipe_connect() for NAMED_PIPE", __func__);
 				pipe_connect();
 			}
 			/* one of the read event handle has been signaled */
 			else {
+				upsdebugx(4, "%s: calling pipe_ready() for NAMED_PIPE", __func__);
 				pipe_conn_t * conn = handler[ret].data;
 				if ( pipe_ready(conn) ) {
 					if (!strncmp(conn->buf, SIGCMD_STOP, sizeof(SIGCMD_STOP))) {
@@ -1393,6 +1437,7 @@ static void mainloop(void)
 						       );
 					}
 
+					upsdebugx(4, "%s: calling pipe_disconnect() for NAMED_PIPE", __func__);
 					pipe_disconnect(conn);
 				}
 			}
@@ -1760,6 +1805,8 @@ int main(int argc, char **argv)
 		} else {
 			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
 		}
+	} else {
+		upslogx(LOG_INFO, "Found %d UPS defined in ups.conf", num_ups);
 	}
 
 	/* try to bring in the var/cmd descriptions */

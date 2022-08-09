@@ -159,10 +159,11 @@ man pages of specific drivers.
 
 *port*::
 
-Required.  This is the serial port where the UPS is connected.  On a Linux
-system, the first serial port usually is '/dev/ttyS0'.  On FreeBSD and
-similar systems, it probably will be '/dev/cuaa0'.  On Windows, the first serial
-port will be "\\\\.\\COM1".
+Required.  This is the serial port where the UPS is connected.
+On a Linux system, the first serial port usually is '/dev/ttyS0'.
+On FreeBSD and similar systems, it probably will be '/dev/cuaa0'.
+On Windows, the first serial port will be "\\\\.\\COM1" (note the
+escaped slashes).
 
 *user*::
 

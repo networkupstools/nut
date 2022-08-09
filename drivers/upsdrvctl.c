@@ -451,7 +451,7 @@ static void start_driver(const ups_t *ups)
 			m = (size_t)nut_debug_level + 1;
 		} else {
 			upsdebugx(1, "Requested debugging level %d is too "
-				"high for pass-through args, truncated to %" PRIuSIZE "",
+				"high for pass-through args, truncated to %" PRIuSIZE,
 				nut_debug_level,
 				(m - 1)	/* count off '-' (and '\0' already) chars */
 				);

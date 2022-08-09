@@ -340,9 +340,8 @@ void writepid(const char *name)
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
 		snprintf(fn, sizeof(fn), "%s", name);
-	else {
+	else
 		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
-	}
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
@@ -699,6 +698,7 @@ const char * altpidpath(void)
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
+	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
 	return dflt_statepath();
 #endif
 }
@@ -1037,7 +1037,12 @@ void *xmalloc(size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
-	memset(p,0,size);
+
+#ifdef WIN32
+	/* FIXME: This is what (x)calloc() is for! */
+	memset(p, 0, size);
+#endif
+
 	return p;
 }
 
@@ -1047,7 +1052,12 @@ void *xcalloc(size_t number, size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
-	memset(p,0,size*number);
+
+#ifdef WIN32
+	/* FIXME: calloc() above should have initialized this already! */
+	memset(p, 0, size * number);
+#endif
+
 	return p;
 }
 
@@ -1150,6 +1160,7 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
 	NUT_UNUSED_VARIABLE(buflen);
 	NUT_UNUSED_VARIABLE(d_sec);
 	NUT_UNUSED_VARIABLE(d_usec);
+	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
 	return 0;
 }
 #endif

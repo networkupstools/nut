@@ -51,6 +51,7 @@
 	#include <sslerr.h>
 	#include <sslproto.h>
 #endif /* WITH_NSS */
+
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
@@ -693,7 +694,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%" PRIiSIZE "", ret);
+	upsdebugx(5, "ssl_write ret=%" PRIiSIZE, ret);
 
 	return ret;
 }

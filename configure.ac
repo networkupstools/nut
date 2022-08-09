@@ -636,7 +636,11 @@ printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
 ])
 AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
     [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
-    [AC_MSG_WARN([Required C library routine inet_ntop() not found])]
+    [AC_MSG_WARN([Required C library routine inet_ntop() not found])
+     AS_CASE([${target_os}],
+	     [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+	     )
+    ]
     )
 
 dnl ----------------------------------------------------------------------

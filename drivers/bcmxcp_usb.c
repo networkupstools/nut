@@ -244,7 +244,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 
 		/* Check data length byte (remove the header length) */
 		length = my_buf[2];
-		upsdebugx(3, "get_answer: data length = %" PRIuSIZE "", length);
+		upsdebugx(3, "get_answer: data length = %" PRIuSIZE, length);
 		if (bytes_read < (length + PW_HEADER_SIZE)) {
 			if (need_data < 0) --need_data; /* count zerro byte too */
 			need_data += length + 1; /* packet lenght + checksum */
@@ -306,7 +306,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		else if (tail == 0)
 			my_buf = &buf[0];
 		else { /* if (tail < 0) */
-			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %" PRIiSIZE "", tail);
+			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %" PRIiSIZE, tail);
 			return -1;
 		}
 

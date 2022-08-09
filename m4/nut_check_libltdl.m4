@@ -43,7 +43,8 @@ if test -z "${nut_have_libltdl_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
-	AC_SEARCH_LIBS(lt_dlinit, ltdl, [], [nut_have_libltdl=no])
+	dnl ltdl-number may help find it for MingW DLLs naming
+	AC_SEARCH_LIBS(lt_dlinit, ltdl ltdl-7, [], [nut_have_libltdl=no])
 
 	if test "${nut_have_libltdl}" = "yes"; then
 		AC_DEFINE(HAVE_LIBLTDL, 1, [Define to enable libltdl support])

@@ -365,7 +365,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE "", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE, __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -519,7 +519,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE "",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE,
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "

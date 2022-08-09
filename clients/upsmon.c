@@ -84,6 +84,8 @@ static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
 static	int	userfsd = 0, pipefd[2];
+	/* Should we run "all in one" (e.g. as root) or split
+	 * into two upsmon processes for some more security? */
 #ifndef WIN32
 static	int	use_pipe = 1;
 #else
@@ -2039,18 +2041,16 @@ static void runparent(int fd)
 	int	sret;
 	char	ch;
 
-#ifndef WIN32
 	/* handling signals is the child's job */
-# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wstrict-prototypes"
-# endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
-# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-#  pragma GCC diagnostic pop
-# endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
 #endif
 
 	ret = read(fd, &ch, 1);
@@ -2259,13 +2259,11 @@ int main(int argc, char *argv[])
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
-	int cmd = 0;
+	int	cmd = 0;
 #else
 	const char * cmd = NULL;
 	DWORD ret;
-#endif
 
-#ifdef WIN32
 	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
 	int		maxhandle = 0;
 	pipe_conn_t	*conn;

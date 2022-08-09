@@ -157,11 +157,7 @@ static void sendping(upstype_t *ups)
 	const char	*cmd = "PING\n";
 	size_t	cmdlen = strlen(cmd);
 
-#ifndef WIN32
-	if ((!ups) || (ups->sock_fd < 0)) {
-#else
-	if ((!ups) || (ups->sock_fd == INVALID_HANDLE_VALUE)) {
-#endif
+	if ((!ups) || !VALID_FD(ups->sock_fd)) {
 		return;
 	}
 
@@ -305,6 +301,8 @@ HANDLE sstate_connect(upstype_t *ups)
 	ReadFile(fd,ups->buf,sizeof(ups->buf)-1,NULL,&(ups->read_overlapped)); /*-1 to be sure to have a trailling 0 */
 #endif
 
+	/* sstate_connect() continued for both platforms: */
+
 	pconf_init(&ups->sock_ctx, NULL);
 
 	ups->dumpdone = 0;
@@ -323,11 +321,7 @@ HANDLE sstate_connect(upstype_t *ups)
 
 void sstate_disconnect(upstype_t *ups)
 {
-#ifndef WIN32
-	if ((!ups) || (ups->sock_fd < 0)) {
-#else
-	if ((!ups) || (ups->sock_fd == INVALID_HANDLE_VALUE)) {
-#endif
+	if ((!ups) || !VALID_FD(ups->sock_fd)) {
 		return;
 	}
 
@@ -372,10 +366,11 @@ void sstate_readline(upstype_t *ups)
 		}
 	}
 #else
-
 	if ((!ups) || (ups->sock_fd == INVALID_HANDLE_VALUE)) {
 		return;
 	}
+
+	/* FIXME? I do not see either buf filled below */
 	char *buf = ups->buf;
 	DWORD bytesRead;
 	GetOverlappedResult(ups->sock_fd, &ups->read_overlapped, &bytesRead, FALSE);
@@ -448,11 +443,7 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-#ifndef WIN32
-	if (ups->sock_fd < 0) {
-#else
-	if (ups->sock_fd == INVALID_HANDLE_VALUE) {
-#endif
+	if ((!ups) || !VALID_FD(ups->sock_fd)) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", ups->name);
 		return 1;	/* dead */
 	}
@@ -500,11 +491,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	ssize_t	ret;
 	size_t	buflen;
 
-#ifndef WIN32
-	if ((!ups) ||(ups->sock_fd < 0)) {
-#else
-	if ((!ups) ||(ups->sock_fd == INVALID_HANDLE_VALUE)) {
-#endif
+	if ((!ups) || !VALID_FD(ups->sock_fd)) {
 		return 0;	/* failed */
 	}
 

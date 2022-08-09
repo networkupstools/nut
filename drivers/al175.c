@@ -891,7 +891,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 
 	reply_head.begin -= 1;  /* restore STX */
 
-	upsdebugx(4, "\t\t--> addr: 0x%" PRIxSIZE "  len: 0x%" PRIxSIZE "", io->addr, io->len);
+	upsdebugx(4, "\t\t--> addr: 0x%" PRIxSIZE "  len: 0x%" PRIxSIZE, io->addr, io->len);
 
 	/* 4:  allocate space for full reply and copy header there */
 	reply = raw_xmalloc(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
