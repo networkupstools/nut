@@ -243,11 +243,16 @@ zlib
 
 Needed for libpng at least, but likely many others too.
 
+[NOTE]
+======
 On recent Debian/Ubuntu systems, you might have luck with:
+------
+:; sudo apt-get install libz-mingw-w64-dev
+------
+======
 
-	:; sudo apt-get install libz-mingw-w64-dev
-
-On any system, you can build from source:
+On any system, you can build from source; however the current version has
+a nuance to address for mingw builds:
 
 	:; ( cd "$DLDIR" && wget -c -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz )
 	:; cd "$WSDIR"
