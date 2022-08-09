@@ -1340,19 +1340,48 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	return libname_path;
 }
 
-char * get_libname(const char* base_libname)
+static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
 {
-	int index = 0;
+	/* Note: this method iterates specified pathset,
+	 * so increments the counter by reference */
 	char *libname_path = NULL;
-	size_t base_libname_length = strlen(base_libname);
+	char *onedir = NULL;
 
-	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
-	{
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], index);
+	if (!pathset || *pathset == '\0')
+		return NULL;
+
+	/* First call to tokenization passes the string, others pass NULL */
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
 		if (libname_path != NULL)
 			break;
 	}
 
+	return libname_path;
+}
+
+char * get_libname(const char* base_libname)
+{
+	int index = 0, counter = 0;
+	char *libname_path = NULL;
+	size_t base_libname_length = strlen(base_libname);
+
+	/* Normally these envvars should not be set, but if the user insists,
+	 * we should prefer the override... */
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH", base_libname);
+		goto found;
+	}
+
+	for (index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], counter++);
+		if (libname_path != NULL)
+			break;
+	}
+
+found:
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }
