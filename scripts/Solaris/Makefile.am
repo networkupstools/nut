@@ -35,17 +35,17 @@ endif
 if WITH_SOLARIS_SMF
 solarisinitscriptdir = @datadir@/solaris-init
 solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
-else
+else !WITH_SOLARIS_SMF
 if WITH_SOLARIS_PKG_IPS
 solarisinitscriptdir = @datadir@/solaris-init
 solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
-else
+else !WITH_SOLARIS_PKG_IPS
 if WITH_SOLARIS_PKG_SVR4
 solarisinitscriptdir = @datadir@/solaris-init
 solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
 endif WITH_SOLARIS_PKG_SVR4
-endif WITH_SOLARIS_PKG_IPS
-endif WITH_SOLARIS_SMF
+endif !WITH_SOLARIS_PKG_IPS
+endif !WITH_SOLARIS_SMF
 
 EXTRA_DIST += reset-ups-usb-solaris.sh.sample
 
