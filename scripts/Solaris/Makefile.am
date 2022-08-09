@@ -29,8 +29,24 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
+# FIXME: This is very clumsy - find a better way...
+# maybe move this logic to configure so *it* decides if we are
+# on the right platform to install anything here?
+if WITH_SOLARIS_SMF
 solarisinitscriptdir = @datadir@/solaris-init
 solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+else
+if WITH_SOLARIS_PKG_IPS
+solarisinitscriptdir = @datadir@/solaris-init
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+else
+if WITH_SOLARIS_PKG_SVR4
+solarisinitscriptdir = @datadir@/solaris-init
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+endif WITH_SOLARIS_PKG_SVR4
+endif WITH_SOLARIS_PKG_IPS
+endif WITH_SOLARIS_SMF
+
 EXTRA_DIST += reset-ups-usb-solaris.sh.sample
 
 SOLARIS_PACKAGE_TARGETS =
