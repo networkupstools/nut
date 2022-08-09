@@ -529,24 +529,21 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-	const char * path;
+	const char *path = getenv("NUT_CONFPATH");
 
-	if ((path = getenv("NUT_CONFPATH")) == NULL)
-		path = CONFPATH;
-
-	return path;
+	/* We assume, here and elsewhere, that
+	 * at least CONFPATH is always defined */
+	return (path != NULL && *path != '\0') ? path : CONFPATH;
 }
 
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-	const char * path;
+	const char *path = getenv("NUT_STATEPATH");
 
-	path = getenv("NUT_STATEPATH");
-	if ( (path == NULL) || (*path == '\0') )
-		path = STATEPATH;
-
-	return path;
+	/* We assume, here and elsewhere, that
+	 * at least STATEPATH is always defined */
+	return (path != NULL && *path != '\0') ? path : STATEPATH;
 }
 
 /* Return the alternate path for pid files, for processes running as non-root
@@ -570,7 +567,8 @@ const char * altpidpath(void)
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-/* We assume, here and elsewhere, that at least STATEPATH is always defined */
+	/* We assume, here and elsewhere, that
+	 * at least STATEPATH is always defined */
 	return STATEPATH;
 #endif
 }
