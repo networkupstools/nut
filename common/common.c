@@ -159,7 +159,7 @@ void open_syslog(const char *progname)
 		setlogmask(LOG_UPTO(LOG_DEBUG));	/* debug-level messages */
 		break;
 	default:
-                fatalx(EXIT_FAILURE, "Invalid log level threshold");
+		fatalx(EXIT_FAILURE, "Invalid log level threshold");
 #else
 	case 0:
 		break;
