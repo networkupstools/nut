@@ -488,6 +488,13 @@ this, instructions below differ from others by setting up an out-of-tree build
 instead of a tarball download. Eventually it would hopefully suffice to fetch
 https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
 
+NOTE: Ability to `make docs` here relies on presence of `xmlto` program.
+In NUT CI workers prepared according to `docs/config-prereqs.txt` this should
+be among dependencies for `asciidoc`; beware that with prerequisites it has
+quite a large installation footprint. Alternately check PR #69, or consult
+the makefiles for current `install` target definition to run its job without
+`install-docs` part (example posted below).
+
 	:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
 	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
 	:; cd "$WSDIR"
@@ -496,7 +503,8 @@ https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
 	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
 	    --enable-shared --with-ssl=openssl
 	:; make all docs
-	:; sudo make install
+	:; sudo make install \
+	   || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
 Other requirements
