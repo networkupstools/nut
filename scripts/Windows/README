@@ -308,9 +308,6 @@ through...
 	:; sudo make install
 
 
-/////////////////////////////////////////////////////////////////////////////
-// for fontconfig
-
 xz (liblzma)
 ^^^^^^^^^^^^
 
@@ -328,7 +325,11 @@ Needed for libxml2.
 libxml2
 ^^^^^^^
 
-Needed for libneon and fontconfig.
+Needed for libneon.
+
+/////////////////////////////////////////////////////////////////////////////
+// ...and for fontconfig
+/////////////////////////////////////////////////////////////////////////////
 
 	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz )
 	:; cd "$WSDIR"
@@ -337,9 +338,6 @@ Needed for libneon and fontconfig.
 	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
 	:; make
 	:; sudo make install
-
-// for fontconfig
-/////////////////////////////////////////////////////////////////////////////
 
 
 gd (cgi)
