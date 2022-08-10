@@ -1138,6 +1138,20 @@ char * get_libname(const char* base_libname)
 
 	/* Normally these envvars should not be set, but if the user insists,
 	 * we should prefer the override... */
+#ifdef BUILD_64
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_64"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_64", base_libname);
+		goto found;
+	}
+#else
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_32"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_32", base_libname);
+		goto found;
+	}
+#endif
+
 	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH"), &counter);
 	if (libname_path != NULL) {
 		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH", base_libname);
