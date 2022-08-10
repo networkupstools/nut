@@ -329,6 +329,19 @@ use this feature in practice.
 
 * zlib: see above
 
+* iconv:
++
+Seems to be directly used by `libgd` (at least queried in its `configure` script):
+
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
+	:; cd libiconv-1.17
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
 * freetype:
 +
 NOTE: For some reason it won't build in an Ubuntu 20.04 running under WSL2 --
@@ -343,6 +356,7 @@ and/or of the system antivirus interaction?..
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG --without-brotli
 	:; make
 	:; sudo make install
+
 
 /////////////////////////////////////////////////////////////////////////////
 WIP - fontconfig not usable yet due to ICU failing to cross-build
@@ -362,15 +376,6 @@ Maybe an older version of either would fare better?..
 	:; make
 	:; sudo make install
 
-* iconv:
-
-	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
-	:; cd libiconv-1.17
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
 
 * ICU:
 
@@ -397,6 +402,7 @@ Set aside a good part of an hour to get this built:
 	:; make
 	:; sudo make install
 
+
 * fontconfig:
 
 	:; ( cd "$DLDIR" && wget -c https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz )
@@ -409,6 +415,7 @@ Set aside a good part of an hour to get this built:
 
 // for fontconfig
 /////////////////////////////////////////////////////////////////////////////
+
 
 * libpng:
 
