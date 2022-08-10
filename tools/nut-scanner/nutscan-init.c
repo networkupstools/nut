@@ -178,7 +178,7 @@ void nutscan_init(void)
 		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
   #ifdef WIN32
 		if (!nutscan_avail_usb) {
-			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-0-1-4" SOEXT);
 		}
   #endif
  #endif
