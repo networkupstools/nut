@@ -127,21 +127,29 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	make 1>/dev/null || exit
 	make install || exit
 
+	# Per docs, Windows loads DLLs from EXE file's dir or some
+	# system locations or finally PATH, so unless the caller set
+	# the latter, we can not load the pre-linked DLLs from ../lib:
+	#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
+
 	# Be sure upsmon can run even if at cost of some duplication
 	# (maybe even do "cp -pf" if some system dislikes "ln"); also
 	# on a modern Windows one could go to their installed "sbin" to
 	#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
-	###[nut#1482]###(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
 
 	# Cover dependencies for nut-scanner (not pre-linked)
 	# Note: lib*snmp*.dll not listed below, it is
 	# statically linked into binaries that use it
-	(cd $INSTALL_DIR/lib && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-	(cd $INSTALL_DIR/lib && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
+	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
 
 	# Steam-roll over all executables/libs we have here and copy
 	# over resolved dependencies from the cross-build environment:
-	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./lib/ ; done ; } ) || true
+	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+
+	# Hardlink libraries for sbin (alternative: all bins in one dir):
+	(cd $INSTALL_DIR/sbin && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	cd ..
 else
 	echo "Usage:"
