@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2975 utf-8
+personal_ws-1.1 en 2984 utf-8
 AAS
 ABI
 ACFAIL
@@ -445,10 +445,10 @@ Harnhammar
 Havard
 Heavner
 Hessenflow
-Hirschler
 HiBox
 HiFreq
 HighBatt
+Hirschler
 Hlavinka
 Holger
 Homebrew
@@ -925,7 +925,6 @@ PwrOut
 PyGTK
 PyNUT
 PyNUTClient
-QinHeng
 QBDR
 QBT
 QBV
@@ -952,6 +951,7 @@ QSKTn
 QSKn
 QVFW
 QWS
+QinHeng
 Quette
 RAIDiator
 RBWARNTIME
@@ -2077,6 +2077,7 @@ libssl
 libtool
 libupsclient
 libusb
+libusb's
 libusbugen
 libusbx
 libvirt
@@ -2119,6 +2120,7 @@ lowvoltsout
 lposix
 lr
 lsusb
+lt
 ltdl
 lu
 lua
@@ -2774,11 +2776,11 @@ tx
 txg
 txt
 typedef
-uart
 uA
 uD
 uM
 ua
+uart
 ubuntu
 uc
 ucb
