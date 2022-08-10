@@ -421,12 +421,18 @@ Set aside a good part of an hour to get this built:
 	:; sudo make install
 
 * libgd itself:
++
+TODO: This works for 64-bit builds, however 32-bit ones are burdened with `@8`
+or `@12` suffixes to symbol names, and subsequent link checks in NUT fail to
+find `libgd` as usable -- so CGI is not built in 32-bit mode. According to
+such context, this must be something about STDCALL and/or "extern C"...
 
 	:; ( cd "$DLDIR" && wget -c https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz )
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
 	:; cd libgd-2.3.3
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    --with-png --with-freetype \
 	    --without-tiff --without-jpeg --without-xpm \
 	    --without-fontconfig
 	# Note: currently we configure away almost all capabilities,
