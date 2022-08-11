@@ -238,7 +238,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
-			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, SOCK_OPT_CAST &sockopt_on,
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST,
+				SOCK_OPT_CAST &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,
