@@ -962,4 +962,3 @@ static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
   printf ("%d tests failed out of %d.\n", fail, num);
 }
 #endif /* SNPRINTF_TEST */
-
