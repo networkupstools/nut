@@ -458,7 +458,7 @@ static TYPE_FD belkin_std_open_tty(const char *device) {
 
 	/* open the device */
 	fd = open(device, O_RDWR | O_NONBLOCK);
-	if (fd == ERROR_FD) {
+	if (!VALID_FD(fd)) {
 		return ERROR_FD;
 	}
 
