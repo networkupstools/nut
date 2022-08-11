@@ -3196,7 +3196,6 @@ Forcing "-Wno-format" into warnings options.
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
-
         CFLAGS="${CFLAGS} -Werror"
         CXXFLAGS="${CXXFLAGS} -Werror"
         ],
