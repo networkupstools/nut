@@ -377,8 +377,6 @@ void sstate_readline(upstype_t *ups)
 	ret = bytesRead;
 #endif
 
-
-
 	for (i = 0; i < ret; i++) {
 
 		switch (pconf_char(&ups->sock_ctx, buf[i]))
