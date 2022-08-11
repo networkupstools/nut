@@ -295,8 +295,8 @@ static void setuptcp(stype_t *server)
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
-
 #endif
+
 		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
@@ -617,7 +617,7 @@ static void client_connect(stype_t *server)
 	}
 
 	lastclient = client;
-*/
+ */
 	upsdebugx(2, "Connect from %s", client->addr);
 }
 
