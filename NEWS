@@ -83,6 +83,16 @@ https://github.com/networkupstools/nut/milestone/8
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 
+ - Code which resolves full paths to libraries should now consider the common
+   environment variable `LD_LIBRARY_PATH` as a preferred possible override
+   to built-in paths (note that most operating systems advise against setting
+   this variable unless troubleshooting, although other systems rely on it)
+   [#805]
+
+ - the nut-scanner program was updated to fall back to loading unresolved
+   library filenames, hoping that `lt_dlopen()` implementation on the current
+   platform would find library files better [#805]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 

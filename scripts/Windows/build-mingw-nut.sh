@@ -66,6 +66,36 @@ esac
 
 cd $BUILD_DIR || exit
 
+REGEX_WS="`printf '[\t ]'`"
+REGEX_NOT_WS="`printf '[^\t ]'`"
+dllldd() {
+  # Traverse an EXE or DLL file for DLLs it needs directly,
+  # which are provided in the cross-build env (not system ones).
+  # Assume no whitespaces in paths and filenames of interest.
+
+  # if `ldd` handles Windows PE, we are lucky:
+  #         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
+  OUT="`ldd "$1" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,"`" \
+  && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
+
+  # Otherwise try objdump
+  for OD in objdump "$ARCH-objdump" ; do
+    (command -v "$OD" >/dev/null 2>/dev/null) || continue
+    OUT="`$OD -x "$1" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | while read F ; do ls -1 "/usr/$ARCH/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
+    && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
+  done
+
+  return 1
+}
+
+dlllddrec() (
+  # Recurse to find the (mingw-provided) tree of dependencies
+  dllldd "$1" | while read D ; do
+    echo "$D"
+    dlllddrec "$D"
+  done | sort | uniq
+)
+
 if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
 	ARCH="x86_64-w64-mingw32"
 	if [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
@@ -78,6 +108,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# FIXME: find something more generic
 	BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
 	export CC="$ARCH-gcc"
+	export CXX="$ARCH-g++"
 	export PATH="/usr/$ARCH/bin:$PATH"
 
 	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
@@ -96,15 +127,30 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	|| exit
 	make 1>/dev/null || exit
 	make install || exit
+
+	# Per docs, Windows loads DLLs from EXE file's dir or some
+	# system locations or finally PATH, so unless the caller set
+	# the latter, we can not load the pre-linked DLLs from ../lib:
+	#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
+
 	# Be sure upsmon can run even if at cost of some duplication
 	# (maybe even do "cp -pf" if some system dislikes "ln"); also
 	# on a modern Windows one could go to their installed "sbin" to
 	#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
 	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+
+	# Cover dependencies for nut-scanner (not pre-linked)
 	# Note: lib*snmp*.dll not listed below, it is
 	# statically linked into binaries that use it
 	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
 	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+
+	# Steam-roll over all executables/libs we have here and copy
+	# over resolved dependencies from the cross-build environment:
+	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+
+	# Hardlink libraries for sbin (alternative: all bins in one dir):
+	(cd $INSTALL_DIR/sbin && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	cd ..
 else
 	echo "Usage:"

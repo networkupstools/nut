@@ -48,7 +48,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_stdint.h"
-#include "timehead.h"
+#include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
 #define DRIVER_VERSION	"0.03"

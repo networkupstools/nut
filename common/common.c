@@ -159,7 +159,7 @@ void open_syslog(const char *progname)
 		setlogmask(LOG_UPTO(LOG_DEBUG));	/* debug-level messages */
 		break;
 	default:
-                fatalx(EXIT_FAILURE, "Invalid log level threshold");
+		fatalx(EXIT_FAILURE, "Invalid log level threshold");
 #else
 	case 0:
 		break;
@@ -598,6 +598,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 
 	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
@@ -646,12 +647,16 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 const char * confpath(void)
 {
 	const char *path = getenv("NUT_CONFPATH");
+
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
 		path = getfullpath(PATH_ETC);
 	}
 #endif
+
+	/* We assume, here and elsewhere, that
+	 * at least CONFPATH is always defined */
 	return (path != NULL && *path != '\0') ? path : CONFPATH;
 }
 
@@ -659,6 +664,7 @@ const char * confpath(void)
 const char * dflt_statepath(void)
 {
 	const char *path = getenv("NUT_STATEPATH");
+
 #ifdef WIN32
 	if (path == NULL) {
 		/* fall back to built-in pathname relative to binary/workdir */
@@ -684,6 +690,7 @@ const char * altpidpath(void)
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+
 #ifdef WIN32
 		if (path == NULL) {
 			/* fall back to built-in pathname relative to binary/workdir */
@@ -715,6 +722,7 @@ void check_unix_socket_filename(const char *fn) {
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
 #endif
+
 	if (len < max)
 		return;
 
@@ -1290,7 +1298,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 					libname_path = xstrdup(current_test_path);
 				}
 			}
-#ifdef WIN32
+
+# ifdef WIN32
 			if (!libname_path) {
 				for (char *p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
 					if (*p == '/') *p = '\\';
@@ -1315,8 +1324,9 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 					}
 				}
 			}
-#endif /* WIN32 */
-#endif
+# endif /* WIN32 */
+#endif  /* HAVE_REALPATH */
+
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
 				(libname_path!=NULL)?libname_path:"NULL");
@@ -1330,19 +1340,90 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	return libname_path;
 }
 
-char * get_libname(const char* base_libname)
+static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
 {
-	int index = 0;
+	/* Note: this method iterates specified pathset,
+	 * so increments the counter by reference */
 	char *libname_path = NULL;
-	size_t base_libname_length = strlen(base_libname);
+	char *onedir = NULL;
 
-	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
-	{
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], index);
+	if (!pathset || *pathset == '\0')
+		return NULL;
+
+	/* First call to tokenization passes the string, others pass NULL */
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
 		if (libname_path != NULL)
 			break;
 	}
 
+#ifdef WIN32
+	/* Note: with mingw, the ":" separator above might have been resolvable */
+	if (!libname_path) {
+		onedir = NULL; /* probably is NULL already, but better ensure this */
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+			if (libname_path != NULL)
+				break;
+		}
+	}
+#endif  /* WIN32 */
+
+	return libname_path;
+}
+
+char * get_libname(const char* base_libname)
+{
+	int index = 0, counter = 0;
+	char *libname_path = NULL;
+	size_t base_libname_length = strlen(base_libname);
+
+	/* Normally these envvars should not be set, but if the user insists,
+	 * we should prefer the override... */
+#ifdef BUILD_64
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_64"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_64", base_libname);
+		goto found;
+	}
+#else
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_32"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_32", base_libname);
+		goto found;
+	}
+#endif
+
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH", base_libname);
+		goto found;
+	}
+
+	for (index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], counter++);
+		if (libname_path != NULL)
+			break;
+	}
+
+#ifdef WIN32
+	/* TODO: Need a reliable cross-platform way to get the full path
+	 * of current executable -- possibly stash it when starting NUT
+	 * programs... consider some way for `nut-scanner` too */
+# ifdef PATH_LIB
+	if (!libname_path) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
+	}
+# endif
+
+	if (!libname_path) {
+		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+	}
+#endif  /* WIN32 */
+
+found:
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }

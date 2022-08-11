@@ -173,6 +173,7 @@ You can compile it  using:
 	:; make
 	:; sudo make install
 
+
 libtool (libltdl)
 ^^^^^^^^^^^^^^^^^
 
@@ -183,6 +184,7 @@ libtool (libltdl)
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
+
 
 libusb
 ^^^^^^
@@ -207,6 +209,259 @@ libusb
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
+
+
+zlib
+^^^^
+
+Needed for libpng at least, but likely many others too.
+
+[NOTE]
+======
+On recent Debian/Ubuntu systems, you might have luck with:
+------
+:; sudo apt-get install libz-mingw-w64-dev
+------
+======
+
+On any system, you can build from source; however the current version has
+a nuance to address for mingw builds:
+
+	:; ( cd "$DLDIR" && wget -c -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/zlib-1.2.12.tar.gz
+	:; cd zlib-1.2.12
+
+	# Edit the `configure` script (not autotools generated) to
+	# neuter the MINGW `leave 1` line:
+	  MINGW* | mingw*)
+	# temporary bypass
+	        rm -f $test.[co] $test $test$shared_ext
+	        echo "Please use win32/Makefile.gcc instead." | tee -a configure.log
+	-       leave 1
+	+       ###leave 1
+	        LDSHARED=${LDSHARED-"$cc -shared"}
+	        LDSHAREDLIBC=""
+	        EXE='.exe' ;;
+
+	:; CHOST="$ARCH" ./configure --prefix="$PREFIX"
+	:; make
+	:; sudo make install
+
+
+openssl
+^^^^^^^
+
+OpenSSL is an optional dependency for NUT itself (it or Mozilla NSS can
+be used to protect the networking communications), and for libneon below
+(OpenSSL or GnuTLS).
+
+Note the non-standard `config` script bundled along, and hoops to jump
+through...
+
+	:; ( cd "$DLDIR" && wget -c https://www.openssl.org/source/openssl-1.1.1q.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/openssl-1.1.1q.tar.gz
+	:; cd openssl-1.1.1q
+	# Build options partially lifted from OBS packaging, see:
+	# https://build.opensuse.org/package/view_file/windows:mingw:win32/mingw32-openssl-1_1/mingw32-openssl-1_1.spec?expand=1
+	:; ( case "$ARCH" in
+	     *x86_64*) SYSTEM=MINGW64 ;;
+	     *i?86*) SYSTEM=MINGW32 ;;
+	     *) SYSTEM=MINGW ;;
+	     esac
+	     export SYSTEM
+	     ./config \
+	        no-idea enable-rfc3779 zlib shared \
+	        -fno-common \
+	        --prefix="$PREFIX" --cross-compile-prefix="/usr/bin/$ARCH-" \
+	        -DPURIFY -D__USE_GNU
+	   )
+	:; make
+	:; sudo make install
+
+
+xz (liblzma)
+^^^^^^^^^^^^
+
+Needed for libxml2.
+
+	:; ( cd "$DLDIR" && wget -c https://tukaani.org/xz/xz-5.2.5.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/xz-5.2.5.tar.gz
+	:; cd xz-5.2.5
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+libxml2
+^^^^^^^
+
+Needed for libneon.
+
+/////////////////////////////////////////////////////////////////////////////
+// ...and for fontconfig
+/////////////////////////////////////////////////////////////////////////////
+
+	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
+	:; cd libxml2-v2.9.14
+	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
+	:; make
+	:; sudo make install
+
+
+gd (cgi)
+^^^^^^^^
+
+Note that for the general-case build libgd supports a huge dependency tree,
+so for the NUT purposes we are going for as little as possible.
+
+Initially the purpose was to have libgd installed to build/link against for
+the Windows target. Subsequently more dependencies were documented, but still
+further refinement may be needed to have it actually usable for CGI web pages
+rendering.
+
+Finally note that end-users would have to install a CGI-capable web server to
+use this feature in practice.
+
+* zlib: see above
+
+* iconv:
++
+Seems to be directly used by `libgd` (at least queried in its `configure` script):
+
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
+	:; cd libiconv-1.17
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+* freetype:
++
+NOTE: For some reason it won't build in an Ubuntu 20.04 running under WSL2 --
+blocks running an `apinames.exe` program that it has just built. May be a
+problem of the emulation layer (as it calls the EXE via `/tools/init`),
+and/or of the system antivirus interaction?..
+
+	:; ( cd "$DLDIR" && wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/freetype-2.12.1.tar.gz
+	:; cd freetype-2.12.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --without-brotli
+	:; make
+	:; sudo make install
+
+
+/////////////////////////////////////////////////////////////////////////////
+WIP - fontconfig not usable yet due to ICU failing to cross-build
+Maybe an older version of either would fare better?..
+
+* gperf is needed by fontconfig build routine as a tool usable on the build
+  system, so a packaged install should suffice, e.g. `apt-get install gperf`.
+  Otherwise, build one from source (and note that this may be needed e.g.
+  for native builds on Windows, but not "just" for using a cross-binary that
+  the build host can generate but not run natively).
+
+	:; ( cd "$DLDIR" && wget -c http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/gperf-3.1.tar.gz
+	:; cd gperf-3.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+* ICU:
+
+For a cross-build of ICU, you should first build and install a copy
+for the host system, then use it as a resource for the final build.
+Set aside a good part of an hour to get this built:
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz )
+
+	# This one is built for native host architecture and provides
+	# some resources to ARCH builds later on:
+	:; cd "$DLDIR"
+	:; tar xzf icu4c-71_1-src.tgz
+	:; rm -rf icu-native || true
+	:; mv icu icu-native   # note, no version in the pathname
+	:; cd icu-native/source
+	:; ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
+	:; make
+
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/icu4c-71_1-src.tgz
+	:; cd icu/source
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --with-cross-build="$DLDIR"/icu-native/source
+	:; make
+	:; sudo make install
+
+
+* fontconfig:
+
+	:; ( cd "$DLDIR" && wget -c https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/fontconfig-2.14.0.tar.gz
+	:; cd fontconfig-2.14.0/
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-libxml2
+	:; make
+	:; sudo make install
+
+// for fontconfig
+/////////////////////////////////////////////////////////////////////////////
+
+
+* libpng:
+
+	:; ( cd "$DLDIR" && wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libpng-1.6.37.tar.gz
+	:; cd libpng-1.6.37
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+* libgd itself:
++
+TODO: This works for 64-bit builds, however 32-bit ones are burdened with `@8`
+or `@12` suffixes to symbol names, and subsequent link checks in NUT fail to
+find `libgd` as usable -- so CGI is not built in 32-bit mode. According to
+such context, this must be something about STDCALL and/or "extern C"...
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
+	:; cd libgd-2.3.3
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    --with-png --with-freetype \
+	    --without-tiff --without-jpeg --without-xpm \
+	    --without-fontconfig
+	# Note: currently we configure away almost all capabilities,
+	# to match the dependency binaries (and/or headers) present
+	# on the build system. Review resulting build recipes that
+	# they DO NOT refer to system /usr/include locations!
+	# In practice we would likely need the fontconfig pieces to work.
+	:; make
+	:; sudo make install
+
+
+libmodbus
+^^^^^^^^^
+
+	:; ( cd "$DLDIR" && wget -c https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libmodbus-3.1.7.tar.gz
+	:; cd libmodbus-3.1.7
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
 
 net-snmp
 ^^^^^^^^
@@ -234,209 +489,6 @@ your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
 Builds can extract this info with `pkg-config --libs --static netsnmp`
 as NUT scenarios do (for mingw, if shared-linking attempt fails).
 
-zlib
-^^^^
-
-Needed for libpng at least, but likely many others too.
-
-On recent Debian/Ubuntu systems, you might have luck with:
-
-	:; sudo apt-get install libz-mingw-w64-dev
-
-On any system, you can build from source:
-
-	:; ( cd "$DLDIR" && wget -c -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/zlib-1.2.12.tar.gz
-	:; cd zlib-1.2.12
-
-	# Edit the `configure` script (not autotools generated) to
-	# neuter the MINGW `leave 1` line:
-	  MINGW* | mingw*)
-	# temporary bypass
-	        rm -f $test.[co] $test $test$shared_ext
-	        echo "Please use win32/Makefile.gcc instead." | tee -a configure.log
-	-       leave 1
-	+       ###leave 1
-	        LDSHARED=${LDSHARED-"$cc -shared"}
-	        LDSHAREDLIBC=""
-	        EXE='.exe' ;;
-
-	:; CHOST="$ARCH" ./configure --prefix="$PREFIX"
-	:; make
-	:; sudo make install
-
-
-/////////////////////////////////////////////////////////////////////////////
-// for fontconfig
-
-xz (liblzma)
-^^^^^^^^^^^^
-
-Needed for libxml2.
-
-	:; ( cd "$DLDIR" && wget -c https://tukaani.org/xz/xz-5.2.5.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/xz-5.2.5.tar.gz
-	:; cd xz-5.2.5
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
-
-
-libxml2
-^^^^^^^
-
-Needed for libneon and fontconfig.
-
-	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
-	:; cd libxml2-v2.9.14
-	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
-	:; make
-	:; sudo make install
-
-// for fontconfig
-/////////////////////////////////////////////////////////////////////////////
-
-
-gd (cgi)
-^^^^^^^^
-
-Note that for the general-case build libgd supports a huge dependency tree,
-so for the NUT purposes we are going for as little as possible.
-
-Initially the purpose was to have libgd installed to build/link against for
-the Windows target. Subsequently more dependencies were documented, but still
-further refinement may be needed to have it actually usable for CGI web pages
-rendering.
-
-Finally note that end-users would have to install a CGI-capable web server to
-use this feature in practice.
-
-* zlib: see above
-
-* freetype:
-+
-NOTE: For some reason it won't build in an Ubuntu 20.04 running under WSL2 --
-blocks running an `apinames.exe` program that it has just built. May be a
-problem of the emulation layer (as it calls the EXE via `/tools/init`),
-and/or of the system antivirus interaction?..
-
-	:; ( cd "$DLDIR" && wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/freetype-2.12.1.tar.gz
-	:; cd freetype-2.12.1
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG --without-brotli
-	:; make
-	:; sudo make install
-
-/////////////////////////////////////////////////////////////////////////////
-WIP - fontconfig not usable yet due to ICU failing to cross-build
-Maybe an older version of either would fare better?..
-
-* gperf is needed by fontconfig build routine as a tool usable on the build
-  system, so a packaged install should suffice, e.g. `apt-get install gperf`.
-  Otherwise, build one from source (and note that this may be needed e.g.
-  for native builds on Windows, but not "just" for using a cross-binary that
-  the build host can generate but not run natively).
-
-	:; ( cd "$DLDIR" && wget -c http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/gperf-3.1.tar.gz
-	:; cd gperf-3.1
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
-
-* iconv:
-
-	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
-	:; cd libiconv-1.17
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
-
-* ICU:
-
-For a cross-build of ICU, you should first build and install a copy
-for the host system, then use it as a resource for the final build.
-Set aside a good part of an hour to get this built:
-
-	:; ( cd "$DLDIR" && wget -c https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz )
-
-	# This one is built for native host architecture and provides
-	# some resources to ARCH builds later on:
-	:; cd "$DLDIR"
-	:; tar xzf icu4c-71_1-src.tgz
-	:; rm -rf icu-native || true
-	:; mv icu icu-native   # note, no version in the pathname
-	:; cd icu-native/source
-	:; ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
-	:; make
-
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/icu4c-71_1-src.tgz
-	:; cd icu/source
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG --with-cross-build="$DLDIR"/icu-native/source
-	:; make
-	:; sudo make install
-
-* fontconfig:
-
-	:; ( cd "$DLDIR" && wget -c https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/fontconfig-2.14.0.tar.gz
-	:; cd fontconfig-2.14.0/
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-libxml2
-	:; make
-	:; sudo make install
-
-// for fontconfig
-/////////////////////////////////////////////////////////////////////////////
-
-* libpng:
-
-	:; ( cd "$DLDIR" && wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libpng-1.6.37.tar.gz
-	:; cd libpng-1.6.37
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
-
-* libgd itself:
-
-	:; ( cd "$DLDIR" && wget -c https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
-	:; cd libgd-2.3.3
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
-	    --without-tiff --without-jpeg --without-xpm \
-	    --without-fontconfig
-	# Note: currently we configure away almost all capabilities,
-	# to match the dependency binaries (and/or headers) present
-	# on the build system. Review resulting build recipes that
-	# they DO NOT refer to system /usr/include locations!
-	# In practice we would likely need the fontconfig pieces to work.
-	:; make
-	:; sudo make install
-
-
-libmodbus
-^^^^^^^^^
-
-	:; ( cd "$DLDIR" && wget -c https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz )
-	:; cd "$WSDIR"
-	:; tar xzf "$DLDIR"/libmodbus-3.1.7.tar.gz
-	:; cd libmodbus-3.1.7
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
-
 
 libneon
 ^^^^^^^
@@ -449,29 +501,62 @@ this, instructions below differ from others by setting up an out-of-tree build
 instead of a tarball download. Eventually it would hopefully suffice to fetch
 https://notroj.github.io/neon/neon-0.32.3.tar.gz or newer.
 
+NOTE: Ability to `make docs` here relies on presence of `xmlto` program.
+In NUT CI workers prepared according to `docs/config-prereqs.txt` this should
+be among dependencies for `asciidoc`; beware that with prerequisites it has
+quite a large installation footprint. Alternately check PR #69, or consult
+the makefiles for current `install` target definition to run its job without
+`install-docs` part (example posted below).
+
 	:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
 	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
 	:; cd "$WSDIR"
 	:; rm -rf neon-git ; mkdir neon-git
 	:; cd neon-git
-	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG --enable-shared
+	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
+	    --enable-shared --with-ssl=openssl
 	:; make all docs
-	:; sudo make install
+	:; sudo make install \
+	   || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-avahi, ipmi, ssl...
+avahi, ipmi, ssl with Mozilla NSS...
 
 * https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
 * https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
 * https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_79_RTM/src/nss-3.79-with-nspr-4.34.tar.gz
 
-Building NUT
-~~~~~~~~~~~~
 
-Use the following to compile NUT with:
+Cross-building NUT with MinGW in Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After preparing at least the required dependencies above, use one of
+the following methods to compile NUT as:
+
+* out-of-tree from git source (easier to iterate for development, so default):
+
+	(cd scripts/Windows/ && ./build-mingw-nut.sh all64)
++
+or, depending on the build environment(s) you have prepared,
++
+	(cd scripts/Windows/ && ./build-mingw-nut.sh all32)
++
+[NOTE]
+======
+This is also automated for common NUT CI build script, calling it like this:
+------
+# Try to guess bitness based on ARCH or CFLAGS:
+BUILD_TYPE=cross-windows-mingw ./ci_build.sh
+
+# Or specifically:
+BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh
+------
+======
+
 
 * an existing source tarball (can be fetched from NUT website):
 
@@ -480,9 +565,6 @@ Use the following to compile NUT with:
 	:; cd scripts/Windows/
 	:; ./build-mingw-nut.sh
 
-* out-of-tree from git source (easier to iterate for development, so default):
-
-	(cd scripts/Windows/ && ./build-mingw-nut.sh all64)
 
 * To (re-)build from scratch with a dist tarball, e.g. testing how a stable
 release would fare, starting from a git checkout, use this:

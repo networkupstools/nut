@@ -2109,7 +2109,7 @@ static void start_pipe(void)
 
 	/* prevent pipe leaking to NOTIFYCMD */
 	set_close_on_exec(pipefd[1]);
-#endif
+#endif	/* WIN32 */
 }
 
 static void delete_ups(utype_t *target)
@@ -2376,6 +2376,7 @@ int main(int argc, char *argv[])
 #else
 		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
 #endif
+		/* exit(EXIT_SUCCESS); */
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
