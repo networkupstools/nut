@@ -1421,6 +1421,15 @@ char * get_libname(const char* base_libname)
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
 	}
+#endif  /* WIN32 so far */
+
+#ifdef WIN32
+	/* Windows-specific: DLLs can be provided by common "PATH" envvar,
+	 * at lowest search priority though (after EXE dir, system, etc.) */
+	if (!libname_path) {
+		upsdebugx(2, "Looking for lib %s in PATH", base_libname);
+		libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("PATH"), &counter);
+	}
 #endif  /* WIN32 */
 
 found:
