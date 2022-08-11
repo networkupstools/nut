@@ -1091,11 +1091,17 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (ups->sock_fd < 0) {
-			upsdebugx(1, "%s: UPS [%s] is not currently connected",
+			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
+				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
-			upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
-				__func__, ups->name, ups->sock_fd);
+			if (ups->sock_fd < 0) {
+				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
+					__func__, ups->name, ups->sock_fd);
+			} else {
+				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+					__func__, ups->name, ups->sock_fd);
+			}
 			continue;
 		}
 
