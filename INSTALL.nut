@@ -351,6 +351,14 @@ Windows
 Windows binary package
 ^^^^^^^^^^^^^^^^^^^^^^
 
+NOTE: NUT binary package built for Windows platform was last issued for
+a much older codebase (using NUT v2.6.5 as a baseline). While the current
+state of the codebase you are looking at aims to refresh the effort of
+delivering NUT on Windows, the aim at the moment is to help developers
+build and modernize it after a decade of blissful slumber, and packages
+are not being regularly produced yet. Functionality of such builds varies
+a lot depending on build environment used.
+
 NUT binary package built for Windows platform comes in a `.msi` file.
 
 If you are using Windows 95, 98 or Me, you should install
