@@ -83,6 +83,7 @@ if test ! -d "${auglensdir}"; then
    fi
 fi
 
+LIBREGEX_LIBS=''
 dnl Disable Hotplug, DevD and udev support on Windows
 dnl (useful when cross-compiling)
 case "${target_os}" in
