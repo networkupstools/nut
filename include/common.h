@@ -93,10 +93,21 @@ extern "C" {
 
 /* porting stuff for WIN32, used by serial and SHUT codebases */
 #ifndef WIN32
-# define TYPE_FD_SER int
-# define ERROR_FD_SER (-1)
-# define VALID_FD(a) (a>0)
-#else
+/* Just match two groups defined for WIN32 */
+# define TYPE_FD int
+# define ERROR_FD (-1)
+# define VALID_FD(a) (a>=0)
+
+# define TYPE_FD_SER TYPE_FD
+# define ERROR_FD_SER ERROR_FD
+# define VALID_FD_SER(a) VALID_FD(a)
+#else /* WIN32 */
+/* Separate definitions of TYPE_FD, ERROR_FD, VALID_FD() macros
+ * for usual file descriptors vs. types for serial port work */
+# define TYPE_FD HANDLE
+# define ERROR_FD (INVALID_HANDLE_VALUE)
+# define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
+
 typedef struct serial_handler_s {
 	HANDLE handle;
 	OVERLAPPED io_status;
@@ -110,12 +121,16 @@ typedef struct serial_handler_s {
 
 # define TYPE_FD_SER serial_handler_t *
 # define ERROR_FD_SER (NULL)
-# define VALID_FD(a) (a!=NULL)
+# define VALID_FD_SER(a) (a!=NULL)
 
 /* difftime returns erroneous value so we use this macro */
 # undef difftime
 # define difftime(t1,t0) (double)(t1 - t0)
-#endif
+#endif /* WIN32 */
+
+/* Two uppercase letters are more readable than one exclamation */
+#define INVALID_FD_SER(a) (!VALID_FD_SER(a))
+#define INVALID_FD(a) (!VALID_FD(a))
 
 extern const char *UPS_VERSION;
 
