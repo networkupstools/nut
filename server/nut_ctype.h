@@ -48,7 +48,7 @@ extern "C" {
 /* client structure */
 typedef struct nut_ctype_s {
 	char	*addr;
-	int	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 	time_t	last_heard;
 	char	*loginups;
 	char	*password;

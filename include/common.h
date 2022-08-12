@@ -101,12 +101,24 @@ extern "C" {
 # define TYPE_FD_SER TYPE_FD
 # define ERROR_FD_SER ERROR_FD
 # define VALID_FD_SER(a) VALID_FD(a)
+
+# define TYPE_FD_SOCK TYPE_FD
+# define ERROR_FD_SOCK ERROR_FD
+# define VALID_FD_SOCK(a) VALID_FD(a)
 #else /* WIN32 */
 /* Separate definitions of TYPE_FD, ERROR_FD, VALID_FD() macros
  * for usual file descriptors vs. types for serial port work */
 # define TYPE_FD HANDLE
 # define ERROR_FD (INVALID_HANDLE_VALUE)
 # define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
+
+# ifndef INVALID_SOCKET
+#  define INVALID_SOCKET -1
+# endif
+
+# define TYPE_FD_SOCK SOCKET
+# define ERROR_FD_SOCK INVALID_SOCKET
+# define VALID_FD_SOCK(a) (a!=INVALID_SOCKET)
 
 typedef struct serial_handler_s {
 	HANDLE handle;
@@ -130,6 +142,7 @@ typedef struct serial_handler_s {
 
 /* Two uppercase letters are more readable than one exclamation */
 #define INVALID_FD_SER(a) (!VALID_FD_SER(a))
+#define INVALID_FD_SOCK(a) (!VALID_FD_SOCK(a))
 #define INVALID_FD(a) (!VALID_FD(a))
 
 extern const char *UPS_VERSION;

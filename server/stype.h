@@ -44,7 +44,7 @@ extern "C" {
 typedef struct stype_s {
 	char	*addr;
 	char	*port;
-	TYPE_FD	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 #ifdef WIN32
 	HANDLE  Event;
 #endif

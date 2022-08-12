@@ -233,7 +233,7 @@ void listen_add(const char *addr, const char *port)
 	server = xcalloc(1, sizeof(*server));
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
-	server->sock_fd = -1;
+	server->sock_fd = ERROR_FD_SOCK;
 	server->next = firstaddr;
 
 	firstaddr = server;
@@ -269,9 +269,9 @@ static void setuptcp(stype_t *server)
 	}
 
 	for (ai = res; ai; ai = ai->ai_next) {
-		int sock_fd;
+		TYPE_FD_SOCK sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 
-		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
+		if (INVALID_FD_SOCK(sock_fd)) {
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
@@ -321,7 +321,7 @@ static void setuptcp(stype_t *server)
 
 	/* leave up to the caller, server_load(), to fail silently if there is
 	 * no other valid LISTEN interface */
-	if (server->sock_fd < 0) {
+	if (INVALID_FD_SOCK(server->sock_fd)) {
 		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
@@ -701,7 +701,7 @@ void server_load(void)
 	}
 
 	/* check if we have at least 1 valid LISTEN interface */
-	if (firstaddr->sock_fd < 0) {
+	if (INVALID_FD_SOCK(firstaddr->sock_fd)) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
 	}
 }
@@ -714,7 +714,7 @@ void server_free(void)
 	for (server = firstaddr; server; server = snext) {
 		snext = server->next;
 
-		if (server->sock_fd != -1) {
+		if (VALID_FD_SOCK(server->sock_fd)) {
 			close(server->sock_fd);
 		}
 
@@ -1345,7 +1345,7 @@ static void mainloop(void)
 	/* scan through server sockets */
 	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
 
-		if (server->sock_fd < 0) {
+		if (INVALID_FD_SOCK(server->sock_fd)) {
 			continue;
 		}
 
