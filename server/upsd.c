@@ -480,7 +480,20 @@ void kick_login_clients(const char *upsname)
 /* make sure a UPS is sane - connected, with fresh data */
 int ups_available(const upstype_t *ups, nut_ctype_t *client)
 {
+	if (!ups) {
+		/* Should never happen, but handle this
+		 * just in case instead of segfaulting */
+		upsdebugx(1, "%s: ERROR, called with a NULL ups pointer", __func__);
+		send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
+		return 0;
+	}
+
+#ifdef WIN32
+	/* Note: in upstype_t we deal with "HANDLE" not "TYPE_FD"! */
+	if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+#else
 	if (!VALID_FD(ups->sock_fd)) {
+#endif
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
 		return 0;
 	}
