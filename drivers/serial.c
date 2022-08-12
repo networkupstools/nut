@@ -96,7 +96,7 @@ static void ser_open_error(const char *port)
 	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
-static void lock_set(TYPE_FD fd, const char *port)
+static void lock_set(TYPE_FD_SER fd, const char *port)
 {
 	int	ret;
 
@@ -145,23 +145,23 @@ static void lock_set(TYPE_FD fd, const char *port)
 }
 
 /* Non fatal version of ser_open */
-TYPE_FD ser_open_nf(const char *port)
+TYPE_FD_SER ser_open_nf(const char *port)
 {
-	TYPE_FD	fd;
+	TYPE_FD_SER	fd;
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
 	if (!VALID_FD(fd))
-		return ERROR_FD;
+		return ERROR_FD_SER;
 
 	lock_set(fd, port);
 
 	return fd;
 }
 
-TYPE_FD ser_open(const char *port)
+TYPE_FD_SER ser_open(const char *port)
 {
-	TYPE_FD res;
+	TYPE_FD_SER res;
 
 	res = ser_open_nf(port);
 	if (!VALID_FD(res)) {
@@ -171,7 +171,7 @@ TYPE_FD ser_open(const char *port)
 	return res;
 }
 
-int ser_set_speed_nf(TYPE_FD fd, const char *port, speed_t speed)
+int ser_set_speed_nf(TYPE_FD_SER fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 	NUT_UNUSED_VARIABLE(port);
@@ -199,7 +199,7 @@ int ser_set_speed_nf(TYPE_FD fd, const char *port, speed_t speed)
 
 	return 0;
 }
-int ser_set_speed(TYPE_FD fd, const char *port, speed_t speed)
+int ser_set_speed(TYPE_FD_SER fd, const char *port, speed_t speed)
 {
 	int res;
 
@@ -212,7 +212,7 @@ int ser_set_speed(TYPE_FD fd, const char *port, speed_t speed)
 }
 
 #ifndef WIN32
-static int ser_set_control(TYPE_FD fd, int line, int state)
+static int ser_set_control(TYPE_FD_SER fd, int line, int state)
 {
 	if (state) {
 		return ioctl(fd, TIOCMBIS, &line);
@@ -221,7 +221,7 @@ static int ser_set_control(TYPE_FD fd, int line, int state)
 	}
 }
 
-int ser_set_dtr(TYPE_FD fd, int state)
+int ser_set_dtr(TYPE_FD_SER fd, int state)
 {
 	return ser_set_control(fd, TIOCM_DTR, state);
 }
@@ -231,7 +231,7 @@ int ser_set_rts(int fd, int state)
 	return ser_set_control(fd, TIOCM_RTS, state);
 }
 #else
-int ser_set_dtr(TYPE_FD fd, int state)
+int ser_set_dtr(TYPE_FD_SER fd, int state)
 {
 	DWORD action;
 
@@ -249,7 +249,7 @@ int ser_set_dtr(TYPE_FD fd, int state)
 	return -1;
 }
 
-int ser_set_rts(TYPE_FD fd, int state)
+int ser_set_rts(TYPE_FD_SER fd, int state)
 {
 	DWORD action;
 
@@ -268,7 +268,7 @@ int ser_set_rts(TYPE_FD fd, int state)
 #endif
 
 #ifndef WIN32
-static int ser_get_control(TYPE_FD fd, int line)
+static int ser_get_control(TYPE_FD_SER fd, int line)
 {
 	int	flags;
 
@@ -277,22 +277,22 @@ static int ser_get_control(TYPE_FD fd, int line)
 	return (flags & line);
 }
 
-int ser_get_dsr(TYPE_FD fd)
+int ser_get_dsr(TYPE_FD_SER fd)
 {
 	return ser_get_control(fd, TIOCM_DSR);
 }
 
-int ser_get_cts(TYPE_FD fd)
+int ser_get_cts(TYPE_FD_SER fd)
 {
 	return ser_get_control(fd, TIOCM_CTS);
 }
 
-int ser_get_dcd(TYPE_FD fd)
+int ser_get_dcd(TYPE_FD_SER fd)
 {
 	return ser_get_control(fd, TIOCM_CD);
 }
 #else
-int ser_get_dsr(TYPE_FD fd)
+int ser_get_dsr(TYPE_FD_SER fd)
 {
 	int flags;
 
@@ -300,7 +300,7 @@ int ser_get_dsr(TYPE_FD fd)
 	return (flags & TIOCM_DSR);
 }
 
-int ser_get_cts(TYPE_FD fd)
+int ser_get_cts(TYPE_FD_SER fd)
 {
 	int flags;
 
@@ -308,7 +308,7 @@ int ser_get_cts(TYPE_FD fd)
 	return (flags & TIOCM_CTS);
 }
 
-int ser_get_dcd(TYPE_FD fd)
+int ser_get_dcd(TYPE_FD_SER fd)
 {
 	int flags;
 
@@ -318,12 +318,12 @@ int ser_get_dcd(TYPE_FD fd)
 
 #endif
 
-int ser_flush_io(TYPE_FD fd)
+int ser_flush_io(TYPE_FD_SER fd)
 {
 	return tcflush(fd, TCIOFLUSH);
 }
 
-int ser_close(TYPE_FD fd, const char *port)
+int ser_close(TYPE_FD_SER fd, const char *port)
 {
 	if (!VALID_FD(fd)) {
 #ifndef WIN32
@@ -344,12 +344,12 @@ int ser_close(TYPE_FD fd, const char *port)
 	return 0;
 }
 
-ssize_t ser_send_char(TYPE_FD fd, unsigned char ch)
+ssize_t ser_send_char(TYPE_FD_SER fd, unsigned char ch)
 {
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
-static ssize_t send_formatted(TYPE_FD fd, const char *fmt, va_list va, useconds_t d_usec)
+static ssize_t send_formatted(TYPE_FD_SER fd, const char *fmt, va_list va, useconds_t d_usec)
 {
 	int	ret;
 	char	buf[LARGEBUF];
@@ -376,7 +376,7 @@ static ssize_t send_formatted(TYPE_FD fd, const char *fmt, va_list va, useconds_
 }
 
 /* send the results of the format string with d_usec delay after each char */
-ssize_t ser_send_pace(TYPE_FD fd, useconds_t d_usec, const char *fmt, ...)
+ssize_t ser_send_pace(TYPE_FD_SER fd, useconds_t d_usec, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -403,7 +403,7 @@ ssize_t ser_send_pace(TYPE_FD fd, useconds_t d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
-ssize_t ser_send(TYPE_FD fd, const char *fmt, ...)
+ssize_t ser_send(TYPE_FD_SER fd, const char *fmt, ...)
 {
 	ssize_t	ret;
 	va_list	ap;
@@ -430,13 +430,13 @@ ssize_t ser_send(TYPE_FD fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-ssize_t ser_send_buf(TYPE_FD fd, const void *buf, size_t buflen)
+ssize_t ser_send_buf(TYPE_FD_SER fd, const void *buf, size_t buflen)
 {
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-ssize_t ser_send_buf_pace(TYPE_FD fd, useconds_t d_usec, const void *buf,
+ssize_t ser_send_buf_pace(TYPE_FD_SER fd, useconds_t d_usec, const void *buf,
 	size_t buflen)
 {
 	ssize_t	ret = 0;
@@ -458,7 +458,7 @@ ssize_t ser_send_buf_pace(TYPE_FD fd, useconds_t d_usec, const void *buf,
 	return sent;
 }
 
-ssize_t ser_get_char(TYPE_FD fd, void *ch, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_char(TYPE_FD_SER fd, void *ch, time_t d_sec, useconds_t d_usec)
 {
 	/* Per standard below, we can cast here, because required ranges are
 	 * effectively the same (and signed -1 for suseconds_t), and at most long:
@@ -467,7 +467,7 @@ ssize_t ser_get_char(TYPE_FD fd, void *ch, time_t d_sec, useconds_t d_usec)
 	return select_read(fd, ch, 1, d_sec, (suseconds_t)d_usec);
 }
 
-ssize_t ser_get_buf(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_buf(TYPE_FD_SER fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	memset(buf, '\0', buflen);
 
@@ -475,7 +475,7 @@ ssize_t ser_get_buf(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, useconds
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-ssize_t ser_get_buf_len(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
+ssize_t ser_get_buf_len(TYPE_FD_SER fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec)
 {
 	ssize_t	ret;
 	ssize_t	recv;
@@ -500,7 +500,7 @@ ssize_t ser_get_buf_len(TYPE_FD fd, void *buf, size_t buflen, time_t d_sec, usec
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-ssize_t ser_get_line_alert(TYPE_FD fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line_alert(TYPE_FD_SER fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch),
 	time_t d_sec, useconds_t d_usec)
 {
@@ -545,14 +545,14 @@ ssize_t ser_get_line_alert(TYPE_FD fd, void *buf, size_t buflen, char endchar,
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
-ssize_t ser_get_line(TYPE_FD fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line(TYPE_FD_SER fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, time_t d_sec, useconds_t d_usec)
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
 }
 
-ssize_t ser_flush_in(TYPE_FD fd, const char *ignset, int verbose)
+ssize_t ser_flush_in(TYPE_FD_SER fd, const char *ignset, int verbose)
 {
 	ssize_t	ret, extra = 0;
 	char	ch;

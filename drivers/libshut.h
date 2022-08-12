@@ -27,7 +27,7 @@
 #ifndef NUT_LIBSHUT_H_SEEN
 #define NUT_LIBSHUT_H_SEEN 1
 
-#include "main.h"	/* for subdrv_info_t and TYPE_FD via "common.h" */
+#include "main.h"	/* for subdrv_info_t and TYPE_FD_SER via "common.h" */
 #include "nut_stdint.h"	/* for uint16_t, size_t, PRIuSIZE etc. */
 
 extern upsdrv_info_t comm_upsdrv_info;
@@ -52,7 +52,7 @@ extern upsdrv_info_t comm_upsdrv_info;
 /* Essentially for SHUT codebase the usb_dev_handle is the file descriptor
  * type, usually an "int" - as in ser_get_char() etc. on Unix-like platforms,
  * but a complex structure which includes a HANDLE field in Win32 builds. */
-typedef TYPE_FD usb_dev_handle;
+typedef TYPE_FD_SER usb_dev_handle;
 
 /* Originally "int" cast to "uint8_t" in shut_control_msg(),
  * and "unsigned char" in shut_get_descriptor() */

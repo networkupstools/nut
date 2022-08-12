@@ -489,7 +489,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 	}
 
 #ifdef WIN32
-	/* Note: in upstype_t we deal with "HANDLE" not "TYPE_FD"! */
+	/* Note: in upstype_t we deal with "HANDLE" not "TYPE_FD_SER"! */
 	if (ups->sock_fd == INVALID_HANDLE_VALUE) {
 #else
 	if (!VALID_FD(ups->sock_fd)) {
