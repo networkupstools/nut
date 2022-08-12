@@ -43,6 +43,9 @@
 #            in Python 3.9, by spelling out b"STR" or str.encode('ascii');
 #            the change was also tested to work with Python 2.7, 3.4, 3.5 and
 #            3.7 (to the extent of accompanying test_nutclient.py at least).
+#
+# 2022-08-12 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.5.0
+#            Fix ListClients() method to actually work with current NUT protocol
 
 import telnetlib
 
@@ -61,8 +64,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.4.0"
-    __release     = "2021-09-27"
+    __version     = "1.5.0"
+    __release     = "2022-08-12"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
