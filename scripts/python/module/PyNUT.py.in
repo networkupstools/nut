@@ -324,26 +324,49 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list of clients
         """
         if self.__debug :
-            print( "[DEBUG] ListClients from server" )
+            print( "[DEBUG] ListClients from server: %s" % ups )
 
-        if ups and (ups not in self.GetUPSList()):
+        self_ups_list = self.GetUPSList()
+        if ups and (ups not in self_ups_list):
             raise PyNUTError( "%s is not a valid UPS" % ups )
 
         if ups:
-            self.__srv_handler.write( ("LIST CLIENTS %s\n" % ups).encode('ascii') )
+            self.__srv_handler.write( ("LIST CLIENT %s\n" % ups).encode('ascii') )
         else:
-            self.__srv_handler.write( b"LIST CLIENTS\n" )
+            # NOTE: Currently NUT does not support just listing all clients
+            # (not providing an "ups" argument) => NUT_ERR_INVALID_ARGUMENT
+            self.__srv_handler.write( b"LIST CLIENT\n" )
         result = self.__srv_handler.read_until( b"\n" )
-        if result != b"BEGIN LIST CLIENTS\n" :
+        if ( (ups and result != (b"BEGIN LIST CLIENT %s\n" % ups)) or (ups is None and result != b"BEGIN LIST CLIENT\n") ):
+            if ups is None and (result == b"ERR INVALID-ARGUMENT\n") :
+                # For ups==None, list all upses, list their clients
+                if self.__debug :
+                    print( "[DEBUG] Recurse ListClients() because it did not specify one UPS to query" )
+                ups_list = {}
+                for ups in self_ups_list :
+                    # Update "ups_list" dict with contents of recursive call return
+                    ups_list.update(self.ListClients(ups))
+                return( ups_list )
+
+            # had a seemingly valid arg, but no success:
+            if self.__debug :
+                print( "[DEBUG] ListClients from server got unexpected result: %s" % result )
+
             raise PyNUTError( result.replace( b"\n", b"" ) )
 
-        result = self.__srv_handler.read_until( b"END LIST CLIENTS\n" )
+        if ups :
+            result = self.__srv_handler.read_until( b"END LIST CLIENT %s\n" % ups )
+        else:
+            # Should not get here with current NUT:
+            result = self.__srv_handler.read_until( b"END LIST CLIENT\n" )
         ups_list = {}
 
         for line in result.split( b"\n" ):
+            ###print( "[DEBUG] ListClients line: '%s'" % line )
             if line[:6] == b"CLIENT" :
-                host, ups = line[7:].split(b' ')
+                ups, host = line[7:].split(b' ')
                 ups.replace(b' ', b'')
+                host.replace(b' ', b'')
                 if not ups in ups_list:
                     ups_list[ups] = []
                 ups_list[ups].append(host)
