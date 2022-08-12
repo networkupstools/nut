@@ -66,7 +66,14 @@ if __name__ == "__main__" :
         result = "EXCEPTION: " + str(sys.exc_info()[1])
     print( "\033[01;33m%s\033[0m\n" % result )
 
-    print( 80*"-" + "\nTesting 'ListClients' for None (should list all devices and sessions to them, if any) :")
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
+    try :
+        result = nut.DeviceLogin( "dummy" )
+    except :
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for None (should list all devices and sessions to them, if any -- e.g. one established above) :")
     try :
         result = nut.ListClients( )
     except :
