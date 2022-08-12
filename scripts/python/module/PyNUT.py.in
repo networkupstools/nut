@@ -46,6 +46,7 @@
 #
 # 2022-08-12 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.5.0
 #            Fix ListClients() method to actually work with current NUT protocol
+#            Added DeviceLogin() method
 
 import telnetlib
 
@@ -265,6 +266,34 @@ Returns OK on success or raises an error
 
         self.__srv_handler.write( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
+        if ( result == b"OK\n" ) :
+            return( "OK" )
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ) )
+
+    def DeviceLogin( self, ups="") :
+        """ Establish a login session with a device (like upsmon does)
+
+Returns OK on success or raises an error
+USERNAME and PASSWORD must have been specified earlier in the session (once)
+and upsd.conf should permit that user with one of `upsmon` role types.
+
+Note there is no "device LOGOUT" in the protocol, just one for general end
+of connection.
+        """
+
+        if self.__debug :
+            print( "[DEBUG] DeviceLogin called..." )
+
+        if ups is None or (ups not in self.GetUPSList()):
+            raise PyNUTError( "%s is not a valid UPS" % ups )
+
+        self.__srv_handler.write( ("LOGIN %s\n" % ups).encode('ascii') )
+        result = self.__srv_handler.read_until( b"\n" )
+        if ( result.startswith(b"User %s@" % self.__login) and result.endswith (b"[%s]\n" % ups) ):
+            # User dummy-user@127.0.0.1 logged into UPS [dummy]
+            # Read next line then
+            result = self.__srv_handler.read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
