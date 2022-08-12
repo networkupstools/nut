@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2984 utf-8
+personal_ws-1.1 en 2986 utf-8
 AAS
 ABI
 ACFAIL
@@ -274,6 +274,7 @@ Defensor
 DeltaUPSv
 DeviceID
 DeviceKit
+DeviceLogin
 Dharm
 DiSplay
 Diehl
@@ -595,6 +596,7 @@ LineA
 LineB
 LineSens
 Lintian
+ListClients
 Lite's
 LowBatt
 LowFreq
