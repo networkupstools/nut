@@ -35,21 +35,15 @@
 #include <sys/stat.h>
 
 /* data which may be useful to the drivers */
-#ifndef WIN32
-	int		upsfd = -1;
-#else
-	HANDLE		upsfd = INVALID_HANDLE_VALUE;
-#endif
+TYPE_FD	upsfd = ERROR_FD;
 
 char		*device_path = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
-#ifndef WIN32
-	int	extrafd = -1;
-#else
-	HANDLE	extrafd = INVALID_HANDLE_VALUE;
-	static HANDLE	mutex = INVALID_HANDLE_VALUE;
+TYPE_FD	extrafd = ERROR_FD;
+#ifdef WIN32
+static HANDLE	mutex = INVALID_HANDLE_VALUE;
 #endif
 
 /* for ser_open */

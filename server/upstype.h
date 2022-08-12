@@ -23,6 +23,7 @@
 #define NUT_UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
+#include "common.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -35,11 +36,8 @@ typedef struct upstype_s {
 	char			*name;
 	char			*fn;
 	char			*desc;
-
-#ifndef WIN32
-	int			sock_fd;
-#else
-	HANDLE			sock_fd;
+	TYPE_FD			sock_fd;
+#ifdef WIN32
 	char 			buf[SMALLBUF];
 	OVERLAPPED		read_overlapped;
 #endif

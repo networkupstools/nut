@@ -458,7 +458,7 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 
 	/* open the device */
 	fd = open(device, O_RDWR | O_NONBLOCK);
-	if (!VALID_FD(fd)) {
+	if (INVALID_FD_SER(fd)) {
 		return ERROR_FD_SER;
 	}
 
@@ -820,10 +820,10 @@ static int belkin_wait(void)
 		} else if (failcount >= 3) {
 			updatestatus(smode, "UPS is not responding, will keep trying: %s", strerror(failerrno));
 		}
-		if (fd == ERROR_FD_SER) {
+		if (INVALID_FD_SER(fd)) {
 			fd = belkin_std_open_tty(device_path);
 		}
-		if (fd == ERROR_FD_SER) {
+		if (INVALID_FD_SER(fd)) {
 			failcount++;
 			failerrno = errno;
 			sleep(1);

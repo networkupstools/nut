@@ -4,6 +4,7 @@
 #define NUT_UPSSCHED_H_SEEN 1
 
 #include <parseconf.h>
+#include "common.h"
 
 #define SERIALIZE_INIT 1
 #define SERIALIZE_SET  2
@@ -17,12 +18,10 @@ extern "C" {
 
 /* track client connections */
 typedef struct conn_s {
-#ifndef WIN32
-	int     fd;
-#else
-	HANDLE     fd;
-	char       buf[LARGEBUF];
-	OVERLAPPED read_overlapped;
+	TYPE_FD		fd;
+#ifdef WIN32
+	char		buf[LARGEBUF];
+	OVERLAPPED	read_overlapped;
 #endif
 	PCONF_CTX_t	ctx;
 	struct conn_s	*next;

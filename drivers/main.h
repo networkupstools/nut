@@ -13,11 +13,7 @@
 extern const char	*progname, *upsname, *device_name;
 extern char		*device_path;
 extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
-#ifndef WIN32
-extern int		upsfd, extrafd;
-#else
-extern HANDLE		upsfd, extrafd;
-#endif
+extern TYPE_FD		upsfd, extrafd;
 extern time_t	poll_interval;
 
 /* functions & variables required in each driver */

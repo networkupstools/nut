@@ -1437,7 +1437,7 @@ found:
 	return libname_path;
 }
 
-/* TODO: Extend for TYPE_FD_SER and WIN32 eventually? */
+/* TODO: Extend for TYPE_FD and WIN32 eventually? */
 void set_close_on_exec(int fd) {
 	/* prevent fd leaking to child processes */
 #ifndef FD_CLOEXEC

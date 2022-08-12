@@ -360,7 +360,7 @@ int __cdecl usleep(useconds_t useconds);
 
 /* Not all platforms support the flag; this method abstracts
  * its use (or not) to simplify calls in the actual codebase */
-/* TODO: Extend for TYPE_FD_SER and WIN32 eventually? */
+/* TODO: Extend for TYPE_FD and WIN32 eventually? */
 void set_close_on_exec(int fd);
 
 #ifdef __cplusplus

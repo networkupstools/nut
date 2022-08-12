@@ -83,8 +83,8 @@ static void ser_open_error(const char *port)
 	if (group)
 		printf("Serial port group: %s (%d)\n",
 			group->gr_name, (int) fs.st_gid);
-
 #endif
+
 	printf("     Mode of port: %04o\n\n", (int) fs.st_mode & 07777);
 
 	printf("Things to try:\n\n");
@@ -100,11 +100,11 @@ static void lock_set(TYPE_FD_SER fd, const char *port)
 {
 	int	ret;
 
-	if (!VALID_FD(fd)) {
+	if (INVALID_FD_SER(fd)) {
 #ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
 #else
-		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: handle = %p", fd);
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: struct = %p", fd);
 #endif
 	}
 
@@ -151,8 +151,9 @@ TYPE_FD_SER ser_open_nf(const char *port)
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
-	if (!VALID_FD(fd))
+	if (INVALID_FD_SER(fd)) {
 		return ERROR_FD_SER;
+	}
 
 	lock_set(fd, port);
 
@@ -164,7 +165,7 @@ TYPE_FD_SER ser_open(const char *port)
 	TYPE_FD_SER res;
 
 	res = ser_open_nf(port);
-	if (!VALID_FD(res)) {
+	if (INVALID_FD_SER(res)) {
 		ser_open_error(port);
 	}
 
@@ -321,11 +322,11 @@ int ser_flush_io(TYPE_FD_SER fd)
 
 int ser_close(TYPE_FD_SER fd, const char *port)
 {
-	if (!VALID_FD(fd)) {
+	if (INVALID_FD_SER(fd)) {
 #ifndef WIN32
 		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
 #else
-		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: handle=%p port=%s", fd, port);
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: struct=%p port=%s", fd, port);
 #endif
 	}
 
