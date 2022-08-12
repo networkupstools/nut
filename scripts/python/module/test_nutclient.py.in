@@ -79,3 +79,6 @@ if __name__ == "__main__" :
     except :
         result = "EXCEPTION: " + str(sys.exc_info()[1])
     print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'PyNUT' instance teardown (end of test script)" )
+    # No more tests AFTER this line; add them above the teardown message
