@@ -165,9 +165,9 @@ static int shut_synchronise(TYPE_FD arg_upsfd)
 static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	TYPE_FD devfd = ERROR_FD;
+	TYPE_FD devfd = ser_open_nf(port_name);
 
-	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
+	if (VALID_FD(devfd)) {
 		/* set RTS to off and DTR to on to allow correct behavior
 		 * with UPS using PnP feature */
 		if (ser_set_dtr(devfd, 1) != -1) {
@@ -216,13 +216,13 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 	nutscan_device_t * dev = NULL;
 	int i;
 	ssize_t ret;
-	TYPE_FD devfd = ERROR_FD;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
+	TYPE_FD devfd = ser_open_nf(port_name);
 
 	memset(sbuf, 0, 128);
 
-	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
+	if (VALID_FD(devfd)) {
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
@@ -308,10 +308,10 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	struct termios tio;
 	ssize_t ret = 0;
 	int retry;
-	TYPE_FD devfd = ERROR_FD;
 	char buf[128];
+	TYPE_FD devfd = ser_open_nf(port_name);
 
-	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
+	if (VALID_FD(devfd)) {
 		if (ser_set_speed_nf(devfd, port_name, B2400) != -1) {
 
 			if (!tcgetattr(devfd, &tio)) {

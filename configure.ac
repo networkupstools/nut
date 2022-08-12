@@ -83,6 +83,7 @@ if test ! -d "${auglensdir}"; then
    fi
 fi
 
+LIBREGEX_LIBS=''
 dnl Disable Hotplug, DevD and udev support on Windows
 dnl (useful when cross-compiling)
 case "${target_os}" in
@@ -3195,7 +3196,6 @@ Forcing "-Wno-format" into warnings options.
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
     [yes|auto], [
-
         CFLAGS="${CFLAGS} -Werror"
         CXXFLAGS="${CXXFLAGS} -Werror"
         ],

@@ -520,12 +520,134 @@ the makefiles for current `install` target definition to run its job without
 	   || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
+/////////////////////////////////////////////////////////////////////////////
+// for avahi
+
+libpcre
+^^^^^^^
+
+Needed for glib2 (further for avahi).
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.40/pcre2-10.40.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/pcre2-10.40.tar.gz
+	:; cd pcre2-10.40
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make all
+	:; sudo make install
+	:; sudo ln -s libpcre2-posix.pc /usr/$ARCH/lib/pkgconfig/libpcre.pc
+
+
+gettext/libintl
+^^^^^^^^^^^^^^^
+
+WARNING: Currently gettext does not build, at least on WSL2 Ubuntu,
+fails with `undefined reference to '__imp_formatstring_ruby'`.
+
+Needed for glib2 (further for avahi).
+
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/gettext/gettext-0.20.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/gettext-0.20.tar.gz
+	:; cd gettext-0.20
+	# Flags tweaked due to http://savannah.gnu.org/bugs/?36443
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    CFLAGS="$CFLAGS -O2" CXXFLAGS="$CXXFLAGS -O2"
+	:; make all
+	:; sudo make install
+
+
+glib2
+^^^^^
+
+WARNING: Currently glib2 does not build, at least on WSL2 Ubuntu, fails to
+find gettext (not built above).
+
+Needed for avahi.
+
+Requires `meson` build system, e.g. via:
+------
+:; sudo apt-get install meson
+------
+
+NOTE: Latest glib-2.73.3 as of this writing requires `meson >= 0.60.0` but the
+one provided in WSL2 Ubuntu 20.04 OS packages is older (0.53.2). In this case,
+try an older glib2 release, e.g. glib-2.72.1 seems compatible.
+
+Configuration options below were initially borrowed from
+https://build.opensuse.org/package/view_file/windows:mingw:win32/mingw32-glib2/mingw32-glib2.spec?expand=1
+
+	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/glib/-/archive/2.72.1/glib-2.72.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/glib-2.72.1.tar.gz
+	:; cd glib-2.72.1
+	:; case "$ARCH" in
+	     *x86_64*) cp -pf .gitlab-ci/cross_file_mingw64.txt .gitlab-ci/cross_file_${ARCH}.txt ;;
+	     *i686*) sed 's,x86_64,i686,g' < .gitlab-ci/cross_file_mingw64.txt > .gitlab-ci/cross_file_${ARCH}.txt ;;
+	   esac
+	# We do not have an ARCH-dependent pkg-config binary:
+	:; sed "s,^pkgconfig = .*\$,pkgconfig = 'pkg-config'," \
+	    -i .gitlab-ci/cross_file_${ARCH}.txt
+	# With meson, config and build can be done in one shot:
+	:; meson --prefix="$PREFIX" \
+	    --buildtype=plain --wrap-mode=nodownload \
+	    --auto-features=auto \
+	    --cross-file=.gitlab-ci/cross_file_${ARCH}.txt \
+	    . build \
+	    --default-library=shared \
+	    -Dman=false -Dgtk_doc=false \
+	    -Dsystemtap=false -Ddtrace=false \
+	    -Dinstalled_tests=false -Dlibelf=disabled
+	:; sudo meson install
+
+
+avahi
+^^^^^
+
+WARNING: Currently avahi does not build, at least on WSL2 Ubuntu, fails to
+find glib2 (not built above).
+
+Release 0.8 (and current git as of this writing) sources use `-Wl,-z...`
+linking flags which are not supported by mingw `ld` tooling, and so fail
+to configure.
+
+[NOTE]
+======
+To build from Git sources or regenerate `configure` in tarball sources
+like shown below, you should also have `gettextize` tool before running
+`autogen.sh`, e.g. via:
+------
+:; sudo apt install intltool autopoint
+:; ( cd "$DLDIR" && git clone https://github.com/lathiat/avahi avahi-git )
+:; ( cd "$DLDIR/avahi-git" && ./autogen.sh )
+# Stock script would go on to try configuring by default,
+# and that bit fails in cross-env vars
+------
+======
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/avahi-0.8.tar.gz
+	:; cd avahi-0.8
+	:; vi common/acx_pthread.m4
+	# Edit `common/acx_pthread.m4` to remove `-Wl,-z,defs` near
+	# AC_MSG_CHECKING([whether -pthread is sufficient with -shared])
+	# Alternatively just edit `configure` script from the tarball.
+	:; ./autogen.sh || true
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+// for avahi
+/////////////////////////////////////////////////////////////////////////////
+
+
 Other requirements
 ^^^^^^^^^^^^^^^^^^
 
-avahi, ipmi, ssl with Mozilla NSS...
+ipmi, ssl with Mozilla NSS...
 
-* https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz
 * https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
 * https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_79_RTM/src/nss-3.79-with-nspr-4.34.tar.gz
 

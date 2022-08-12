@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ltdl.h>
+
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
@@ -64,8 +65,9 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static int (*nut_usb_find_busses)(void);
 # ifndef WIN32
  static struct usb_bus * (*nut_usb_busses);
-# endif
+# else
  static struct usb_bus * (*nut_usb_get_busses)(void);
+# endif	/* WIN32 */
  static int (*nut_usb_find_devices)(void);
  static char * (*nut_usb_strerror)(void);
 #endif /* WITH_LIBUSB_1_0 */
@@ -168,13 +170,13 @@ int nutscan_load_usb_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
-# endif
-
+# else
 	*(void **) (&nut_usb_get_busses) = lt_dlsym(dl_handle,
 					"usb_get_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
+# endif	/* WIN32 */
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,
 					"usb_find_devices");
@@ -293,7 +295,7 @@ nutscan_device_t * nutscan_scan_usb()
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
 # else
 	for (bus = (*nut_usb_get_busses)(); bus; bus = bus->next) {
-# endif
+# endif	/* WIN32 */
 		for (dev = bus->devices; dev; dev = dev->next) {
 
 			VendorID = dev->descriptor.idVendor;

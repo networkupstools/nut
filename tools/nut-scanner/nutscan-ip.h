@@ -28,7 +28,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #else
-#include <common.h>
+#include "common.h"
 #endif
 
 #ifdef __cplusplus

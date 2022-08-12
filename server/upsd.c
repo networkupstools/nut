@@ -295,8 +295,8 @@ static void setuptcp(stype_t *server)
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
-
 #endif
+
 		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
@@ -480,7 +480,20 @@ void kick_login_clients(const char *upsname)
 /* make sure a UPS is sane - connected, with fresh data */
 int ups_available(const upstype_t *ups, nut_ctype_t *client)
 {
+	if (!ups) {
+		/* Should never happen, but handle this
+		 * just in case instead of segfaulting */
+		upsdebugx(1, "%s: ERROR, called with a NULL ups pointer", __func__);
+		send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
+		return 0;
+	}
+
+#ifdef WIN32
+	/* Note: in upstype_t we deal with "HANDLE" not "TYPE_FD"! */
+	if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+#else
 	if (!VALID_FD(ups->sock_fd)) {
+#endif
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
 		return 0;
 	}
@@ -617,7 +630,7 @@ static void client_connect(stype_t *server)
 	}
 
 	lastclient = client;
-*/
+ */
 	upsdebugx(2, "Connect from %s", client->addr);
 }
 
@@ -1091,11 +1104,17 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (ups->sock_fd < 0) {
-			upsdebugx(1, "%s: UPS [%s] is not currently connected",
+			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
+				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
-			upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
-				__func__, ups->name, ups->sock_fd);
+			if (ups->sock_fd < 0) {
+				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
+					__func__, ups->name, ups->sock_fd);
+			} else {
+				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+					__func__, ups->name, ups->sock_fd);
+			}
 			continue;
 		}
 
@@ -1274,7 +1293,17 @@ static void mainloop(void)
 
 		/* see if we need to (re)connect to the socket */
 		if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
+				"trying to reconnect",
+				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
+			if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
+					__func__, ups->name, ups->sock_fd);
+			} else {
+				upsdebugx(1, "%s: UPS [%s] is now connected as FD %d",
+					__func__, ups->name, ups->sock_fd);
+			}
 			continue;
 		}
 
