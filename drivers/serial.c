@@ -199,6 +199,7 @@ int ser_set_speed_nf(TYPE_FD_SER fd, const char *port, speed_t speed)
 
 	return 0;
 }
+
 int ser_set_speed(TYPE_FD_SER fd, const char *port, speed_t speed)
 {
 	int res;
@@ -220,22 +221,16 @@ static int ser_set_control(TYPE_FD_SER fd, int line, int state)
 		return ioctl(fd, TIOCMBIC, &line);
 	}
 }
+#endif
 
 int ser_set_dtr(TYPE_FD_SER fd, int state)
 {
+#ifndef WIN32
 	return ser_set_control(fd, TIOCM_DTR, state);
-}
-
-int ser_set_rts(int fd, int state)
-{
-	return ser_set_control(fd, TIOCM_RTS, state);
-}
 #else
-int ser_set_dtr(TYPE_FD_SER fd, int state)
-{
 	DWORD action;
 
-	if(state == 0) {
+	if (state == 0) {
 		action = CLRDTR;
 	}
 	else {
@@ -243,14 +238,19 @@ int ser_set_dtr(TYPE_FD_SER fd, int state)
 	}
 
 	/* Success */
-	if( EscapeCommFunction(fd->handle,action) != 0) {
+	if (EscapeCommFunction(fd->handle,action) != 0) {
 		return 0;
 	}
+
 	return -1;
+#endif
 }
 
 int ser_set_rts(TYPE_FD_SER fd, int state)
 {
+#ifndef WIN32
+	return ser_set_control(fd, TIOCM_RTS, state);
+#else
 	DWORD action;
 
 	if(state == 0) {
@@ -264,8 +264,8 @@ int ser_set_rts(TYPE_FD_SER fd, int state)
 		return 0;
 	}
 	return -1;
-}
 #endif
+}
 
 #ifndef WIN32
 static int ser_get_control(TYPE_FD_SER fd, int line)
@@ -276,47 +276,43 @@ static int ser_get_control(TYPE_FD_SER fd, int line)
 
 	return (flags & line);
 }
+#endif
 
 int ser_get_dsr(TYPE_FD_SER fd)
 {
+#ifndef WIN32
 	return ser_get_control(fd, TIOCM_DSR);
-}
-
-int ser_get_cts(TYPE_FD_SER fd)
-{
-	return ser_get_control(fd, TIOCM_CTS);
-}
-
-int ser_get_dcd(TYPE_FD_SER fd)
-{
-	return ser_get_control(fd, TIOCM_CD);
-}
 #else
-int ser_get_dsr(TYPE_FD_SER fd)
-{
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_DSR);
+#endif
 }
 
 int ser_get_cts(TYPE_FD_SER fd)
 {
+#ifndef WIN32
+	return ser_get_control(fd, TIOCM_CTS);
+#else
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_CTS);
+#endif
 }
 
 int ser_get_dcd(TYPE_FD_SER fd)
 {
+#ifndef WIN32
+	return ser_get_control(fd, TIOCM_CD);
+#else
 	int flags;
 
 	w32_getcomm(fd->handle, &flags);
 	return (flags & TIOCM_CD);
-}
-
 #endif
+}
 
 int ser_flush_io(TYPE_FD_SER fd)
 {
