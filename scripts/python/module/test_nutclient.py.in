@@ -50,3 +50,18 @@ if __name__ == "__main__" :
     except :
         result = sys.exc_info()[1]
     print( "\033[01;33m%s\033[0m\n" % result )
+
+    # testing who has an upsmon-like log-in session to a device
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in upsd.conf) :")
+    try :
+        result = nut.ListClients( "dummy" )
+    except :
+        result = sys.exc_info()[1]
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for None (should list all devices and sessions to them, if any) :")
+    try :
+        result = nut.ListClients( )
+    except :
+        result = sys.exc_info()[1]
+    print( "\033[01;33m%s\033[0m\n" % result )
