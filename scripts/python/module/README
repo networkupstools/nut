@@ -34,7 +34,9 @@ class PyNUTClient :
 
   def ver( self ) :
 
-  def FSD( self, ups="") :
+  def DeviceLogin( self, ups="" ) :
+
+  def FSD( self, ups="" ) :
 
   def GetRWVars( self, ups='' ) :
 
@@ -92,6 +94,19 @@ identification such as version, product or distribution it may be bunded with.
 
 Note that the NUT client interactions should not rely on reported versions,
 but follow the protocol as defined.
+
+
+DeviceLogin
+~~~~~~~~~~~
+
+Establish a "client" session with the specified UPS. This uses credentials
+specified earlier to `__init__()` this class instance, and on server side
+(in `upsd.users` file) these credentials must have one of `upsmon` roles.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure, such as invalid or insufficiently privileged credentials.
+
+Note there is no `DeviceLogout()`, just the general connection termination.
 
 
 FSD
