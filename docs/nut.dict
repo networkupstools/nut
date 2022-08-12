@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2986 utf-8
+personal_ws-1.1 en 2989 utf-8
 AAS
 ABI
 ACFAIL
@@ -1707,6 +1707,7 @@ dev
 devctl
 devd
 devel
+deviceGetClients
 devscan
 dfl
 dhcp
@@ -1864,6 +1865,7 @@ genericups
 genesisII
 gentoo
 gestion
+getClients
 getDescription
 getDevice
 getDevicesVariableValues
@@ -2095,6 +2097,7 @@ linevoltage
 linkdoc
 linux
 lipo
+listDeviceClients
 listdef
 littleguy
 lk

@@ -106,6 +106,10 @@ https://github.com/networkupstools/nut/milestone/8
    * `DeviceLogin()` method added (mostly as aid to CI-test `ListClients()`
      in a practically relevant manner, so far)
 
+ - nutclient C++ library:
+   * added `listDeviceClients()` and `deviceGetClients(dev)` to `Client`
+     classes, and `Device::getClients()` to match PyNUT capabilities [#549]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
