@@ -67,6 +67,9 @@ https://github.com/networkupstools/nut/milestone/8
      in the field -- the driver otherwise interpreted the situation as
      `ups.status` being `OL OFF` and cut the power supply.
 
+ - snmp-ups IETF MIB mapping updated for data points where negative readings
+   are invalid [#1558]
+
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
 
