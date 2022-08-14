@@ -261,7 +261,7 @@ rights to set it (maybe login/password).
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result )
+            raise PyNUTError( result.replace( b"\n", b"" ) )
 
     def RunUPSCommand( self, ups="", command="" ) :
         """ Send a command to the specified UPS
