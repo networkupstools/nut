@@ -2090,34 +2090,8 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-AC_MSG_CHECKING(whether to install Solaris SMF files)
-solarissmf="auto"
-AC_ARG_WITH([solaris-smf],
-	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarissmf="auto"
-		;;
-	yes|no)
-		solarissmf="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
-		;;
-	esac
-], [])
 
-if test x"$solarissmf" = xauto ; then
-	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
-		solarissmf="yes"
-	else
-		solarissmf="no"
-	fi
-fi
-AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-
+dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
 solarispkg_svr4="auto"
 AC_ARG_WITH([solaris-pkg-svr4],
@@ -2146,6 +2120,7 @@ fi
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
+
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
 solarispkg_ips="auto"
 AC_ARG_WITH([solaris-pkg-ips],
@@ -2173,6 +2148,81 @@ if test x"$solarispkg_ips" = xauto ; then
 fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
+
+dnl NOTE: Be sure to customize e.g.  --datarootdir=/usr/share/nut to install
+dnl these scripts not into default location as e.g. /usr/share/solaris-smf
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		case "${solarispkg_ips}${solarispkg_svr4}" in
+			*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+			*) solarissmf="no" ;; dnl Target not solarish
+		esac
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
+
+AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
+solarisinit="auto"
+AC_ARG_WITH([solaris-init],
+	AS_HELP_STRING([--with-solaris-init=(yes|auto|no)], [Enable installation of NUT legacy init-scripts for Solaris/illumos (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarisinit="auto"
+		;;
+	yes|no)
+		solarisinit="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-init=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarisinit" = xauto ; then
+	dnl Depends on usability of SMF or making for packaging
+	case "${solarispkg_ips}${solarispkg_svr4}" in
+		*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+		*)
+			case ${target_os} in
+				solaris*|sunos*|SunOS*|illumos*)
+					if test "$solarissmf" = x"yes" ; then
+						dnl no need on modern OSes
+						solarisinit="no"
+					else
+						solarisinit="yes"
+					fi
+					;;
+				*) solarisinit="no" ;; dnl Some other OS
+			esac
+			;;
+	esac
+fi
+AC_MSG_RESULT([${solarisinit}])
+AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
