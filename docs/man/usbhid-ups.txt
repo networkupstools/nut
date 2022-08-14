@@ -45,7 +45,7 @@ This driver is known to work on:
  - most Linux systems,
  - FreeBSD (beta stage) and maybe other *BSD,
  - Darwin / Mac OS X,
- - Solaris 10.
+ - Solaris 10 and illumos-based distributions.
 
 EXTRA ARGUMENTS
 ---------------
