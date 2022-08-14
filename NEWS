@@ -93,6 +93,11 @@ https://github.com/networkupstools/nut/milestone/8
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]
 
+ - an explicit `configure --with-nut-scanner` toggle was added, specifically
+   so that build environments requesting `--with-all` but lack `libltdl` would
+   abort and require either to install the dependency or explicitly forfeit
+   the tool (some distro packages missed it quietly in the past) [#1560]
+
  - existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]
