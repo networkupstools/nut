@@ -510,7 +510,9 @@ static void sock_connect(TYPE_FD sock)
 
 #else /* WIN32 */
 
-	/* We have detected a connection on the opened pipe. So we start by saving its handle  and cretae a new pipe for future connection */
+	/* We have detected a connection on the opened pipe.
+	 * So we start by saving its handle and creating
+	 * a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sock;
 
@@ -943,9 +945,9 @@ char * dstate_init(const char *prog, const char *devname)
 int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
-	int overrun = 0;
+	int	overrun = 0;
 	conn_t	*conn;
-	struct timeval  now;
+	struct timeval	now;
 
 #ifndef WIN32
 	int	ret;
@@ -1032,7 +1034,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 	DWORD	ret;
 	HANDLE	rfds[32];
-	DWORD   timeout_ms;
+	DWORD	timeout_ms;
 
 	/* FIXME: Should such table (and limit) be used in reality? */
 	NUT_UNUSED_VARIABLE(arg_extrafd);
