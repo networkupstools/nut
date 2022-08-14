@@ -357,7 +357,9 @@ state of the codebase you are looking at aims to refresh the effort of
 delivering NUT on Windows, the aim at the moment is to help developers
 build and modernize it after a decade of blissful slumber, and packages
 are not being regularly produced yet. Functionality of such builds varies
-a lot depending on build environment used.
+a lot depending on build environment used. This effort is generally
+tracked at https://github.com/orgs/networkupstools/projects/2/views/1
+and help would be welcome!
 
 NUT binary package built for Windows platform comes in a `.msi` file.
 
