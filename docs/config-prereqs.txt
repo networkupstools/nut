@@ -998,6 +998,7 @@ script find the dependencies listed below), start the terminal session with
 "MSYS2 MinGW x64" shortcut. Other options set up the environment variables
 for toolkits listed in their shortcut names, and so tend to prefer "wrong"
 flags and paths to dependencies (if you have several variants installed).
+The "MSYS2 MinGW UCRT x64" was also reported to work.
 
 To avoid toolkit variant mismatches, you may require to use their specific
 builds preferentially:
