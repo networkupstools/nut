@@ -738,11 +738,15 @@ static int sock_read(conn_t *conn)
 
 static void start_daemon(TYPE_FD lockfd)
 {
-#ifndef WIN32
-	int	maxfd, pid, pipefd, ret;
+	int	maxfd = 0;	/* Unidiomatic use vs. "pipefd" below, which is "int" on non-WIN32 */
+	TYPE_FD pipefd;
 	struct	timeval	tv;
+	conn_t	*tmp;
+
+#ifndef WIN32
+	int	pid, ret;
 	fd_set	rfds;
-	conn_t	*tmp, *tmpnext;
+	conn_t	*tmpnext;
 
 	us_serialize(SERIALIZE_INIT);
 
@@ -832,12 +836,8 @@ static void start_daemon(TYPE_FD lockfd)
 
 #else /* WIN32 */
 
-	int	maxfd;
-	HANDLE pipefd;
 	DWORD timeout_ms;
 	HANDLE rfds[32];
-	struct	timeval	tv;
-	conn_t	*tmp;
 
 	char module[MAX_PATH];
 	STARTUPINFO sinfo;
