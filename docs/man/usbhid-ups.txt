@@ -96,6 +96,20 @@ For most devices this combination means calibration or similar maintenance;
 however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
 
+*disable_fix_report_desc*::
+Set to disable fix-ups for broken USB encoding, etc. which we apply by default
+on certain models (vendors/products) which were reported as not following the
+protocol strictly. This flag allows to disable the feature in particular device
+configurations.
++
+It is always possible that the vendors eventually release fixed firmware, or
+re-use identifiers by which we match suspected broken devices for unrelated
+products, so processing these fix-ups would be a waste of time there.
++
+It is also always possible that NUT fix-ups cause issues on some devices,
+whether due to NUT bugs or because the vendor protocol implementation is
+broken in more than one place.
+
 *vendor*='regex'::
 *product*='regex'::
 *serial*='regex'::
