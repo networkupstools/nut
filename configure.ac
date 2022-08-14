@@ -689,7 +689,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
