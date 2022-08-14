@@ -93,21 +93,30 @@ extern "C" {
 
 /* porting stuff for WIN32, used by serial and SHUT codebases */
 #ifndef WIN32
-/* Just match two groups defined for WIN32 */
+/* Just match three macro groups defined for WIN32 */
+
+/* Type of what file open() and close() use,
+ * including pipes for driver-upsd communications: */
 # define TYPE_FD int
 # define ERROR_FD (-1)
 # define VALID_FD(a) (a>=0)
 
+/* Type of what NUT serial/SHUT methods juggle: */
 # define TYPE_FD_SER TYPE_FD
 # define ERROR_FD_SER ERROR_FD
 # define VALID_FD_SER(a) VALID_FD(a)
 
+/* Type of what socket() returns, mostly for networked code: */
 # define TYPE_FD_SOCK TYPE_FD
 # define ERROR_FD_SOCK ERROR_FD
 # define VALID_FD_SOCK(a) VALID_FD(a)
+
 #else /* WIN32 */
+
 /* Separate definitions of TYPE_FD, ERROR_FD, VALID_FD() macros
- * for usual file descriptors vs. types for serial port work */
+ * for usual file descriptors vs. types needed for serial port
+ * work or for networking sockets.
+ */
 # define TYPE_FD HANDLE
 # define ERROR_FD (INVALID_HANDLE_VALUE)
 # define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
