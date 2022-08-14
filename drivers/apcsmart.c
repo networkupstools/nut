@@ -454,7 +454,7 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
 	}
 
-	if (!VALID_FD(upsfd))
+	if (INVALID_FD(upsfd))
 		return 0;
 
 	if (flags & SER_D0) {
@@ -581,7 +581,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 	ssize_t ret;
 	errno = 0;
 
-	if (!VALID_FD(upsfd))
+	if (INVALID_FD(upsfd))
 		return 0;
 
 	ret = ser_send_char(upsfd, code);
@@ -2123,7 +2123,7 @@ void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
-	if (!VALID_FD(upsfd))
+	if (INVALID_FD(upsfd))
 		return;
 
 	apc_flush(0);

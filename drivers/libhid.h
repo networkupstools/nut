@@ -43,7 +43,7 @@
 	typedef char                           HIDDeviceMatcher_t;
 	typedef usb_dev_handle                 hid_dev_handle_t;
 	typedef shut_communication_subdriver_t communication_subdriver_t;
-	#define HID_DEV_HANDLE_CLOSED          (hid_dev_handle_t)(ERROR_FD)
+	#define HID_DEV_HANDLE_CLOSED          (hid_dev_handle_t)(ERROR_FD_SER)
 #else
 	#include "nut_libusb.h" /* includes usb-common.h */
 	typedef USBDevice_t                   HIDDevice_t;

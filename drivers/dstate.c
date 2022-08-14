@@ -42,11 +42,10 @@
 #include "attribute.h"
 #include "nut_stdint.h"
 
+	static TYPE_FD	sockfd = ERROR_FD;
 #ifndef WIN32
-	static int	sockfd = -1;
 	static char	*sockfn = NULL;
 #else
-	static HANDLE	sockfd = INVALID_HANDLE_VALUE;
 	static OVERLAPPED connect_overlapped;
 	static char	*pipename = NULL;
 #endif
@@ -116,17 +115,21 @@ static void sock_fail(const char *fn)
 	printf("\n");
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
+#endif
 
-static int sock_open(const char *fn)
+static TYPE_FD sock_open(const char *fn)
 {
-	int	ret, fd;
+	TYPE_FD	fd;
+
+#ifndef WIN32
+	int	ret;
 	struct sockaddr_un	ssaddr;
 
 	check_unix_socket_filename(fn);
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
 	}
 
@@ -158,10 +161,8 @@ static int sock_open(const char *fn)
 	if (ret < 0) {
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
-#else
-static HANDLE sock_open(const char *fn)
-{
-	HANDLE fd;
+
+#else /* WIN32 */
 
 	fd = CreateNamedPipe(
 			fn,			// pipe name
@@ -176,8 +177,9 @@ static HANDLE sock_open(const char *fn)
 			0,			// client time-out
 			NULL);			// FIXME: default security attribute
 
-	if (fd == INVALID_HANDLE_VALUE) {
-		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+	if (INVALID_FD(fd)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
@@ -452,11 +454,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	return 1;	/* OK */
 }
 
-#ifndef WIN32
-static void sock_connect(int sock)
-#else
-static void sock_connect(HANDLE sock)
-#endif
+static void sock_connect(TYPE_FD sock)
 {
 	conn_t	*conn;
 
@@ -473,7 +471,7 @@ static void sock_connect(HANDLE sock)
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
@@ -510,17 +508,8 @@ static void sock_connect(HANDLE sock)
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = fd;
 
-	pconf_init(&conn->ctx, NULL);
+#else /* WIN32 */
 
-	if (connhead) {
-		conn->next = connhead;
-		connhead->prev = conn;
-	}
-
-	connhead = conn;
-
-	upsdebugx(3, "new connection on fd %d", fd);
-#else
 	/* We have detected a connection on the opened pipe. So we start by saving its handle  and cretae a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sock;
@@ -539,8 +528,9 @@ static void sock_connect(HANDLE sock)
 			0,			// client time-out
 			NULL);			// FIXME: default security attribute
 
-	if (sockfd == INVALID_HANDLE_VALUE) {
-		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+	if (INVALID_FD(sockfd)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare a new async wait for a connection on the pipe */
@@ -569,7 +559,10 @@ static void sock_connect(HANDLE sock)
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
-	ReadFile (conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+	ReadFile (conn->fd, conn->buf,
+		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailling 0 */
+		NULL, &(conn->read_overlapped));
+#endif
 
 	pconf_init(&conn->ctx, NULL);
 
@@ -580,6 +573,9 @@ static void sock_connect(HANDLE sock)
 
 	connhead = conn;
 
+#ifndef WIN32
+	upsdebugx(3, "new connection on fd %d", fd);
+#else
 	upsdebugx(3, "new connection on handle %p", sock);
 #endif
 
@@ -876,25 +872,23 @@ static void sock_read(conn_t *conn)
 static void sock_close(void)
 {
 	conn_t	*conn, *cnext;
+
+	if (VALID_FD(sockfd)) {
 #ifndef WIN32
-	if (sockfd != -1) {
 		close(sockfd);
-		sockfd = -1;
 
 		if (sockfn) {
 			unlink(sockfn);
 			free(sockfn);
 			sockfn = NULL;
 		}
-	}
-
 #else
-	if (sockfd != INVALID_HANDLE_VALUE) {
 		FlushFileBuffers(sockfd);
 		CloseHandle(sockfd);
-		sockfd = INVALID_HANDLE_VALUE;
-	}
 #endif
+
+		sockfd = ERROR_FD;
+	}
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
@@ -945,21 +939,25 @@ char * dstate_init(const char *prog, const char *devname)
 	return xstrdup(sockname);
 }
 
-#ifndef WIN32
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, int arg_extrafd)
+int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
-	int	ret, maxfd, overrun = 0;
+	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
+	int overrun = 0;
+	conn_t	*conn;
+	struct timeval  now;
+
+#ifndef WIN32
+	int	ret;
 	fd_set	rfds;
-	struct timeval	now;
-	conn_t	*conn, *cnext;
+	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
 
 	maxfd = sockfd;
 
-	if (arg_extrafd != -1) {
+	if (VALID_FD(arg_extrafd)) {
 		FD_SET(arg_extrafd, &rfds);
 
 		if (arg_extrafd > maxfd) {
@@ -1026,27 +1024,20 @@ int dstate_poll_fds(struct timeval timeout, int arg_extrafd)
 	}
 
 	/* tell the caller if that fd woke up */
-	if ((arg_extrafd != -1) && (FD_ISSET(arg_extrafd, &rfds))) {
+	if (VALID_FD(arg_extrafd) && (FD_ISSET(arg_extrafd, &rfds))) {
 		return 1;
 	}
 
-	return overrun;
-}
-#else
-/* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, HANDLE arg_extrafd)
-{
+#else /* WIN32 */
+
 	DWORD	ret;
-	int	maxfd = 0, overrun = 0;
 	HANDLE	rfds[32];
-	conn_t	*conn;
-        struct timeval  now;
 	DWORD   timeout_ms;
 
 	/* FIXME: Should such table (and limit) be used in reality? */
 	NUT_UNUSED_VARIABLE(arg_extrafd);
 /*
-	if (arg_extrafd != -1) {
+	if (VALID_FD(arg_extrafd)) {
 		rfds[maxfd] = arg_extrafd;
 		maxfd++;
 	}
@@ -1096,7 +1087,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE arg_extrafd)
 	}
 
 	/* Retrieve the signaled connection */
-	for(conn = connhead; conn != NULL; conn = conn->next) {
+	for (conn = connhead; conn != NULL; conn = conn->next) {
 		if( conn->read_overlapped.hEvent == rfds[ret-WAIT_OBJECT_0]) {
 			break;
 		}
@@ -1108,20 +1099,21 @@ int dstate_poll_fds(struct timeval timeout, HANDLE arg_extrafd)
 	}
 	/* one of the read event handle has been signaled */
 	else {
-		if( conn != NULL) {
+		if (conn != NULL) {
 			sock_read(conn);
 		}
 	}
 
 	/* tell the caller if that fd woke up */
 /*
-	if ((arg_extrafd != -1) && (ret == arg_extrafd)) {
+	if (VALID_FD(arg_extrafd) && (ret == arg_extrafd)) {
 		return 1;
 	}
 */
+#endif
+
 	return overrun;
 }
-#endif
 
 /******************************************************************
  * COMMON

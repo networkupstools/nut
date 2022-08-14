@@ -89,11 +89,7 @@ static pthread_mutex_t dev_mutex;
 
 /* Fake driver main, for using serial functions, needed for bcmxcp_ser.c */
 char  *device_path;
-#ifndef WIN32
-int   upsfd;
-#else
-HANDLE   upsfd;
-#endif
+TYPE_FD   upsfd;
 int   exit_flag = 0;
 int   do_lock_port;
 
@@ -135,7 +131,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-static int shut_synchronise(TYPE_FD arg_upsfd)
+static int shut_synchronise(TYPE_FD_SER arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
@@ -165,9 +161,9 @@ static int shut_synchronise(TYPE_FD arg_upsfd)
 static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	TYPE_FD devfd = ser_open_nf(port_name);
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
-	if (VALID_FD(devfd)) {
+	if (VALID_FD_SER(devfd)) {
 		/* set RTS to off and DTR to on to allow correct behavior
 		 * with UPS using PnP feature */
 		if (ser_set_dtr(devfd, 1) != -1) {
@@ -218,11 +214,11 @@ static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 	ssize_t ret;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
-	TYPE_FD devfd = ser_open_nf(port_name);
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
 	memset(sbuf, 0, 128);
 
-	if (VALID_FD(devfd)) {
+	if (VALID_FD_SER(devfd)) {
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
@@ -309,9 +305,9 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	ssize_t ret = 0;
 	int retry;
 	char buf[128];
-	TYPE_FD devfd = ser_open_nf(port_name);
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
-	if (VALID_FD(devfd)) {
+	if (VALID_FD_SER(devfd)) {
 		if (ser_set_speed_nf(devfd, port_name, B2400) != -1) {
 
 			if (!tcgetattr(devfd, &tio)) {

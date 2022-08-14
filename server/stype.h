@@ -21,6 +21,8 @@
 #ifndef NUT_STYPE_H_SEEN
 #define NUT_STYPE_H_SEEN 1
 
+#include "common.h"
+
 #ifndef WIN32
 #include <netdb.h>
 #endif
@@ -42,7 +44,7 @@ extern "C" {
 typedef struct stype_s {
 	char	*addr;
 	char	*port;
-	int	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 #ifdef WIN32
 	HANDLE  Event;
 #endif

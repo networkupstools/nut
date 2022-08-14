@@ -233,7 +233,7 @@ void listen_add(const char *addr, const char *port)
 	server = xcalloc(1, sizeof(*server));
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
-	server->sock_fd = -1;
+	server->sock_fd = ERROR_FD_SOCK;
 	server->next = firstaddr;
 
 	firstaddr = server;
@@ -269,9 +269,9 @@ static void setuptcp(stype_t *server)
 	}
 
 	for (ai = res; ai; ai = ai->ai_next) {
-		int sock_fd;
+		TYPE_FD_SOCK sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 
-		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
+		if (INVALID_FD_SOCK(sock_fd)) {
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
@@ -321,7 +321,7 @@ static void setuptcp(stype_t *server)
 
 	/* leave up to the caller, server_load(), to fail silently if there is
 	 * no other valid LISTEN interface */
-	if (server->sock_fd < 0) {
+	if (INVALID_FD_SOCK(server->sock_fd)) {
 		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
@@ -488,12 +488,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 		return 0;
 	}
 
-#ifdef WIN32
-	/* Note: in upstype_t we deal with "HANDLE" not "TYPE_FD"! */
-	if (ups->sock_fd == INVALID_HANDLE_VALUE) {
-#else
-	if (!VALID_FD(ups->sock_fd)) {
-#endif
+	if (INVALID_FD(ups->sock_fd)) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
 		return 0;
 	}
@@ -706,7 +701,7 @@ void server_load(void)
 	}
 
 	/* check if we have at least 1 valid LISTEN interface */
-	if (firstaddr->sock_fd < 0) {
+	if (INVALID_FD_SOCK(firstaddr->sock_fd)) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
 	}
 }
@@ -719,7 +714,7 @@ void server_free(void)
 	for (server = firstaddr; server; server = snext) {
 		snext = server->next;
 
-		if (server->sock_fd != -1) {
+		if (VALID_FD_SOCK(server->sock_fd)) {
 			close(server->sock_fd);
 		}
 
@@ -752,17 +747,15 @@ static void driver_free(void)
 
 		unext = ups->next;
 
+		if (VALID_FD(ups->sock_fd)) {
 #ifndef WIN32
-		if (ups->sock_fd != -1) {
 			close(ups->sock_fd);
-		}
 #else
-		if (ups->sock_fd != INVALID_HANDLE_VALUE) {
 			DisconnectNamedPipe(ups->sock_fd);
 			CloseHandle(ups->sock_fd);
-			ups->sock_fd = INVALID_HANDLE_VALUE;
-		}
 #endif
+			ups->sock_fd = ERROR_FD;
+		}
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);
@@ -802,7 +795,7 @@ static void upsd_cleanup(void)
 	free(handler);
 
 #ifdef WIN32
-	if(mutex != INVALID_HANDLE_VALUE) {
+	if (mutex != INVALID_HANDLE_VALUE) {
 		ReleaseMutex(mutex);
 		CloseHandle(mutex);
 	}
@@ -1103,12 +1096,12 @@ static void mainloop(void)
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
 
 		/* see if we need to (re)connect to the socket */
-		if (ups->sock_fd < 0) {
+		if (INVALID_FD(ups->sock_fd)) {
 			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
 				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
-			if (ups->sock_fd < 0) {
+			if (INVALID_FD(ups->sock_fd)) {
 				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
 			} else {
@@ -1292,12 +1285,12 @@ static void mainloop(void)
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
 
 		/* see if we need to (re)connect to the socket */
-		if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+		if (INVALID_FD(ups->sock_fd)) {
 			upsdebugx(1, "%s: UPS [%s] is not currently connected, "
 				"trying to reconnect",
 				__func__, ups->name);
 			ups->sock_fd = sstate_connect(ups);
-			if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+			if (INVALID_FD(ups->sock_fd)) {
 				upsdebugx(1, "%s: UPS [%s] is still not connected (FD %d)",
 					__func__, ups->name, ups->sock_fd);
 			} else {
@@ -1314,7 +1307,8 @@ static void mainloop(void)
 			ups_data_ok(ups);
 		}
 
-		if( ups->sock_fd != INVALID_HANDLE_VALUE) {
+		/* FIXME: Is the conditional needed? We got here... */
+		if (VALID_FD(ups->sock_fd)) {
 			fds[nfds] = ups->read_overlapped.hEvent;
 
 			handler[nfds].type = DRIVER;
@@ -1351,7 +1345,7 @@ static void mainloop(void)
 	/* scan through server sockets */
 	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
 
-		if (server->sock_fd < 0) {
+		if (INVALID_FD_SOCK(server->sock_fd)) {
 			continue;
 		}
 
@@ -1713,14 +1707,15 @@ int main(int argc, char **argv)
 	}
 #else
 	mutex = CreateMutex(NULL,TRUE,UPSD_PIPE_NAME);
-	if(mutex == NULL ) {
-		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+	if (mutex == NULL) {
+		if (GetLastError() != ERROR_ACCESS_DENIED) {
 			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSD_PIPE_NAME,(int)GetLastError());
 		}
 	}
 
 	cmdret = -1; /* unknown, maybe ok */
-	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED)
+	if (GetLastError() == ERROR_ALREADY_EXISTS
+	||  GetLastError() == ERROR_ACCESS_DENIED)
 		cmdret = 0; /* known conflict */
 #endif
 

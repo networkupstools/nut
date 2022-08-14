@@ -165,11 +165,13 @@ static int parse_args(size_t numargs, char **arg)
 }
 
 
-#ifndef WIN32
-static int sstate_connect(void)
+static TYPE_FD sstate_connect(void)
 {
+	TYPE_FD	fd;
+
+#ifndef WIN32
 	ssize_t	ret;
-	int	fd, len;
+	int	len;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
@@ -193,9 +195,9 @@ static int sstate_connect(void)
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		upslog_with_errno(LOG_ERR, "Can't create socket for UPS [%s]", device_path);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
@@ -209,13 +211,13 @@ static int sstate_connect(void)
 		time(&now);
 
 		if (difftime(now, last_connfail) < 60) {
-			return -1;
+			return ERROR_FD;
 		}
 
 		last_connfail = now;
 
 		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_GETFL, 0);
@@ -223,7 +225,7 @@ static int sstate_connect(void)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
@@ -231,7 +233,7 @@ static int sstate_connect(void)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
@@ -240,14 +242,11 @@ static int sstate_connect(void)
 	if (ret != (int)strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	/* continued below... */
-#else
-HANDLE sstate_connect(void)
-{
-	HANDLE		fd;
+#else /* WIN32 */
 	char		pipename[SMALLBUF];
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL		result = FALSE;
@@ -256,8 +255,8 @@ HANDLE sstate_connect(void)
 
 	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
 
-	if( result == FALSE ) {
-		return INVALID_HANDLE_VALUE;
+	if (result == FALSE) {
+		return ERROR_FD;
 	}
 
 	fd = CreateFile(
@@ -272,7 +271,7 @@ HANDLE sstate_connect(void)
 
 	if (fd == INVALID_HANDLE_VALUE) {
 		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
-		return INVALID_HANDLE_VALUE;
+		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
@@ -282,11 +281,13 @@ HANDLE sstate_connect(void)
 	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", device_path);
 		CloseHandle(fd);
-		return INVALID_HANDLE_VALUE;
+		return ERROR_FD;
 	}
 
 	/* Start a read IO so we could wait on the event associated with it */
-	ReadFile(fd,read_buf,sizeof(read_buf)-1,NULL,&(read_overlapped)); /*-1 to be sure to have a trailling 0 */
+	ReadFile(fd, read_buf,
+		sizeof(read_buf) - 1, /*-1 to be sure to have a trailling 0 */
+		NULL, &(read_overlapped));
 #endif
 
 	/* sstate_connect() continued for both platforms: */
@@ -306,7 +307,7 @@ HANDLE sstate_connect(void)
 
 static void sstate_disconnect(void)
 {
-	if (!VALID_FD(upsfd)) {
+	if (INVALID_FD(upsfd)) {
 		/* Already disconnected... or not yet? ;) */
 		return;
 	}
@@ -315,11 +316,11 @@ static void sstate_disconnect(void)
 
 #ifndef WIN32
 	close(upsfd);
-	upsfd = -1;
 #else
 	CloseHandle(upsfd);
-	upsfd = INVALID_HANDLE_VALUE;
 #endif
+
+	upsfd = ERROR_FD;
 }
 
 
@@ -327,7 +328,7 @@ static int sstate_sendline(const char *buf)
 {
 	ssize_t	ret;
 
-	if (!VALID_FD(upsfd)) {
+	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
@@ -339,7 +340,7 @@ static int sstate_sendline(const char *buf)
 
 	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
 
-	if( result == 0 ) {
+	if (result == 0) {
 		ret = 0;
 	}
 	else {
@@ -363,7 +364,7 @@ static int sstate_readline(void)
 #ifndef WIN32
 	char	buf[SMALLBUF];
 
-	if (upsfd < 0) {
+	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
@@ -382,7 +383,7 @@ static int sstate_readline(void)
 		}
 	}
 #else
-	if (upsfd == INVALID_HANDLE_VALUE) {
+	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
@@ -423,7 +424,7 @@ static int sstate_dead(int maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (!VALID_FD(upsfd)) {
+	if (INVALID_FD(upsfd)) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", device_path);
 		return -1;	/* dead */
 	}
