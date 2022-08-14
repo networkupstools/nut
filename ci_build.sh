@@ -293,6 +293,12 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=yes ;;
+
+        # Currently for nut-scanner, might be more later - hence agnostic naming:
+        "NUT_BUILD_CAPS=libltdl=no")
+            [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
+        "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
+            [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
     esac
 done
 
@@ -890,6 +896,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Just make sure relevant install recipes are tested:
     CONFIG_OPTS+=("--with-nut_monitor=force")
     CONFIG_OPTS+=("--with-pynut=auto")
+
+    # Similarly for nut-scanner which requires libltdl which
+    # is not ubiquitous on CI workers. So unless agent labels
+    # declare it should be capable, err on the safe side:
+    if [ "${CANBUILD_WITH_LIBLTDL-}" != yes ] ; then
+        CONFIG_OPTS+=("--with-nut-scanner=auto")
+    fi
 
     # Some OSes have broken cppunit support, it crashes either build/link
     # or at run-time. While distros take time to figure out fixes, we can
