@@ -24,6 +24,32 @@ of the original project, allowing to develop other classes nearby later.
 Currently the module is regularly tested to work with Python interpreter
 versions 2.7, 3.4, 3.5 and 3.7.
 
+[NOTE]
+======
+Text fields (including NUT protocol error codes quoted into `PyNUTError`
+exceptions) returned by methods are byte sequences (not locale-aware
+strings). This is of little concern for Python 2, but is important in
+Python 3.
+
+The `ups` argument to methods is handled as a string, so conversion may
+be needed to compare with names returned in the arrays, e.g.:
+----
+strUps = bUps.decode('ascii')
+bUps = strUps.encode('ascii')
+----
+
+Names returned by `GetUPSNames()` are specifically converted into string
+type.
+
+Since Python 3 support was added just recently, module code may later be
+converted to use string types like `str` or `unicode` in the returned
+dictionaries and sets instead, if the community deems this to be more
+idiomatic.
+
+Examples below *do not* specify the `b'some text'` markup that would be
+pedantically correct (for Python 3 at least).
+======
+
 .List of methods in the class
 ------
 class PyNUTClient :
