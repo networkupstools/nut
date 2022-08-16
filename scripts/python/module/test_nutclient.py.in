@@ -41,12 +41,44 @@ if __name__ == "__main__" :
     try :
         result = nut.RunUPSCommand( "UPS1", "test.panel.start" )
     except :
-        result = sys.exc_info()[1]
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
     print( "\033[01;33m%s\033[0m\n" % result )
 
     print( 80*"-" + "\nTesting 'SetUPSVar' (set ups.id to test):")
     try :
         result = nut.SetRWVar( "UPS1", "ups.id", "test" )
     except :
-        result = sys.exc_info()[1]
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
     print( "\033[01;33m%s\033[0m\n" % result )
+
+    # testing who has an upsmon-like log-in session to a device
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in upsd.conf) :")
+    try :
+        result = nut.ListClients( "dummy" )
+    except :
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for missing device (should raise an exception) :")
+    try :
+        result = nut.ListClients( "MissingBogusDummy" )
+    except :
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
+    try :
+        result = nut.DeviceLogin( "dummy" )
+    except :
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for None (should list all devices and sessions to them, if any -- e.g. one established above) :")
+    try :
+        result = nut.ListClients( )
+    except :
+        result = "EXCEPTION: " + str(sys.exc_info()[1])
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'PyNUT' instance teardown (end of test script)" )
+    # No more tests AFTER this line; add them above the teardown message

@@ -174,6 +174,17 @@ TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std
 	throw NutException("Not implemented");
 }
 
+std::map<std::string, std::set<std::string>> MemClientStub::listDeviceClients(void)
+{
+	throw NutException("Not implemented");
+}
+
+std::set<std::string> MemClientStub::deviceGetClients(const std::string& dev)
+{
+	NUT_UNUSED_VARIABLE(dev);
+	throw NutException("Not implemented");
+}
+
 void MemClientStub::deviceLogin(const std::string& dev)
 {
 	NUT_UNUSED_VARIABLE(dev);

@@ -901,10 +901,31 @@ testcase_sandbox_python_with_credentials() {
     fi
 }
 
+testcase_sandbox_python_with_upsmon_credentials() {
+    isTestablePython || return 0
+
+    log_separator
+    log_info "Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
+    if (
+        NUT_USER='dummy-admin'
+        NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
+        export NUT_USER NUT_PASS
+        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+    ) ; then
+        log_info "OK, PyNUT did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "PyNUT complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_upsmon_credentials"
+    fi
+}
+
 testcases_sandbox_python() {
     isTestablePython || return 0
     testcase_sandbox_python_without_credentials
     testcase_sandbox_python_with_credentials
+    testcase_sandbox_python_with_upsmon_credentials
 }
 
 ####################################
