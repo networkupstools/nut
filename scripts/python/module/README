@@ -111,7 +111,7 @@ help
 ~~~~
 
 Sends the `HELP` command to the NUT data server and returns whatever bits of
-wizdom it has to offer.
+wisdom it has to offer.
 
 
 ver
