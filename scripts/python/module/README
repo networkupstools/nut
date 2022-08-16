@@ -70,6 +70,8 @@ class PyNUTClient :
 
   def GetUPSList( self ) :
 
+  def GetUPSNames( self ) :
+
   def GetUPSVars( self, ups='' ) :
 
   def ListClients( self, ups = None ) :
@@ -214,6 +216,29 @@ Returns the list of UPSes represented by the NUT server, as a dictionary of
 
     >> {'UPS1': 'Smart UPS 3000 File server',
         'UPS2': 'Smart UPS 1000 Serveur de mail'}
+-----
+
+
+GetUPSNames
+~~~~~~~~~~~
+
+Returns just the list of available UPS names from the NUT server.
+
+The result is a set of `str` objects (comparable with `ups="somename"` and
+useful as arguments to other methods). Helps work around Python2/Python3
+string API changes (where `b'string' != 'string'` and not even a type
+comparable to it), and is primarily used as a helper internally in some
+methods.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    result = ups.GetUPSNames()
+    print( result )
+
+    >> ['UPS1', 'UPS2']
 -----
 
 
