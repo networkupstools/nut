@@ -80,12 +80,15 @@ test_script:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst"'
-        7z a NUT-for-Windows-SNAPSHOT-{version}.zip .inst
+        7z a NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.zip .inst
 
 artifacts:
   - path: 'NUT-for-Windows-SNAPSHOT*.zip'
     name: Bundle of binary files and FOSS dependencies of NUT for Windows
     type: zip
+
+  - path: config.log
+    name: config.log
 
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
