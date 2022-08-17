@@ -34,6 +34,6 @@ build_script:
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ./ci_build.sh'
 
 cache:
-  - C:\msys64 -> appveyor.yml
+  - C:\msys64\var\cache\pacman\pkg # -> appveyor.yml
   - C:\msys64\home\%USER\.ccache
 
