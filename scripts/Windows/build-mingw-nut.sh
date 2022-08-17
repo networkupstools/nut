@@ -4,6 +4,11 @@
 
 #set -x
 
+SCRIPTDIR="`dirname "$0"`"
+SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+
+DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
+
 # default to update source then build
 WINDIR=$(pwd)
 TOP_DIR=$WINDIR/../..
@@ -65,36 +70,6 @@ out-of-tree)
 esac
 
 cd $BUILD_DIR || exit
-
-REGEX_WS="`printf '[\t ]'`"
-REGEX_NOT_WS="`printf '[^\t ]'`"
-dllldd() {
-  # Traverse an EXE or DLL file for DLLs it needs directly,
-  # which are provided in the cross-build env (not system ones).
-  # Assume no whitespaces in paths and filenames of interest.
-
-  # if `ldd` handles Windows PE, we are lucky:
-  #         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
-  OUT="`ldd "$1" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,"`" \
-  && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-
-  # Otherwise try objdump
-  for OD in objdump "$ARCH-objdump" ; do
-    (command -v "$OD" >/dev/null 2>/dev/null) || continue
-    OUT="`$OD -x "$1" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | while read F ; do ls -1 "/usr/$ARCH/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
-    && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-  done
-
-  return 1
-}
-
-dlllddrec() (
-  # Recurse to find the (mingw-provided) tree of dependencies
-  dllldd "$1" | while read D ; do
-    echo "$D"
-    dlllddrec "$D"
-  done | sort | uniq
-)
 
 if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
 	ARCH="x86_64-w64-mingw32"
