@@ -11,6 +11,7 @@ SUBDIRS = include common clients conf data docs drivers tools \
 bindir = @bindir@
 sbindir = @sbindir@
 driverexecdir = @driverexecdir@
+cgiexecdir = @cgiexecdir@
 
 # Automatically update the libtool script if it becomes out-of-date
 # See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
@@ -350,7 +351,7 @@ if HAVE_WINDOWS
 # Then hardlink libraries for sbin... (alternative: all bins in one dir)
 # TOTHINK: Are there more dirs to consider? So far we cover bindir, sbindir and
 # driverexecdir (e.g. some Linux distros place drivers to /lib/nut while tools
-# and daemons are in /usr/bin and /usr/sbin); anything else?..
+# and daemons are in /usr/bin and /usr/sbin), and cgiexecdir; anything else?..
 # Currently this is handled by a CHECKING... step that should fail if it hits
 # anything.
 install-win-bundle: all
@@ -392,14 +393,26 @@ install-win-bundle-thirdparty:
 	        echo "   DLL->drv   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
+	 ) || exit ; \
+	 (  if test -z "$(cgiexecdir)" ; then exit 0 ; fi ; \
+	    if test x"$(cgiexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
+	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
+	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
+	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
+	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->cgi   $$D" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+        done ; \
 	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
 	 relbindir="`echo './$(bindir)/' | sed 's,//*,/,g'`" ; \
 	 relsbindir="`echo './$(sbindir)/' | sed 's,//*,/,g'`" ; \
 	 reldriverexecdir="`echo './$(driverexecdir)/' | sed 's,//*,/,g'`" ; \
+	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
 	 cd '$(DESTDIR)' || exit ; \
 	 find . -type f | grep -Ei '\.(exe|dll)$$' \
-	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir})" \
+	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
 else
