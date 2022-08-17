@@ -362,7 +362,7 @@ install-win-bundle: all
 install-win-bundle-thirdparty:
 	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
 	@echo "Searching which DLLs need to be bundled with NUT for Windows..." >&2
-	 if test -z "$$ARCH" ; then \
+	@if test -z "$$ARCH" ; then \
 	    if test -n "$(target)" ; then \
 	        ARCH='$(target)' \
         ; else \
