@@ -37,8 +37,13 @@ install:
         REM Prerequisites for NUT per https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt :
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"
   - cmd: |
-        REM Assorted stats after packaging:
-        C:\msys64\usr\bin\bash -lc "date -u; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date"
+        REM Assorted stats after package processing:
+        C:\msys64\usr\bin\bash -lc "date -u; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats"'
 
 
 build_script:
@@ -47,7 +52,15 @@ build_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ./ci_build.sh'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ./ci_build.sh'
+
+after_build:
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
 
 cache:
   - C:\msys64\var\cache\pacman\pkg # -> appveyor.yml
