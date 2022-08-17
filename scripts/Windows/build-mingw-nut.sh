@@ -122,10 +122,10 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	# Steam-roll over all executables/libs we have here and copy
 	# over resolved dependencies from the cross-build environment:
-	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+	(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 
 	# Hardlink libraries for sbin (alternative: all bins in one dir):
-	(cd $INSTALL_DIR/sbin && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+	(cd $INSTALL_DIR/sbin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	cd ..
 else
 	echo "Usage:"

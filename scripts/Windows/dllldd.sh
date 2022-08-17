@@ -54,6 +54,17 @@ dlllddrec() (
 	done | sort | uniq
 )
 
+dllldddir() (
+	# Recurse the current (or specified) directory, find all EXE/DLL here,
+	# and locate their dependency DLLs, and produce a unique-item list
+	if [ $# = 0 ]; then
+		dllldddir .
+		return
+	fi
+
+	find "$@" -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq
+)
+
 if [ x"${DLLLDD_SOURCED-}" != xtrue ] ; then
 	# Work like a command-line tool:
 	case "$1" in
@@ -62,13 +73,17 @@ if [ x"${DLLLDD_SOURCED-}" != xtrue ] ; then
 Tool to find DLLs needed by an EXE or another DLL
 
 Directly used libraries:
-	$0 dllldd FILE.EXE
+	$0 dllldd ONEFILE.EXE
 
 Recursively used libraries:
-	$0 dlllddrec FILE.EXE
+	$0 dlllddrec ONEFILE.EXE
+
+Find all EXE/DLL files under specified (or current) dir,
+and list their set of required DLLs
+	$0 dllldddir [DIRNAME]
 EOF
 			;;
-		dlllddrec|dllldd) "$@" ;;
+		dlllddrec|dllldd|dllldddir) "$@" ;;
 		*) dlllddrec "$1" ;;
 	esac
 
