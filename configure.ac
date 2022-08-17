@@ -689,7 +689,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -723,6 +723,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
+		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -1190,30 +1191,51 @@ NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], 
 
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-libltdl
+dnl Check for --with-libltdl and --with-nut-scanner
 
+dnl Note: libltdl is primarily used by nut-scanner now; however some
+dnl side projects and forks of NUT have more creative uses for it
+dnl and might eventually land in NUT codebase proper.
 NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
 
+dnl Note: default could be overridden above by --with-all handling.
+dnl While nut-scanner decides at run-time if it would use third-party shared
+dnl library files (bundled along or not, if available for the platform), its
+dnl binary must be configured now and built against their headers at least.
+NUT_ARG_WITH([nut-scanner], [build and install nut-scanner tool (requires libltdl; optionally libusb, libneon, libsnmp)], [auto])
+
 dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_libltdl}" != "no"; then
-   dnl check for libltdl compiler flags
-   NUT_CHECK_LIBLTDL
+if test x"${nut_with_libltdl}" != x"no"; then
+    if test x"${nut_with_nut_scanner}" = x"yes"; then
+        dnl Require libltdl to be present (or fail the configure script)
+        nut_with_libltdl="yes"
+    fi
+
+    dnl check for libltdl compiler flags
+    NUT_CHECK_LIBLTDL
 fi
 
-if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR([libltdl not found])
+if test x"${nut_with_libltdl}" = x"yes" -a x"${nut_have_libltdl}" != x"yes"; then
+    AC_MSG_ERROR([libltdl not found])
 fi
 
-if test "${nut_with_libltdl}" != "no"; then
-   nut_with_libltdl="${nut_have_libltdl}"
+if test x"${nut_with_libltdl}" != x"no"; then
+    nut_with_libltdl="${nut_have_libltdl}"
 fi
 
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitly report if we are building nut-scanner or not
-dnl since it requires libltdl
-NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
+if test x"${nut_with_libltdl}" = x"no" && test x"${nut_with_nut_scanner}" = x"yes"; then
+    AC_MSG_ERROR([libltdl support was disabled or not found, but --with-nut-scanner was requested and requires it])
+fi
+
+if test x"${nut_with_nut_scanner}" = x"auto"; then
+    nut_with_nut_scanner="${nut_with_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([build nut-scanner], [${nut_with_nut_scanner}], [],
+					[WITH_NUT_SCANNER], [Define to enable nut-scanner tool support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi

@@ -30,7 +30,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.6"
+#define CPS_HID_VERSION      "CyberPower HID 0.7"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -283,6 +283,15 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
 	if (vendorID != CPS_VENDORID || (productID != 0x0501 && productID != 0x0601)) {
+		return 0;
+	}
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			vendorID, productID);
 		return 0;
 	}
 
