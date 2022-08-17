@@ -22,6 +22,7 @@ platform: x64
 
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
 install:
+  - ps: C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg"
   - ps: C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Syuu"  # Core update (in case any core packages are outdated)
   - ps: C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Syuu"  # Normal update
   - ps: C:\msys64\usr\bin\bash -lc "pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"
