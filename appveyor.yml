@@ -29,19 +29,19 @@ install:
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
         $ErrorAction = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Core update (in case any core packages are outdated)
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Core update (in case any core packages are outdated)
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
         $ErrorAction = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Normal update
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Normal update
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
         $ErrorAction = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"2>&1 | %{ "$_" }
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"2>&1 | %{ "$_" }
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
         $ErrorAction = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time du -ks / ; time du -ks /var/cache/pacman/pkg"2>&1 | %{ "$_" }
+        C:\msys64\usr\bin\bash -lc "date -u; du -ks / ; date -u; du -ks /var/cache/pacman/pkg; date" 2>&1 | %{ "$_" }
 
 
 build_script:
