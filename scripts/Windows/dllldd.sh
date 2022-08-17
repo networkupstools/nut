@@ -25,7 +25,7 @@ dllldd() (
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|ws2_)(32|64))\.dll$'`" \
+			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|user|wsock|ws2_)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			if [ -n "$ARCH" -a -d ""/usr/${ARCH}"" ] ; then
