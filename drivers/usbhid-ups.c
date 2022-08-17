@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.48"
+#define DRIVER_VERSION		"0.49"
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"
@@ -160,6 +160,7 @@ static double interval(void);
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
+int disable_fix_report_desc = 0; /* by default we apply fix-ups for broken USB encoding, etc. */
 
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
@@ -790,6 +791,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "onlinedischarge",
 		"Set to treat discharging while online as being offline");
 
+	addvar(VAR_FLAG, "disable_fix_report_desc",
+		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
+
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1074,6 +1078,10 @@ void upsdrv_initups(void)
 		onlinedischarge = 1;
 	}
 
+	if (testvar("disable_fix_report_desc")) {
+		disable_fix_report_desc = 1;
+	}
+
 	val = getval("interruptsize");
 	if (val) {
 		int ipv = atoi(val);
@@ -1330,6 +1338,9 @@ int fix_report_desc(HIDDevice_t *arg_pDev, HIDDesc_t *arg_pDesc) {
 	NUT_UNUSED_VARIABLE(arg_pDev);
 	NUT_UNUSED_VARIABLE(arg_pDesc);
 
+/* Implementations should honor the user's toggle:
+ *	if (disable_fix_report_desc) return 0;
+ */
 	return 0;
 }
 
