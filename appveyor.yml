@@ -38,7 +38,7 @@ install:
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"
   - cmd: |
         REM Assorted stats after packaging:
-        C:\msys64\usr\bin\bash -lc "date -u; du -ks / ; date -u; du -ks /var/cache/pacman/pkg; date"
+        C:\msys64\usr\bin\bash -lc "date -u; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date"
 
 
 build_script:
