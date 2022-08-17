@@ -1669,9 +1669,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
-    # Can be noisy if regen is needed (DMF branch)
+    # Can be noisy if regen is needed (DMF branch with this or that BUILD_TGT)
     # Bail out due to DMF will (optionally) happen in the next check
-    GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+    #GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
 
     # TODO (when merging DMF branch, not a problem before then):
     # this one check should not-list the "*.dmf" files even if
@@ -1698,7 +1698,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
         $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
-        FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+        #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
         )
     fi
