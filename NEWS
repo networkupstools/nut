@@ -93,6 +93,10 @@ https://github.com/networkupstools/nut/milestone/8
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]
 
+ - detection of `libltdl` in `configure` script updated with fallback code to
+   find it on systems that deliver the library to `/usr/local/lib` (e.g. on
+   FreeBSD) [#1577]
+
  - an explicit `configure --with-nut-scanner` toggle was added, specifically
    so that build environments requesting `--with-all` but lack `libltdl` would
    abort and require either to install the dependency or explicitly forfeit
