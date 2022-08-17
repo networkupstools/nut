@@ -62,7 +62,12 @@ dllldddir() (
 		return
 	fi
 
-	find "$@" -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq
+	# Two passes: one finds direct dependencies of all EXE/DLL under the
+	# specified location(s); then trims this list to be unique, and then
+	# the second pass recurses those libraries for their dependencies:
+	find "$@" -type f | grep -Ei '\.(exe|dll)$' \
+	| while read E ; do dllldd "$E" ; done | sort | uniq \
+	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
 )
 
 if [ x"${DLLLDD_SOURCED-}" != xtrue ] ; then
