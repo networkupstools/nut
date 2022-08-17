@@ -868,7 +868,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -902,6 +902,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
+		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -1376,30 +1377,51 @@ NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], 
 
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-libltdl
+dnl Check for --with-libltdl and --with-nut-scanner
 
+dnl Note: libltdl is primarily used by nut-scanner now; however some
+dnl side projects and forks of NUT have more creative uses for it
+dnl and might eventually land in NUT codebase proper.
 NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
 
+dnl Note: default could be overridden above by --with-all handling.
+dnl While nut-scanner decides at run-time if it would use third-party shared
+dnl library files (bundled along or not, if available for the platform), its
+dnl binary must be configured now and built against their headers at least.
+NUT_ARG_WITH([nut-scanner], [build and install nut-scanner tool (requires libltdl; optionally libusb, libneon, libsnmp)], [auto])
+
 dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_libltdl}" != "no"; then
-   dnl check for libltdl compiler flags
-   NUT_CHECK_LIBLTDL
+if test x"${nut_with_libltdl}" != x"no"; then
+    if test x"${nut_with_nut_scanner}" = x"yes"; then
+        dnl Require libltdl to be present (or fail the configure script)
+        nut_with_libltdl="yes"
+    fi
+
+    dnl check for libltdl compiler flags
+    NUT_CHECK_LIBLTDL
 fi
 
-if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR([libltdl not found])
+if test x"${nut_with_libltdl}" = x"yes" -a x"${nut_have_libltdl}" != x"yes"; then
+    AC_MSG_ERROR([libltdl not found])
 fi
 
-if test "${nut_with_libltdl}" != "no"; then
-   nut_with_libltdl="${nut_have_libltdl}"
+if test x"${nut_with_libltdl}" != x"no"; then
+    nut_with_libltdl="${nut_have_libltdl}"
 fi
 
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitly report if we are building nut-scanner or not
-dnl since it requires libltdl
-NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
+if test x"${nut_with_libltdl}" = x"no" && test x"${nut_with_nut_scanner}" = x"yes"; then
+    AC_MSG_ERROR([libltdl support was disabled or not found, but --with-nut-scanner was requested and requires it])
+fi
+
+if test x"${nut_with_nut_scanner}" = x"auto"; then
+    nut_with_nut_scanner="${nut_with_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([build nut-scanner], [${nut_with_nut_scanner}], [],
+					[WITH_NUT_SCANNER], [Define to enable nut-scanner tool support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -2290,34 +2312,8 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-AC_MSG_CHECKING(whether to install Solaris SMF files)
-solarissmf="auto"
-AC_ARG_WITH([solaris-smf],
-	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarissmf="auto"
-		;;
-	yes|no)
-		solarissmf="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
-		;;
-	esac
-], [])
 
-if test x"$solarissmf" = xauto ; then
-	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
-		solarissmf="yes"
-	else
-		solarissmf="no"
-	fi
-fi
-AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-
+dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
 solarispkg_svr4="auto"
 AC_ARG_WITH([solaris-pkg-svr4],
@@ -2346,6 +2342,7 @@ fi
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
+
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
 solarispkg_ips="auto"
 AC_ARG_WITH([solaris-pkg-ips],
@@ -2373,6 +2370,81 @@ if test x"$solarispkg_ips" = xauto ; then
 fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
+
+dnl NOTE: Be sure to customize e.g.  --datarootdir=/usr/share/nut to install
+dnl these scripts not into default location as e.g. /usr/share/solaris-smf
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		case "${solarispkg_ips}${solarispkg_svr4}" in
+			*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+			*) solarissmf="no" ;; dnl Target not solarish
+		esac
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
+
+AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
+solarisinit="auto"
+AC_ARG_WITH([solaris-init],
+	AS_HELP_STRING([--with-solaris-init=(yes|auto|no)], [Enable installation of NUT legacy init-scripts for Solaris/illumos (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarisinit="auto"
+		;;
+	yes|no)
+		solarisinit="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-init=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarisinit" = xauto ; then
+	dnl Depends on usability of SMF or making for packaging
+	case "${solarispkg_ips}${solarispkg_svr4}" in
+		*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+		*)
+			case ${target_os} in
+				solaris*|sunos*|SunOS*|illumos*)
+					if test "$solarissmf" = x"yes" ; then
+						dnl no need on modern OSes
+						solarisinit="no"
+					else
+						solarisinit="yes"
+					fi
+					;;
+				*) solarisinit="no" ;; dnl Some other OS
+			esac
+			;;
+	esac
+fi
+AC_MSG_RESULT([${solarisinit}])
+AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or

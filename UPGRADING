@@ -7,6 +7,13 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+NOTE: For packaging (OS distribution or in-house) it is recommended to
+primarily `./configure --with-all` and then excise `--without-something`
+explicitly for items not supported on your platform, so you do not miss
+out on new NUT features as they come with new releases. Some may require
+that you update your build environment with new third-party dependencies,
+so a broken build of a new NUT release would let you know how to act.
+
 Changes from 2.8.0 to 2.8.1
 ---------------------------
 
@@ -30,6 +37,12 @@ Changes from 2.8.0 to 2.8.1
 - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]
+
+- an explicit `configure --with-nut-scanner` toggle was added, specifically
+  so that build environments requesting `--with-all` but lacking `libltdl`
+  would abort and require the packager either to install the dependency
+  or explicitly forfeit building the tool (some distro packages missed it
+  quietly in the past) [#1560]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------

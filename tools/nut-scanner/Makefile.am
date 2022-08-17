@@ -43,8 +43,8 @@ BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# Only build nut-scanner, and its library, if libltdl was found (required!)
-if WITH_LIBLTDL
+# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+if WITH_NUT_SCANNER
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif

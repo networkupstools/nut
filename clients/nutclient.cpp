@@ -810,8 +810,42 @@ TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::st
 	return sendTrackingQuery("INSTCMD " + dev + " " + name + " " + param);
 }
 
+std::map<std::string, std::set<std::string>> TcpClient::listDeviceClients(void)
+{
+	/* Lists all clients of all devices (which have at least one client) */
+	std::map<std::string, std::set<std::string>> deviceClientsMap;
+
+	std::set<std::string> devs = getDeviceNames();
+	for(std::set<std::string>::iterator it=devs.begin(); it!=devs.end(); ++it)
+	{
+		std::string dev = *it;
+		std::set<std::string> deviceClients = deviceGetClients(dev);
+		if (!deviceClients.empty()) {
+			deviceClientsMap[dev] = deviceClients;
+		}
+	}
+
+	return deviceClientsMap;
+}
+
+std::set<std::string> TcpClient::deviceGetClients(const std::string& dev)
+{
+	/* Who did a deviceLogin() to this dev? */
+	std::set<std::string> clients;
+
+	std::vector<std::vector<std::string> > res = list("CLIENT", dev);
+	for(size_t n=0; n<res.size(); ++n)
+	{
+		clients.insert(res[n][0]);
+	}
+
+	return clients;
+}
+
 void TcpClient::deviceLogin(const std::string& dev)
 {
+	/* Requires that current session is already logged in with
+	 * an account which has one of "upsmon" roles in `upsd.users` */
 	detectError(sendQuery("LOGIN " + dev));
 }
 
@@ -1336,6 +1370,12 @@ TrackingID Device::executeCommand(const std::string& name, const std::string& pa
 	return getClient()->executeDeviceCommand(getName(), name, param);
 }
 
+std::set<std::string> Device::getClients()
+{
+	if (!isOk()) throw NutException("Invalid device");
+	return getClient()->deviceGetClients(getName());
+}
+
 void Device::login()
 {
 	if (!isOk()) throw NutException("Invalid device");
@@ -1358,6 +1398,8 @@ void Device::primary()
 
 void Device::forcedShutdown()
 {
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->deviceForcedShutdown(getName());
 }
 
 int Device::getNumLogins()

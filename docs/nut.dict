@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3008 utf-8
+personal_ws-1.1 en 3013 utf-8
 AAS
 ABI
 ACFAIL
@@ -274,6 +274,7 @@ Defensor
 DeltaUPSv
 DeviceID
 DeviceKit
+DeviceLogin
 Dharm
 DiSplay
 Diehl
@@ -596,6 +597,7 @@ LineA
 LineB
 LineSens
 Lintian
+ListClients
 Lite's
 LowBatt
 LowFreq
@@ -1717,6 +1719,7 @@ dev
 devctl
 devd
 devel
+deviceGetClients
 devscan
 dfl
 dhcp
@@ -1875,6 +1878,7 @@ genericups
 genesisII
 gentoo
 gestion
+getClients
 getDescription
 getDevice
 getDevicesVariableValues
@@ -2109,6 +2113,7 @@ linevoltage
 linkdoc
 linux
 lipo
+listDeviceClients
 listdef
 littleguy
 lk

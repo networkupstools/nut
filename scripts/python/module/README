@@ -24,6 +24,32 @@ of the original project, allowing to develop other classes nearby later.
 Currently the module is regularly tested to work with Python interpreter
 versions 2.7, 3.4, 3.5 and 3.7.
 
+[NOTE]
+======
+Text fields (including NUT protocol error codes quoted into `PyNUTError`
+exceptions) returned by methods are byte sequences (not locale-aware
+strings). This is of little concern for Python 2, but is important in
+Python 3.
+
+The `ups` argument to methods is handled as a string, so conversion may
+be needed to compare with names returned in the arrays, e.g.:
+----
+strUps = bUps.decode('ascii')
+bUps = strUps.encode('ascii')
+----
+
+Names returned by `GetUPSNames()` are specifically converted into string
+type.
+
+Since Python 3 support was added just recently, module code may later be
+converted to use string types like `str` or `unicode` in the returned
+dictionaries and sets instead, if the community deems this to be more
+idiomatic.
+
+Examples below *do not* specify the `b'some text'` markup that would be
+pedantically correct (for Python 3 at least).
+======
+
 .List of methods in the class
 ------
 class PyNUTClient :
@@ -34,13 +60,17 @@ class PyNUTClient :
 
   def ver( self ) :
 
-  def FSD( self, ups="") :
+  def DeviceLogin( self, ups="" ) :
+
+  def FSD( self, ups="" ) :
 
   def GetRWVars( self, ups='' ) :
 
   def GetUPSCommands( self, ups='' ) :
 
   def GetUPSList( self ) :
+
+  def GetUPSNames( self ) :
 
   def GetUPSVars( self, ups='' ) :
 
@@ -81,7 +111,7 @@ help
 ~~~~
 
 Sends the `HELP` command to the NUT data server and returns whatever bits of
-wizdom it has to offer.
+wisdom it has to offer.
 
 
 ver
@@ -92,6 +122,19 @@ identification such as version, product or distribution it may be bunded with.
 
 Note that the NUT client interactions should not rely on reported versions,
 but follow the protocol as defined.
+
+
+DeviceLogin
+~~~~~~~~~~~
+
+Establish a "client" session with the specified UPS. This uses credentials
+specified earlier to `__init__()` this class instance, and on server side
+(in `upsd.users` file) these credentials must have one of `upsmon` roles.
+
+The command should return `OK` if everything went well, or raise an exception
+in case of failure, such as invalid or insufficiently privileged credentials.
+
+Note there is no `DeviceLogout()`, just the general connection termination.
 
 
 FSD
@@ -173,6 +216,29 @@ Returns the list of UPSes represented by the NUT server, as a dictionary of
 
     >> {'UPS1': 'Smart UPS 3000 File server',
         'UPS2': 'Smart UPS 1000 Serveur de mail'}
+-----
+
+
+GetUPSNames
+~~~~~~~~~~~
+
+Returns just the list of available UPS names from the NUT server.
+
+The result is a set of `str` objects (comparable with `ups="somename"` and
+useful as arguments to other methods). Helps work around Python2/Python3
+string API changes (where `b'string' != 'string'` and not even a type
+comparable to it), and is primarily used as a helper internally in some
+methods.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    result = ups.GetUPSNames()
+    print( result )
+
+    >> ['UPS1', 'UPS2']
 -----
 
 

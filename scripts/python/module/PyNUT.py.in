@@ -43,6 +43,11 @@
 #            in Python 3.9, by spelling out b"STR" or str.encode('ascii');
 #            the change was also tested to work with Python 2.7, 3.4, 3.5 and
 #            3.7 (to the extent of accompanying test_nutclient.py at least).
+#
+# 2022-08-12 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.5.0
+#            Fix ListClients() method to actually work with current NUT protocol
+#            Added DeviceLogin() method
+#            Added GetUPSNames() method
 
 import telnetlib
 
@@ -61,8 +66,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.4.0"
-    __release     = "2021-09-27"
+    __version     = "1.5.0"
+    __release     = "2022-08-12"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -119,12 +124,24 @@ if something goes wrong.
             self.__srv_handler.write( ("PASSWORD %s\n" % self.__password).encode('ascii') )
             result = self.__srv_handler.read_until( b"\n", self.__timeout )
             if result[:2] != b"OK" :
-                raise PyNUTError( result.replace( b"\n", b"" ) )
+                if result == b"ERR INVALID-ARGUMENT\n" :
+                    # Quote the password (if it has whitespace etc)
+                    # TODO: Escape special chard like NUT does?
+                    self.__srv_handler.write( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
+                    result = self.__srv_handler.read_until( b"\n", self.__timeout )
+                    if result[:2] != b"OK" :
+                        raise PyNUTError( result.replace( b"\n", b"" ) )
+                else:
+                    raise PyNUTError( result.replace( b"\n", b"" ) )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
 
 The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
+
+Note that fields here are byte sequences (not locale-aware strings)
+which is of little concern for Python2 but is important in Python3
+(e.g. when we use "str" type `ups` variables or check their "validity").
         """
         if self.__debug :
             print( "[DEBUG] GetUPSList from server" )
@@ -143,6 +160,22 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Des
                 ups_list[ ups.replace( b" ", b"" ) ] = desc
 
         return( ups_list )
+
+    def GetUPSNames( self ) :
+        """ Returns the list of available UPS names from the NUT server as strings
+
+The result is a set of str objects (comparable with ups="somename" and
+useful as arguments to other methods). Helps work around Python2/Python3
+string API changes.
+        """
+        if self.__debug :
+            print( "[DEBUG] GetUPSNames from server" )
+
+        self_ups_list = []
+        for b in self.GetUPSList():
+            self_ups_list.append(b.decode('ascii'))
+
+        return self_ups_list
 
     def GetUPSVars( self, ups="" ) :
         """ Get all available vars from the specified UPS
@@ -249,7 +282,7 @@ rights to set it (maybe login/password).
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result )
+            raise PyNUTError( result.replace( b"\n", b"" ) )
 
     def RunUPSCommand( self, ups="", command="" ) :
         """ Send a command to the specified UPS
@@ -262,6 +295,34 @@ Returns OK on success or raises an error
 
         self.__srv_handler.write( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
+        if ( result == b"OK\n" ) :
+            return( "OK" )
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ) )
+
+    def DeviceLogin( self, ups="") :
+        """ Establish a login session with a device (like upsmon does)
+
+Returns OK on success or raises an error
+USERNAME and PASSWORD must have been specified earlier in the session (once)
+and upsd.conf should permit that user with one of `upsmon` role types.
+
+Note there is no "device LOGOUT" in the protocol, just one for general end
+of connection.
+        """
+
+        if self.__debug :
+            print( "[DEBUG] DeviceLogin called..." )
+
+        if ups is None or (ups not in self.GetUPSNames()):
+            raise PyNUTError( "%s is not a valid UPS" % ups )
+
+        self.__srv_handler.write( ("LOGIN %s\n" % ups).encode('ascii') )
+        result = self.__srv_handler.read_until( b"\n" )
+        if ( result.startswith( ("User %s@" % self.__login).encode('ascii')) and result.endswith (("[%s]\n" % ups).encode('ascii')) ):
+            # User dummy-user@127.0.0.1 logged into UPS [dummy]
+            # Read next line then
+            result = self.__srv_handler.read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
@@ -324,26 +385,50 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list of clients
         """
         if self.__debug :
-            print( "[DEBUG] ListClients from server" )
+            print( "[DEBUG] ListClients from server: %s" % ups )
 
-        if ups and (ups not in self.GetUPSList()):
+        # If (!ups) we use this list below to recurse:
+        self_ups_list = self.GetUPSNames()
+        if ups and (ups not in self_ups_list):
             raise PyNUTError( "%s is not a valid UPS" % ups )
 
         if ups:
-            self.__srv_handler.write( ("LIST CLIENTS %s\n" % ups).encode('ascii') )
+            self.__srv_handler.write( ("LIST CLIENT %s\n" % ups).encode('ascii') )
         else:
-            self.__srv_handler.write( b"LIST CLIENTS\n" )
+            # NOTE: Currently NUT does not support just listing all clients
+            # (not providing an "ups" argument) => NUT_ERR_INVALID_ARGUMENT
+            self.__srv_handler.write( b"LIST CLIENT\n" )
         result = self.__srv_handler.read_until( b"\n" )
-        if result != b"BEGIN LIST CLIENTS\n" :
+        if ( (ups and result != ("BEGIN LIST CLIENT %s\n" % ups).encode('ascii')) or (ups is None and result != b"BEGIN LIST CLIENT\n") ):
+            if ups is None and (result == b"ERR INVALID-ARGUMENT\n") :
+                # For ups==None, list all upses, list their clients
+                if self.__debug :
+                    print( "[DEBUG] Recurse ListClients() because it did not specify one UPS to query" )
+                ups_list = {}
+                for ups in self_ups_list :
+                    # Update "ups_list" dict with contents of recursive call return
+                    ups_list.update(self.ListClients(ups))
+                return( ups_list )
+
+            # had a seemingly valid arg, but no success:
+            if self.__debug :
+                print( "[DEBUG] ListClients from server got unexpected result: %s" % result )
+
             raise PyNUTError( result.replace( b"\n", b"" ) )
 
-        result = self.__srv_handler.read_until( b"END LIST CLIENTS\n" )
+        if ups :
+            result = self.__srv_handler.read_until( ("END LIST CLIENT %s\n" % ups).encode('ascii') )
+        else:
+            # Should not get here with current NUT:
+            result = self.__srv_handler.read_until( b"END LIST CLIENT\n" )
         ups_list = {}
 
         for line in result.split( b"\n" ):
+            ###print( "[DEBUG] ListClients line: '%s'" % line )
             if line[:6] == b"CLIENT" :
-                host, ups = line[7:].split(b' ')
+                ups, host = line[7:].split(b' ')
                 ups.replace(b' ', b'')
+                host.replace(b' ', b'')
                 if not ups in ups_list:
                     ups_list[ups] = []
                 ups_list[ups].append(host)
