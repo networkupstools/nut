@@ -22,7 +22,9 @@ dllldd() (
 
 	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
 	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
-	OUT="`ldd "$1" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,"`" \
+	# but it tends to say "not a dynamic executable"
+	# or that file type is not supported
+	OUT="`ldd "$@" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2," | sort | uniq | grep -Ei '\.dll$'`" \
 	&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 
 	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
@@ -30,7 +32,7 @@ dllldd() (
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x "$1" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|ws2_)(32|64))\.dll$'`" \
+			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|ws2_)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			if [ -n "$ARCH" ] ; then
@@ -70,6 +72,23 @@ dllldddir() (
 	# Two passes: one finds direct dependencies of all EXE/DLL under the
 	# specified location(s); then trims this list to be unique, and then
 	# the second pass recurses those libraries for their dependencies:
+	dllldd `find "$@" -type f | grep -Ei '\.(exe|dll)$'` | sort | uniq \
+	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
+)
+
+dllldddir_pedantic() (
+	# For `ldd` or `objdump` versions that do not act on many files
+
+	# Recurse the current (or specified) directory, find all EXE/DLL here,
+	# and locate their dependency DLLs, and produce a unique-item list
+	if [ $# = 0 ]; then
+		dllldddir_pedantic .
+		return
+	fi
+
+	# Two passes: one finds direct dependencies of all EXE/DLL under the
+	# specified location(s); then trims this list to be unique, and then
+	# the second pass recurses those libraries for their dependencies:
 	find "$@" -type f | grep -Ei '\.(exe|dll)$' \
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
@@ -90,10 +109,11 @@ Recursively used libraries:
 
 Find all EXE/DLL files under specified (or current) dir,
 and list their set of required DLLs
-	$0 dllldddir [DIRNAME]
+	$0 dllldddir [DIRNAME...]
+	$0 dllldddir_pedantic [DIRNAME...]
 EOF
 			;;
-		dlllddrec|dllldd|dllldddir) "$@" ;;
+		dlllddrec|dllldd|dllldddir|dllldddir_pedantic) "$@" ;;
 		*) dlllddrec "$1" ;;
 	esac
 
