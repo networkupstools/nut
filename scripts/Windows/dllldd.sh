@@ -20,13 +20,6 @@ dllldd() (
 	LC_ALL=C
 	export LANG LC_ALL
 
-	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
-	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
-	# but it tends to say "not a dynamic executable"
-	# or that file type is not supported
-	OUT="`ldd "$@" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2," | sort | uniq | grep -Ei '\.dll$'`" \
-	&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-
 	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
 		for OD in objdump "$ARCH-objdump" ; do
@@ -49,6 +42,13 @@ dllldd() (
 			fi
 		done
 	fi
+
+	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
+	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
+	# but it tends to say "not a dynamic executable"
+	# or that file type is not supported
+	OUT="`ldd "$@" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2," | sort | uniq | grep -Ei '\.dll$'`" \
+	&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 
 	return 1
 )
