@@ -92,40 +92,48 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
 	export CXXFLAGS+=" $CFLAGS"
 	export LDFLAGS+=" -L/usr/$ARCH/lib/"
-	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR \
+	# Note: installation prefix here is "/" and desired INSTALL_DIR
+	# location is passed to `make install` as DESTDIR below.
+	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    PKG_CONFIG_PATH=/usr/$ARCH/lib/pkgconfig \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
-	    --with-augeas-lenses-dir=$INSTALL_DIR/augeas-lenses \
+	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
 	|| exit
 	make 1>/dev/null || exit
-	make install || exit
 
-	# Per docs, Windows loads DLLs from EXE file's dir or some
-	# system locations or finally PATH, so unless the caller set
-	# the latter, we can not load the pre-linked DLLs from ../lib:
-	#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
+	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
+		make install-win-bundle DESTDIR="${INSTALL_DIR}" || exit
+	else
+		make install DESTDIR="${INSTALL_DIR}"  || exit
 
-	# Be sure upsmon can run even if at cost of some duplication
-	# (maybe even do "cp -pf" if some system dislikes "ln"); also
-	# on a modern Windows one could go to their installed "sbin" to
-	#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
-	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+		# Per docs, Windows loads DLLs from EXE file's dir or some
+		# system locations or finally PATH, so unless the caller set
+		# the latter, we can not load the pre-linked DLLs from ../lib:
+		#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
 
-	# Cover dependencies for nut-scanner (not pre-linked)
-	# Note: lib*snmp*.dll not listed below, it is
-	# statically linked into binaries that use it
-	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+		# Be sure upsmon can run even if at cost of some duplication
+		# (maybe even do "cp -pf" if some system dislikes "ln"); also
+		# on a modern Windows one could go to their installed "sbin" to
+		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
+		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
 
-	# Steam-roll over all executables/libs we have here and copy
-	# over resolved dependencies from the cross-build environment:
-	(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+		# Cover dependencies for nut-scanner (not pre-linked)
+		# Note: lib*snmp*.dll not listed below, it is
+		# statically linked into binaries that use it
+		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
+		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
 
-	# Hardlink libraries for sbin (alternative: all bins in one dir):
-	(cd $INSTALL_DIR/sbin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		# Steam-roll over all executables/libs we have here and copy
+		# over resolved dependencies from the cross-build environment:
+		(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+
+		# Hardlink libraries for sbin (alternative: all bins in one dir):
+		(cd $INSTALL_DIR/sbin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+	fi
+
 	cd ..
 else
 	echo "Usage:"
