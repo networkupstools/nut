@@ -74,6 +74,18 @@ test_script:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make check'
+  - cmd: |
+        REM Preserve the current working directory:
+        set CHERE_INVOKING=yes
+        REM Start a 64 bit Mingw environment:
+        set MSYSTEM=MINGW64
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make install-win-bundle DESTDIR="`pwd`/.inst"'
+        7z a NUT-for-Windows-SNAPSHOT-{version}.zip .inst
+
+artifacts:
+  - path: 'NUT-for-Windows-SNAPSHOT*.zip'
+    name: Bundle of binary files and FOSS dependencies of NUT for Windows
+    type: zip
 
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
