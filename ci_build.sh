@@ -1096,6 +1096,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export PATH
         else
@@ -1722,7 +1723,7 @@ bindings)
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
-            echo "INFO: Using ccache via ${CI_CCACHE_SYMLINKDIR}" >&2
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export CCACHE_PATH CCACHE_DIR PATH
         fi
