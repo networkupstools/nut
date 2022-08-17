@@ -65,7 +65,7 @@ dlllddrec() (
 # even if hidden by conditionals or separate method like this (might
 # optionally source it from another file though?)
 #diffvars_bash() {
-#	diff -bu <(echo "$1") <(echo "$2") | grep -E '^\+[^+]'
+#	diff -bu <(echo "$1") <(echo "$2") | grep -E '^\+[^+]' | sed 's,^\+,,'
 #}
 
 dllldddir() (
@@ -102,7 +102,7 @@ dllldddir() (
 		#else
 			echo "$SEENDLLS" > "$TMP1"
 			echo "$MOREDLLS" > "$TMP2"
-			NEXTDLLS="`diff -bu "$TMP1" "$TMP2" | grep -E '^\+[^+]'`"
+			NEXTDLLS="`diff -bu "$TMP1" "$TMP2" | grep -E '^\+[^+]' | sed 's,^\+,,'`"
 		#fi
 
 		if [ -n "$NEXTDLLS" ] ; then
