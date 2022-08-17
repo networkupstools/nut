@@ -10,10 +10,15 @@
 
 REGEX_WS="`printf '[\t ]'`"
 REGEX_NOT_WS="`printf '[^\t ]'`"
-dllldd() {
+dllldd() (
 	# Traverse an EXE or DLL file for DLLs it needs directly,
 	# which are provided in the cross-build env (not system ones).
 	# Assume no whitespaces in paths and filenames of interest.
+
+	# grep for standard-language strings where needed:
+	LANG=C
+	LC_ALL=C
+	export LANG LC_ALL
 
 	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
 	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
@@ -44,7 +49,7 @@ dllldd() {
 	fi
 
 	return 1
-}
+)
 
 dlllddrec() (
 	# Recurse to find the (mingw-provided) tree of dependencies
