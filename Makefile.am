@@ -381,7 +381,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->sbin  $$D" 2>&1 ; \
-	        ln '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
 	 ) || exit ; \
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
@@ -390,7 +390,7 @@ install-win-bundle-thirdparty:
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->drv   $$D" 2>&1 ; \
-	        ln '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
 	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
