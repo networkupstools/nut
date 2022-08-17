@@ -24,19 +24,24 @@ platform: x64
 install:
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg"
+        $ErrorAction = 'Continue' # stderr not fatal
+        C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg" 2>&1 | %{ "$_" }
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu"  # Core update (in case any core packages are outdated)
+        $ErrorAction = 'Continue' # stderr not fatal
+        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Core update (in case any core packages are outdated)
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu"  # Normal update
+        $ErrorAction = 'Continue' # stderr not fatal
+        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -Syuu" 2>&1 | %{ "$_" } # Normal update
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"
+        $ErrorAction = 'Continue' # stderr not fatal
+        C:\msys64\usr\bin\bash -lc "time pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd"2>&1 | %{ "$_" }
   - ps: |
         $ErrorActionPreference = 'Continue' # stderr not fatal
-        C:\msys64\usr\bin\bash -lc "time du -ks / ; time du -ks /var/cache/pacman/pkg"
+        $ErrorAction = 'Continue' # stderr not fatal
+        C:\msys64\usr\bin\bash -lc "time du -ks / ; time du -ks /var/cache/pacman/pkg"2>&1 | %{ "$_" }
 
 
 build_script:
@@ -44,7 +49,7 @@ build_script:
         $ErrorActionPreference = 'Continue' # stderr not fatal
         $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
         $env:MSYSTEM = 'MINGW64'  # Start a 64 bit Mingw environment
-        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ./ci_build.sh'
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ./ci_build.sh' 2>&1 | %{ "$_" }
 
 cache:
   - C:\msys64\var\cache\pacman\pkg # -> appveyor.yml
