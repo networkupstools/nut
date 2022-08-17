@@ -29,15 +29,15 @@ dllldd() (
 			&& [ -n "$ODOUT" ] || continue
 
 			if [ -n "$ARCH" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "/usr/${ARCH}/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
+				OUT="`for F in $ODOUT ; do ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
 			if [ -n "$MSYSTEM_PREFIX" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "${MSYSTEM_PREFIX}/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
+				OUT="`for F in $ODOUT ; do ls -1 "${MSYSTEM_PREFIX}/bin/$F" "${MSYSTEM_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
 			if [ -n "$MINGW_PREFIX" ] && [ "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "${MINGW_PREFIX}/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
+				OUT="`for F in $ODOUT ; do ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
 		done
