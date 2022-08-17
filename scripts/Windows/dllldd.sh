@@ -61,6 +61,13 @@ dlllddrec() (
 	done | sort | uniq
 )
 
+# Alas, can't rely on having BASH, and dash fails to parse its syntax
+# even if hidden by conditionals or separate method like this (might
+# optionally source it from another file though?)
+#diffvars_bash() {
+#	diff -bu <(echo "$1") <(echo "$2") | grep -E '^\+[^+]'
+#}
+
 dllldddir() (
 	# Recurse the current (or specified) directory, find all EXE/DLL here,
 	# and locate their dependency DLLs, and produce a unique-item list
@@ -69,11 +76,46 @@ dllldddir() (
 		return
 	fi
 
-	# Two passes: one finds direct dependencies of all EXE/DLL under the
-	# specified location(s); then trims this list to be unique, and then
-	# the second pass recurses those libraries for their dependencies:
-	dllldd `find "$@" -type f | grep -Ei '\.(exe|dll)$'` | sort | uniq \
-	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
+	# Assume no whitespace in built/MSYS/MinGW paths...
+	ORIGFILES="`find "$@" -type f | grep -Ei '\.(exe|dll)$'`" || return
+
+	# Quick OK, nothing here?
+	[ -n "$ORIGFILES" ] || return 0
+
+	# Loop until we see nothing new:
+	SEENDLLS="`dllldd $ORIGFILES | sort | uniq`"
+	[ -n "$SEENDLLS" ] || return 0
+
+	#if [ -z "$BASH_VERSION" ] ; then
+		TMP1="`mktemp`"
+		TMP2="`mktemp`"
+		trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
+	#fi
+
+	NEXTDLLS="$SEENDLLS"
+	while [ -n "$NEXTDLLS" ] ; do
+		MOREDLLS="`dllldd $NEXTDLLS | sort | uniq`"
+
+		# Next iteration we drill into those we have not seen yet
+		#if [ -n "$BASH_VERSION" ] ; then
+		#	NEXTDLLS="`diffvars_bash "$SEENDLLS" "$MOREDLLS"`"
+		#else
+			echo "$SEENDLLS" > "$TMP1"
+			echo "$MOREDLLS" > "$TMP2"
+			NEXTDLLS="`diff -bu "$TMP1" "$TMP2" | grep -E '^\+[^+]'`"
+		#fi
+
+		if [ -n "$NEXTDLLS" ] ; then
+			SEENDLLS="`( echo "$SEENDLLS" ; echo "$NEXTDLLS" ) | sort | uniq`"
+		fi
+	done
+
+	if [ -z "$BASH_VERSION" ] ; then
+		rm -f "$TMP1" "$TMP2"
+		trap - 0 1 2 3 15
+	fi
+
+	echo "$SEENDLLS"
 )
 
 dllldddir_pedantic() (
