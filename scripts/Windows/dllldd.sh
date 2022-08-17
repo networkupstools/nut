@@ -28,15 +28,15 @@ dllldd() (
 			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|ws2_)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
-			if [ -n "$ARCH" ] ; then
+			if [ -n "$ARCH" -a -d ""/usr/${ARCH}"" ] ; then
 				OUT="`for F in $ODOUT ; do ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
-			if [ -n "$MSYSTEM_PREFIX" ] ; then
+			if [ -n "$MSYSTEM_PREFIX" -a -d "$MSYSTEM_PREFIX" ] ; then
 				OUT="`for F in $ODOUT ; do ls -1 "${MSYSTEM_PREFIX}/bin/$F" "${MSYSTEM_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
-			if [ -n "$MINGW_PREFIX" ] && [ "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" ] ; then
+			if [ -n "$MINGW_PREFIX" -a "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" -a -d "$MINGW_PREFIX" ] ; then
 				OUT="`for F in $ODOUT ; do ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
