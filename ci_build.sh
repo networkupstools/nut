@@ -123,6 +123,15 @@ esac
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
+# We allow some CI setups to CI_SKIP_CHECK (avoiding it during single-process
+# scripted build), so tests can be done as a visibly separate stage.
+# This does not really apply to some build scenarios whose purpose is to
+# loop and check many build scenarios (e.g. BUILD_TYPE="default-all-errors"
+# and "fightwarn*" family), but it is up to caller when and why to set it.
+# It is also a concern of the caller (for now) if actually passing the check
+# relies on something this script does (set envvars, change paths...)
+[ -n "${CI_SKIP_CHECK-}" ] || CI_SKIP_CHECK=false
+
 # By default we configure and build in the same directory as source;
 # and a `make distcheck` handles how we build from a tarball.
 # However there are also cases where source is prepared (autogen) once,
@@ -478,6 +487,11 @@ build_to_only_catch_errors_target() {
 
 build_to_only_catch_errors() {
     build_to_only_catch_errors_target all || return $?
+
+    if [ "${CI_SKIP_CHECK}" = true ] ; then
+        echo "`date`: SKIP: not starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards, because caller requested CI_SKIP_CHECK=true; plain build has just succeeded however"
+        return 0
+    fi
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
@@ -1722,7 +1736,7 @@ bindings)
     # are aimed at developer iterations so not tweaking verbosity.
     #$MAKE all && \
     $MAKE $PARMAKE_FLAGS all && \
-    $MAKE check
+    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check ; fi
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
