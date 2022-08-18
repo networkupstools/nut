@@ -131,6 +131,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
 		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../cgi-bin/) || true
 
 		# Cover dependencies for nut-scanner (not pre-linked)
 		# Note: lib*snmp*.dll not listed below, it is
@@ -144,6 +145,9 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 		# Hardlink libraries for sbin (alternative: all bins in one dir):
 		(cd $INSTALL_DIR/sbin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+
+		# Hardlink libraries for cgi-bin if present:
+		(cd $INSTALL_DIR/cgi-bin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	fi
 
 	cd ..
