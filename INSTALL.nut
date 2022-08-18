@@ -351,7 +351,9 @@ Windows
 Windows binary package
 ^^^^^^^^^^^^^^^^^^^^^^
 
-NOTE: NUT binary package built for Windows platform was last issued for
+[NOTE]
+======
+NUT binary package built for Windows platform was last issued for
 a much older codebase (using NUT v2.6.5 as a baseline). While the current
 state of the codebase you are looking at aims to refresh the effort of
 delivering NUT on Windows, the aim at the moment is to help developers
@@ -360,6 +362,22 @@ are not being regularly produced yet. Functionality of such builds varies
 a lot depending on build environment used. This effort is generally
 tracked at https://github.com/orgs/networkupstools/projects/2/views/1
 and help would be welcome!
+
+It should currently be possible to build the codebase in native Windows
+with MSYS2/MinGW and cross-building from Linux with mingw (preferably
+in a Debian/Ubuntu container). Refer to
+link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+and link:scripts/Windows/README[scripts/Windows/README file] for respective
+build environment preparation instructions.
+
+Note that to use NUT for Windows, non-system dependency DLL files must
+be located in same directory as each EXE file that uses them. This can be
+accomplished for FOSS libraries (copying them from the build environment)
+by calling `make install-win-bundle DESTDIR=/some/valid/location` easily.
+======
+
+*Information below may be currently obsolete, but the NUT project wishes
+it to become actual and factual again :)*
 
 NUT binary package built for Windows platform comes in a `.msi` file.
 
