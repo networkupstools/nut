@@ -52,6 +52,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
             PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON_SITE_PACKAGES}])
             ])
+        dnl Note: on Windows MSYS2 this embeds "C:\msys64\mingw..." into the string [nut#1584]
         AC_SUBST([PYTHON_SITE_PACKAGES], [${PYTHON_SITE_PACKAGES}])
         AM_CONDITIONAL([HAVE_PYTHON_SITE_PACKAGES], [test x"${PYTHON_SITE_PACKAGES}" != "x"])
     ])
@@ -108,6 +109,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
             PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON2_SITE_PACKAGES}])
             ])
+        dnl Note: on Windows MSYS2 this embeds "C:\msys64\mingw..." into the string [nut#1584]
         AC_SUBST([PYTHON2_SITE_PACKAGES], [${PYTHON2_SITE_PACKAGES}])
         AM_CONDITIONAL([HAVE_PYTHON2_SITE_PACKAGES], [test x"${PYTHON2_SITE_PACKAGES}" != "x"])
     ])
@@ -164,6 +166,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
             PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"
             AC_MSG_RESULT([${PYTHON3_SITE_PACKAGES}])
             ])
+        dnl Note: on Windows MSYS2 this embeds "C:\msys64\mingw..." into the string [nut#1584]
         AC_SUBST([PYTHON3_SITE_PACKAGES], [${PYTHON3_SITE_PACKAGES}])
         AM_CONDITIONAL([HAVE_PYTHON3_SITE_PACKAGES], [test x"${PYTHON3_SITE_PACKAGES}" != "x"])
     ])
