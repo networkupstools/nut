@@ -397,7 +397,7 @@ install-win-bundle-thirdparty:
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
 	 ) || exit ; \
-	 (  if test -z "$(cgiexecdir)" -o ! -d "./$(cgiexecdir)" ; then exit 0 ; fi ; \
+	 (  if test -z "$(cgiexecdir)" -o ! -d "$(DESTDIR)/$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(cgiexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
