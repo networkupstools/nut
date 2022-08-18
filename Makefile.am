@@ -373,8 +373,9 @@ install-win-bundle-thirdparty:
         fi ; \
      fi ; \
      if test -n "$$ARCH" ; then export ARCH ; fi ; \
+     DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
 	 (  cd '$(DESTDIR)' || exit ; \
-	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->bin   $$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
