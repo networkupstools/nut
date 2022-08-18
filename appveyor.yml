@@ -80,14 +80,14 @@ test_script:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
+        REM Note: currently Python installation path with MSYS is buggy [#1584]
         C:\msys64\usr\bin\bash -lxc 'date -u; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi  ; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-SNAPSHOT '
         cd .inst
-        7z a ../NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.zip NUT*
+        7z a ../NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
 
 artifacts:
-  - path: 'NUT-for-Windows-SNAPSHOT*.zip'
+  - path: 'NUT-for-Windows-SNAPSHOT*.7z'
     name: Bundle of binary files and FOSS dependencies of NUT for Windows
-    type: zip
 
   - path: config.log
     name: config.log
