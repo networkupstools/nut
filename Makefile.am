@@ -382,8 +382,9 @@ install-win-bundle-thirdparty:
 	 ) || exit ; \
 	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
-	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
-	    | while read D ; do \
+	    ( '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . ; \
+	      ls -1 '$(DESTDIR)/$(bindir)'/libups*.dll '$(DESTDIR)/$(bindir)'/libnut*.dll 2>/dev/null || true ; \
+	    ) | while read D ; do \
 	        echo "   DLL->sbin  $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
@@ -391,8 +392,9 @@ install-win-bundle-thirdparty:
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
-	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
-	    | while read D ; do \
+	    ( '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . ; \
+	      ls -1 '$(DESTDIR)/$(bindir)'/libups*.dll '$(DESTDIR)/$(bindir)'/libnut*.dll 2>/dev/null || true ; \
+	    ) | while read D ; do \
 	        echo "   DLL->drv   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
@@ -402,8 +404,9 @@ install-win-bundle-thirdparty:
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
-	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
-	    | while read D ; do \
+	    ( '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . ; \
+	      ls -1 '$(DESTDIR)/$(bindir)'/libups*.dll '$(DESTDIR)/$(bindir)'/libnut*.dll 2>/dev/null || true ; \
+	    ) | while read D ; do \
 	        echo "   DLL->cgi   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
