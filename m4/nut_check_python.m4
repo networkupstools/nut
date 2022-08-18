@@ -39,7 +39,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         PYTHON_VERSION_REPORT=""
         AS_IF([test -n "${PYTHON}"], [
             AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
-                [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON=no])
+                [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"], [PYTHON=no])
             ])
 
         AC_MSG_CHECKING([python interpeter to call])
@@ -101,7 +101,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         PYTHON2_VERSION_REPORT=""
         AS_IF([test -n "${PYTHON2}"], [
             AS_IF([test x"`$PYTHON2 -c 'import sys; print (sys.version_info >= (2, 6) and sys.version_info < (3, 0))'`" = xTrue],
-                [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON2=no])
+                [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print (sys.version_info)'`)"], [PYTHON2=no])
             ])
 
         AC_MSG_CHECKING([python2 interpeter to call])
@@ -163,7 +163,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         PYTHON3_VERSION_REPORT=""
         AS_IF([test -n "${PYTHON3}"], [
             AS_IF([test x"`$PYTHON3 -c 'import sys; print (sys.version_info >= (3, 0))'`" = xTrue],
-                [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON3=no])
+                [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"], [PYTHON3=no])
             ])
 
         AC_MSG_CHECKING([python3 interpeter to call])
