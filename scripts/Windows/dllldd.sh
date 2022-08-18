@@ -14,9 +14,6 @@ dllldd() (
 	# Traverse an EXE or DLL file for DLLs it needs directly,
 	# which are provided in the cross-build env (not system ones).
 	# Assume no whitespaces in paths and filenames of interest.
-	# WARNING: Does not concern about (not report) dependencies built and
-	# delivered by the project itself (e.g. libupsclient or libnutclient)!
-	# TODO: Search nearby? Which DESTDIR and its subdir tree then?..
 
 	# grep for standard-language strings where needed:
 	LANG=C
@@ -24,6 +21,7 @@ dllldd() (
 	export LANG LC_ALL
 
 	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
+	SEEN=0
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
@@ -31,19 +29,29 @@ dllldd() (
 			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|user|wsock|ws2_)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
-			if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true ; done`" \
-				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-			fi
-			if [ -n "$MSYSTEM_PREFIX" -a -d "$MSYSTEM_PREFIX" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "${MSYSTEM_PREFIX}/bin/$F" "${MSYSTEM_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
-				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-			fi
-			if [ -n "$MINGW_PREFIX" -a "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" -a -d "$MINGW_PREFIX" ] ; then
-				OUT="`for F in $ODOUT ; do ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true ; done`" \
-				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-			fi
+			for F in $ODOUT ; do
+				if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
+					OUT="`find "$DESTDIR" -type f -name "$F" 2>/dev/null`" \
+					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
+				fi
+				if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
+					OUT="`ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true`" \
+					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
+				fi
+				if [ -n "$MSYSTEM_PREFIX" -a -d "$MSYSTEM_PREFIX" ] ; then
+					OUT="`ls -1 "${MSYSTEM_PREFIX}/bin/$F" "${MSYSTEM_PREFIX}/lib/$F" 2>/dev/null || true`" \
+					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
+				fi
+				if [ -n "$MINGW_PREFIX" -a "$MINGW_PREFIX" != "$MSYSTEM_PREFIX" -a -d "$MINGW_PREFIX" ] ; then
+					OUT="`ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true`" \
+					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
+				fi
+				echo "WARNING: '$F' was not found in searched locations!" >&2
+			done
 		done
+		if [ "$SEEN" != 0 ] ; then
+			return 0
+		fi
 	fi
 
 	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
