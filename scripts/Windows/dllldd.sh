@@ -31,7 +31,7 @@ dllldd() (
 
 			for F in $ODOUT ; do
 				if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
-					OUT="`find "$DESTDIR" -type f -name "$F" 2>/dev/null`" \
+					OUT="`find "$DESTDIR" -type f -name "$F" 2>/dev/null | head -1`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
