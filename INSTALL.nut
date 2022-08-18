@@ -374,6 +374,9 @@ Note that to use NUT for Windows, non-system dependency DLL files must
 be located in same directory as each EXE file that uses them. This can be
 accomplished for FOSS libraries (copying them from the build environment)
 by calling `make install-win-bundle DESTDIR=/some/valid/location` easily.
+
+Archives with binaries built by recent iterations of continuous integration
+jobs should be available for exploration on the respective CI platforms.
 ======
 
 *Information below may be currently obsolete, but the NUT project wishes
