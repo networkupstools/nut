@@ -36,8 +36,14 @@ AC_DEFUN([NUT_CHECK_PYTHON],
             [*], [PYTHON="/usr/bin/env ${PYTHON}"]
         )
 
+        PYTHON_VERSION_REPORT=""
+        AS_IF([test -n "${PYTHON}"], [
+            AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
+                [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON=no])
+            ])
+
         AC_MSG_CHECKING([python interpeter to call])
-        AC_MSG_RESULT([${PYTHON}])
+        AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_REPORT}])
         AC_SUBST([PYTHON], [${PYTHON}])
         AM_CONDITIONAL([HAVE_PYTHON], [test "${PYTHON}" != "no"])
         AS_IF([test -n "${PYTHON}"], [
@@ -86,8 +92,14 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
             [*], [PYTHON2="/usr/bin/env ${PYTHON2}"]
         )
 
+        PYTHON2_VERSION_REPORT=""
+        AS_IF([test -n "${PYTHON2}"], [
+            AS_IF([test x"`$PYTHON2 -c 'import sys; print (sys.version_info >= (2, 6) and sys.version_info < (3, 0))'`" = xTrue],
+                [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON2=no])
+            ])
+
         AC_MSG_CHECKING([python2 interpeter to call])
-        AC_MSG_RESULT([${PYTHON2}])
+        AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_REPORT}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
         AM_CONDITIONAL([HAVE_PYTHON2], [test "${PYTHON2}" != "no"])
         AS_IF([test -n "${PYTHON2}"], [
@@ -136,8 +148,14 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
             [*], [PYTHON3="/usr/bin/env ${PYTHON3}"]
         )
 
+        PYTHON3_VERSION_REPORT=""
+        AS_IF([test -n "${PYTHON3}"], [
+            AS_IF([test x"`$PYTHON3 -c 'import sys; print (sys.version_info >= (3, 0))'`" = xTrue],
+                [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print ("%s.%s.%s" % sys.version_info[:3])'`)"], [PYTHON3=no])
+            ])
+
         AC_MSG_CHECKING([python3 interpeter to call])
-        AC_MSG_RESULT([${PYTHON3}])
+        AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_REPORT}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
         AM_CONDITIONAL([HAVE_PYTHON3], [test "${PYTHON3}" != "no"])
         AS_IF([test -n "${PYTHON3}"], [
