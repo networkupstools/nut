@@ -144,10 +144,10 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 
 		# Hardlink libraries for sbin (alternative: all bins in one dir):
-		(cd $INSTALL_DIR/sbin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd $INSTALL_DIR/sbin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd $INSTALL_DIR/cgi-bin && { dllldddir . | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	fi
 
 	cd ..
