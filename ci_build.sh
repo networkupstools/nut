@@ -1777,9 +1777,9 @@ bindings)
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    #$MAKE all && \
-    $MAKE $PARMAKE_FLAGS all && \
-    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check ; fi
+    #$MAKE all || \
+    $MAKE $PARMAKE_FLAGS all || exit
+    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
     ;;
 
 # These mingw modes below are currently experimental and not too integrated
