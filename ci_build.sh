@@ -123,6 +123,15 @@ esac
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
+# We allow some CI setups to CI_SKIP_CHECK (avoiding it during single-process
+# scripted build), so tests can be done as a visibly separate stage.
+# This does not really apply to some build scenarios whose purpose is to
+# loop and check many build scenarios (e.g. BUILD_TYPE="default-all-errors"
+# and "fightwarn*" family), but it is up to caller when and why to set it.
+# It is also a concern of the caller (for now) if actually passing the check
+# relies on something this script does (set envvars, change paths...)
+[ -n "${CI_SKIP_CHECK-}" ] || CI_SKIP_CHECK=false
+
 # By default we configure and build in the same directory as source;
 # and a `make distcheck` handles how we build from a tarball.
 # However there are also cases where source is prepared (autogen) once,
@@ -521,6 +530,11 @@ build_to_only_catch_errors_target() {
 
 build_to_only_catch_errors() {
     build_to_only_catch_errors_target all || return $?
+
+    if [ "${CI_SKIP_CHECK}" = true ] ; then
+        echo "`date`: SKIP: not starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards, because caller requested CI_SKIP_CHECK=true; plain build has just succeeded however"
+        return 0
+    fi
 
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
@@ -1096,6 +1110,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export PATH
         else
@@ -1668,9 +1683,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
-    # Can be noisy if regen is needed (DMF branch)
+    # Can be noisy if regen is needed (DMF branch with this or that BUILD_TGT)
     # Bail out due to DMF will (optionally) happen in the next check
-    GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+    #GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
 
     # TODO (when merging DMF branch, not a problem before then):
     # this one check should not-list the "*.dmf" files even if
@@ -1697,7 +1712,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
         $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
-        FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+        #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
         )
     fi
@@ -1722,7 +1737,7 @@ bindings)
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
-            echo "INFO: Using ccache via ${CI_CCACHE_SYMLINKDIR}" >&2
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export CCACHE_PATH CCACHE_DIR PATH
         fi
@@ -1762,9 +1777,18 @@ bindings)
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    #$MAKE all && \
-    $MAKE $PARMAKE_FLAGS all && \
-    $MAKE check
+    #$MAKE all || \
+    $MAKE $PARMAKE_FLAGS all || exit
+    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+
+    case "$CI_OS_NAME" in
+        windows*)
+            echo "INFO: Build and tests succeeded. If you plan to install a NUT bundle now" >&2
+            echo "for practical usage or testing on a native Windows system, consider calling" >&2
+            echo "    make install-win-bundle DESTDIR=`pwd`/.inst/NUT4Win" >&2
+            echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
+            ;;
+    esac
     ;;
 
 # These mingw modes below are currently experimental and not too integrated
@@ -1775,6 +1799,8 @@ bindings)
 # Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw*)
+    echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
+
     ./autogen.sh
     cd scripts/Windows || exit
 

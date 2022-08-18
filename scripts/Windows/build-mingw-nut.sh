@@ -4,6 +4,11 @@
 
 #set -x
 
+SCRIPTDIR="`dirname "$0"`"
+SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+
+DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
+
 # default to update source then build
 WINDIR=$(pwd)
 TOP_DIR=$WINDIR/../..
@@ -66,35 +71,10 @@ esac
 
 cd $BUILD_DIR || exit
 
-REGEX_WS="`printf '[\t ]'`"
-REGEX_NOT_WS="`printf '[^\t ]'`"
-dllldd() {
-  # Traverse an EXE or DLL file for DLLs it needs directly,
-  # which are provided in the cross-build env (not system ones).
-  # Assume no whitespaces in paths and filenames of interest.
-
-  # if `ldd` handles Windows PE, we are lucky:
-  #         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
-  OUT="`ldd "$1" 2>/dev/null | grep -Ei '\.dll' | grep -E '/(bin|lib)/' | sed "s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,"`" \
-  && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-
-  # Otherwise try objdump
-  for OD in objdump "$ARCH-objdump" ; do
-    (command -v "$OD" >/dev/null 2>/dev/null) || continue
-    OUT="`$OD -x "$1" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | while read F ; do ls -1 "/usr/$ARCH/"{bin,lib}/"$F" 2>/dev/null || true ; done`" \
-    && [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
-  done
-
-  return 1
-}
-
-dlllddrec() (
-  # Recurse to find the (mingw-provided) tree of dependencies
-  dllldd "$1" | while read D ; do
-    echo "$D"
-    dlllddrec "$D"
-  done | sort | uniq
-)
+if [ -z "$INSTALL_WIN_BUNDLE" ]; then
+	echo "NOTE: You might want to export INSTALL_WIN_BUNDLE=true to use main NUT Makefile"
+	echo "recipe for DLL co-bundling (default: false to use logic maintained in $0"
+fi >&2
 
 if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
 	ARCH="x86_64-w64-mingw32"
@@ -117,40 +97,59 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
 	export CXXFLAGS+=" $CFLAGS"
 	export LDFLAGS+=" -L/usr/$ARCH/lib/"
-	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=$INSTALL_DIR \
+	# Note: installation prefix here is "/" and desired INSTALL_DIR
+	# location is passed to `make install` as DESTDIR below.
+	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    PKG_CONFIG_PATH=/usr/$ARCH/lib/pkgconfig \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
-	    --with-augeas-lenses-dir=$INSTALL_DIR/augeas-lenses \
+	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
 	|| exit
 	make 1>/dev/null || exit
-	make install || exit
 
-	# Per docs, Windows loads DLLs from EXE file's dir or some
-	# system locations or finally PATH, so unless the caller set
-	# the latter, we can not load the pre-linked DLLs from ../lib:
-	#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
+	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
+		# Going forward, this should be the main mode - "legacy code"
+		# below picked up and transplanted into main build scenarios:
+		echo "NOTE: INSTALL_WIN_BUNDLE==true so using main NUT Makefile logic for DLL co-bundling" >&2
+		make install-win-bundle DESTDIR="${INSTALL_DIR}" || exit
+	else
+		# Legacy code from when NUT for Windows effort started;
+		# there is no plan to maintain it much (this script is PoC):
+		echo "NOTE: INSTALL_WIN_BUNDLE!=true so using built-in logic for DLL co-bundling" >&2
 
-	# Be sure upsmon can run even if at cost of some duplication
-	# (maybe even do "cp -pf" if some system dislikes "ln"); also
-	# on a modern Windows one could go to their installed "sbin" to
-	#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
-	(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+		make install DESTDIR="${INSTALL_DIR}" || exit
 
-	# Cover dependencies for nut-scanner (not pre-linked)
-	# Note: lib*snmp*.dll not listed below, it is
-	# statically linked into binaries that use it
-	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-	(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+		# Per docs, Windows loads DLLs from EXE file's dir or some
+		# system locations or finally PATH, so unless the caller set
+		# the latter, we can not load the pre-linked DLLs from ../lib:
+		#   http://msdn.microsoft.com/en-us/library/windows/desktop/ms682586(v=vs.85).aspx#standard_search_order_for_desktop_applications
 
-	# Steam-roll over all executables/libs we have here and copy
-	# over resolved dependencies from the cross-build environment:
-	(cd $INSTALL_DIR && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+		# Be sure upsmon can run even if at cost of some duplication
+		# (maybe even do "cp -pf" if some system dislikes "ln"); also
+		# on a modern Windows one could go to their installed "sbin" to
+		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
+		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
+		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../cgi-bin/) || true
 
-	# Hardlink libraries for sbin (alternative: all bins in one dir):
-	(cd $INSTALL_DIR/sbin && { find . -type f | grep -Ei '\.(exe|dll)$' | while read E ; do dlllddrec "$E" ; done | sort | uniq | while read D ; do ln ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		# Cover dependencies for nut-scanner (not pre-linked)
+		# Note: lib*snmp*.dll not listed below, it is
+		# statically linked into binaries that use it
+		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
+		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+
+		# Steam-roll over all executables/libs we have here and copy
+		# over resolved dependencies from the cross-build environment:
+		(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+
+		# Hardlink libraries for sbin (alternative: all bins in one dir):
+		(cd $INSTALL_DIR/sbin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+
+		# Hardlink libraries for cgi-bin if present:
+		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+	fi
+
 	cd ..
 else
 	echo "Usage:"
