@@ -14,6 +14,9 @@ dllldd() (
 	# Traverse an EXE or DLL file for DLLs it needs directly,
 	# which are provided in the cross-build env (not system ones).
 	# Assume no whitespaces in paths and filenames of interest.
+	# WARNING: Does not concern about (not report) dependencies built and
+	# delivered by the project itself (e.g. libupsclient or libnutclient)!
+	# TODO: Search nearby? Which DESTDIR and its subdir tree then?..
 
 	# grep for standard-language strings where needed:
 	LANG=C
