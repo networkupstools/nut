@@ -79,8 +79,9 @@ test_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst"'
-        7z a NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.zip .inst
+        C:\msys64\usr\bin\bash -lc 'date -u; rm -rf "`pwd`/.inst" || true ; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" NUT-for-Windows-SNAPSHOT '
+        cd .inst
+        7z a ../NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.zip NUT*
 
 artifacts:
   - path: 'NUT-for-Windows-SNAPSHOT*.zip'
