@@ -46,7 +46,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_REPORT}])
         AC_SUBST([PYTHON], [${PYTHON}])
         AM_CONDITIONAL([HAVE_PYTHON], [test "${PYTHON}" != "no"])
-        AS_IF([test -n "${PYTHON}"], [
+        AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             export PYTHON
             AC_MSG_CHECKING([python site-packages location])
             PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"
@@ -102,7 +102,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_REPORT}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
         AM_CONDITIONAL([HAVE_PYTHON2], [test "${PYTHON2}" != "no"])
-        AS_IF([test -n "${PYTHON2}"], [
+        AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             export PYTHON2
             AC_MSG_CHECKING([python2 site-packages location])
             PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
@@ -158,7 +158,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_REPORT}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
         AM_CONDITIONAL([HAVE_PYTHON3], [test "${PYTHON3}" != "no"])
-        AS_IF([test -n "${PYTHON3}"], [
+        AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             export PYTHON3
             AC_MSG_CHECKING([python3 site-packages location])
             PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"
