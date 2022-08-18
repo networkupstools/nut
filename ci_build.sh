@@ -1780,6 +1780,15 @@ bindings)
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
     if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+
+    case "$CI_OS_NAME" in
+        windows*)
+            echo "INFO: Build and tests succeeded. If you plan to install a NUT bundle now" >&2
+            echo "for practical usage or testing on a native Windows system, consider calling" >&2
+            echo "    make install-win-bundle DESTDIR=`pwd`/.inst/NUT4Win" >&2
+            echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
+            ;;
+    esac
     ;;
 
 # These mingw modes below are currently experimental and not too integrated
