@@ -28,7 +28,7 @@ dllldd() (
 			ODOUT="`$OD -x "$@" 2>/dev/null | grep -Ei "DLL Name:" | awk '{print $NF}' | sort | uniq | grep -vEi '^(|/.*/)(msvcrt|(advapi|kernel|user|wsock|ws2_)(32|64))\.dll$'`" \
 			&& [ -n "$ODOUT" ] || continue
 
-			if [ -n "$ARCH" -a -d ""/usr/${ARCH}"" ] ; then
+			if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
 				OUT="`for F in $ODOUT ; do ls -1 "/usr/${ARCH}/bin/$F" "/usr/${ARCH}/lib/$F" 2>/dev/null || true ; done`" \
 				&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 			fi
