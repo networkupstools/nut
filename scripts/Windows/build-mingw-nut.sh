@@ -71,6 +71,11 @@ esac
 
 cd $BUILD_DIR || exit
 
+if [ -z "$INSTALL_WIN_BUNDLE" ]; then
+	echo "NOTE: You might want to export INSTALL_WIN_BUNDLE=true to use main NUT Makefile"
+	echo "recipe for DLL co-bundling (default: false to use logic maintained in $0"
+fi >&2
+
 if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
 	ARCH="x86_64-w64-mingw32"
 	if [ "$cmd" == "all32" ] || [ "$cmd" == "b32" ] ; then
@@ -105,9 +110,16 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	make 1>/dev/null || exit
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
+		# Going forward, this should be the main mode - "legacy code"
+		# below picked up and transplanted into main build scenarios:
+		echo "NOTE: INSTALL_WIN_BUNDLE==true so using main NUT Makefile logic for DLL co-bundling" >&2
 		make install-win-bundle DESTDIR="${INSTALL_DIR}" || exit
 	else
-		make install DESTDIR="${INSTALL_DIR}"  || exit
+		# Legacy code from when NUT for Windows effort started;
+		# there is no plan to maintain it much (this script is PoC):
+		echo "NOTE: INSTALL_WIN_BUNDLE!=true so using built-in logic for DLL co-bundling" >&2
+
+		make install DESTDIR="${INSTALL_DIR}" || exit
 
 		# Per docs, Windows loads DLLs from EXE file's dir or some
 		# system locations or finally PATH, so unless the caller set
