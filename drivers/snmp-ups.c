@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -166,7 +166,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.21"
+#define DRIVER_VERSION		"1.22"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3465,7 +3465,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if (status == TRUE) {
 			upsdebugx(2, "=> %ld alarms present", value);
 			if( value > 0 ) {
-				pdu_array = nut_snmp_walk(su_info_p->OID, INT_MAX);
+				pdu_array = nut_snmp_walk(su_info_p->OID, value);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;
