@@ -352,6 +352,9 @@ if HAVE_WINDOWS
 # TOTHINK: Are there more dirs to consider? So far we cover bindir, sbindir and
 # driverexecdir (e.g. some Linux distros place drivers to /lib/nut while tools
 # and daemons are in /usr/bin and /usr/sbin), and cgiexecdir; anything else?..
+# Note we hold existance of cgiexecdir as optional, but the name is expected to
+# be defined. Other dirs are "just assumed" to exist (that we are not packaging
+# some NUT build without drivers/tools/daemons). Subject to change if needed.
 # Currently this is handled by a CHECKING... step that should fail if it hits
 # anything.
 install-win-bundle: all
@@ -394,7 +397,7 @@ install-win-bundle-thirdparty:
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
         done ; \
 	 ) || exit ; \
-	 (  if test -z "$(cgiexecdir)" -o ! -d "$(cgiexecdir)" ; then exit 0 ; fi ; \
+	 (  if test -z "$(cgiexecdir)" -o ! -d "./$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(cgiexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
