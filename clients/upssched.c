@@ -945,8 +945,6 @@ static TYPE_FD try_connect(void)
 	if (ret != -1)
 		return pipefd;
 
-	return ERROR_FD;
-
 #else /* WIN32 */
 
 	BOOL   result = FALSE;
@@ -967,12 +965,12 @@ static TYPE_FD try_connect(void)
 			FILE_FLAG_OVERLAPPED,   /*  enable async IO */
 			NULL);          /* no template file */
 
-	if (pipefd == INVALID_HANDLE_VALUE) {
-		return ERROR_FD;
-	}
+	if (VALID_FD(pipefd))
+		return pipefd;
 
-	return pipefd;
 #endif
+
+	return ERROR_FD;
 }
 
 static TYPE_FD get_lock(const char *fn)
