@@ -115,11 +115,10 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 #ifndef WIN32
 		close(temp->sock_fd);
-		temp->sock_fd = -1;
 #else
 		CloseHandle(temp->sock_fd);
-		temp->sock_fd = INVALID_HANDLE_VALUE;
 #endif
+		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
 		/* now redefine the filename and wrap up */
