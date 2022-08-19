@@ -110,16 +110,16 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 
 	if (FD_ISSET (upsfd, &readfs)) {
 #else
-	DWORD timeout;
-	COMMTIMEOUTS TOut;
+		DWORD timeout;
+		COMMTIMEOUTS TOut;
 
-	timeout = read_timeout;	/* recast */
+		timeout = read_timeout;	/* recast */
 
-	GetCommTimeouts(upsfd, &TOut);
-	TOut.ReadIntervalTimeout = MAXDWORD;
-	TOut.ReadTotalTimeoutMultiplier = 0;
-	TOut.ReadTotalTimeoutConstant = timeout;
-	SetCommTimeouts(upsfd, &TOut);
+		GetCommTimeouts(upsfd, &TOut);
+		TOut.ReadIntervalTimeout = MAXDWORD;
+		TOut.ReadTotalTimeoutMultiplier = 0;
+		TOut.ReadTotalTimeoutConstant = timeout;
+		SetCommTimeouts(upsfd, &TOut);
 #endif
 
 		ssize_t now;
