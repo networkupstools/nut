@@ -508,11 +508,10 @@ static void delete_ups(upstype_t *target)
 			else
 				last->next = ptr->next;
 
+			if (VALID_FD(ptr->sock_fd))
 #ifndef WIN32
-			if (ptr->sock_fd != -1)
 				close(ptr->sock_fd);
 #else
-			if (ptr->sock_fd != INVALID_HANDLE_VALUE)
 				CloseHandle(ptr->sock_fd);
 #endif
 
