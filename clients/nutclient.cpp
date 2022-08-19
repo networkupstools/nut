@@ -39,9 +39,15 @@
 #  include <unistd.h> /* close */
 #  include <netdb.h> /* gethostbyname */
 #  include <fcntl.h>
-#  define INVALID_SOCKET -1
-#  define SOCKET_ERROR -1
-#  define closesocket(s) close(s)
+#  ifndef INVALID_SOCKET
+#    define INVALID_SOCKET -1
+#  endif
+#  ifndef SOCKET_ERROR
+#    define SOCKET_ERROR -1
+#  endif
+#  ifndef closesocket
+#    define closesocket(s) close(s)
+#  endif
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
