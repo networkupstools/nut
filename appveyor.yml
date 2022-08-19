@@ -86,9 +86,9 @@ after_test:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
         REM Note: currently Python installation path with MSYS is buggy [#1584]
-        C:\msys64\usr\bin\bash -lc 'date -u; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-SNAPSHOT '
+        C:\msys64\usr\bin\bash -lc 'date -u; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT '
         cd .inst
-        7z a ../NUT-for-Windows-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
+        7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
   - cmd: |
         REM Preserve the current working directory:
         set CHERE_INVOKING=yes
