@@ -1026,7 +1026,7 @@ static void drop_connection(utype_t *ups)
 	ups->commstate = 0;
 	ups->linestate = 0;
 	clearflag(&ups->status, ST_LOGIN);
-	clearflag(&ups->status, ST_CONNECTED);
+	clearflag(&ups->status, ST_CLICONNECTED);
 
 	upscli_disconnect(&ups->conn);
 }
@@ -1751,7 +1751,7 @@ static int try_connect(utype_t *ups)
 
 	upsdebugx(1, "Trying to connect to UPS [%s]", ups->sys);
 
-	clearflag(&ups->status, ST_CONNECTED);
+	clearflag(&ups->status, ST_CLICONNECTED);
 
 	/* force it if configured that way, just try it otherwise */
 	if (forcessl == 1)
@@ -1793,7 +1793,7 @@ static int try_connect(utype_t *ups)
 	}
 
 	/* we're definitely connected now */
-	setflag(&ups->status, ST_CONNECTED);
+	setflag(&ups->status, ST_CLICONNECTED);
 
 	/* prevent connection leaking to NOTIFYCMD */
 	set_close_on_exec(upscli_fd(&ups->conn));
@@ -1872,7 +1872,7 @@ static void pollups(utype_t *ups)
 	char	status[SMALLBUF];
 
 	/* try a reconnect here */
-	if (!flag_isset(ups->status, ST_CONNECTED))
+	if (!flag_isset(ups->status, ST_CLICONNECTED))
 		if (try_connect(ups) != 1)
 			return;
 

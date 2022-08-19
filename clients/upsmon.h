@@ -34,7 +34,7 @@
 #define ST_PRIMARY     (1 << 4)       /* we are the primary (manager) of this UPS */
 #define ST_MASTER      ST_PRIMARY     /* legacy alias                             */
 #define ST_LOGIN       (1 << 5)       /* we are logged into this UPS              */
-#define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK               */
+#define ST_CLICONNECTED (1 << 6)      /* upscli_connect returned OK               */
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
 
 /* required contents of flag file */
