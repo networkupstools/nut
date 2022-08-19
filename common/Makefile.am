@@ -47,8 +47,10 @@ libcommonclient_la_SOURCES += strptime.c
 endif
 
 # TODO: libnutwincompat.la?
+if HAVE_WINDOWS
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+endif
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
