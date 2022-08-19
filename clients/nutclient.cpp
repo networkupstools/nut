@@ -17,11 +17,16 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* FIXME: Last known to have had issues building under Windows */
-#ifndef WIN32
 #include "nutclient.h"
 
 #include <sstream>
+
+#ifndef WIN32
+# ifdef HAVE_PTHREAD
+/* this include is needed on AIX to have errno stored in thread local storage */
+#  include <pthread.h>
+# endif
+#endif
 
 #include <errno.h>
 #include <string.h>
@@ -31,6 +36,7 @@
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
 #  include <winsock2.h>
+#  define SOCK_OPT_CAST (char *)
 #else
 #  include <sys/types.h>
 #  include <sys/socket.h>
@@ -48,12 +54,27 @@
 #  ifndef closesocket
 #    define closesocket(s) close(s)
 #  endif
+#  define SOCK_OPT_CAST
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
    typedef struct in_addr IN_ADDR;
+
+/* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
+#  if (defined NUT_PLATFORM_SOLARIS)
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#  else
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#  endif  /* end of Solaris/i386 WA for non-blocking connect */
+
+/* WA for AIX bug: non-blocking connect sets errno to 0 */
+#  if (defined NUT_PLATFORM_AIX)
+#    define AIX_NBCONNECT_0(status) (0 == (status))
+#  else
+#    define AIX_NBCONNECT_0(status) (0)
+#  endif  /* end of AIX WA for non-blocking connect */
 #endif /* WIN32 */
-/* End of Windows/Linux Socket compatibility layer: */
+/* End of Windows/Linux Socket compatibility layer */
 
 
 /* Include nut common utility functions or define simple ones if not */
@@ -188,9 +209,18 @@ void Socket::connect(const std::string& host, uint16_t port)
 	fd_set 			wfds;
 	int			error;
 	socklen_t		error_size;
-	long			fd_flags;
 
-	_sock = -1;
+#ifndef WIN32
+	long			fd_flags;
+#else
+	HANDLE event = NULL;
+	unsigned long argp;
+
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+#endif
+
+	_sock = INVALID_SOCKET;
 
 	if (host.empty()) {
 		throw nut::UnknownHostException();
@@ -199,6 +229,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
+	/* TODO: Port IPv4 vs IPv6 detail from upsclient.c */
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -210,10 +241,14 @@ void Socket::connect(const std::string& host, uint16_t port)
 			continue;
 		case EAI_NONAME:
 			throw nut::UnknownHostException();
-		case EAI_SYSTEM:
-			throw nut::SystemException();
 		case EAI_MEMORY:
 			throw nut::NutException("Out of memory");
+#ifndef WIN32
+		case EAI_SYSTEM:
+#else
+		case WSANO_RECOVERY:
+#endif
+			throw nut::SystemException();
 		default:
 			throw nut::NutException("Unknown error");
 		}
@@ -236,21 +271,37 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		/* non blocking connect */
-		if(hasTimeout()) {
+		if (hasTimeout()) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
+#else
+			event = CreateEvent(NULL, /* Security */
+					FALSE, /* auto-reset */
+					FALSE, /* initial state */
+					NULL); /* no name */
+
+			/* Associate socket event to the socket via its Event object */
+			WSAEventSelect( sock_fd, event, FD_CONNECT );
+			CloseHandle(event);
+#endif
 		}
 
 		while ((v = ::connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			if(errno == EINPROGRESS) {
+#ifndef WIN32
+			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
+#else
+			if(errno == WSAEWOULDBLOCK) {
+#endif
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
-				select(sock_fd+1, nullptr, &wfds, nullptr, hasTimeout() ? &_tv : nullptr);
+				select(sock_fd+1, nullptr, &wfds, nullptr,
+					hasTimeout() ? &_tv : nullptr);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
 					getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
-							&error, &error_size);
+							SOCK_OPT_CAST &error, &error_size);
 					if( error == 0) {
 						/* connect successful */
 						v = 0;
@@ -286,10 +337,15 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		/* switch back to blocking operation */
-		if(hasTimeout()) {
+		if (hasTimeout()) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
+#else
+			argp = 0;
+			ioctlsocket(sock_fd, FIONBIO, &argp);
+#endif
 		}
 
 		_sock = sock_fd;
@@ -300,10 +356,15 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 	freeaddrinfo(res);
 
+#ifndef WIN32
 	if (_sock < 0) {
+#else
+	if (_sock == INVALID_SOCKET) {
+#endif
 		throw nut::IOException("Cannot connect to host");
 	}
 
+    /* TODO? See upsclient.c for NSS/SSL connection handling */
 
 #ifdef OLD
 	struct hostent *hostinfo = nullptr;
@@ -2105,5 +2166,3 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 #endif
 
 } /* extern "C" */
-
-#endif /* WIN32 */
