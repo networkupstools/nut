@@ -932,7 +932,7 @@ char * dstate_init(const char *prog, const char *devname)
 	sockfd = sock_open(sockname);
 
 #ifndef WIN32
-	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, (int)sockfd);
+	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
 #else
 	upsdebugx(2, "dstate_init: sock %s open on handle %p", sockname, sockfd);
 #endif
