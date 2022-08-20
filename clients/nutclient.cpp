@@ -37,7 +37,37 @@
 #ifdef WIN32
 #  include <winsock2.h>
 #  define SOCK_OPT_CAST (char *)
-#else
+
+/* equivalent of W32_NETWORK_CALL_OVERRIDE
+ * invoked by wincompat.h in upsclient.c:
+ */
+static inline int sktconnect(int fh, struct sockaddr * name, int len)
+{
+	int ret = connect(fh,name,len);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktread(int fh, void *buf, int size)
+{
+	int ret = recv(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktwrite(int fh, const void*buf, int size)
+{
+	int ret = send(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktclose(int fh)
+{
+	int ret = closesocket((SOCKET)fh);
+	errno = WSAGetLastError();
+	return ret;
+}
+
+#else /* not WIN32 */
+
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
@@ -60,6 +90,11 @@
    typedef struct sockaddr SOCKADDR;
    typedef struct in_addr IN_ADDR;
 
+#  define sktconnect(h,n,l)	::connect(h,n,l)
+#  define sktread(h,b,s) 	::read(h,b,s)
+#  define sktwrite(h,b,s) 	::write(h,b,s)
+#  define sktclose(h)		::close(h)
+
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
 #  if (defined NUT_PLATFORM_SOLARIS)
 #    define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
@@ -73,6 +108,7 @@
 #  else
 #    define AIX_NBCONNECT_0(status) (0)
 #  endif  /* end of AIX WA for non-blocking connect */
+
 #endif /* WIN32 */
 /* End of Windows/Linux Socket compatibility layer */
 
@@ -288,7 +324,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 #endif
 		}
 
-		while ((v = ::connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+		while ((v = sktconnect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
 #else
@@ -332,7 +368,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		if (v < 0) {
-			close(sock_fd);
+			sktclose(sock_fd);
 			continue;
 		}
 
@@ -386,7 +422,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 	sin.sin_addr = *(IN_ADDR *) hostinfo->h_addr;
 	sin.sin_port = htons(port);
 	sin.sin_family = AF_INET;
-	if(::connect(_sock,(SOCKADDR *) &sin, sizeof(SOCKADDR)) == SOCKET_ERROR)
+	if(sktconnect(_sock,(SOCKADDR *) &sin, sizeof(SOCKADDR)) == SOCKET_ERROR)
 	{
 		_sock = INVALID_SOCKET;
 		throw nut::IOException("Cannot connect to host");
@@ -427,7 +463,7 @@ size_t Socket::read(void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = ::read(_sock, buf, sz);
+	ssize_t res = sktread(_sock, buf, sz);
 	if(res==-1)
 	{
 		disconnect();
@@ -454,7 +490,7 @@ size_t Socket::write(const void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = ::write(_sock, buf, sz);
+	ssize_t res = sktwrite(_sock, buf, sz);
 	if(res==-1)
 	{
 		disconnect();
