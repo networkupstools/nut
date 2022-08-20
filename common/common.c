@@ -25,8 +25,11 @@
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
-#include <dirent.h>
 #include <sys/un.h>
+#include <dirent.h>
+#if !HAVE_REALPATH
+# include <sys/stat.h>
+#endif
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
