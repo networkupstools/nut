@@ -21,6 +21,9 @@
 
 #include <sstream>
 
+/* TODO: Make it a run-time option like upsdebugx(),
+ * probably with a verbosity level variable in each
+ * class instance */
 #include <iostream>	/* std::cerr debugging */
 #include <cstdint>
 #include <cstdlib>
@@ -384,25 +387,31 @@ void Socket::connect(const std::string& host, uint16_t port)
 					if( error == 0) {
 						/* connect successful */
 						std::cerr << "[D2] Socket::connect(): " <<
-							"connect successful" <<
+							"connect-select successful" <<
 							std::endl << std::flush;
 						v = 0;
 						break;
 					}
 					errno = error;
 					std::cerr << "[D2] Socket::connect(): " <<
-						"connect not successful: " <<
-						"; errno = " << errno <<
+						"connect-select not successful: " <<
+						"errno = " << errno <<
 						std::endl << std::flush;
 				}
 				else {
 					/* Timeout */
 					v = -1;
 					std::cerr << "[D2] Socket::connect(): " <<
-						"connect not successful: timeout" <<
+						"connect-select not successful: timeout" <<
 						std::endl << std::flush;
 					break;
 				}
+			} else {
+				/* WIN32: errno=10061 is actively refusing connection */
+				std::cerr << "[D2] Socket::connect(): " <<
+					"connect not successful: " <<
+					"errno = " << errno <<
+					std::endl << std::flush;
 			}
 
 			switch (errno)
@@ -428,7 +437,8 @@ void Socket::connect(const std::string& host, uint16_t port)
 			continue;
 		}
 		std::cerr << "[D2] Socket::connect(): " <<
-			"sktconnect() > 0" << std::endl << std::flush;
+			"sktconnect() > 0, looks promising" <<
+			std::endl << std::flush;
 
 		/* switch back to blocking operation */
 		if (hasTimeout()) {
@@ -456,6 +466,11 @@ void Socket::connect(const std::string& host, uint16_t port)
 	if (_sock < 0) {
 #else
 	if (_sock == INVALID_SOCKET) {
+		/* In tracing one may see 18446744073709551615 = "-1" after
+		 * conversion from 'long long unsigned int' to 'int'
+		 * 64-bit WINSOCK API with UINT_PTR , see gory details at e.g.
+		 * https://github.com/openssl/openssl/issues/7282#issuecomment-430633656
+		 */
 #endif
 		std::cerr << "[D2] Socket::connect(): " <<
 			"invalid _sock = " << _sock << std::endl << std::flush;
