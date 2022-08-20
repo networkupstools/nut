@@ -935,6 +935,7 @@ isTestableCppNIT() {
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/tests/cppnit" ] \
     ; then
+        log_warn "SKIP: ${TOP_BUILDDIR}/tests/cppnit: Not found"
         return 1
     fi
     return 0
