@@ -7,9 +7,6 @@ all: $(TESTS)
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
 TESTS = nutlogtest
-if HAVE_WINDOWS
-nutlogtest: nutlogtest.exe
-endif
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
@@ -34,9 +31,6 @@ hidparser.c: $(top_srcdir)/drivers/hidparser.c
 
 if WITH_USB
 TESTS += getvaluetest
-if HAVE_WINDOWS
-getvaluetest: getvaluetest.exe
-endif
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
@@ -58,9 +52,6 @@ CPPUNITTESTERSRC = cpputest.cpp
 CPPCLIENTTESTSRC = cpputest-client.cpp
 
 TESTS_CXX11 = cppunittest
-if HAVE_WINDOWS
-cppunittest: cppunittest.exe
-endif
 
 if HAVE_CXX11
 if HAVE_CPPUNIT
@@ -71,9 +62,6 @@ TESTS += $(TESTS_CXX11)
 
 # Note: we only build it, but do not run directly (NIT prepares the sandbox)
 check_PROGRAMS += cppnit
-if HAVE_WINDOWS
-cppnit: cppnit.exe
-endif
 
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
