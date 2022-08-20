@@ -353,7 +353,7 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 /* TODO: port extrafd to Windows */
 #ifndef WIN32
-			extrafd = -1;
+			extrafd = ERROR_FD;
 #endif
 			return;
 		}

@@ -115,11 +115,10 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 #ifndef WIN32
 		close(temp->sock_fd);
-		temp->sock_fd = -1;
 #else
 		CloseHandle(temp->sock_fd);
-		temp->sock_fd = INVALID_HANDLE_VALUE;
 #endif
+		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
 		/* now redefine the filename and wrap up */
@@ -509,11 +508,10 @@ static void delete_ups(upstype_t *target)
 			else
 				last->next = ptr->next;
 
+			if (VALID_FD(ptr->sock_fd))
 #ifndef WIN32
-			if (ptr->sock_fd != -1)
 				close(ptr->sock_fd);
 #else
-			if (ptr->sock_fd != INVALID_HANDLE_VALUE)
 				CloseHandle(ptr->sock_fd);
 #endif
 

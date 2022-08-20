@@ -127,6 +127,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl Check if the Net-SNMP library is usable
+	nut_have_libnetsnmp_static=no
 	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(init_snmp, [], [
 		dnl Probably is dysfunctional, except one case...
@@ -137,7 +138,10 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 					AC_MSG_NOTICE([mingw builds of net-snmp might provide only a static library - retrying for that])
 					LIBS="`$PKG_CONFIG --silence-errors --libs --static netsnmp 2>/dev/null`"
 					AS_UNSET([ac_cv_func_init_snmp])
-					AC_CHECK_FUNCS(init_snmp, [nut_have_libnetsnmp=yes])
+					AC_CHECK_FUNCS(init_snmp, [
+						nut_have_libnetsnmp=yes
+						nut_have_libnetsnmp_static=yes
+					])
 				]
 			)
 		])

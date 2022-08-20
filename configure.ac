@@ -2590,7 +2590,8 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
                     [AC_MSG_RESULT([no])
                      CXXFLAGS="$my_CXXFLAGS"
                      have_cxx11=no])])])])
-AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
+NUT_REPORT_FEATURE([build C++11 codebase (client library, etc.)], [${have_cxx11}], [],
+					[HAVE_CXX11], [Define to enable C++11 support])
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
@@ -2675,8 +2676,8 @@ return res ? 0 : 1;
      AC_LANG_POP([C++])
      unset CPLUSPLUS_MAIN
      unset CPLUSPLUS_DECL
+     AC_MSG_RESULT(${have_cppunit})
      ])
-AC_MSG_RESULT(${have_cppunit})
 
 dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
@@ -2688,7 +2689,8 @@ AC_ARG_ENABLE(cppunit,
 	)])
 AC_MSG_RESULT(${have_cppunit})
 
-AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
+NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
+					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
@@ -2983,11 +2985,14 @@ fi
 
 if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
+else
+   nut_have_libnetsnmp_static="no"
 fi
 
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
-AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
+NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
+					[WITH_SNMP_STATIC], [Define to use SNMP support with a statically linked libnetsnmp])
 
 
 if test -n "${host_alias}" ; then
