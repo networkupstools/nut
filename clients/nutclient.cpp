@@ -21,6 +21,11 @@
 
 #include <sstream>
 
+#include <iostream>	/* std::cerr debugging */
+#include <cstdint>
+#include <cstdlib>
+#include <stdlib.h>
+
 #ifndef WIN32
 # ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
@@ -259,6 +264,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 	_sock = INVALID_SOCKET;
 
 	if (host.empty()) {
+		std::cerr << "[D2] Socket::connect(): host.empty()" << std::endl << std::flush;
 		throw nut::UnknownHostException();
 	}
 
@@ -269,6 +275,10 @@ void Socket::connect(const std::string& host, uint16_t port)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+	std::cerr << "[D2] Socket::connect(): getaddrinfo(" <<
+		host << ", " <<
+		sport << ", " <<
+		"...)" << std::endl << std::flush;
 
 	while ((v = getaddrinfo(host.c_str(), sport, &hints, &res)) != 0) {
 		switch (v)
@@ -276,23 +286,42 @@ void Socket::connect(const std::string& host, uint16_t port)
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			std::cerr << "[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"UnknownHostException" << std::endl << std::flush;
 			throw nut::UnknownHostException();
 		case EAI_MEMORY:
+			std::cerr << "[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"Out of memory" << std::endl << std::flush;
 			throw nut::NutException("Out of memory");
 #ifndef WIN32
 		case EAI_SYSTEM:
 #else
 		case WSANO_RECOVERY:
 #endif
+			std::cerr << "[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"SystemException" << std::endl << std::flush;
 			throw nut::SystemException();
 		default:
+			std::cerr << "[D2] Socket::connect(): " <<
+				"connect not successful: " <<
+				"Unknown error" << std::endl << std::flush;
 			throw nut::NutException("Unknown error");
 		}
 	}
 
 	for (ai = res; ai != nullptr; ai = ai->ai_next) {
 
+		std::cerr << "[D2] Socket::connect(): socket(" <<
+			ai->ai_family << ", " <<
+			ai->ai_socktype << ", " <<
+			ai->ai_protocol << ")" << std::endl << std::flush;
+
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		std::cerr << "[D2] Socket::connect(): socket(): " <<
+			"sock_fd = " << sock_fd << std::endl << std::flush;
 
 		if (sock_fd < 0) {
 			switch (errno)
@@ -301,6 +330,9 @@ void Socket::connect(const std::string& host, uint16_t port)
 			case EINVAL:
 				break;
 			default:
+				std::cerr << "[D2] Socket::connect(): " <<
+					"connect not successful: " <<
+					"SystemException" << std::endl << std::flush;
 				throw nut::SystemException();
 			}
 			continue;
@@ -324,7 +356,18 @@ void Socket::connect(const std::string& host, uint16_t port)
 #endif
 		}
 
+		std::cerr << "[D2] Socket::connect(): sktconnect(" <<
+			sock_fd << ", " <<
+			ai->ai_addr << ", " <<
+			ai->ai_addrlen << ")" << std::endl << std::flush;
+
 		while ((v = sktconnect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+			std::cerr << "[D2] Socket::connect(): " <<
+				"sktconnect() < 0" <<
+				"; errno = " << errno <<
+				"; v = " << v <<
+				std::endl << std::flush;
+
 #ifndef WIN32
 			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
 #else
@@ -340,14 +383,24 @@ void Socket::connect(const std::string& host, uint16_t port)
 							SOCK_OPT_CAST &error, &error_size);
 					if( error == 0) {
 						/* connect successful */
+						std::cerr << "[D2] Socket::connect(): " <<
+							"connect successful" <<
+							std::endl << std::flush;
 						v = 0;
 						break;
 					}
 					errno = error;
+					std::cerr << "[D2] Socket::connect(): " <<
+						"connect not successful: " <<
+						"; errno = " << errno <<
+						std::endl << std::flush;
 				}
 				else {
 					/* Timeout */
 					v = -1;
+					std::cerr << "[D2] Socket::connect(): " <<
+						"connect not successful: timeout" <<
+						std::endl << std::flush;
 					break;
 				}
 			}
@@ -368,9 +421,14 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		if (v < 0) {
+			std::cerr << "[D2] Socket::connect(): " <<
+				"sktconnect() remains < 0 => sktclose()" <<
+				std::endl << std::flush;
 			sktclose(sock_fd);
 			continue;
 		}
+		std::cerr << "[D2] Socket::connect(): " <<
+			"sktconnect() > 0" << std::endl << std::flush;
 
 		/* switch back to blocking operation */
 		if (hasTimeout()) {
@@ -384,6 +442,8 @@ void Socket::connect(const std::string& host, uint16_t port)
 #endif
 		}
 
+		std::cerr << "[D2] Socket::connect(): " <<
+			"saving sock_fd = " << sock_fd << std::endl << std::flush;
 		_sock = sock_fd;
 //		ups->upserror = 0;
 //		ups->syserrno = 0;
@@ -397,6 +457,8 @@ void Socket::connect(const std::string& host, uint16_t port)
 #else
 	if (_sock == INVALID_SOCKET) {
 #endif
+		std::cerr << "[D2] Socket::connect(): " <<
+			"invalid _sock = " << _sock << std::endl << std::flush;
 		throw nut::IOException("Cannot connect to host");
 	}
 
