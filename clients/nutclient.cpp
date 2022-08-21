@@ -123,15 +123,25 @@ static inline int sktclose(int fh)
 
 /* Include nut common utility functions or define simple ones if not */
 #ifdef HAVE_NUTCOMMON
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable fallback:
+ */
+# ifndef HAVE_GMTIME_R
+#  define HAVE_GMTIME_R 111
+# endif
+# ifndef HAVE_LOCALTIME_R
+#  define HAVE_LOCALTIME_R 111
+# endif
 #include "common.h"
-#else /* HAVE_NUTCOMMON */
+#else /* not HAVE_NUTCOMMON */
 #include <stdlib.h>
 #include <string.h>
 static inline void *xmalloc(size_t size){return malloc(size);}
 static inline void *xcalloc(size_t number, size_t size){return calloc(number, size);}
 static inline void *xrealloc(void *ptr, size_t size){return realloc(ptr, size);}
 static inline char *xstrdup(const char *string){return strdup(string);}
-#endif /* HAVE_NUTCOMMON */
+#endif /* not HAVE_NUTCOMMON */
 
 #include "nut_stdint.h" /* PRIuMAX etc. */
 
