@@ -86,7 +86,7 @@ dllldd() (
 					done
 				fi
 
-				echo "WARNING: '$F' was not found in searched locations!" >&2
+				echo "WARNING: '$F' was not found in searched locations (system paths)!" >&2
 			done
 		done
 		if [ "$SEEN" != 0 ] ; then
