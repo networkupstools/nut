@@ -98,7 +98,7 @@ endif
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 2:0:0
+libnutclient_la_LDFLAGS = -version-info 2:1:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
