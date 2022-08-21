@@ -43,8 +43,14 @@ if HAVE_CXX11
 endif
 
 if WITH_DEV
- include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h nutclient.h nutclientmem.h
-endif
+ include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h
+if HAVE_CXX11
+ include_HEADERS += nutclient.h nutclientmem.h
+else !HAVE_CXX11
+ EXTRA_DIST += nutclient.h nutclientmem.h
+endif !HAVE_CXX11
+endif WITH_DEV
+
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
 endif
