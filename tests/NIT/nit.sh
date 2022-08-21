@@ -1073,6 +1073,11 @@ case "${NIT_CASE}" in
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
+        log_warn "========================================================"
+        log_warn "You asked to run just a specific testcase* or testgroup*"
+        log_warn "Be sure to have previously run with DEBUG_SLEEP and"
+        log_warn "   have exported the NUT_PORT upsd is listening on!"
+        log_warn "========================================================"
         "${NIT_CASE}" ;;
     "") # Default test groups:
         testgroup_upsd_invalid_configs
