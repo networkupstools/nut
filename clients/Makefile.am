@@ -92,8 +92,8 @@ endif
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 6:0:0
 libupsclient_la_LDFLAGS += -export-symbols-regex ^upscli_
-if HAVE_WINDOWS_SOCKETS
-  # Many versions of MingW seem to fail without this
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined
 endif
 
@@ -104,6 +104,10 @@ libnutclient_la_LDFLAGS = -version-info 2:1:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutclient_la_LDFLAGS += -no-undefined
+endif
 else
 EXTRA_DIST += nutclient.h nutclient.cpp
 endif
@@ -113,6 +117,10 @@ if HAVE_CXX11
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
 libnutclientstub_la_LDFLAGS = -version-info 1:0:0
 libnutclientstub_la_LIBADD = libnutclient.la
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutclientstub_la_LDFLAGS += -no-undefined
+endif
 else
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif
