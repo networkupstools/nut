@@ -395,6 +395,12 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'p':
         strvalue = va_arg (args, void *);
+        /* FIXME: in 64-bit (and Windows-targeted) builds this code yields:
+         * warning: cast from pointer to integer of different size
+         * so probably prints a truncated pointer value. Should check
+         * if sizeof(void*) == sizeof(long) and output e.g. two pieces
+         * (lower and upper long for bytes of the pointer).
+         */
         fmtint (buffer, &currlen, maxlen, (long) strvalue, 16, min, max, flags);
         break;
       case 'n':
