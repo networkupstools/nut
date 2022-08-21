@@ -98,7 +98,7 @@ after_test:
 
 
 artifacts:
-  - path: 'NUT-for-Windows-SNAPSHOT*.7z'
+  - path: 'NUT-for-Windows*.7z'
     name: Bundle of binary files and FOSS dependencies of NUT for Windows
 
   - path: config.log
