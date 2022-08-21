@@ -62,6 +62,11 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)
 
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LDFLAGS += -no-undefined
+endif
+
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
