@@ -37,13 +37,9 @@ if HAVE_WINDOWS_SOCKETS
 endif
 
 lib_LTLIBRARIES = libupsclient.la
-if HAVE_WINDOWS_SOCKETS
-  # FIXME: Currently C++ libs don't build on Win32?
-else
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
   lib_LTLIBRARIES += libnutclientstub.la
-endif
 endif
 
 if WITH_DEV
