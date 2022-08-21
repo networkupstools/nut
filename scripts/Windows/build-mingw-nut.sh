@@ -95,7 +95,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# and the value 0xffff is anyway forced into some components at least
 	# by netsnmp cflags.
 	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
-	export CXXFLAGS+=" $CFLAGS"
+	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L/usr/$ARCH/lib/"
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
