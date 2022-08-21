@@ -112,6 +112,9 @@ https://github.com/networkupstools/nut/milestone/8
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]
 
+ - upslog: Added support for logging multiple devices with one call to the
+   program [#1604]
+
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
