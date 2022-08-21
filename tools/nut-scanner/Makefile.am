@@ -106,7 +106,15 @@ if WITH_SNMP
 if    WITH_SNMP_STATIC
     # MinGW builds of libnetsnmp are static-only, so we link it in:
     libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
-    libnutscan_la_LIBADD += $(LIBNETSNMP_LIBS)
+    # Some workarouds here, to avoid libtool bailing out like this:
+    # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
+    # *** I have the capability to make that library automatically link in when
+    # *** you link to this library.  But I can only do this if you have a
+    # *** shared version of the library, which you do not appear to have.
+    # Note that LIBNETSNMP_LIBS prepared by nut_check_libnetsnmp.m4 for such
+    # builds particularly WITH_SNMP_STATIC is special (with -Wl passthrough,
+    # and for that automake requires LDFLAGS not LIBADD):
+    libnutscan_la_LDFLAGS += $(LIBNETSNMP_LIBS)
 endif WITH_SNMP_STATIC
 endif WITH_SNMP
 if WITH_NEON
