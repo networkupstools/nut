@@ -1807,7 +1807,7 @@ bindings)
 cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
 
-    ./autogen.sh
+    ./autogen.sh || exit
     cd scripts/Windows || exit
 
     cmd="" # default soup of the day, as defined in the called script
