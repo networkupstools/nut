@@ -198,7 +198,7 @@ namespace internal
  * Internal socket wrapper.
  * Provides only client socket functions.
  *
- * Implemented as separate internal class to easily hide plateform specificities.
+ * Implemented as separate internal class to easily hide platform specificities.
  */
 class Socket
 {
@@ -209,6 +209,7 @@ public:
 	void connect(const std::string& host, uint16_t port);
 	void disconnect();
 	bool isConnected()const;
+	void setDebugConnect(bool d);
 
 	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
@@ -222,12 +223,14 @@ public:
 
 private:
 	SOCKET _sock;
+	bool _debugConnect;
 	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
 };
 
 Socket::Socket():
 _sock(INVALID_SOCKET),
+_debugConnect(false),
 _tv()
 {
 	_tv.tv_sec = -1;
@@ -242,6 +245,11 @@ Socket::~Socket()
 void Socket::setTimeout(time_t timeout)
 {
 	_tv.tv_sec = timeout;
+}
+
+void Socket::setDebugConnect(bool d)
+{
+	_debugConnect = d;
 }
 
 void Socket::connect(const std::string& host, uint16_t port)
@@ -267,18 +275,22 @@ void Socket::connect(const std::string& host, uint16_t port)
 	_sock = INVALID_SOCKET;
 
 	if (host.empty()) {
-		std::cerr << "[D2] Socket::connect(): host.empty()" << std::endl << std::flush;
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): host.empty()" <<
+			std::endl << std::flush;
 		throw nut::UnknownHostException();
 	}
 
 	snprintf(sport, sizeof(sport), "%" PRIuMAX, static_cast<uintmax_t>(port));
 
 	memset(&hints, 0, sizeof(hints));
-	/* TODO: Port IPv4 vs IPv6 detail from upsclient.c */
+	/* TODO? Port IPv4 vs IPv6 detail from upsclient.c */
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
-	std::cerr << "[D2] Socket::connect(): getaddrinfo(" <<
+
+	if (_debugConnect) std::cerr <<
+		"[D2] Socket::connect(): getaddrinfo(" <<
 		host << ", " <<
 		sport << ", " <<
 		"...)" << std::endl << std::flush;
@@ -289,42 +301,54 @@ void Socket::connect(const std::string& host, uint16_t port)
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"connect not successful: " <<
-				"UnknownHostException" << std::endl << std::flush;
+				"UnknownHostException" <<
+				std::endl << std::flush;
 			throw nut::UnknownHostException();
 		case EAI_MEMORY:
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"connect not successful: " <<
-				"Out of memory" << std::endl << std::flush;
+				"Out of memory" <<
+				std::endl << std::flush;
 			throw nut::NutException("Out of memory");
 #ifndef WIN32
 		case EAI_SYSTEM:
 #else
 		case WSANO_RECOVERY:
 #endif
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"connect not successful: " <<
-				"SystemException" << std::endl << std::flush;
+				"SystemException" <<
+				std::endl << std::flush;
 			throw nut::SystemException();
 		default:
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"connect not successful: " <<
-				"Unknown error" << std::endl << std::flush;
+				"Unknown error" <<
+				std::endl << std::flush;
 			throw nut::NutException("Unknown error");
 		}
 	}
 
 	for (ai = res; ai != nullptr; ai = ai->ai_next) {
 
-		std::cerr << "[D2] Socket::connect(): socket(" <<
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): socket(" <<
 			ai->ai_family << ", " <<
 			ai->ai_socktype << ", " <<
-			ai->ai_protocol << ")" << std::endl << std::flush;
+			ai->ai_protocol << ")" <<
+			std::endl << std::flush;
 
 		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		std::cerr << "[D2] Socket::connect(): socket(): " <<
-			"sock_fd = " << sock_fd << std::endl << std::flush;
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): socket(): " <<
+			"sock_fd = " << sock_fd <<
+			std::endl << std::flush;
 
 		if (sock_fd < 0) {
 			switch (errno)
@@ -333,9 +357,11 @@ void Socket::connect(const std::string& host, uint16_t port)
 			case EINVAL:
 				break;
 			default:
-				std::cerr << "[D2] Socket::connect(): " <<
+				if (_debugConnect) std::cerr <<
+					"[D2] Socket::connect(): " <<
 					"connect not successful: " <<
-					"SystemException" << std::endl << std::flush;
+					"SystemException" <<
+					std::endl << std::flush;
 				throw nut::SystemException();
 			}
 			continue;
@@ -359,13 +385,16 @@ void Socket::connect(const std::string& host, uint16_t port)
 #endif
 		}
 
-		std::cerr << "[D2] Socket::connect(): sktconnect(" <<
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): sktconnect(" <<
 			sock_fd << ", " <<
 			ai->ai_addr << ", " <<
-			ai->ai_addrlen << ")" << std::endl << std::flush;
+			ai->ai_addrlen << ")" <<
+			std::endl << std::flush;
 
 		while ((v = sktconnect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"sktconnect() < 0" <<
 				"; errno = " << errno <<
 				"; v = " << v <<
@@ -386,14 +415,16 @@ void Socket::connect(const std::string& host, uint16_t port)
 							SOCK_OPT_CAST &error, &error_size);
 					if( error == 0) {
 						/* connect successful */
-						std::cerr << "[D2] Socket::connect(): " <<
+						if (_debugConnect) std::cerr <<
+							"[D2] Socket::connect(): " <<
 							"connect-select successful" <<
 							std::endl << std::flush;
 						v = 0;
 						break;
 					}
 					errno = error;
-					std::cerr << "[D2] Socket::connect(): " <<
+					if (_debugConnect) std::cerr <<
+						"[D2] Socket::connect(): " <<
 						"connect-select not successful: " <<
 						"errno = " << errno <<
 						std::endl << std::flush;
@@ -401,14 +432,16 @@ void Socket::connect(const std::string& host, uint16_t port)
 				else {
 					/* Timeout */
 					v = -1;
-					std::cerr << "[D2] Socket::connect(): " <<
+					if (_debugConnect) std::cerr <<
+						"[D2] Socket::connect(): " <<
 						"connect-select not successful: timeout" <<
 						std::endl << std::flush;
 					break;
 				}
 			} else {
 				/* WIN32: errno=10061 is actively refusing connection */
-				std::cerr << "[D2] Socket::connect(): " <<
+				if (_debugConnect) std::cerr <<
+					"[D2] Socket::connect(): " <<
 					"connect not successful: " <<
 					"errno = " << errno <<
 					std::endl << std::flush;
@@ -430,13 +463,15 @@ void Socket::connect(const std::string& host, uint16_t port)
 		}
 
 		if (v < 0) {
-			std::cerr << "[D2] Socket::connect(): " <<
+			if (_debugConnect) std::cerr <<
+				"[D2] Socket::connect(): " <<
 				"sktconnect() remains < 0 => sktclose()" <<
 				std::endl << std::flush;
 			sktclose(sock_fd);
 			continue;
 		}
-		std::cerr << "[D2] Socket::connect(): " <<
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
 			"sktconnect() > 0, looks promising" <<
 			std::endl << std::flush;
 
@@ -452,8 +487,10 @@ void Socket::connect(const std::string& host, uint16_t port)
 #endif
 		}
 
-		std::cerr << "[D2] Socket::connect(): " <<
-			"saving sock_fd = " << sock_fd << std::endl << std::flush;
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
+			"saving sock_fd = " << sock_fd <<
+			std::endl << std::flush;
 		_sock = sock_fd;
 //		ups->upserror = 0;
 //		ups->syserrno = 0;
@@ -472,12 +509,14 @@ void Socket::connect(const std::string& host, uint16_t port)
 		 * https://github.com/openssl/openssl/issues/7282#issuecomment-430633656
 		 */
 #endif
-		std::cerr << "[D2] Socket::connect(): " <<
-			"invalid _sock = " << _sock << std::endl << std::flush;
+		if (_debugConnect) std::cerr <<
+			"[D2] Socket::connect(): " <<
+			"invalid _sock = " << _sock <<
+			std::endl << std::flush;
 		throw nut::IOException("Cannot connect to host");
 	}
 
-    /* TODO? See upsclient.c for NSS/SSL connection handling */
+	/* TODO? See upsclient.c for NSS/SSL connection handling */
 
 #ifdef OLD
 	struct hostent *hostinfo = nullptr;
@@ -768,6 +807,11 @@ void TcpClient::connect(const std::string& host, uint16_t port)
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
+}
+
+void TcpClient::setDebugConnect(bool d)
+{
+	_socket->setDebugConnect(d);
 }
 
 std::string TcpClient::getHost()const
