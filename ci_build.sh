@@ -1833,6 +1833,7 @@ cross-windows-mingw*)
     esac
 
     SOURCEMODE="out-of-tree" \
+    MAKEFLAGS="$PARMAKE_FLAGS" \
     ./build-mingw-nut.sh $cmd
     ;;
 
