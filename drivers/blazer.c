@@ -680,7 +680,7 @@ static void blazer_initbattery(void)
 	if (val) {
 		load.low = strtod(val, NULL) / 100;
 
-		if ((load.low <= 0) || (load.low > 1)) {
+		if ((load.low < 0) || (load.low > 1)) {
 			fatalx(EXIT_FAILURE, "Idle load out of range [0..100]");
 		}
 
