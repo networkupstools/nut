@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2992 utf-8
+personal_ws-1.1 en 2993 utf-8
 AAS
 ABI
 ACFAIL
@@ -2390,6 +2390,7 @@ phoenixcontact
 phoenixtec
 picocom
 pid
+pidfile
 pidpath
 pigz
 pijuice
