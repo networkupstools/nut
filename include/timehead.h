@@ -22,6 +22,12 @@
 #ifndef NUT_TIMEHEAD_H_SEEN
 #define NUT_TIMEHEAD_H_SEEN 1
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -65,6 +71,12 @@ static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
         return buf;
 }
 # endif
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif	/* NUT_TIMEHEAD_H_SEEN */

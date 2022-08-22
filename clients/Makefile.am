@@ -37,18 +37,20 @@ if HAVE_WINDOWS_SOCKETS
 endif
 
 lib_LTLIBRARIES = libupsclient.la
-if HAVE_WINDOWS_SOCKETS
-  # FIXME: Currently C++ libs don't build on Win32?
-else
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
   lib_LTLIBRARIES += libnutclientstub.la
 endif
-endif
 
 if WITH_DEV
- include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h nutclient.h nutclientmem.h
-endif
+ include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h
+if HAVE_CXX11
+ include_HEADERS += nutclient.h nutclientmem.h
+else !HAVE_CXX11
+ EXTRA_DIST += nutclient.h nutclientmem.h
+endif !HAVE_CXX11
+endif WITH_DEV
+
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
 endif
@@ -90,18 +92,22 @@ endif
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 6:0:0
 libupsclient_la_LDFLAGS += -export-symbols-regex ^upscli_
-if HAVE_WINDOWS_SOCKETS
-  # Many versions of MingW seem to fail without this
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined
 endif
 
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 2:0:0
+libnutclient_la_LDFLAGS = -version-info 2:1:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutclient_la_LDFLAGS += -no-undefined
+endif
 else
 EXTRA_DIST += nutclient.h nutclient.cpp
 endif
@@ -111,6 +117,10 @@ if HAVE_CXX11
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
 libnutclientstub_la_LDFLAGS = -version-info 1:0:0
 libnutclientstub_la_LIBADD = libnutclient.la
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutclientstub_la_LDFLAGS += -no-undefined
+endif
 else
 EXTRA_DIST += nutclientmem.h nutclientmem.cpp
 endif

@@ -18,7 +18,6 @@
 */
 
 #include "nutclientmem.h"
-#include <common.h>
 
 namespace nut
 {

@@ -46,7 +46,47 @@ dllldd() (
 					OUT="`ls -1 "${MINGW_PREFIX}/bin/$F" "${MINGW_PREFIX}/lib/$F" 2>/dev/null || true`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
-				echo "WARNING: '$F' was not found in searched locations!" >&2
+
+				# Look for compiler-provided libraries, e.g. in cross-builds on linux+mingw
+				# we have a selection of such C++ required artifacts as:
+				#   /usr/lib/gcc/x86_64-w64-mingw32/9.3-win32/libgcc_s_seh-1.dll
+				#   /usr/lib/gcc/x86_64-w64-mingw32/9.3-win32/libstdc++-6.dll
+				#   /usr/lib/gcc/x86_64-w64-mingw32/9.3-posix/libgcc_s_seh-1.dll
+				#   /usr/lib/gcc/x86_64-w64-mingw32/9.3-posix/libstdc++-6.dll
+				#   /usr/lib/gcc/i686-w64-mingw32/9.3-win32/libstdc++-6.dll
+				#   /usr/lib/gcc/i686-w64-mingw32/9.3-posix/libstdc++-6.dll
+				# while on MSYS2 there is one in standard path matched above:
+				#   /mingw64/bin/libstdc++-6.dll
+				# A clumsy alternative would be to link deliverable C++ libs/bins
+				# statically with "-static-libgcc -static-libstdc++" options.
+				COMPILER_PATHS=""
+				if [ -n "$CC" ] ; then
+					# gcc and clang support this option:
+					COMPILER_PATHS="`$CC --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+				else
+					# FIXME: Try to look up in config.log first?
+					if [ -n "$ARCH" ] && (command -v "${ARCH}-gcc") 2>/dev/null >/dev/null ; then
+						COMPILER_PATHS="`"${ARCH}-gcc" --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+					fi
+				fi
+				if [ -n "$CXX" ] ; then
+					# g++ and clang support this option:
+					COMPILER_PATHS="`$CXX --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`:${COMPILER_PATHS}"
+				else
+					# FIXME: Try to look up in config.log first?
+					if [ -n "$ARCH" ] && (command -v "${ARCH}-g++") 2>/dev/null >/dev/null ; then
+						COMPILER_PATHS="`"${ARCH}-g++" --print-search-dirs | grep libraries: | sed 's,^libraries: *=/,/,'`"
+					fi
+				fi
+				if [ -n "$COMPILER_PATHS" ] ; then
+					COMPILER_PATHS="`echo "$COMPILER_PATHS" | tr ':' '\n'`"
+					for P in $COMPILER_PATHS ; do
+						OUT="`ls -1 "${P}/$F" 2>/dev/null || true`" \
+						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue 2 ; }
+					done
+				fi
+
+				echo "WARNING: '$F' was not found in searched locations (system paths)!" >&2
 			done
 		done
 		if [ "$SEEN" != 0 ] ; then

@@ -137,6 +137,15 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 				[*mingw*], [
 					AC_MSG_NOTICE([mingw builds of net-snmp might provide only a static library - retrying for that])
 					LIBS="`$PKG_CONFIG --silence-errors --libs --static netsnmp 2>/dev/null`"
+					dnl # Some workarouds here, to avoid libtool bailing out like this:
+					dnl # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
+					dnl # *** I have the capability to make that library automatically link in when
+					dnl # *** you link to this library.  But I can only do this if you have a
+					dnl # *** shared version of the library, which you do not appear to have.
+					dnl # In Makefiles be sure to use _LDFLAGS (not _LIBADD) to smuggle linker
+					dnl # arguments when building "if WITH_SNMP_STATIC" recipe blocks!
+					dnl # For a practical example, see tools/nut-scanner/Makefile.am.
+					LIBS="`echo " $LIBS" | sed 's/ -l/ -Wl,-l/g'`"
 					AS_UNSET([ac_cv_func_init_snmp])
 					AC_CHECK_FUNCS(init_snmp, [
 						nut_have_libnetsnmp=yes

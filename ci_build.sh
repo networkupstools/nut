@@ -430,16 +430,23 @@ if [ -z "${PKG_CONFIG-}" ]; then
     PKG_CONFIG="pkg-config"
 fi
 
-configure_nut() {
-    local CONFIGURE_SCRIPT="configure"
-    cd "$SCRIPTDIR"
+# Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
+CONFIGURE_SCRIPT=""
+autogen_get_CONFIGURE_SCRIPT() {
+    # Autogen once (delete the file if some scenario ever requires to re-autogen)
+    if [ -n "${CONFIGURE_SCRIPT}" -a -s "${CONFIGURE_SCRIPT}" ] ; then return 0 ; fi
+
+    pushd "${SCRIPTDIR}" || exit
 
     if [[ "$CI_OS_NAME" == "windows" ]] ; then
-        find . -ls
+        # Debug once
+        [ -n "$CONFIGURE_SCRIPT" ] || find . -ls
         CONFIGURE_SCRIPT="configure.bat"
+    else
+        CONFIGURE_SCRIPT="configure"
     fi
 
-    if [ ! -s "$CONFIGURE_SCRIPT" ]; then
+    if [ ! -s "./$CONFIGURE_SCRIPT" ]; then
         # Note: modern auto(re)conf requires pkg-config to generate the configure
         # script, so to stage the situation of building without one (as if on an
         # older system) we have to remove it when we already have the script.
@@ -452,14 +459,24 @@ configure_nut() {
         fi || exit
     fi
 
+    # Retain the full path to configure script file
+    CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
+
+    popd || exit
+}
+
+configure_CI_BUILDDIR() {
+    autogen_get_CONFIGURE_SCRIPT
+
     if [ "${CI_BUILDDIR}" != "." ]; then
         # Per above, we always start this routine in absolute $SCRIPTDIR
         echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
         mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
-        CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
-    else
-        CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
     fi
+}
+
+configure_nut() {
+    configure_CI_BUILDDIR
 
     # Note: maintainer-clean checks remove this, and then some systems'
     # build toolchains noisily complain about missing LD path candidate
@@ -1218,11 +1235,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         echo "=== Finished initial clean-up"
     fi
 
-    if [ "$CI_OS_NAME" = "windows" ] ; then
-        $CI_TIME ./autogen.sh || true
-    else
-        $CI_TIME ./autogen.sh ### 2>/dev/null
-    fi
+    # Just prepare `configure` script; we run it at different points
+    # below depending on scenario
+    autogen_get_CONFIGURE_SCRIPT
 
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         # This should be done in scratch containers...
@@ -1751,16 +1766,7 @@ bindings)
         echo "=== Finished initial clean-up"
     fi
 
-    ./autogen.sh
-
-    if [ "${CI_BUILDDIR}" != "." ]; then
-        # Per above, we always start this routine in absolute $SCRIPTDIR
-        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
-        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
-        CONFIGURE_SCRIPT="${SCRIPTDIR}/configure"
-    else
-        CONFIGURE_SCRIPT="./configure"
-    fi
+    configure_CI_BUILDDIR
 
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
@@ -1801,7 +1807,7 @@ bindings)
 cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
 
-    ./autogen.sh
+    ./autogen.sh || exit
     cd scripts/Windows || exit
 
     cmd="" # default soup of the day, as defined in the called script
@@ -1827,6 +1833,7 @@ cross-windows-mingw*)
     esac
 
     SOURCEMODE="out-of-tree" \
+    MAKEFLAGS="$PARMAKE_FLAGS" \
     ./build-mingw-nut.sh $cmd
     ;;
 

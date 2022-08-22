@@ -1215,8 +1215,8 @@ set | sort -n """
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_STRICT_C,
-                    dynacfgPipeline.axisCombos_WINDOWS_CROSS,
-                    [~/BUILD_WARNOPT=hard/]
+                    //dynacfgPipeline.axisCombos_WINDOWS_CROSS,
+                    //[~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!

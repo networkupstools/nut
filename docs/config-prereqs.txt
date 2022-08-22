@@ -1052,6 +1052,11 @@ export PATH
     mingw-w64-clang-x86_64-libmodbus-git \
     mingw-w64-x86_64-libgd \
     mingw-w64-clang-x86_64-libgd
+
+# For C++ tests:
+:; pacman -S --needed \
+    mingw-w64-x86_64-cppunit \
+    mingw-w64-clang-x86_64-cppunit
 ----
 
 
