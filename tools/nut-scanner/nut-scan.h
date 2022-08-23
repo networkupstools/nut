@@ -49,7 +49,6 @@
 #include "nutscan-init.h"
 #include "nutscan-device.h"
 #include "nutscan-ip.h"
-#include <timehead.h>
 
 #ifdef WITH_IPMI
 #include <freeipmi/freeipmi.h>
