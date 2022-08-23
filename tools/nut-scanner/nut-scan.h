@@ -32,7 +32,19 @@
 #define NUT_SCAN_H
 
 #include <sys/types.h>
-#include "nut_stdint.h"
+
+/* Ensure uint16_t et al: */
+#if defined HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#  include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>
+#endif
 
 #include <nutscan-init.h>
 #include <nutscan-device.h>
