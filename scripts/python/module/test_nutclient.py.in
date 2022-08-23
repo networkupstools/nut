@@ -47,10 +47,10 @@ if __name__ == "__main__" :
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
-        if (NUT_USER is None and ex == b'ERR USERNAME-REQUIRED'):
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
             result = result + "\n(anticipated error: no credentials were provided)"
         else:
-            if (ex != b'ERR CMD-NOT-SUPPORTED' and (NUT_USER is not None and ex != b'ERR ACCESS-DENIED') ):
+            if (ex != 'ERR CMD-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
                 result = result + "\nTEST-CASE FAILED"
                 failed.append('RunUPSCommand')
     print( "\033[01;33m%s\033[0m\n" % result )
@@ -61,10 +61,10 @@ if __name__ == "__main__" :
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
-        if (NUT_USER is None and ex == b'ERR USERNAME-REQUIRED'):
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
             result = result + "\n(anticipated error: no credentials were provided)"
         else:
-            if (ex != b'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != b'ERR ACCESS-DENIED') ):
+            if (ex != 'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
                 result = result + "\nTEST-CASE FAILED"
                 failed.append('SetUPSVar')
     print( "\033[01;33m%s\033[0m\n" % result )
@@ -86,7 +86,7 @@ if __name__ == "__main__" :
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
-        if (ex == b'ERR UNKNOWN-UPS'):
+        if (ex == 'ERR UNKNOWN-UPS'):
             result = result + "\n(anticipated error: bogus device name was tested)"
         else:
             result = result + "\nTEST-CASE FAILED"
@@ -101,10 +101,10 @@ if __name__ == "__main__" :
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
-        if (NUT_USER is None and ex == b'ERR USERNAME-REQUIRED'):
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
             result = result + "\n(anticipated error: no credentials were provided)"
         else:
-            if (NUT_USER is not None and ex != b'ERR ACCESS-DENIED'):
+            if (NUT_USER is not None and ex != 'ERR ACCESS-DENIED'):
                 result = result + "\nTEST-CASE FAILED"
                 failed.append('DeviceLogin-dummy')
     print( "\033[01;33m%s\033[0m\n" % result )
