@@ -315,7 +315,9 @@ of connection.
             print( "[DEBUG] DeviceLogin called..." )
 
         if ups is None or (ups not in self.GetUPSNames()):
-            raise PyNUTError( "%s is not a valid UPS" % ups )
+            if self.__debug :
+                print( "[DEBUG] DeviceLogin: %s is not a valid UPS" % ups )
+            raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         self.__srv_handler.write( ("LOGIN %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
@@ -348,7 +350,9 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
             self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
             result = self.__srv_handler.read_until( b"\n" )
             if ( result != b"OK MASTER-GRANTED\n" ) :
-                raise PyNUTError( ( "Primary level functions are not available", "" ) )
+                if self.__debug :
+                    print( "[DEBUG] Primary level functions are not available" )
+                raise PyNUTError( "ERR ACCESS-DENIED" )
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
@@ -390,7 +394,9 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
         # If (!ups) we use this list below to recurse:
         self_ups_list = self.GetUPSNames()
         if ups and (ups not in self_ups_list):
-            raise PyNUTError( "%s is not a valid UPS" % ups )
+            if self.__debug :
+                print( "[DEBUG] ListClients: %s is not a valid UPS" % ups )
+            raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         if ups:
             self.__srv_handler.write( ("LIST CLIENT %s\n" % ups).encode('ascii') )
