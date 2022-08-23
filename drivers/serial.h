@@ -53,8 +53,6 @@ int ser_get_dsr(TYPE_FD_SER fd);
 int ser_get_cts(TYPE_FD_SER fd);
 int ser_get_dcd(TYPE_FD_SER fd);
 
-int ser_flush_io(TYPE_FD_SER fd);
-
 int ser_close(TYPE_FD_SER fd, const char *port);
 
 ssize_t ser_send_char(TYPE_FD_SER fd, unsigned char ch);
@@ -92,6 +90,7 @@ ssize_t ser_get_line(TYPE_FD_SER fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, time_t d_sec, useconds_t d_usec);
 
 ssize_t ser_flush_in(TYPE_FD_SER fd, const char *ignset, int verbose);
+int ser_flush_io(TYPE_FD_SER fd);
 
 /* unified failure reporting: call these often */
 void ser_comm_fail(const char *fmt, ...)
