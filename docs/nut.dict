@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3013 utf-8
+personal_ws-1.1 en 3017 utf-8
 AAS
 ABI
 ACFAIL
@@ -335,6 +335,7 @@ Erikson
 Eriksson
 Evgeny
 Exar
+FD
 FEMEA
 FFF
 FH
@@ -1035,6 +1036,7 @@ SDT
 SELFTEST
 SELinux
 SENTR
+SER
 SERIALNO
 SERVER's
 SETFL
@@ -1068,6 +1070,7 @@ SMTP
 SMX
 SNMPv
 SNR
+SOCK
 SOCKADDR
 SOCKLEN
 SOFF
