@@ -31,7 +31,6 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
-#include "config.h"
 #include <sys/types.h>
 #include "nut_stdint.h"
 
