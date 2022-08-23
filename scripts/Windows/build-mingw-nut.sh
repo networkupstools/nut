@@ -107,7 +107,10 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
 	|| exit
+	echo "$0: configure phase complete ($?)" >&2
+
 	make 1>/dev/null || exit
+	echo "$0: build phase complete ($?)" >&2
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
 		# Going forward, this should be the main mode - "legacy code"
@@ -150,6 +153,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 	fi
 
+	echo "$0: install phase complete ($?)" >&2
 	cd ..
 else
 	echo "Usage:"
