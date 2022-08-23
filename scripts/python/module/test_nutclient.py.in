@@ -117,11 +117,11 @@ if __name__ == "__main__" :
         else:
             if (loggedIntoDummy):
                 if (len(result) < 1):
-                    raise ValueError("ListClients() returned an empty dict where at least one client was expected on 'dummy'")
-                if (type(result['dummy']) is not list):
-                    raise TypeError("ListClients() did not return a dict whose 'dummy' keyed value is a list")
-                if (len(result['dummy']) < 1):
-                    raise ValueError("ListClients() returned a dict where at least one client was expected on 'dummy' but none were reported")
+                    raise ValueError("ListClients() returned an empty dict where at least one client was expected on b'dummy'")
+                if (type(result[b'dummy']) is not list):
+                    raise TypeError("ListClients() did not return a dict whose b'dummy' keyed value is a list")
+                if (len(result[b'dummy']) < 1):
+                    raise ValueError("ListClients() returned a dict where at least one client was expected on b'dummy' but none were reported")
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
