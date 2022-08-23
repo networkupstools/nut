@@ -46,9 +46,9 @@
 #  include <limits.h>
 #endif
 
-#include <nutscan-init.h>
-#include <nutscan-device.h>
-#include <nutscan-ip.h>
+#include "nutscan-init.h"
+#include "nutscan-device.h"
+#include "nutscan-ip.h"
 #include <timehead.h>
 
 #ifdef WITH_IPMI
