@@ -8,6 +8,7 @@ import sys
 import os
 
 if __name__ == "__main__" :
+    NUT_HOST = os.getenv('NUT_HOST', '127.0.0.1')
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
     NUT_USER = os.getenv('NUT_USER', None)
     NUT_PASS = os.getenv('NUT_PASS', None)
@@ -18,7 +19,7 @@ if __name__ == "__main__" :
 
     print( "PyNUTClient test..." )
     #nut    = PyNUT.PyNUTClient( debug=True, port=NUT_PORT )
-    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, port=NUT_PORT )
+    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, host=NUT_HOST, port=NUT_PORT )
     #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True, port=NUT_PORT )
 
     print( 80*"-" + "\nTesting 'GetUPSList' :")
