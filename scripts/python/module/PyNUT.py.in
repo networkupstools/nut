@@ -48,6 +48,9 @@
 #            Fix ListClients() method to actually work with current NUT protocol
 #            Added DeviceLogin() method
 #            Added GetUPSNames() method
+#            Fixed raised PyNUTError() exceptions to carry a Python string
+#            (suitable for Python2 and Python3), not byte array from protocol,
+#            so exception catchers can process them naturally (see test script).
 
 import telnetlib
 
