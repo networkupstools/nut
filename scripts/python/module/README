@@ -26,10 +26,10 @@ versions 2.7, 3.4, 3.5 and 3.7.
 
 [NOTE]
 ======
-Text fields (including NUT protocol error codes quoted into `PyNUTError`
-exceptions) returned by methods are byte sequences (not locale-aware
-strings). This is of little concern for Python 2, but is important in
-Python 3.
+Text fields returned by methods are byte sequences (not locale-aware
+strings), except NUT protocol error codes quoted into `PyNUTError`
+exceptions which are decoded into strings as originally `ascii` text.
+This is of little concern for Python 2, but is important in Python 3.
 
 The `ups` argument to methods is handled as a string, so conversion may
 be needed to compare with names returned in the arrays, e.g.:
