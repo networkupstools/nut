@@ -25,6 +25,7 @@
 
 #include "common.h"
 #include "nut-scan.h"
+#include "nut_stdint.h"
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX

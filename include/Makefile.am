@@ -1,5 +1,11 @@
-dist_noinst_HEADERS = attribute.h common.h extstate.h parseconf.h proto.h	\
+dist_noinst_HEADERS = attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h nut_float.h nut_stdint.h nut_platform.h
+
+if WITH_DEV
+include_HEADERS = parseconf.h
+else
+dist_noinst_HEADERS += parseconf.h
+endif
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
