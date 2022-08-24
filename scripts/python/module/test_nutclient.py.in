@@ -44,6 +44,8 @@ if __name__ == "__main__" :
     print( 80*"-" + "\nTesting 'RunUPSCommand' (Test front panel) :")
     try :
         result = nut.RunUPSCommand( "UPS1", "test.panel.start" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
@@ -58,6 +60,8 @@ if __name__ == "__main__" :
     print( 80*"-" + "\nTesting 'SetUPSVar' (set ups.id to test):")
     try :
         result = nut.SetRWVar( "UPS1", "ups.id", "test" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
     except :
         ex = str(sys.exc_info()[1])
         result = "EXCEPTION: " + ex
@@ -97,6 +101,8 @@ if __name__ == "__main__" :
     print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
     try :
         result = nut.DeviceLogin( "dummy" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
         loggedIntoDummy = True
     except :
         ex = str(sys.exc_info()[1])
