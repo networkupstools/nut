@@ -32,14 +32,15 @@ exceptions which are decoded into strings as originally `ascii` text.
 This is of little concern for Python 2, but is important in Python 3.
 
 The `ups` argument to methods is handled as a string, so conversion may
-be needed to compare with names returned in the arrays, e.g.:
+be needed to compare with names returned in the lists and dictionaries,
+e.g.:
 ----
 strUps = bUps.decode('ascii')
 bUps = strUps.encode('ascii')
 ----
 
-Names returned by `GetUPSNames()` are specifically converted into string
-type.
+Only the names returned by `GetUPSNames()` method specifically are
+converted into string type.
 
 Since Python 3 support was added just recently, module code may later be
 converted to use string types like `str` or `unicode` in the returned
@@ -81,7 +82,7 @@ class PyNUTClient :
   def SetRWVar( self, ups='', var='', value='' ) :
 ------
 
-The module also provides the `PyNUTError` class to represent any excpetions
+The module also provides the `PyNUTError` class to represent any exceptions
 raised by `PyNUTClient` logic.
 
 Documentation
