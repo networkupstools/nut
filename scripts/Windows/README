@@ -479,10 +479,13 @@ net-snmp
 	# NOTE: ./configure script may ask a few questions, or may just print
 	# a banner that it would; hopefully all replies needed for current
 	# version are covered above
-	:; make
+	# The following long `LDFLAGS` ensure that shared `libnetsnmp-40.dll`
+	# gets built and later installed (and siblings which NUT does not use):
+	:; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long"
 	:; sudo make install
 
-NOTE: net-snmp tends to only build a static-linking library for Windows.
+NOTE: net-snmp tends to only `make` a static-linking library for Windows
+by default (the shared library only appears with `LDFLAGS` proposed above).
 In this case consumers must link not only with `-lnetsnmp` but also its
 dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
 your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
