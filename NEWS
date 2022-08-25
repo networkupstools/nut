@@ -34,6 +34,12 @@ PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
 
 https://github.com/networkupstools/nut/milestone/8
 
+ - "UPS management protocol", Informational RFC 9271 published
+   by IETF at https://www.rfc-editor.org/info/rfc9271 and the
+   IANA port number registry was updated accordingly at
+   https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=3493
+   (even though this RFC is not formally an Internet Standard)
+
  - Bug fixes for fallout possible due to "fightwarn" effort and other
    evolution in NUT v2.8.0 release:
    * The `upsdebugx()` and similar methods were converted to macros in #685

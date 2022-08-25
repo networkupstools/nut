@@ -214,6 +214,11 @@ log_info "Using '$TESTDIR' for generated configs and state files"
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
+if [ "`id -u`" = 0 ]; then
+	log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
+	chmod 777 "${TESTDIR}/run"
+fi
+
 stop_daemons() {
     if [ -n "$PID_UPSD$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
         log_info "Stopping test daemons"

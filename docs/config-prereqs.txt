@@ -200,9 +200,9 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
-(technically, needs at least JRE 8+). You may have to ensure `/proc` is mounted
-in the target chroot (or do this from the running container).
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`.
+You may have to ensure that `/proc` is mounted in the target chroot
+(or do this from the running container).
 
 CentOS 7
 ~~~~~~~~
@@ -320,8 +320,7 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 :; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
 ------
 
-NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
-(technically, needs at least JRE 8+).
+NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`.
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
@@ -394,9 +393,9 @@ For compatibility with common setups on other operating systems, can symlink
 suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
 by package).
 
-NOTE: For Jenkins agents, also need to `pkg install openjdk8` (or 11+) --
-and do note its further OS configuration suggestions for special filesystem
-mounts.
+NOTE: For Jenkins agents, also need to `pkg install openjdk11` (11 or 17
+required since summer 2022) -- and do note its further OS configuration
+suggestions for special filesystem mounts.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
@@ -411,7 +410,7 @@ or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
 Note the lack of `pkg-config` also precludes `libcppunit` tests, although
 they also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
 
-OpenBSD 6.4
+OpenBSD 6.5
 ~~~~~~~~~~~
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
@@ -427,6 +426,10 @@ below.
 OpenBSD delivers many versions of numerous packages, you should specify
 your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
 
+NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
+requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
+used OpenBSD 6.4 and version nuances in this document may still reflect that.
+
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
 allows to test many versions of auto-tools in the same agent), e.g.:
@@ -438,13 +441,13 @@ To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
 base installation. It is not required for "legacy" builds arranged by just
 `autogen.sh` and `configure` scripts.
 
-NOTE: The OpenBSD 6.4 `install64.iso` installation includes a set of packages
+NOTE: The OpenBSD 6.5 `install65.iso` installation includes a set of packages
 that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
-at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
+at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
 networked repository (4.2.x vs 4.9.x).
-You may have to echo a working base URL (part before "6.4/..." into the
+You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
 
@@ -506,6 +509,7 @@ default site.
 With OpenBSD 6.4, building against freeipmi failed: its libtool
 recipes referenced `-largp` which did not get installed in the system.
 Maybe some more packages are needed explicitly?
+Was not yet retried with OpenBSD 6.5.
 
 ------
 :; pkg_add \
@@ -525,16 +529,16 @@ Recommended:
 :; ( cd /usr/bin && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
 :; ( cd /usr/lib/ccache && for T in gcc g++ cpp ; do ln -s "$T" "$T-4.2.1" ; done )
 
-:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-6.0.0" ; done )
-:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-6.0.0" ; done )
+:; ( cd /usr/bin && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
+:; ( cd /usr/lib/ccache && for T in clang clang++ clang-cpp ; do ln -s "$T" "$T-7.0.1" ; done )
 ------
 
 For compatibility with common setups on other operating systems, can add
 dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
 `gcc` installed by package) into `/usr/lib/ccache`.
 
-NOTE: For Jenkins agents, also need to `pkg_add jre` or `pkg_add jdk`
-(if asked, pick version 1.8 or 8, or 11+). You would likely have to update
+NOTE: For Jenkins agents, also need to `pkg_add jdk` (if asked, pick version
+11 or 17); can request `pkg_add jdk%11`. You would likely have to update
 the trusted CA store to connect to NUT CI, see e.g. (raw!) download from
 https://gist.github.com/galan/ec8b5f92dd325a97e2f66e524d28aaf8
 but ensure that you run it with `bash` and it does `wget` the certificates
@@ -806,9 +810,9 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 
 No pre-packaged `cppcheck` was found, either.
 
-NOTE: For Jenkins agents, also need to `pkg install developer/java/openjdk8`
-(or `pkg install runtime/java/openjdk11` for JRE 11 -- currently the OS does
-not offer in-distro JDK version 11+).
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
+for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
+summer 2022.
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -875,6 +879,9 @@ Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
 
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
+for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
+summer 2022.
 
 MacOS with homebrew
 ~~~~~~~~~~~~~~~~~~~
