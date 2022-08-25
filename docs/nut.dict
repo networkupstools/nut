@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2989 utf-8
+personal_ws-1.1 en 2992 utf-8
 AAS
 ABI
 ACFAIL
@@ -67,6 +67,7 @@ Angelone
 Antonino
 Apodaca
 AppData
+AppVeyor
 Arjen
 Arkadiusz
 Armin
@@ -634,6 +635,7 @@ MQ
 MSI
 MSII
 MSIII
+MSYS
 MX
 MacKenzie's
 MacOS
@@ -674,6 +676,7 @@ Milkov
 MinACVI
 MinACVO
 MinDCV
+MinGW
 MiniCOL
 MiniGuard
 Minislot
