@@ -26,6 +26,7 @@
 #include "common.h"
 #include "upsclient.h"
 #include "nut-scan.h"
+#include "nut_stdint.h"
 #include <ltdl.h>
 
 /* dynamic link library stuff */

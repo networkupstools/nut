@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "nut-scan.h"
+#include "nut_stdint.h"
 
 #ifdef WITH_SNMP
 

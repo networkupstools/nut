@@ -24,9 +24,9 @@
 #include "config.h" /* must be first */
 
 #include "nut_stdint.h"
+#include "common.h"
 #include "nutscan-ip.h"
 #include <stdio.h>
-#include "common.h"
 #include <sys/types.h>
 #ifndef WIN32
 # include <sys/socket.h>

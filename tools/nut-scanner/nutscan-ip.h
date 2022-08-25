@@ -28,7 +28,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #else
-#include "common.h"
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
 #endif
 
 #ifdef __cplusplus

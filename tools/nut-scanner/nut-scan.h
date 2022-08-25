@@ -31,14 +31,24 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
-#include "config.h"
 #include <sys/types.h>
-#include "nut_stdint.h"
 
-#include <nutscan-init.h>
-#include <nutscan-device.h>
-#include <nutscan-ip.h>
-#include <timehead.h>
+/* Ensure uint16_t et al: */
+#if defined HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#  include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>
+#endif
+
+#include "nutscan-init.h"
+#include "nutscan-device.h"
+#include "nutscan-ip.h"
 
 #ifdef WITH_IPMI
 #include <freeipmi/freeipmi.h>

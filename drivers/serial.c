@@ -315,11 +315,6 @@ int ser_get_dcd(TYPE_FD_SER fd)
 #endif
 }
 
-int ser_flush_io(TYPE_FD_SER fd)
-{
-	return tcflush(fd, TCIOFLUSH);
-}
-
 int ser_close(TYPE_FD_SER fd, const char *port)
 {
 	if (INVALID_FD_SER(fd)) {
@@ -571,6 +566,11 @@ ssize_t ser_flush_in(TYPE_FD_SER fd, const char *ignset, int verbose)
 	}
 
 	return extra;
+}
+
+int ser_flush_io(TYPE_FD_SER fd)
+{
+	return tcflush(fd, TCIOFLUSH);
 }
 
 void ser_comm_fail(const char *fmt, ...)
