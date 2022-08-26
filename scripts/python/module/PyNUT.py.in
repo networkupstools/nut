@@ -48,6 +48,9 @@
 #            Fix ListClients() method to actually work with current NUT protocol
 #            Added DeviceLogin() method
 #            Added GetUPSNames() method
+#            Fixed raised PyNUTError() exceptions to carry a Python string
+#            (suitable for Python2 and Python3), not byte array from protocol,
+#            so exception catchers can process them naturally (see test script).
 
 import telnetlib
 
@@ -118,7 +121,7 @@ if something goes wrong.
             self.__srv_handler.write( ("USERNAME %s\n" % self.__login).encode('ascii') )
             result = self.__srv_handler.read_until( b"\n", self.__timeout )
             if result[:2] != b"OK" :
-                raise PyNUTError( result.replace( b"\n", b"" ) )
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         if self.__password != None :
             self.__srv_handler.write( ("PASSWORD %s\n" % self.__password).encode('ascii') )
@@ -130,9 +133,9 @@ if something goes wrong.
                     self.__srv_handler.write( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
                     result = self.__srv_handler.read_until( b"\n", self.__timeout )
                     if result[:2] != b"OK" :
-                        raise PyNUTError( result.replace( b"\n", b"" ) )
+                        raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
-                    raise PyNUTError( result.replace( b"\n", b"" ) )
+                    raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
@@ -149,7 +152,7 @@ which is of little concern for Python2 but is important in Python3
         self.__srv_handler.write( b"LIST UPS\n" )
         result = self.__srv_handler.read_until( b"\n" )
         if result != b"BEGIN LIST UPS\n" :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         result = self.__srv_handler.read_until( b"END LIST UPS\n" )
         ups_list = {}
@@ -189,7 +192,7 @@ available vars.
         self.__srv_handler.write( ("LIST VAR %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
         if result != ("BEGIN LIST VAR %s\n" % ups).encode('ascii') :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         ups_vars   = {}
         result     = self.__srv_handler.read_until( ("END LIST VAR %s\n" % ups).encode('ascii') )
@@ -215,7 +218,7 @@ of the command as value
         self.__srv_handler.write( ("LIST CMD %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
         if result != ("BEGIN LIST CMD %s\n" % ups).encode('ascii') :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         ups_cmds   = {}
         result     = self.__srv_handler.read_until( ("END LIST CMD %s\n" % ups).encode('ascii') )
@@ -252,7 +255,7 @@ The result is presented as a dictionary containing 'key->val' pairs
         self.__srv_handler.write( ("LIST RW %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
         if ( result != ("BEGIN LIST RW %s\n" % ups).encode('ascii') ) :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         result     = self.__srv_handler.read_until( ("END LIST RW %s\n" % ups).encode('ascii') )
         offset     = len( ("VAR %s" % ups).encode('ascii') )
@@ -282,7 +285,7 @@ rights to set it (maybe login/password).
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def RunUPSCommand( self, ups="", command="" ) :
         """ Send a command to the specified UPS
@@ -298,7 +301,7 @@ Returns OK on success or raises an error
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def DeviceLogin( self, ups="") :
         """ Establish a login session with a device (like upsmon does)
@@ -315,7 +318,9 @@ of connection.
             print( "[DEBUG] DeviceLogin called..." )
 
         if ups is None or (ups not in self.GetUPSNames()):
-            raise PyNUTError( "%s is not a valid UPS" % ups )
+            if self.__debug :
+                print( "[DEBUG] DeviceLogin: %s is not a valid UPS" % ups )
+            raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         self.__srv_handler.write( ("LOGIN %s\n" % ups).encode('ascii') )
         result = self.__srv_handler.read_until( b"\n" )
@@ -326,7 +331,7 @@ of connection.
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def FSD( self, ups="") :
         """ Send FSD command
@@ -348,7 +353,9 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
             self.__srv_handler.write( ("MASTER %s\n" % ups).encode('ascii') )
             result = self.__srv_handler.read_until( b"\n" )
             if ( result != b"OK MASTER-GRANTED\n" ) :
-                raise PyNUTError( ( "Primary level functions are not available", "" ) )
+                if self.__debug :
+                    print( "[DEBUG] Primary level functions are not available" )
+                raise PyNUTError( "ERR ACCESS-DENIED" )
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
@@ -357,7 +364,7 @@ NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
         if ( result == b"OK FSD-SET\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def help(self) :
         """ Send HELP command
@@ -390,7 +397,9 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
         # If (!ups) we use this list below to recurse:
         self_ups_list = self.GetUPSNames()
         if ups and (ups not in self_ups_list):
-            raise PyNUTError( "%s is not a valid UPS" % ups )
+            if self.__debug :
+                print( "[DEBUG] ListClients: %s is not a valid UPS" % ups )
+            raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         if ups:
             self.__srv_handler.write( ("LIST CLIENT %s\n" % ups).encode('ascii') )
@@ -414,7 +423,7 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
             if self.__debug :
                 print( "[DEBUG] ListClients from server got unexpected result: %s" % result )
 
-            raise PyNUTError( result.replace( b"\n", b"" ) )
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         if ups :
             result = self.__srv_handler.read_until( ("END LIST CLIENT %s\n" % ups).encode('ascii') )

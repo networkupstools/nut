@@ -8,6 +8,12 @@ else
 dist_noinst_HEADERS += parseconf.h
 endif
 
+if WITH_DEV
+include_HEADERS = parseconf.h
+else
+dist_noinst_HEADERS += parseconf.h
+endif
+
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
 CLEANFILES = nut_version.h
