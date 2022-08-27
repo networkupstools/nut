@@ -1571,10 +1571,14 @@ static int reconnect_ups(void)
 		wait_before_reconnect = atoi(val);
 	}
 
-	upsdebugx(4, "Closing comm_driver previous handle");
 	/* Try to close the previous handle */
-	if (udev)
+	if (udev == HID_DEV_HANDLE_CLOSED) {
+		upsdebugx(4, "Not closing comm_driver previous handle: already closed");
+	} else {
+		upsdebugx(4, "Closing comm_driver previous handle");
 		comm_driver->close_dev(udev);
+		udev = HID_DEV_HANDLE_CLOSED;
+	}
 
 	upsdebugx(4, "===================================================================");
 	if (wait_before_reconnect > 0 ) {
