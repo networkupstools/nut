@@ -858,6 +858,7 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	interval();
 #endif
+
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
@@ -911,10 +912,10 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-		if(!found_data && !interrupt_only) {
+		if (!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
-		if(!found_data) {
+		if (!found_data) {
 			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
 			continue;
 		}
@@ -930,7 +931,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
 		interval());
 #endif
-	/* clear status buffer before begining */
+	/* clear status buffer before beginning */
 	status_init();
 
 	/* Do a full update (polling) every pollfreq
