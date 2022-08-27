@@ -833,7 +833,12 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		upsdebugx(1, "Got to reconnect!\n");
+		upsdebugx(1, "Got to reconnect!");
+		if (use_interrupt_pipe == TRUE) {
+			upsdebugx(0, "\nReconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
+				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+		}
 
 		if (!reconnect_ups()) {
 			lastpoll = now;
