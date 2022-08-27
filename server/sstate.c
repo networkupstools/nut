@@ -54,11 +54,13 @@ static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 	}
 
 	if (!strcasecmp(arg[0], "DATASTALE")) {
+		upsdebugx(3, "UPS [%s]: data is STALE now", ups->name);
 		ups->data_ok = 0;
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DATAOK")) {
+		upsdebugx(3, "UPS [%s]: data is NOT STALE now", ups->name);
 		ups->data_ok = 1;
 		return 1;
 	}
