@@ -377,7 +377,13 @@
 
 /* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
-# include <usb.h>
+# ifdef HAVE_LIBUSB_H
+#  include <usb.h>
+# else
+#  ifdef HAVE_LUSB0_USB_H
+#   include <lusb0_usb.h>
+#  endif
+# endif
  /* Structures */
  /* See detailed comments above, in libusb-1.0 definitions
   * FIXME: It may make sense to constrain the limits to lowest common
