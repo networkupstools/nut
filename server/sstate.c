@@ -359,21 +359,23 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 
 	time(&now);
 
-	/* ignore DATAOK/DATASTALE unless the dump is done */
-	if ((ups->dumpdone) && (!ups->data_ok)) {
-		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", ups->name);
-		return 1;	/* dead */
-	}
-
 	elapsed = difftime(now, ups->last_heard);
 
-	/* somewhere beyond a third of the maximum time - prod it to make it talk */
+	/* Somewhere beyond a third of the maximum time - prod it to make it talk
+	 * Note this helps detect drivers that died without closing the connection
+	 */
 	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
 		sendping(ups);
 
 	if (elapsed > arg_maxage) {
 		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
 					ups->name, elapsed, arg_maxage);
+		return 1;	/* dead */
+	}
+
+	/* ignore DATAOK/DATASTALE unless the dump is done */
+	if ((ups->dumpdone) && (!ups->data_ok)) {
+		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", ups->name);
 		return 1;	/* dead */
 	}
 
