@@ -51,7 +51,7 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_REPORT_SIZE         0x1800
 #define MAX_RETRY               3
 
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR)
+#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
 /* Only used in this file of all NUT codebase, so not in str.{c,h}
  * where it happens to conflict with netsnmp-provided variant for
  * some of our build products.
@@ -802,7 +802,7 @@ static void libusb_close(usb_dev_handle *udev)
 	usb_close(udev);
 }
 
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR)
+#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
 static char *strcasestr(const char *haystack, const char *needle) {
 	/* work around "const char *" and guarantee the original is not
 	 * touched... not efficient but we have few uses for this method */
