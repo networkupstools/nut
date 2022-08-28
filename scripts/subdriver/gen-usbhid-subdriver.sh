@@ -88,9 +88,9 @@ natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
     fi
 done
 
-# try to determine product and vendor id
-VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
-PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+# try to determine product and vendor id, if not specified by user
+[ -n "$VENDORID" ] || VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+[ -n "$PRODUCTID" ] || PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
 
 # prompt for productid, vendorid if necessary
 if [ -z "$VENDORID" ]; then
