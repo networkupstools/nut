@@ -288,6 +288,42 @@ hardware/firmware vs. those models where existing fix-up method should be
 applied, and post a pull request so the NUT driver would handle both cases.
 
 
+Investigating report descriptors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Beside looking for problems with report descriptor processing in NUT code,
+it is important to make sure what data the device actually serves on the
+wire, and if it is logically consistent with the protocol requirements.
+
+For a deep dive into the byte stream, you will need additional tools:
+
+* get/build/install link:https://regina-rexx.sourceforge.io[regina-rexx]
+* get/install link:https://github.com/abend0c1/hidrdd[HIDRDD]
+
+Typical troubleshooting of suspected firmware/protocol issues goes like this:
+
+* Turn the NUT `usbhid-ups` driver debug verbosity level up to 5 (or more)
+  and restart the driver, so it would record the HEX dump of report descriptor
+* Look for reports from the driver of any problems it has already detected
+  and possibly amended (LogMin/LogMax, report descriptor fix-ups)
+* Extract the HEX dump of the report descriptor from USB driver output from
+  the first step above, and run it through HIDRDD
+* Look at the HIDRDD output, with reference to any documents related to your
+  device and the USB/HID power devices class available in NUT documentation,
+  e.g. at https://networkupstools.org/ups-protocols.html
+* Especially look for inconsistencies in the USB HID report descriptors (RD):
+  * between the min/max (logical and physical) values,
+  * the sizes of the report fields they apply to,
+  * the expected physical values (e.g., supply and output voltages,
+    over-voltage/under-voltage transfer points, ...)
+* If you're seeing unexpected values for particular variables, look at the
+  raw data that is being sent, decide whether it makes sense in the context
+  of the logical and physical min/max values from the report descriptor.
+* Read the NUT code, tracing through how each value gets processed looking
+  for where the result deviates from expectations...
+* Think, code, test, rinse, repeat, post a PR :)
+
+
 Shutting down the UPS
 ~~~~~~~~~~~~~~~~~~~~~
 
