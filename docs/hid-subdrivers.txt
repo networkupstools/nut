@@ -295,6 +295,15 @@ Beside looking for problems with report descriptor processing in NUT code,
 it is important to make sure what data the device actually serves on the
 wire, and if it is logically consistent with the protocol requirements.
 
+While here, keep in mind that USB protocol on the wire has a specified
+order of bytes involved, while processing on your computer may lay them
+out differently due to bitness and endianness of the current binary build.
+General NUT codebase (`libhid.c`, `hidparser.c`) aims to abstract this,
+so application code like drivers can deal with their native numeric data
+types, but when troubleshooting, do not rule out possibility of flaws
+there as well. And certainly do not code any assumptions about ordered
+multiple-byte ranges in a protocol buffer.
+
 For a deep dive into the byte stream, you will need additional tools:
 
 * get/build/install link:https://regina-rexx.sourceforge.io[regina-rexx]
