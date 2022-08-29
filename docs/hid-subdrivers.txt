@@ -203,6 +203,40 @@ You can then recompile `usbhid-ups`, and start experimenting with the new
 subdriver.
 
 
+Updating a subdriver
+~~~~~~~~~~~~~~~~~~~~
+
+You may have a device from vendor (and maybe model) whose support `usbhid-ups`
+already claims. However, you may feel that the driver does not represent all
+data points that your device serves. This may be possible, as vendors tend to
+use the same identifiers for unrelated products, as well as produce revisions
+of devices with same marketed name but different internals (due to chip and
+other components availability, cost optimization, etc.) Even without sinister
+implications, UPS firmwares evolve and so bugs and features can get added,
+fixed and removed over time with truly the same hardware being involved.
+
+In this case you should follow the same instructions as above for "Writing
+a subdriver", but specify the same subdriver name as the one which supports
+your device family already.
+
+Then compare the generated source file with the one already committed to NUT
+codebase, paying close attention to `..._hid2nut[]` table which maps "usage"
+names to NUT data points. There may be several "usage" values served by
+different device models or firmware versions, that provide same information
+for a NUT data point, such as `input.voltage`. For the `hid2nut` mapping
+tables, first hit wins (so you may e.g. prefer to check values with better
+precision first).
+
+Using a GUI tool with partial-line difference matching and highlighting,
+such as Meld or WinMerge, is recommended for this endeavour.
+
+For new data points in `hid2nut` tables be sure to not invent new names,
+but use standard ones from `docs/nut-names.txt` file. Temporarily, the
+`experimental.*` namespace may be used.
+If you need to standardize a name for some concept not addressed yet,
+please do so via nut-upsdev mailing list discussion.
+
+
 Customization
 ~~~~~~~~~~~~~
 
