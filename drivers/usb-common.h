@@ -377,7 +377,7 @@
 
 /* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
-# ifdef HAVE_LIBUSB_H
+# ifdef HAVE_USB_H
 #  include <usb.h>
 # else
 #  ifdef HAVE_LUSB0_USB_H
