@@ -163,7 +163,8 @@ Writing a subdriver
 In preparation for writing a subdriver for a device that is currently
 unsupported, run usbhid-ups with the following command line:
 
-	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX -x port=auto -s ups
+	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
+		-x port=auto -s ups
 
 (substitute your device's 4-digit VendorID instead of "XXXX").
 This will produce a bunch of debugging information, including a number
@@ -173,12 +174,13 @@ This information forms the initial basis for a new subdriver.
 You should save this information to a file, e.g.:
 
 	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
-		-x port=auto -s ups 2>&1 | tee /tmp/info
+		-x port=auto -s ups -d1 2>&1 | tee /tmp/info
 
-You can create an initial "stub" subdriver for your device by using
-script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates
-a "stub" and needs to be further customized to be useful (see
-"Customization" below).
+You can now create an initial "stub" subdriver for your device by using
+helper script `scripts/subdriver/gen-usbhid-subdriver.sh`.
+
+NOTE: this only creates a driver code "stub" which needs to be further
+customized to be actually useful (see "Customization" below).
 
 Use the script as follows:
 
