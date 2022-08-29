@@ -147,6 +147,8 @@ sub gen_usb_files
 	print $outputDevScanner "# else\n";
 	print $outputDevScanner "#  ifdef HAVE_LUSB0_USB_H\n";
 	print $outputDevScanner "#   include <lusb0_usb.h>\n";
+	print $outputDevScanner "#  else\n";
+	print $outputDevScanner "#   error \"configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build\"\n";
 	print $outputDevScanner "#  endif\n";
 	print $outputDevScanner "# endif\n";
 	print $outputDevScanner " /* simple remap to avoid bloating structures */\n";
