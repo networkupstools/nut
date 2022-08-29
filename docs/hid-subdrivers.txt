@@ -279,6 +279,14 @@ For some practical examples, see e.g. `apc_fix_report_desc()` method in the
 `drivers/apc-hid.c` file, and `cps_fix_report_desc()` in `drivers/cps-hid.c`
 file.
 
+Finally note that such fix-ups may be not applicable to all devices or
+firmware versions for what they assume their target audience is. If you
+suspect that the fix-up method is actually causing problems, you can quickly
+disable it with `disable_fix_report_desc` driver option for `usbhid-ups`.
+If the problem does dissipate, please find a way to identify your "fixed"
+hardware/firmware vs. those models where existing fix-up method should be
+applied, and post a pull request so the NUT driver would handle both cases.
+
 
 Shutting down the UPS
 ~~~~~~~~~~~~~~~~~~~~~
