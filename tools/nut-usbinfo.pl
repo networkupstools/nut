@@ -142,7 +142,7 @@ sub gen_usb_files
 	print $outputDevScanner "# include <libusb.h>\n";
 	print $outputDevScanner "#endif\n";
 	print $outputDevScanner "#if WITH_LIBUSB_0_1\n";
-	print $outputDevScanner "# ifdef HAVE_LIBUSB_H\n";
+	print $outputDevScanner "# ifdef HAVE_USB_H\n";
 	print $outputDevScanner "#  include <usb.h>\n";
 	print $outputDevScanner "# else\n";
 	print $outputDevScanner "#  ifdef HAVE_LUSB0_USB_H\n";
