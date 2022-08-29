@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" usbhid-ups subdriver from
 # the output of
 #
-# drivers/usbhid-ups -s ups -DD -u root -x vendorid=XXXX -x productid=XXXX -x port=auto -d1 > debuginfo 2>&1
+# drivers/usbhid-ups -s ups -DD -u root -x explore -x vendorid=XXXX -x productid=XXXX -x port=auto -d1 > debuginfo 2>&1
 #
 # Usage: cat debuginfo | gen-usbhid-subdriver.sh
 #
@@ -13,7 +13,7 @@ usage() {
     echo "Usage: $0 [options] [file] < debuginfo"
     echo "with data prepared by a driver walk:"
     echo "    drivers/usbhid-ups -s ups -DD -u root -x vendorid=XXXX -x productid=XXXX \\"
-    echo "        -x port=auto -d1 > debuginfo 2>&1"
+    echo "        -x port=auto -x explore -d1 > debuginfo 2>&1"
     echo "Options:"
     echo " -h, --help           -- show this message and quit"
     echo " -n name              -- driver name (use natural capitalization)"
