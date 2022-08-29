@@ -382,6 +382,8 @@
 # else
 #  ifdef HAVE_LUSB0_USB_H
 #   include <lusb0_usb.h>
+#  else
+#   error "configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build"
 #  endif
 # endif
  /* Structures */
