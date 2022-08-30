@@ -130,6 +130,7 @@ bool_t use_interrupt_pipe = TRUE;
 #else
 bool_t use_interrupt_pipe = FALSE;
 #endif
+static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
@@ -836,7 +837,12 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		upsdebugx(1, "Got to reconnect!\n");
+		upsdebugx(1, "Got to reconnect!");
+		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
+			upsdebugx(0, "\nReconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
+				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+		}
 
 		if (!reconnect_ups()) {
 			lastpoll = now;
@@ -845,6 +851,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		hd = &curDevice;
+		interrupt_pipe_EIO_count = 0;
 
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
@@ -854,6 +861,7 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	interval();
 #endif
+
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
@@ -867,7 +875,6 @@ void upsdrv_updateinfo(void)
 #endif
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
-		case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
 		case -ENXIO:		    /* No such device or address */
 #endif
@@ -875,6 +882,11 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return;
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return;
 		default:
@@ -903,10 +915,10 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-		if(!found_data && !interrupt_only) {
+		if (!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
-		if(!found_data) {
+		if (!found_data) {
 			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
 			continue;
 		}
@@ -922,7 +934,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
 		interval());
 #endif
-	/* clear status buffer before begining */
+	/* clear status buffer before beginning */
 	status_init();
 
 	/* Do a full update (polling) every pollfreq
@@ -1485,7 +1497,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 #endif
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
-		case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1           /* limit to libusb 0.1 implementation */
 		case -ENXIO:		  /* No such device or address */
 #endif
@@ -1493,6 +1504,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return FALSE;
+
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return FALSE;
 
@@ -1578,10 +1595,14 @@ static int reconnect_ups(void)
 		wait_before_reconnect = atoi(val);
 	}
 
-	upsdebugx(4, "Closing comm_driver previous handle");
 	/* Try to close the previous handle */
-	if (udev)
+	if (udev == HID_DEV_HANDLE_CLOSED) {
+		upsdebugx(4, "Not closing comm_driver previous handle: already closed");
+	} else {
+		upsdebugx(4, "Closing comm_driver previous handle");
 		comm_driver->close_dev(udev);
+		udev = HID_DEV_HANDLE_CLOSED;
+	}
 
 	upsdebugx(4, "===================================================================");
 	if (wait_before_reconnect > 0 ) {

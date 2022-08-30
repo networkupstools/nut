@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3017 utf-8
+personal_ws-1.1 en 3023 utf-8
 AAS
 ABI
 ACFAIL
@@ -428,6 +428,7 @@ HEHn
 HELn
 HFILE
 HIDIOCINITREPORT
+HIDRDD
 HITRANS
 HMAC
 HNX
@@ -601,6 +602,8 @@ LineSens
 Lintian
 ListClients
 Lite's
+LogMax
+LogMin
 LowBatt
 LowFreq
 LowRntm
@@ -1329,6 +1332,7 @@ Werror
 Wextra
 WhizBang
 Wikipedia
+WinMerge
 WinNUT
 WinPower
 Wireshark
@@ -1791,6 +1795,7 @@ emacs
 endchar
 enddate
 endian
+endianness
 endif
 endl
 energizerups
@@ -2671,6 +2676,7 @@ ss
 sshd
 ssize
 ssl
+sstate
 stan
 startIP
 startdelay

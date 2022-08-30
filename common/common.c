@@ -1286,7 +1286,9 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 
 		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
 		int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
-		if(compres == 0) {
+		if (compres == 0
+		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
+		) {
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
 #if HAVE_REALPATH
 			libname_path = realpath(current_test_path, NULL);
