@@ -222,15 +222,39 @@ if test -z "${nut_have_libusb_seen}"; then
 			fi
 		else
 			dnl libusb 0.1, or missing pkg-config :
-			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
+			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [
+				nut_have_libusb=no
+				dnl Per https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/1.2.6.0/
+				dnl this project (used among alternatives in MSYS2/MinGW builds)
+				dnl uses a different include filename to avoid conflict with
+				dnl a WDK header:
+				AS_CASE(["${target_os}"],
+					[*mingw*], [
+						AC_MSG_NOTICE([try alternate header name for mingw builds with libusb-win32])
+						AC_CHECK_HEADERS(lusb0_usb.h, [
+							nut_usb_lib="(libusb-0.1)"
+							nut_have_libusb=yes
+						], [], [AC_INCLUDES_DEFAULT])
+					])
+				],
+				[AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(usb_init, [], [
 				dnl Some systems may just have libusb in their standard
 				dnl paths, but not the pkg-config or libusb-config data
-				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS"],
+				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS" -o x"$LIBS" = x"-lusb" ],
 					[AC_MSG_CHECKING([if libusb is just present in path])
 					 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+					 dnl TODO: Detect bitness for trying /mingw32 or /usr/$ARCH as well?
+					 dnl This currently caters to mingw-w64-x86_64-libusb-win32 of MSYS2:
+					 AS_CASE(["${target_os}"],
+						[*mingw*], [LIBS="-L/mingw64/lib $LIBS"])
 					 unset ac_cv_func_usb_init || true
-					 AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+					 AC_CHECK_FUNCS(usb_init, [], [
+						AC_MSG_CHECKING([if libusb0 is just present in path])
+						LIBS="$LIBS"0
+						unset ac_cv_func_usb_init || true
+						AC_CHECK_FUNCS(usb_init, [nut_usb_lib="(libusb-0.1)"], [nut_have_libusb=no])
+						])
 					 AC_MSG_RESULT([${nut_have_libusb}])
 					], [nut_have_libusb=no]
 				)]

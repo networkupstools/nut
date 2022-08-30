@@ -377,7 +377,15 @@
 
 /* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
-# include <usb.h>
+# ifdef HAVE_USB_H
+#  include <usb.h>
+# else
+#  ifdef HAVE_LUSB0_USB_H
+#   include <lusb0_usb.h>
+#  else
+#   error "configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build"
+#  endif
+# endif
  /* Structures */
  /* See detailed comments above, in libusb-1.0 definitions
   * FIXME: It may make sense to constrain the limits to lowest common
