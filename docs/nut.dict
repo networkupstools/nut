@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2997 utf-8
+personal_ws-1.1 en 2998 utf-8
 AAS
 ABI
 ACFAIL
@@ -2654,6 +2654,7 @@ ss
 sshd
 ssize
 ssl
+sstate
 stan
 startIP
 startdelay
