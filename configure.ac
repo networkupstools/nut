@@ -321,11 +321,13 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
     [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
     )
 
+dnl Note: this changes the original string in argument!
+dnl Do not pass it constants (strdup them if needed)!
 AC_CACHE_CHECK([for strlwr(s)],
     [ac_cv_func_strlwr],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL],
-            [if (strlwr("Some STR1 text") == NULL) return 1])],
+            [char s@<:@64@:>@ = {"Some STR1 text"} ; if (strlwr(s) == NULL) return 1])],
         [ac_cv_func_strlwr=yes], [ac_cv_func_strlwr=no]
     )])
 AS_IF([test x"${ac_cv_func_strlwr}" = xyes],
