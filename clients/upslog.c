@@ -515,7 +515,7 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "Warning: initial connect failed: %s\n",
+		upslogx(LOG_INFO, "Warning: initial connect failed: %s\n",
 			upscli_strerror(&ups));
 
 	if (strcmp(logfn, "-") == 0)
