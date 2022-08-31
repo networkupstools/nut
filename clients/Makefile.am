@@ -42,6 +42,7 @@ if HAVE_CXX11
   lib_LTLIBRARIES += libnutclientstub.la
 endif
 
+# Optionally deliverable as part of NUT public API:
 if WITH_DEV
  include_HEADERS = upsclient.h
 if HAVE_CXX11

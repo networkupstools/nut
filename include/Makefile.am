@@ -8,6 +8,7 @@ else
 dist_noinst_HEADERS += parseconf.h
 endif
 
+# Optionally deliverable as part of NUT public API:
 if WITH_DEV
 include_HEADERS = parseconf.h
 else

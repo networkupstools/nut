@@ -127,6 +127,9 @@ https://github.com/networkupstools/nut/milestone/8
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]
 
+ - upslog: Added support for logging multiple devices with one call to the
+   program [#1604]
+
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
@@ -143,6 +146,12 @@ https://github.com/networkupstools/nut/milestone/8
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
+
+ - Further revision of public headers delivered by NUT was done, particularly
+   to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
+   `time_t` etc.) in third-party client code that earlier sufficed to only
+   include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
+   still have to re-declare some numeric variable types used) [#1638, #1615]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:

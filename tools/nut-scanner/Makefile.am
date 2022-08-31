@@ -130,6 +130,7 @@ endif
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
+# Optionally deliverable as part of NUT public API:
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else
