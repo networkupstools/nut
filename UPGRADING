@@ -25,6 +25,9 @@ Changes from 2.8.0 to 2.8.1
   include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
   still have to re-declare some numeric variable types used) [#1638]
 
+  * For practical example of NUT consumer adaptation (to cater to both old and
+    new API types) please see https://github.com/collectd/collectd/pull/4043
+
 - Added support for `make install` of PyNUT module and NUT-Monitor desktop
   application -- such activity was earlier done by packages directly; now
   the packaging recipes may use NUT source-code facilities and package just
