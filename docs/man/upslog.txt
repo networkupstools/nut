@@ -78,6 +78,11 @@ upslog will run in the background, regardless of logging target.
 Monitor this UPS.  The format for this option is
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".
 
+*-m* 'tuple'::
+Monitor multiple UPSs. The format for this option is a tuple of
+ups and logfile separated by commas. An example would be:
+`upsname@hostname:9999,/var/log/nut/cps.log`
+
 *-u* 'username'::
 
 If started as root, upslog will *setuid*(2) to the user id
