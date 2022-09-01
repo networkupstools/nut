@@ -2,12 +2,6 @@ dist_noinst_HEADERS = attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h nut_float.h nut_stdint.h nut_platform.h	\
     wincompat.h
 
-if WITH_DEV
-include_HEADERS = parseconf.h
-else
-dist_noinst_HEADERS += parseconf.h
-endif
-
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
 include_HEADERS = parseconf.h
