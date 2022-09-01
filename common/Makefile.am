@@ -46,6 +46,14 @@ libcommon_la_SOURCES += strptime.c
 libcommonclient_la_SOURCES += strptime.c
 endif
 
+if HAVE_STRSEP
+EXTRA_DIST += strsep.c
+else
+# fall back to simple implem
+libcommon_la_SOURCES += strsep.c
+libcommonclient_la_SOURCES += strsep.c
+endif
+
 # TODO: libnutwincompat.la?
 if HAVE_WINDOWS
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
