@@ -72,6 +72,9 @@ https://github.com/networkupstools/nut/milestone/8
      Resource temporarily unavailable"), which can cause practical problems
      in the field -- the driver otherwise interpreted the situation as
      `ups.status` being `OL OFF` and cut the power supply.
+   * powercom-hid subdriver: fixed `UPS.Battery.ManufacturerDate` to map
+     to `battery.mfr.date` (not `battery.date` which is the maintenance
+     replacement date) [#1644]
 
  - snmp-ups IETF MIB mapping updated for data points where negative readings
    are invalid [#1558]
