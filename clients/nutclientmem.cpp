@@ -19,7 +19,6 @@
 
 #include "config.h"
 #include "nutclientmem.h"
-#include <common.h>
 
 namespace nut
 {

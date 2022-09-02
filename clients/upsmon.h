@@ -90,9 +90,14 @@ typedef struct {
 #define NOTIFY_EXEC    (1 << 3)        /* send the msg to NOTIFYCMD script */
 
 /* flags are set to NOTIFY_SYSLOG | NOTIFY_WALL at program init		*/
+/* except under Windows where they are set to NOTIFY_SYSLOG only	*/
 /* the user can override with NOTIFYFLAGS in the upsmon.conf		*/
 
+#ifdef WIN32
+#define NOTIFY_DEFAULT	NOTIFY_SYSLOG
+#else
 #define NOTIFY_DEFAULT	(NOTIFY_SYSLOG | NOTIFY_WALL)
+#endif
 
 /* This is only used in upsmon.c, but might it also have external consumers?..
  * To move or not to move?..
@@ -121,9 +126,15 @@ static struct {
 
 /* values for signals passed between processes */
 
+#ifndef WIN32
 #define SIGCMD_FSD	SIGUSR1
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
+#else
+#define SIGCMD_FSD	COMMAND_FSD
+#define SIGCMD_STOP	COMMAND_STOP
+#define SIGCMD_RELOAD	COMMAND_RELOAD
+#endif
 
 /* various constants */
 

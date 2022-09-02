@@ -37,6 +37,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "nut_float.h"
+#include "timehead.h"
 
 #define MGE_HID_VERSION		"MGE HID 1.46"
 

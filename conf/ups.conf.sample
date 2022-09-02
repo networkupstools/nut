@@ -127,7 +127,11 @@ maxretry = 3
 #          apcsmart, bestups, and sec are some examples.
 #
 #    port: REQUIRED.  The serial port where your UPS is connected.
-#          /dev/ttyS0 is usually the first port on Linux boxes, for example.
+#          For example:
+#            /dev/ttyS0 is usually the first port on Linux boxes.
+#            "\\\\.\\COM1" is the first port on Windows boxes (note that
+#                the backslash characters themselves must be escaped,
+#                for the NUT configuration parser to yield "\\.\COM1").
 #
 # sdorder: OPTIONAL.  When you have multiple UPSes on your system, you
 #          usually need to turn them off in a certain order.  upsdrvctl

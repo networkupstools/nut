@@ -24,8 +24,12 @@
 */
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "upsd.h"
 #include "neterr.h"

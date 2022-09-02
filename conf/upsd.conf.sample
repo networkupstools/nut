@@ -60,6 +60,8 @@
 #
 # This defaults to the localhost listening addresses and port 3493.
 # In case of IP v4 or v6 disabled kernel, only the available one will be used.
+# Note that it is not true for Windows platforms. You shouldn't use IPv6 in
+# your configuration files unless you have IPv6 installed.
 #
 # You may specify each interface IP address or name that you want upsd to
 # listen on for connections, optionally with a port number.

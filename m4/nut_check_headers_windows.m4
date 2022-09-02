@@ -12,24 +12,37 @@ dnl Check for compilable and valid windows.h header
 AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
   AC_CACHE_CHECK([for windows.h], [nut_cv_header_windows_h], [
     AC_LANG_PUSH([C])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
+    TESTPROG_H='
 #undef inline
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-      ]],[[
+'
+    TESTPROG_C='
 #if defined(__CYGWIN__) || defined(__CEGCC__)
         HAVE_WINDOWS_H shall not be defined.
 #else
         int dummy=2*WINVER;
 #endif
-      ]])
+'
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([$TESTPROG_H], [$TESTPROG_C])
     ],[
       nut_cv_header_windows_h="yes"
     ],[
-      nut_cv_header_windows_h="no"
+      dnl Try extending default search path as relevant for e.g. MSYS2
+      dnl (though there this should be compiler built-in default):
+      SAVED_CFLAGS="$CFLAGS"
+      CFLAGS="-I/usr/include/w32api $CFLAGS"
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([$TESTPROG_H], [$TESTPROG_C])
+      ],[
+        nut_cv_header_windows_h="yes"
+      ],[
+        nut_cv_header_windows_h="no"
+	CFLAGS="$SAVED_CFLAGS"
+      ])
     ])
     AC_LANG_POP([C])
   ])

@@ -30,14 +30,24 @@
 #include "nut_stdint.h"
 
 #ifdef WITH_NEON
+#ifndef WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#define SOCK_OPT_CAST
+#else
+#define SOCK_OPT_CAST (char*)
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <errno.h>
 #include <ne_xml.h>
 #include <ltdl.h>
@@ -187,6 +197,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	ssize_t recv_size;
 	int i;
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 	nutscan_device_t * nut_dev = NULL;
 	if (sec != NULL) {
 /*		if (sec->port_http > 0 && sec->port_http <= 65534)
@@ -222,7 +238,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
-			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST,
+				SOCK_OPT_CAST &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,

@@ -82,25 +82,41 @@ if test ! -d "${auglensdir}"; then
       auglensdir=''
    fi
 fi
-hotplugdir='/etc/hotplug'
-if test ! -d "${hotplugdir}"; then
-   hotplugdir=''
-fi
-udevdir='/lib/udev'
-if test ! -d "${udevdir}"; then
-   udevdir='/etc/udev'
-   if test ! -d "${udevdir}"; then
-      udevdir=''
-   fi
-fi
 
-devddir='/usr/local/etc/devd'
-if test ! -d "${devddir}"; then
-   devddir='/etc/devd'
-   if test ! -d "${devddir}"; then
-      devddir=''
-   fi
-fi
+LIBREGEX_LIBS=''
+dnl Disable Hotplug, DevD and udev support on Windows
+dnl (useful when cross-compiling)
+case "${target_os}" in
+    *mingw* )
+        dnl TODO: Actually detect it? See also nut_check_libusb.m4 for same.
+        LIBREGEX_LIBS='-lregex'
+        hotplugdir=''
+        udevdir=''
+        devddir=''
+        ;;
+    * )
+        hotplugdir='/etc/hotplug'
+        if test ! -d "${hotplugdir}"; then
+            hotplugdir=''
+        fi
+
+        udevdir='/lib/udev'
+        if test ! -d "${udevdir}"; then
+            udevdir='/etc/udev'
+            if test ! -d "${udevdir}"; then
+                udevdir=''
+            fi
+        fi
+
+        devddir='/usr/local/etc/devd'
+        if test ! -d "${devddir}"; then
+            devddir='/etc/devd'
+            if test ! -d "${devddir}"; then
+               devddir=''
+            fi
+        fi
+        ;;
+esac
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
@@ -209,6 +225,10 @@ getrlimit(RLIMIT_NOFILE, &limit);
     ]
 )
 
+AC_CHECK_HEADER([poll.h],
+    [AC_DEFINE([HAVE_POLL_H], [1],
+        [Define to 1 if you have <poll.h>.])])
+
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
@@ -236,7 +256,7 @@ sem_destroy(&semaphore);
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
-AC_CHECK_FUNCS(on_exit strptime setlogmask)
+AC_CHECK_FUNCS(on_exit setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
@@ -257,7 +277,7 @@ dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTEN
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
- AC_CHECK_FUNCS(strtok_r fileno localtime_r sigemptyset sigaction,
+AC_CHECK_FUNCS(strtok_r fileno localtime_r localtime_s gmtime_r gmtime_s sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
 
 AC_LANG_PUSH([C])
@@ -301,10 +321,92 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
     [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
     )
 
+dnl Note: this changes the original string in argument!
+dnl Do not pass it constants (strdup them if needed)!
+AC_CACHE_CHECK([for strlwr(s)],
+    [ac_cv_func_strlwr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [char s@<:@64@:>@ = {"Some STR1 text"} ; if (strlwr(s) == NULL) return 1])],
+        [ac_cv_func_strlwr=yes], [ac_cv_func_strlwr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strlwr}" = xyes],
+    [AC_DEFINE([HAVE_STRLWR], 1, [defined if standard library has, and C standard allows, the strlwr(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strlwr not found])]
+    )
+
+AC_CACHE_CHECK([for strsep(s1,s2)],
+    [ac_cv_func_strsep],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [char arr@<:@64@:>@ = {"Some,tuple,text"} ; char *s = arr; if (strsep(&s, ",") == NULL) return 1])],
+        [ac_cv_func_strsep=yes], [ac_cv_func_strsep=no]
+    )])
+AS_IF([test x"${ac_cv_func_strsep}" = xyes],
+    [AC_DEFINE([HAVE_STRSEP], 1, [defined if standard library has, and C standard allows, the strsep(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strsep not found])]
+    )
+AM_CONDITIONAL([HAVE_STRSEP], [test x"${ac_cv_func_strsep}" = "xyes"])
+
+AC_CACHE_CHECK([for strstr(s1,s2)],
+    [ac_cv_func_strstr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strstr("Some str1 text", "str1") == NULL) return 1])],
+        [ac_cv_func_strstr=yes], [ac_cv_func_strstr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strstr}" = xyes],
+    [AC_DEFINE([HAVE_STRSTR], 1, [defined if standard library has, and C standard allows, the strstr(s1,s2) method])],
+    [AC_MSG_ERROR([Required C library routine strstr not found])]
+    )
+
+AC_CACHE_CHECK([for strcasestr(s1,s2)],
+    [ac_cv_func_strcasestr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strcasestr("Some STR1 text", "str1") == NULL) return 1])],
+        [ac_cv_func_strcasestr=yes], [ac_cv_func_strcasestr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strcasestr}" = xyes],
+    [AC_DEFINE([HAVE_STRCASESTR], 1, [defined if standard library has, and C standard allows, the strcasestr(s1,s2) method])],
+    [AS_IF([test x"${ac_cv_func_strlwr}" = xyes && test x"${ac_cv_func_strstr}" = xyes],
+        [AC_MSG_WARN([Optional C library routine strcasestr not found; a simple wrapper will be built in])]
+        [AC_MSG_WARN([Required C library routine strcasestr not found; try adding _GNU_SOURCE])]
+    )])
+
+AC_CACHE_CHECK([for strptime(s1,s2,tm)],
+    [ac_cv_func_strptime],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+],
+            [struct tm tm;
+char *date = "12/30/1999";
+char *p = strptime(date, "%m/%d/%Y", &tm);
+if (p == NULL || *p != '\0') return 1])],
+        [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
+    )])
+AS_IF([test x"${ac_cv_func_strptime}" = xyes],
+    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
-        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
             [[int res = 0;
 char *t = "Test";
 char *s = strdup(t);
@@ -318,6 +420,52 @@ if (res != 0) return res
 AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_DEFINE([HAVE_STRDUP], 1, [defined if standard library has, and C standard allows, the strdup(s) method])],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CHECK_HEADER([sys/select.h],
+    [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
+        [Define to 1 if you have <sys/select.h>.])])
+
+AC_CACHE_CHECK([for suseconds_t],
+    [ac_cv_type_suseconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <sys/types.h>
+#if HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+        ]],
+            [[suseconds_t us = 1000000;
+              signed long int l = 1000000;
+              if (l != (signed long int)us) return 1;
+
+              l = -1; us = -1;
+              if (l != (signed long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_suseconds_t=yes], [ac_cv_type_suseconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_suseconds_t}" = xyes],
+    [AC_DEFINE([HAVE_SUSECONDS_T], 1, [defined if standard library has, and C standard allows, the suseconds_t type])],
+    [AC_MSG_WARN([Required C library type suseconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for useconds_t],
+    [ac_cv_type_useconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <unistd.h>
+        ]],
+            [[useconds_t us = 1000000;
+              unsigned long int l = 1000000;
+              if (l != (unsigned long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_useconds_t=yes], [ac_cv_type_useconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_useconds_t}" = xyes],
+    [AC_DEFINE([HAVE_USECONDS_T], 1, [defined if standard library has, and C standard allows, the useconds_t type])],
+    [AC_MSG_WARN([Required C library type useconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
 AC_CACHE_CHECK([for usleep(us)],
@@ -463,7 +611,53 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
+NUT_CHECK_SOCKETLIB
 NUT_FUNC_GETNAMEINFO_ARGTYPES
+
+AC_CACHE_CHECK([for inet_ntop()],
+    [ac_cv_func_inet_ntop],
+    [AC_LANG_PUSH([C])
+    dnl e.g. add "-lws2_32" for mingw builds
+    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+    SAVED_LIBS="$LIBS"
+    LIBS="$LIBS $NETLIBS"
+    AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#if HAVE_WINDOWS_H
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+#else
+# include <arpa/inet.h>
+#endif
+#include <stdio.h>
+]],
+            [[/* const char* inet_ntop(int af, const void* src, char* dst, size_t cnt); */
+char buf[128];
+printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_inet_ntop=yes], [ac_cv_func_inet_ntop=no]
+    )
+    AC_LANG_POP([C])
+    LIBS="$SAVED_LIBS"
+])
+AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
+    [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
+    [AC_MSG_WARN([Required C library routine inet_ntop() not found])
+     AS_CASE([${target_os}],
+	     [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+	     )
+    ]
+    )
 
 dnl ----------------------------------------------------------------------
 dnl Check for python binary program names per language version
@@ -881,6 +1075,13 @@ getspeed(&baudrate);
      CFLAGS="${CFLAGS_SAVED_SERIAL}"
 
      AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_CASE(["${target_os}"],
+        [*mingw*], [
+             AS_IF([test "${nut_have_serial_types}" != yes],
+                [AC_MSG_WARN([not with system includes, but can try with our fallback for the target platform])
+                 nut_have_serial_types=yes]
+             )
+        ])
      AS_IF([test "${nut_have_serial_types}" = yes],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
@@ -1825,6 +2026,20 @@ fi
 AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
 NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}], [],
 					[WITH_DEV], [Define to enable development files support])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to MS Windows support (MingW)
+
+AC_CHECK_TOOL([WINDMC], [windmc], [none])
+AC_CHECK_TOOL([WINDRES], [windres], [none])
+
+if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" ; then
+	nut_have_mingw_resgen="yes"
+fi
+
+AM_CONDITIONAL([HAVE_MINGW_RESGEN], [test "${nut_have_mingw_resgen}" = "yes"])
+dnl Also define a generic AM_CONDITIONAL for general Windows compilation
+AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
@@ -2785,11 +3000,14 @@ fi
 
 if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
+else
+   nut_have_libnetsnmp_static="no"
 fi
 
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
-AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
+NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
+					[WITH_SNMP_STATIC], [Define to use SNMP support with a statically linked libnetsnmp])
 
 
 if test -n "${host_alias}" ; then
@@ -2841,6 +3059,7 @@ AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LIBS)
+AC_SUBST(LIBREGEX_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
@@ -3048,6 +3267,23 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ]
 )
+
+AS_IF([test x"${nut_enable_warnings}" != xno || test x"${nut_enable_Werror}" != xno],
+    [AS_IF([test "x${CLANGCC}" = "xyes" || test "x${GCC}" = "xyes"],
+        [AS_CASE(["${target_os}"],
+            [*mingw*], [
+                AC_MSG_NOTICE(
+[GCC on WIN32 builds warns about '%lld' etc. via PRId64 etc.
+even though modern libraries support long-long printing
+in practice (older ones did not - hence the warning).
+Forcing "-Wno-format" into warnings options.
+])
+                CFLAGS="${CFLAGS} -Wno-format"
+                CXXFLAGS="${CXXFLAGS} -Wno-format"
+            ]
+        )
+    ])
+])
 
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
@@ -3282,6 +3518,7 @@ AC_CONFIG_FILES([
  scripts/udev/nut-ipmipsu.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
+ scripts/Windows/Makefile
  scripts/Makefile
  server/Makefile
  tools/Makefile

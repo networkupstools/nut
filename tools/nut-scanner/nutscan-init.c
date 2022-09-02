@@ -30,12 +30,20 @@
 #include <string.h>
 #include "nut-scan.h"
 
+#ifndef WIN32
 #define SOEXT ".so"
+#else
+#define SOEXT ".dll"
+#endif
 
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
 int nutscan_avail_nut = 0;
+#ifdef WITH_SNMP_STATIC
+int nutscan_avail_snmp = 1;
+#else
 int nutscan_avail_snmp = 0;
+#endif
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
@@ -89,6 +97,15 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 
 #endif /* HAVE_PTHREAD */
 
+#ifdef WIN32
+/* Stub for libupsclient */
+void do_upsconf_args(char *confupsname, char *var, char *val) {
+	NUT_UNUSED_VARIABLE(confupsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
+}
+#endif
+
 void nutscan_init(void)
 {
 #ifdef HAVE_PTHREAD
@@ -138,6 +155,13 @@ void nutscan_init(void)
 	libname = get_libname("libusb-1.0" SOEXT);
  #else
 	libname = get_libname("libusb-0.1" SOEXT);
+  #ifdef WIN32
+	/* TODO: Detect DLL name at build time, or rename it at install time? */
+	/* libusb-compat built for mingw per NUT instructions */
+	if (!libname) {
+		libname = get_libname("libusb-0-1-4" SOEXT);
+	}
+  #endif
  #endif
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
@@ -152,6 +176,11 @@ void nutscan_init(void)
 		nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
  #else
 		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+  #ifdef WIN32
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-0-1-4" SOEXT);
+		}
+  #endif
  #endif
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
@@ -205,12 +234,30 @@ void nutscan_init(void)
 	}
 #endif
 	libname = get_libname("libupsclient" SOEXT);
+#ifdef WIN32
+	/* TODO: Detect DLL name at build time, or rename it at install time? */
+	/* e.g. see clients/Makefile.am for version-info value */
+	if (!libname) {
+		libname = get_libname("libupsclient-3" SOEXT);
+	}
+	if (!libname) {
+		libname = get_libname("libupsclient-6" SOEXT);
+	}
+#endif
 	if (libname) {
 		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
 		free(libname);
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+#ifdef WIN32
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
+		}
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
+		}
+#endif
 	}
 }
 

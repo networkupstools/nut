@@ -910,3 +910,214 @@ you can:
 ----
 :; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
 ----
+
+
+Windows builds
+~~~~~~~~~~~~~~
+
+There have been several attempts to adjust NUT codebase to native builds
+for Windows, as well as there are many projects helping to produce portable
+programs.
+
+Further TODO for Windows would include:
+
+* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+  https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
+
+* libusb-0.1 vs libusb-1.0
+
+NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
+interaction with antivirus software which holds executable files open and
+so not writable by the linker. This may cause random steps in the `configure`
+script or later during the build to fail. If that happens to you, disable the
+antivirus completely or exempt at least the NUT build area from protection.
+
+Windows with mingw
+------------------
+
+See `scripts/Windows/README` for original recommendations for the effort,
+including possibilities of cross-builds with mingw available in Linux.
+
+Unfortunately these did not work for me at the time of testing, yielding
+some issues downloading mingw both in Windows and Linux environments.
+So I explored other downloads, as detailed below.
+
+See also:
+
+* https://winlibs.com/
+* https://azrael.digipen.edu/~mmead/www/public/mingw/
+* https://www.mingw-w64.org/downloads/
+
+NOTE: Seems the mingw installer has problems with current authentication
+and redirect on SourceForge. You can download and unpack 7z archives from
+https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
+into e.g. `C:\Progra~1\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0`
+location on your Windows system. Then for building further NUT dependencies
+see `scripts/Windows/README`.
+
+Windows with MSYS2
+------------------
+
+The MSYS2 ecosystem is available at https://www.msys2.org/ and builds upon
+earlier work by link:https://www.mingw-w64.org[MinGW-w64] (in turn a fork
+of link:https://sourceforge.net/projects/mingw/[MinGW.org (aka mingw-w32)])
+and link:http://cygwin.com/[Cygwin] projects, to name a few related efforts.
+It also includes `pacman` similar to that in Arch Linux for easier dependency
+installation, and many packages are available "out of the box" this way.
+
+The project is currently sponsored by Microsoft and seems to be supported by
+Visual Studio Code IDE for building and debugging projects, for more details
+see https://code.visualstudio.com/docs/cpp/config-mingw
+
+Notable pages of the project include:
+
+* https://www.msys2.org/ with current download link and first-installation
+  instructions
+* https://www.msys2.org/wiki/MSYS2-introduction/ for general overview
+* https://packages.msys2.org/search?t=binpkg for search in package repository
+
+After downloading and installing MSYS2 archive for the first time, they
+suggest to start by updating the base ecosystem (using their terminal):
+----
+:; pacman -Syu
+----
+
+Wait for metadata and base package downloads, agree that all MSYS2 programs
+including your terminal would be closed/restarted, and wait for this stage
+to complete.
+
+Run it again to refresh more of the ecosystem, now without restarting it:
+----
+:; pacman -Syu
+----
+
+Finally, install tools and prerequisites for building NUT; note that some
+of the recommended package names are "umbrellas" for several implementations,
+and the `pacman` would ask you which (or "all") to install in those cases.
+
+NOTE: Suggestions below use `x86_64` generic variants where possible, and
+`clang` where available to try both build toolkits on the platform. If you
+want to build `i686` (32-bit) or alternate backends (e.g. `ucrt` instead
+of default `msvcrt`), poke the repository search to see what is available.
+
+NOTE: To build NUT with `ci_build.sh` (and generally -- to help `configure`
+script find the dependencies listed below), start the terminal session with
+"MSYS2 MinGW x64" shortcut. Other options set up the environment variables
+for toolkits listed in their shortcut names, and so tend to prefer "wrong"
+flags and paths to dependencies (if you have several variants installed).
+The "MSYS2 MinGW UCRT x64" was also reported to work.
+
+To avoid toolkit variant mismatches, you may require to use their specific
+builds preferentially:
+----
+PATH="/mingw64/bin:$PATH"
+export PATH
+----
+...and also add these lines to the `~/.bashrc` file.
+
+----
+# This covers most of the common FOSS development baseline, including
+# python, perl, autotools, gcc, clang, git, binutils, make, pkgconf...
+:; pacman -S --needed \
+    base-devel mingw-w64-x86_64-toolchain \
+    autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl \
+    clang gcc \
+    ccache mingw-w64-x86_64-ccache \
+    git aspell aspell-en \
+    vim python \
+    mingw-w64-x86_64-python-pygments
+
+# PThreads come as an extra feature; note there are many variants,
+# see https://packages.msys2.org/search?t=binpkg&q=pthread
+:; pacman -S --needed \
+    mingw-w64-x86_64-winpthreads-git \
+    mingw-w64-clang-x86_64-winpthreads-git
+
+# Note that MSYS2 includes libusb-1.0 "natively"
+# The NUT codebase adjustments for Windows might at this moment expect older
+# ecosystem via https://github.com/mcuee/libusb-win32 -- subject to fix then.
+:; pacman -S --needed \
+    mingw-w64-x86_64-libusb \
+    mingw-w64-clang-x86_64-libusb
+
+# Seems that the older libusb-win32 (libusb-0.1) is also available as:
+:; pacman -S --needed \
+    mingw-w64-x86_64-libusb-win32 \
+    mingw-w64-clang-x86_64-libusb-win32
+
+# Alternately there is libusb-compat (libusb-1.0 codebase exposing the older
+# libusb-0.1 API) which SHOULD NOT be installed along with the real libusb-0.1:
+# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git mingw-w64-clang-x86_64-libusb-compat-git
+
+# This also pulls *-devel of several other projects:
+:; pacman -S --needed \
+    mingw-w64-x86_64-neon libneon-devel
+
+# Other dependencies:
+:; pacman -S --needed \
+    mingw-w64-x86_64-libmodbus-git \
+    mingw-w64-clang-x86_64-libmodbus-git \
+    mingw-w64-x86_64-libgd \
+    mingw-w64-clang-x86_64-libgd
+
+# For C++ tests:
+:; pacman -S --needed \
+    mingw-w64-x86_64-cppunit \
+    mingw-w64-clang-x86_64-cppunit
+----
+
+
+`ccache` wrapper scripts are available as e.g. `/mingw64/lib/ccache/bin/gcc`
+and lack a set for `clang` tools; easy-peasy fix with:
+
+----
+:; cd /mingw64/lib/ccache/bin
+:; for T in clang clang++ clang-cpp ; do sed "s/gcc/$T/" < gcc > "$T" ; chmod +x "$T" ; done
+----
+
+Note that default `ccache` seems quirky on Windows MSYS2, possibly due to
+mixing of the path separator characters and/or embedding and choking on
+the `C:` in path names. Overall it seems unable to create the cache files
+after it has created the cache directory tree (though you might have to
+pre-create the `${HOME}/.ccache` anyway, as NUT `ci_build.sh` script does.
+As found in experimentation, setting the `PATH` consistently for toolkits
+involved is very important.
+
+* https://github.com/ccache/ccache/discussions/784
+* https://sourceforge.net/p/msys2/tickets/253/
+
+Notable packages not found in the repo:
+
+* snmp (net-snmp, ucd-snmp)
+* libregex (C version, direct NUT `configure` script support was added by
+  the Windows branch); MSYS2 however includes `libpcre` pulled by some
+  of the dependencies above...
+* augeas
+* avahi
+* powerman
+* ipmi
+
+Not installed above (yet?):
+
+* https://packages.msys2.org/search?t=binpkg&q=serial
+  -- for these need to first check if termios is part of baseline
+
+Note that `ccache` symlinks for MSYS2 are installed into `/usr/lib/ccache/bin`
+directory (not plain `/usr/lib/ccache` as elsewhere).
+
+NOTE: After you successfully build NUT (perhaps using `ci_build.sh`), if you
+install it into a prototype area by `make DESTDIR=... install` then you should
+add the third-party shared libraries involved, for that file set to be usable.
+Something along these lines:
+------
+:; find "$DESTDIR" -name '*.exe' -type f  | while read F ; do ldd "$F" \
+   | grep ' /mingw64/' ; done  | awk '{print $3}' | sort | uniq \
+   | while read LIB ; do cp -pf "$LIB" "$DESTDIR/mingw64/bin/" ; done
+------
+Keep in mind that a similar trick (or links to `*.dll` -- and symlinks are
+problematic on that platform) may be needed in other directories, such as
+`sbin` and `cgi-bin`:
+------
+:; ( cd "$DESTDIR/mingw64/bin/" && ln *.dll ../sbin && ln *.dll ../cgi-bin )
+------
+

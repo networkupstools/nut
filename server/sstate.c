@@ -34,8 +34,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif
 
 static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 {
@@ -157,12 +159,27 @@ static void sendping(upstype_t *ups)
 	const char	*cmd = "PING\n";
 	size_t	cmdlen = strlen(cmd);
 
-	if ((!ups) || (ups->sock_fd < 0)) {
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return;
 	}
 
 	upsdebugx(3, "Pinging UPS [%s]", ups->name);
+
+#ifndef WIN32
 	ret = write(ups->sock_fd, cmd, cmdlen);
+#else
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+
+	result = WriteFile (ups->sock_fd, cmd, cmdlen, &bytesWritten, NULL);
+	if( result == 0 ) {
+		/* Write failed */
+		ret = 0;
+	}
+	else  {
+		ret = (ssize_t)bytesWritten;
+	}
+#endif
 
 	if ((ret < 1) || (ret != (ssize_t)cmdlen))  {
 		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
@@ -175,9 +192,10 @@ static void sendping(upstype_t *ups)
 
 /* interface */
 
-int sstate_connect(upstype_t *ups)
+TYPE_FD sstate_connect(upstype_t *ups)
 {
-	int	fd;
+	TYPE_FD	fd;
+#ifndef WIN32
 	const char	*dumpcmd = "DUMPALL\n";
 	size_t	dumpcmdlen = strlen(dumpcmd);
 	ssize_t	ret;
@@ -191,9 +209,9 @@ int sstate_connect(upstype_t *ups)
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		upslog_with_errno(LOG_ERR, "Can't create socket for UPS [%s]", ups->name);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
@@ -206,13 +224,13 @@ int sstate_connect(upstype_t *ups)
 		/* rate-limit complaints - don't spam the syslog */
 		time(&now);
 		if (difftime(now, ups->last_connfail) < SS_CONNFAIL_INT)
-			return -1;
+			return ERROR_FD;
 
 		ups->last_connfail = now;
 		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 			ups->name, ups->fn);
 
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_GETFL, 0);
@@ -220,7 +238,7 @@ int sstate_connect(upstype_t *ups)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", ups->name);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
@@ -228,7 +246,7 @@ int sstate_connect(upstype_t *ups)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", ups->name);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
@@ -237,8 +255,54 @@ int sstate_connect(upstype_t *ups)
 	if ((ret < 1) || (ret != (ssize_t)dumpcmdlen))  {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
+
+#else
+	char pipename[SMALLBUF];
+	const char	*dumpcmd = "DUMPALL\n";
+	BOOL  result = FALSE;
+
+	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", ups->fn);
+
+	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
+
+	if (result == FALSE) {
+		return ERROR_FD;
+	}
+
+	fd = CreateFile(
+			pipename,   // pipe name
+			GENERIC_READ |  // read and write access
+			GENERIC_WRITE,
+			0,              // no sharing
+			NULL,           // default security attributes FIXME
+			OPEN_EXISTING,  // opens existing pipe
+			FILE_FLAG_OVERLAPPED, //  enable async IO
+			NULL);          // no template file
+
+	if (fd == INVALID_HANDLE_VALUE) {
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", ups->name, ups->fn);
+		return ERROR_FD;
+	}
+
+	/* get a dump started so we have a fresh set of data */
+	DWORD bytesWritten = 0;
+
+	result = WriteFile (fd,dumpcmd,strlen(dumpcmd),&bytesWritten,NULL);
+	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
+		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
+		CloseHandle(fd);
+		return ERROR_FD;
+	}
+
+	/* Start a read IO so we could wait on the event associated with it */
+	ReadFile(fd, ups->buf,
+		sizeof(ups->buf) - 1, /*-1 to be sure to have a trailling 0 */
+		NULL, &(ups->read_overlapped));
+#endif
+
+	/* sstate_connect() continued for both platforms: */
 
 	pconf_init(&ups->sock_ctx, NULL);
 
@@ -258,7 +322,7 @@ int sstate_connect(upstype_t *ups)
 
 void sstate_disconnect(upstype_t *ups)
 {
-	if ((!ups) || (ups->sock_fd < 0)) {
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return;
 	}
 
@@ -267,16 +331,23 @@ void sstate_disconnect(upstype_t *ups)
 
 	pconf_finish(&ups->sock_ctx);
 
+#ifndef WIN32
 	close(ups->sock_fd);
-	ups->sock_fd = -1;
+#else
+	CloseHandle(ups->sock_fd);
+#endif
+
+	ups->sock_fd = ERROR_FD;
 }
 
 void sstate_readline(upstype_t *ups)
 {
 	ssize_t	i, ret;
+
+#ifndef WIN32
 	char	buf[SMALLBUF];
 
-	if ((!ups) || (ups->sock_fd < 0)) {
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return;
 	}
 
@@ -295,6 +366,17 @@ void sstate_readline(upstype_t *ups)
 			return;
 		}
 	}
+#else
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
+		return;
+	}
+
+	/* FIXME? I do not see either buf filled below */
+	char *buf = ups->buf;
+	DWORD bytesRead;
+	GetOverlappedResult(ups->sock_fd, &ups->read_overlapped, &bytesRead, FALSE);
+	ret = bytesRead;
+#endif
 
 	for (i = 0; i < ret; i++) {
 
@@ -316,6 +398,12 @@ void sstate_readline(upstype_t *ups)
 			return;
 		}
 	}
+
+#ifdef WIN32
+	/* Restart async read */
+	memset(ups->buf,0,sizeof(ups->buf));
+	ReadFile( ups->sock_fd, ups->buf, sizeof(ups->buf)-1,NULL, &(ups->read_overlapped)); /* -1 to be sure to have a trailing 0 */
+#endif
 }
 
 const char *sstate_getinfo(const upstype_t *ups, const char *var)
@@ -354,7 +442,7 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (ups->sock_fd < 0) {
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", ups->name);
 		return 1;	/* dead */
 	}
@@ -404,7 +492,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	ssize_t	ret;
 	size_t	buflen;
 
-	if ((!ups) ||(ups->sock_fd < 0)) {
+	if ((!ups) || INVALID_FD(ups->sock_fd)) {
 		return 0;	/* failed */
 	}
 
@@ -415,7 +503,21 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 		return 0;	/* failed */
 	}
 
+#ifndef WIN32
 	ret = write(ups->sock_fd, buf, buflen);
+#else
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+
+	result = WriteFile (ups->sock_fd, buf, buflen, &bytesWritten, NULL);
+
+	if (result == 0) {
+		ret = 0;
+	}
+	else {
+		ret = (ssize_t)bytesWritten;
+	}
+#endif
 
 	if (ret == (ssize_t)buflen) {
 		return 1;

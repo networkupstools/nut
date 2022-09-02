@@ -62,6 +62,11 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)
 
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LDFLAGS += -no-undefined
+endif
+
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -95,9 +100,23 @@ endif
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
 endif
+# Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
-endif
+if    WITH_SNMP_STATIC
+    # MinGW builds of libnetsnmp are static-only, so we link it in:
+    libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
+    # Some workarouds here, to avoid libtool bailing out like this:
+    # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
+    # *** I have the capability to make that library automatically link in when
+    # *** you link to this library.  But I can only do this if you have a
+    # *** shared version of the library, which you do not appear to have.
+    # Note that LIBNETSNMP_LIBS prepared by nut_check_libnetsnmp.m4 for such
+    # builds particularly WITH_SNMP_STATIC is special (with -Wl passthrough,
+    # and for that automake requires LDFLAGS not LIBADD):
+    libnutscan_la_LDFLAGS += $(LIBNETSNMP_LIBS)
+endif WITH_SNMP_STATIC
+endif WITH_SNMP
 if WITH_NEON
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
 endif

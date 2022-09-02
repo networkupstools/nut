@@ -148,6 +148,13 @@ MINSUPPLIES 1
 # off, consider setting the SHUTDOWNCMD temporarily to do something benign -
 # such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
 # to plug the UPS back into the wall in a timely fashion.
+#
+# For Windows setup use something like:
+# SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
+# If you have command line using space character you have to add double quote to them, like this:
+# SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
+# Or use the old DOS 8.3 file name, like this:
+# SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 
@@ -247,6 +254,9 @@ DEADTIME 15
 # Refer to the section:
 # [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events"
 # or refer to the online version.
+#
+# For Windows setup use something like:
+# POWERDOWNFLAG "C:\\killpower"
 
 POWERDOWNFLAG /etc/killpower
 
@@ -287,7 +297,9 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
 #
 # By default, upsmon sends walls (global messages to all logged in users)
-# and writes to the syslog when things happen.  You can change this.
+# and writes to the syslog when things happen.
+# Except for Windows where upsmon only writes to the syslog by default.
+# You can change this.
 #
 # NOTIFYFLAG <notify type> <flag>[+<flag>][+<flag>] ...
 #

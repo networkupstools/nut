@@ -174,6 +174,8 @@ esac
 if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
     for D in \
         "/usr/lib/ccache" \
+        "/mingw64/lib/ccache/bin" \
+        "/mingw32/lib/ccache/bin" \
         "/usr/lib64/ccache" \
         "/usr/libexec/ccache" \
         "/usr/lib/ccache/bin" \
@@ -339,6 +341,12 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="centos" ;;
         *linux*)
             CI_OS_NAME="linux" ;;
+        *msys2*)
+            CI_OS_NAME="windows-msys2" ;;
+        *mingw*64*)
+            CI_OS_NAME="windows-mingw64" ;;
+        *mingw*32*)
+            CI_OS_NAME="windows-mingw32" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
@@ -367,6 +375,41 @@ fi
 
 # CI builds on Travis
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
+
+case "${CI_OS_NAME}" in
+	windows*)
+		# At the moment WIN32 builds are quite particular in their
+		# desires, for headers to declare what is needed, and yet
+		# there is currently not much real variation in supportable
+		# build environment (mingw variants). Lest we hardcode
+		# stuff in configure script, define some here:
+		case "$CFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+
+		case "$CXXFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+		;;
+esac
 
 # Analyze some environmental choices
 if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
@@ -1743,7 +1786,57 @@ bindings)
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
     if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+
+    case "$CI_OS_NAME" in
+        windows*)
+            echo "INFO: Build and tests succeeded. If you plan to install a NUT bundle now" >&2
+            echo "for practical usage or testing on a native Windows system, consider calling" >&2
+            echo "    make install-win-bundle DESTDIR=`pwd`/.inst/NUT4Win" >&2
+            echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
+            ;;
+    esac
     ;;
+
+# These mingw modes below are currently experimental and not too integrated
+# with this script per se; it is intended to run for NUT CI farm on prepared
+# Linux+mingw worker nodes (see scripts/Windows/README) in an uniform manner,
+# using mostly default settings (warnings in particular) and some hardcoded
+# in that script (ARCH, CFLAGS, ...).
+# Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
+# on any other supported platform (more details in docs/config-prereqs.txt).
+cross-windows-mingw*)
+    echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
+
+    ./autogen.sh || exit
+    cd scripts/Windows || exit
+
+    cmd="" # default soup of the day, as defined in the called script
+    case "$BUILD_TYPE" in
+        cross-windows-mingw32|cross-windows-mingw-32) cmd="all32" ;;
+        cross-windows-mingw64|cross-windows-mingw-64) cmd="all64" ;;
+        cross-windows-mingw) # make a difficult guess
+            case "${BITS-}" in
+                32|64) cmd="all${BITS}"
+                    ;;
+                *)  # Use other clues
+                    case "${CFLAGS-}${CXXFLAGS-}${LDFLAGS-}" in
+                        *-m32*-m64*|*-m64*-m32*)
+                            echo "FATAL: Mismatched bitness requested in *FLAGS" >&2
+                            exit 1
+                            ;;
+                        *-m32*) cmd="all32" ;;
+                        *-m64*) cmd="all64" ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+
+    SOURCEMODE="out-of-tree" \
+    MAKEFLAGS="$PARMAKE_FLAGS" \
+    ./build-mingw-nut.sh $cmd
+    ;;
+
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
     ;;

@@ -63,7 +63,11 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
  static void (*nut_usb_init)(void);
  static int (*nut_usb_find_busses)(void);
+# ifndef WIN32
  static struct usb_bus * (*nut_usb_busses);
+# else
+ static struct usb_bus * (*nut_usb_get_busses)(void);
+# endif	/* WIN32 */
  static int (*nut_usb_find_devices)(void);
  static char * (*nut_usb_strerror)(void);
 #endif /* WITH_LIBUSB_1_0 */
@@ -160,11 +164,19 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
+# ifndef WIN32
 	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle,
 					"usb_busses");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
+# else
+	*(void **) (&nut_usb_get_busses) = lt_dlsym(dl_handle,
+					"usb_get_busses");
+	if ((dl_error = lt_dlerror()) != NULL) {
+			goto err;
+	}
+# endif	/* WIN32 */
 
 	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,
 					"usb_find_devices");
@@ -279,7 +291,11 @@ nutscan_device_t * nutscan_scan_usb()
 		}
 		snprintf(busname, 4, "%03d", bus);
 #else  /* => WITH_LIBUSB_0_1 */
+# ifndef WIN32
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
+# else
+	for (bus = (*nut_usb_get_busses)(); bus; bus = bus->next) {
+# endif	/* WIN32 */
 		for (dev = bus->devices; dev; dev = dev->next) {
 
 			VendorID = dev->descriptor.idVendor;
