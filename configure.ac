@@ -335,6 +335,19 @@ AS_IF([test x"${ac_cv_func_strlwr}" = xyes],
     [AC_MSG_WARN([Optional C library routine strlwr not found])]
     )
 
+AC_CACHE_CHECK([for strsep(s1,s2)],
+    [ac_cv_func_strsep],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [char arr@<:@64@:>@ = {"Some,tuple,text"} ; char *s = arr; if (strsep(&s, ",") == NULL) return 1])],
+        [ac_cv_func_strsep=yes], [ac_cv_func_strsep=no]
+    )])
+AS_IF([test x"${ac_cv_func_strsep}" = xyes],
+    [AC_DEFINE([HAVE_STRSEP], 1, [defined if standard library has, and C standard allows, the strsep(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strsep not found])]
+    )
+AM_CONDITIONAL([HAVE_STRSEP], [test x"${ac_cv_func_strsep}" = "xyes"])
+
 AC_CACHE_CHECK([for strstr(s1,s2)],
     [ac_cv_func_strstr],
     [AX_RUN_OR_LINK_IFELSE(

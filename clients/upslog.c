@@ -48,7 +48,6 @@
 	static	char	*upsname;
 	static	UPSCONN_t	*ups;
 
-	static	FILE	*logfile;
 	static	char *logfn, *monhost;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
@@ -464,7 +463,11 @@ int main(int argc, char **argv)
 					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
+#ifndef WIN32
 					monhost_ups_current->logfn = xstrdup(strsep(&m_arg, ","));
+#else
+					monhost_ups_current->logfn = xstrdup(filter_path(strsep(&m_arg, ",")));
+#endif
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 					if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
