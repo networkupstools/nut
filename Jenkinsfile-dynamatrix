@@ -1190,8 +1190,8 @@ set | sort -n """
 
         ,[name: 'Strict C and GNU standard builds on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
-         branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
-         branchRegexTarget: ~/fightwarn|Windows-.*/,
+         //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
+         //branchRegexTarget: ~/fightwarn|Windows-.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
