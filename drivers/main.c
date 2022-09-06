@@ -205,13 +205,17 @@ static void storeval(const char *var, char *val)
 	vartab_t	*tmp, *last;
 
 	if (!strncasecmp(var, "override.", 9)) {
+		/* NOTE: No regard for VAR_SENSITIVE here */
 		dstate_setinfo(var+9, "%s", val);
 		dstate_setflags(var+9, ST_FLAG_IMMUTABLE);
+		dparam_setinfo(var, val);
 		return;
 	}
 
 	if (!strncasecmp(var, "default.", 8)) {
+		/* NOTE: No regard for VAR_SENSITIVE here */
 		dstate_setinfo(var+8, "%s", val);
+		dparam_setinfo(var, val);
 		return;
 	}
 
