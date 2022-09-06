@@ -275,52 +275,58 @@ static int	qx_load(void)
 	return 0;
 }
 
-/* Guesstimation: init */
+/* Init known (readings, configs) and guessed (if needed) battery related values */
 static void	qx_initbattery(void)
 {
+	const char	*val;
+	int batt_packs_known = 0;
+
+	val = dstate_getinfo("battery.voltage.high");
+	if (val) {
+		batt.volt.high = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.low");
+	if (val) {
+		batt.volt.low = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.nominal");
+	if (val) {
+		batt.volt.nom = strtod(val, NULL);
+	}
+
+	/* If no values are available for both battery.voltage.{low,high}
+	 * either from the UPS or provided by the user in ups.conf,
+	 * but nominal battery.voltage.nom is known,
+	 * try to guesstimate them, but announce it! */
+	if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
+
+		upslogx(LOG_INFO, "No values for battery high/low voltages");
+
+		/* Basic formula, which should cover most cases */
+		batt.volt.low = 104 * batt.volt.nom / 120;
+		batt.volt.high = 130 * batt.volt.nom / 120;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+
+		upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!",
+			batt.volt.low, batt.volt.high);
+
+	}
+
+	val = dstate_getinfo("battery.packs");
+	if (val && (strspn(val, "0123456789 .") == strlen(val))) {
+		batt.packs = strtod(val, NULL);
+		batt_packs_known = 1;
+	}
+
+	/* Guesstimation: init values if not provided by device/overrides */
 	if (!dstate_getinfo("battery.charge") || !dstate_getinfo("battery.runtime")) {
 
-		const char	*val;
-
-		val = dstate_getinfo("battery.voltage.high");
-		if (val) {
-			batt.volt.high = strtod(val, NULL);
-		}
-
-		val = dstate_getinfo("battery.voltage.low");
-		if (val) {
-			batt.volt.low = strtod(val, NULL);
-		}
-
-		val = dstate_getinfo("battery.voltage.nominal");
-		if (val) {
-			batt.volt.nom = strtod(val, NULL);
-		}
-
-		/* If no values are available for both battery.voltage.{low,high}
-		 * either from the UPS or provided by the user in ups.conf,
-		 * try to guesstimate them, but announce it! */
-		if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
-
-			upslogx(LOG_INFO, "No values for battery high/low voltages");
-
-			/* Basic formula, which should cover most cases */
-			batt.volt.low = 104 * batt.volt.nom / 120;
-			batt.volt.high = 130 * batt.volt.nom / 120;
-
-			/* Publish these data too */
-			dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
-			dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
-
-			upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!",
-				batt.volt.low, batt.volt.high);
-
-		}
-
-		val = dstate_getinfo("battery.packs");
-		if (val && (strspn(val, "0123456789 .") == strlen(val))) {
-			batt.packs = strtod(val, NULL);
-		} else {
+		if (!batt_packs_known) {
 
 			/* qx_battery -> batt.volt.act */
 			if (!qx_battery() && (!d_equal(batt.volt.nom, -1))) {
