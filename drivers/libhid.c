@@ -819,6 +819,7 @@ static double logical_to_physical(HIDData_t *Data, long logical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning logical value as is");
 		return (double)logical;
 	}
 
@@ -857,6 +858,7 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning physical value as is");
 		return (long)physical;
 	}
 
