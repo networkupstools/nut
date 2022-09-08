@@ -696,6 +696,25 @@ if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
         fi
         export MAKE
     fi
+    case "$CI_OS_NAME" in
+        windows-msys2)
+            # https://github.com/msys2/MSYS2-packages/issues/2088
+            echo "=========================================================================="
+            echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
+            echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+            echo "=========================================================================="
+            sleep 5
+            ;;
+        *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                echo "=========================================================================="
+                echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
+                echo "script would find the spellchecking toolkit elsewhere)"
+                echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                echo "=========================================================================="
+                sleep 5
+            fi
+            ;;
+    esac >&2
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
         build_to_only_catch_errors_target spellcheck ; exit
