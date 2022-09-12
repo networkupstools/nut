@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.99"
+#define APC_HID_VERSION "APC HID 0.100"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -94,6 +94,10 @@ static usb_device_id_t apc_usb_device_table[] = {
 	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
+	/* APC Smart UPS 1000 with latest firmware 04.3
+	 * seems to have bumped the productid from 3 to 4
+	 * See https://github.com/networkupstools/nut/issues/1429 */
+	{ USB_DEVICE(APC_VENDORID, 0x0004), disable_interrupt_pipe },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
