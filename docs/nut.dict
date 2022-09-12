@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3023 utf-8
+personal_ws-1.1 en 3026 utf-8
 AAS
 ABI
 ACFAIL
@@ -2765,6 +2765,7 @@ tcsetattr
 tcsh
 td
 tdriver
+teknologist
 tempmax
 tempmin
 terminal's
@@ -2960,6 +2961,8 @@ waitbeforereconnect
 wakeup
 wc
 wchar
+webNUT
+webnut
 webserver
 wf
 wget
