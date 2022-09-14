@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3040 utf-8
+personal_ws-1.1 en 3042 utf-8
 AAS
 ABI
 ACFAIL
@@ -1794,6 +1794,7 @@ eco
 edb
 edl
 ef
+egrep
 ei
 el
 emacs
@@ -1876,6 +1877,7 @@ frob
 frontends
 fs
 fsd
+fsr
 ftdi
 fuji
 fullload
