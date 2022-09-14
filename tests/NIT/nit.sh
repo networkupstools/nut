@@ -77,36 +77,57 @@ isBusy_NUT_PORT() {
     [ -n "${NUT_PORT}" ] || return
 
     log_debug "Trying to report if NUT_PORT=${NUT_PORT} is used"
-	if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
-		# Assume Linux - hex-encoded
-		# IPv4:
-		#   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
-		#   0: 0100007F:EE48 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 48881 1 00000000ec238d02 100 0 0 10 0
-		#   ^^^ 1.0.0.127 - note reversed byte order!
-		# IPv6:
-		#   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
-		#   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
-		NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
-		NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_POR_HEX}\$"`" \
-		&& [ -n "$NUT_PORT_HITS" ] && return 0
+    if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
+        # Assume Linux - hex-encoded
+        # IPv4:
+        #   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+        #   0: 0100007F:EE48 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 48881 1 00000000ec238d02 100 0 0 10 0
+        #   ^^^ 1.0.0.127 - note reversed byte order!
+        # IPv6:
+        #   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+        #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
+        NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
+        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
+        && [ -n "$NUT_PORT_HITS" ] && return 0
 
-		# We had a way to check, and the way said port is available
-		return 1
-	fi
+        # We had a way to check, and the way said port is available
+        return 1
+    fi
 
     (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
 
     (lsof -i :"${NUT_PORT}") 2>/dev/null && return
 
-	# Not busy... or no tools to confirm?
-	if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
-		# at least one tool is present, so not busy
-		return 1
-	fi
+    # Not busy... or no tools to confirm?
+    if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
+        # at least one tool is present, so not busy
+        return 1
+    fi
 
-	# Assume not busy to not preclude testing in 100% of the cases
-	log_warn "isBusy_NUT_PORT() can not say, tools for checking NUT_PORT=$NUT_PORT are not available"
-	return 1
+    # If the current shell interpreter is bash, it can do a bit of networking:
+    if [ -n "${BASH_VERSION-}" ]; then
+        # NOTE: Probing host names we use in upsd.conf
+        # See generatecfg_upsd_trivial() for a more carefully made list
+        (   # Hide this looped noise:
+            # ./nit.sh: connect: Connection refused
+            # ./nit.sh: line 112: /dev/tcp/localhost/35050: Connection refused
+            if ! shouldDebug ; then
+                exec 2>/dev/null
+            fi
+            for H in "localhost" "127.0.0.1" "::1"; do
+                if echo "HELP" > "/dev/tcp/${H}/${NUT_PORT}" ; then
+                    # Successfully connected - port isBusy
+                    return 0
+                fi
+            done
+            return 1
+        ) && return 0
+        log_warn "isBusy_NUT_PORT() tried with BASH-specific query, and port does not seem busy (or something else errored out)"
+    fi
+
+    # Assume not busy to not preclude testing in 100% of the cases
+    log_warn "isBusy_NUT_PORT() can not say definitively, tools for checking NUT_PORT=$NUT_PORT are not available"
+    return 1
 }
 
 die() {
@@ -215,8 +236,8 @@ mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
 if [ "`id -u`" = 0 ]; then
-	log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
-	chmod 777 "${TESTDIR}/run"
+    log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
+    chmod 777 "${TESTDIR}/run"
 fi
 
 stop_daemons() {
@@ -241,49 +262,49 @@ export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
 if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
-	if isBusy_NUT_PORT ; then
-		log_warn "NUT_PORT=$NUT_PORT requested by caller seems occupied; tests may fail below"
-	fi
+    if isBusy_NUT_PORT ; then
+        log_warn "NUT_PORT=$NUT_PORT requested by caller seems occupied; tests may fail below"
+    fi
 else
-	COUNTDOWN=60
-	while [ "$COUNTDOWN" -gt 0 ] ; do
-	    DELTA1="`date +%S`" || DELTA1=0
-	    DELTA2="`expr $$ % 99`" || DELTA2=0
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ] ; do
+        DELTA1="`date +%S`" || DELTA1=0
+        DELTA2="`expr $$ % 99`" || DELTA2=0
 
-	    NUT_PORT="`expr 34931 + $DELTA1 + $DELTA2`" \
-	    && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
-	    || NUT_PORT=34931
+        NUT_PORT="`expr 34931 + $DELTA1 + $DELTA2`" \
+        && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
+        || NUT_PORT=34931
 
-		if ! isBusy_NUT_PORT ; then
-			break
-		fi
+        if ! isBusy_NUT_PORT ; then
+            break
+        fi
 
-		log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
-		COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+        log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
+        COUNTDOWN="`expr "$COUNTDOWN" - 1`"
 
-		[ "$COUNTDOWN" = 0 ] || sleep 2
-	done
+        [ "$COUNTDOWN" = 0 ] || sleep 2
+    done
 
-	if [ "$COUNTDOWN" = 0 ] ; then
-		COUNTDOWN=60
-		DELTA1=1025
-		while [ "$COUNTDOWN" -gt 0 ] ; do
-		    DELTA2="`expr $RANDOM % 64000`" \
-		    && [ "$DELTA2" -ge 0 ] || die "Can not pick random port"
+    if [ "$COUNTDOWN" = 0 ] ; then
+        COUNTDOWN=60
+        DELTA1=1025
+        while [ "$COUNTDOWN" -gt 0 ] ; do
+            DELTA2="`expr $RANDOM % 64000`" \
+            && [ "$DELTA2" -ge 0 ] || die "Can not pick random port"
 
-		    NUT_PORT="`expr $DELTA1 + $DELTA2`"
-			if ! isBusy_NUT_PORT ; then
-				break
-			fi
+            NUT_PORT="`expr $DELTA1 + $DELTA2`"
+            if ! isBusy_NUT_PORT ; then
+                break
+            fi
 
-			# Loop quickly, no sleep here
-			COUNTDOWN="`expr "$COUNTDOWN" - 1`"
-		done
+            # Loop quickly, no sleep here
+            COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+        done
 
-		if [ "$COUNTDOWN" = 0 ] ; then
-			die "Can not pick random port"
-		fi
-	fi
+        if [ "$COUNTDOWN" = 0 ] ; then
+            die "Can not pick random port"
+        fi
+    fi
 fi
 export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
