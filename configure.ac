@@ -461,8 +461,10 @@ if (p == NULL || *p != '\0') return 1])],
     )])
 AS_IF([test x"${ac_cv_func_strptime}" = xyes],
     [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
-    [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
+    [AC_MSG_WARN([Optional C library routine strptime not found; try adding _GNU_SOURCE; a fallback implementation will be built in])]
     )
+dnl Note: per Linux headers, this may need __USE_XOPEN (features.h)
+dnl which is enabled by _XOPEN_SOURCE via _GNU_SOURCE on the platform.
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 
 AC_CACHE_CHECK([for strdup(s)],
