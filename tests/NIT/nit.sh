@@ -104,8 +104,29 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
+    # If the current shell interpreter is bash, it can do a bit of networking:
+    if [ -n "${BASH_VERSION-}" ]; then
+        # NOTE: Probing host names we use in upsd.conf
+        # See generatecfg_upsd_trivial() for a more carefully made list
+        (   # Hide this looped noise:
+            # ./nit.sh: connect: Connection refused
+            # ./nit.sh: line 112: /dev/tcp/localhost/35050: Connection refused
+            if ! shouldDebug ; then
+                exec 2>/dev/null
+            fi
+            for H in "localhost" "127.0.0.1" "::1"; do
+                if echo "HELP" > "/dev/tcp/${H}/${NUT_PORT}" ; then
+                    # Successfully connected - port isBusy
+                    return 0
+                fi
+            done
+            return 1
+        ) && return 0
+        log_warn "isBusy_NUT_PORT() tried with BASH-specific query, and port does not seem busy (or something else errored out)"
+    fi
+
     # Assume not busy to not preclude testing in 100% of the cases
-    log_warn "isBusy_NUT_PORT() can not say, tools for checking NUT_PORT=$NUT_PORT are not available"
+    log_warn "isBusy_NUT_PORT() can not say definitively, tools for checking NUT_PORT=$NUT_PORT are not available"
     return 1
 }
 
