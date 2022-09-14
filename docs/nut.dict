@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3026 utf-8
+personal_ws-1.1 en 3040 utf-8
 AAS
 ABI
 ACFAIL
@@ -872,6 +872,7 @@ PWR
 PXG
 PaaS
 Pac
+PackageRequired
 Parisi
 Patrik
 Pavel
@@ -1131,6 +1132,7 @@ Shutdn
 Sibbald
 Sicon
 Sidorov
+SigLevel
 Signetic
 Silvino
 Sinline
@@ -1169,6 +1171,7 @@ Sublicensing
 SunOS
 SuperPower
 Sweex
+Sy
 Sycon
 Symmetra
 Symmetras
@@ -1439,6 +1442,7 @@ apctest
 apcupsd
 aphel
 ar
+archlinux
 arduino
 arg
 argc
@@ -1628,6 +1632,7 @@ clepple
 clicky
 cls
 clueful
+cmake
 cmd
 cmdline
 cmdname
@@ -2055,6 +2060,8 @@ kde
 keyclick
 keygen
 keyout
+keyring
+keyserver
 killall
 killpower
 kludgy
@@ -2072,16 +2079,19 @@ ldd
 le
 len
 lf
+libarchive
 libaugeas
 libavahi
 libc
 libcommon
 libcppunit
 libcrypto
+libcurl
 libdir
 libexec
 libfreeipmi
 libgd
+libgpgme
 libhid
 libhidups
 libi
@@ -2266,6 +2276,7 @@ mysecurityname
 myups
 myupsname
 nabcd
+nameserver
 namespace
 nanosleep
 nashkaminski
@@ -2386,6 +2397,7 @@ otheruser
 outliers
 pF
 pacman
+pacstrap
 param
 paramkeywords
 parsable
@@ -2523,6 +2535,7 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+recv
 redistributors
 reentrancy
 refactored
@@ -2536,6 +2549,7 @@ reposurgeon
 repotec
 req
 resistive
+resolv
 resync
 ret
 retrydelay
