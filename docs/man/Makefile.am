@@ -17,8 +17,8 @@
 #   files from source tree
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \

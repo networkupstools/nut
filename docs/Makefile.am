@@ -2,8 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
