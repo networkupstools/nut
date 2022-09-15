@@ -40,12 +40,18 @@
 #include "nut_stdint.h"
 #include "upslog.h"
 
+#ifdef WIN32
+#include "wincompat.h"
+#endif
+
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	char	*upsname;
 	static	UPSCONN_t	*ups;
 
 	static	char *logfn, *monhost;
+#ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
+#endif
 	static	char	logbuffer[LARGEBUF], *logformat;
 
 	static	flist_t	*fhead = NULL;
@@ -86,6 +92,7 @@ static void reopen_log(void)
 	}
 }
 
+#ifndef WIN32
 static void set_reopen_flag(int sig)
 {
 	reopen_flag = sig;
@@ -102,10 +109,12 @@ static void set_print_now_flag(int sig)
 
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
+#endif
 
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
+#ifndef WIN32
 	struct	sigaction	sa;
 
 	sigemptyset(&nut_upslog_sigmask);
@@ -127,6 +136,7 @@ static void setup_signals(void)
 	sa.sa_handler = set_print_now_flag;
 	if (sigaction(SIGUSR1, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
+#endif
 }
 
 static void help(const char *prog)
@@ -453,7 +463,11 @@ int main(int argc, char **argv)
 					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
+#ifndef WIN32
 					monhost_ups_current->logfn = xstrdup(strsep(&m_arg, ","));
+#else
+					monhost_ups_current->logfn = xstrdup(filter_path(strsep(&m_arg, ",")));
+#endif
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 					if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
@@ -467,7 +481,11 @@ int main(int argc, char **argv)
 				break;
 
 			case 'l':
+#ifndef WIN32
 				logfn = optarg;
+#else
+				logfn = filter_path(optarg);
+#endif
 				break;
 
 			case 'i':
@@ -512,7 +530,11 @@ int main(int argc, char **argv)
 
 	if (argc >= 3) {
 		monhost = argv[0];
+#ifndef WIN32
 		logfn = argv[1];
+#else
+		logfn = filter_path(argv[1]);
+#endif
 		interval = atoi(argv[2]);
 	}
 

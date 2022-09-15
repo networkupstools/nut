@@ -31,9 +31,12 @@
 
 #include "config.h" /* must be the first header */
 
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
+
 #include <sys/stat.h>
 #include <string.h>
 
@@ -95,7 +98,7 @@ static struct stat	datafile_stat;
 
 static int setvar(const char *varname, const char *val);
 static int instcmd(const char *cmdname, const char *extra);
-static int parse_data_file(int upsfd);
+static int parse_data_file(TYPE_FD upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
@@ -231,8 +234,15 @@ void upsdrv_updateinfo(void)
 
 				/* Determine if file modification timestamp has changed
 				 * since last use (so we would want to re-read it) */
+#ifndef WIN32
 				/* Either successful stat is OK to fill the "fs" struct */
 				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
+#else
+				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+				 */
+				if (0 != stat (fn, &fs)) {
+#endif
 					upsdebugx(2, "Can't open %s currently", fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
@@ -458,8 +468,15 @@ void upsdrv_initups(void)
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 		/* Update file modification timestamp (and other data) */
+#ifndef WIN32
 		/* Either successful stat is OK to fill the "datafile_stat" struct */
 		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
+#else
+		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
+		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
+		 */
+		if (0 != stat (device_path, &datafile_stat)) {
+#endif
 			upsdebugx(2, "Can't open %s currently", device_path);
 		}
 	}
@@ -654,7 +671,7 @@ static void upsconf_err(const char *errmsg)
 /* for dummy mode
  * parse the definition file and process its content
  */
-static int parse_data_file(int arg_upsfd)
+static int parse_data_file(TYPE_FD arg_upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr, var_value[MAX_STRING_SIZE];

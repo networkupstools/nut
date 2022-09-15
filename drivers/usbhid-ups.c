@@ -37,6 +37,9 @@
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -1523,9 +1526,13 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 
 		case LIBUSB_ERROR_TIMEOUT:   /* Connection timed out */
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
 		case LIBUSB_ERROR_OVERFLOW:  /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+# if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
+# endif
 #endif
 		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:

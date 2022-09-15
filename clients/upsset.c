@@ -19,10 +19,14 @@
 
 #include "common.h"
 
+#ifndef WIN32
 #include <netdb.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"

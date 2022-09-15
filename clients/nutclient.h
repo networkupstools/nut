@@ -401,9 +401,15 @@ public:
 
 	/**
 	 * Connect to the server.
-	 * Host name and ports must have already set (usefull for reconnection).
+	 * Host name and ports must have already set (useful for reconnection).
 	 */
 	void connect();
+
+	/**
+	 * Enable or disable std::cerr tracing of internal Socket operations
+	 * during connect() processing. Primarily for developer troubleshooting.
+	 */
+	void setDebugConnect(bool d);
 
 	/**
 	 * Test if the connection is active.

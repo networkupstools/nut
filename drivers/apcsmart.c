@@ -35,6 +35,12 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
+#ifdef WIN32
+# ifndef ECANCELED
+#  define ECANCELED ERROR_CANCELLED
+# endif
+#endif
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -448,8 +454,9 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
 	}
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return 0;
+
 	if (flags & SER_D0) {
 		sec = 0; usec = 0;
 	}
@@ -574,7 +581,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 	ssize_t ret;
 	errno = 0;
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return 0;
 
 	ret = ser_send_char(upsfd, code);
@@ -2116,7 +2123,7 @@ void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return;
 
 	apc_flush(0);

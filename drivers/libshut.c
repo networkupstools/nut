@@ -397,7 +397,7 @@ static int libshut_open(
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
 	/* If device is still open, close it */
-	if (*arg_upsfd > 0) {
+	if (VALID_FD_SER(*arg_upsfd)) {
 		ser_close(*arg_upsfd, arg_device_path);
 	}
 
@@ -660,7 +660,7 @@ static int libshut_open(
  */
 static void libshut_close(usb_dev_handle arg_upsfd)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return;
 	}
 
@@ -680,7 +680,7 @@ static int libshut_get_report(
 	usb_ctrl_charbuf raw_buf,
 	usb_ctrl_charbufsize ReportSize)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return 0;
 	}
 
@@ -707,7 +707,7 @@ static int libshut_set_report(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return 0;
 	}
 
@@ -745,7 +745,7 @@ static int libshut_get_string(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return -1;
 	}
 
@@ -770,7 +770,7 @@ static int libshut_get_interrupt(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return -1;
 	}
 
@@ -810,7 +810,7 @@ shut_communication_subdriver_t shut_subdriver = {
  */
 void setline(usb_dev_handle arg_upsfd, int set)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return;
 	}
 

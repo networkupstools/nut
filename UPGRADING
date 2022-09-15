@@ -19,6 +19,16 @@ Changes from 2.8.0 to 2.8.1
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Work on NUT for Windows branch led to situation-specific definitions of
+  what in POSIX code was all "file descriptors" (an `int` type). Now such
+  entities are named `TYPE_FD`, `TYPE_FD_SER` or `TYPE_FD_SOCK` with some
+  helper macros to name and determine "invalid" values (closed file, etc.)
+  Some of these changes happened in NUT header files, and at this time it
+  was not investigated whether the set of files delivered for third-party
+  code integration (e.g. C/C++ projects binding with `libnutclient` or
+  `libupsclient) is consistent or requires additional definitions/files.
+  If something gets broken by this, it is a bug to address in future [#1556]
+
 - Further revision of public headers delivered by NUT was done, particularly
   to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
   `time_t` etc.) in third-party client code that earlier sufficed to only

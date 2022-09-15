@@ -21,11 +21,16 @@
 #include "common.h"
 
 #include <ctype.h>
+#ifndef WIN32
 #include <syslog.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <sys/un.h>
+#else
+#include <wincompat.h>
+#endif
+
 #include <dirent.h>
 #if !HAVE_REALPATH
 # include <sys/stat.h>
@@ -114,6 +119,7 @@ void syslogbit_set(void)
 /* get the syslog ready for us */
 void open_syslog(const char *progname)
 {
+#ifndef WIN32
 	int	opt;
 
 	opt = LOG_PID;
@@ -162,11 +168,15 @@ void open_syslog(const char *progname)
 		break;
 #endif
 	}
+#else
+	EventLogName = progname;
+#endif
 }
 
 /* close ttys and become a daemon */
 void background(void)
 {
+#ifndef WIN32
 	int	pid;
 
 	if ((pid = fork()) < 0)
@@ -198,12 +208,18 @@ void background(void)
 	setsid();		/* make a new session to dodge signals */
 #endif
 
+#else /* WIN32 */
+	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	xbit_clear(&upslog_flags, UPSLOG_STDERR);
+#endif
+
 	upslogx(LOG_INFO, "Startup successful");
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name)
 {
+#ifndef WIN32
 	struct passwd *r;
 	errno = 0;
 	if ((r = getpwnam(name)))
@@ -216,6 +232,9 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
+#else
+	NUT_UNUSED_VARIABLE(name);
+#endif /* WIN32 */
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
 #pragma GCC diagnostic push
@@ -247,6 +266,7 @@ struct passwd *get_user_pwent(const char *name)
 /* change to the user defined in the struct */
 void become_user(struct passwd *pw)
 {
+#ifndef WIN32
 	/* if we can't switch users, then don't even try */
 	if ((geteuid() != 0) && (getuid() != 0))
 		return;
@@ -263,6 +283,9 @@ void become_user(struct passwd *pw)
 
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
+#else
+	NUT_UNUSED_VARIABLE(pw);
+#endif
 }
 
 /* drop down into a directory and throw away pointers to the old path */
@@ -271,18 +294,45 @@ void chroot_start(const char *path)
 	if (chdir(path))
 		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
 
+#ifndef WIN32
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
+#endif
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
 	upsdebugx(1, "chrooted into %s", path);
 }
 
+#ifdef WIN32
+/* In WIN32 all non binaries files (namely configuration and PID files)
+   are retrieved relative to the path of the binary itself.
+   So this function fill "dest" with the full path to "relative_path"
+   depending on the .exe path */
+char * getfullpath(char * relative_path)
+{
+	char buf[MAX_PATH];
+	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
+		return NULL;
+	}
+
+	/* remove trailing executable name and its preceeding slash */
+	char * last_slash = strrchr(buf, '\\');
+	*last_slash = '\0';
+
+	if( relative_path ) {
+		strncat(buf, relative_path, sizeof(buf) - 1);
+	}
+
+	return(xstrdup(buf));
+}
+#endif
+
 /* drop off a pidfile for this process */
 void writepid(const char *name)
 {
+#ifndef WIN32
 	char	fn[SMALLBUF];
 	FILE	*pidf;
 	mode_t	mask;
@@ -306,6 +356,9 @@ void writepid(const char *name)
 	}
 
 	umask(mask);
+#else
+	NUT_UNUSED_VARIABLE(name);
+#endif
 }
 
 /* send sig to pid, returns -1 for error, or
@@ -313,6 +366,7 @@ void writepid(const char *name)
  */
 int sendsignalpid(pid_t pid, int sig)
 {
+#ifndef WIN32
 	int	ret;
 
 	if (pid < 2 || pid > get_max_pid_t()) {
@@ -341,6 +395,15 @@ int sendsignalpid(pid_t pid, int sig)
 	}
 
 	return 0;
+#else
+	NUT_UNUSED_VARIABLE(pid);
+	NUT_UNUSED_VARIABLE(sig);
+	upslogx(LOG_ERR,
+		"%s: not implemented for Win32 and "
+		"should not have been called directly!",
+		__func__);
+	return -1;
+#endif
 }
 
 /* parses string buffer into a pid_t if it passes
@@ -365,6 +428,7 @@ pid_t parsepid(const char *buf)
  * returns negative codes for errors, or
  * zero for a successfully sent signal
  */
+#ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
@@ -400,6 +464,22 @@ int sendsignalfn(const char *pidfn, int sig)
 	fclose(pidf);
 	return ret;
 }
+
+#else	/* => WIN32 */
+
+int sendsignalfn(const char *pidfn, const char * sig)
+{
+	BOOL	ret;
+
+	ret = send_to_named_pipe(pidfn, sig);
+
+	if (ret != 0) {
+		return -1;
+	}
+
+	return 0;
+}
+#endif	/* WIN32 */
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 {
@@ -451,6 +531,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
+#ifndef WIN32
 int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
@@ -459,10 +540,25 @@ int sendsignal(const char *progname, int sig)
 
 	return sendsignalfn(fn, sig);
 }
+#else
+int sendsignal(const char *progname, const char * sig)
+{
+	return sendsignalfn(progname, sig);
+}
+#endif
 
 const char *xbasename(const char *file)
 {
+#ifndef WIN32
 	const char *p = strrchr(file, '/');
+#else
+	const char *p = strrchr(file, '\\');
+	const char *r = strrchr(file, '/');
+	/* if not found, try '/' */
+	if( r > p ) {
+		p = r;
+	}
+#endif
 
 	if (p == NULL)
 		return file;
@@ -502,6 +598,24 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 
 	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+
+#ifdef WIN32
+		LPVOID WinBuf;
+		DWORD WinErr = GetLastError();
+		FormatMessage(
+				FORMAT_MESSAGE_MAX_WIDTH_MASK |
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL,
+				WinErr,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPTSTR) &WinBuf,
+				0, NULL );
+
+		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
+		LocalFree(WinBuf);
+#endif
 	}
 
 	if (nut_debug_level > 0) {
@@ -534,6 +648,13 @@ const char * confpath(void)
 {
 	const char *path = getenv("NUT_CONFPATH");
 
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_ETC);
+	}
+#endif
+
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
 	return (path != NULL && *path != '\0') ? path : CONFPATH;
@@ -543,6 +664,13 @@ const char * confpath(void)
 const char * dflt_statepath(void)
 {
 	const char *path = getenv("NUT_STATEPATH");
+
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_VAR_RUN);
+	}
+#endif
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
@@ -562,6 +690,13 @@ const char * altpidpath(void)
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+
+#ifdef WIN32
+		if (path == NULL) {
+			/* fall back to built-in pathname relative to binary/workdir */
+			path = getfullpath(PATH_VAR_RUN);
+		}
+#endif
 	}
 
 	if ( (path != NULL) && (*path != '\0') )
@@ -570,17 +705,24 @@ const char * altpidpath(void)
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-	/* We assume, here and elsewhere, that
-	 * at least STATEPATH is always defined */
-	return STATEPATH;
+	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
+	return dflt_statepath();
 #endif
 }
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
 	size_t len = strlen(fn);
+#ifdef UNIX_PATH_MAX
+	size_t max = UNIX_PATH_MAX;
+#else
+	size_t max = PATH_MAX;
+#endif
+#ifndef WIN32
 	struct sockaddr_un	ssaddr;
-	size_t max = sizeof(ssaddr.sun_path);
+	max = sizeof(ssaddr.sun_path);
+#endif
+
 	if (len < max)
 		return;
 
@@ -903,6 +1045,12 @@ void *xmalloc(size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+
+#ifdef WIN32
+	/* FIXME: This is what (x)calloc() is for! */
+	memset(p, 0, size);
+#endif
+
 	return p;
 }
 
@@ -912,6 +1060,12 @@ void *xcalloc(size_t number, size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+
+#ifdef WIN32
+	/* FIXME: calloc() above should have initialized this already! */
+	memset(p, 0, size * number);
+#endif
+
 	return p;
 }
 
@@ -936,6 +1090,7 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
+#ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
@@ -956,10 +1111,34 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 
 	return read(fd, buf, buflen);
 }
+#else
+ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+{
+	/* This function is only called by serial drivers right now */
+	/* TODO: Assert below that resulting values fit in ssize_t range */
+	/* DWORD bytes_read; */
+	int res;
+	DWORD timeout;
+	COMMTIMEOUTS TOut;
+
+	timeout = (d_sec*1000) + ((d_usec+999)/1000);
+
+	GetCommTimeouts(fd->handle,&TOut);
+	TOut.ReadIntervalTimeout = MAXDWORD;
+	TOut.ReadTotalTimeoutMultiplier = 0;
+	TOut.ReadTotalTimeoutConstant = timeout;
+	SetCommTimeouts(fd->handle,&TOut);
+
+	res = w32_serial_read(fd,buf,buflen,timeout);
+
+	return res;
+}
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
+#ifndef WIN32
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
@@ -980,7 +1159,19 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const t
 
 	return write(fd, buf, buflen);
 }
-
+#else
+/* Note: currently not implemented de-facto for Win32 */
+ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+{
+	NUT_UNUSED_VARIABLE(fd);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+	NUT_UNUSED_VARIABLE(d_sec);
+	NUT_UNUSED_VARIABLE(d_usec);
+	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
+	return 0;
+}
+#endif
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
  * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
@@ -1045,6 +1236,14 @@ static const char * search_paths[] = {
 #  endif
 # endif
 #endif
+#ifdef WIN32
+	/* TODO: Track the binary program name (many platform-specific solutions,
+	 * or custom one to stash argv[0] in select programs, and derive its
+	 * dirname (with realpath and apparent path) as well as "../lib".
+	 * Perhaps a decent fallback idea for all platforms, not just WIN32.
+	 */
+	".",
+#endif
 	NULL
 };
 
@@ -1101,7 +1300,35 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 					libname_path = xstrdup(current_test_path);
 				}
 			}
-#endif
+
+# ifdef WIN32
+			if (!libname_path) {
+				for (char *p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
+					if (*p == '/') *p = '\\';
+				}
+				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path);
+				if (stat(current_test_path, &st) == 0) {
+					if (st.st_size > 0) {
+						libname_path = xstrdup(current_test_path);
+					}
+				}
+			}
+			if (!libname_path && strcmp(dirname, ".") == 0 && current_test_path[0] == '.' && current_test_path[1] == '\\' && current_test_path[2] != '\0') {
+				/* Seems mingw stat() only works for files in current dir,
+				 * so for others a chdir() is needed (and memorizing the
+				 * original dir, and no threading at this moment, to be safe!)
+				 * https://stackoverflow.com/a/66096983/4715872
+				 */
+				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path + 2);
+				if (stat(current_test_path + 2, &st) == 0) {
+					if (st.st_size > 0) {
+						libname_path = xstrdup(current_test_path + 2);
+					}
+				}
+			}
+# endif /* WIN32 */
+#endif  /* HAVE_REALPATH */
+
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
 				(libname_path!=NULL)?libname_path:"NULL");
@@ -1131,6 +1358,18 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 		if (libname_path != NULL)
 			break;
 	}
+
+#ifdef WIN32
+	/* Note: with mingw, the ":" separator above might have been resolvable */
+	if (!libname_path) {
+		onedir = NULL; /* probably is NULL already, but better ensure this */
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+			if (libname_path != NULL)
+				break;
+		}
+	}
+#endif  /* WIN32 */
 
 	return libname_path;
 }
@@ -1169,6 +1408,31 @@ char * get_libname(const char* base_libname)
 		if (libname_path != NULL)
 			break;
 	}
+
+#ifdef WIN32
+	/* TODO: Need a reliable cross-platform way to get the full path
+	 * of current executable -- possibly stash it when starting NUT
+	 * programs... consider some way for `nut-scanner` too */
+# ifdef PATH_LIB
+	if (!libname_path) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
+	}
+# endif
+
+	if (!libname_path) {
+		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+	}
+#endif  /* WIN32 so far */
+
+#ifdef WIN32
+	/* Windows-specific: DLLs can be provided by common "PATH" envvar,
+	 * at lowest search priority though (after EXE dir, system, etc.) */
+	if (!libname_path) {
+		upsdebugx(2, "Looking for lib %s in PATH", base_libname);
+		libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("PATH"), &counter);
+	}
+#endif  /* WIN32 */
 
 found:
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
