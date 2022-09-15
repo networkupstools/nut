@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.07"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.08"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
@@ -191,11 +191,19 @@ static void	voltronic_qs_initups(void)
 /* Protocol used by the UPS */
 static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	if (strcasecmp(item->value, "V")) {
-		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
-		return -1;
+	int	ret = -1;
+
+	if (!strcasecmp(item->value, "V")) {
+		upsdebugx(2, "%s: detected V protocol [%s]", __func__, item->value);
+		ret = 0;
+	} else if (!strcasecmp(item->value, "H")) {
+		upsdebugx(2, "%s: detected H protocol [%s]", __func__, item->value);
+		ret = 0;
 	}
 
+	if (ret == -1) {
+		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
+	} else {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -205,12 +213,13 @@ static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuele
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-	snprintf(value, valuelen, item->dfl, item->value);
+		snprintf(value, valuelen, item->dfl, item->value);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
+	}
 
-	return 0;
+	return ret;
 }
 
 

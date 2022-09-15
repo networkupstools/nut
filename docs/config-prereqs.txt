@@ -322,6 +322,102 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 
 NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`.
 
+Arch Linux
+~~~~~~~~~~
+
+Update the lower-level OS and package databases:
+------
+:; pacman -Syu
+------
+
+Install tools and prerequisites for NUT:
+------
+:; pacman -S --needed \
+    base-devel \
+    autoconf automake libtool libltdl \
+    clang gcc \
+    ccache \
+    git \
+    vim python perl \
+    pkgconf \
+    cppcheck valgrind
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; pacman -S --needed \
+    aspell en-aspell
+
+# For man-page doc types generation:
+:; pacman -S --needed \
+    asciidoc
+
+# For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
+:; pacman -S --needed \
+    source-highlight dblatex
+
+# For CGI graph generation - massive packages (X11):
+:; pacman -S --needed \
+    gd
+
+:; pacman -S --needed \
+    cppunit \
+    openssl nss \
+    augeas \
+    libusb \
+    neon \
+    net-snmp \
+    freeipmi \
+    avahi
+
+:; pacman -S --needed \
+    lua51
+
+:; pacman -S --needed \
+    bash dash busybox ksh93
+------
+
+Recommended for NUT CI farm integration (matching specific toolkit versions
+in a build matrix), and note the unusual location of `/usr/lib/ccache/bin/`
+for symlinks:
+------
+:; gcc --version
+gcc (GCC) 12.2.0
+...
+
+# Note: this distro delivers "gcc" et al as file names
+# so symlinks like this may erode after upgrades.
+# TODO: Rename and then link?..
+:; (cd /usr/bin \
+    && for V in 12 12.2.0 ; do for T in gcc g++ cpp ; do \
+        ln -fsr $T $T-$V ; \
+    done; done)
+:; (cd /usr/lib/ccache/bin/ \
+    && for V in 12 12.2.0 ; do for T in gcc g++ ; do \
+        ln -fsr /usr/bin/ccache $T-$V ; \
+    done; done)
+
+
+:; clang --version
+clang version 14.0.6
+...
+
+:; (cd /usr/bin && ln -fs clang-14 clang++-14 && ln -fs clang-14 clang-cpp-14)
+:; (cd /usr/lib/ccache/bin/ \
+    && for V in 14 ; do for T in clang clang++ ; do \
+        ln -fsr /usr/bin/ccache $T-$V ; \
+    done; done)
+------
+
+Also for CI build agents, a Java environment (JDK11+ since summer 2022) is
+required:
+------
+# Search for available Java versions:
+:; pacman -Ss | egrep 'jre|jdk'
+
+# Pick one:
+:; pacman -S --needed \
+    jre11-openjdk-headless
+------
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 
