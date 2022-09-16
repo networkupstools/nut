@@ -43,7 +43,7 @@ convertFile() {
 
 TOTALCODE=0
 if [ $# = 0 ] ; then
-    git ls-files | egrep '\.(c|h)$' | while read F ; do
+    git ls-files | grep -E '\.(c|h)$' | while read F ; do
         convertFile "$F"
     done
 else

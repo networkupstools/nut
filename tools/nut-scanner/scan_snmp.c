@@ -165,7 +165,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	NUT_UNUSED_VARIABLE(libname_path);
 
 	/* Assignments were parsed from code below with:
-	 *   grep -A1 dlsym tools/nut-scanner/scan_snmp.c | egrep 'dlsym|")' | sed -e 's| *lt_dlsym(dl_handle, *| |' -e 's,");,;,' -e 's,",,' -e 's,= *$,=,'
+	 *   grep -A1 dlsym tools/nut-scanner/scan_snmp.c | grep -E 'dlsym|")' | sed -e 's| *lt_dlsym(dl_handle, *| |' -e 's,");,;,' -e 's,",,' -e 's,= *$,=,'
 	 */
 
 # if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP)

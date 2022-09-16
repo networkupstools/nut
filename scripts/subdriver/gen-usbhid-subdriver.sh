@@ -82,7 +82,7 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
     read -p "Name of subdriver: " DRIVER < /dev/tty
-    if echo $DRIVER | egrep -q '[^a-zA-Z0-9]'; then
+    if echo $DRIVER | grep -E -q '[^a-zA-Z0-9]'; then
 	echo "Please use only letters and digits"
 	DRIVER=""
     fi
@@ -113,7 +113,7 @@ cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
 
 # make up dummy names for unknown usages
 count=0
-cat "$USAGES" | egrep '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
+cat "$USAGES" | grep -E '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
 while read U; do
     count=`expr $count + 1`
     echo "$U $UDRIVER$count"
