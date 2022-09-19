@@ -398,6 +398,9 @@ static void	qx_initbattery(void)
 					}
 
 					batt.packs = packs[i];
+					upslogx(LOG_INFO,
+						"Autodetected %.0f as number of battery packs [%.0f/%.2f]",
+						batt.packs, batt.volt.nom, batt.volt.act);
 					break;
 
 				}
