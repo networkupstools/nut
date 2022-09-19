@@ -74,6 +74,9 @@ https://github.com/networkupstools/nut/milestone/8
    for auto-detection [#1448, #1684]
 
  - nutdrv_qx updates:
+   * a `battery_voltage_reports_one_pack` driver option was added for devices
+     which "natively" report a `battery.voltage` for a single battery pack or
+     cell, not for the whole assembly [#1279]
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
      and newly "H" dialects, which otherwise seem interchangeable [#1623]
 

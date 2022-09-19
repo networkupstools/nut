@@ -88,9 +88,33 @@ If you want the driver to report a guesstimated *battery.charge*, you need to sp
 Some devices show a wrong nominal battery voltage (or none at all), so you may need to override or set a default value.
 
 *override.battery.packs =* 'value'::
-Some devices report a part of the total battery voltage.
-For instance, if *battery.voltage.nominal* is 24 V, but it reports a *battery.voltage* of around 2 V, the number of *battery.packs* to correct this reading would be 12.
-The driver will attempt to detect this automatically, but if this fails somehow, you may want to override this value.
+Some devices "natively" report just a part of the total battery voltage
+(see also *battery_voltage_reports_one_pack* below).
++
+For instance, if *battery.voltage.nominal* is 24 V, but it reports
+a *battery.voltage* of around 2 V, the number of *battery.packs* to
+correct this reading would be 12.
++
+The driver will attempt to detect this number automatically, but if
+this fails somehow, you may want to override this value.
++
+Note that this is primarily useful for "guesstimation" of `battery.charge`
+and/or `battery.runtime` (with `runtimecal` setting), if those readings are
+not provided by the device directly.
+
+*battery_voltage_reports_one_pack*::
+Some devices "natively" report just report a part of the total battery voltage
+(see also *override.battery.packs* above, if that value is not reported by the
+device or properly guessed by the driver otherwise).
++
+If this flag is set, most of the subdrivers (except those which know about
+more  complicated device-specific nuances, currently: *ablerex*, *masterguard*
+and *voltronic-qs-hex*) adjust their ultimately reported *battery.voltage*
+value as a multiple of *battery.packs* and "native" *battery.voltage*).
++
+Note this is primarily useful for consistent diagnostics and graphing of the
+numbers, and should not impact the "guesstimation" of `battery.charge` and/or
+`battery.runtime` - so rather a cosmetic adjustment, than critical.
 
 *runtimecal =* 'value,value,value,value'::
 Parameter used in the (optional) runtime estimation.
