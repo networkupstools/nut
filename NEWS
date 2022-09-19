@@ -80,6 +80,9 @@ https://github.com/networkupstools/nut/milestone/8
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
      and newly "H" dialects, which otherwise seem interchangeable [#1623]
 
+ - nutdrv_qx and blazer updates:
+   * extended default ranges for max battery voltage when guessing [#1279]
+
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
