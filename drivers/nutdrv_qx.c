@@ -386,7 +386,7 @@ static void	qx_initbattery(void)
 				 * therefore choose the one with the highest multiplier. */
 				for (i = 0; packs[i] > 0; i++) {
 
-					if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+					if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 						continue;
 					}
 
