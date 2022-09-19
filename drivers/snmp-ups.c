@@ -2390,7 +2390,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 /* Try to determine the number of items (outlets, outlet groups, ...),
  * using a template definition. Walk through the template until we can't
  * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
-static int guestimate_template_count(snmp_info_t *su_info_p)
+static int guesstimate_template_count(snmp_info_t *su_info_p)
 {
 	int base_index = 0;
 	char test_OID[SU_INFOSIZE];
@@ -2478,8 +2478,8 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
 		 * su_info_p->flags &= ~SU_FLAG_OK;
-		 * or rely on guestimation? */
-		template_count = guestimate_template_count(su_info_p);
+		 * or rely on guesstimation? */
+		template_count = guesstimate_template_count(su_info_p);
 		/* Publish the count estimation */
 		if (template_count > 0) {
 			dstate_setinfo(template_count_var, "%i", template_count);
@@ -2860,7 +2860,7 @@ bool_t daisychain_init()
 		 * the number of devices present */
 		else
 		{
-			devices_count = guestimate_template_count(su_info_p);
+			devices_count = guesstimate_template_count(su_info_p);
 			upsdebugx(1, "Guesstimation: there are %ld device(s) present", devices_count);
 		}
 
