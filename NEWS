@@ -63,6 +63,10 @@ https://github.com/networkupstools/nut/milestone/8
  - huawei-ups2000 is now known to support more devices, noted in docs and
    for auto-detection [#1448]
 
+ - nutdrv_qx updates:
+   * the `voltronic_qs_protocol` should now accept both "V" (as before)
+     and newly "H" dialects, which otherwise seem interchangeable [#1623]
+
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
@@ -73,6 +77,9 @@ https://github.com/networkupstools/nut/milestone/8
      Resource temporarily unavailable"), which can cause practical problems
      in the field -- the driver otherwise interpreted the situation as
      `ups.status` being `OL OFF` and cut the power supply.
+   * powercom-hid subdriver: fixed `UPS.Battery.ManufacturerDate` to map
+     to `battery.mfr.date` (not `battery.date` which is the maintenance
+     replacement date) [#1644]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on

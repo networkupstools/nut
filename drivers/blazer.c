@@ -88,7 +88,7 @@ static const struct {
 
 /*
  * Do whatever we think is needed when we read a battery voltage from the UPS.
- * Basically all it does now, is guestimating the battery charge, but this
+ * Basically all it does now, is guesstimating the battery charge, but this
  * could be extended.
  */
 static double blazer_battery(const char *ptr, char **endptr)
@@ -616,7 +616,7 @@ static void blazer_initbattery(void)
 		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
 		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
 
-		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+		upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
 	}
 
 	val = getval("runtimecal");
