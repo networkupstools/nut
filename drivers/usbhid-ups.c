@@ -408,6 +408,12 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
+	/* Per  spec https://www.usb.org/sites/default/files/pdcv11.pdf (page 38):
+	 * 4.2.6 Battery Settings -> ManufacturerDate
+	 *   The date the pack was manufactured in a packed integer.
+	 *   The date is packed in the following fashion:
+	 *   (year – 1980)*512 + month*32 + day.
+	 */
 	static char buf[32];
 	long year, month, day;
 
