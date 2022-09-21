@@ -1076,7 +1076,7 @@ static item_t	voltronic_qx2nut[] = {
 	{ "ups.load",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	29,	31,	"%.0f",	0,	NULL,	NULL,	NULL },
 /*	{ "unknown.1",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	33,	37,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 /*	{ "unknown.2",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	39,	43,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
-	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	multiply_battvolt },
+	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 /*	{ "unknown.3",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	51,	55,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 	{ "ups.temperature",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	57,	61,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.type",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	63,	64,	"%s",	QX_FLAG_SEMI_STATIC,	NULL,	NULL,	voltronic_status },
