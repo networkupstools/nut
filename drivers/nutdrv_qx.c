@@ -364,7 +364,7 @@ static void	qx_initbattery(void)
 		batt_packs_known = 1;
 	}
 
-	val = dstate_getinfo("battery_voltage_reports_one_pack");
+	val = getval("battery_voltage_reports_one_pack");
 	if (val) {
 		battery_voltage_reports_one_pack = 1;
 	}
