@@ -231,7 +231,7 @@ static int	battery_voltage_reports_one_pack = 0, battery_voltage_reports_one_pac
  * This shared method can be referenced from subdriver mapping tables.
  */
 int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen) {
-	float s;
+	float s = 0;
 
 	/* Adjusted here or not, this method was called at all
 	 * and other code should not multiply again! */
