@@ -343,6 +343,18 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+	const char *quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+	if (quiet_init_ssl != NULL) {
+		if (*quiet_init_ssl == '\0'
+			|| (strncmp(quiet_init_ssl, "true", 4)
+			&&  strncmp(quiet_init_ssl, "TRUE", 4)
+			&&  strncmp(quiet_init_ssl, "1", 1) )
+		) {
+			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+			quiet_init_ssl = NULL;
+		}
+	}
+
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
 		return -1;
@@ -405,10 +417,18 @@ int upscli_init(int certverify, const char *certpath,
 	PK11_SetPasswordFunc(nss_password_callback);
 
 	if (certpath) {
-		upslogx(LOG_INFO, "Init SSL with certificate database located at %s", certpath);
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "Init SSL with certificate database located at %s", certpath);
+		} else {
+			upslogx(LOG_INFO, "Init SSL with certificate database located at %s", certpath);
+		}
 		status = NSS_Init(certpath);
 	} else {
-		upslogx(LOG_NOTICE, "Init SSL without certificate database");
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "Init SSL without certificate database");
+		} else {
+			upslogx(LOG_NOTICE, "Init SSL without certificate database");
+		}
 		status = NSS_NoDB_Init(NULL);
 	}
 	if (status != SECSuccess) {
