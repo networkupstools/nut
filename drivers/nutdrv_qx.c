@@ -367,6 +367,28 @@ static void	qx_initbattery(void)
 	val = getval("battery_voltage_reports_one_pack");
 	if (val) {
 		battery_voltage_reports_one_pack = 1;
+		/* If we already have a battery.voltage reading from the device,
+		 * it is not yet "adjusted" to consider the multiplication for
+		 * packs (if known; if not - the guesswork and call below for
+		 * qx_battery() should take care of it). Note that it is only
+		 * a few lines above that we might have learned the user-set
+		 * amount of battery packs and that they know the device only
+		 * reports a single pack voltage in the protocol.
+		 * Even if the qx_multiply_battvolt() method was called before
+		 * and set the battery_voltage_reports_one_pack_considered flag,
+		 * it is not too relevant until now *for maths*. However it is
+		 * important to know that the mapping table for this subdriver
+		 * does reference the adjustment method at all (which it would
+		 * encounter and set the flag while querying battery.voltage
+		 * from device and having a non-NULL reading now).
+		 */
+		if (battery_voltage_reports_one_pack_considered) {
+			val = dstate_getinfo("battery.voltage");
+			if (val && batt_packs_known && batt.packs > 1) {
+				batt.volt.act = strtod(val, NULL) * batt.packs;
+				dstate_setinfo("battery.voltage", "%.2f", batt.volt.act);
+			}
+		}
 	}
 
 	/* Guesstimation: init values if not provided by device/overrides */
