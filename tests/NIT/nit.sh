@@ -31,6 +31,9 @@ LANG=C
 LC_ALL=C
 export TZ LANG LC_ALL
 
+NUT_QUIET_INIT_SSL="true"
+export NUT_QUIET_INIT_SSL
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2

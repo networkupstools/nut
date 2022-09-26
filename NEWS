@@ -150,6 +150,10 @@ https://github.com/networkupstools/nut/milestone/8
    * added `listDeviceClients()` and `deviceGetClients(dev)` to `Client`
      classes, and `Device::getClients()` to match PyNUT capabilities [#549]
 
+ - upsclient C library:
+   * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
+     the infamous "Init SSL without certificate database" warning [#1662]
+
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
