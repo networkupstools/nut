@@ -63,6 +63,7 @@
 #include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
+#include "apc-epdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
@@ -94,6 +95,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
@@ -166,7 +168,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.22"
+#define DRIVER_VERSION		"1.23"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
