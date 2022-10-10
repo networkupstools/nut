@@ -138,8 +138,8 @@ void upsdrv_updateinfo(void)
 	upsdebugx(2, "battery.voltage %.2f", (double) h_tab_reg[50 - 1] / 10);
 	dstate_setinfo("battery.current", "%.2f", (double) h_tab_reg[52 - 1] / 10);
 	upsdebugx(2, "battery.current %.2f", (double) h_tab_reg[52 - 1] / 10);
-	dstate_setinfo("battery.runtime", "%.2f", (double) h_tab_reg[55 - 1] / 10);
-	upsdebugx(2, "battery.runtime %.2f", (double) h_tab_reg[55 - 1] / 10);
+	dstate_setinfo("battery.runtime", "%.2f", (double) h_tab_reg[55 - 1]);
+	upsdebugx(2, "battery.runtime %.2f", (double) h_tab_reg[55 - 1]);
 
 
 	if (h_tab_reg[79 - 1] == 3) {
@@ -245,7 +245,7 @@ void upsdrv_updateinfo(void)
 	if ((i_tab_reg[88 - 81] == 0)&&(i_tab_reg[81-81] == 1)) {
 		status_set("OL");
 		upsdebugx(2, "OL");
-	} else if ((i_tab_reg[88 - 81] == 1)&&(i_tab_reg[81-81] == 1)&&(h_tab_reg[55-1] < 50)) {
+	} else if ((i_tab_reg[88 - 81] == 1)&&(i_tab_reg[81-81] == 1)&&(h_tab_reg[55-1] < 5)) {
 		status_set("LB");
 		upsdebugx(2, "LB");
 	} else if ((i_tab_reg[88 - 81] == 1)&&(i_tab_reg[81-81] == 1)) {
