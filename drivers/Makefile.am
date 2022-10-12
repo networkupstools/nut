@@ -231,7 +231,7 @@ mge_shut_LDADD = $(LDADD) -lm
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
 # by vendor too) to ease maintenance and codebase fork resynchronisations
 snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
- apc-mib.c apc-pdu-mib.c \
+ apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
  baytech-mib.c bestpower-mib.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
@@ -339,7 +339,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
- apc-pdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
+ apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
  hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h
 
