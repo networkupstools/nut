@@ -60,41 +60,48 @@ static snmp_info_t apc_epdu_mib[] = {
 	{ "device.version", ST_FLAG_STRING, SU_INFOSIZE, " .1.3.6.1.4.1.318.1.1.30.2.1.1.3.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* Input */
-	/* ePDUDeviceStatusActivePower.1 = INTEGER: 785 */
-	{ "input.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.2.1.1.7.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
-	/* FIXME: Take first phase for global */
-	/* ePDUPhaseStatusVoltage.1 = INTEGER: 2304 */
-	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
 	/* ePDUPhaseTableSize = INTEGER: 1 */
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.318.1.1.30.3.0", NULL, SU_FLAG_OK, NULL },
+	/* ePDUDeviceStatusActivePower.1 = INTEGER: 785 */
+	{ "input.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.2.1.1.7.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	/* Take first phase for global if monophase */
 	/* ePDUPhaseStatusVoltage.1 = INTEGER: 2304 */
-	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
-	/* ePDUPhaseStatusVoltage.2 = INTEGER: 2304 */
-	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
-	/* ePDUPhaseStatusVoltage.3 = INTEGER: 2304 */
-	{ "input.L3-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_1, NULL },
+	/* Take first phase for global if monophase */
 	/* ePDUPhaseStatusCurrent.1 = INTEGER: 355 */
-	{ "input.L1.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_1, NULL },
+
+	/* Only if triphase */
+	/* ePDUPhaseStatusVoltage.1 = INTEGER: 2304 */
+	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
+	/* ePDUPhaseStatusVoltage.2 = INTEGER: 2304 */
+	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
+	/* ePDUPhaseStatusVoltage.3 = INTEGER: 2304 */
+	{ "input.L3-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
+	/* ePDUPhaseStatusCurrent.1 = INTEGER: 355 */
+	{ "input.L1.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusCurrent.2 = INTEGER: 355 */
-	{ "input.L2.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.L2.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusCurrent.3 = INTEGER: 355 */
-	{ "input.L3.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.L3.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusActivePower.1 = INTEGER: 785 */
-	{ "input.L1.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.L1.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusActivePower.2 = INTEGER: 785 */
-	{ "input.L2.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.L2.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.2", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusActivePower.3 = INTEGER: 785 */
-	{ "input.L3.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
+	{ "input.L3.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.6.3", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 
 	/* Outlets */
 	/* ePDUOutletTableSize.0 = INTEGER: 1 */
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.318.1.1.30.5.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* ePDUOutletStatusIndex.%i = INTEGER: 1 */
 	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.318.1.1.30.6.1.1.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_OUTLET, NULL },
+	/* ePDUOutletStatusModule.%i= INTEGER: 1 */
+	{ "outlet.%i.name",  0, 1, ".1.3.6.1.4.1.318.1.1.30.6.2.1.2.%i", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_OUTLET, NULL },
 	/* ePDUOutletStatusNumber.%i = INTEGER: 1 */
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.30.6.1.1.3.%i", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_OUTLET, NULL },
+	{ "outlet.%i.desc", 0, 1, NULL, "Outlet %i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET, NULL },
 	/* ePDUOutletStatusState.%i = INTEGER: off(1) */
-	{ "outlet.%i.status", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.30.6.1.1.4.%i", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_OUTLET, &apc_epdu_sw_outlet_status_info[0] },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.30.6.1.1.4.%i", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_OUTLET, &apc_epdu_sw_outlet_status_info[0] },
 	/* Also use this OID to determine switchability ; its presence means "yes" */
 	/* ePDUOutletStatusState.%i = INTEGER: off(1) */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.30.6.1.1.4.%i", "yes",  SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, &apc_epdu_sw_outlet_switchability_info[0] },
