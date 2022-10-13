@@ -346,7 +346,7 @@ void upsdrv_shutdown(void)
 
 	/* set shutdown and autostart delay */
 	set_delays();
-	
+
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -2294,9 +2294,6 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 	char test_OID[SU_INFOSIZE];
 	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
-	if (!su_info_p->OID)
-		return base_index;
-
 	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
 
 	/* Try to differentiate between template types which may have
@@ -2320,6 +2317,10 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
+
+	/* If no OID defined, now we can return the good index computed */
+	if (!su_info_p->OID)
+		return base_index;
 
 	if (template_index_base == -1)
 	{
