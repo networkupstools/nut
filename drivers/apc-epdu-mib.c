@@ -64,14 +64,14 @@ static snmp_info_t apc_epdu_mib[] = {
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.318.1.1.30.3.0", NULL, SU_FLAG_OK, NULL },
 	/* ePDUDeviceStatusActivePower.1 = INTEGER: 785 */
 	{ "input.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.30.2.1.1.7.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL },
-	/* Take first phase for global if monophase */
+	/* Take first phase for global if single phase */
 	/* ePDUPhaseStatusVoltage.1 = INTEGER: 2304 */
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_1, NULL },
-	/* Take first phase for global if monophase */
+	/* Take first phase for global if single phase */
 	/* ePDUPhaseStatusCurrent.1 = INTEGER: 355 */
 	{ "input.current", 0, 0.01, ".1.3.6.1.4.1.318.1.1.30.4.2.1.5.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_1, NULL },
 
-	/* Only if triphase */
+	/* Only if tree-phase */
 	/* ePDUPhaseStatusVoltage.1 = INTEGER: 2304 */
 	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.30.4.2.1.4.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_INPUT_3, NULL },
 	/* ePDUPhaseStatusVoltage.2 = INTEGER: 2304 */
