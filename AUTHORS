@@ -174,3 +174,7 @@ D: Author of bcmxcp driver, 3-phase work.
 N: Giuseppe Corbelli
 E: giuseppe.corbelli@copanitalia.com
 D: Author of asem driver
+
+N: zakx
+E: zakx@zakx.de
+D: Updating device support docs after unnecessarily writing a redundant driver first
