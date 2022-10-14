@@ -2294,7 +2294,8 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 	char test_OID[SU_INFOSIZE];
 	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
-	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
+	upsdebugx(3, "%s: OID template = %s", __func__,
+		(su_info_p->OID ? su_info_p->OID : "<null>") );
 
 	/* Try to differentiate between template types which may have
 	 * different indexes ; and store it to not redo it again */
