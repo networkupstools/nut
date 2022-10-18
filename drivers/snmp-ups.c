@@ -1156,7 +1156,20 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
-			numerr = 0;
+			/* Checked the "type" field of the returned varbind if it is a type error
+			 * exception (only applicable with SNMPv2 or SNMPv3 protocol) */
+			if (response->variables->type == SNMP_NOSUCHOBJECT ||
+			    response->variables->type == SNMP_NOSUCHINSTANCE ||
+			    response->variables->type == SNMP_ENDOFMIBVIEW) {
+				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				snmp_free_pdu(response);
+				break;
+			}
+			else {
+				/* no error */
+				numerr = 0;
+			}
 		}
 
 		nb_iteration++;
