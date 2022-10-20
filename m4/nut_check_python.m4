@@ -40,7 +40,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AS_IF([test -n "${PYTHON}"], [
             AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
                 [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"],
-                [AC_MSG_WARN([Version reported by ${PYTHON} was not suitable])
+                [AC_MSG_WARN([Version reported by ${PYTHON} was not suitable as python])
                  PYTHON=no])
             ])
 
@@ -104,7 +104,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AS_IF([test -n "${PYTHON2}"], [
             AS_IF([test x"`$PYTHON2 -c 'import sys; print (sys.version_info >= (2, 6) and sys.version_info < (3, 0))'`" = xTrue],
                 [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print (sys.version_info)'`)"],
-                [AC_MSG_WARN([Version reported by ${PYTHON2} was not suitable])
+                [AC_MSG_WARN([Version reported by ${PYTHON2} was not suitable as python2])
                  PYTHON2=no])
             ])
 
@@ -168,7 +168,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AS_IF([test -n "${PYTHON3}"], [
             AS_IF([test x"`$PYTHON3 -c 'import sys; print (sys.version_info >= (3, 0))'`" = xTrue],
                 [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"],
-                [AC_MSG_WARN([Version reported by ${PYTHON3} was not suitable])
+                [AC_MSG_WARN([Version reported by ${PYTHON3} was not suitable as python3])
                  PYTHON3=no])
             ])
 
