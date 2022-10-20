@@ -99,6 +99,8 @@ https://github.com/networkupstools/nut/milestone/8
    * IETF MIB mapping updated for data points where negative readings
      are invalid [#1558]
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
+   * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
+     in the middle has a type error [#1682]
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
