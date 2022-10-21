@@ -2,8 +2,8 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf"
- * and "http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -24,20 +24,33 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+
 #include <string.h>
 #include <stdint.h>
 
-#include "config.h"
+#ifdef WIN32
+# include "wincompat.h"
+#endif
+
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+/*
+// The serial driver has no need for HID structures/code currently
+// (maybe there is/was a plan for sharing something between siblings).
+// Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
+*/
 #include "common.h" /* for upsdebugx() etc */
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.07"
+
+#define DEFAULT_OFFDELAY   5
+#define DEFAULT_BOOTDELAY  5
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -57,26 +70,33 @@ static uint8_t typeRielloProtocol;
 static uint8_t input_monophase;
 static uint8_t output_monophase;
 
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+
 static TRielloData DevData;
 
 /**********************************************************************
- * char_read (char *bytes, int size, int read_timeout)
+ * char_read (char *bytes, size_t size, int read_timeout)
  *
  * reads size bytes from the serial port
  *
- * bytes	  			- buffer to store the data
+ * bytes			- buffer to store the data
  * size				- size of the data to get
  * read_timeout 	- serial timeout (in milliseconds)
  *
  * return -1 on error, -2 on timeout, nb_bytes_readen on success
  *
+ * See also select_read() in common.c (TODO: standardize codebase)
+ *
  *********************************************************************/
-static int char_read (char *bytes, int size, int read_timeout)
+static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 {
+	ssize_t readen = 0;
+
+#ifndef WIN32
+	int rc = 0;
 	struct timeval serial_timeout;
 	fd_set readfs;
-	int readen = 0;
-	int rc = 0;
 
 	FD_ZERO (&readfs);
 	FD_SET (upsfd, &readfs);
@@ -89,7 +109,30 @@ static int char_read (char *bytes, int size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		int now = read (upsfd, bytes, size - readen);
+#else
+		DWORD timeout;
+		COMMTIMEOUTS TOut;
+
+		timeout = read_timeout;	/* recast */
+
+		GetCommTimeouts(upsfd, &TOut);
+		TOut.ReadIntervalTimeout = MAXDWORD;
+		TOut.ReadTotalTimeoutMultiplier = 0;
+		TOut.ReadTotalTimeoutConstant = timeout;
+		SetCommTimeouts(upsfd, &TOut);
+#endif
+
+		ssize_t now;
+#ifndef WIN32
+		now = read (upsfd, bytes, size - (size_t)readen);
+#else
+		/* FIXME? for some reason this compiles, but the first
+		 * arg to the method should be serial_handler_t* - not
+		 * a HANDLE as upsfd is (in main.c)... then again, many
+		 * other drivers seem to use it just fine...
+		 */
+		now = w32_serial_read(upsfd, bytes, size - (size_t)readen, timeout);
+#endif
 
 		if (now < 0) {
 			return -1;
@@ -97,10 +140,12 @@ static int char_read (char *bytes, int size, int read_timeout)
 		else {
 			readen += now;
 		}
+#ifndef WIN32
 	}
 	else {
 		return -1;
 	}
+#endif
 	return readen;
 }
 
@@ -114,12 +159,12 @@ static int char_read (char *bytes, int size, int read_timeout)
  * returns 0 on success, -1 on error, -2 on timeout
  *
  **********************************************************************/
-static int serial_read (int read_timeout, unsigned char *readbuf)
+static ssize_t serial_read (int read_timeout, unsigned char *readbuf)
 {
 	static unsigned char cache[512];
 	static unsigned char *cachep = cache;
 	static unsigned char *cachee = cache;
-	int recv;
+	ssize_t recv;
 	*readbuf = '\0';
 
 	/* if still data in cache, get it */
@@ -383,8 +428,11 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -461,8 +509,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -511,8 +563,12 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ipv;
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -744,6 +800,14 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("test.battery.start");
 
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", 3);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
+	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.reboot", 3);
+
+
 	if (typeRielloProtocol == DEV_RIELLOGPSER)
 		dstate_addcmd("test.panel.start");
 
@@ -796,9 +860,14 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+
+	if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
+		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	}
+
+	if (DevData.Tsystem < 0xFF)
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);

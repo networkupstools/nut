@@ -19,11 +19,16 @@
 
 #include "common.h"
 
+#ifndef WIN32
 #include <netdb.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "cgilib.h"
 #include "parseconf.h"
@@ -44,7 +49,7 @@ static char	*monups, *username, *password, *function, *upscommand;
 /* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
 static int	magic_string_set = 0;
 
-static	int	port;
+static	uint16_t	port;
 static	char	*upsname, *hostname;
 static	UPSCONN_t	ups;
 
@@ -163,7 +168,7 @@ static void do_hidden(const char *next)
 }
 
 /* generate SELECT chooser from hosts.conf entries */
-static void upslist_arg(int numargs, char **arg)
+static void upslist_arg(size_t numargs, char **arg)
 {
 	if (numargs < 3)
 		return;
@@ -350,7 +355,7 @@ static void upsd_connect(void)
 static void print_cmd(const char *cmd)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -373,7 +378,7 @@ static void print_cmd(const char *cmd)
 static void showcmds(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -410,7 +415,7 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %u args, need at least 3)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 3)\n", numa);
 
 			return;
 		}
@@ -617,7 +622,7 @@ static void docmd(void)
 static const char *get_data(const char *type, const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -655,7 +660,7 @@ static void do_string(const char *varname, int maxlen)
 static void do_enum(const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer, *val;
 	const	char	*query[4], *tmp;
 
@@ -697,7 +702,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %u args, need at least 4)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 4)\n", numa);
 
 			free(val);
 			return;
@@ -720,7 +725,7 @@ static void do_enum(const char *varname)
 static void do_type(const char *varname)
 {
 	int	ret;
-	unsigned int	i, numq, numa;
+	size_t	i, numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -750,7 +755,9 @@ static void do_type(const char *varname)
 			/* split out the :<len> data */
 			ptr = strchr(answer[i], ':');
 			*ptr++ = '\0';
-			len = strtol(ptr, (char **) NULL, 10);
+			long l = strtol(ptr, (char **) NULL, 10);
+			assert(l <= 127);	/* FIXME: Loophole about longer numbers? Why are we limited to char at all here? */
+			len = (char)l;
 
 			do_string(varname, len);
 			return;
@@ -796,7 +803,7 @@ static void showsettings(void)
 static void showsettings(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer, *desc = NULL;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;

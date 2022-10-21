@@ -15,8 +15,9 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver was developed for the Enterprise Nxx and Bxx models. Other
-Microdowell models may work, too.
+
+This driver was developed for the Enterprise Nxx and Bxx models.
+Other Microdowell models may work, too.
 
 EXTRA ARGUMENTS
 ---------------
@@ -26,6 +27,7 @@ linkman:ups.conf[5].
 
 AUTHOR
 ------
+
 Elio Corbolante <eliocor@microdowell.com>
 
 SEE ALSO
@@ -33,8 +35,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

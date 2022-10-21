@@ -24,7 +24,7 @@
 
 #include "eaton-ats30-mib.h"
 
-#define EATON_ATS30_MIB_VERSION  "0.02"
+#define EATON_ATS30_MIB_VERSION  "0.03"
 
 #define EATON_ATS30_SYSOID       ".1.3.6.1.4.1.534.10.1"
 #define EATON_ATS30_MODEL        ".1.3.6.1.4.1.534.10.1.2.1.0"

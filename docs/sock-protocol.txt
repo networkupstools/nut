@@ -185,6 +185,7 @@ INSTCMD
 	INSTCMD load.on 10 TRACKING 1bd31808-cb49-4aec-9d75-d056e6f018d2
 
 NOTE:
+
 * <cmdparam> is an additional and optional parameter for the command,
 * "TRACKING <id>" can be provided to track commands execution status, if
 TRACKING was set to ON on upsd. In this case, driver will later return
@@ -199,6 +200,7 @@ SET
 	SET ups.id "Data room" TRACKING 2dedb58a-3b91-4fab-831f-c8af4b90760a
 
 NOTE:
+
 * "TRACKING <id>" can be provided to track commands execution status, if
 TRACKING was set to ON on upsd. In this case, driver will later return
 the execution status, using TRACKING.

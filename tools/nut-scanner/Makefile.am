@@ -7,25 +7,66 @@ NUT_SCANNER_DEPS_C =
 NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 BUILT_SOURCES = $(NUT_SCANNER_DEPS)
+CLEANFILES = $(BUILT_SOURCES)
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
-$(NUT_SCANNER_DEPS):
-	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
+$(NUT_SCANNER_DEPS): dummy
+	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
-# Only build nut-scanner, and its library, if libltdl was found (required!)
-if WITH_LIBLTDL
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la: dummy
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# do not hard depend on '../include/nut_version.h', since it blocks
+# 'dist', and is only required for actual build, in which case
+# BUILT_SOURCES (in ../include) will ensure nut_version.h will
+# be built before anything else
+nut-scanner.c: $(top_builddir)/include/nut_version.h
+
+LINKED_SOURCE_FILES =
+
+# Separate the .deps of other dirs from this one
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+LINKED_SOURCE_FILES += serial.c
+serial.c: $(top_srcdir)/drivers/serial.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
+
+LINKED_SOURCE_FILES += bcmxcp_ser.c
+bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
+
+CLEANFILES += $(LINKED_SOURCE_FILES)
+BUILT_SOURCES += $(LINKED_SOURCE_FILES)
+
+$(top_builddir)/include/nut_version.h:
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+if WITH_NUT_SCANNER
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
-			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			../../drivers/serial.c \
-			../../drivers/bcmxcp_ser.c \
-			../../common/common.c ../../common/str.c
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
+nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
+libnutscan_la_LIBADD = $(NETLIBS)
+if WITH_LIBLTDL
+libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
+endif
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+
+# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
+libnutscan_la_LDFLAGS = $(SERLIBS)
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LDFLAGS += -no-undefined
+endif
+
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -33,12 +74,24 @@ libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0 -export-symbols-regex ^nutscan_
-libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+libnutscan_la_LDFLAGS += -version-info 2:0:0
+
+# libnutscan exported symbols regex
+# WARNING: Since the library includes parts of libcommon (as much as needed
+# e.g. for logging or string manipulations), we export a few symbols from
+# those too. This may cause issues for (third-party) code development that
+# would use both libnutscan and libcommon or similar libs. Here we did have
+# a problem with nut-scanner using two copies of common.c and conflicting
+# copies of "nut_debug_level" making fun of our debug-logging attempts.
+# One solution to tackle if needed for those cases would be to make some
+# dynamic/shared libnutcommon (etc.)
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
+libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
+			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = ../../common/libcommon.la libnutscan.la
+nut_scanner_LDADD = libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
@@ -47,9 +100,23 @@ endif
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
 endif
+# Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
-endif
+if    WITH_SNMP_STATIC
+    # MinGW builds of libnetsnmp are static-only, so we link it in:
+    libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
+    # Some workarouds here, to avoid libtool bailing out like this:
+    # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
+    # *** I have the capability to make that library automatically link in when
+    # *** you link to this library.  But I can only do this if you have a
+    # *** shared version of the library, which you do not appear to have.
+    # Note that LIBNETSNMP_LIBS prepared by nut_check_libnetsnmp.m4 for such
+    # builds particularly WITH_SNMP_STATIC is special (with -Wl passthrough,
+    # and for that automake requires LDFLAGS not LIBADD):
+    libnutscan_la_LDFLAGS += $(LIBNETSNMP_LIBS)
+endif WITH_SNMP_STATIC
+endif WITH_SNMP
 if WITH_NEON
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
 endif
@@ -63,10 +130,19 @@ endif
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
+# Optionally deliverable as part of NUT public API:
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
-CLEANFILES = $(BUILT_SOURCES)
+dummy:
+
+CLEANFILES += *-spellchecked
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

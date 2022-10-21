@@ -4,6 +4,7 @@
  *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2020 - 2022	Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.5"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.7"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -48,7 +49,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static char powercom_scratch_buf[32];
@@ -67,9 +68,18 @@ static double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
 	uint16_t	val, command;
+	int iv;
 
-	val = atoi(value ? value : s) / 60;
-	command = ((val << 8) + (val >> 8));
+	iv = atoi(value ? value : s) / 60;
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
+		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+		return 0;
+	}
+
+	/* COMMENTME: What are we doing here, a byte-swap in the word? */
+	val = (uint16_t)iv;
+	command =  (uint16_t)(val << 8);
+	command += (uint16_t)(val >> 8);
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
@@ -93,10 +103,17 @@ static double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
+	int iv;
 
-	val = atoi(value ? value : s);
+	iv = atoi(value ? value : s);
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
+		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+		return 0;
+	}
+
+	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((val % 60) << 8) + (val / 60);
+	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
 	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
@@ -111,10 +128,17 @@ static double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
+	int iv;
 
-	val = atoi(value ? value : s);
+	iv = atoi(value ? value : s);
+	if (iv < 0 || (intmax_t)iv > (intmax_t)UINT16_MAX) {
+		upsdebugx(0, "%s: value = %d is not in uint16_t range", __func__, iv);
+		return 0;
+	}
+
+	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((val % 60) << 8) + (val / 60);
+	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
 	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
@@ -347,7 +371,7 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-	{ "battery.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
+	{ "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 /*	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL }, */
 /*	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL }, */
@@ -422,6 +446,7 @@ static hid_info_t powercom_hid2nut[] = {
 /*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, is always 255 */
 	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
 	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", 0, NULL },	
 	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
 /*	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL }, */
 	{ "input.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomFrequency", NULL, "%.0f", 0, NULL },
@@ -526,4 +551,5 @@ subdriver_t powercom_subdriver = {
 	powercom_format_model,
 	powercom_format_mfr,
 	powercom_format_serial,
+	fix_report_desc,
 };

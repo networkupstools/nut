@@ -22,13 +22,16 @@
 #include "main.h"
 #include "parseconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -41,8 +44,8 @@ upsdrv_info_t upsdrv_info = {
 
 static struct {
 	struct {
-		int	start;
-		int	shutdown;
+		long	start;
+		long	shutdown;
 	} timer;
 	char	status[ST_MAX_VALUE_LEN];
 } ups = { { -1, -1 }, "WAIT" };
@@ -59,16 +62,22 @@ static struct {
 } battery = { { 0, 0 }, { 0, 0 } };
 
 static int	dumpdone = 0, online = 1, outlet = 1;
-static int	offdelay = 120, ondelay = 30;
+static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0,
-		last_ping = 0, last_connfail = 0;
+		last_ping = 0;
+#ifndef WIN32
+static time_t last_connfail = 0;
+#else
+static char	read_buf[SMALLBUF];
+static OVERLAPPED read_overlapped;
+#endif
 
 static int instcmd(const char *cmdname, const char *extra);
 
 
-static int parse_args(int numargs, char **arg)
+static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
 		return 0;
@@ -156,21 +165,39 @@ static int parse_args(int numargs, char **arg)
 }
 
 
-static int sstate_connect(void)
+static TYPE_FD sstate_connect(void)
 {
-	int	ret, fd;
+	TYPE_FD	fd;
+
+#ifndef WIN32
+	ssize_t	ret;
+	int	len;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
-	snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+	len = snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s", dflt_statepath(), device_path);
+
+	if (len < 0) {
+		fatalx(EXIT_FAILURE, "Can't create a unix domain socket: "
+			"failed to prepare the pathname");
+	}
+	if ((uintmax_t)len >= (uintmax_t)sizeof(sa.sun_path)) {
+		fatalx(EXIT_FAILURE,
+			"Can't create a unix domain socket: pathname '%s/%s' "
+			"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
+			"on this system (%" PRIuSIZE ")",
+			dflt_statepath(), device_path,
+			strlen(dflt_statepath()) + 1 + strlen(device_path),
+			sizeof(sa.sun_path));
+	}
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		upslog_with_errno(LOG_ERR, "Can't create socket for UPS [%s]", device_path);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
@@ -184,13 +211,13 @@ static int sstate_connect(void)
 		time(&now);
 
 		if (difftime(now, last_connfail) < 60) {
-			return -1;
+			return ERROR_FD;
 		}
 
 		last_connfail = now;
 
 		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_GETFL, 0);
@@ -198,7 +225,7 @@ static int sstate_connect(void)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
@@ -206,7 +233,7 @@ static int sstate_connect(void)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
 	/* get a dump started so we have a fresh set of data */
@@ -215,9 +242,55 @@ static int sstate_connect(void)
 	if (ret != (int)strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", device_path);
 		close(fd);
-		return -1;
+		return ERROR_FD;
 	}
 
+	/* continued below... */
+#else /* WIN32 */
+	char		pipename[SMALLBUF];
+	const char	*dumpcmd = "DUMPALL\n";
+	BOOL		result = FALSE;
+
+	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
+
+	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
+
+	if (result == FALSE) {
+		return ERROR_FD;
+	}
+
+	fd = CreateFile(
+			pipename,	/* pipe name */
+			GENERIC_READ |	/* read and write access */
+			GENERIC_WRITE,
+			0,		/* no sharing */
+			NULL,		/* default security attributes FIXME */
+			OPEN_EXISTING,	/* opens existing pipe */
+			FILE_FLAG_OVERLAPPED,	/*  enable async IO */
+			NULL);		/* no template file */
+
+	if (fd == INVALID_HANDLE_VALUE) {
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
+		return ERROR_FD;
+	}
+
+	/* get a dump started so we have a fresh set of data */
+	DWORD bytesWritten = 0;
+
+	result = WriteFile (fd,dumpcmd,strlen(dumpcmd),&bytesWritten,NULL);
+	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
+		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", device_path);
+		CloseHandle(fd);
+		return ERROR_FD;
+	}
+
+	/* Start a read IO so we could wait on the event associated with it */
+	ReadFile(fd, read_buf,
+		sizeof(read_buf) - 1, /*-1 to be sure to have a trailling 0 */
+		NULL, &(read_overlapped));
+#endif
+
+	/* sstate_connect() continued for both platforms: */
 	pconf_init(&sock_ctx, NULL);
 
 	time(&last_heard);
@@ -234,26 +307,46 @@ static int sstate_connect(void)
 
 static void sstate_disconnect(void)
 {
-	if (upsfd < 0) {
+	if (INVALID_FD(upsfd)) {
+		/* Already disconnected... or not yet? ;) */
 		return;
 	}
 
 	pconf_finish(&sock_ctx);
 
+#ifndef WIN32
 	close(upsfd);
-	upsfd = -1;
+#else
+	CloseHandle(upsfd);
+#endif
+
+	upsfd = ERROR_FD;
 }
 
 
 static int sstate_sendline(const char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 
-	if (upsfd < 0) {
+	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
+#ifndef WIN32
 	ret = write(upsfd, buf, strlen(buf));
+#else
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+
+	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+
+	if (result == 0) {
+		ret = 0;
+	}
+	else {
+		ret = (int)bytesWritten;
+	}
+#endif
 
 	if (ret == (int)strlen(buf)) {
 		return 0;
@@ -266,10 +359,12 @@ static int sstate_sendline(const char *buf)
 
 static int sstate_readline(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
+#ifndef WIN32
 	char	buf[SMALLBUF];
 
-	if (upsfd < 0) {
+	if (INVALID_FD(upsfd)) {
 		return -1;	/* failed */
 	}
 
@@ -287,6 +382,17 @@ static int sstate_readline(void)
 			return -1;
 		}
 	}
+#else
+	if (INVALID_FD(upsfd)) {
+		return -1;	/* failed */
+	}
+
+	/* FIXME? I do not see this buf or read_buf filled below */
+	char *buf = read_buf;
+	DWORD bytesRead;
+	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
+	ret = bytesRead;
+#endif
 
 	for (i = 0; i < ret; i++) {
 
@@ -318,7 +424,7 @@ static int sstate_dead(int maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (upsfd < 0) {
+	if (INVALID_FD(upsfd)) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", device_path);
 		return -1;	/* dead */
 	}
@@ -436,11 +542,11 @@ void upsdrv_initinfo(void)
 		battery.runtime.low = strtod(val, NULL);
 	}
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
-	dstate_setinfo("ups.delay.start", "%d", ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", ondelay);
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -515,8 +621,8 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	dstate_setinfo("ups.timer.shutdown", "%d", ups.timer.shutdown);
-	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
+	dstate_setinfo("ups.timer.shutdown", "%ld", ups.timer.shutdown);
+	dstate_setinfo("ups.timer.start", "%ld", ups.timer.start);
 
 	last_poll = now;
 }

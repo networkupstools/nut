@@ -1,6 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2021-2022  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,11 +21,20 @@
 #include "common.h"
 
 #include <ctype.h>
+#ifndef WIN32
 #include <syslog.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/un.h>
+#else
+#include <wincompat.h>
+#endif
+
 #include <dirent.h>
+#if !HAVE_REALPATH
+# include <sys/stat.h>
+#endif
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -35,7 +45,6 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 #include <stdio.h>
-#include <limits.h>
 
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
@@ -47,6 +56,39 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #  undef BUILD_64
 # endif
 #endif
+
+/* https://stackoverflow.com/a/12844426/4715872 */
+#include <sys/types.h>
+#include <limits.h>
+#include <stdlib.h>
+pid_t get_max_pid_t()
+{
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
+	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
+	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */
+# if defined(LLONG_MAX)  /* since C99 */
+	if (sizeof(pid_t) == sizeof(long long)) return (pid_t)LLONG_MAX;
+# endif
+#endif
+	abort();
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+}
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -77,6 +119,7 @@ void syslogbit_set(void)
 /* get the syslog ready for us */
 void open_syslog(const char *progname)
 {
+#ifndef WIN32
 	int	opt;
 
 	opt = LOG_PID;
@@ -116,7 +159,7 @@ void open_syslog(const char *progname)
 		setlogmask(LOG_UPTO(LOG_DEBUG));	/* debug-level messages */
 		break;
 	default:
-                fatalx(EXIT_FAILURE, "Invalid log level threshold");
+		fatalx(EXIT_FAILURE, "Invalid log level threshold");
 #else
 	case 0:
 		break;
@@ -125,11 +168,15 @@ void open_syslog(const char *progname)
 		break;
 #endif
 	}
+#else
+	EventLogName = progname;
+#endif
 }
 
 /* close ttys and become a daemon */
 void background(void)
 {
+#ifndef WIN32
 	int	pid;
 
 	if ((pid = fork()) < 0)
@@ -161,12 +208,18 @@ void background(void)
 	setsid();		/* make a new session to dodge signals */
 #endif
 
+#else /* WIN32 */
+	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	xbit_clear(&upslog_flags, UPSLOG_STDERR);
+#endif
+
 	upslogx(LOG_INFO, "Startup successful");
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name)
 {
+#ifndef WIN32
 	struct passwd *r;
 	errno = 0;
 	if ((r = getpwnam(name)))
@@ -179,13 +232,41 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
+#else
+	NUT_UNUSED_VARIABLE(name);
+#endif /* WIN32 */
 
-	return NULL;  /* to make the compiler happy */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+#pragma GCC diagnostic ignored "-Wunreachable-code-return"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+# ifdef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+#  pragma clang diagnostic ignored "-Wunreachable-code-return"
+# endif
+#endif
+	/* Oh joy, adding unreachable "return" to make one compiler happy,
+	 * and pragmas around to make other compilers happy, all at once! */
+	return NULL;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN) )
+#pragma GCC diagnostic pop
+#endif
 }
 
 /* change to the user defined in the struct */
 void become_user(struct passwd *pw)
 {
+#ifndef WIN32
 	/* if we can't switch users, then don't even try */
 	if ((geteuid() != 0) && (getuid() != 0))
 		return;
@@ -202,6 +283,9 @@ void become_user(struct passwd *pw)
 
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
+#else
+	NUT_UNUSED_VARIABLE(pw);
+#endif
 }
 
 /* drop down into a directory and throw away pointers to the old path */
@@ -210,18 +294,45 @@ void chroot_start(const char *path)
 	if (chdir(path))
 		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
 
+#ifndef WIN32
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
+#endif
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
 	upsdebugx(1, "chrooted into %s", path);
 }
 
+#ifdef WIN32
+/* In WIN32 all non binaries files (namely configuration and PID files)
+   are retrieved relative to the path of the binary itself.
+   So this function fill "dest" with the full path to "relative_path"
+   depending on the .exe path */
+char * getfullpath(char * relative_path)
+{
+	char buf[MAX_PATH];
+	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
+		return NULL;
+	}
+
+	/* remove trailing executable name and its preceeding slash */
+	char * last_slash = strrchr(buf, '\\');
+	*last_slash = '\0';
+
+	if( relative_path ) {
+		strncat(buf, relative_path, sizeof(buf) - 1);
+	}
+
+	return(xstrdup(buf));
+}
+#endif
+
 /* drop off a pidfile for this process */
 void writepid(const char *name)
 {
+#ifndef WIN32
 	char	fn[SMALLBUF];
 	FILE	*pidf;
 	mode_t	mask;
@@ -236,64 +347,139 @@ void writepid(const char *name)
 	pidf = fopen(fn, "w");
 
 	if (pidf) {
-		fprintf(pidf, "%d\n", (int) getpid());
+		intmax_t pid = (intmax_t)getpid();
+		upsdebugx(1, "Saving PID %" PRIdMAX " into %s", pid, fn);
+		fprintf(pidf, "%" PRIdMAX "\n", pid);
 		fclose(pidf);
 	} else {
 		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);
 	}
 
 	umask(mask);
+#else
+	NUT_UNUSED_VARIABLE(name);
+#endif
 }
 
-/* open pidfn, get the pid, then send it sig */
+/* send sig to pid, returns -1 for error, or
+ * zero for a successfully sent signal
+ */
+int sendsignalpid(pid_t pid, int sig)
+{
+#ifndef WIN32
+	int	ret;
+
+	if (pid < 2 || pid > get_max_pid_t()) {
+		upslogx(LOG_NOTICE,
+			"Ignoring invalid pid number %" PRIdMAX,
+			(intmax_t) pid);
+		return -1;
+	}
+
+	/* see if this is going to work first - does the process exist? */
+	ret = kill(pid, 0);
+
+	if (ret < 0) {
+		perror("kill");
+		return -1;
+	}
+
+	if (sig != 0) {
+		/* now actually send it */
+		ret = kill(pid, sig);
+
+		if (ret < 0) {
+			perror("kill");
+			return -1;
+		}
+	}
+
+	return 0;
+#else
+	NUT_UNUSED_VARIABLE(pid);
+	NUT_UNUSED_VARIABLE(sig);
+	upslogx(LOG_ERR,
+		"%s: not implemented for Win32 and "
+		"should not have been called directly!",
+		__func__);
+	return -1;
+#endif
+}
+
+/* parses string buffer into a pid_t if it passes
+ * a few sanity checks; returns -1 on error
+ */
+pid_t parsepid(const char *buf)
+{
+	pid_t	pid = -1;
+
+	/* assuming 10 digits for a long */
+	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	if (_pid <= get_max_pid_t()) {
+		pid = (pid_t)_pid;
+	} else {
+		upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+	}
+
+	return pid;
+}
+
+/* open pidfn, get the pid, then send it sig
+ * returns negative codes for errors, or
+ * zero for a successfully sent signal
+ */
+#ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	long	pid;
-	int	ret;
+	pid_t	pid = -1;
+	int	ret = -1;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
 		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
-		return -1;
+		return -3;
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
-		return -1;
+		return -2;
 	}
+	/* TOTHINK: Original code only closed pidf before
+	 * exiting the method, on error or "normally".
+	 * Why not here? Do we want an (exclusive?) hold
+	 * on it while being active in the method?
+	 */
 
-	pid = strtol(buf, (char **)NULL, 10);
+	/* this method actively reports errors, if any */
+	pid = parsepid(buf);
 
-	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %ld", pid);
-		fclose(pidf);
-		return -1;
-	}
-
-	/* see if this is going to work first */
-	ret = kill(pid, 0);
-
-	if (ret < 0) {
-		perror("kill");
-		fclose(pidf);
-		return -1;
-	}
-
-	/* now actually send it */
-	ret = kill(pid, sig);
-
-	if (ret < 0) {
-		perror("kill");
-		fclose(pidf);
-		return -1;
+	if (pid >= 0) {
+		/* this method actively reports errors, if any */
+		ret = sendsignalpid(pid, sig);
 	}
 
 	fclose(pidf);
+	return ret;
+}
+
+#else	/* => WIN32 */
+
+int sendsignalfn(const char *pidfn, const char * sig)
+{
+	BOOL	ret;
+
+	ret = send_to_named_pipe(pidfn, sig);
+
+	if (ret != 0) {
+		return -1;
+	}
+
 	return 0;
 }
+#endif	/* WIN32 */
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 {
@@ -345,6 +531,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
+#ifndef WIN32
 int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
@@ -353,10 +540,25 @@ int sendsignal(const char *progname, int sig)
 
 	return sendsignalfn(fn, sig);
 }
+#else
+int sendsignal(const char *progname, const char * sig)
+{
+	return sendsignalfn(progname, sig);
+}
+#endif
 
 const char *xbasename(const char *file)
 {
+#ifndef WIN32
 	const char *p = strrchr(file, '/');
+#else
+	const char *p = strrchr(file, '\\');
+	const char *r = strrchr(file, '/');
+	/* if not found, try '/' */
+	if( r > p ) {
+		p = r;
+	}
+#endif
 
 	if (p == NULL)
 		return file;
@@ -377,7 +579,15 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -386,11 +596,30 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
 
-	if (use_strerror)
+	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
 
+#ifdef WIN32
+		LPVOID WinBuf;
+		DWORD WinErr = GetLastError();
+		FormatMessage(
+				FORMAT_MESSAGE_MAX_WIDTH_MASK |
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL,
+				WinErr,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPTSTR) &WinBuf,
+				0, NULL );
+
+		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
+		LocalFree(WinBuf);
+#endif
+	}
+
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0 };
+		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
@@ -413,27 +642,39 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		syslog(priority, "%s", buf);
 }
 
+
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-	const char * path;
+	const char *path = getenv("NUT_CONFPATH");
 
-	if ((path = getenv("NUT_CONFPATH")) == NULL)
-		path = CONFPATH;
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_ETC);
+	}
+#endif
 
-	return path;
+	/* We assume, here and elsewhere, that
+	 * at least CONFPATH is always defined */
+	return (path != NULL && *path != '\0') ? path : CONFPATH;
 }
 
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-	const char * path;
+	const char *path = getenv("NUT_STATEPATH");
 
-	path = getenv("NUT_STATEPATH");
-	if ( (path == NULL) || (*path == '\0') )
-		path = STATEPATH;
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_VAR_RUN);
+	}
+#endif
 
-	return path;
+	/* We assume, here and elsewhere, that
+	 * at least STATEPATH is always defined */
+	return (path != NULL && *path != '\0') ? path : STATEPATH;
 }
 
 /* Return the alternate path for pid files, for processes running as non-root
@@ -447,8 +688,16 @@ const char * altpidpath(void)
 	const char * path;
 
 	path = getenv("NUT_ALTPIDPATH");
-	if ( (path == NULL) || (*path == '\0') )
+	if ( (path == NULL) || (*path == '\0') ) {
 		path = getenv("NUT_STATEPATH");
+
+#ifdef WIN32
+		if (path == NULL) {
+			/* fall back to built-in pathname relative to binary/workdir */
+			path = getfullpath(PATH_VAR_RUN);
+		}
+#endif
+	}
 
 	if ( (path != NULL) && (*path != '\0') )
 		return path;
@@ -456,9 +705,40 @@ const char * altpidpath(void)
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-/* We assume, here and elsewhere, that at least STATEPATH is always defined */
-	return STATEPATH;
+	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
+	return dflt_statepath();
 #endif
+}
+
+/* Die with a standard message if socket filename is too long */
+void check_unix_socket_filename(const char *fn) {
+	size_t len = strlen(fn);
+#ifdef UNIX_PATH_MAX
+	size_t max = UNIX_PATH_MAX;
+#else
+	size_t max = PATH_MAX;
+#endif
+#ifndef WIN32
+	struct sockaddr_un	ssaddr;
+	max = sizeof(ssaddr.sun_path);
+#endif
+
+	if (len < max)
+		return;
+
+	/* Avoid useless truncated pathnames that
+	 * other driver instances would conflict
+	 * with, and upsd can not discover.
+	 * Note this is quite short on many OSes
+	 * varying 104-108 bytes (UNIX_PATH_MAX)
+	 * as opposed to PATH_MAX or MAXPATHLEN
+	 * typically of a kilobyte range.
+	 */
+	fatalx(EXIT_FAILURE,
+		"Can't create a unix domain socket: pathname '%s' "
+		"is too long (%" PRIuSIZE ") for 'struct sockaddr_un->sun_path' "
+		"on this system (%" PRIuSIZE ")",
+		fn, len, max);
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */
@@ -505,10 +785,15 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
-void upsdebug_with_errno(int level, const char *fmt, ...)
+void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
+	/* Note: Thanks to macro wrapping, we do not quite need this
+	 * test now, but we still need the "level" value to report
+	 * below - when it is not zero.
+	 */
 	if (nut_debug_level < level)
 		return;
 
@@ -517,7 +802,6 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
  * of logging info he needs to see at the moment. Using '-DDDDD' all the time
  * is too brutal and needed high-level overview can be lost. This [D#] prefix
  * can help limit this debug stream quicker, than experimentally picking ;) */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -546,15 +830,15 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	va_end(va);
 }
 
-void upsdebugx(int level, const char *fmt, ...)
+void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
+	char fmt2[LARGEBUF];
 
 	if (nut_debug_level < level)
 		return;
 
 /* See comments above in upsdebug_with_errno() - they apply here too. */
-	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
 		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
@@ -586,13 +870,14 @@ void upsdebugx(int level, const char *fmt, ...)
 /* dump message msg and len bytes from buf to upsdebugx(level) in
    hexadecimal. (This function replaces Philippe Marzouk's original
    dump_hex() function) */
-void upsdebug_hex(int level, const char *msg, const void *buf, int len)
+void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[100];
 	int n;	/* number of characters currently in line */
-	int i;	/* number of bytes output from buffer */
+	size_t i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len);
+	n = snprintf(line, sizeof(line), "%s: (%" PRIuSIZE " bytes) =>", msg, len);
+	if (n < 0) goto failed;
 
 	for (i = 0; i < len; i++) {
 
@@ -603,8 +888,15 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
 			((const unsigned char *)buf)[i]);
+
+		if (n < 0) goto failed;
 	}
-	upsdebugx(level, "%s", line);
+
+	s_upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	s_upsdebugx(level, "%s", "Failed to print a hex dump for debug");
 }
 
 /* taken from www.asciitable.com */
@@ -644,29 +936,37 @@ static const char* ascii_symb[] = {
 };
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
-void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
+void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[256];
-	int i;
+	int n;	/* number of characters currently in line */
+	size_t i;	/* number of bytes output from buffer */
 	unsigned char ch;
 
 	if (nut_debug_level < level)
 		return;	/* save cpu cycles */
 
-	snprintf(line, sizeof(line), "%s", msg);
+	n = snprintf(line, sizeof(line), "%s", msg);
+	if (n < 0) goto failed;
 
 	for (i=0; i<len; ++i) {
 		ch = ((const unsigned char *)buf)[i];
 
 		if (ch < 0x20)
-			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
+			n = snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
 		else if (ch >= 0x80)
-			snprintfcat(line, sizeof(line), "%02Xh ", ch);
+			n = snprintfcat(line, sizeof(line), "%02Xh ", ch);
 		else
-			snprintfcat(line, sizeof(line), "'%c' ", ch);
+			n = snprintfcat(line, sizeof(line), "'%c' ", ch);
+
+		if (n < 0) goto failed;
 	}
 
-	upsdebugx(level, "%s", line);
+	s_upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	s_upsdebugx(level, "%s", "Failed to print an ASCII data dump for debug");
 }
 
 static void vfatal(const char *fmt, va_list va, int use_strerror)
@@ -745,6 +1045,12 @@ void *xmalloc(size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+
+#ifdef WIN32
+	/* FIXME: This is what (x)calloc() is for! */
+	memset(p, 0, size);
+#endif
+
 	return p;
 }
 
@@ -754,6 +1060,12 @@ void *xcalloc(size_t number, size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+
+#ifdef WIN32
+	/* FIXME: calloc() above should have initialized this already! */
+	memset(p, 0, size * number);
+#endif
+
 	return p;
 }
 
@@ -778,7 +1090,8 @@ char *xstrdup(const char *string)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+#ifndef WIN32
+ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -798,11 +1111,35 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const long d_s
 
 	return read(fd, buf, buflen);
 }
+#else
+ssize_t select_read(serial_handler_t *fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+{
+	/* This function is only called by serial drivers right now */
+	/* TODO: Assert below that resulting values fit in ssize_t range */
+	/* DWORD bytes_read; */
+	int res;
+	DWORD timeout;
+	COMMTIMEOUTS TOut;
+
+	timeout = (d_sec*1000) + ((d_usec+999)/1000);
+
+	GetCommTimeouts(fd->handle,&TOut);
+	TOut.ReadIntervalTimeout = MAXDWORD;
+	TOut.ReadTotalTimeoutMultiplier = 0;
+	TOut.ReadTotalTimeoutConstant = timeout;
+	SetCommTimeouts(fd->handle,&TOut);
+
+	res = w32_serial_read(fd,buf,buflen,timeout);
+
+	return res;
+}
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-ssize_t select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+#ifndef WIN32
+ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -822,7 +1159,19 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const l
 
 	return write(fd, buf, buflen);
 }
-
+#else
+/* Note: currently not implemented de-facto for Win32 */
+ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+{
+	NUT_UNUSED_VARIABLE(fd);
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(buflen);
+	NUT_UNUSED_VARIABLE(d_sec);
+	NUT_UNUSED_VARIABLE(d_usec);
+	upsdebugx(1, "WARNING: method %s() is not implemented yet for WIN32", __func__);
+	return 0;
+}
+#endif
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
  * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
@@ -839,12 +1188,12 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const l
  * communications media and/or vendor protocol.
  */
 static const char * search_paths[] = {
-	// Use the library path (and bitness) provided during ./configure first
+	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/local"LIBDIR,
 #ifdef BUILD_64
-	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
 	"/usr/lib64",
 #endif
@@ -887,41 +1236,221 @@ static const char * search_paths[] = {
 #  endif
 # endif
 #endif
+#ifdef WIN32
+	/* TODO: Track the binary program name (many platform-specific solutions,
+	 * or custom one to stash argv[0] in select programs, and derive its
+	 * dirname (with realpath and apparent path) as well as "../lib".
+	 * Perhaps a decent fallback idea for all platforms, not just WIN32.
+	 */
+	".",
+#endif
 	NULL
 };
 
-char * get_libname(const char* base_libname)
-{
+static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
+	/* Implementation detail for get_libname() below.
+	 * Returns pointer to allocated copy of the buffer
+	 * (caller must free later) if dir has lib,
+	 * or NULL otherwise.
+	 * base_libname_length is optimization to not recalculate length in a loop.
+	 * index is for search_paths[] table looping; use negative to not log dir number
+	 */
 	DIR *dp;
 	struct dirent *dirp;
-	int index = 0;
 	char *libname_path = NULL;
 	char current_test_path[LARGEBUF];
-	size_t base_libname_length = strlen(base_libname);
 
-	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
-	{
-		memset(current_test_path, 0, LARGEBUF);
+	memset(current_test_path, 0, LARGEBUF);
 
-		if ((dp = opendir(search_paths[index])) == NULL)
-			continue;
-
-		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
-		while ((dirp = readdir(dp)) != NULL)
-		{
-			upsdebugx(5,"Comparing lib %s with dirpath %s", base_libname, dirp->d_name);
-			int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
-			if(compres == 0) {
-				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
-				libname_path = realpath(current_test_path, NULL);
-				upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)", base_libname, current_test_path, (libname_path!=NULL)?libname_path:"NULL");
-				if (libname_path != NULL)
-					break;
-			}
+	if ((dp = opendir(dirname)) == NULL) {
+		if (index >= 0) {
+			upsdebugx(5,"NOT looking for lib %s in unreachable directory #%d : %s",
+				base_libname, index, dirname);
+		} else {
+			upsdebugx(5,"NOT looking for lib %s in unreachable directory : %s",
+				base_libname, dirname);
 		}
-		closedir(dp);
+		return NULL;
 	}
 
+	if (index >= 0) {
+		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, dirname);
+	} else {
+		upsdebugx(2,"Looking for lib %s in directory : %s", base_libname, dirname);
+	}
+	while ((dirp = readdir(dp)) != NULL)
+	{
+#if !HAVE_REALPATH
+		struct stat	st;
+#endif
+
+		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
+		int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+		if (compres == 0
+		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
+		) {
+			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
+#if HAVE_REALPATH
+			libname_path = realpath(current_test_path, NULL);
+#else
+			/* Just check if candidate name is (points to?) valid file */
+			libname_path = NULL;
+			if (stat(current_test_path, &st) == 0) {
+				if (st.st_size > 0) {
+					libname_path = xstrdup(current_test_path);
+				}
+			}
+
+# ifdef WIN32
+			if (!libname_path) {
+				for (char *p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
+					if (*p == '/') *p = '\\';
+				}
+				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path);
+				if (stat(current_test_path, &st) == 0) {
+					if (st.st_size > 0) {
+						libname_path = xstrdup(current_test_path);
+					}
+				}
+			}
+			if (!libname_path && strcmp(dirname, ".") == 0 && current_test_path[0] == '.' && current_test_path[1] == '\\' && current_test_path[2] != '\0') {
+				/* Seems mingw stat() only works for files in current dir,
+				 * so for others a chdir() is needed (and memorizing the
+				 * original dir, and no threading at this moment, to be safe!)
+				 * https://stackoverflow.com/a/66096983/4715872
+				 */
+				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path + 2);
+				if (stat(current_test_path + 2, &st) == 0) {
+					if (st.st_size > 0) {
+						libname_path = xstrdup(current_test_path + 2);
+					}
+				}
+			}
+# endif /* WIN32 */
+#endif  /* HAVE_REALPATH */
+
+			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
+				base_libname, current_test_path,
+				(libname_path!=NULL)?libname_path:"NULL");
+			if (libname_path != NULL)
+				break;
+		}
+	} /* while iterating dir */
+
+	closedir(dp);
+
+	return libname_path;
+}
+
+static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
+{
+	/* Note: this method iterates specified pathset,
+	 * so increments the counter by reference */
+	char *libname_path = NULL;
+	char *onedir = NULL;
+
+	if (!pathset || *pathset == '\0')
+		return NULL;
+
+	/* First call to tokenization passes the string, others pass NULL */
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+		if (libname_path != NULL)
+			break;
+	}
+
+#ifdef WIN32
+	/* Note: with mingw, the ":" separator above might have been resolvable */
+	if (!libname_path) {
+		onedir = NULL; /* probably is NULL already, but better ensure this */
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+			if (libname_path != NULL)
+				break;
+		}
+	}
+#endif  /* WIN32 */
+
+	return libname_path;
+}
+
+char * get_libname(const char* base_libname)
+{
+	int index = 0, counter = 0;
+	char *libname_path = NULL;
+	size_t base_libname_length = strlen(base_libname);
+
+	/* Normally these envvars should not be set, but if the user insists,
+	 * we should prefer the override... */
+#ifdef BUILD_64
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_64"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_64", base_libname);
+		goto found;
+	}
+#else
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_32"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_32", base_libname);
+		goto found;
+	}
+#endif
+
+	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH"), &counter);
+	if (libname_path != NULL) {
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH", base_libname);
+		goto found;
+	}
+
+	for (index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], counter++);
+		if (libname_path != NULL)
+			break;
+	}
+
+#ifdef WIN32
+	/* TODO: Need a reliable cross-platform way to get the full path
+	 * of current executable -- possibly stash it when starting NUT
+	 * programs... consider some way for `nut-scanner` too */
+# ifdef PATH_LIB
+	if (!libname_path) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
+	}
+# endif
+
+	if (!libname_path) {
+		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+	}
+#endif  /* WIN32 so far */
+
+#ifdef WIN32
+	/* Windows-specific: DLLs can be provided by common "PATH" envvar,
+	 * at lowest search priority though (after EXE dir, system, etc.) */
+	if (!libname_path) {
+		upsdebugx(2, "Looking for lib %s in PATH", base_libname);
+		libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("PATH"), &counter);
+	}
+#endif  /* WIN32 */
+
+found:
 	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
+}
+
+/* TODO: Extend for TYPE_FD and WIN32 eventually? */
+void set_close_on_exec(int fd) {
+	/* prevent fd leaking to child processes */
+#ifndef FD_CLOEXEC
+	/* Find a way, if possible at all old platforms */
+	NUT_UNUSED_VARIABLE(fd);
+#else
+# ifdef WIN32
+	/* Find a way, if possible at all (WIN32: get INT fd from the HANDLE?) */
+	NUT_UNUSED_VARIABLE(fd);
+# else
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+# endif
+#endif
 }

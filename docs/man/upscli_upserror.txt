@@ -18,7 +18,7 @@ DESCRIPTION
 
 The *upscli_upserror*() function takes the pointer 'ups' to a
 `UPSCONN_t` state structure and returns the value of the internal error
-number, if any. 
+number, if any.
 
 This is typically used to check for certain error values like
 `UPSCLI_ERR_UNKCOMMAND`.  That specific error can be used for detecting

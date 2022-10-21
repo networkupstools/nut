@@ -226,7 +226,7 @@ displays the textual OID name. For example, the following entry:
 	/* upsMIB.upsObjects.upsIdent.upsIdentModel = STRING: "Dell UPS Tower 1920W HV" */
 	{ "unmapped.upsidentmodel", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.1.0", NULL, SU_FLAG_OK, NULL },
 
-Many time, only the first field will need to be modified, to map to an actual
+Many times, only the first field will need to be modified, to map to an actual
 NUT variable name.
 
 Check the <<nut-names,NUT command and variable naming scheme>> section first

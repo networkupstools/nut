@@ -237,7 +237,7 @@ static int	mecer_process_test_battery(item_t *item, char *value, const size_t va
 {
 	const char	*protocol = dstate_getinfo("ups.firmware.aux");
 	char		buf[SMALLBUF] = "";
-	int		min, test_time;
+	long		min, test_time;
 
 	/* Voltronic P98 units -> Accepted values for test time: .2 -> .9 (.2=12sec ..), 01 -> 99 (minutes) -> range = [12..5940] */
 	if (protocol && !strcasecmp(protocol, "Voltronic Power P98"))
@@ -251,10 +251,12 @@ static int	mecer_process_test_battery(item_t *item, char *value, const size_t va
 		return -1;
 	}
 
-	test_time = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
+	test_time = (strlen(value) > 0) ? strtol(value, NULL, 10) : 600;
 
 	if ((test_time < min) || (test_time > 5940)) {
-		upslogx(LOG_ERR, "%s: battery test time '%d' out of range [%d..5940] seconds", item->info_type, test_time, min);
+		upslogx(LOG_ERR,
+			"%s: battery test time '%ld' out of range [%ld..5940] seconds",
+			item->info_type, test_time, min);
 		return -1;
 	}
 
@@ -262,13 +264,13 @@ static int	mecer_process_test_battery(item_t *item, char *value, const size_t va
 	if (test_time < 60) {
 
 		test_time = test_time / 6;
-		snprintf(buf, sizeof(buf), ".%d", test_time);
+		snprintf(buf, sizeof(buf), ".%ld", test_time);
 
 	/* test time > 1 minute */
 	} else {
 
 		test_time = test_time / 60;
-		snprintf(buf, sizeof(buf), "%02d", test_time);
+		snprintf(buf, sizeof(buf), "%02ld", test_time);
 
 	}
 

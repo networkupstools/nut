@@ -41,7 +41,7 @@ extern "C" {
 	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
 
 typedef enum nutscan_device_type {
-	TYPE_NONE=0,
+	TYPE_NONE = 0,
 	TYPE_USB,
 	TYPE_SNMP,
 	TYPE_XML,
@@ -72,7 +72,7 @@ typedef struct nutscan_device {
 
 nutscan_device_t * nutscan_new_device(void);
 void nutscan_free_device(nutscan_device_t * device);
-void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value);
+void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
 
 /**

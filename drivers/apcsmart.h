@@ -24,7 +24,7 @@
 #define NUT_APCSMART_H_SEEN 1
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.1"
+#define DRIVER_VERSION	"3.2"
 
 #define ALT_CABLE_1 "940-0095B"
 
@@ -69,6 +69,10 @@
  * furthermore, since the canonical/non-canonical mode is user selectable now,
  * we have to ignore this character explicitly
  */
+
+#ifndef WIN32
+#include <sys/ioctl.h>
+#endif
 
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF (and CR, but it's IGNCRed) */
@@ -126,14 +130,14 @@
 
 /* status bits */
 
-#define APC_STAT_CAL   (1 << 0)        /* calibration */
-#define APC_STAT_TRIM  (1 << 1)        /* SmartTrim */
-#define APC_STAT_BOOST (1 << 2)        /* SmartBoost */
-#define APC_STAT_OL    (1 << 3)        /* on line */
-#define APC_STAT_OB    (1 << 4)        /* on battery */
-#define APC_STAT_OVER  (1 << 5)        /* overload */
-#define APC_STAT_LB    (1 << 6)        /* low battery */
-#define APC_STAT_RB    (1 << 7)        /* replace battery */
+#define APC_STAT_CAL   (1L << 0)        /* calibration */
+#define APC_STAT_TRIM  (1L << 1)        /* SmartTrim */
+#define APC_STAT_BOOST (1L << 2)        /* SmartBoost */
+#define APC_STAT_OL    (1L << 3)        /* on line */
+#define APC_STAT_OB    (1L << 4)        /* on battery */
+#define APC_STAT_OVER  (1L << 5)        /* overload */
+#define APC_STAT_LB    (1L << 6)        /* low battery */
+#define APC_STAT_RB    (1L << 7)        /* replace battery */
 
 /*
  * serial protocol: special commands - initialization and such
@@ -163,13 +167,5 @@
 
 /* cshdelay format */
 #define APC_CSHDFMT	"^([0-9]\\.?|[0-9]?\\.[0-9])$"
-
-/* error logging/debug related macros */
-
-#define fatx(fmt, ...) fatalx(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
-#define fate(fmt, ...) fatal_with_errno(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
-
-#define logx(lev, fmt, ...) upslogx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
-#define debx(lev, fmt, ...) upsdebugx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
 
 #endif  /* NUT_APCSMART_H_SEEN */

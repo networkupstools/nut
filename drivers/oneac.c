@@ -41,13 +41,14 @@
 #include "main.h"
 #include "serial.h"
 #include "oneac.h"
+#include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.80"
+#define DRIVER_VERSION	"0.81"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -75,20 +76,22 @@ static char UpsFamily [3];
  *  the correct number of characters are returned.
  */
 
-static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount)
+static ssize_t OneacGetResponse (char* chBuff, const size_t BuffSize, int ExpectedCount)
 {
 	int Retries = 10;		/* x/2 seconds max with 500000 USEC */
-	int return_val;
+	ssize_t return_val;
 
 	do
 	{
-		return_val = ser_get_line(upsfd, chBuff, BuffSize, ENDCHAR, IGNCHARS,
-																	SECS, USEC);
+		return_val = ser_get_line(upsfd,
+			chBuff, BuffSize, ENDCHAR, IGNCHARS, SECS, USEC);
 
 		if (return_val == ExpectedCount)
 			break;
 
-		upsdebugx (3,"!OneacGetResponse retry (%d, %d)...", return_val,Retries);
+		upsdebugx (3,
+			"!OneacGetResponse retry (%" PRIiSIZE ", %d)...",
+			return_val, Retries);
 
 	} while (--Retries > 0);
 
@@ -107,7 +110,7 @@ static int OneacGetResponse (char* chBuff, const int BuffSize, int ExpectedCount
 		return_val = 0;					/* Good comms */
 	}
 
-    return return_val;
+	return return_val;
 }
 
 static void do_battery_test(void)
@@ -165,7 +168,7 @@ static int SetOutputAllow(const char* lowval, const char* highval)
 }
 
 static void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
-															const int buff2size)
+															const size_t buff2size)
 {
 	int i = 0;
 	int j = 0;
@@ -205,7 +208,7 @@ void upsdrv_initinfo(void)
 	int i,j, k;
 	int VRange=0;
 	int timevalue;
-	int RetValue;
+	ssize_t RetValue;
 	char buffer[256], buffer2[32];
 
 	/* All families should reply to this request so we can confirm that it is
@@ -368,7 +371,19 @@ void upsdrv_initinfo(void)
 
 		/*UPS Model (full string)*/
 		memset(buffer2, '\0', 32);
-		strncpy(buffer2, buffer+5, 10);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+		strncpy(buffer2, buffer + 5, 10);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 		for (i = 9; i >= 0 && buffer2[i] == ' '; --i)
 		{
 			buffer2[i] = '\0';
@@ -416,7 +431,19 @@ void upsdrv_initinfo(void)
 			buffer2[3]='\0';
 			i = atoi(buffer2);		/* Minimum voltage */
 
-			strncpy(buffer2, buffer+4, 3);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+			strncpy(buffer2, buffer + 4, 3);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 			j = atoi(buffer2);		/* Maximum voltage */
 
 			strncpy(buffer2, buffer+8, 2);
@@ -465,7 +492,7 @@ void upsdrv_updateinfo(void)
 	char buffer[256];	/* Main response buffer */
 	char buffer2[32];	/* Conversion buffer */
 	char s;
-	int RetValue;
+	ssize_t RetValue;
 	int timevalue;
 
 	/* Start with EG/ON information */

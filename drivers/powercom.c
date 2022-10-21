@@ -74,6 +74,10 @@
  * - Fixed the processing of input/output voltages for KIN models
  *   (https://github.com/networkupstools/nut/issues/187)
  *
+ * rev 0.18: Rouben Tchakhmakhtchian
+ * - Added nobt flag to config that skips UPS battery check on startup/init
+ *   (https://github.com/networkupstools/nut/issues/546)
+ *
  */
 
 #include "main.h"
@@ -82,7 +86,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.19"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -92,7 +96,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Peter Bieringer <pb@bieringer.de>\n" \
 	"Alexey Sidorov <alexsid@altlinux.org>\n" \
 	"Florian Bruhin <nut@the-compiler.org>\n" \
-	"Arnaud Quette <ArnaudQuette@Eaton.com>",
+	"Arnaud Quette <ArnaudQuette@Eaton.com>\n" \
+	"Rouben Tchakhmakhtchian <rouben@rouben.net>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -289,7 +294,7 @@ static void shutdown_halt(void)
 
 static void shutdown_halt(void)
 {
-	ser_send_char (upsfd, SHUTDOWN);
+	ser_send_char (upsfd, (unsigned char)SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -302,8 +307,8 @@ static void shutdown_ret(void)
 
 static void shutdown_ret(void)
 {
-	ser_send_char (upsfd, RESTART);
-	ser_send_char (upsfd, COUNTER);
+	ser_send_char (upsfd, (unsigned char)RESTART);
+	ser_send_char (upsfd, (unsigned char)COUNTER);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
@@ -356,7 +361,7 @@ static void no_flow_control (void)
 
 	tcgetattr (upsfd, &tio);
 
-	tio.c_iflag &= ~ (IXON | IXOFF);
+	tio.c_iflag &= ~ ((tcflag_t)IXON | (tcflag_t)IXOFF);
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
 
@@ -385,7 +390,8 @@ static int validate_raw_data (void)
 /* get info from ups */
 static int ups_getinfo(void)
 {
-	int	i, c;
+	size_t	i;
+	ssize_t c;
 
 	/* send trigger char to UPS */
 	if (ser_send_char (upsfd, SEND_DATA) != 1) {
@@ -395,15 +401,17 @@ static int ups_getinfo(void)
 	} else {
 		upsdebugx(5, "Num of bytes requested for reading from UPS: %d", types[type].num_of_bytes_from_ups);
 
+		/* Note: num_of_bytes_from_ups is (unsigned char) so comparable
+		 * to ssize_t without more range checks */
 		c = ser_get_buf_len(upsfd, raw_data,
 			types[type].num_of_bytes_from_ups, 3, 0);
 
-		if (c != types[type].num_of_bytes_from_ups) {
-			upslogx(LOG_NOTICE, "data receiving error (%d instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
+		if (c != (ssize_t)types[type].num_of_bytes_from_ups) {
+			upslogx(LOG_NOTICE, "data receiving error (%" PRIiSIZE " instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %d", c);
+			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE, c);
 	}
 
 	/* optional dump of raw data */
@@ -411,7 +419,7 @@ static int ups_getinfo(void)
 		/* FIXME: use upsdebug_hex() ? */
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
-			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
+			printf("%2zu 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
 		}
 	}
 
@@ -501,16 +509,16 @@ static float output_voltage(void)
 		model=KINmodels[raw_data[MODELNUMBER]/16];
 		if (statINV == 0) {
 			if (statAVR == 0) {
-				// FIXME: miss test "if (iUPS == 1) {"
+				/* FIXME: miss test "if (iUPS == 1) {" */
 				if (linevoltage >= 200) {
-					if (linevoltage <= 625)
+					if (model <= 625)
 						tmp = 1.79*raw_data[OUTPUT_VOLTAGE] + 3.35;
 					else if (model<2000)
 						tmp = 1.61*raw_data[OUTPUT_VOLTAGE];
 					else
 						tmp = 1.625*raw_data[OUTPUT_VOLTAGE];
 				} else {
-					if (linevoltage <= 625)
+					if (model <= 625)
 						tmp = 0.89 * raw_data[OUTPUT_VOLTAGE] + 6.18;
 					else if (model<2000)
 						tmp = 1.61 * raw_data[OUTPUT_VOLTAGE] / 2.0;
@@ -519,7 +527,7 @@ static float output_voltage(void)
 				}
 			}
 			else if (statAVR == 1) {
-				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				/* FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {" */
 				if (linevoltage >= 200) {
 					if (model <= 525)
 						tmp = 2.07 * raw_data[OUTPUT_VOLTAGE];
@@ -538,7 +546,7 @@ static float output_voltage(void)
 						tmp = 1.875 * raw_data[OUTPUT_VOLTAGE] / 2.0;
 				}
 			} else {
-				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				/* FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {" */
 				if (linevoltage >= 200) {
 					if (model == 625)
 						tmp = 1.571 * raw_data[OUTPUT_VOLTAGE];
@@ -556,7 +564,7 @@ static float output_voltage(void)
 				}
 			}
 		} else {
-			// FIXME: miss test "if ((iUPS == 1) && (T != 0))"
+			/* FIXME: miss test "if ((iUPS == 1) && (T != 0))" */
 			if (linevoltage < 200) {
 				rdatax = datax1[raw_data[MODELNUMBER]/16];
 				rdatay = datay1[raw_data[MODELNUMBER]/16];
@@ -584,7 +592,7 @@ static float output_voltage(void)
 				if (tmp>0)
 					tmp=sqrt(tmp)*rdatay;
 			}
-			// FIXME: may miss a last processing with ErrorVal = 5 | 10
+			/* FIXME: may miss a last processing with ErrorVal = 5 | 10 */
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
@@ -697,7 +705,8 @@ static float load_level(void)
 
 static float batt_level(void)
 {
-	int bat0,bat29,bat100,model;
+	int bat0,bat29,bat100;
+	unsigned int model;
 	float battval;
 
 	if ( !strcmp(types[type].name, "BNT") ) {
@@ -844,24 +853,25 @@ void upsdrv_shutdown(void)
 /* initialize UPS */
 void upsdrv_initups(void)
 {
-	int tmp,model = 0;
+	int tmp;
+	unsigned int model = 0;
 	unsigned int i;
 	static char buf[20];
 
 	/* check manufacturer name from arguments */
-	if (getval("manufacturer") != NULL)
+	if (testvar("manufacturer"))
 		manufacturer = getval("manufacturer");
 
 	/* check model name from arguments */
-	if (getval("modelname") != NULL)
+	if (testvar("modelname"))
 		modelname = getval("modelname");
 
 	/* check serial number from arguments */
-	if (getval("serialnumber") != NULL)
+	if (testvar("serialnumber"))
 		serialnumber = getval("serialnumber");
 
 	/* get and check type */
-	if (getval("type") != NULL) {
+	if (testvar("type")) {
 		for (i = 0;
 			 i < NUM_OF_SUBTYPES  &&  strcmp(types[i].name, getval("type"));
 			 i++) ;
@@ -873,7 +883,7 @@ void upsdrv_initups(void)
 	}
 
 	/* check line voltage from arguments */
-	if (getval("linevoltage") != NULL) {
+	if (testvar("linevoltage")) {
 		tmp = atoi(getval("linevoltage"));
 		if (! ( (tmp >= 200 && tmp <= 240) || (tmp >= 100 && tmp <= 120) ) ) {
 			printf("Given line voltage '%d' is out of range (100-120 or 200-240 V)\n", tmp);
@@ -882,7 +892,7 @@ void upsdrv_initups(void)
 		linevoltage = (unsigned int) tmp;
 	}
 
-	if (getval("numOfBytesFromUPS") != NULL) {
+	if (testvar("numOfBytesFromUPS")) {
 		tmp = atoi(getval("numOfBytesFromUPS"));
 		if (! (tmp > 0 && tmp <= MAX_NUM_OF_BYTES_FROM_UPS) ) {
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
@@ -892,7 +902,7 @@ void upsdrv_initups(void)
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
 	}
 
-	if (getval("methodOfFlowControl") != NULL) {
+	if (testvar("methodOfFlowControl")) {
 		for (i = 0;
 			 i < NUM_OF_SUBTYPES  &&
 					strcmp(types[i].flowControl.name,
@@ -906,7 +916,7 @@ void upsdrv_initups(void)
 		types[type].flowControl = types[i].flowControl;
 	}
 
-	if (getval("validationSequence")  &&
+	if (testvar("validationSequence")  &&
 	    sscanf(getval("validationSequence"),
 			        "{{%u,%x},{%u,%x},{%u,%x}}",
 			                &types[type].validation[0].index_of_byte,
@@ -922,8 +932,10 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("shutdownArguments")  &&
-	    sscanf(getval("shutdownArguments"), "{{%u,%u},%c}",
+	/* NOTE: %hhu is not supported before C99; that would need reading
+	 * arguments into an uint as %u, checking range and casting */
+	if (testvar("shutdownArguments")  &&
+	    sscanf(getval("shutdownArguments"), "{{%hhu,%hhu},%c}",
 	                &types[type].shutdown_arguments.delay[0],
 	                &types[type].shutdown_arguments.delay[1],
 	                &types[type].shutdown_arguments.minutesShouldBeUsed
@@ -934,7 +946,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("frequency")  &&
+	if (testvar("frequency")  &&
 	        sscanf(getval("frequency"), "{%f,%f}",
 	                &types[type].freq[0], &types[type].freq[1]
 	              ) < 2
@@ -944,7 +956,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("loadPercentage")  &&
+	if (testvar("loadPercentage")  &&
 	        sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
 	            &types[type].loadpct[0], &types[type].loadpct[1],
 	            &types[type].loadpct[2], &types[type].loadpct[3]
@@ -955,7 +967,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("batteryPercentage")  &&
+	if (testvar("batteryPercentage")  &&
 	        sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
 	                &types[type].battpct[0], &types[type].battpct[1],
 	                &types[type].battpct[2], &types[type].battpct[3],
@@ -967,7 +979,7 @@ void upsdrv_initups(void)
 		exit (1);
 	}
 
-	if (getval("voltage")  &&
+	if (testvar("voltage")  &&
 	        sscanf(getval("voltage"), "{%f,%f,%f,%f}",
 	            &types[type].voltage[0], &types[type].voltage[1],
 	            &types[type].voltage[2], &types[type].voltage[3]
@@ -1015,17 +1027,23 @@ void upsdrv_initups(void)
 		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
 		if (!strcmp(types[type].name, "OPTI")) {
-			snprintf(buf,sizeof(buf),"%s-%d",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%u",types[type].name, model);
 		} else {
-			snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
+			snprintf(buf,sizeof(buf),"%s-%uAP",types[type].name, model);
 		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
 		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
-		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
-			upslogx(LOG_NOTICE, "writing error");
-			dstate_datastale();
-			return;
+		if (testvar("nobt") || dstate_getinfo("driver.flag.nobt")) {
+			upslogx(LOG_NOTICE, "nobt flag set, skipping battery test as requested");
+		}
+		else {
+			upslogx(LOG_NOTICE, "nobt flag not set, performing battery test as requested");
+			if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
+				upslogx(LOG_NOTICE, "Write error: failed to send battery test command to UPS!");
+				dstate_datastale();
+				return;
+			}
 		}
 	}
 
@@ -1071,8 +1089,8 @@ void upsdrv_initups(void)
 /* display help */
 void upsdrv_help(void)
 {
-	//               1         2         3         4         5         6         7         8
-	//      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+	/*               1         2         3         4         5         6         7         8 */
+	/*      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
 	printf("\n");
 	printf("Specify UPS information in the ups.conf file.\n");
 	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
@@ -1110,7 +1128,8 @@ void upsdrv_help(void)
 	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
 	printf("                 {240A,240B,120A,120B}\n");
 	printf("                 used in function: A*x+B\n");
-	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n\n");
+	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n");
+	printf(" nobt:          Flag to skip battery check on init/startup.\n\n");
 
 	printf("Example for BNT1500AP in ups.conf:\n");
 	printf("[BNT1500AP]\n");
@@ -1130,6 +1149,7 @@ void upsdrv_help(void)
 	printf("#   loadPercentage = {1.0000,0.0,1.0000,0.0}\n");
 	printf("#   batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}\n");
 	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
+	printf("    nobt\n");
 	return;
 }
 
@@ -1153,8 +1173,8 @@ void upsdrv_initinfo(void)
 /* define possible arguments */
 void upsdrv_makevartable(void)
 {
-		//        1         2         3         4         5         6         7         8
-		//2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+		/*        1         2         3         4         5         6         7         8 */
+		/*2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX */
 	addvar(VAR_VALUE, "type",
 		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other','OPTI'\n"
 		" (default: 'Trust')");
@@ -1183,6 +1203,8 @@ void upsdrv_makevartable(void)
 			"Battery conversion values: OffFactor, LoadFactor, OffConst, OnFactor, OnConst");
 		addvar(VAR_VALUE, "voltage",
 			"Voltage conversion values: 240VFactor, 240VConst, 120VFactor, 120VConst");
+		addvar(VAR_FLAG, "nobt",
+			"Disable battery test at driver init/startup");
 	}
 }
 

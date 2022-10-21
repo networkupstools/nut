@@ -22,18 +22,23 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			tracking_enabled = 0;
-static unsigned int		timeout = DEFAULT_TRACKING_TIMEOUT;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -64,7 +69,7 @@ static void usage(const char *prog)
 static void print_cmd(char *cmdname)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -87,7 +92,7 @@ static void print_cmd(char *cmdname)
 static void listcmds(void)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 	struct list_t	*lhead = NULL, *llast = NULL, *ltmp, *lnext;
@@ -112,7 +117,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,
@@ -143,6 +148,15 @@ static void listcmds(void)
 	}
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_cmd(char **argv, const int argc)
 {
 	int		cmd_complete = 0;
@@ -180,7 +194,20 @@ static void do_cmd(char **argv, const int argc)
 		return;
 	}
 
-	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
+	 */
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */
@@ -196,8 +223,29 @@ static void do_cmd(char **argv, const int argc)
 		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
 			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		/* and get status tracking reply */
-		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
 			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 
 		if (strncmp(buf, "PENDING", 7))
@@ -209,6 +257,9 @@ static void do_cmd(char **argv, const int argc)
 
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static void clean_exit(void)
 {
@@ -223,7 +274,9 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, ret, port;
+	int	i;
+	uint16_t	port;
+	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
 	const char	*prog = xbasename(argv[0]);

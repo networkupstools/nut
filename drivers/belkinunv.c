@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -247,7 +247,7 @@ static void belkin_nut_open_tty(void)
    byte, checksum). Return length of message, or -1 if not
    well-formed */
 static int belkin_nut_receive(unsigned char *buf, int bufsize) {
-	int r;
+	ssize_t r;
 	int n=0;
 	int len;
 
@@ -285,7 +285,8 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 	if (n+len > bufsize) {
 		return -1;
 	}
-	r = ser_get_buf_len(upsfd, &buf[4], len, 3, 0);
+	/* Casting is okay, len is range-limited to unsigned char */
+	r = ser_get_buf_len(upsfd, &buf[4], (size_t)len, 3, 0);
 	if (r!=len) {
 		upslogx(LOG_ERR, "Short read from UPS");
 		return -1;
@@ -302,9 +303,10 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 
 /* read the value of a string register from UPS. Return NULL on
    failure, else an allocated string. */
-static char *belkin_nut_read_str(int reg) {
+static char *belkin_nut_read_str(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
-	int len, r;
+	ssize_t r;
+	size_t len;
 	char *str;
 
 	/* send the request */
@@ -335,6 +337,10 @@ static char *belkin_nut_read_str(int reg) {
 	}
 
 	/* convert the answer to a string */
+	if (buf[2] < 1) {
+		upslogx(LOG_ERR, "Invalid response from UPS: string too short to be true");
+		return NULL;
+	}
 	len = buf[2]-1;
 	str = (char *)xmalloc(len+1);
 	memcpy(str, &buf[4], len);
@@ -344,9 +350,10 @@ static char *belkin_nut_read_str(int reg) {
 
 /* read the value of an integer register from UPS. Return -1 on
    failure. */
-static int belkin_nut_read_int(int reg) {
+static int belkin_nut_read_int(unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
-	int len, r;
+	int len;
+	ssize_t r;
 
 	/* send the request */
 	buf[0] = 0x7e;
@@ -389,9 +396,9 @@ static int belkin_nut_read_int(int reg) {
 
 /* write the value of an integer register to UPS. Return -1 on
    failure, else 0 */
-static int belkin_nut_write_int(int reg, int val) {
+static int belkin_nut_write_int(unsigned char reg, int val) {
 	unsigned char buf[MAXMSGSIZE];
-	int r;
+	ssize_t r;
 
 	/* send the request */
 	buf[0] = 0x7e;
@@ -440,17 +447,19 @@ static int belkin_nut_write_int(int reg, int val) {
    will be discarded. After this call, the device is ready for reading
    and writing via read(2) and write(2). Return a valid file
    descriptor on success, or else -1 with errno set. */
-static int belkin_std_open_tty(const char *device) {
-	int fd;
+static TYPE_FD_SER belkin_std_open_tty(const char *device) {
+	TYPE_FD_SER fd;
 	struct termios tios;
+#ifndef WIN32
 	struct flock flock;
+#endif
 	char buf[128];
-	int r;
+	ssize_t r;
 
 	/* open the device */
 	fd = open(device, O_RDWR | O_NONBLOCK);
-	if (fd == -1) {
-		return -1;
+	if (INVALID_FD_SER(fd)) {
+		return ERROR_FD_SER;
 	}
 
 	/* set communications parameters: 2400 baud, 8 bits, 1 stop bit, no
@@ -463,7 +472,7 @@ static int belkin_std_open_tty(const char *device) {
 	r = tcsetattr(fd, TCSANOW, &tios);
 	if (r == -1) {
 		close(fd);
-		return -1;
+		return ERROR_FD_SER;
 	}
 
 	/* signal the UPS to enter "smart" mode. This is done by setting RTS
@@ -480,17 +489,20 @@ static int belkin_std_open_tty(const char *device) {
 	r = ser_flush_io(fd);
 	if (r == -1) {
 		close(fd);
-		return -1;
+		return ERROR_FD_SER;
 	}
 
+/* TODO: port to WIN32 */
+#ifndef WIN32
 	/* lock the port */
 	memset(&flock, 0, sizeof(flock));
 	flock.l_type = F_RDLCK;
 	r = fcntl(fd, F_SETLK, &flock);
 	if (r == -1) {
 		close(fd);
-		return -1;
+		return ERROR_FD_SER;
 	}
+#endif
 
 	/* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
 	   software sleeps 1 second, so that's what we do, too. */
@@ -501,13 +513,20 @@ static int belkin_std_open_tty(const char *device) {
 	r = tcflush(fd, TCIFLUSH);
 	if (r == -1) {
 		close(fd);
-		return -1;
+		return ERROR_FD_SER;
 	}
 
+#ifndef WIN32
 	r = read(fd, buf, 127);
+#else
+/* WIN32 : w32_serial_read is blocking, using select_read with 0ms timeout
+ * is non-blocking */
+	r = select_read(fd, buf, 127, 0, 0);
+#endif
+
 	if (r == -1 && errno != EAGAIN) {
 		close(fd);
-		return -1;
+		return ERROR_FD_SER;
 	}
 
 	/* leave port in non-blocking state */
@@ -516,13 +535,19 @@ static int belkin_std_open_tty(const char *device) {
 }
 
 /* blocking read with 1-second timeout (use non-blocking i/o) */
-static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
+static int belkin_std_upsread(TYPE_FD_SER fd, unsigned char *buf, int n) {
 	int count = 0;
-	int r;
+	ssize_t r;
 	int tries = 0;
 
 	while (count < n) {
-		r = read(fd, &buf[count], n-count);
+#ifndef WIN32
+		r = read(fd, &buf[count], (size_t)(n-count));
+#else
+		/* WIN32 : w32_serial_read is blocking, using select_read
+		 * with 0ms timeout is non-blocking */
+		r = select_read(fd, buf, (size_t)(n-count), 0, 0);
+#endif
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
@@ -540,13 +565,13 @@ static int belkin_std_upsread(int fd, unsigned char *buf, int n) {
 }
 
 /* blocking write with 1-second timeout (use non-blocking i/o) */
-static int belkin_std_upswrite(int fd, unsigned char *buf, int n) {
+static int belkin_std_upswrite(TYPE_FD_SER fd, unsigned char *buf, int n) {
 	int count = 0;
-	int r;
+	ssize_t r;
 	int tries = 0;
 
 	while (count < n) {
-		r = write(fd, &buf[count], n-count);
+		r = write(fd, &buf[count], (size_t)(n-count));
 		if (r==-1 && errno==EAGAIN) {
 			/* non-blocking i/o, no data available */
 			usleep(100000);
@@ -566,7 +591,7 @@ static int belkin_std_upswrite(int fd, unsigned char *buf, int n) {
 /* receive Belkin message from UPS, check for well-formedness (leading
    byte, checksum). Return length of message, or -1 if not
    well-formed */
-static int belkin_std_receive(int fd, unsigned char *buf, int bufsize) {
+static int belkin_std_receive(TYPE_FD_SER fd, unsigned char *buf, int bufsize) {
 	int r;
 	int n=0;
 	int len;
@@ -612,7 +637,7 @@ static int belkin_std_receive(int fd, unsigned char *buf, int bufsize) {
 
 /* read the value of an integer register from UPS. Return -1 on
    failure. */
-static int belkin_std_read_int(int fd, int reg) {
+static int belkin_std_read_int(TYPE_FD_SER fd, unsigned char reg) {
 	unsigned char buf[MAXMSGSIZE];
 	int len, r;
 
@@ -654,7 +679,7 @@ static int belkin_std_read_int(int fd, int reg) {
 
 /* write the value of an integer register to UPS. Return -1 on
    failure, else 0 */
-static int belkin_std_write_int(int fd, int reg, int val) {
+static int belkin_std_write_int(TYPE_FD_SER fd, unsigned char reg, int val) {
 	unsigned char buf[MAXMSGSIZE];
 	int r;
 
@@ -759,7 +784,7 @@ static int belkin_wait(void)
 	char *val;
 	int failcount = 0;  /* count consecutive failed connection attempts */
 	int failerrno = 0;
-	int fd;
+	TYPE_FD_SER fd;
 	int r;
 	int bs, ov, bl, st;
 
@@ -785,7 +810,7 @@ static int belkin_wait(void)
 
 	updatestatus(smode, "Connecting to UPS...");
 	failcount = 0;
-	fd = -1;
+	fd = ERROR_FD_SER;
 
 	while (1) {
 		if (failcount >= 3 && nohang) {
@@ -795,10 +820,10 @@ static int belkin_wait(void)
 		} else if (failcount >= 3) {
 			updatestatus(smode, "UPS is not responding, will keep trying: %s", strerror(failerrno));
 		}
-		if (fd == -1) {
+		if (INVALID_FD_SER(fd)) {
 			fd = belkin_std_open_tty(device_path);
 		}
-		if (fd == -1) {
+		if (INVALID_FD_SER(fd)) {
 			failcount++;
 			failerrno = errno;
 			sleep(1);
@@ -812,7 +837,7 @@ static int belkin_wait(void)
 			failcount++;
 			failerrno = errno;
 			close(fd);
-			fd = -1;
+			fd = ERROR_FD_SER;
 			sleep(1);
 			continue;
 		}
@@ -821,7 +846,7 @@ static int belkin_wait(void)
 			failcount++;
 			failerrno = errno;
 			close(fd);
-			fd = -1;
+			fd = ERROR_FD_SER;
 			sleep(1);
 			continue;
 		}
@@ -830,7 +855,7 @@ static int belkin_wait(void)
 			failcount++;
 			failerrno = errno;
 			close(fd);
-			fd = -1;
+			fd = ERROR_FD_SER;
 			sleep(1);
 			continue;
 		}
@@ -1189,35 +1214,43 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 1);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.disable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 1);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 2);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "beeper.mute")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 3);
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 0);
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
@@ -1229,11 +1262,13 @@ int instcmd(const char *cmdname, const char *extra)
 		   the UPS will stay off between 60 and 120 seconds */
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 40); /* 40 seconds */
+		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {

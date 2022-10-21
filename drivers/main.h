@@ -5,12 +5,16 @@
 #include "upsconf.h"
 #include "dstate.h"
 #include "extstate.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* public functions & variables from main.c */
 extern const char	*progname, *upsname, *device_name;
 extern char		*device_path;
-extern int		upsfd, extrafd, broken_driver, experimental_driver, do_lock_port, exit_flag;
-extern unsigned int	poll_interval;
+extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
+extern TYPE_FD		upsfd, extrafd;
+extern time_t	poll_interval;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
@@ -20,6 +24,8 @@ void upsdrv_shutdown(void);	/* make the UPS power off the load */
 void upsdrv_help(void);		/* tack on anything useful for the -h text */
 void upsdrv_banner(void);	/* print your version information */
 void upsdrv_cleanup(void);	/* free any resources before shutdown */
+
+void set_exit_flag(int sig);
 
 /* --- details for the variable/value sharing --- */
 

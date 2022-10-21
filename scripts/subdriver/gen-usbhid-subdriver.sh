@@ -3,19 +3,22 @@
 # an auxiliary script to produce a "stub" usbhid-ups subdriver from
 # the output of
 #
-# drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
+# drivers/usbhid-ups -s ups -DD -u root -x explore -x vendorid=XXXX -x productid=XXXX -x port=auto -d1 > debuginfo 2>&1
 #
 # Usage: cat debuginfo | gen-usbhid-subdriver.sh
 #
 # See also: docs/hid-subdrivers.txt
 
 usage() {
-    echo "Usage: $0 [options] [file]"
+    echo "Usage: $0 [options] [file] < debuginfo"
+    echo "with data prepared by a driver walk:"
+    echo "    drivers/usbhid-ups -s ups -DD -u root -x vendorid=XXXX -x productid=XXXX \\"
+    echo "        -x port=auto -x explore -d1 > debuginfo 2>&1"
     echo "Options:"
     echo " -h, --help           -- show this message and quit"
     echo " -n name              -- driver name (use natural capitalization)"
-    echo " -v XXXX              -- vendor id"
-    echo " -p XXXX              -- product id"
+    echo " -v XXXX              -- vendor id (learned from debuginfo by default)"
+    echo " -p XXXX              -- product id (learned from debuginfo by default)"
     echo " -k                   -- keep temporary files (for debugging)"
     echo " file                 -- read from file instead of stdin"
 }
@@ -79,15 +82,15 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
     read -p "Name of subdriver: " DRIVER < /dev/tty
-    if echo $DRIVER | egrep -q '[^a-zA-Z0-9]'; then
+    if echo $DRIVER | grep -E -q '[^a-zA-Z0-9]'; then
 	echo "Please use only letters and digits"
 	DRIVER=""
     fi
 done
 
-# try to determine product and vendor id
-VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
-PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+# try to determine product and vendor id, if not specified by user
+[ -n "$VENDORID" ] || VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+[ -n "$PRODUCTID" ] || PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
 
 # prompt for productid, vendorid if necessary
 if [ -z "$VENDORID" ]; then
@@ -110,7 +113,7 @@ cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
 
 # make up dummy names for unknown usages
 count=0
-cat "$USAGES" | egrep '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
+cat "$USAGES" | grep -E '[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' |\
 while read U; do
     count=`expr $count + 1`
     echo "$U $UDRIVER$count"
@@ -168,6 +171,9 @@ cat > "$CFILE" <<EOF
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *
+ *  TODO: Add year and name for new subdriver author (contributor)
+ *  Mention in docs/acknowledgements.txt if this is a vendor contribution
+ *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
  *
@@ -203,7 +209,7 @@ static usb_device_id_t ${LDRIVER}_usb_device_table[] = {
 	{ USB_DEVICE(${UDRIVER}_VENDORID, 0x${PRODUCTID}), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 
@@ -218,7 +224,7 @@ EOF
 cat "$SUBST" | sed 's/\(.*\) \(.*\)/\t{ "\2",\t0x\1 },/' >> "$CFILE"
 
 cat >> "$CFILE" <<EOF
-	{  NULL, 0 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t ${LDRIVER}_utab[] = {
@@ -238,14 +244,14 @@ EOF
 cat "$NEWUTABLE" | sort -u | while read U; do
     UL=`echo $U | tr A-Z a-z`
     cat >> "$CFILE" <<EOF
-  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
+	{ "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF
 done
 
 cat >> "$CFILE" <<EOF
 
-  /* end of structure. */
-  { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 static const char *${LDRIVER}_format_model(HIDDevice_t *hd) {
@@ -293,16 +299,27 @@ subdriver_t ${LDRIVER}_subdriver = {
 	${LDRIVER}_format_model,
 	${LDRIVER}_format_mfr,
 	${LDRIVER}_format_serial,
+	fix_report_desc,	/* may optionally be customized, see cps-hid.c for example */
 };
 EOF
 
 cat <<EOF
 Done.
 
-Do not forget to:
+If you are looking to extend an existing subdriver with data points
+not yet handled, now is a good time to compare ${LDRIVER}_hid2nut[]
+tables in existing sources vs. content generated from this device walk.
+Using a GUI tool like Meld or WinMerge is recommended.
+
+If you are crafting a new subdriver, do not forget to:
 * add #include "${HFILE}" to drivers/usbhid-ups.c,
 * add &${LDRIVER}_subdriver to drivers/usbhid-ups.c:subdriver_list,
 * add ${LDRIVER}-hid.c to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
 * add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "autoreconf" from the top level directory
+
+For new data points in ${LDRIVER}_hid2nut[] tables be sure to not
+invent new names, but use standard ones from docs/nut-names.txt file.
+If you need to standardize a name for some concept not addressed yet,
+please do so via nut-upsdev mailing list discussion.
 EOF

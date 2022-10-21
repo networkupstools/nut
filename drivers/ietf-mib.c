@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.52"
+#define IETF_MIB_VERSION	"1.55"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -111,6 +111,12 @@ static info_lkp_t ietf_beeper_status_info[] = {
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 static snmp_info_t ietf_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* The Device Identification group */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.1.0", "Generic", SU_FLAG_STATIC, NULL }, /* upsIdentManufacturer */
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.2.0", "Generic SNMP UPS", SU_FLAG_STATIC, NULL }, /* upsIdentModel */
@@ -128,7 +134,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "battery.runtime", 0, 60.0, IETF_OID_UPS_MIB "2.3.0", "", 0, NULL }, /* upsEstimatedMinutesRemaining */
 	{ "battery.charge", 0, 1, IETF_OID_UPS_MIB "2.4.0", "", 0, NULL }, /* upsEstimatedChargeRemaining */
 	{ "battery.voltage", 0, 0.1, IETF_OID_UPS_MIB "2.5.0", "", 0, NULL }, /* upsBatteryVoltage */
-	{ "battery.current", 0, 0.1, IETF_OID_UPS_MIB "2.6.0", "", 0, NULL }, /* upsBatteryCurrent */
+	{ "battery.current", 0, 0.1, IETF_OID_UPS_MIB "2.6.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsBatteryCurrent */
 	{ "battery.temperature", 0, 1.0, IETF_OID_UPS_MIB "2.7.0", "", 0, NULL }, /* upsBatteryTemperature */
 
 	/* Input Group */
@@ -150,11 +156,11 @@ static snmp_info_t ietf_mib[] = {
 	{ "input.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.1", "", SU_INPUT_3, NULL },
 	{ "input.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.2", "", SU_INPUT_3, NULL },
 	{ "input.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.3", "", SU_INPUT_3, NULL },
-	{ "input.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_1, NULL }, /* upsInputCurrent */
+	{ "input.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_1 |SU_FLAG_NEGINVALID, NULL }, /* upsInputCurrent */
 	{ "input.L1.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_3, NULL },
 	{ "input.L2.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.2", "", SU_INPUT_3, NULL },
 	{ "input.L3.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.3", "", SU_INPUT_3, NULL },
-	{ "input.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_1, NULL }, /* upsInputTruePower */
+	{ "input.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_1 | SU_FLAG_NEGINVALID, NULL }, /* upsInputTruePower */
 	{ "input.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_3, NULL },
 	{ "input.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.2", "", SU_INPUT_3, NULL },
 	{ "input.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.3", "", SU_INPUT_3, NULL },
@@ -173,11 +179,11 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.2", "", SU_OUTPUT_3, NULL },
 	{ "output.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.3", "", SU_OUTPUT_3, NULL },
-	{ "output.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_1, NULL }, /* upsOutputCurrent */
+	{ "output.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL }, /* upsOutputCurrent */
 	{ "output.L1.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.2", "", SU_OUTPUT_3, NULL },
 	{ "output.L3.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.3", "", SU_OUTPUT_3, NULL },
-	{ "output.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_1, NULL }, /* upsOutputPower */
+	{ "output.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL }, /* upsOutputPower */
 	{ "output.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.2", "", SU_OUTPUT_3, NULL },
 	{ "output.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.3", "", SU_OUTPUT_3, NULL },
@@ -187,8 +193,8 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.L3.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.3", "", SU_OUTPUT_3, NULL },
 
 	/* Bypass Group */
-	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", 0, NULL }, /* upsBypassNumLines */
-	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3, NULL }, /* upsBypassFrequency */
+	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsBypassNumLines */
+	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3 | SU_FLAG_NEGINVALID, NULL }, /* upsBypassFrequency */
 #ifdef DEBUG
 	{ "debug.upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_1, NULL }, /* upsBypassLineIndex */
 	{ "debug.[1].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_3, NULL },
@@ -267,12 +273,12 @@ static snmp_info_t ietf_mib[] = {
 	{ "ups.start.auto", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.5.0", "", 0, ietf_yes_no_info }, /* upsAutoRestart */
 
 	/* Configuration Group */
-	{ "input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", 0, NULL }, /* upsConfigInputVoltage */
-	{ "input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", 0, NULL }, /* upsConfigInputFreq */
+	{ "input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsConfigInputVoltage */
+	{ "input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsConfigInputFreq */
 	{ "output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", 0, NULL }, /* upsConfigOutputVoltage */
 	{ "output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", 0, NULL }, /* upsConfigOutputFreq */
-	{ "output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", 0, NULL }, /* upsConfigOutputVA */
-	{ "output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", 0, NULL }, /* upsConfigOutputPower */
+	{ "output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsConfigOutputVA */
+	{ "output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", SU_FLAG_NEGINVALID, NULL }, /* upsConfigOutputPower */
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL }, /* upsConfigLowBattTime */
 	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info }, /* upsConfigAudibleStatus */
 	{ "beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "1", SU_TYPE_CMD, NULL },

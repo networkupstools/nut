@@ -218,7 +218,7 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #define NOMINAL_BATTERY_VOLTAGE             4.18
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.9"
+#define DRIVER_VERSION                      "0.10"
 
 static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;

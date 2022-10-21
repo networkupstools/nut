@@ -22,18 +22,23 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "extstate.h"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			tracking_enabled = 0;
-static unsigned int		timeout = DEFAULT_TRACKING_TIMEOUT;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -50,6 +55,7 @@ static void usage(const char *prog)
 	printf("  -h            display this help text\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
+	printf("  -l            show all possible read/write variables.\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
@@ -58,7 +64,7 @@ static void usage(const char *prog)
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
-	printf("Call without -s to show all possible read/write variables.\n");
+	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 }
 
 static void clean_exit(void)
@@ -72,6 +78,15 @@ static void clean_exit(void)
 	free(ups);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_set(const char *varname, const char *newval)
 {
 	int		cmd_complete = 0;
@@ -105,7 +120,20 @@ static void do_set(const char *varname, const char *newval)
 		return;
 	}
 
-	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
+	 */
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */
@@ -121,8 +149,29 @@ static void do_set(const char *varname, const char *newval)
 		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
 			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		/* and get status tracking reply */
-		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
 			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 
 		if (strncmp(buf, "PENDING", 7))
@@ -134,6 +183,9 @@ static void do_set(const char *varname, const char *newval)
 
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static void do_setvar(const char *varname, char *uin, const char *pass)
 {
@@ -251,7 +303,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 static const char *get_data(const char *type, const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const char	*query[4];
 
@@ -271,7 +323,7 @@ static const char *get_data(const char *type, const char *varname)
 	return answer[3];
 }
 
-static void do_string(const char *varname, const int len)
+static void do_string(const char *varname, const long len)
 {
 	const char	*val;
 
@@ -282,7 +334,7 @@ static void do_string(const char *varname, const int len)
 	}
 
 	printf("Type: STRING\n");
-	printf("Maximum length: %d\n", len);
+	printf("Maximum length: %ld\n", len);
 	printf("Value: %s\n", val);
 }
 
@@ -306,10 +358,10 @@ static void do_number(const char *varname)
  * @param vartype the type of the NUT variable (ST_FLAG_STRING, ST_FLAG_NUMBER
  * @param len the length of the NUT variable, if type == ST_FLAG_STRING
  */
-static void do_enum(const char *varname, const int vartype, const int len)
+static void do_enum(const char *varname, const int vartype, const long len)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer, buf[SMALLBUF];
 	const char	*query[4], *val;
 
@@ -342,14 +394,14 @@ static void do_enum(const char *varname, const int vartype, const int len)
 		printf("Type: ENUM\n");
 
 	if (vartype == ST_FLAG_STRING)
-		printf("Maximum length: %d\n", len);
+		printf("Maximum length: %ld\n", len);
 
 	while (ret == 1) {
 
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("Option: \"%s\"", answer[3]);
@@ -367,7 +419,7 @@ static void do_enum(const char *varname, const int vartype, const int len)
 static void do_range(const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const char	*query[4], *val;
 	int ival, min, max;
@@ -402,7 +454,7 @@ static void do_range(const char *varname)
 		/* RANGE <upsname> <varname> <min> <max> */
 
 		if (numa < 5) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		min = atoi(answer[3]);
@@ -424,7 +476,7 @@ static void do_type(const char *varname)
 {
 	int	ret;
 	int is_enum = 0; /* 1 if ENUM; FIXME: add a boolean type in common.h */
-	unsigned int	i, numq, numa;
+	size_t	i, numq, numa;
 	char	**answer;
 	const char	*query[4];
 
@@ -458,7 +510,7 @@ static void do_type(const char *varname)
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
 
 			char	*len = answer[i] + 7;
-			int	length = strtol(len, NULL, 10);
+			long	length = strtol(len, NULL, 10);
 
 			if (is_enum == 1)
 				do_enum(varname, ST_FLAG_STRING, length);
@@ -511,7 +563,7 @@ static void print_rw(const char *varname)
 static void print_rwlist(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -545,7 +597,7 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		/* sock this entry away for later */
@@ -582,15 +634,22 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+hls:p:t:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
 			setvar = optarg;
+			break;
+		case 'l':
+			if (setvar) {
+				upslogx(LOG_WARNING, "Listing mode requested, overriding setvar specified earlier!");
+				setvar = NULL;
+			}
 			break;
 		case 'p':
 			password = optarg;

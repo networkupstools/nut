@@ -67,7 +67,7 @@ let upsd_users_instcmds   = [ del_spc
 
 let upsd_users_upsmon    = [ del_spc
                                . key "upsmon" . sep_spc
-                               . store /master|slave/ . eol ]
+                               . store /master|primary|slave|secondary/ . eol ]
 
 let upsd_users_title    = IniFile.indented_title IniFile.record_re
 

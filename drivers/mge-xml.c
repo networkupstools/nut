@@ -2,8 +2,8 @@
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2009		Arnaud Quette <ArnaudQuette@Eaton.com>
-	2017		Jim Klimov <EvgenyKlimov@Eaton.com>
+	2009-2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"	/* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +35,11 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.29"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
+
+#define MGE_XML_VERSION		"MGEXML/0.36"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -438,7 +444,7 @@ static const char *convert_deci(const char *arg_val)
 			upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are normally not decimated. This driver instance has however configured do_convert_deci in your ups.conf, so this behavior for old MGE NetXML-capable devices is preserved.", __func__);
 			mge_report_deprecation__convert_deci = 0;
 		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(arg_val));
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)(atoi(arg_val)));
 		return mge_scratch_buf;
 	}
 
@@ -484,13 +490,13 @@ static const char *url_convert(const char *arg_val)
 
 static const char *mge_battery_capacity(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 3600);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)(atoi(arg_val)) / 3600.0);
 	return mge_scratch_buf;
 }
 
 static const char *mge_powerfactor_conversion(const char *arg_val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)atoi(arg_val) / 100);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", (float)(atoi(arg_val)) / 100.0);
 	return mge_scratch_buf;
 }
 
@@ -542,7 +548,7 @@ static const char *mge_sensitivity_info(const char *arg_val)
 
 static const char *mge_test_result_info(const char *arg_val)
 {
-	STATUS_CLR(CAL);
+	STATUS_CLR(CALIB);
 	switch (atoi(arg_val))
 	{
 	case 1:
@@ -554,7 +560,7 @@ static const char *mge_test_result_info(const char *arg_val)
 	case 4:
 		return "aborted";
 	case 5:
-		STATUS_SET(CAL);
+		STATUS_SET(CALIB);
 		return "in progress";
 	case 6:
 		return "no test initiated";
@@ -570,6 +576,25 @@ static const char *mge_ambient_info(const char *arg_val)
 	{
 	case 1:
 		return arg_val;
+	default:
+		return NULL;
+	}
+}
+
+static const char *mge_drycontact_info(const char *arg_val)
+{
+	/* these values should theoretically be obtained through
+	 * Environment.Input[1].State[x].Description
+	 * Examples:
+	 * <OBJECT name="Environment.Input[1].State[0].Description">open</OBJECT>
+	 * <OBJECT name="Environment.Input[1].State[1].Description">closed</OBJECT>
+	 */
+	switch (atoi(arg_val))
+	{
+	case 0:
+		return "opened";
+	case 1:
+		return "closed";
 	default:
 		return NULL;
 	}
@@ -926,12 +951,10 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
 	{ "battery.runtime.low", ST_FLAG_RW, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
+	{ "battery.packs.external", 0, 0, "UPS.BatterySystem.Battery.Count", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
-	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
-	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
-	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
 	{ "battery.protection", 0, 0, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
 	{ "battery.energysave", 0, 0, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 
@@ -961,15 +984,15 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", 0, 0, NULL },
-	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL },
-	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, ignore_if_zero },
-	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, ignore_if_zero },
-	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, ignore_if_zero },
 	{ "ups.power.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
+	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL },
+	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, NULL },
+	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, NULL },
+	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", 0, 0, NULL },
-	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, ignore_if_zero },
-	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, ignore_if_zero },
-	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, ignore_if_zero },
+	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, NULL },
+	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, NULL },
+	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, NULL },
 	{ "ups.realpower.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
 	{ "ups.start.auto", 0, 0, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
 	{ "ups.start.battery", 0, 0, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
@@ -1059,6 +1082,8 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.temperature.low", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
 	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, mge_ambient_info },
 	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, mge_ambient_info },
+	{ "ambient.contacts.1.status", 0, 0, "Environment.Input[1].PresentStatus.State", 0, 0, mge_drycontact_info },
+	{ "ambient.contacts.2.status", 0, 0, "Environment.Input[2].PresentStatus.State", 0, 0, mge_drycontact_info },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },

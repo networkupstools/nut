@@ -4,8 +4,8 @@
  * Documents describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
- *   http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf
+ *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -33,9 +33,6 @@
 
 #define CTRL_RETRIES 50
 #define CTRL_TIMEOUT 100
-
-#define USB_ENDPOINT_IN 0x80
-#define USB_ENDPOINT_OUT 0x00
 
 #define MAX_READ_WRITE (16 * 1024)
 

@@ -285,7 +285,7 @@ static void list_clients(nut_ctype_t *client, const char *upsname)
 	sendback(client, "END LIST CLIENT %s\n", upsname);
 }
 
-void net_list(nut_ctype_t *client, int numarg, const char **arg)
+void net_list(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

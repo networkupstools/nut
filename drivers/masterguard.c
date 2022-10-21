@@ -4,6 +4,11 @@
 
    masterguard.c created on 15.8.2001
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -21,9 +26,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -56,11 +62,11 @@ static char    firmware[6];
  * Returns NULL on reaching the end of the string.
  *
  ********************************************************************/
-static char *StringSplit( char *source, char *word, int maxlen )
+static char *StringSplit( char *source, char *word, size_t maxlen )
 {
-	int     i;
-	int     len;
-	int     wc=0;
+	size_t  i;
+	size_t  len;
+	size_t  wc=0;
 
 	word[0] = '\0';
 	len = strlen( source );
@@ -88,9 +94,9 @@ static char *StringSplit( char *source, char *word, int maxlen )
  ********************************************************************/
 static void StringStrip( char *source, char *word )
 {
-	int     wc=0;
-	int     i;
-	int     len;
+	size_t  wc=0;
+	size_t  i;
+	size_t  len;
 
 	word[0] = '\0';
 	len = strlen( source );
@@ -363,15 +369,15 @@ static void fakeWH(void)
 		printf( "Name = %s, Firmware Version = %s\n", name, firmware );
 }
 
-static int ups_ident( void )
+static ssize_t ups_ident( void )
 {
 	char    buf[255];
-	int     ret;
+	ssize_t ret;
 
 	/* Check presence of Q1 */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q1\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret != 46 )
 	{
 		/* No Q1 response found */
@@ -388,7 +394,7 @@ static int ups_ident( void )
 	/* Check presence of Q3 */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q3\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret == 70 )
 	{
 		if( DEBUG )
@@ -399,7 +405,7 @@ static int ups_ident( void )
 	/* Check presence of WH ( Who am I ) */
 	ret = ser_send_pace(upsfd, UPS_PACE, "%s", "WH\x0D" );
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 	if( ret == 112 )
 	{
 		if( DEBUG )
@@ -421,7 +427,7 @@ static int ups_ident( void )
 	else if( ret > 0 )
 	{
 		if( DEBUG )
-			printf( "WH says <%s> with length %i\n", buf, ret );
+			printf( "WH says <%s> with length %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_INFO,
 			"New WH String found. Please report to maintainer\n" );
 	}
@@ -469,7 +475,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	char    buf[255];
-	int     ret;
+	ssize_t ret;
 	int     lenRSP=0;
 
 	if( DEBUG )
@@ -497,12 +503,12 @@ void upsdrv_updateinfo(void)
 
 	buf[0] = '\0';
 	ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
-	ret = strlen( buf );
+	ret = (ssize_t)strlen( buf );
 
 	if( ret != lenRSP )
 	{
 		if( DEBUG )
-			printf( "buf = %s len = %i\n", buf, ret );
+			printf( "buf = %s len = %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_ERR, "Error in UPS response " );
 		dstate_datastale();
 		return;
@@ -561,6 +567,15 @@ void upsdrv_initups(void)
 	int     count = 0;
 	int     fail  = 0;
 	int     good  = 0;
+
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
 
 	/* setup serial port */
 	upsfd = ser_open(device_path);

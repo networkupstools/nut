@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B
@@ -80,7 +80,7 @@
 
 #define ACCESS_DEVICE(fd, address) \
 	if (ioctl(fd, I2C_SLAVE, address) < 0) { \
-		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to slave 0x%02X", address); \
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire bus access and/or talk to i2c slave 0x%02X", address); \
 	}
 
 static unsigned long lb_threshold = LOW_BATTERY_THRESHOLD;
@@ -105,7 +105,18 @@ void upsdrv_initinfo(void)
 	__u8 buffer[10];
 	unsigned short year, month, day;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Set capacity mode in mA(h) */
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x03);
@@ -171,7 +182,18 @@ void upsdrv_updateinfo(void)
 	static __s32 temperature;
 	static __s32 runtime_to_empty;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, CHARGER_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 	/* Charger only supplies online/offline status */
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x13);
 	if (i2c_status == -1) {
@@ -182,7 +204,18 @@ void upsdrv_updateinfo(void)
 	online = (i2c_status & 0x8000) != 0;
 	upsdebugx(3, "Charger status 0x%02X, online %d", i2c_status, online);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 	i2c_status = i2c_smbus_read_word_data(upsfd, 0x16);
 	if (i2c_status == -1) {
 		dstate_datastale();
@@ -292,6 +325,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
+void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
@@ -339,7 +375,18 @@ void upsdrv_initups(void)
 		fatal_with_errno(EXIT_FAILURE, "Could not open device port '%s'", device_path);
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+# pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+#endif
+	/* Current definition of this macro ends with a brace;
+	 * we keep the useless trailing ";" for readability */
 	ACCESS_DEVICE(upsfd, BQ2060_ADDRESS);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Get ManufacturerName */
 	memset(DeviceName_buffer, 0, 10);

@@ -9,6 +9,8 @@
 .deps/
 .libs/
 .inst/
+/tmp/
+/obj/
 /_install_pkgprotodir/
 Makefile
 Makefile.in
@@ -20,12 +22,16 @@ Makefile.in
 /config.log
 /config.status
 /config.sub
+/config.h
 /config.cache
 /configure
 /conf_nut_report_feature
 /conf??????/
 /dir.??????/
+/dir?.???????/
 /configure-test*/
+/confdefs.h
+/conftest.*
 /cscope.*
 /depcomp
 /INSTALL
@@ -34,7 +40,16 @@ Makefile.in
 /ltmain.sh
 /missing
 /test-driver
-common/.dirstamp
+*-spellchecked
+/cppcheck*.xml
+/.ci*.log
+/.ci*.log.*
+.dirstamp
+*.exe
+
+# Python precompiled files
+__pycache__/
+*.pyc
 
 # Dist
 /nut-*.*.*/
@@ -43,6 +58,8 @@ common/.dirstamp
 /NUT*.local.gz
 /NUT*.p5i
 /NUT*.depot
+/*.msi
+/*.MSI
 
 # Official dist
 /nut-*.tar.gz.md5
@@ -52,3 +69,10 @@ common/.dirstamp
 # Debuggers and IDEs
 .gdb_history
 /nbproject
+/.idea
+/*.iml
+
+# Coredumps
+*.stackdump
+*.core
+core

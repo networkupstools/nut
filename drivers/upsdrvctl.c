@@ -17,18 +17,24 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#else
+#include "wincompat.h"
+#endif
 
-#include "config.h"
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 typedef struct {
 	char	*upsname;
@@ -60,6 +66,9 @@ static char	*driverpath = NULL;
 
 	/* passthrough to the drivers: chroot path and new user name */
 static char	*pt_root = NULL, *pt_user = NULL;
+
+	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
+static int	nut_debug_level_passthrough = 0;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -141,11 +150,12 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
-	int	ret;
-	struct stat	fs;
+	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
+#ifndef WIN32
+	struct stat	fs;
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
@@ -163,20 +173,69 @@ static void stop_driver(const ups_t *ups)
 		return;
 	}
 
+#else
+	snprintf(pidfn, sizeof(pidfn), "%s-%s",ups->driver, ups->upsname);
+#endif
+
 	upsdebugx(2, "Sending signal to %s", pidfn);
 
 	if (testmode)
 		return;
 
+#ifndef WIN32
 	ret = sendsignalfn(pidfn, SIGTERM);
+#else
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
 
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
-		exec_error++;
-		return;
+#ifndef WIN32
+		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
+		ret = sendsignalfn(pidfn, SIGKILL);
+#else
+		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
+		ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+			exec_error++;
+			return;
+		}
 	}
+
+	for (i = 0; i < 5 ; i++) {
+		if (sendsignalfn(pidfn, 0) != 0) {
+			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+			return;
+		}
+		sleep(1);
+	}
+
+#ifndef WIN32
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
+	ret = sendsignalfn(pidfn, SIGKILL);
+#else
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
+	if (ret == 0) {
+		for (i = 0; i < 5 ; i++) {
+			if (sendsignalfn(pidfn, 0) != 0) {
+				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+				// While a TERMinated driver cleans up,
+				// a stuck and KILLed one does not, so:
+				unlink(pidfn);
+				return;
+			}
+			sleep(1);
+		}
+	}
+
+	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+	exec_error++;
 }
 
+#ifndef WIN32
 static void waitpid_timeout(const int sig)
 {
 	NUT_UNUSED_VARIABLE(sig);
@@ -184,6 +243,7 @@ static void waitpid_timeout(const int sig)
 	/* do nothing */
 	return;
 }
+#endif
 
 /* print out a command line at the given debug level. */
 static void debugcmdline(int level, const char *msg, char *const argv[])
@@ -201,6 +261,7 @@ static void debugcmdline(int level, const char *msg, char *const argv[])
 
 static void forkexec(char *const argv[], const ups_t *ups)
 {
+#ifndef WIN32
 	int	ret;
 	pid_t	pid;
 
@@ -225,10 +286,13 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		sigaction(SIGALRM, &sa, NULL);
 
 		/* Use the local maxstartdelay, if available */
-		if (ups->maxstartdelay != -1)
-			alarm(ups->maxstartdelay);
-		else /* Otherwise, use the global (or default) value */
-			alarm(maxstartdelay);
+		if (ups->maxstartdelay != -1) {
+			if (ups->maxstartdelay >= 0)
+				alarm((unsigned int)ups->maxstartdelay);
+		} else { /* Otherwise, use the global (or default) value */
+			if (maxstartdelay >= 0)
+				alarm((unsigned int)maxstartdelay);
+		}
 
 		ret = waitpid(pid, &wstat, 0);
 
@@ -270,25 +334,137 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	/* shouldn't get here */
 	fatal_with_errno(EXIT_FAILURE, "execv");
+#else
+	BOOL	ret;
+	DWORD res;
+	DWORD exit_code = 0;
+	char	commandline[SMALLBUF];
+	STARTUPINFO StartupInfo;
+	PROCESS_INFORMATION ProcessInformation;
+	int 	i = 1;
+
+	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+
+	/* the command line is made of the driver name followed by args */
+	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
+	while( argv[i] != NULL ) {
+		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
+		i++;
+	}
+	
+	ret = CreateProcess(
+			argv[0],
+			commandline,
+			NULL,
+			NULL,
+			FALSE,
+			CREATE_NEW_PROCESS_GROUP,
+			NULL,
+			NULL,
+			&StartupInfo,
+			&ProcessInformation
+			);
+
+	if( ret == 0 ) {
+		fatal_with_errno(EXIT_FAILURE, "execv");
+	}
+	
+	/* Wait a bit then look at driver process.
+	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
+	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 */
+	res = WaitForSingleObject(ProcessInformation.hProcess,
+			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
+	
+	if (res != WAIT_TIMEOUT) {
+		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
+		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
+		exec_error++;
+		return;
+	}
+	
+	return;
+#endif
 }
 
 static void start_driver(const ups_t *ups)
 {
-	char	*argv[8];
-	char	dfn[SMALLBUF];
+	char	*argv[9];
+	char	dfn[SMALLBUF], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
 	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
 	argv[arg++] = dfn;
+
+	if (nut_debug_level_passthrough > 0
+	&&  nut_debug_level > 0
+	&&  sizeof(dbg) > 3
+	) {
+		size_t d, m;
+
+		/* cut-off point: buffer size or requested debug level */
+		m = sizeof(dbg) - 1;	/* leave a place for '\0' */
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* Different platforms, different sizes, none fits all... */
+		/* can we fit this many 'D's? */
+		if ((uintmax_t)SIZE_MAX > (uintmax_t)nut_debug_level /* else can't assign, requested debug level is huge */
+		&&  (size_t)nut_debug_level + 1 < m
+		) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+			/* need even fewer (leave a place for '-'): */
+			m = (size_t)nut_debug_level + 1;
+		} else {
+			upsdebugx(1, "Requested debugging level %d is too "
+				"high for pass-through args, truncated to %" PRIuSIZE,
+				nut_debug_level,
+				(m - 1)	/* count off '-' (and '\0' already) chars */
+				);
+		}
+
+		dbg[0] = '-';
+		for (d = 1; d < m ; d++) {
+			dbg[d] = 'D';
+		}
+		dbg[d] = '\0';
+		argv[arg++] = dbg;
+	}
+
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
 
@@ -326,7 +502,8 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				sleep (retrydelay);
+				if (retrydelay >= 0)
+					sleep ((unsigned int)retrydelay);
 		}
 	}
 }
@@ -344,6 +521,7 @@ static void help(const char *progname)
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
 	printf("  -D            	raise debugging level\n");
+	printf("  -d            	pass debugging level from upsdrvctl to driver\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
@@ -362,7 +540,11 @@ static void shutdown_driver(const ups_t *ups)
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 
 	argv[arg++] = dfn;
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
@@ -471,7 +653,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -490,6 +672,10 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				break;
+
+			case 'd':
+				nut_debug_level_passthrough = 1;
 				break;
 
 			case 'h':
@@ -511,14 +697,18 @@ int main(int argc, char **argv)
 			nut_debug_level = 2;
 	}
 
-	upsdebugx(2, "\n"
-		   "If you're not a NUT core developer, chances are that you're told to enable debugging\n"
-		   "to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
-		   "the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
-		   "Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
-		   "path to the driver binary and some command line option. This is what the driver\n"
-		   "starts and you need to copy and paste that line and append the debug flags to that\n"
-		   "line (less the 'exec:' prefix).\n");
+	if (nut_debug_level_passthrough == 0) {
+		upsdebugx(2, "\n"
+			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
+			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
+			"the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
+			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
+			"path to the driver binary and some command line option. This is what the driver\n"
+			"starts and you need to copy and paste that line and append the debug flags to that\n"
+			"line (less the 'exec:' prefix).\n\n"
+			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
+			"pass its current debug level to the launched driver.\n");
+	}
 
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;
@@ -532,7 +722,11 @@ int main(int argc, char **argv)
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
+#ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
+#else
+	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
+#endif
 
 	atexit(exit_cleanup);
 

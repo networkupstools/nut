@@ -31,11 +31,11 @@
 
 	PCONF_CTX_t	sock_ctx;
 
-static void sock_arg(int numarg, char **arg)
+static void sock_arg(size_t numarg, char **arg)
 {
-	int	i;
+	size_t	i;
 
-	printf("numarg=%d : ", numarg);
+	printf("numarg=%" PRIuSIZE " : ", numarg);
 
 	for (i = 0; i < numarg; i++)
 		printf("[%s] ", arg[i]);
@@ -47,6 +47,8 @@ static int socket_connect(const char *sockfn)
 {
 	int	ret, fd;
 	struct	sockaddr_un sa;
+
+	check_unix_socket_filename(sockfn);
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;

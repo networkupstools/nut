@@ -70,7 +70,7 @@ typedef struct {
 } info_lkp_t;
 
 /* accessor on the status */
-extern int ups_status_get(void);
+extern unsigned ups_status_get(void);
 
 /* declarations of public lookup tables */
 /* boolean status values from UPS */
@@ -134,7 +134,7 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
-	CAL,		/* calibration */
+	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
@@ -208,6 +208,7 @@ typedef struct {
 	const char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
 	const char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
 	const char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
+	int	(*fix_report_desc)(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);		/* Function called to potentially remedy defects in the parsed Report Descriptor caused by buggy HID contents*/
 } subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */
@@ -216,4 +217,7 @@ int setvar(const char *varname, const char *val);
 
 void possibly_supported(const char *mfr, HIDDevice_t *hd);
 
+/* by default we apply fix-ups for broken USB encoding, etc. */
+extern int disable_fix_report_desc;
+int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);
 #endif /* USBHID_UPS_H */

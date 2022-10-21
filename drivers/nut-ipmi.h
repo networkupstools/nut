@@ -29,6 +29,14 @@ typedef enum {
 	PSU_POWER_FAILURE		/* = status OFF */
 } psu_status_t;
 
+#ifdef HAVE_FREEIPMI_11X_12X
+  /* args 8, 9, 10, 11 of ipmi_fru_multirecord_power_supply_information() */
+  typedef int input_voltage_range_t;
+#else
+  /* args 8, 9, 10, 11 of ipmi_fru_parse_multirecord_power_supply_information() */
+  typedef unsigned int input_voltage_range_t;
+#endif
+
 /* Abstract structure to store information */
 typedef struct IPMIDevice_s {
 	int			ipmi_id;				/* FRU ID */
@@ -38,8 +46,8 @@ typedef struct IPMIDevice_s {
 	char*		part;					/* Part Number */
 	char*		date;					/* Manufacturing Date/Time */
 	int			overall_capacity;		/* realpower.nominal? */
-	int			input_minvoltage;
-	int			input_maxvoltage;
+	input_voltage_range_t			input_minvoltage;
+	input_voltage_range_t			input_maxvoltage;
 	int			input_minfreq;
 	int			input_maxfreq;
 	int			voltage;				/* psu.voltage or device.voltage */
@@ -60,4 +68,3 @@ int nut_ipmi_monitoring_init(void);
 int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev);
 
 #endif /* NUT_IPMI_H */
-

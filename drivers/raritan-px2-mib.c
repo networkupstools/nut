@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.2"
+#define RARITAN_PX2_MIB_VERSION  "0.4"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -57,7 +57,7 @@ static info_lkp_t raritanpx2_outlet_status_info[] = {
 	{ 0, "NULL", NULL, NULL }
 };
 
-static info_lkp_t outlet_switchability_info[] = {
+static info_lkp_t raritanpx2_outlet_switchability_info[] = {
 	{ -1, "yes", NULL, NULL },
 	{ 1, "yes", NULL, NULL },
 	{ 2, "no", NULL, NULL },
@@ -66,6 +66,11 @@ static info_lkp_t outlet_switchability_info[] = {
 
 /* PDU2-MIB Snmp2NUT lookup table */
 static snmp_info_t raritan_px2_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* pduManufacturer.1 = STRING: Raritan */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.2.1",
@@ -152,7 +157,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	 * { "unmapped.measurementsOutletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.1.14", NULL, SU_FLAG_OK, NULL }, */
 
 	/* outletSwitchable.1.%i = INTEGER: true(1) */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &outlet_switchability_info[0] },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &raritanpx2_outlet_switchability_info[0] },
 
 	/* instant commands. */
 	/* switchingOperation.1.1 = INTEGER: on(1) */

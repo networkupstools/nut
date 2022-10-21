@@ -1,11 +1,13 @@
 Installation instructions
 =========================
 
-This chapter describe the various methods for installing Network UPS Tools.
+This chapter describes the various methods for installing Network UPS Tools.
 
 Whenever it is possible, prefer <<Installing_packages, installing from packages>>.
 Packagers have done an excellent and hard work at improving NUT integration into
-their system.
+their system.  On the other hand, distributions and appliances tend to package
+"official releases" of projects such as NUT, and so do not deliver latest and
+greatest fixes, new drivers, bugs and other features.
 
 [[Installing_source]]
 Installing from source
@@ -15,6 +17,13 @@ These are the essential steps for compiling and installing this software.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
+
+The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+document suggests prerequisite packages with tools and dependencies
+available and needed to build and test as much as possible of NUT on
+numerous platforms, written from perspective of CI testing (if you
+are interested in getting updated drivers for a particular device,
+you might select a sub-set of those suggestions).
 
 [NOTE]
 .Keep in mind that...
@@ -52,7 +61,7 @@ long as you are consistent.
 The process for doing this varies from one system to the next, and
 explaining how to add users is beyond the scope of this document.
 
-For the purposes of this document, the user name and group name 
+For the purposes of this document, the user name and group name
 will be 'ups' and 'nut' respectively.
 
 Be sure the new user is a member of the new group!  If you forget to
@@ -87,7 +96,7 @@ docs/configure.txt or './configure --help' for all the available
 options.
 
 If you alter paths with additional switches, be sure to use those
-new paths while reading the rest of the steps.    
+new paths while reading the rest of the steps.
 
 Reference: <<Configure_options,Configure options>> from the
 User Manual.
@@ -100,7 +109,7 @@ Build the programs
 
 This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
-selected during <<Configuration,configuration>> step above. 
+selected during <<Configuration,configuration>> step above.
 
 
 Installation
@@ -175,7 +184,7 @@ permissions for the USB device, you may need to set up (operating
 system dependent) hotplugging scripts.  Sample scripts and
 information are provided in the scripts/hotplug and
 scripts/udev directories. For most users, the hotplugging scripts
-will be installed automatically by "make install". 
+will be installed automatically by "make install".
 
 (If you want to try if a driver works without setting up
 hotplugging, you can add the "-u root" option to upsd, upsmon, and
@@ -299,7 +308,7 @@ To install NUT as a package execute:
 Port
 ^^^^
 
-The port is located under +sysutils/nut+. 
+The port is located under +sysutils/nut+.
 Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
 To install it, use:
 
@@ -334,6 +343,81 @@ using:
 
 where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 
+
+[[Windows]]
+Windows
+~~~~~~~
+
+Windows binary package
+^^^^^^^^^^^^^^^^^^^^^^
+
+[NOTE]
+======
+NUT binary package built for Windows platform was last issued for
+a much older codebase (using NUT v2.6.5 as a baseline). While the current
+state of the codebase you are looking at aims to refresh the effort of
+delivering NUT on Windows, the aim at the moment is to help developers
+build and modernize it after a decade of blissful slumber, and packages
+are not being regularly produced yet. Functionality of such builds varies
+a lot depending on build environment used. This effort is generally
+tracked at https://github.com/orgs/networkupstools/projects/2/views/1
+and help would be welcome!
+
+It should currently be possible to build the codebase in native Windows
+with MSYS2/MinGW and cross-building from Linux with mingw (preferably
+in a Debian/Ubuntu container). Refer to
+link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+and link:scripts/Windows/README[scripts/Windows/README file] for respective
+build environment preparation instructions.
+
+Note that to use NUT for Windows, non-system dependency DLL files must
+be located in same directory as each EXE file that uses them. This can be
+accomplished for FOSS libraries (copying them from the build environment)
+by calling `make install-win-bundle DESTDIR=/some/valid/location` easily.
+
+Archives with binaries built by recent iterations of continuous integration
+jobs should be available for exploration on the respective CI platforms.
+======
+
+*Information below may be currently obsolete, but the NUT project wishes
+it to become actual and factual again :)*
+
+NUT binary package built for Windows platform comes in a `.msi` file.
+
+If you are using Windows 95, 98 or Me, you should install
+link:http://www.microsoft.com/downloads/en/details.aspx?familyid=cebbacd8-c094-4255-b702-de3bb768148f&displaylang=en[Windows Installer 2.0]
+from Microsoft site.
+
+If you are using Windows 2000 or NT 4.0, you can
+link:http://www.microsoft.com/downloads/en/details.aspx?FamilyID=4b6140f9-2d36-4977-8fa1-6f8a0f5dca8f&DisplayLang=en[download it here].
+
+Newer Windows releases should include the Windows Installer natively.
+
+Run `NUT-Installer.msi` and follow the wizard indications.
+
+If you plan to use an UPS which is locally connected to an USB port, you have to install
+link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
+on your system. Then you must install your device via libusb's "Inf Wizard".
+
+NOTE: If you intend to build from source, relevant sources may be available at
+https://github.com/mcuee/libusb-win32 and keep in mind that it is a variant of
+libusb-0.1. Current NUT supports libusb-1.0 as well, and that project should
+have Windows support out of the box (but it was not explored for NUT yet).
+
+If you have selected default directory, all configuration files are located in
+`C:\Program Files\NUT\ups\etc`
+
+Building for Windows
+^^^^^^^^^^^^^^^^^^^^
+
+For suggestions about setting up the NUT build environment variants
+for Windows, please see link:docs/config-prereqs.txt and/or
+link:scripts/Windows/README files. Note this is rather experimental
+at this point.
+
+
+Runtime configuration
+~~~~~~~~~~~~~~~~~~~~~
 
 You are now ready to configure NUT, and start testing and using it.
 

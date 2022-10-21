@@ -3,18 +3,21 @@ netxml-ups(8)
 
 NAME
 ----
+
 netxml-ups - Driver for Eaton / MGE Network Management Card / Proxy
 (XML/HTTP Protocol) equipment
 
 NOTE
 ----
+
 This man page only documents the hardware-specific features of the
 netxml-ups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-netxml-ups support all recent Eaton / MGE models which use a Network
+
+netxml-ups supports all recent Eaton / MGE models which use a Network
 Management Card or Proxy (MGE XML/HTTP protocol based). This applies to both
 Eaton (previously MGE Office Protection Systems) and to MGE UPS SYSTEMS.
 Supported card and proxy models are:
@@ -32,6 +35,7 @@ parameter.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
@@ -77,6 +81,7 @@ particular driver instance restores the old behavior for those measurements.
 
 IMPLEMENTATION
 --------------
+
 The hostname of the UPS is specified with the "port" value in
 *ups.conf*, i.e.:
 
@@ -94,6 +99,7 @@ linkman:ups.conf[5]) to at least 5 seconds.
 
 KNOWN ISSUES
 ------------
+
 Don't connect to the UPS through a proxy. Although it would be trivial to add
 support for proxies, this is not recommended and don't ask for it. Not only
 because it will prevent the driver to make a persistent connection to the UPS,
@@ -102,6 +108,7 @@ whatever reason), the driver will no longer be able to reach the UPS.
 
 AUTHORS
 -------
+
 Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 SEE ALSO
@@ -109,8 +116,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

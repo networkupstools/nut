@@ -15,6 +15,7 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports SOLA/BASIC Mexico ISBMEX protocol UPS equipment.
 
 EXTRA ARGUMENTS
@@ -25,6 +26,7 @@ linkman:ups.conf[5].
 
 AUTHOR
 ------
+
 Edscott Wilson Garcia <edscott@imp.mx>
 
 SEE ALSO
@@ -32,8 +34,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

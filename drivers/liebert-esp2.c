@@ -28,7 +28,7 @@
 #define IsBitSet(val, bit) ((val) & (1 << (bit)))
 
 #define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 #define UPS_SHUTDOWN_DELAY 12 /* it means UPS will be shutdown 120 sec */
 #define SHUTDOWN_CMD_LEN  8
 
@@ -117,7 +117,7 @@ static void NUT_UNUSED_FUNCTION_dummy_bitfields(void)
 	NUT_UNUSED_VARIABLE(cmd_bitfield7);
 }
 
-static int num_inphases = 1, num_outphases = 1;
+static unsigned int num_inphases = 1, num_outphases = 1;
 
 static char cksum(const char *buf, const size_t len)
 {
@@ -131,34 +131,34 @@ static char cksum(const char *buf, const size_t len)
 	return sum;
 }
 
-static int do_command(const unsigned char *command, char *reply, int cmd_len)
+static ssize_t do_command(const unsigned char *command, char *reply, size_t cmd_len)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_send_buf(upsfd, command, cmd_len);
 	if (ret < 0) {
 		upsdebug_with_errno(2, "send");
 		return -1;
-	} else if (ret < cmd_len) {
-		upsdebug_hex(2, "send: truncated", command, ret);
+	} else if ((size_t)ret < cmd_len) {
+		upsdebug_hex(2, "send: truncated", command, (size_t)ret);
 		return -1;
 	}
 
-	upsdebug_hex(2, "send", command, ret);
+	upsdebug_hex(2, "send", command, (size_t)ret);
 
 	ret = ser_get_buf_len(upsfd, reply, 8, 1, 0); /* it needs that this driver works with USB to Serial cable */
 	if (ret < 0) {
 		upsdebug_with_errno(2, "read");
 		return -1;
 	} else if (ret < 6) {
-		upsdebug_hex(2, "read: truncated", reply, ret);
+		upsdebug_hex(2, "read: truncated", reply, (size_t)ret);
 		return -1;
 	} else if (reply[7] != cksum(reply, 7)) {
-		upsdebug_hex(2, "read: checksum error", reply, ret);
+		upsdebug_hex(2, "read: checksum error", reply, (size_t)ret);
 		return -1;
 	}
 
-	upsdebug_hex(2, "read", reply, ret);
+	upsdebug_hex(2, "read", reply, (size_t)ret);
 	return ret;
 }
 
@@ -176,7 +176,8 @@ void upsdrv_initinfo(void)
 	};
 
 	char	buf[LARGEBUF];
-	int	i, bitn, vari, ret=0, offset=4, readok=0;
+	int	i, bitn, vari, offset=4, readok=0;
+	ssize_t	ret=0;
 	char	command[6], reply[8];
 	unsigned int	value;
 
@@ -187,20 +188,20 @@ void upsdrv_initinfo(void)
 
 		for (i = 0; i < vartab[vari].len; i++) {
 			snprintf(command, sizeof(command), "\x01\x88\x02\x01%c", i+offset);
-		command[5] = cksum(command, 5);
+			command[5] = cksum(command, 5);
 
-		ret = do_command((unsigned char *)command, reply, 6);
+			ret = do_command((unsigned char *)command, reply, 6);
 			if (ret < 8) {
-				upsdebug_hex(2, "send: truncated", command, ret);
+				upsdebug_hex(2, "send: truncated", command, (size_t)ret);
 				break;
 			}
 
 			buf[i<<1] = reply[6];
 			buf[(i<<1)+1] = reply[5];
-	}
+		}
 
-	buf[i<<1] = 0;
-		upsdebugx(1, "return: %d (8=success)", ret);
+		buf[i<<1] = 0;
+		upsdebugx(1, "return: %" PRIiSIZE " (8=success)", ret);
 
 		if (ret == 8) { /* last command successful */
 			dstate_setinfo(vartab[vari].var,"%s",buf);
@@ -216,7 +217,7 @@ void upsdrv_initinfo(void)
 	memcpy(command,cmd_upstype,6);
 	ret = do_command((unsigned char *)command, reply, 6);
 	if (ret < 8) {
-		upsdebug_hex(2, "send: phase detection: truncated", command, ret);
+		upsdebug_hex(2, "send: phase detection: truncated", command, (size_t)ret);
 	}
 	else {
 		/* input: from bit 0 to bit 1 (2 bits) */
@@ -252,7 +253,7 @@ void upsdrv_initinfo(void)
 	memcpy(command,cmd_scaling1,6);
 	ret = do_command((unsigned char *)command, reply, 6);
 	if (ret < 8) {
-		upsdebug_hex(2, "send: scaling detection: truncated", command, ret);
+		upsdebug_hex(2, "send: scaling detection: truncated", command, (size_t)ret);
 	}
 	else { /* add here multipliers that differentiate between models */
 		switch (reply[6]) {
@@ -386,7 +387,8 @@ void upsdrv_updateinfo(void)
 
 	const char	*val;
 	char	reply[8];
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	for (i = 0; vartab[i].var; i++) {
 		int16_t	intval;

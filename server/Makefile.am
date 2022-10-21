@@ -1,5 +1,10 @@
 # Network UPS Tools: server
 
+# Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la: dummy
+	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
@@ -10,7 +15,7 @@ endif
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
-LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
+LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
    LDADD += $(LIBWRAP_LIBS)
 endif
@@ -27,4 +32,17 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
 
-sockdebug_SOURCES = sockdebug.c
+if HAVE_WINDOWS
+  sockdebug_SOURCES = pipedebug.c
+else !HAVE_WINDOWS
+  sockdebug_SOURCES = sockdebug.c
+endif !HAVE_WINDOWS
+
+dummy:
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	rm -rf $(builddir)/.deps

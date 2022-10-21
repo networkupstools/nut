@@ -57,6 +57,7 @@
 #serial 9
 
 AC_DEFUN([AX_C___ATTRIBUTE__], [
+  AC_LANG_PUSH([C])
   AC_CACHE_CHECK([for __attribute__((unused)) for function arguments], [ax_cv___attribute__unused_arg],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
@@ -101,6 +102,7 @@ AC_DEFUN([AX_C___ATTRIBUTE__], [
       [ax_cv___attribute__noreturn=no]
     )
   ])
+  AC_LANG_POP([C])
 
   AC_CACHE_CHECK([for at least some __attribute__ support], [ax_cv___attribute__],
    [if test "$ax_cv___attribute__unused_arg" = "yes" \

@@ -30,9 +30,10 @@
 #include "main.h"
 #include "serial.h"
 #include "gamatronic.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -81,16 +82,16 @@ static int sec_upsrecv (char *buf)
 		return (-2);
 }
 
-static int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
+static ssize_t sec_cmd(const char mode, const char *command, char *msgbuf, ssize_t *buflen)
 {
 	char msg[140];
-	int ret;
+	ssize_t ret;
 
 	memset(msg, 0, sizeof(msg));
 
 	/* create the message string */
 	if (*buflen > 0) {
-		snprintf(msg, sizeof(msg), "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
+		snprintf(msg, sizeof(msg), "%c%c%03zd%s%s", SEC_MSG_STARTCHAR,
 			mode, (*buflen)+3, command, msgbuf);
 	}
 	else {
@@ -100,7 +101,7 @@ static int sec_cmd(const char mode, const char *command, char *msgbuf, int *bufl
 	upsdebugx(1, "PC-->UPS: \"%s\"",msg);
 	ret = ser_send(upsfd, "%s", msg);
 
-	upsdebugx(1, " send returned: %d",ret);
+	upsdebugx(1, " send returned: %" PRIiSIZE, ret);
 
 	if (ret == -1) return -1;
 
@@ -108,7 +109,7 @@ static int sec_cmd(const char mode, const char *command, char *msgbuf, int *bufl
 
 	if (ret < 0) return -1;
 
-	strncpy(msgbuf, msg, ret);
+	strncpy(msgbuf, msg, (size_t)ret);
 	upsdebugx(1, "UPS<--PC: \"%s\"",msg);
 
 /*
@@ -198,8 +199,9 @@ static void update_pseudovars( void )
 }
 
 static void sec_poll ( int pollflag ) {
-	int msglen,f,q;
-	char retbuf[140],*n,*r;
+	ssize_t msglen;
+	int f, q;
+	char retbuf[140], *n, *r;
 
 	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
 		if (sec_querylist[q].command == NULL) break;
@@ -215,8 +217,31 @@ static void sec_poll ( int pollflag ) {
 
 			if (sqv(q,f) > 0) {
 				if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0) {
-					snprintf(sec_varlist[sqv(q,f)].value,
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+					/* NOTE: We intentionally limit the amount
+					 * of characters picked from "r" buffer
+					 * into respectively sized "*.value"
+					 */
+					int len = snprintf(sec_varlist[sqv(q,f)].value,
 						sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
+
+					if (len < 0) {
+						upsdebugx(1, "%s: got an error while extracting value", __func__);
+					}
+
+					if ((intmax_t)len > (intmax_t)sizeof(sec_varlist[sqv(q,f)].value)
+					||  (intmax_t)strnlen(r, sizeof(retbuf)) > (intmax_t)sizeof(sec_varlist[sqv(q,f)].value)
+					) {
+						upsdebugx(1, "%s: value was truncated", __func__);
+					}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 					sec_setinfo(sqv(q,f), r);
 				}
 
@@ -235,8 +260,9 @@ static void sec_poll ( int pollflag ) {
 
 void upsdrv_initinfo(void)
 {
-	int msglen, v;
-	char *a,*p,avail_list[300];
+	ssize_t msglen;
+	int v;
+	char *a, *p, avail_list[300];
 
 	/* find out which variables/commands this UPS supports */
 	msglen = 0;
@@ -246,7 +272,6 @@ void upsdrv_initinfo(void)
 	msglen = 0;
 	sec_cmd(SEC_POLLCMD, SEC_AVAILP2, p, &msglen);
 	*(p+msglen) = '\0';
-
 
 	if (strlen(avail_list) == 0) {
 		fatalx(EXIT_FAILURE, "No available variables found!");
@@ -278,20 +303,20 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int msg_len;
+	ssize_t msglen;
 	char msgbuf[SMALLBUF];
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "-1");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "1");
-	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "1");
+	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "2");
-	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "2");
+	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msglen);
 
-	msg_len = snprintf(msgbuf, sizeof(msgbuf), "5");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
+	msglen = snprintf(msgbuf, sizeof(msgbuf), "5");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
 }
 
 /*
@@ -324,11 +349,12 @@ void upsdrv_makevartable(void)
 static void setup_serial(const char *port)
 {
 	char temp[140];
-	int i,ret;
+	int i;
+	ssize_t ret;
 
 	/* Detect the ups baudrate  */
 	for (i=0; i<5; i++) {
-		ser_set_speed(upsfd, device_path,baud_rates[i].rate);
+		ser_set_speed(upsfd, device_path, baud_rates[i].rate);
 		ret = ser_send(upsfd, "^P003MAN");
 		ret = sec_upsrecv(temp);
 		if (ret >= -1) break;
@@ -342,7 +368,8 @@ static void setup_serial(const char *port)
 		exit (1);
 	}
 	else
-		printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
+		printf("Connected to UPS on %s baudrate: %" PRIuSIZE "\n",
+			port, baud_rates[i].name);
 }
 
 void upsdrv_initups(void)

@@ -1,4 +1,4 @@
-USBHID-UPS(8) 
+USBHID-UPS(8)
 =============
 
 NAME
@@ -26,14 +26,16 @@ At the present time, usbhid-ups supports:
  - the newer Eaton USB models,
  - all MGE USB models,
  - all Dell USB models,
+ - all AMETEK Powervar UPM models,
  - some APC models,
  - some Belkin models,
  - some Cyber Power Systems models,
  - some Powercom models,
+ - some PowerWalker models,
  - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
-available in the source distribution as data/drivers.list, or on the
+available in the source distribution as data/driver.list, or on the
 NUT website. You may use the "explore" driver option to gather
 information from HID UPSes which are not yet supported; see below for
 details.
@@ -43,7 +45,7 @@ This driver is known to work on:
  - most Linux systems,
  - FreeBSD (beta stage) and maybe other *BSD,
  - Darwin / Mac OS X,
- - Solaris 10.
+ - Solaris 10 and illumos-based distributions.
 
 EXTRA ARGUMENTS
 ---------------
@@ -60,7 +62,7 @@ The default value is 20 (in seconds). Usually this *must be lower* than
 Note that many Cyber Power Systems (CPS) models tend to divide this delay by
 60 and round down, so the minimum advisable value is 60 to avoid powering off
 immediately after NUT sends the shutdown command to the UPS.
- 
+
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent, but before the actual switch off. This
@@ -88,6 +90,26 @@ If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
 
+*onlinedischarge*::
+If this flag is set, the driver will treat `OL+DISCHRG` status as offline.
+For most devices this combination means calibration or similar maintenance;
+however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
+wall power is lost -- and need this option to handle shutdowns.
+
+*disable_fix_report_desc*::
+Set to disable fix-ups for broken USB encoding, etc. which we apply by default
+on certain models (vendors/products) which were reported as not following the
+protocol strictly. This flag allows to disable the feature in particular device
+configurations.
++
+It is always possible that the vendors eventually release fixed firmware, or
+re-use identifiers by which we match suspected broken devices for unrelated
+products, so processing these fix-ups would be a waste of time there.
++
+It is also always possible that NUT fix-ups cause issues on some devices,
+whether due to NUT bugs or because the vendor protocol implementation is
+broken in more than one place.
+
 *vendor*='regex'::
 *product*='regex'::
 *serial*='regex'::
@@ -101,7 +123,7 @@ string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
 finding out the strings to match.
 +
-Examples: 
+Examples:
 
  -  `-x vendor="Foo.Corporation.*"`
  -  `-x vendorid=051d*` (APC)
@@ -111,7 +133,15 @@ Examples:
 
 Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]"). 
+connected (e.g. bus="002", bus="00[2-3]").
+
+*device =* 'regex'::
+
+Select a UPS on a specific USB device or group of devices. The argument is
+a regular expression that must match the device name where the UPS is
+connected (e.g. device="001", device="00[1-2]").
+Note that device numbers are not guaranteed by the OS to be stable across
+re-boots or device re-plugging.
 
 *explore*::
 With this option, the driver will connect to any device, including
@@ -132,6 +162,18 @@ INPUT flagged objects. Some Powercom units need this option.
 *interruptsize*='num'::
 Limit the number of bytes to read from interrupt pipe. For some Powercom units
 this option should be equal to 8.
+
+*waitbeforereconnect*='num'::
+The driver automatically tries to reconnect to the UPS on unexpected error.
+This parameter (in seconds) allows it to wait before attempting the reconnection.
+The default value is 0.
++
+NOTE: for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
+stops responding every few hours, which causes usbhid-ups driver to detect an
+libusb insufficient memory error; in this case, when the usbhid-ups driver tries
+to reconnect too early, the activity sometimes led the UPS firmware to crash and
+turn off the load immediately! Setting this parameter to 30 seconds solved this
+problem (while 20 seconds were not enough).
 
 INSTALLATION
 ------------
@@ -227,6 +269,33 @@ If you do the same without mains present, it should do the same, but in
 this case, the outputs shall remain off until mains power is applied
 again.
 
+UPS cuts power too soon
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that many Cyber Power Systems (CPS) models tend to divide `offdelay`
+by 60 and round down, so the minimum advisable value is 60 (seconds) to avoid
+powering off immediately after NUT sends the shutdown command to the UPS.
+
+UPS does not set battery.charge.low but says OK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that many Cyber Power Systems (CPS) models tend to allow only certain
+values for `battery.charge.low` and anything outside of the set of allowed
+values are rounded or ignored.
+
+A shell loop like this can help you map out the allowed values:
+
+====
+    for i in `seq 90 -1 0`; do echo "set to $i"; \
+        upsrw -s battery.charge.low=$i -u * -p * cps-big; \
+        sleep 1; upsc cps-big battery.charge.low; echo ""; \
+    done
+====
+
+For example, for CPS PR1000LCDRTXL2U model, the only allowed values are
+`[60,55,50,45,40,35,30,25,20]` and in some cases, your UPS may effectively
+not support a value of 10 for the `battery.charge.low` setting.
+
 HISTORY
 -------
 
@@ -237,16 +306,22 @@ AUTHORS
 -------
 
 Originally sponsored by MGE UPS SYSTEMS.
+
 Now sponsored by Eaton <http://opensource.eaton.com>
-Arnaud Quette, Peter Selinger, Arjen de Korte
+
+* Arnaud Quette
+* Peter Selinger
+* Arjen de Korte
 
 SEE ALSO
 --------
 
 The core driver
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

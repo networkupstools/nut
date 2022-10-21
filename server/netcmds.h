@@ -45,11 +45,12 @@ extern "C" {
 
 static struct {
 	const	char	*name;
-	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
+	void	(*func)(nut_ctype_t *client, size_t numargs, const char **arg);
 	int	flags;
 } netcmds[] = {
 	{ "VER",	net_ver,	0		},
 	{ "NETVER",	net_netver,	0		},
+	{ "PROTVER",	net_netver,	0		},	/* aliased since NUT 2.8.0 */
 	{ "HELP",	net_help,	0		},
 	{ "STARTTLS",	net_starttls,	0		},
 
@@ -61,6 +62,10 @@ static struct {
 
 	{ "LOGIN",	net_login,	FLAG_USER	},
 	{ "LOGOUT", 	net_logout,	0		},
+	/* NOTE: Protocol in NUT 2.8.0 allows to handle
+	 * master/primary to rename/alias the routine.
+	 */
+	{ "PRIMARY",	net_primary,	FLAG_USER	},
 	{ "MASTER",	net_master,	FLAG_USER	},
 
 	{ "FSD",	net_fsd,	FLAG_USER	},
@@ -68,7 +73,7 @@ static struct {
 	{ "SET",	net_set,	FLAG_USER	},
 	{ "INSTCMD",	net_instcmd,	FLAG_USER	},
 
-	{ NULL,		(void(*)(struct nut_ctype_s *, int,  const char **))(NULL), 0		}
+	{ NULL,		(void(*)(struct nut_ctype_s *, size_t,  const char **))(NULL), 0		}
 };
 
 #ifdef __cplusplus

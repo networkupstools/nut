@@ -137,9 +137,16 @@ Firewall
 
 NUT has its own official IANA port: 3493/tcp.
 
-The `upsmon` process on slave systems, as well as any other NUT client (such
-as `upsc`, `upscmd`, `upsrw`, NUT-Monitor, ...) connects to the `upsd` process
-on the master system via this TCP port. The `upsd` process does not connect out.
+The `upsmon` process on secondary systems, as well as any other NUT client
+(such as `upsc`, `upscmd`, `upsrw`, NUT-Monitor, ...) connects to the `upsd`
+process on the system which manages the UPS, via this TCP port. Usually an
+`upsmon` process runs on the latter system in "primary" mode for the devices
+connected to it.
+
+The `upsd` process does not initiate outgoing connections.
+
+Certain NUT drivers (for network-managed devices) can initiate their own
+connections to various ports according to corresponding vendor protocol.
 
 You should use this to restrict network access.
 
@@ -161,7 +168,7 @@ into the server.
 `hosts.allow`:
 
 	upsd : admin@127.0.0.1/32
-	upsd : monslave@127.0.0.1/32 monslave@192.168.1.0/24
+	upsd : observer@127.0.0.1/32 observer@192.168.1.0/24
 
 `hosts.deny`:
 
@@ -257,8 +264,8 @@ Example:
 If you already have a file with that name in there, increment the
 0 until you get a unique filename that works.
 
-If you have multiple client systems (like upsmon slaves), be sure
-to install this file on them as well.
+If you have multiple client systems (like upsmon instances in
+secondary mode), be sure to install this file on them as well.
 
 We recommend making a directory under your existing confpath to
 keep everything in the same place.  Remember the path you created,
@@ -691,7 +698,7 @@ confpath and the state path.  I recommend deleting the 'real'
 You can also do this with your confpath and point `/usr/local/ups/etc` (or
 equivalent on your system) at `/chroot/nut/usr/local/ups/etc` unless you're
 worried about something hurting the files inside that directory.  In that
-case, you should maintain a 'master' copy and push it into the chroot path
+case, you should maintain a 'golden' copy and push it into the chroot path
 after making changes.
 
 The `upsdrvctl` itself does not chroot, so the `ups.conf` still needs to be

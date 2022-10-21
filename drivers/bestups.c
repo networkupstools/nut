@@ -1,5 +1,10 @@
 /* bestups.c - model specific routines for Best-UPS Fortress models
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
    ID config option by Jason White <jdwhite@jdwhite.org>
@@ -21,9 +26,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.06"
+#define DRIVER_VERSION	"1.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -128,7 +134,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int get_ident(char *buf, size_t bufsize)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	*ID;
 
 	ID = getval("ID");	/* user-supplied override from ups.conf */
@@ -240,7 +247,8 @@ static void ups_ident(void)
 static void ups_sync(void)
 {
 	char	buf[256];
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 
 	for (i = 0; i < MAXTRIES; i++) {
 		ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
@@ -277,7 +285,8 @@ void upsdrv_initinfo(void)
 
 static int ups_on_line(void)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	temp[256], pstat[32];
 
 	for (i = 0; i < MAXTRIES; i++) {
@@ -322,7 +331,7 @@ void upsdrv_updateinfo(void)
 	char	involt[16], outvolt[16], loadpct[16], acfreq[16],
 		battvolt[16], upstemp[16], pstat[16], buf[256];
 	float	bvoltp;
-	int	ret;
+	ssize_t	ret;
 
 	ret = ser_send_pace(upsfd, UPSDELAY, "\rQ1\r");
 
@@ -345,13 +354,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (ret < 46) {
-		ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
+		ser_comm_fail("Poll failed: short read (got %" PRIiSIZE " bytes)", ret);
 		dstate_datastale();
 		return;
 	}
 
 	if (ret > 46) {
-		ser_comm_fail("Poll failed: response too long (got %d bytes)",
+		ser_comm_fail("Poll failed: response too long (got %" PRIiSIZE " bytes)",
 			ret);
 		dstate_datastale();
 		return;
@@ -428,6 +437,15 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 }

@@ -48,7 +48,10 @@ static char *unescape(char *buf)
 			if (!isxdigit((unsigned char) hex[0])
 				|| !isxdigit((unsigned char) hex[1]))
 				fatalx(EXIT_FAILURE, "bad escape char");
-			ch = strtol(hex, NULL, 16);
+			long l = strtol(hex, NULL, 16);
+			assert(l>=0);
+			assert(l<=255);
+			ch = (char)l;	/* FIXME: Loophole about non-ASCII symbols in top 128 values, or negatives for signed char... */
 
 			if ((ch == 10) || (ch == 13))
 				ch = ' ';

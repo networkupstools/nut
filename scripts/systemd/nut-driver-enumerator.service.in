@@ -13,6 +13,7 @@ PartOf=nut.target
 #User=@RUN_AS_USER@
 #Group=@RUN_AS_GROUP@
 User=root
+SyslogIdentifier=%N
 # it is expected that the process has to exit before systemd starts follow-up
 # units; it should not be a problem for those
 Type=oneshot

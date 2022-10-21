@@ -31,6 +31,7 @@ extern "C" {
 extern char	*certfile;
 extern char	*certname;
 extern char	*certpasswd;
+extern int	disable_weak_ssl;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 extern int certrequest;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
@@ -48,10 +49,10 @@ void ssl_init(void);
 void ssl_finish(nut_ctype_t *client);
 void ssl_cleanup(void);
 
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen);
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen);
+ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen);
+ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen);
 
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
+void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

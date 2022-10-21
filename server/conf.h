@@ -51,6 +51,7 @@ void delete_acls(void);
 void delete_access(void);
 
 extern	int	num_ups;
+extern	int	nut_debug_level_global;
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

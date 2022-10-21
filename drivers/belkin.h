@@ -17,7 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 #include "serial.h"
 #include "timehead.h"
 

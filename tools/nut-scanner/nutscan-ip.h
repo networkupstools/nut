@@ -24,8 +24,14 @@
 #ifndef SCAN_IP
 #define SCAN_IP
 
+#ifndef WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#else
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#endif
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -34,8 +40,8 @@ extern "C" {
 #endif
 
 enum network_type {
-        IPv4,
-        IPv6
+	IPv4,
+	IPv6
 };
 
 typedef struct nutscan_ip_iter {

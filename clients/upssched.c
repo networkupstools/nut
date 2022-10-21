@@ -42,15 +42,22 @@
 #include "common.h"
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#else
+#include "wincompat.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "upssched.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 
 typedef struct ttype_s {
 	char	*name;
@@ -65,6 +72,11 @@ static int	verbose = 0;		/* use for debugging */
 
 /* ups name and notify type (string) as received from upsmon */
 static const	char	*upsname, *notify_type;
+
+#ifdef WIN32
+static OVERLAPPED connect_overlapped;
+#define BUF_LEN 512
+#endif
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
@@ -84,6 +96,7 @@ static void exec_cmd(const char *cmd)
 	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
 
 	err = system(buf);
+#ifndef WIN32
 	if (WIFEXITED(err)) {
 		if (WEXITSTATUS(err)) {
 			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
@@ -95,6 +108,14 @@ static void exec_cmd(const char *cmd)
 			upslogx(LOG_ERR, "Execute command failure: %s", buf);
 		}
 	}
+#else
+	if(err != -1) {
+		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
+	}
+	else {
+		upslogx(LOG_ERR, "Execute command failure : %s", buf);
+	}
+#endif
 
 	return;
 }
@@ -180,7 +201,7 @@ static void checktimers(void)
 static void start_timer(const char *name, const char *ofsstr)
 {
 	time_t	now;
-	int	ofs;
+	long	ofs;
 	ttype_t	*tmp, *last;
 
 	/* get the time */
@@ -195,7 +216,7 @@ static void start_timer(const char *name, const char *ofsstr)
 	}
 
 	if (verbose)
-		upslogx(LOG_INFO, "New timer: %s (%d seconds)", name, ofs);
+		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
 
 	/* now add to the queue */
 	tmp = last = thead;
@@ -238,10 +259,11 @@ static void cancel_timer(const char *name, const char *cname)
 	}
 }
 
+#ifndef WIN32
 static void us_serialize(int op)
 {
 	static	int	pipefd[2];
-	int	ret;
+	ssize_t	ret;
 	char	ch;
 
 	switch(op) {
@@ -265,15 +287,20 @@ static void us_serialize(int op)
 			break;
 	}
 }
+#endif
 
-static int open_sock(void)
+static TYPE_FD open_sock(void)
 {
-	int	ret, fd;
+	TYPE_FD fd;
+
+#ifndef WIN32
+	int	ret;
 	struct	sockaddr_un	ssaddr;
 
+	check_unix_socket_filename(pipefn);
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0)
+	if (INVALID_FD(fd))
 		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
 
 	ssaddr.sun_family = AF_UNIX;
@@ -299,7 +326,41 @@ static int open_sock(void)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
 	/* don't leak socket to CMDSCRIPT */
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(fd);
+
+#else /* WIN32 */
+
+	fd = CreateNamedPipe(
+			pipefn, /* pipe name */
+			PIPE_ACCESS_DUPLEX | /* read/write access */
+			FILE_FLAG_OVERLAPPED, /* async IO */
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, /* max. instances */
+			BUF_LEN, /* output buffer size */
+			BUF_LEN, /* input buffer size */
+			0, /* client time-out */
+			NULL); /* FIXME: default security attributes */
+
+	if (INVALID_FD(fd)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare an async wait on a connection on the pipe */
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if (connect_overlapped.hEvent == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	ConnectNamedPipe(fd,&connect_overlapped);
+#endif
 
 	return fd;
 }
@@ -333,7 +394,8 @@ static void conn_del(conn_t *target)
 
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
-	int	ret;
+	ssize_t	ret;
+	size_t	buflen;
 	va_list	ap;
 	char	buf[US_SOCK_BUF_LEN];
 
@@ -353,23 +415,83 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 	va_end(ap);
 
-	ret = write(conn->fd, buf, strlen(buf));
+	buflen = strlen(buf);
+	if (buflen >= SSIZE_MAX) {
+		/* Can't compare buflen to ret */
+		upsdebugx(2, "send_to_one(): buffered message too large");
 
-	if ((ret < 1) || (ret != (int) strlen(buf))) {
-		upsdebugx(2, "write to fd %d failed", conn->fd);
+		if (VALID_FD(conn->fd)) {
+#ifndef WIN32
+			close(conn->fd);
+#else
+			FlushFileBuffers(conn->fd);
+			CloseHandle(conn->fd);
+#endif
+			conn->fd = ERROR_FD;
+		}
+
+		conn_del(conn);
+
+		return 0;	/* failed */
+	}
+
+#ifndef WIN32
+	ret = write(conn->fd, buf, buflen);
+
+	if ((ret < 1) || (ret != (ssize_t) buflen)) {
+		upsdebugx(2, "write failed on socket %d, disconnecting", conn->fd);
 
 		close(conn->fd);
 		conn_del(conn);
 
 		return 0;	/* failed */
 	}
+#else
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+
+	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+	if (result == 0) {
+		upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
+
+		/* FIXME not sure this is the right way to close a connection */
+		if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+			CloseHandle(conn->read_overlapped.hEvent);
+			conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
+		}
+		DisconnectNamedPipe(conn->fd);
+		CloseHandle(conn->fd);
+		conn_del(conn);
+
+		return 0;
+	}
+	else {
+		ret = (ssize_t)bytesWritten;
+	}
+
+	if ((ret < 1) || (ret != (ssize_t)buflen)) {
+		upsdebugx(2, "write to fd %p failed", conn->fd);
+		/* FIXME not sure this is the right way to close a connection */
+		if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+			CloseHandle(conn->read_overlapped.hEvent);
+			conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
+		}
+		DisconnectNamedPipe(conn->fd);
+		CloseHandle(conn->fd);
+
+		return 0;	/* failed */
+	}
+#endif
 
 	return 1;	/* OK */
 }
 
-static void conn_add(int sockfd)
+static TYPE_FD conn_add(TYPE_FD sockfd)
 {
-	int	acc, ret;
+	TYPE_FD	acc;
+
+#ifndef WIN32
+	int	ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
 #if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
@@ -381,13 +503,13 @@ static void conn_add(int sockfd)
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
 
-	if (acc < 0) {
+	if (INVALID_FD(acc)) {
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
-		return;
+		return ERROR_FD;
 	}
 
 	/* don't leak connection to CMDSCRIPT */
-	fcntl(acc, F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(acc);
 
 	/* enable nonblocking I/O */
 
@@ -396,7 +518,7 @@ static void conn_add(int sockfd)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
 		close(acc);
-		return;
+		return ERROR_FD;
 	}
 
 	ret = fcntl(acc, F_SETFL, ret | O_NDELAY);
@@ -404,7 +526,7 @@ static void conn_add(int sockfd)
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
 		close(acc);
-		return;
+		return ERROR_FD;
 	}
 
 	tmp = last = connhead;
@@ -426,6 +548,85 @@ static void conn_add(int sockfd)
 	upsdebugx(3, "new connection on fd %d", acc);
 
 	pconf_init(&tmp->ctx, NULL);
+
+#else /* WIN32 */
+
+	conn_t	*conn, *tmp, *last;
+
+	/* We have detected a connection on the opened pipe. So we start
+	   by saving its handle  and create a new pipe for future connection */
+	conn = xcalloc(1, sizeof(*conn));
+	conn->fd = sockfd;
+
+	/* sock is the handle of the connection pending pipe */
+	acc = CreateNamedPipe(
+			pipefn, /* pipe name */
+			PIPE_ACCESS_DUPLEX |  /* read/write access */
+			FILE_FLAG_OVERLAPPED, /* async IO */
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, /* max. instances */
+			BUF_LEN, /* output buffer size */
+			BUF_LEN, /* input buffer size */
+			0, /* client time-out */
+			NULL); /* FIXME: default security attribute */
+
+	if (INVALID_FD(acc)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare a new async wait for a connection on the pipe */
+	CloseHandle(connect_overlapped.hEvent);
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if (connect_overlapped.hEvent == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	ConnectNamedPipe(acc,&connect_overlapped);
+
+	/* A new pipe waiting for new client connection has been created.
+	   We could manage the current connection now */
+	/* Start a read operation on the newly connected pipe so we could wait
+	   on the event associated to this IO */
+	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
+	memset(conn->buf,0,sizeof(conn->buf));
+	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if (conn->read_overlapped.hEvent == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	ReadFile (conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
+
+	conn->next = NULL;
+
+	tmp = last = connhead;
+
+	while (tmp) {
+		last = tmp;
+		tmp = tmp->next;
+	}
+
+	if (last)
+		last->next = conn;
+	else
+		connhead = conn;
+
+	upsdebugx(3, "new connection on fd %p", acc);
+
+	pconf_init(&conn->ctx, NULL);
+#endif
+
+	return acc;
 }
 
 static int sock_arg(conn_t *conn)
@@ -459,23 +660,25 @@ static int sock_arg(conn_t *conn)
 	return 0;
 }
 
-static void log_unknown(int numarg, char **arg)
+static void log_unknown(size_t numarg, char **arg)
 {
-	int	i;
+	size_t	i;
 
 	upslogx(LOG_INFO, "Unknown command on socket: ");
 
 	for (i = 0; i < numarg; i++)
-		upslogx(LOG_INFO, "arg %d: %s", i, arg[i]);
+		upslogx(LOG_INFO, "arg %" PRIuSIZE ": %s", i, arg[i]);
 }
 
 static int sock_read(conn_t *conn)
 {
-	int	i, ret;
+	int	i;
+	ssize_t	ret;
 	char	ch;
 
 	for (i = 0; i < US_MAX_READ; i++) {
 
+#ifndef WIN32
 		ret = read(conn->fd, &ch, 1);
 
 		if (ret < 1) {
@@ -484,13 +687,34 @@ static int sock_read(conn_t *conn)
 			if ((ret == -1) && (errno == EAGAIN))
 				return 0;
 
+			/* O_NDELAY with zero bytes means nothing to read but
+			 * since read() follows a succesful select() with
+			 * ready file descriptor, ret shouldn't be 0. */
+			if (ret == 0)
+				continue;
+
 			/* some other problem */
 			return -1;	/* error */
 		}
+#else
+		DWORD bytesRead;
+		GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead,FALSE);
+		if( bytesRead < 1 ) {
+			/* Restart async read */
+			memset(conn->buf,0,sizeof(conn->buf));
+			ReadFile(conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
+			return 0;
+		}
 
+		ch = conn->buf[0];
+
+		/* Restart async read */
+		memset(conn->buf,0,sizeof(conn->buf));
+		ReadFile(conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
+#endif
 		ret = pconf_char(&conn->ctx, ch);
 
-		if (ret == 0)		/* nothing to parse yet */
+		if (ret == 0)	/* nothing to parse yet */
 			continue;
 
 		if (ret == -1) {
@@ -512,12 +736,17 @@ static int sock_read(conn_t *conn)
 	return 0;	/* fell out without parsing anything */
 }
 
-static void start_daemon(int lockfd)
+static void start_daemon(TYPE_FD lockfd)
 {
-	int	maxfd, pid, pipefd, ret;
+	int	maxfd = 0;	/* Unidiomatic use vs. "pipefd" below, which is "int" on non-WIN32 */
+	TYPE_FD pipefd;
 	struct	timeval	tv;
+	conn_t	*tmp;
+
+#ifndef WIN32
+	int	pid, ret;
 	fd_set	rfds;
-	conn_t	*tmp, *tmpnext;
+	conn_t	*tmpnext;
 
 	us_serialize(SERIALIZE_INIT);
 
@@ -604,14 +833,103 @@ static void start_daemon(int lockfd)
 
 		checktimers();
 	}
+
+#else /* WIN32 */
+
+	DWORD timeout_ms;
+	HANDLE rfds[32];
+
+	char module[MAX_PATH];
+	STARTUPINFO sinfo;
+	PROCESS_INFORMATION pinfo;
+	if( !GetModuleFileName(NULL,module,MAX_PATH) ) {
+		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
+	}
+	memset(&sinfo,0,sizeof(sinfo));
+	if(!CreateProcess(module, NULL, NULL,NULL,FALSE,0,NULL,NULL,&sinfo,&pinfo)) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create child process");
+	}
+	pipefd = open_sock();
+
+	if (verbose)
+		upslogx(LOG_INFO, "Timer daemon started");
+
+	/* drop the lock now that the background is running */
+	CloseHandle(lockfd);
+	DeleteFile(lockfn);
+
+	/* now watch for activity */
+
+	for (;;) {
+		/* wait at most 1s so we can check our timers regularly */
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+
+		timeout_ms = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+
+		maxfd = 0;
+
+		/* Wait on the read IO of each connections */
+		for (tmp = connhead; tmp != NULL; tmp = tmp->next) {
+			rfds[maxfd] = tmp->read_overlapped.hEvent;
+			maxfd++;
+		}
+		/* Add the connect event */
+		rfds[maxfd] = connect_overlapped.hEvent;
+		maxfd++;
+		DWORD ret_val;
+		ret_val = WaitForMultipleObjects(
+				maxfd,  /* number of objects in array */
+				rfds,   /* array of objects */
+				FALSE,  /* wait for any object */
+				timeout_ms); /* timeout in millisecond */
+
+		if (ret_val == WAIT_FAILED) {
+			upslog_with_errno(LOG_ERR, "waitfor failed");
+			return;
+		}
+
+		/* timer has not expired */
+		if (ret_val != WAIT_TIMEOUT) {
+			/* Retrieve the signaled connection */
+			for(tmp = connhead; tmp != NULL; tmp = tmp->next) {
+				if( tmp->read_overlapped.hEvent == rfds[ret_val-WAIT_OBJECT_0]) {
+					break;
+				}
+			}
+
+			/* the connection event handle has been signaled */
+			if (rfds[ret_val] == connect_overlapped.hEvent) {
+				pipefd = conn_add(pipefd);
+			}
+			/* one of the read event handle has been signaled */
+			else {
+				if( tmp != NULL) {
+					if (sock_read(tmp) < 0) {
+						CloseHandle(tmp->fd);
+						conn_del(tmp);
+					}
+				}
+			}
+
+		}
+
+		checktimers();
+	}
+#endif
 }
 
 /* --- 'client' functions --- */
 
-static int try_connect(void)
+static TYPE_FD try_connect(void)
 {
-	int	pipefd, ret;
+	TYPE_FD pipefd;
+
+#ifndef WIN32
+	int	ret;
 	struct	sockaddr_un saddr;
+
+	check_unix_socket_filename(pipefn);
 
 	memset(&saddr, '\0', sizeof(saddr));
 	saddr.sun_family = AF_UNIX;
@@ -619,7 +937,7 @@ static int try_connect(void)
 
 	pipefd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (pipefd < 0)
+	if (INVALID_FD(pipefd))
 		fatal_with_errno(EXIT_FAILURE, "socket");
 
 	ret = connect(pipefd, (const struct sockaddr *) &saddr, sizeof(saddr));
@@ -627,32 +945,60 @@ static int try_connect(void)
 	if (ret != -1)
 		return pipefd;
 
-	return -1;
+#else /* WIN32 */
+
+	BOOL   result = FALSE;
+
+	result = WaitNamedPipe(pipefn,NMPWAIT_USE_DEFAULT_WAIT);
+
+	if (result == FALSE) {
+		return ERROR_FD;
+	}
+
+	pipefd = CreateFile(
+			pipefn,       /* pipe name */
+			GENERIC_READ |  /* read and write access */
+			GENERIC_WRITE,
+			0,              /* no sharing */
+			NULL,           /* default security attributes FIXME */
+			OPEN_EXISTING,  /* opens existing pipe */
+			FILE_FLAG_OVERLAPPED,   /*  enable async IO */
+			NULL);          /* no template file */
+
+	if (VALID_FD(pipefd))
+		return pipefd;
+
+#endif
+
+	return ERROR_FD;
 }
 
-static int get_lock(const char *fn)
+static TYPE_FD get_lock(const char *fn)
 {
+#ifndef WIN32
 	return open(fn, O_RDONLY | O_CREAT | O_EXCL, 0);
-
+#else
+	return CreateFile(fn,GENERIC_ALL,0,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
+#endif
 }
 
 /* try to connect to bg process, and start one if necessary */
-static int check_parent(const char *cmd, const char *arg2)
+static TYPE_FD check_parent(const char *cmd, const char *arg2)
 {
-	int	pipefd, lockfd, tries = 0;
+	TYPE_FD	pipefd, lockfd;
+	int	tries = 0;
 
 	for (tries = 0; tries < MAX_TRIES; tries++) {
-
 		pipefd = try_connect();
 
-		if (pipefd != -1)
+		if (VALID_FD(pipefd))
 			return pipefd;
 
 		/* timer daemon isn't running */
 
 		/* it's not running, so there's nothing to cancel */
 		if (!strcmp(cmd, "CANCEL") && (arg2 == NULL))
-			return PARENT_UNNECESSARY;
+			return (TYPE_FD)PARENT_UNNECESSARY;
 
 		/* arg2 non-NULL means there is a cancel action available */
 
@@ -660,15 +1006,19 @@ static int check_parent(const char *cmd, const char *arg2)
 
 		lockfd = get_lock(lockfn);
 
-		if (lockfd != -1) {
+		if (VALID_FD(lockfd)) {
 			start_daemon(lockfd);
-			return PARENT_STARTED;	/* started successfully */
+			return (TYPE_FD)PARENT_STARTED;	/* started successfully */
 		}
 
 		/* we didn't get the lock - must be two upsscheds running */
 
 		/* blow this away in case we crashed before */
+#ifndef WIN32
 		unlink(lockfn);
+#else
+		DeleteFile(lockfn);
+#endif
 
 		/* give the other one a chance to start it, then try again */
 		usleep(250000);
@@ -678,30 +1028,20 @@ static int check_parent(const char *cmd, const char *arg2)
 	exit(EXIT_FAILURE);
 }
 
-static void read_timeout(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-
-	/* ignore this */
-	return;
-}
-
-static void setup_sigalrm(void)
-{
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
-
-	sigemptyset(&nut_upssched_sigmask);
-	sa.sa_mask = nut_upssched_sigmask;
-	sa.sa_flags = 0;
-	sa.sa_handler = read_timeout;
-	sigaction(SIGALRM, &sa, NULL);
-}
-
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
-	int	i, pipefd, ret;
-	char	buf[SMALLBUF], enc[SMALLBUF + 8];
+	int	i;
+	ssize_t	ret;
+	size_t	enclen, buflen;
+	char buf[SMALLBUF], enc[SMALLBUF + 8];
+#ifndef WIN32
+	int	ret_s;
+	struct	timeval tv;
+	fd_set	fdread;
+#else
+	DWORD bytesWritten = 0;
+#endif
+	TYPE_FD pipefd;
 
 	/* insanity */
 	if (!arg1)
@@ -717,49 +1057,67 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
+	/* Sanity checks, for static analyzers to sleep well */
+	enclen = strlen(enc);
+	buflen = strlen(buf);
+	if (enclen >= SSIZE_MAX || buflen >= SSIZE_MAX) {
+		/* Can't compare enclen to ret below */
+		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
+	}
+
 	/* see if the parent needs to be started (and maybe start it) */
 
 	for (i = 0; i < MAX_TRIES; i++) {
 
 		pipefd = check_parent(cmd, arg2);
 
-		if (pipefd == PARENT_STARTED) {
-
+		if (pipefd == (TYPE_FD)PARENT_STARTED) {
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
 		}
 
 		/* special case for CANCEL when no parent is running */
-		if (pipefd == PARENT_UNNECESSARY)
+		if (pipefd == (TYPE_FD)PARENT_UNNECESSARY)
 			return;
 
 		/* we're connected now */
-
-		ret = write(pipefd, enc, strlen(enc));
+#ifndef WIN32
+		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (int) strlen(enc))) {
+		if ((ret < 1) || (ret != (ssize_t)enclen)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
 		}
 
-		/* ugh - probably should use select here... */
-		setup_sigalrm();
+		/* select on child's pipe fd */
+		do {
+			/* set timeout every time before call select() */
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
 
-		alarm(2);
-		ret = read(pipefd, buf, sizeof(buf));
-		alarm(0);
+			FD_ZERO(&fdread);
+			FD_SET(pipefd, &fdread);
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#endif
-		signal(SIGALRM, SIG_IGN);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
-# pragma GCC diagnostic pop
-#endif
+			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			switch(ret_s) {
+				/* select error */
+				case -1:
+					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					break;
+
+				/* nothing to read */
+				case 0:
+					break;
+
+				/* available data to read */
+				default:
+					ret = read(pipefd, buf, sizeof(buf));
+					break;
+			}
+		} while (ret_s <= 0);
 
 		close(pipefd);
 
@@ -769,13 +1127,45 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			continue;
 		}
 
+#else /* WIN32 */
+		ret = WriteFile(pipefd, enc, enclen, &bytesWritten, NULL);
+		if (ret == 0 || bytesWritten != enclen) {
+			upslogx(LOG_ERR, "write failed, trying again");
+			CloseHandle(pipefd);
+			continue;
+		}
+
+		OVERLAPPED read_overlapped;
+		DWORD ret;
+
+		memset(&read_overlapped,0,sizeof(read_overlapped));
+		memset(buf,0,sizeof(buf));
+		read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+				FALSE, /* auto-reset*/
+				FALSE, /* inital state = non signaled*/
+				NULL /* no name*/);
+		if(read_overlapped.hEvent == NULL ) {
+			fatal_with_errno(EXIT_FAILURE, "Can't create event");
+		}
+
+		ReadFile(pipefd,buf,sizeof(buf)-1,NULL,&(read_overlapped));
+
+		ret = WaitForSingleObject(read_overlapped.hEvent,2000);
+
+		if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
+			upslogx(LOG_ERR, "read confirmation failed, trying again");
+			CloseHandle(pipefd);
+			continue;
+		}
+#endif
+
 		if (!strncmp(buf, "OK", 2))
 			return;		/* success */
 
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
 		/* try again ... */
-	}
+	}	/* loop until MAX_TRIES if no success above */
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
@@ -837,7 +1227,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	upslogx(LOG_ERR, "Invalid command: %s", cmd);
 }
 
-static int conf_arg(int numargs, char **arg)
+static int conf_arg(size_t numargs, char **arg)
 {
 	if (numargs < 2)
 		return 0;
@@ -850,13 +1240,21 @@ static int conf_arg(int numargs, char **arg)
 
 	/* PIPEFN <pipename> */
 	if (!strcmp(arg[0], "PIPEFN")) {
+#ifndef WIN32
 		pipefn = xstrdup(arg[1]);
+#else
+		pipefn = xstrdup("\\\\.\\pipe\\upssched");
+#endif
 		return 1;
 	}
 
 	/* LOCKFN <filename> */
 	if (!strcmp(arg[0], "LOCKFN")) {
+#ifndef WIN32
 		lockfn = xstrdup(arg[1]);
+#else
+		lockfn = filter_path(arg[1]);
+#endif
 		return 1;
 	}
 

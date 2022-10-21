@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=NUT Monitor
+Name[fr]=Moniteur NUT
+Comment=Network UPS Tools GUI client (Py3Qt5)
+Comment[fr]=Client graphique pour NUT (Network UPS Tools, Py3Qt5)
+Comment[it]=Client grafico per NUT (Network UPS Tools, Py3Qt5)
+Categories=System;Monitor;HardwareSettings;Settings;Qt
+Exec=NUT-Monitor-py3qt5
+Icon=nut-monitor
+Terminal=false
+Type=Application

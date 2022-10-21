@@ -21,12 +21,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "openups-hid.h"
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.4"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.5"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
@@ -75,7 +77,7 @@ static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), get_voltage_multiplier},
 
 	/* Terminating entry */
-	{-1, -1, NULL}
+	{ 0, 0, NULL }
 };
 
 /* Thermistor table used for temperature lookups
@@ -393,4 +395,5 @@ subdriver_t openups_subdriver = {
 	openups_format_model,
 	openups_format_mfr,
 	openups_format_serial,
+	fix_report_desc,
 };

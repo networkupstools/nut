@@ -28,6 +28,13 @@
 #include <map>
 #include <set>
 #include <exception>
+#include <cstdint>
+#include <ctime>
+
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
 
 namespace nut
 {
@@ -51,8 +58,10 @@ class NutException : public std::exception
 {
 public:
 	NutException(const std::string& msg):_msg(msg){}
-	virtual ~NutException();
-	virtual const char * what() const noexcept {return this->_msg.c_str();}
+	NutException(const NutException&) = default;
+	NutException& operator=(NutException& rhs) = default;
+	virtual ~NutException() override;
+	virtual const char * what() const noexcept override {return this->_msg.c_str();}
 	virtual std::string str() const noexcept {return this->_msg;}
 private:
 	std::string _msg;
@@ -65,7 +74,9 @@ class SystemException : public NutException
 {
 public:
 	SystemException();
-	virtual ~SystemException();
+	SystemException(const SystemException&) = default;
+	SystemException& operator=(SystemException& rhs) = default;
+	virtual ~SystemException() override;
 private:
 	static std::string err();
 };
@@ -78,7 +89,9 @@ class IOException : public NutException
 {
 public:
 	IOException(const std::string& msg):NutException(msg){}
-	virtual ~IOException();
+	IOException(const IOException&) = default;
+	IOException& operator=(IOException& rhs) = default;
+	virtual ~IOException() override;
 };
 
 /**
@@ -88,7 +101,9 @@ class UnknownHostException : public IOException
 {
 public:
 	UnknownHostException():IOException("Unknown host"){}
-	virtual ~UnknownHostException();
+	UnknownHostException(const UnknownHostException&) = default;
+	UnknownHostException& operator=(UnknownHostException& rhs) = default;
+	virtual ~UnknownHostException() override;
 };
 
 /**
@@ -98,7 +113,9 @@ class NotConnectedException : public IOException
 {
 public:
 	NotConnectedException():IOException("Not connected"){}
-	virtual ~NotConnectedException();
+	NotConnectedException(const NotConnectedException&) = default;
+	NotConnectedException& operator=(NotConnectedException& rhs) = default;
+	virtual ~NotConnectedException() override;
 };
 
 /**
@@ -108,7 +125,9 @@ class TimeoutException : public IOException
 {
 public:
 	TimeoutException():IOException("Timeout"){}
-	virtual ~TimeoutException();
+	TimeoutException(const TimeoutException&) = default;
+	TimeoutException& operator=(TimeoutException& rhs) = default;
+	virtual ~TimeoutException() override;
 };
 
 /**
@@ -305,13 +324,31 @@ public:
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
 	/**
-	 * Retrieve the number of user longged in the specified device.
+	 * Retrieve the number of user logged-in for the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
+	/**
+	 * Who did a deviceLogin() to this dev?
+	 * \param dev Device name.
+	 * \return List of clients e.g. {'127.0.0.1', 'admin-workstation.local.domain'}
+	 */
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) = 0;
+	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	 * For the sake of old/new server/client interoperability,
+	 * practical implementations should try to use one and fall
+	 * back to the other, and only fail if both return "ERR".
+	 */
 	virtual void deviceMaster(const std::string& dev) = 0;
+	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
+
+	/**
+	 * Lists all clients of all devices (which have at least one client)
+	 * \return Map with device names vs. list of their connected clients
+	 */
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) = 0;
 
 	/**
 	 * Retrieve the result of a tracking ID.
@@ -335,6 +372,11 @@ protected:
  */
 class TcpClient : public Client
 {
+	/* We have a number of direct-call methods we do not expose
+	 * generally, but still want covered with integration tests
+	 */
+	friend class NutActiveClientTest;
+
 public:
 	/**
 	 * Construct a nut TcpClient object.
@@ -347,21 +389,27 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, int port = 3493);
-	~TcpClient();
+	TcpClient(const std::string& host, uint16_t port = 3493);
+	~TcpClient() override;
 
 	/**
 	 * Connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, int port = 3493);
+	void connect(const std::string& host, uint16_t port = 3493);
 
 	/**
 	 * Connect to the server.
-	 * Host name and ports must have already set (usefull for reconnection).
+	 * Host name and ports must have already set (useful for reconnection).
 	 */
 	void connect();
+
+	/**
+	 * Enable or disable std::cerr tracing of internal Socket operations
+	 * during connect() processing. Primarily for developer troubleshooting.
+	 */
+	void setDebugConnect(bool d);
 
 	/**
 	 * Test if the connection is active.
@@ -377,13 +425,13 @@ public:
 	 * Set the timeout in seconds.
 	 * \param timeout Timeout n seconds, negative to block operations.
 	 */
-	void setTimeout(long timeout);
+	void setTimeout(time_t timeout);
 
 	/**
 	 * Retrieve the timeout.
 	 * \returns Current timeout in seconds.
 	 */
-	long getTimeout()const;
+	time_t getTimeout()const;
 
 	/**
 	 * Retriueve the host name of the server the client is connected to.
@@ -394,37 +442,44 @@ public:
 	 * Retriueve the port of host of the server the client is connected to.
 	 * \return Server port
 	 */
-	int getPort()const;
+	uint16_t getPort()const;
 
-	virtual void authenticate(const std::string& user, const std::string& passwd);
-	virtual void logout();
+	virtual void authenticate(const std::string& user, const std::string& passwd) override;
+	virtual void logout() override;
 
-	virtual Device getDevice(const std::string& name);
-	virtual std::set<std::string> getDeviceNames();
-	virtual std::string getDeviceDescription(const std::string& name);
+	virtual Device getDevice(const std::string& name) override;
+	virtual std::set<std::string> getDeviceNames() override;
+	virtual std::string getDeviceDescription(const std::string& name) override;
 
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name);
-	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
-	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values);
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev) override;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev) override;
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name) override;
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name) override;
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev) override;
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) override;
 
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
 
- 	virtual void deviceLogin(const std::string& dev);
-	virtual void deviceMaster(const std::string& dev);
-	virtual void deviceForcedShutdown(const std::string& dev);
-	virtual int deviceGetNumLogins(const std::string& dev);
+	virtual void deviceLogin(const std::string& dev) override;
+	/* FIXME: Protocol update needed to handle master/primary alias
+	 * and probably an API bump also, to rename/alias the routine.
+	 */
+	virtual void deviceMaster(const std::string& dev) override;
+	virtual void devicePrimary(const std::string& dev) override;
+	virtual void deviceForcedShutdown(const std::string& dev) override;
+	virtual int deviceGetNumLogins(const std::string& dev) override;
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
 
-	virtual TrackingResult getTrackingResult(const TrackingID& id);
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
-	virtual bool isFeatureEnabled(const Feature& feature);
-	virtual void setFeature(const Feature& feature, bool status);
+	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
+
+	virtual bool isFeatureEnabled(const Feature& feature) override;
+	virtual void setFeature(const Feature& feature, bool status) override;
 
 protected:
 	std::string sendQuery(const std::string& req);
@@ -443,11 +498,10 @@ protected:
 
 private:
 	std::string _host;
-	int _port;
-	long _timeout;
+	uint16_t _port;
+	time_t _timeout;
 	internal::Socket* _socket;
 };
-
 
 /**
  * Device attached to a client.
@@ -457,6 +511,7 @@ class Device
 {
 	friend class Client;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -585,7 +640,15 @@ public:
 	 * Login current client's user for the device.
 	 */
 	void login();
+	/**
+	 * Who did a login() to this dev?
+	 */
+	std::set<std::string> getClients();
+	/* FIXME: Protocol update needed to handle master/primary alias
+	 * and probably an API bump also, to rename/alias the routine.
+	 */
 	void master();
+	void primary();
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -609,6 +672,7 @@ class Variable
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -692,6 +756,7 @@ class Command
 {
 	friend class Device;
 	friend class TcpClient;
+	friend class TcpClientMock;
 #ifdef _NUTCLIENTTEST_BUILD
 	friend class NutClientTest;
 #endif
@@ -841,7 +906,11 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
+/* FIXME: Protocol update needed to handle master/primary alias
+ * and probably an API bump also, to rename/alias the routine.
+ */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.
@@ -987,7 +1056,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \param port Host port.
  * \return New client or nullptr if failed.
  */
-NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.
@@ -1010,12 +1079,12 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.
  */
-void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, long timeout);
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 /**
  * Retrieve the timeout value for the TCP connection.
  * \return Timeout value in seconds.
  */
-long nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
 
 /** \} */
 

@@ -23,14 +23,14 @@
 
 #include "baytech-mib.h"
 
-/* FIXME: should be "X.Y[Z]"! */
-#define BAYTECH_MIB_VERSION	"4032"
+/* NOTE: last badly versioned release was "4032" but should be "X.Y[Z]"! */
+#define BAYTECH_MIB_VERSION	"0.4034"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
-static info_lkp_t outlet_status_info[] = {
+static info_lkp_t baytech_outlet_status_info[] = {
 	{ -1, "error", NULL, NULL },
 	{ 0, "off", NULL, NULL },
 	{ 1, "on", NULL, NULL },
@@ -40,6 +40,12 @@ static info_lkp_t outlet_status_info[] = {
 
 /* Snmp2NUT lookup table for BayTech MIBs */
 static snmp_info_t baytech_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "BayTech",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -76,7 +82,7 @@ static snmp_info_t baytech_mib[] = {
 	{ "outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL },
 
 	/* outlet template definition */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &outlet_status_info[0] },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &baytech_outlet_status_info[0] },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.4.1.%i", NULL, SU_OUTLET, NULL },
 	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.6.1.3.2.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET | SU_FLAG_OK, NULL },
 	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL },

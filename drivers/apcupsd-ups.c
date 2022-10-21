@@ -18,18 +18,28 @@
 
 #include "config.h"
 
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <poll.h>
 #include <sys/ioctl.h>
+#else
+#include "wincompat.h"
+#endif
+
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 
 #include "main.h"
 #include "apcupsd-ups.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.5"
+#define DRIVER_VERSION	"0.6"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -42,7 +52,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static int port=3551;
+static uint16_t port=3551;
 static struct sockaddr_in host;
 
 static void process(char *item,char *data)
@@ -158,18 +168,28 @@ static void process(char *item,char *data)
 
 static int getdata(void)
 {
-	int x, fd_flags;
-	short n;
+	ssize_t x;
+	uint16_t n;
 	char *item;
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
+#ifndef WIN32
+	int fd_flags;
+#else
+	/* Note: while the code below uses "pollfd" for simplicity as it is
+	 * available in mingw headers (although poll() method usually is not),
+	 * WIN32 builds use WaitForMultipleObjects(); see also similar code
+	 * in upsd.c for networking.
+	 */
+	HANDLE event = NULL;
+#endif
 
 	for(x=0;nut_data[x].info_type;x++)
 		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
-	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
+	if (INVALID_FD_SOCK( p.fd = socket(AF_INET, SOCK_STREAM, 0) ))
 	{
 		upsdebugx(1,"socket error");
 		return -1;
@@ -182,14 +202,31 @@ static int getdata(void)
 		return -1;
 	}
 
+#ifndef WIN32
+	/* WSAEventSelect automatically sets the socket to nonblocking mode */
 	fd_flags = fcntl(p.fd, F_GETFL);
+	if (fd_flags == -1) {
+		upsdebugx(1,"unexpected fcntl(fd, F_GETFL) failure");
+		close(p.fd);
+		return -1;
+	}
 	fd_flags |= O_NONBLOCK;
-	if(fcntl(p.fd, F_SETFL, fd_flags))
+	if(fcntl(p.fd, F_SETFL, fd_flags) == -1)
 	{
 		upsdebugx(1,"unexpected fcntl(fd, F_SETFL, fd_flags|O_NONBLOCK) failure");
 		close(p.fd);
 		return -1;
 	}
+#else
+	event = CreateEvent(
+		NULL,  /* Security */
+		FALSE, /* auto-reset */
+		FALSE, /* initial state */
+		NULL); /* no name */
+
+	/* Associate socket event to the socket via its Event object */
+	WSAEventSelect( p.fd, event, FD_CONNECT );
+#endif
 
 	p.events=POLLIN;
 
@@ -198,18 +235,28 @@ static int getdata(void)
 	x=write(p.fd,"status",6);
 
 	/* TODO: double-check for poll() in configure script */
+#ifndef WIN32
 	while(poll(&p,1,15000)==1)
+#else
+	while (WaitForMultipleObjects(1, &event, FALSE, 15000) == WAIT_TIMEOUT)
+#endif
 	{
 		if(read(p.fd,&n,2)!=2)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
 		if(!(x=ntohs(n)))
 		{
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return 0;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
@@ -222,15 +269,25 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
+#ifndef WIN32
 		if(poll(&p,1,15000)!=1)break;
+#else
+		if (WaitForMultipleObjects(1, &event, FALSE, 15000) != WAIT_OBJECT_0) break;
+#endif
 
-		if(read(p.fd,bfr,x)!=x)
+		if(read(p.fd,bfr,(size_t)x)!=x)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
@@ -240,6 +297,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 
@@ -247,6 +307,9 @@ static int getdata(void)
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);
+#ifdef WIN32
+			CloseHandle(event);
+#endif
 			return -1;
 		}
 		while(*data==' '||*data=='\t'||*data==':')data++;
@@ -256,6 +319,9 @@ static int getdata(void)
 
 	upsdebugx(1,"unexpected connection close by apcupsd");
 	close(p.fd);
+#ifdef WIN32
+	CloseHandle(event);
+#endif
 	return -1;
 }
 
@@ -297,14 +363,22 @@ void upsdrv_initups(void)
 	char *p;
 	struct hostent *h;
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 	if(device_path&&*device_path)
 	{
 		/* TODO: fix parsing since bare IPv6 addresses contain colons */
 		if((p=strchr(device_path,':')))
 		{
+			int i;
 			*p++=0;
-			port=atoi(p);
-			if(port<1||port>65535)port=0;
+			i=atoi(p);
+			if(i<1||i>65535)i=0;
+			port = (uint16_t)i;
 		}
 	}
 	else device_path="localhost";

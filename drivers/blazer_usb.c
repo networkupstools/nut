@@ -1,11 +1,17 @@
 /*
  * blazer_usb.c: support for Megatec/Q1 USB protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  * Copyright (C) 2011-2012  Arnaud Quette <arnaud.quette@free.fr>
+ * Copyright (C) 2016       Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +29,15 @@
  */
 
 #include "main.h"
-#include "libusb.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "blazer.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -61,15 +70,15 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x200, 0, &tmp[i], 8, 5000);
+			0x09, 0x200, 0, (usb_ctrl_charbuf)&tmp[i], 8, 5000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "timeout");
 			return ret;
 		}
 	}
@@ -78,24 +87,27 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
 		 * will happen after successfully writing a command to the UPS)
 		 */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
 			return ret;
 		}
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -109,7 +121,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&tmp, 8, 1000);
 
 		/*
 		 * This USB to serial implementation is crappy. In order to read correct
@@ -118,32 +132,34 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 */
 		switch (ret)
 		{
-		case -EPIPE:		/* Broken pipe */
+		case LIBUSB_ERROR_PIPE:    /** Pipe error or Broken pipe */
 			usb_clear_halt(udev, 0x81);
-		case -ETIMEDOUT:	/* Connection timed out */
+			break;
+
+		case LIBUSB_ERROR_TIMEOUT: /** Operation or Connection timed out */
 			break;
 		}
 
 		if (ret < 0) {
-			upsdebugx(3, "flush: %s", usb_strerror());
+			upsdebugx(3, "flush: %s", nut_usb_strerror(ret));
 			break;
 		}
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebug_hex(4, "dump", tmp, (size_t)ret);
 	}
 
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x200, 0, &tmp[i], 8, 1000);
+			0x09, 0x200, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "timeout");
 			return ret;
 		}
 	}
@@ -152,24 +168,27 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 8, 1000);
 
 		/*
 		 * Any errors here mean that we are unable to read a reply (which
 		 * will happen after successfully writing a command to the UPS)
 		 */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
 			return ret;
 		}
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return i;
+	/* TODO: Range-check before cast */
+	return (int)i;
 }
 
 
@@ -181,14 +200,14 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
-	for (i = 0; i < strlen(tmp); i += ret) {
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x2, 0, &tmp[i], 8, 1000);
+			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+			upsdebugx(3, "send: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 			return ret;
 		}
 	}
@@ -196,14 +215,16 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	/* Read all 64 bytes of the reply in one large chunk */
-	ret = usb_interrupt_read(udev, 0x81, tmp, sizeof(tmp), 1000);
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)&tmp, sizeof(tmp), 1000);
 
 	/*
 	 * Any errors here mean that we are unable to read a reply (which
 	 * will happen after successfully writing a command to the UPS)
 	 */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+		upsdebugx(3, "read: %s", (ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
 		return ret;
 	}
 
@@ -262,14 +283,16 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
-				ret = usb_get_string(udev, command[i].index, langid_fix, buf, buflen);
+				ret = usb_get_string(udev, command[i].index, langid_fix,
+					(usb_ctrl_charbuf)buf, buflen);
 			}
 			else {
-				ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+				ret = usb_get_string_simple(udev, command[i].index,
+					(usb_ctrl_charbuf)buf, buflen);
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+				upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
 				return ret;
 			}
 
@@ -288,7 +311,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int di, si, size = buf[0];
+				size_t di, si, size = (size_t)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 					if (di >= (buflen - 1))
 						break;
@@ -299,7 +322,9 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 						buf[di++] = buf[si];
 				}
 				buf[di] = 0;
-				ret = di;
+				/* with buf a char* array, practical "size" limit and
+				 * so "di" are small enough to cast to int */
+				ret = (int)di;
 			}
 
 			/* "UPS No Ack" has a special meaning */
@@ -373,8 +398,9 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
-	/* end of list */
-	{-1, -1, NULL}
+
+	/* Terminating entry */
+	{ 0, 0, NULL }
 };
 
 
@@ -413,13 +439,13 @@ static USBDeviceMatcher_t device_matcher = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen)
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
-	int	ret;
+	ssize_t	ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
 			return ret;
@@ -433,24 +459,26 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	switch (ret)
 	{
-	case -EBUSY:		/* Device or resource busy */
+	case LIBUSB_ERROR_BUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
-#ifndef HAVE___ATTRIBUTE__NORETURN
+# ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
-#endif
+# endif
+#endif /* WITH_LIBUSB_0_1 */
 
-	case -EPIPE:		/* Broken pipe */
+	case LIBUSB_ERROR_PIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#ifdef ETIME
+#if (defined ETIME) && ETIME && WITH_LIBUSB_0_1
 		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
 	fallthrough_case_etime:
@@ -459,21 +487,27 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "Device reset handled");
 		}
 		goto fallthrough_case_reconnect;
-	case -ENODEV:		/* No such device */
-	case -EACCES:		/* Permission denied */
-	case -EIO:		/* I/O error */
+	case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+	case LIBUSB_ERROR_ACCESS:    /* Permission denied */
+	case LIBUSB_ERROR_IO:        /* I/O error */
+#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -ENXIO:		/* No such device or address */
-	case -ENOENT:		/* No such file or directory */
+#endif
+	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
-	case -ETIMEDOUT:	/* Connection timed out */
-	case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+	case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
+/* libusb-win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
+	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
+# if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
+# endif
 #endif
 	default:
 		break;
@@ -501,16 +535,41 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		return snprintf(buf, buflen, "%s", testing[i].answer);
+		/* TODO: Range-check int vs ssize_t values */
+		return (ssize_t)snprintf(buf, buflen, "%s", testing[i].answer);
 	}
 
-	return snprintf(buf, buflen, "%s", testing[i].command);
+	return (ssize_t)snprintf(buf, buflen, "%s", testing[i].command);
 #endif	/* TESTING */
 }
 
+#ifndef TESTING
+static const struct subdriver_t {
+	const char	*name;
+	int		(*command)(const char *cmd, char *buf, size_t buflen);
+} subdriver[] = {
+	{ "cypress", &cypress_command },
+	{ "phoenix", &phoenix_command },
+	{ "ippon", &ippon_command },
+	{ "krauler", &krauler_command },
+	{ NULL, NULL }
+};
+#endif	/* TESTING */
 
 void upsdrv_help(void)
 {
+#ifndef TESTING
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	size_t i;
+
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("%s", subdriver[i].name);
+	}
+	printf("\n\n");
+#endif	/* TESTING */
+
 	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
@@ -529,22 +588,12 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 #ifndef TESTING
-	const struct {
-		const char	*name;
-		int		(*command)(const char *cmd, char *buf, size_t buflen);
-	} subdriver[] = {
-		{ "cypress", &cypress_command },
-		{ "phoenix", &phoenix_command },
-		{ "ippon", &ippon_command },
-		{ "krauler", &krauler_command },
-		{ NULL, NULL }
-	};
-
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
-	char	*regex_array[6];
-
+	char	*regex_array[7];
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -552,6 +601,7 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -561,7 +611,7 @@ void upsdrv_initups(void)
 			upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 		}
 		else {
-			langid_fix = u_langid_fix;
+			langid_fix = (int)u_langid_fix;
 			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
 		}
 	}
@@ -604,7 +654,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -640,9 +690,9 @@ void upsdrv_initups(void)
 		 *   in the descriptor. See USB 2.0 specification, section 9.6.7, for
 		 *   more information on this.
 		 * This should allow automatic application of the workaround */
-		ret = usb_get_string(udev, 0, 0, tbuf, sizeof(tbuf));
+		ret = usb_get_string(udev, 0, 0, (usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 		if (ret >= 4) {
-			langid = tbuf[2] | (tbuf[3] << 8);
+			langid = (unsigned char)tbuf[2] | ((unsigned char)tbuf[3] << 8);
 			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
 		}
 	}
@@ -660,12 +710,13 @@ void upsdrv_initinfo(void)
 void upsdrv_cleanup(void)
 {
 #ifndef TESTING
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
 #endif	/* TESTING */
 }

@@ -27,15 +27,18 @@
 
 */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
-#include <math.h>
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
 #define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_VERSION	"0.52"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -129,7 +132,7 @@ static unsigned char EventosRede, EventosSaida, EventosBateria;
 /* Methods */
 static void ScanReceivePack(void);
 static int AutonomyCalc( int );
-static void CommReceive(const unsigned char*, int );
+static void CommReceive(const unsigned char*, ssize_t);
 static void getbaseinfo(void);
 static void getupdateinfo(void);
 
@@ -165,13 +168,13 @@ AutonomyCalc( int ia ) /* all models */
 
 	if( ia )
 	{
-		if( BattVoltage == 0 )
+		if( d_equal(BattVoltage, 0) )
 			result = 0;
 		else
 		{
 					calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
 					auton = pow( calc, 1.18 );
-					if( auton == 0 )
+					if( d_equal(auton, 0) )
 						result = 0;
 					else
 						{
@@ -385,14 +388,14 @@ ScanReceivePack( void )
 }
 
 static void
-CommReceive(const unsigned char *bufptr, int size)
+CommReceive(const unsigned char *bufptr, ssize_t size)
 {
 	int i, i_end, CheckSum, chk;
 
 	if( size == 37 )
 		Waiting = 0;
 
-	printf("CommReceive size = %d waiting = %d\n", size, Waiting );
+	printf("CommReceive size = %" PRIiSIZE " waiting = %d\n", size, Waiting );
 
 	switch( Waiting )
 	{
@@ -466,12 +469,13 @@ CommReceive(const unsigned char *bufptr, int size)
 	Waiting = 0;
 }
 
-static int
-send_command( int cmd )
+static ssize_t
+send_command( unsigned char cmd )
 {
 	static const size_t sizes = 19, iend = 18;
-	size_t i;
-	int chk, checksum = 0, ret, kount; /*, j, uc; */
+	size_t i, kount; /*, j, uc; */
+	unsigned char chk, checksum = 0;
+	ssize_t ret = -1;
 	unsigned char ch, *psend = NULL;
 
 	if ( !(psend = xmalloc(sizeof(char) * sizes)) ) {
@@ -487,7 +491,7 @@ send_command( int cmd )
 			chk = 0x01;
 		else
 		{
-			if( i == 1)
+			if( i == 1 )
 				chk = cmd;
 			else
 				chk = 0x00; /* 0x20; */
@@ -540,7 +544,7 @@ static void getbaseinfo(void)
 {
 	unsigned char temp[256];
 	unsigned char Pacote[37];
-	int tam, i, j=0;
+	ssize_t tam, i, j=0;
 	time_t tmt;
 	struct tm *now;
 	struct tm tmbuf;
@@ -636,7 +640,7 @@ static void getbaseinfo(void)
 static void getupdateinfo(void)
 {
 	unsigned char temp[256];
-	int tam;
+	ssize_t tam;
 
 	temp[0] = 0; /* flush temp buffer */
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
@@ -647,7 +651,7 @@ static void getupdateinfo(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	int ret = 0;
+	ssize_t ret = 0;
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{

@@ -20,12 +20,16 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"	/* must be first */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif
 
 #include "common.h"
 #include "state.h"
@@ -362,7 +366,7 @@ int state_getflags(st_tree_t *root, const char *var)
 	return sttmp->flags;
 }
 
-int state_getaux(st_tree_t *root, const char *var)
+long state_getaux(st_tree_t *root, const char *var)
 {
 	st_tree_t	*sttmp;
 
@@ -404,9 +408,9 @@ const range_t *state_getrangelist(st_tree_t *root, const char *var)
 	return sttmp->range_list;
 }
 
-void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
+void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **flag)
 {
-	int	i;
+	size_t	i;
 	st_tree_t	*sttmp;
 
 	/* find the tree node for var */

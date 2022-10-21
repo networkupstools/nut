@@ -19,11 +19,12 @@
  */
 
 #include "common.h"
+#include "nut_stdint.h"
+#include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
 #include "cgilib.h"
 #include "parseconf.h"
-#include "timehead.h"
 #include "upsstats.h"
 #include "upsimagearg.h"
 
@@ -36,7 +37,7 @@ static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 	/* from cgilib's checkhost() */
 static char	*monhostdesc = NULL;
 
-static int	port;
+static uint16_t	port;
 static char	*upsname, *hostname;
 static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
 static UPSCONN_t	ups;
@@ -103,7 +104,7 @@ static int check_ups_fd(int do_report)
 static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -350,7 +351,7 @@ static void ups_connect(void)
 {
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
-	int	newport;
+	uint16_t	newport;
 
 	/* try to minimize reconnects */
 	if (lastups) {
@@ -565,7 +566,7 @@ static void do_upsimgpath(const char *s) {
 static void do_temp(const char *var)
 {
 	char	tempc[SMALLBUF];
-	float	tempf;
+	double	tempf;
 
 	if (!get_var(var, tempc, sizeof(tempc), 1))
 		return;
@@ -808,7 +809,8 @@ static int do_command(char *cmd)
 static void parse_line(const char *buf)
 {
 	char	cmd[SMALLBUF];
-	int	i, len, do_cmd = 0;
+	size_t	i, len;
+	char	do_cmd = 0;
 
 	for (i = 0; buf[i]; i += len) {
 
@@ -825,9 +827,10 @@ static void parse_line(const char *buf)
 			i++;	/* skip over the '@' character */
 			continue;
 		}
+		assert (len < INT_MAX);
 
 		if (do_cmd) {
-			snprintf(cmd, sizeof(cmd), "%.*s", len, &buf[i]);
+			snprintf(cmd, sizeof(cmd), "%.*s", (int)len, &buf[i]);
 			continue;
 		}
 
@@ -837,7 +840,7 @@ static void parse_line(const char *buf)
 		}
 
 		/* pass it trough */
-		printf("%.*s", len, &buf[i]);
+		printf("%.*s", (int)len, &buf[i]);
 	}
 }
 
@@ -866,7 +869,7 @@ static void display_template(const char *tfn)
 
 static void display_tree(int verbose)
 {
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 

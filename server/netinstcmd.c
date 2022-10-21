@@ -108,7 +108,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		sendback(client, "OK\n");
 }
 
-void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
+void net_instcmd(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	const char *devname = NULL;
 	const char *cmdname = NULL;

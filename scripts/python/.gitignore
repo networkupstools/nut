@@ -1,0 +1,4 @@
+# A script may be generated here which would be installed into system PATH
+# to re-exec the real client with its full path name (so that it knows its
+# resource directory location):
+/NUT-Monitor

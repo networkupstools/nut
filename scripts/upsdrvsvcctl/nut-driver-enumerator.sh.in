@@ -12,7 +12,8 @@
 #       reference or 100% compliant with what the binary code uses; its aim
 #       is to just pick out some strings relevant for tracking config changes.
 #
-# Copyright (C) 2016-2019 Eaton
+# Copyright (C) 2016-2020 Eaton
+# Copyright (C) 2020-2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +95,11 @@ if [ -n "$ZSH_VERSION" ]; then
 #    setopt noglob
 #    setopt +F
 #    IFS="`printf ' \t\r\n'`" ; export IFS
+fi
+
+if set | grep -E '^(shell|version|t?csh)' | grep -E 't?csh' >/dev/null ; then
+    echo "FATAL: csh or tcsh is not supported in this script" >&2
+    exit 1
 fi
 
 # Third-party services to depend on (can be overridden by config file)
@@ -497,7 +503,7 @@ upsconf_getValue() {
         RES_L=0
         VALUE=""
 
-        LINE="`echo "$SECTION_CONTENT" | egrep '(^'"$1"'=|^'"$1"'$)'`" \
+        LINE="`echo "$SECTION_CONTENT" | grep -E '(^'"$1"'=|^'"$1"'$)'`" \
         && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'\$,\1,")" \
         || RES_L=$?
 
@@ -688,7 +694,7 @@ smf_refreshSupervizor() {
 }
 smf_listInstances_raw() {
     # Newer versions have pattern matching; older SMF might not have this luxury
-    /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:'
+    /usr/bin/svcs -a -H -o fmri | grep -E '/nut-driver:'
 }
 smf_listInstances() {
     # Chop twice, in case there is a leading "svc:/...."
@@ -857,6 +863,7 @@ EOF
     systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
+        systemd_refreshSupervizor || echo "WARNING: Somehow managed to fail systemd_refreshSupervizor()" >&2
         $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
         echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
@@ -875,7 +882,7 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
@@ -940,6 +947,7 @@ systemd_restart_upsd() {
     # Do not restart/reload if not already running
     case "`/bin/systemctl is-active "nut-server"`" in
         active|unknown) ;; # unknown meant "starting" in our testing...
+        failed) echo "Note: nut-server unit was 'failed' - not disabled by user, so (re)starting it (probably had no config initially)" >&2 ;;
         *) return 0 ;;
     esac
 
@@ -979,15 +987,15 @@ upslist_normalizeFile_filter() {
     # are dropped. Note that brackets with spaces inside, and brackets
     # that do not start the non-whitespace payload of the line, are not
     # sections.
-    egrep -v '(^$|^#)' | \
+    grep -E -v '(^$|^#)' | \
     sed -e 's,^['"$TABCHAR"'\ ]*,,' \
         -e 's,^\#.*$,,' \
         -e 's,['"$TABCHAR"'\ ]*$,,' \
         -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
         -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
-    | egrep -v '^$' \
-    | egrep '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
+    | grep -E -v '^$' \
+    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
 }
 
 upslist_normalizeFile() {
@@ -1014,7 +1022,7 @@ upslist_normalizeFile() {
     # for faster parsing when determining driver-required media etc.
     UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
         && [ "${#UPSCONF_DATA}" != 0 ] \
-        && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
+        && UPSCONF_DATA_SDP="`grep -E '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
 EOF`" \
         ||  { echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization" >&2
@@ -1045,7 +1053,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
@@ -1378,7 +1386,7 @@ get_device_for_service() {
     case "$SVC" in
         MD5_*) ;; # fall through to the bulk of code
         *)  upslist_readFile_once || return $?
-            echo "$UPSLIST_FILE" | egrep "^$SVC\$"
+            echo "$UPSLIST_FILE" | grep -E "^$SVC\$"
             return $?
             ;;
     esac

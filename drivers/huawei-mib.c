@@ -21,7 +21,7 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.2"
+#define HUAWEI_MIB_VERSION  "0.4"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
@@ -29,7 +29,7 @@
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
+ * static info_lkp_t huawei_onbatt_info[] = {
  * 	{ 1, "OB", NULL, NULL },
  * 	{ 2, "OL", NULL, NULL },
  * 	{ 0, NULL, NULL, NULL }
@@ -130,16 +130,21 @@ static snmp_info_t huawei_mib[] = {
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, huawei_onbatt_info },
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
+	 * static info_lkp_t huawei_onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
 	 * 	{ 0, NULL }
 	 * };
 	 */
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* UPS page */
 

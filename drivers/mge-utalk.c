@@ -52,19 +52,24 @@
  * from/to the UPS to re synchronise the communication.
  */
 
+#include "config.h" /* must be the first header */
+
 #include <ctype.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
+#include "nut_stdint.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 
 /* driver description structure */
@@ -125,11 +130,11 @@ static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
 static void extract_info(const char *buf, const mge_info_item_t *mge,
-			 char *infostr, int infolen);
+			 char *infostr, size_t infolen);
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
-static int mge_command(char *reply, int replylen, const char *fmt, ...);
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -162,17 +167,28 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
+#ifndef WIN32
 	int RTS = TIOCM_RTS;
+#endif
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* read command line/conf variable that affect comm. */
+#ifndef WIN32
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
+#else
+	if (testvar ("oldmac")) {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
+	}
+	else {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
+	}
+#endif
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -224,14 +240,14 @@ void upsdrv_initinfo(void)
 	int  table;
 	int  tries;
 	int  status_ok = 0;
-	int  bytes_rcvd;
+	ssize_t  bytes_rcvd;
 	int  si_data1 = 0;
 	int  si_data2 = 0;
 	mge_info_item_t *item;
 	models_name_t *model_info;
 	mge_model_info_t *legacy_model;
 	char infostr[32];
-	int  chars_rcvd;
+	ssize_t  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
@@ -320,7 +336,7 @@ void upsdrv_initinfo(void)
 			}
 		}
 
-		if ( firmware && strcmp(firmware, ""))
+		if (firmware && firmware[0] != '\0')
 			dstate_setinfo("ups.firmware", "%s", firmware);
 		else
 			dstate_setinfo("ups.firmware", "unknown");
@@ -404,7 +420,7 @@ void upsdrv_updateinfo(void)
 	char buf[BUFFLEN];
 	char infostr[32];
 	int status_ok;
-	int bytes_rcvd;
+	ssize_t bytes_rcvd;
 	mge_info_item_t *item;
 
 	/* make sure that communication is enabled */
@@ -425,7 +441,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Don't overload old units (at startup) */
-	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + poll_interval) )
+	if ( time(NULL) <= (lastpoll + poll_interval) )
 		return;
 
 	/* update all other ok variables */
@@ -675,7 +691,7 @@ static void enable_ups_comm(void)
          buf is changed inspite of const !!!!!
 */
 static void extract_info(const char *buf, const mge_info_item_t *item,
-			 char *infostr, int infolen)
+			 char *infostr, size_t infolen)
 {
 	/* initialize info string */
 	infostr[0] = '\0';
@@ -726,7 +742,7 @@ static int get_ups_status(void)
 	int over_set= FALSE;  /* has OVER flag been set ? */
 	int tries = 0;
 	int ok    = FALSE;
-	int bytes_rcvd = 0;
+	ssize_t bytes_rcvd = 0;
 
 	do {
 		/* Check if we are asked to stop (reactivity++) */
@@ -867,12 +883,12 @@ static const char *info_variable_cmd(const char *type)
 
    returns :  no of chars received, -1 if error
 */
-static int mge_command(char *reply, int replylen, const char *fmt, ...)
+static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 {
 	const char *p;
 	char command[BUFFLEN];
-	int bytes_sent = 0;
-	int bytes_rcvd = 0;
+	ssize_t bytes_sent = 0;
+	ssize_t bytes_rcvd = 0;
 	int ret;
 	va_list ap;
 
@@ -906,7 +922,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 	/* send command */
 	for (p = command; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -920,7 +936,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 	/* send terminating string */
 	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -940,7 +956,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %d byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: received %" PRIiSIZE " byte(s)", bytes_rcvd);
 
 	return bytes_rcvd;
 }

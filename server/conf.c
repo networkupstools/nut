@@ -23,10 +23,19 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include "nut_stdint.h"
 #include <ctype.h>
 
 static ups_t	*upstable = NULL;
 int	num_ups = 0;
+
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the upsd.conf
+ * can define a debug_min value in the global section,
+ * to set the minimal debug level (CLI provided value less
+ * than that would not have effect, can only have more).
+ */
+int	nut_debug_level_global = -1;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -51,6 +60,19 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 
 	temp->stale = 1;
 	temp->retain = 1;
+#ifdef WIN32
+	memset(&temp->read_overlapped,0,sizeof(temp->read_overlapped));
+	memset(temp->buf,0,sizeof(temp->buf));
+	temp->read_overlapped.hEvent = CreateEvent(NULL, /* Security */
+						FALSE, /* auto-reset*/
+						FALSE, /* initial state = non signaled */
+						NULL /* no name */);
+	if(temp->read_overlapped.hEvent == NULL ) {
+		upslogx(LOG_ERR, "Can't create event for UPS [%s]",
+			name);
+		return;
+	}
+#endif
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
@@ -91,8 +113,12 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 		sstate_cmdfree(temp);
 		pconf_finish(&temp->sock_ctx);
 
+#ifndef WIN32
 		close(temp->sock_fd);
-		temp->sock_fd = -1;
+#else
+		CloseHandle(temp->sock_fd);
+#endif
+		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
 		/* now redefine the filename and wrap up */
@@ -113,16 +139,44 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 	temp->retain = 1;
 }
 
+/* returns 1 if "arg" was usable as a boolean value, 0 if not
+ * saves converted meaning of "arg" into referenced "result"
+ */
+static int parse_boolean(char *arg, int *result)
+{
+	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
+		*result = 1;
+		return 1;
+	}
+	if ( (!strcasecmp(arg, "false")) || (!strcasecmp(arg, "off")) || (!strcasecmp(arg, "no")) || (!strcasecmp(arg, "0"))) {
+		*result = 0;
+		return 1;
+	}
+	return 0;
+}
+
 /* return 1 if usable, 0 if not */
-static int parse_upsd_conf_args(int numargs, char **arg)
+static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
 		return 0;
 
+	/* DEBUG_MIN (NUM) */
+	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
+	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "DEBUG_MIN has non numeric or negative value in upsd.conf");
+		}
+		return 1;
+	}
+
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			maxage = atoi(arg[1]);
 			return 1;
 		}
@@ -134,7 +188,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			tracking_delay = atoi(arg[1]);
 			return 1;
 		}
@@ -146,28 +200,22 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* ALLOW_NO_DEVICE <seconds> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
-		if (isdigit(arg[1][0])) {
-			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
+		if (isdigit((size_t)arg[1][0])) {
+			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
 			return 1;
 		}
-		else {
-			if ( (!strcasecmp(arg[1], "true")) || (!strcasecmp(arg[1], "on")) || (!strcasecmp(arg[1], "yes"))) {
-				allow_no_device = 1;
-				return 1;
-			}
-			if ( (!strcasecmp(arg[1], "false")) || (!strcasecmp(arg[1], "off")) || (!strcasecmp(arg[1], "no"))) {
-				allow_no_device = 0;
-				return 1;
-			}
-			upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
-			return 0;
-		}
+		if (parse_boolean(arg[1], &allow_no_device))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
 	}
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		if (isdigit(arg[1][0])) {
-			maxconn = atoi(arg[1]);
+		if (isdigit((size_t)arg[1][0])) {
+			/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
+			maxconn = (nfds_t)atol(arg[1]);
 			return 1;
 		}
 		else {
@@ -207,7 +255,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			certrequest = atoi(arg[1]);
 			return 1;
 		}
@@ -217,6 +265,17 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+#endif /* WITH_OPENSSL | WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* DISABLE_WEAK_SSL <bool> */
+	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
+		if (parse_boolean(arg[1], &disable_weak_ssl))
+			return 1;
+
+		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
+		return 0;
+	}
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	/* ACCEPT <aclname> [<aclname>...] */
@@ -292,6 +351,13 @@ void load_upsdconf(int reloading)
 		return;
 	}
 
+	if (reloading) {
+		/* if upsd.conf added or changed
+		 * (or commented away) the debug_min
+		 * setting, detect that */
+		nut_debug_level_global = -1;
+	}
+
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
@@ -316,6 +382,15 @@ void load_upsdconf(int reloading)
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 
+	}
+
+	if (reloading) {
+		if (nut_debug_level_global > -1) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from upsd.conf",
+				nut_debug_level_global);
+			nut_debug_level = nut_debug_level_global;
+		}
 	}
 
 	pconf_finish(&ctx);
@@ -433,8 +508,12 @@ static void delete_ups(upstype_t *target)
 			else
 				last->next = ptr->next;
 
-			if (ptr->sock_fd != -1)
+			if (VALID_FD(ptr->sock_fd))
+#ifndef WIN32
 				close(ptr->sock_fd);
+#else
+				CloseHandle(ptr->sock_fd);
+#endif
 
 			/* release memory */
 			sstate_infofree(ptr);
