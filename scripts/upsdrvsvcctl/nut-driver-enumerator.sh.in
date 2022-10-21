@@ -372,7 +372,7 @@ upslist_savednames_find_missing() {
 
     # Find services which do not have saved names in props
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | egrep "^${SVCINST_PROPS}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROPS}\t"'$' >/dev/null || echo "$SVCINST"
     done
 }
 
@@ -394,12 +394,12 @@ upslist_savednames_find_mismatch() {
 
     # Find services whose props exist but services do not
     echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
-        echo "$SVCINSTS" | egrep "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
+        echo "$SVCINSTS" | grep -E "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
     done
 
     # Find services which do not have saved names in props
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | egrep "^${SVCINST_PROP}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROP}\t"'$' >/dev/null || echo "$SVCINST"
     done
 }
 
@@ -904,7 +904,7 @@ systemd_findSavedDeviceName() {
             /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
-        egrep -H "Environment='DEVICE=($1|\"$1\")'" \
+        grep -E -H "Environment='DEVICE=($1|\"$1\")'" \
             /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
