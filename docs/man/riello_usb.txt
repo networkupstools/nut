@@ -25,6 +25,23 @@ riello_usb supports all recent Riello UPS with USB.
 Older Riello UPS products are not supported.
 
 
+EXTRA ARGUMENTS
+---------------
+
+You may need to tweak some settings, depending on the make and model of your UPS
+(see linkman:ups.conf[5]):
+
+*localcalculation*::
+When enabled, driver will calculate values of `battery.runtime` and `battery.load`
+locally. This is for some Riello models (iPlug and iDialog series) that provide
+incorrect values. Local calculation is done according to nominal battery capacity,
+nominal battery voltage, actual battery charge, maximum and actual UPS load.
++
+Lead battery charge graph is not linear, so estimated charge value may not be
+perfectly accurate. However it should be good enough to determine battery
+actual status and roughly estimate the time it can power the system.
+
+
 AUTHOR
 ------
 
