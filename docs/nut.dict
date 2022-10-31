@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3043 utf-8
+personal_ws-1.1 en 3044 utf-8
 AAS
 ABI
 ACFAIL
@@ -2141,6 +2141,7 @@ lk
 lm
 ln
 loadPercentage
+localcalculation
 localhost
 localtime
 lockf
