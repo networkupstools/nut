@@ -307,11 +307,16 @@ void chroot_start(const char *path)
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
+#else
+	upsdebugx(1, "Can not chroot into %s: not implemented on this platform", path);
 #endif
+
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
+#ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
+#endif
 }
 
 #ifdef WIN32
