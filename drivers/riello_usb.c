@@ -1087,20 +1087,18 @@ void upsdrv_updateinfo(void)
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
 
-		dstate_setinfo("battery.charge", "%u", battcharge );
+		dstate_setinfo("battery.charge", "%u", battcharge);
 		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
 	}
-	else if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
-		upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
-				"try setting \"localcalculation\" flag in \"ups.conf\" "
-				"options section for this driver!\n");
-		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	}
 	else {
-		upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
+		upsdebugx(0, "\n If you don't see values for battery.charge and "
+				"battery.runtime or values are incorrect,"
 				"try setting \"localcalculation\" flag in \"ups.conf\" "
 				"options section for this driver!\n");
+		if ((DevData.BatCap < 0xFFFF) && (DevData.BatTime < 0xFFFF)) {
+			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+			dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+		}
 	}
 
 	if (DevData.Tsystem == 255) {
