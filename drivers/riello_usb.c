@@ -1107,7 +1107,10 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (DevData.Tsystem == 255) {
-		dstate_setinfo("ups.temperature", "%u", 0 );
+		/*dstate_setinfo("ups.temperature", "%u", 0);*/
+		upsdebugx(4, "Reported temperature value is 0xFF, "
+			"probably meaning \"-1\" for error or "
+			"missing sensor - ignored");
 	}
 	else if (DevData.Tsystem < 0xFF) {
 		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
