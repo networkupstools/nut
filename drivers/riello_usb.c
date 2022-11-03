@@ -70,6 +70,8 @@ static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 
+static int localcalculation_logged = 0;
+
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
 static void ussleep(useconds_t usec)
@@ -1091,10 +1093,13 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
 	}
 	else {
-		upsdebugx(0, "\n If you don't see values for battery.charge and "
+		if (!localcalculation_logged) {
+			upsdebugx(0, "\nIf you don't see values for battery.charge and "
 				"battery.runtime or values are incorrect,"
 				"try setting \"localcalculation\" flag in \"ups.conf\" "
 				"options section for this driver!\n");
+			localcalculation_logged = 1;
+		}
 		if ((DevData.BatCap < 0xFFFF) && (DevData.BatTime < 0xFFFF)) {
 			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
 			dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
