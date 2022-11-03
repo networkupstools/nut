@@ -37,7 +37,7 @@ locally. This is for some Riello models (iPlug and iDialog series) that provide
 incorrect values. Local calculation is done according to nominal battery capacity,
 nominal battery voltage, actual battery charge, maximum and actual UPS load.
 +
-Lead battery charge graph is not linear, so estimated charge value may not be
+Lead battery charge graph is not linear, so guesstimated charge value may not be
 perfectly accurate. However it should be good enough to determine battery
 actual status and roughly estimate the time it can power the system.
 
