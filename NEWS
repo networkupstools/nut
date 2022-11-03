@@ -61,7 +61,7 @@ https://github.com/networkupstools/nut/milestone/8
      by `configure` script for custom builds [#1467]
 
  - We lacked log information about changes of chroot jail (uncommon) and
-   of uid/gid (everywhere), which makes troubleshooting harder (e.g. lack
+   of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
 
  - huawei-ups2000 is now known to support more devices, noted in docs and
