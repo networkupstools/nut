@@ -70,6 +70,8 @@ static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 
+/* Flag for estimation of battery.runtime and battery.charge */
+static int localcalculation = 0;
 static int localcalculation_logged = 0;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
@@ -941,6 +943,11 @@ void upsdrv_initinfo(void)
 	else
 		upsdebugx(2, "Communication with UPS established");
 
+	if (testvar("localcalculation")) {
+		localcalculation = 1;
+	}
+	dstate_setinfo("driver.parameter.localcalculation", "%d", localcalculation);
+
 	riello_parse_gi(&bufIn[0], &DevData);
 
 	gpser_error_control = DevData.Identif_bytes[4]-0x30;
@@ -1084,7 +1091,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	if (testvar("localcalculation")) {
+	if (localcalculation) {
 		battcharge = ((DevData.Ubat <= 129) && (DevData.Ubat >=107)) ? (((DevData.Ubat-107)*100)/22) : ((DevData.Ubat < 107) ? 0 : 100);
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
