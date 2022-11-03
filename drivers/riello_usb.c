@@ -945,6 +945,8 @@ void upsdrv_initinfo(void)
 
 	if (testvar("localcalculation")) {
 		localcalculation = 1;
+		upsdebugx(1, "Will guesstimate battery charge and runtime "
+			"instead of trusting device readings (if any)");
 	}
 	dstate_setinfo("driver.parameter.localcalculation", "%d", localcalculation);
 
