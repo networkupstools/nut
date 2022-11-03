@@ -82,7 +82,7 @@ https://github.com/networkupstools/nut/milestone/8
 
  - riello_usb updates:
    * added `localcalculation` option to compute `battery.runtime` and
-     `battery.load` if the device provides bogus values [#1692, #1685]
+     `battery.charge` if the device provides bogus values [#1692, #1685]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
