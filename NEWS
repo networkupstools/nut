@@ -60,8 +60,12 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed building of NUT man pages when just a few drivers are selected
      by `configure` script for custom builds [#1467]
 
+ - We lacked log information about changes of chroot jail (uncommon) and
+   of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
+   of access to config files or USB device nodes). Now we have it [#1694]
+
  - huawei-ups2000 is now known to support more devices, noted in docs and
-   for auto-detection [#1448]
+   for auto-detection [#1448, #1684]
 
  - nutdrv_qx updates:
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
