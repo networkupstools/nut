@@ -1045,9 +1045,9 @@ void upsdrv_updateinfo(void)
 	uint8_t getextendedOK;
 	static int countlost = 0;
 	int stat;
-        int battcharge;
-        float battruntime;
-        float upsloadfactor;
+	int battcharge;
+	float battruntime;
+	float upsloadfactor;
 
 	upsdebugx(1, "countlost %d",countlost);
 
@@ -1082,33 +1082,33 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-        if (testvar("localcalculation")) {
-                battcharge = ((DevData.Ubat <= 129) && (DevData.Ubat >=107)) ? (((DevData.Ubat-107)*100)/22) : ((DevData.Ubat < 107) ? 0 : 100);
-                battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
-                upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
+	if (testvar("localcalculation")) {
+		battcharge = ((DevData.Ubat <= 129) && (DevData.Ubat >=107)) ? (((DevData.Ubat-107)*100)/22) : ((DevData.Ubat < 107) ? 0 : 100);
+		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
+		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
 
-                dstate_setinfo("battery.charge", "%u", battcharge );
-                dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
-        }
-        else if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
-                upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
-                                "try setting \"localcalculation\" flag in \"ups.conf\" "
-                                "options section for this driver!\n");
+		dstate_setinfo("battery.charge", "%u", battcharge );
+		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
+	}
+	else if ((DevData.BatCap < 0xFFFF) &&  (DevData.BatTime < 0xFFFF)) {
+		upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
+				"try setting \"localcalculation\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
 		dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-                dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-        }
-        else {
-                upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
-                                "try setting \"localcalculation\" flag in \"ups.conf\" "
-                                "options section for this driver!\n");
-        }
+		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	}
+	else {
+		upsdebugx(0, "\n If you don't see values for battery.charge and battery.runtime or values are incorrect,"
+				"try setting \"localcalculation\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+	}
 
 	if (DevData.Tsystem == 255) {
-                dstate_setinfo("ups.temperature", "%u", 0 );
-        }
-        else if (DevData.Tsystem < 0xFF) {
-                dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
-        }
+		dstate_setinfo("ups.temperature", "%u", 0 );
+	}
+	else if (DevData.Tsystem < 0xFF) {
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+	}
 
 	if (input_monophase) {
 		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
