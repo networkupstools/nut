@@ -268,8 +268,12 @@ void become_user(struct passwd *pw)
 {
 #ifndef WIN32
 	/* if we can't switch users, then don't even try */
-	if ((geteuid() != 0) && (getuid() != 0))
+	if ((geteuid() != 0) && (getuid() != 0)) {
+		upsdebugx(1, "Can not become_user(%s): not root initially, "
+			"remaining UID=%jd GID=%jd",
+			pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 		return;
+	}
 
 	if (getuid() == 0)
 		if (seteuid(0))
@@ -283,8 +287,13 @@ void become_user(struct passwd *pw)
 
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
+
+	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
+		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
 	NUT_UNUSED_VARIABLE(pw);
+
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform", pw->pw_name);
 #endif
 }
 
@@ -298,11 +307,16 @@ void chroot_start(const char *path)
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
+#else
+	upsdebugx(1, "Can not chroot into %s: not implemented on this platform", path);
 #endif
+
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
+#ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
+#endif
 }
 
 #ifdef WIN32

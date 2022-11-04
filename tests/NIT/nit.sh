@@ -322,7 +322,13 @@ STATEPATH "$NUT_STATEPATH"
 LISTEN localhost $NUT_PORT
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
-    chmod 640 "$NUT_CONFPATH/upsd.conf"
+
+    if [ "`id -u`" = 0 ]; then
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+        chmod 644 "$NUT_CONFPATH/upsd.conf"
+    else
+        chmod 640 "$NUT_CONFPATH/upsd.conf"
+    fi
 
     # Some systems listining on symbolic "localhost" actually
     # only bind to IPv6, and Python telnetlib resolves IPv4
@@ -384,7 +390,13 @@ generatecfg_upsdusers_trivial() {
     upsmon secondary
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
-    chmod 640 "$NUT_CONFPATH/upsd.users"
+
+    if [ "`id -u`" = 0 ]; then
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
+        chmod 644 "$NUT_CONFPATH/upsd.users"
+    else
+        chmod 640 "$NUT_CONFPATH/upsd.users"
+    fi
 }
 
 ### upsmon.conf: ##################################################
@@ -398,7 +410,13 @@ generatecfg_upsmon_trivial() {
            echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
        fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
-    chmod 640 "$NUT_CONFPATH/upsmon.conf"
+
+    if [ "`id -u`" = 0 ]; then
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' so unprivileged daemons (after de-elevation) may read it"
+        chmod 644 "$NUT_CONFPATH/upsmon.conf"
+    else
+        chmod 640 "$NUT_CONFPATH/upsmon.conf"
+    fi
 }
 
 generatecfg_upsmon_master() {
@@ -437,8 +455,13 @@ generatecfg_ups_trivial() {
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
         fi
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
-    chmod 640 "$NUT_CONFPATH/ups.conf"
 
+    if [ "`id -u`" = 0 ]; then
+        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
+        chmod 644 "$NUT_CONFPATH/ups.conf"
+    else
+        chmod 640 "$NUT_CONFPATH/ups.conf"
+    fi
 }
 
 generatecfg_ups_dummy() {
