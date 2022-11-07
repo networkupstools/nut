@@ -598,20 +598,11 @@ default site.
 
 :; pkg_add \
     dash ksh93
-------
 
-[NOTE]
-======
-With OpenBSD 6.4, building against freeipmi failed: its libtool
-recipes referenced `-largp` which did not get installed in the system.
-Maybe some more packages are needed explicitly?
-Was not yet retried with OpenBSD 6.5.
-
-------
 :; pkg_add \
+    argp-standalone \
     freeipmi
 ------
-======
 
 Recommended:
 ------

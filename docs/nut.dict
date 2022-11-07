@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3046 utf-8
+personal_ws-1.1 en 3050 utf-8
 AAS
 ABI
 ACFAIL
@@ -466,6 +466,7 @@ Håvard
 IANA
 IC
 ID's
+IDE
 IDEN
 IDentifiers
 IFBETWEEN
@@ -1431,6 +1432,7 @@ altroot
 altroots
 amd
 anded
+antivirus
 aod
 aon
 ap
@@ -1447,6 +1449,7 @@ archlinux
 arduino
 arg
 argc
+argp
 args
 argv
 armac
