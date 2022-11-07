@@ -58,7 +58,11 @@ case "$BUILD_TYPE" in
     fightwarn-clang)
         CC="clang"
         CXX="clang++"
-        CPP="clang-cpp"
+        if (command -v clang-cpp) >/dev/null 2>/dev/null ; then
+            CPP="clang-cpp"
+        else
+            CPP="clang -E"
+        fi
         BUILD_TYPE=fightwarn
         ;;
 esac
@@ -119,6 +123,15 @@ esac
 # (allowing to rebuild interactively and investigate that set-up)?
 [ -n "${CI_FAILFAST-}" ] || CI_FAILFAST=false
 
+# We allow some CI setups to CI_SKIP_CHECK (avoiding it during single-process
+# scripted build), so tests can be done as a visibly separate stage.
+# This does not really apply to some build scenarios whose purpose is to
+# loop and check many build scenarios (e.g. BUILD_TYPE="default-all-errors"
+# and "fightwarn*" family), but it is up to caller when and why to set it.
+# It is also a concern of the caller (for now) if actually passing the check
+# relies on something this script does (set envvars, change paths...)
+[ -n "${CI_SKIP_CHECK-}" ] || CI_SKIP_CHECK=false
+
 # By default we configure and build in the same directory as source;
 # and a `make distcheck` handles how we build from a tarball.
 # However there are also cases where source is prepared (autogen) once,
@@ -153,6 +166,43 @@ esac
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
+
+# This is where many symlinks like "gcc -> ../bin/ccache" reside
+# (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
+# ccache may still be used via prefixing if the tool is found in
+# the PATH, unless you export CI_CCACHE_USE=no also):
+if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+    for D in \
+        "/usr/lib/ccache" \
+        "/mingw64/lib/ccache/bin" \
+        "/mingw32/lib/ccache/bin" \
+        "/usr/lib64/ccache" \
+        "/usr/libexec/ccache" \
+        "/usr/lib/ccache/bin" \
+        "/usr/local/lib/ccache" \
+    ; do
+        if [ -d "$D" ] ; then
+            if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
+            || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+            ; then
+                CI_CCACHE_SYMLINKDIR="$D" && break
+            else
+                echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
+            fi
+        fi
+    done
+
+    if [ -n "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+        echo "INFO: Detected CI_CCACHE_SYMLINKDIR='$CI_CCACHE_SYMLINKDIR'; specify another explicitly if desired" >&2
+    else
+        echo "WARNING: Did not find any CI_CCACHE_SYMLINKDIR; specify one explicitly if desired" >&2
+    fi
+else
+    if [ x"${CI_CCACHE_SYMLINKDIR-}" = x- ] ; then
+        echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
+        CI_CCACHE_SYMLINKDIR=""
+    fi
+fi
 
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
@@ -193,7 +243,7 @@ esac
 # for actual builds with parallel phases. Specify a whitespace to neuter.
 if [ -z "$PARMAKE_FLAGS" ]; then
     PARMAKE_FLAGS="-j $NPARMAKES"
-    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | egrep 'GNU Make|Free Software Foundation' > /dev/null ; then
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | grep -E 'GNU Make|Free Software Foundation' > /dev/null ; then
         PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
         echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
     else
@@ -225,6 +275,16 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=cppcheck"|"NUT_BUILD_CAPS=cppcheck=yes")
             [ -n "$CANBUILD_CPPCHECK_TESTS" ] || CANBUILD_CPPCHECK_TESTS=yes ;;
 
+        # Some workers (presumably where several executors or separate
+        # Jenkins agents) are enabled randomly fail NIT tests, once in
+        # a hundred runs or so. This option allows isolated workers to
+        # proclaim they are safe places to "make check-NIT" (and we can
+        # see if that is true, over time).
+        "NUT_BUILD_CAPS=NIT=no")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=no ;;
+        "NUT_BUILD_CAPS=NIT"|"NUT_BUILD_CAPS=NIT=yes")
+            [ -n "$CANBUILD_NIT_TESTS" ] || CANBUILD_NIT_TESTS=yes ;;
+
         "NUT_BUILD_CAPS=docs:man=no")
             [ -n "$CANBUILD_DOCS_MAN" ] || CANBUILD_DOCS_MAN=no ;;
         "NUT_BUILD_CAPS=docs:man"|"NUT_BUILD_CAPS=docs:man=yes")
@@ -244,6 +304,12 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=no ;;
         "NUT_BUILD_CAPS=cgi"|"NUT_BUILD_CAPS=cgi=yes")
             [ -n "$CANBUILD_LIBGD_CGI" ] || CANBUILD_LIBGD_CGI=yes ;;
+
+        # Currently for nut-scanner, might be more later - hence agnostic naming:
+        "NUT_BUILD_CAPS=libltdl=no")
+            [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
+        "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
+            [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
     esac
 done
 
@@ -275,6 +341,12 @@ if [ -z "$CI_OS_NAME" ]; then
             CI_OS_NAME="centos" ;;
         *linux*)
             CI_OS_NAME="linux" ;;
+        *msys2*)
+            CI_OS_NAME="windows-msys2" ;;
+        *mingw*64*)
+            CI_OS_NAME="windows-mingw64" ;;
+        *mingw*32*)
+            CI_OS_NAME="windows-mingw32" ;;
         *windows*)
             CI_OS_NAME="windows" ;;
         *[Mm]ac*|*arwin*|*[Oo][Ss][Xx]*)
@@ -304,6 +376,41 @@ fi
 # CI builds on Travis
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
 
+case "${CI_OS_NAME}" in
+	windows*)
+		# At the moment WIN32 builds are quite particular in their
+		# desires, for headers to declare what is needed, and yet
+		# there is currently not much real variation in supportable
+		# build environment (mingw variants). Lest we hardcode
+		# stuff in configure script, define some here:
+		case "$CFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+
+		case "$CXXFLAGS" in
+			*-D_POSIX=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_POSIX_C_SOURCE=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+		esac
+		case "$CXXFLAGS" in
+			*-D_WIN32_WINNT=*) ;;
+			*) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
+		esac
+		;;
+esac
+
 # Analyze some environmental choices
 if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     # No prereq dll and headers on win so far
@@ -323,16 +430,23 @@ if [ -z "${PKG_CONFIG-}" ]; then
     PKG_CONFIG="pkg-config"
 fi
 
-configure_nut() {
-    local CONFIGURE_SCRIPT="configure"
-    cd "$SCRIPTDIR"
+# Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
+CONFIGURE_SCRIPT=""
+autogen_get_CONFIGURE_SCRIPT() {
+    # Autogen once (delete the file if some scenario ever requires to re-autogen)
+    if [ -n "${CONFIGURE_SCRIPT}" -a -s "${CONFIGURE_SCRIPT}" ] ; then return 0 ; fi
+
+    pushd "${SCRIPTDIR}" || exit
 
     if [[ "$CI_OS_NAME" == "windows" ]] ; then
-        find . -ls
+        # Debug once
+        [ -n "$CONFIGURE_SCRIPT" ] || find . -ls
         CONFIGURE_SCRIPT="configure.bat"
+    else
+        CONFIGURE_SCRIPT="configure"
     fi
 
-    if [ ! -s "$CONFIGURE_SCRIPT" ]; then
+    if [ ! -s "./$CONFIGURE_SCRIPT" ]; then
         # Note: modern auto(re)conf requires pkg-config to generate the configure
         # script, so to stage the situation of building without one (as if on an
         # older system) we have to remove it when we already have the script.
@@ -345,13 +459,34 @@ configure_nut() {
         fi || exit
     fi
 
+    # Retain the full path to configure script file
+    CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
+
+    popd || exit
+}
+
+configure_CI_BUILDDIR() {
+    autogen_get_CONFIGURE_SCRIPT
+
     if [ "${CI_BUILDDIR}" != "." ]; then
         # Per above, we always start this routine in absolute $SCRIPTDIR
         echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
         mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
-        CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT}"
-    else
-        CONFIGURE_SCRIPT="./${CONFIGURE_SCRIPT}"
+    fi
+}
+
+configure_nut() {
+    configure_CI_BUILDDIR
+
+    # Note: maintainer-clean checks remove this, and then some systems'
+    # build toolchains noisily complain about missing LD path candidate
+    if [ -n "$BUILD_PREFIX" ]; then
+        # tmp/lib/
+        mkdir -p "$BUILD_PREFIX"/lib
+    fi
+    if [ -n "$INST_PREFIX" ]; then
+        # .inst/
+        mkdir -p "$INST_PREFIX"
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
@@ -413,6 +548,11 @@ build_to_only_catch_errors_target() {
 build_to_only_catch_errors() {
     build_to_only_catch_errors_target all || return $?
 
+    if [ "${CI_SKIP_CHECK}" = true ] ; then
+        echo "`date`: SKIP: not starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards, because caller requested CI_SKIP_CHECK=true; plain build has just succeeded however"
+        return 0
+    fi
+
     echo "`date`: Starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME $MAKE $MAKE_FLAGS_QUIET check \
     && echo "`date`: SUCCESS" \
@@ -465,13 +605,13 @@ check_gitignore() {
 
     # One invocation should report to log:
     git status $GIT_ARGS -s -- "${FILE_GLOB}" \
-    | egrep -v '^.. \.ci.*\.log.*' \
-    | egrep "${FILE_REGEX}" \
+    | grep -E -v '^.. \.ci.*\.log.*' \
+    | grep -E "${FILE_REGEX}" \
     || echo "WARNING: Could not query git repo while in `pwd`" >&2
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | egrep -v '^.. \.ci.*\.log.*' | egrep "^.. ${FILE_REGEX}"`" ] \
+    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | grep -E -v '^.. \.ci.*\.log.*' | grep -E "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
@@ -556,6 +696,25 @@ if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
         fi
         export MAKE
     fi
+    case "$CI_OS_NAME" in
+        windows-msys2)
+            # https://github.com/msys2/MSYS2-packages/issues/2088
+            echo "=========================================================================="
+            echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
+            echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+            echo "=========================================================================="
+            sleep 5
+            ;;
+        *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                echo "=========================================================================="
+                echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
+                echo "script would find the spellchecking toolkit elsewhere)"
+                echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                echo "=========================================================================="
+                sleep 5
+            fi
+            ;;
+    esac >&2
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
         build_to_only_catch_errors_target spellcheck ; exit
@@ -568,7 +727,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | egrep '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|CC|CXX|DO_.*|BUILD_.*)=' || true
+set | grep -E '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -585,7 +744,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -d "./.inst/" ]; then
         rm -rf ./.inst/
     fi
-    mkdir -p tmp/ .inst/
+
+    # Pre-create locations; tmp/lib in particular to avoid (on MacOS xcode):
+    #   ld: warning: directory not found for option '-L/Users/distiller/project/tmp/lib'
+    # Note that maintainer-clean checks can remove these directory trees,
+    # so we re-create them just in case in the configure_nut() method too.
+    mkdir -p tmp/lib .inst/
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
@@ -603,15 +767,26 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         $CXX --version || true
     fi
 
-    PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
-    CCACHE_PATH="$PATH"
-    CCACHE_DIR="${HOME}/.ccache"
-    export CCACHE_PATH CCACHE_DIR PATH
-    HAVE_CCACHE=no
-    if (command -v ccache || which ccache) && ls -la /usr/lib/ccache ; then
-        HAVE_CCACHE=yes
+    if [ x"${CI_CCACHE_USE-}" = xno ]; then
+        HAVE_CCACHE=no
+        CI_CCACHE_SYMLINKDIR=""
+        echo "WARNING: Caller required to not use ccache even if available" >&2
+    else
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            # Tell ccache the PATH without itself in it, to avoid loops processing
+                PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        fi
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        export CCACHE_PATH CCACHE_DIR PATH
+        HAVE_CCACHE=no
+        if (command -v ccache || which ccache) \
+        && ( [ -z "${CI_CCACHE_SYMLINKDIR}" ] || ls -la "${CI_CCACHE_SYMLINKDIR}" ) \
+        ; then
+            HAVE_CCACHE=yes
+        fi
+        mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
     fi
-    mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
 
     ccache_stats "before"
 
@@ -709,10 +884,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     if [ -n "$CPP" ] ; then
-        [ -x "$CPP" ] && export CPP
+        # Note: can be a multi-token name like "clang -E" or just not a full pathname
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
         if is_gnucc "cpp" ; then
             CPP=cpp && export CPP
+        else
+            case "$COMPILER_FAMILY" in
+                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            esac
         fi
     fi
 
@@ -793,11 +973,28 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    CONFIG_OPTS+=("--enable-check-NIT=no")
+    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+        CONFIG_OPTS+=("--enable-check-NIT")
+    else
+        echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
+        CONFIG_OPTS+=("--disable-check-NIT")
+    fi
 
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
+    # Even in scenarios that request --with-all, we do not want
+    # to choke on absence of desktop-related modules in Python.
+    # Just make sure relevant install recipes are tested:
+    CONFIG_OPTS+=("--with-nut_monitor=force")
+    CONFIG_OPTS+=("--with-pynut=auto")
+
+    # Similarly for nut-scanner which requires libltdl which
+    # is not ubiquitous on CI workers. So unless agent labels
+    # declare it should be capable, err on the safe side:
+    if [ "${CANBUILD_WITH_LIBLTDL-}" != yes ] ; then
+        CONFIG_OPTS+=("--with-nut-scanner=auto")
     fi
 
     # Some OSes have broken cppunit support, it crashes either build/link
@@ -948,51 +1145,67 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # There is another below for running actual scenarios.
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
-        PATH="/usr/lib/ccache:$PATH"
-        export PATH
-        if [ -n "$CC" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export PATH
+        else
+            case "$CC" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CC="ccache $CC" ;;
+            esac
+            case "$CXX" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CXX="ccache $CXX" ;;
+            esac
+            # No-op for CPP currently
+        fi
+        if [ -n "$CC" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
-                    if echo "$CCACHE_PATH" | egrep '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
                         CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
                     fi
                     ;;
             esac
-            CC="/usr/lib/ccache/`basename "$CC"`"
+            CC="${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`"
           else
             CC="ccache $CC"
           fi
         fi
-        if [ -n "$CXX" ]; then
-          if [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
+        if [ -n "$CXX" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
-                    if echo "$CCACHE_PATH" | egrep '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
                         CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
                     fi
                     ;;
             esac
-            CXX="/usr/lib/ccache/`basename "$CXX"`"
+            CXX="${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`"
           else
             CXX="ccache $CXX"
           fi
         fi
-        if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
+        if [ -n "$CPP" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
+        && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
                 */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
-                    if echo "$CCACHE_PATH" | egrep '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
                         CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
                     fi
                     ;;
             esac
-            CPP="/usr/lib/ccache/`basename "$CPP"`"
+            CPP="${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`"
         else
             : # CPP="ccache $CPP"
         fi
@@ -1041,11 +1254,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         echo "=== Finished initial clean-up"
     fi
 
-    if [ "$CI_OS_NAME" = "windows" ] ; then
-        $CI_TIME ./autogen.sh || true
-    else
-        $CI_TIME ./autogen.sh ### 2>/dev/null
-    fi
+    # Just prepare `configure` script; we run it at different points
+    # below depending on scenario
+    autogen_get_CONFIGURE_SCRIPT
 
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         # This should be done in scratch containers...
@@ -1506,9 +1717,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Quiet parallel make, redo loud sequential if that failed
     build_to_only_catch_errors_target all
 
-    # Can be noisy if regen is needed (DMF branch)
+    # Can be noisy if regen is needed (DMF branch with this or that BUILD_TGT)
     # Bail out due to DMF will (optionally) happen in the next check
-    GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+    #GIT_DIFF_SHOW=false FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
 
     # TODO (when merging DMF branch, not a problem before then):
     # this one check should not-list the "*.dmf" files even if
@@ -1535,7 +1746,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
         $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distcheck
 
-        FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
+        #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "distcheck" || exit
         )
     fi
@@ -1555,6 +1766,17 @@ bindings)
     fi
     echo ""
 
+    if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
+        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export CCACHE_PATH CCACHE_DIR PATH
+        fi
+    fi
+
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
@@ -1563,16 +1785,7 @@ bindings)
         echo "=== Finished initial clean-up"
     fi
 
-    ./autogen.sh
-
-    if [ "${CI_BUILDDIR}" != "." ]; then
-        # Per above, we always start this routine in absolute $SCRIPTDIR
-        echo "=== Running NUT build out-of-tree in ${CI_BUILDDIR}"
-        mkdir -p "${CI_BUILDDIR}" && cd "${CI_BUILDDIR}" || exit
-        CONFIGURE_SCRIPT="${SCRIPTDIR}/configure"
-    else
-        CONFIGURE_SCRIPT="./configure"
-    fi
+    configure_CI_BUILDDIR
 
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
@@ -1582,15 +1795,67 @@ bindings)
     ${CONFIGURE_SCRIPT} --enable-Wcolor \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
+        --with-nut_monitor=auto --with-pynut=auto \
+        --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    #$MAKE all && \
-    $MAKE $PARMAKE_FLAGS all && \
-    $MAKE check
+    #$MAKE all || \
+    $MAKE $PARMAKE_FLAGS all || exit
+    if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
+
+    case "$CI_OS_NAME" in
+        windows*)
+            echo "INFO: Build and tests succeeded. If you plan to install a NUT bundle now" >&2
+            echo "for practical usage or testing on a native Windows system, consider calling" >&2
+            echo "    make install-win-bundle DESTDIR=`pwd`/.inst/NUT4Win" >&2
+            echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
+            ;;
+    esac
     ;;
+
+# These mingw modes below are currently experimental and not too integrated
+# with this script per se; it is intended to run for NUT CI farm on prepared
+# Linux+mingw worker nodes (see scripts/Windows/README) in an uniform manner,
+# using mostly default settings (warnings in particular) and some hardcoded
+# in that script (ARCH, CFLAGS, ...).
+# Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
+# on any other supported platform (more details in docs/config-prereqs.txt).
+cross-windows-mingw*)
+    echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
+
+    ./autogen.sh || exit
+    cd scripts/Windows || exit
+
+    cmd="" # default soup of the day, as defined in the called script
+    case "$BUILD_TYPE" in
+        cross-windows-mingw32|cross-windows-mingw-32) cmd="all32" ;;
+        cross-windows-mingw64|cross-windows-mingw-64) cmd="all64" ;;
+        cross-windows-mingw) # make a difficult guess
+            case "${BITS-}" in
+                32|64) cmd="all${BITS}"
+                    ;;
+                *)  # Use other clues
+                    case "${CFLAGS-}${CXXFLAGS-}${LDFLAGS-}" in
+                        *-m32*-m64*|*-m64*-m32*)
+                            echo "FATAL: Mismatched bitness requested in *FLAGS" >&2
+                            exit 1
+                            ;;
+                        *-m32*) cmd="all32" ;;
+                        *-m64*) cmd="all64" ;;
+                    esac
+                    ;;
+            esac
+            ;;
+    esac
+
+    SOURCEMODE="out-of-tree" \
+    MAKEFLAGS="$PARMAKE_FLAGS" \
+    ./build-mingw-nut.sh $cmd
+    ;;
+
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
     ;;

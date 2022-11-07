@@ -82,25 +82,41 @@ if test ! -d "${auglensdir}"; then
       auglensdir=''
    fi
 fi
-hotplugdir='/etc/hotplug'
-if test ! -d "${hotplugdir}"; then
-   hotplugdir=''
-fi
-udevdir='/lib/udev'
-if test ! -d "${udevdir}"; then
-   udevdir='/etc/udev'
-   if test ! -d "${udevdir}"; then
-      udevdir=''
-   fi
-fi
 
-devddir='/usr/local/etc/devd'
-if test ! -d "${devddir}"; then
-   devddir='/etc/devd'
-   if test ! -d "${devddir}"; then
-      devddir=''
-   fi
-fi
+LIBREGEX_LIBS=''
+dnl Disable Hotplug, DevD and udev support on Windows
+dnl (useful when cross-compiling)
+case "${target_os}" in
+    *mingw* )
+        dnl TODO: Actually detect it? See also nut_check_libusb.m4 for same.
+        LIBREGEX_LIBS='-lregex'
+        hotplugdir=''
+        udevdir=''
+        devddir=''
+        ;;
+    * )
+        hotplugdir='/etc/hotplug'
+        if test ! -d "${hotplugdir}"; then
+            hotplugdir=''
+        fi
+
+        udevdir='/lib/udev'
+        if test ! -d "${udevdir}"; then
+            udevdir='/etc/udev'
+            if test ! -d "${udevdir}"; then
+                udevdir=''
+            fi
+        fi
+
+        devddir='/usr/local/etc/devd'
+        if test ! -d "${devddir}"; then
+            devddir='/etc/devd'
+            if test ! -d "${devddir}"; then
+               devddir=''
+            fi
+        fi
+        ;;
+esac
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
@@ -144,6 +160,18 @@ NUT_COMPILER_FAMILY_FLAGS
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
+
+dnl All current systems provide time.h; it need not be checked for.
+dnl Not all systems provide sys/time.h, but those that do, all allow
+dnl you to include it and time.h simultaneously.
+dnl NUT codebase provides the include/timehead.h to wrap these nuances.
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
+dnl ###obsolete### AC_HEADER_TIME
+AS_IF([test "$ac_cv_header_sys_time_h" = yes],
+    [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+         and <time.h>.  This macro is deemed obsolete by autotools.])
+    ], [])
+
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
 
 AC_CHECK_HEADER([float.h],
@@ -152,17 +180,32 @@ AC_CHECK_HEADER([float.h],
 AC_CHECK_HEADER([math.h],
     [AC_DEFINE([HAVE_MATH_H], [1],
         [Define to 1 if you have <math.h>.])])
+
 AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
 [#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
 #ifdef HAVE_FLOAT_H
 # include <float.h>
-#endif])
+#endif
+])
 
 AC_CHECK_HEADER([limits.h],
     [AC_DEFINE([HAVE_LIMITS_H], [1],
         [Define to 1 if you have <limits.h>.])])
+
+AC_CHECK_HEADER([stdlib.h],
+    [AC_DEFINE([HAVE_STDLIB_H], [1],
+        [Define to 1 if you have <stdlib.h>.])])
+
+AC_CHECK_FUNCS(realpath, [], [],
+[#ifdef HAVE_LIMITS_H
+# include <limits.h>
+#endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+])
 
 AC_CHECK_HEADER([signal.h],
     [AC_DEFINE([HAVE_SIGNAL_H], [1],
@@ -194,6 +237,10 @@ getrlimit(RLIMIT_NOFILE, &limit);
     ]
 )
 
+AC_CHECK_HEADER([poll.h],
+    [AC_DEFINE([HAVE_POLL_H], [1],
+        [Define to 1 if you have <poll.h>.])])
+
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
@@ -221,7 +268,7 @@ sem_destroy(&semaphore);
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
-AC_CHECK_FUNCS(on_exit strptime setlogmask)
+AC_CHECK_FUNCS(on_exit setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
@@ -242,7 +289,7 @@ dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTEN
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
- AC_CHECK_FUNCS(strtok_r fileno localtime_r sigemptyset sigaction,
+AC_CHECK_FUNCS(strtok_r fileno localtime_r localtime_s gmtime_r gmtime_s sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
 
 AC_LANG_PUSH([C])
@@ -286,10 +333,92 @@ AS_IF([test x"${ac_cv_func_strncasecmp}" = xyes],
     [AC_MSG_WARN([Required C library routine strncasecmp not found; try adding __EXTENSIONS__])]
     )
 
+dnl Note: this changes the original string in argument!
+dnl Do not pass it constants (strdup them if needed)!
+AC_CACHE_CHECK([for strlwr(s)],
+    [ac_cv_func_strlwr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [char s@<:@64@:>@ = {"Some STR1 text"} ; if (strlwr(s) == NULL) return 1])],
+        [ac_cv_func_strlwr=yes], [ac_cv_func_strlwr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strlwr}" = xyes],
+    [AC_DEFINE([HAVE_STRLWR], 1, [defined if standard library has, and C standard allows, the strlwr(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strlwr not found])]
+    )
+
+AC_CACHE_CHECK([for strsep(s1,s2)],
+    [ac_cv_func_strsep],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [char arr@<:@64@:>@ = {"Some,tuple,text"} ; char *s = arr; if (strsep(&s, ",") == NULL) return 1])],
+        [ac_cv_func_strsep=yes], [ac_cv_func_strsep=no]
+    )])
+AS_IF([test x"${ac_cv_func_strsep}" = xyes],
+    [AC_DEFINE([HAVE_STRSEP], 1, [defined if standard library has, and C standard allows, the strsep(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strsep not found])]
+    )
+AM_CONDITIONAL([HAVE_STRSEP], [test x"${ac_cv_func_strsep}" = "xyes"])
+
+AC_CACHE_CHECK([for strstr(s1,s2)],
+    [ac_cv_func_strstr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strstr("Some str1 text", "str1") == NULL) return 1])],
+        [ac_cv_func_strstr=yes], [ac_cv_func_strstr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strstr}" = xyes],
+    [AC_DEFINE([HAVE_STRSTR], 1, [defined if standard library has, and C standard allows, the strstr(s1,s2) method])],
+    [AC_MSG_ERROR([Required C library routine strstr not found])]
+    )
+
+AC_CACHE_CHECK([for strcasestr(s1,s2)],
+    [ac_cv_func_strcasestr],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+            [if (strcasestr("Some STR1 text", "str1") == NULL) return 1])],
+        [ac_cv_func_strcasestr=yes], [ac_cv_func_strcasestr=no]
+    )])
+AS_IF([test x"${ac_cv_func_strcasestr}" = xyes],
+    [AC_DEFINE([HAVE_STRCASESTR], 1, [defined if standard library has, and C standard allows, the strcasestr(s1,s2) method])],
+    [AS_IF([test x"${ac_cv_func_strlwr}" = xyes && test x"${ac_cv_func_strstr}" = xyes],
+        [AC_MSG_WARN([Optional C library routine strcasestr not found; a simple wrapper will be built in])]
+        [AC_MSG_WARN([Required C library routine strcasestr not found; try adding _GNU_SOURCE])]
+    )])
+
+AC_CACHE_CHECK([for strptime(s1,s2,tm)],
+    [ac_cv_func_strptime],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+],
+            [struct tm tm;
+char *date = "12/30/1999";
+char *p = strptime(date, "%m/%d/%Y", &tm);
+if (p == NULL || *p != '\0') return 1])],
+        [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
+    )])
+AS_IF([test x"${ac_cv_func_strptime}" = xyes],
+    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
-        [AC_LANG_PROGRAM([$CODE_STRINGINCL],
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
             [[int res = 0;
 char *t = "Test";
 char *s = strdup(t);
@@ -305,13 +434,59 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CHECK_HEADER([sys/select.h],
+    [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
+        [Define to 1 if you have <sys/select.h>.])])
+
+AC_CACHE_CHECK([for suseconds_t],
+    [ac_cv_type_suseconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <sys/types.h>
+#if HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+        ]],
+            [[suseconds_t us = 1000000;
+              signed long int l = 1000000;
+              if (l != (signed long int)us) return 1;
+
+              l = -1; us = -1;
+              if (l != (signed long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_suseconds_t=yes], [ac_cv_type_suseconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_suseconds_t}" = xyes],
+    [AC_DEFINE([HAVE_SUSECONDS_T], 1, [defined if standard library has, and C standard allows, the suseconds_t type])],
+    [AC_MSG_WARN([Required C library type suseconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+AC_CACHE_CHECK([for useconds_t],
+    [ac_cv_type_useconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <unistd.h>
+        ]],
+            [[useconds_t us = 1000000;
+              unsigned long int l = 1000000;
+              if (l != (unsigned long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_useconds_t=yes], [ac_cv_type_useconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_useconds_t}" = xyes],
+    [AC_DEFINE([HAVE_USECONDS_T], 1, [defined if standard library has, and C standard allows, the useconds_t type])],
+    [AC_MSG_WARN([Required C library type useconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
 AC_CACHE_CHECK([for usleep(us)],
     [ac_cv_func_usleep],
     [AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM([[#include <unistd.h>
         ]],
             [[useconds_t us = 1000;
-if (usleep(us) != 0) return 1 /* per doc, no erros are returned actually*/
+if (usleep(us) != 0) return 1 /* per doc, no errors are returned actually */
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_usleep=yes], [ac_cv_func_usleep=no]
@@ -421,16 +596,6 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-dnl All current systems provide time.h; it need not be checked for.
-dnl Not all systems provide sys/time.h, but those that do, all allow
-dnl you to include it and time.h simultaneously.
-dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
-AS_IF([test "$ac_cv_header_sys_time_h" = yes],
-    [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
-	     and <time.h>.  This macro is deemed obsolete by autotools.])
-    ], [])
-
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
@@ -448,7 +613,53 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
+NUT_CHECK_SOCKETLIB
 NUT_FUNC_GETNAMEINFO_ARGTYPES
+
+AC_CACHE_CHECK([for inet_ntop()],
+    [ac_cv_func_inet_ntop],
+    [AC_LANG_PUSH([C])
+    dnl e.g. add "-lws2_32" for mingw builds
+    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+    SAVED_LIBS="$LIBS"
+    LIBS="$LIBS $NETLIBS"
+    AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#if HAVE_WINDOWS_H
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+#else
+# include <arpa/inet.h>
+#endif
+#include <stdio.h>
+]],
+            [[/* const char* inet_ntop(int af, const void* src, char* dst, size_t cnt); */
+char buf[128];
+printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_inet_ntop=yes], [ac_cv_func_inet_ntop=no]
+    )
+    AC_LANG_POP([C])
+    LIBS="$SAVED_LIBS"
+])
+AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
+    [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
+    [AC_MSG_WARN([Required C library routine inet_ntop() not found])
+     AS_CASE([${target_os}],
+	     [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+	     )
+    ]
+    )
 
 dnl ----------------------------------------------------------------------
 dnl Check for python binary program names per language version
@@ -459,6 +670,10 @@ NUT_CHECK_PYTHON3
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
+dnl Note: a few drivers are NUT software constructs (NUTSW_DRIVERLIST)
+dnl e.g. dummy-ups, clone and clone-outlet; they do not have a separate
+dnl toggle or dependency at the moment. Earlier NUT releases before 2.8.0
+dnl grouped them with serial drivers, which were enabled by default.
 
 dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs
 dnl (square brackets), so the help string depends on the version used
@@ -521,7 +736,7 @@ AC_ARG_WITH(drivers,
 		AS_IF([test -n "$DRIVER_BUILD_LIST"],
 			[dnl DRVLIST is occasionally synced with drivers/Makefile.am
 			 dnl NOTE: Currently "USB_DRIVERLIST" is not used standalone:
-			DRVLIST_NAMES="
+			DRVLIST_NAMES="NUTSW_DRIVERLIST
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
@@ -577,6 +792,9 @@ AC_ARG_WITH(drivers,
 							DRV_HITS="$DRV_HITS $DRVLIST_NAME"
 							AS_CASE(["$DRVLIST_NAME"],
 
+								[NUTSW_DRIVERLIST], [
+									AC_MSG_NOTICE([Building NUT-Software-only driver "$DRV"])
+									],
 								[SERIAL_DRIVERLIST], [
 									AS_IF([test -z "${with_serial}"],
 										[AC_MSG_NOTICE([Requiring --with-serial=yes for driver "$DRV"])
@@ -667,7 +885,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -701,6 +919,21 @@ AC_ARG_WITH(all,
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
+		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
+
+		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
+		|| test x"${withval}" != xyes \
+		; then
+			dnl We expect Python to be available (augeas etc),
+			dnl so if it is present - try to provide the PyNUT
+			dnl binding module:
+			if test -z "${with_pynut}"; then with_pynut="${withval}"; fi
+
+			dnl However, do not let "--with-all" break builds
+			dnl on servers that lack some GUI modules in their
+			dnl Python installations; "auto" is defaulted below.
+			dnl # if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
+		fi
 
 		AC_MSG_RESULT("${withval}")
 	else
@@ -763,6 +996,17 @@ NUT_CHECK_LIBMODBUS
 
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
+
+dnl A Python GUI client application for the sysadmin desktop
+dnl (not necessarily on the NUT server itself):
+NUT_ARG_WITH([nut_monitor], [install the NUT-Monitor GUI files], [auto])
+NUT_ARG_WITH([pynut], [install the PyNUT module files (yes, no, app, auto)], [auto])
+dnl Note: we did NUT_CHECK_PYTHON2 NUT_CHECK_PYTHON3 etc above,
+dnl and if at all possible, we generate the files from .in templates
+dnl anyway by running this configure script. The question is about
+dnl installing these features or not.
+dnl Note: more for tests than other reasons, there is also an option
+dnl value to "force" the installation.
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
@@ -833,6 +1077,13 @@ getspeed(&baudrate);
      CFLAGS="${CFLAGS_SAVED_SERIAL}"
 
      AC_MSG_CHECKING([whether we can build serial drivers])
+     AS_CASE(["${target_os}"],
+        [*mingw*], [
+             AS_IF([test "${nut_have_serial_types}" != yes],
+                [AC_MSG_WARN([not with system includes, but can try with our fallback for the target platform])
+                 nut_have_serial_types=yes]
+             )
+        ])
      AS_IF([test "${nut_have_serial_types}" = yes],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
         [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
@@ -1143,30 +1394,51 @@ NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], 
 
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-libltdl
+dnl Check for --with-libltdl and --with-nut-scanner
 
+dnl Note: libltdl is primarily used by nut-scanner now; however some
+dnl side projects and forks of NUT have more creative uses for it
+dnl and might eventually land in NUT codebase proper.
 NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
 
+dnl Note: default could be overridden above by --with-all handling.
+dnl While nut-scanner decides at run-time if it would use third-party shared
+dnl library files (bundled along or not, if available for the platform), its
+dnl binary must be configured now and built against their headers at least.
+NUT_ARG_WITH([nut-scanner], [build and install nut-scanner tool (requires libltdl; optionally libusb, libneon, libsnmp)], [auto])
+
 dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_libltdl}" != "no"; then
-   dnl check for libltdl compiler flags
-   NUT_CHECK_LIBLTDL
+if test x"${nut_with_libltdl}" != x"no"; then
+    if test x"${nut_with_nut_scanner}" = x"yes"; then
+        dnl Require libltdl to be present (or fail the configure script)
+        nut_with_libltdl="yes"
+    fi
+
+    dnl check for libltdl compiler flags
+    NUT_CHECK_LIBLTDL
 fi
 
-if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR([libltdl not found])
+if test x"${nut_with_libltdl}" = x"yes" -a x"${nut_have_libltdl}" != x"yes"; then
+    AC_MSG_ERROR([libltdl not found])
 fi
 
-if test "${nut_with_libltdl}" != "no"; then
-   nut_with_libltdl="${nut_have_libltdl}"
+if test x"${nut_with_libltdl}" != x"no"; then
+    nut_with_libltdl="${nut_have_libltdl}"
 fi
 
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitly report if we are building nut-scanner or not
-dnl since it requires libltdl
-NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
+if test x"${nut_with_libltdl}" = x"no" && test x"${nut_with_nut_scanner}" = x"yes"; then
+    AC_MSG_ERROR([libltdl support was disabled or not found, but --with-nut-scanner was requested and requires it])
+fi
+
+if test x"${nut_with_nut_scanner}" = x"auto"; then
+    nut_with_nut_scanner="${nut_with_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([build nut-scanner], [${nut_with_nut_scanner}], [],
+					[WITH_NUT_SCANNER], [Define to enable nut-scanner tool support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -1190,6 +1462,224 @@ fi
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-pynut and --with-nut_monitor
+
+dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
+dnl python 3 qt5, or both
+AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+nut_with_nut_monitor_py2gtk2=""
+nut_with_nut_monitor_py3qt5=""
+nut_with_nut_monitor_desktop=""
+dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
+nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+if test x"${nut_with_nut_monitor}" != xno ; then
+    dnl While we might just install for "yes" request, in hopes user would
+    dnl get their python ecosystem in place later, we need some criteria to
+    dnl avoid installing it always :) Also, need to substitute the shebang.
+    if test -z "${PYTHON}${PYTHON2}${PYTHON3}" ; then
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="no" ;;
+            "yes")  AC_MSG_ERROR([No python 2/3 interpreter was found, required for NUT-Monitor desktop application])
+                ;;
+        esac
+    fi
+fi
+
+if test x"${nut_with_nut_monitor}" != xno ; then
+    dnl Note: no double-quoting for use, the command string may be multi-token
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        ; then
+            nut_with_nut_monitor_py2gtk2="yes"
+        fi
+    fi
+
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        ; then
+            nut_with_nut_monitor_py3qt5="yes"
+        fi
+    fi
+
+    dnl Fall back to default interpreter
+    if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
+    && test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        ; then
+            nut_with_nut_monitor_py3qt5="yes"
+        fi
+
+        if ${PYTHON} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        ; then
+            nut_with_nut_monitor_py2gtk2="yes"
+        fi
+    fi
+
+    dnl Can we satisfy any NUT-Monitor installation request?
+    if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="yes" ;;
+        esac
+    else
+        case "${nut_with_nut_monitor}" in
+            "auto") nut_with_nut_monitor="no" ;;
+            "yes")
+                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application])
+                ;;
+        esac
+    fi
+fi
+AC_MSG_RESULT([${nut_with_nut_monitor}])
+
+if test x"${nut_with_nut_monitor}" != xno ; then
+    if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
+        case "${nut_with_nut_monitor}" in
+            "auto"|"yes") nut_with_nut_monitor_desktop="desktop-file-install" ;;
+        esac
+    else
+        case "${nut_with_nut_monitor}" in
+            "yes")  AC_MSG_WARN([Current OS does not seem to provide desktop-file-install])
+                nut_with_nut_monitor_desktop="install"
+                ;;
+            "auto") nut_with_nut_monitor_desktop="install" ;;
+        esac
+    fi
+fi
+
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
+AC_MSG_CHECKING([if we can and should install PyNUT module])
+nut_with_pynut_py=""
+nut_with_pynut_py2=""
+nut_with_pynut_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py2="yes"
+        fi
+    fi
+
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py3="yes"
+        fi
+    fi
+
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
+    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
+    ; then
+        if ${PYTHON} -c "import telnetlib" \
+        ; then
+            nut_with_pynut_py="yes"
+        fi
+    fi
+fi
+
+if test -z "${nut_with_pynut_py}${nut_with_pynut_py2}${nut_with_pynut_py3}" ; then
+    dnl Not all prereqs are available...
+    case "${nut_with_pynut}" in
+        "auto"|"app")
+            if test "${nut_with_nut_monitor}" = yes ; then
+                AC_MSG_ERROR([Prerequisites for PyNUT not found, can't install as required for NUT-Monitor desktop application])
+            else
+                nut_with_pynut="no"
+            fi
+            ;;
+        "yes")
+            AC_MSG_ERROR([Prerequisites for PyNUT not found, can't install as required])
+            ;;
+    esac
+fi
+
+if test x"${nut_with_pynut}" != xno ; then
+    if test -n "${PYTHON_SITE_PACKAGES}${PYTHON2_SITE_PACKAGES}${PYTHON3_SITE_PACKAGES}" \
+    ; then
+        dnl retain "app" if requested by caller
+        case "${nut_with_pynut}" in
+            "auto")
+                nut_with_pynut="yes"
+                ;;
+        esac
+    else
+        case "${nut_with_pynut}" in
+            "auto")
+                if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
+                    nut_with_pynut="app"
+                else
+                    nut_with_pynut="no"
+                fi
+                ;;
+            "yes") dnl Note: this would die for --with-nut_monitor=yes but no site location
+                if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
+                    nut_with_pynut="app"
+                else
+                    AC_MSG_ERROR([python interpreter and/or its site-packages location not found, but required for PyNUT])
+                fi
+                ;;
+        esac
+    fi
+fi
+AC_MSG_RESULT([${nut_with_pynut}])
+
+dnl Note: do not move up to before pynut processing
+if test "${nut_with_nut_monitor}" = force ; then
+    AC_MSG_NOTICE([overriding nut_with_nut_monitor=yes because caller forced it])
+    nut_with_nut_monitor=yes
+    nut_with_nut_monitor_py2gtk2=yes
+    nut_with_nut_monitor_py3qt5=yes
+fi
+
+if test "${nut_with_pynut}" = force ; then
+    AC_MSG_NOTICE([overriding nut_with_pynut=yes because caller forced it])
+    if test "${nut_with_nut_monitor}" = yes ; then
+        nut_with_pynut=app
+    else
+        nut_with_pynut=yes
+    fi
+fi
+
+NUT_REPORT_FEATURE([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
+					[WITH_NUT_MONITOR], [Define to enable NUT-Monitor desktop application installation])
+
+NUT_REPORT_FEATURE([install PyNUT binding module], [${nut_with_pynut}], [],
+					[WITH_PYNUT], [Define to enable PyNUT module installation])
+
+dnl One or both of these may be installed:
+AM_CONDITIONAL(WITH_NUT_MONITOR, test "${nut_with_nut_monitor}" = "yes" && test "${nut_with_nut_monitor_py2gtk2}" = "yes" -o "${nut_with_nut_monitor_py3qt5}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY2GTK2, test "${nut_with_nut_monitor_py2gtk2}" = "yes")
+AM_CONDITIONAL(WITH_NUT_MONITOR_PY3QT5, test "${nut_with_nut_monitor_py3qt5}" = "yes")
+dnl Install PyNUT as a globally usable module, or just as app internals?
+AM_CONDITIONAL(WITH_PYNUT_PY,  test "${nut_with_pynut_py}" = "yes"  -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_PY2, test "${nut_with_pynut_py2}" = "yes" -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_PY3, test "${nut_with_pynut_py3}" = "yes" -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_APP, test "${nut_with_pynut}" = "app")
+
+AC_SUBST([nut_with_nut_monitor_dir], [${nut_with_nut_monitor_dir}])
+AC_SUBST([nut_with_nut_monitor_py2gtk2], [${nut_with_nut_monitor_py2gtk2}])
+AC_SUBST([nut_with_nut_monitor_py3qt5], [${nut_with_nut_monitor_py3qt5}])
+AC_SUBST([nut_with_nut_monitor_desktop], [${nut_with_nut_monitor_desktop}])
+AC_SUBST([nut_with_nut_monitor], [${nut_with_nut_monitor}])
+AC_SUBST([nut_with_pynut], [${nut_with_pynut}])
+AC_SUBST([nut_with_pynut_py], [${nut_with_pynut_py}])
+AC_SUBST([nut_with_pynut_py2], [${nut_with_pynut_py2}])
+AC_SUBST([nut_with_pynut_py3], [${nut_with_pynut_py3}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-cppcheck
@@ -1540,6 +2030,20 @@ NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}],
 					[WITH_DEV], [Define to enable development files support])
 
 dnl ----------------------------------------------------------------------
+dnl checks related to MS Windows support (MingW)
+
+AC_CHECK_TOOL([WINDMC], [windmc], [none])
+AC_CHECK_TOOL([WINDRES], [windres], [none])
+
+if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" ; then
+	nut_have_mingw_resgen="yes"
+fi
+
+AM_CONDITIONAL([HAVE_MINGW_RESGEN], [test "${nut_have_mingw_resgen}" = "yes"])
+dnl Also define a generic AM_CONDITIONAL for general Windows compilation
+AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
+
+dnl ----------------------------------------------------------------------
 
 
 AC_MSG_CHECKING(state path)
@@ -1738,6 +2242,7 @@ AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see 
 AC_MSG_RESULT(${LOGFACILITY})
 
 AC_MSG_CHECKING(which driver man pages to install)
+DRIVER_MAN_LIST_PAGES=""
 if test "${WITH_MANS}" = "yes"; then
 	if test "${DRIVER_BUILD_LIST}" = "all"; then
 		DRIVER_MAN_LIST=all
@@ -1745,8 +2250,10 @@ if test "${WITH_MANS}" = "yes"; then
 	else
 		DRIVER_MAN_LIST=""
 		for i in ${DRIVER_BUILD_LIST}; do
-			if test -f ${srcdir}/docs/man/$i.8; then
+		    dnl See if source or pre-generated (tarball) doc file exists:
+			if test -f ${srcdir}/docs/man/$i.txt -o -f ${srcdir}/docs/man/$i.8; then
 				DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
+				DRIVER_MAN_LIST_PAGES="${DRIVER_MAN_LIST_PAGES} $i.txt"
 			fi
 		done
 		AC_MSG_RESULT(${DRIVER_MAN_LIST})
@@ -1755,6 +2262,33 @@ else
 	DRIVER_MAN_LIST=""
 	AC_MSG_RESULT([none (manpages disabled)])
 fi
+
+dnl By default as we iterate (and git commit) the codebase during development,
+dnl prerequisites for that header file change and cause much of the C code
+dnl to be rebuilt and re-linked. For developers fixing one small part of the
+dnl project after another (*and* committing fixes as they go on), the version
+dnl string reported by their new binaries may be of lesser consequence than
+dnl iterating *quickly* and rebuiding just what "really" changed!
+dnl Still, this speed-up is not default to avoid surprises for core team.
+AC_MSG_CHECKING(whether to force nut_version.h generation for every make run)
+dnl Value is "FORCE" or empty, substituted into Makefile.am rule:
+FORCE_NUT_VERSION="FORCE"
+AC_ARG_ENABLE(force-nut-version-header,
+	AS_HELP_STRING([--enable-force-nut-version-header], [Force nut_version.h generation for every make run (yes)]),
+[
+	case "${enableval}" in
+	no)
+		AC_MSG_RESULT(no)
+                FORCE_NUT_VERSION=""
+		;;
+	*)
+		AC_MSG_RESULT(yes)
+		;;
+	esac
+], [
+	AC_MSG_RESULT(no)
+])
+
 
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
@@ -1795,34 +2329,8 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-AC_MSG_CHECKING(whether to install Solaris SMF files)
-solarissmf="auto"
-AC_ARG_WITH([solaris-smf],
-	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
-[
-	case "${withval}" in
-	auto|"")
-		solarissmf="auto"
-		;;
-	yes|no)
-		solarissmf="${withval}"
-		;;
-	*)
-		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
-		;;
-	esac
-], [])
 
-if test x"$solarissmf" = xauto ; then
-	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
-		solarissmf="yes"
-	else
-		solarissmf="no"
-	fi
-fi
-AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-
+dnl Options for Solaris/illumos `make install` and `make package`
 AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
 solarispkg_svr4="auto"
 AC_ARG_WITH([solaris-pkg-svr4],
@@ -1851,6 +2359,7 @@ fi
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
+
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
 solarispkg_ips="auto"
 AC_ARG_WITH([solaris-pkg-ips],
@@ -1878,6 +2387,81 @@ if test x"$solarispkg_ips" = xauto ; then
 fi
 AC_MSG_RESULT([${solarispkg_ips}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
+
+dnl NOTE: Be sure to customize e.g.  --datarootdir=/usr/share/nut to install
+dnl these scripts not into default location as e.g. /usr/share/solaris-smf
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		case "${solarispkg_ips}${solarispkg_svr4}" in
+			*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+			*) solarissmf="no" ;; dnl Target not solarish
+		esac
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
+
+AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
+solarisinit="auto"
+AC_ARG_WITH([solaris-init],
+	AS_HELP_STRING([--with-solaris-init=(yes|auto|no)], [Enable installation of NUT legacy init-scripts for Solaris/illumos (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarisinit="auto"
+		;;
+	yes|no)
+		solarisinit="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-init=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarisinit" = xauto ; then
+	dnl Depends on usability of SMF or making for packaging
+	case "${solarispkg_ips}${solarispkg_svr4}" in
+		*yes*) solarisinit="yes" ;; dnl Want to install so we can generally package
+		*)
+			case ${target_os} in
+				solaris*|sunos*|SunOS*|illumos*)
+					if test "$solarissmf" = x"yes" ; then
+						dnl no need on modern OSes
+						solarisinit="no"
+					else
+						solarisinit="yes"
+					fi
+					;;
+				*) solarisinit="no" ;; dnl Some other OS
+			esac
+			;;
+	esac
+fi
+AC_MSG_RESULT([${solarisinit}])
+AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
@@ -2023,7 +2607,8 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
                     [AC_MSG_RESULT([no])
                      CXXFLAGS="$my_CXXFLAGS"
                      have_cxx11=no])])])])
-AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
+NUT_REPORT_FEATURE([build C++11 codebase (client library, etc.)], [${have_cxx11}], [],
+					[HAVE_CXX11], [Define to enable C++11 support])
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
@@ -2108,8 +2693,8 @@ return res ? 0 : 1;
      AC_LANG_POP([C++])
      unset CPLUSPLUS_MAIN
      unset CPLUSPLUS_DECL
+     AC_MSG_RESULT(${have_cppunit})
      ])
-AC_MSG_RESULT(${have_cppunit})
 
 dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
@@ -2121,7 +2706,8 @@ AC_ARG_ENABLE(cppunit,
 	)])
 AC_MSG_RESULT(${have_cppunit})
 
-AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
+NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
+					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
@@ -2375,9 +2961,8 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-DATADIR=${conftemp}
 NUT_DATADIR=${conftemp}
-AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
+AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
@@ -2417,11 +3002,14 @@ fi
 
 if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
+else
+   nut_have_libnetsnmp_static="no"
 fi
 
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
-AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
+NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
+					[WITH_SNMP_STATIC], [Define to use SNMP support with a statically linked libnetsnmp])
 
 
 if test -n "${host_alias}" ; then
@@ -2465,6 +3053,7 @@ AC_SUBST(now)
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
+AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_REQUIRES)
@@ -2472,6 +3061,7 @@ AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LIBS)
+AC_SUBST(LIBREGEX_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
@@ -2492,6 +3082,7 @@ AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
+AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
@@ -2500,7 +3091,7 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
-AC_SUBST(NUT_DATADIR, [`eval echo "${DATADIR}"`])
+AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
@@ -2678,6 +3269,23 @@ AS_CASE(["${nut_enable_warnings}"],
         )
         ]
 )
+
+AS_IF([test x"${nut_enable_warnings}" != xno || test x"${nut_enable_Werror}" != xno],
+    [AS_IF([test "x${CLANGCC}" = "xyes" || test "x${GCC}" = "xyes"],
+        [AS_CASE(["${target_os}"],
+            [*mingw*], [
+                AC_MSG_NOTICE(
+[GCC on WIN32 builds warns about '%lld' etc. via PRId64 etc.
+even though modern libraries support long-long printing
+in practice (older ones did not - hence the warning).
+Forcing "-Wno-format" into warnings options.
+])
+                CFLAGS="${CFLAGS} -Wno-format"
+                CXXFLAGS="${CXXFLAGS} -Wno-format"
+            ]
+        )
+    ])
+])
 
 AC_MSG_CHECKING([whether to make warnings fatal])
 AS_CASE(["${nut_enable_Werror}"],
@@ -2912,6 +3520,7 @@ AC_CONFIG_FILES([
  scripts/udev/nut-ipmipsu.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
+ scripts/Windows/Makefile
  scripts/Makefile
  server/Makefile
  tools/Makefile

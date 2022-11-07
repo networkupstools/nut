@@ -23,6 +23,7 @@
 #ifndef NUT_SSTATE_H_SEEN
 #define NUT_SSTATE_H_SEEN 1
 
+#include "common.h"	/* TYPE_FD */
 #include "state.h"
 #include "upstype.h"
 
@@ -35,7 +36,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-int sstate_connect(upstype_t *ups);
+TYPE_FD sstate_connect(upstype_t *ups);
 void sstate_disconnect(upstype_t *ups);
 void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);

@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.98"
+#define APC_HID_VERSION "APC HID 0.99"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -531,6 +531,15 @@ static int apc_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
 	if (vendorID != APC_VENDORID || productID != 0x0002) {
+		return 0;
+	}
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			vendorID, productID);
 		return 0;
 	}
 

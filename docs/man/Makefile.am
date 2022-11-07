@@ -17,8 +17,8 @@
 #   files from source tree
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -695,6 +695,14 @@ SRC_DRIVERS_PAGES = \
 	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES)
 
+if SOME_DRIVERS
+# The list above probably came up empty in this case, so make sure that
+# the drivers requested by configure script are documented in the build;
+# notably in the linkman-driver-names.txt file.
+SRC_DRIVERS_PAGES += \
+	$(DRIVER_MAN_LIST_PAGES)
+endif
+
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
 SRC_ALL_PAGES = \
@@ -764,6 +772,7 @@ linkman-driver-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT drivers were built" > "$@" ; fi
 
 linkman-drivertool-names.txt:
 	@if test x"$(srcdir)" != x"$(builddir)" ; then \
@@ -777,6 +786,7 @@ linkman-drivertool-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT driver tools were built" > "$@" ; fi
 
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:

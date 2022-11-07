@@ -344,6 +344,81 @@ using:
 where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 
 
+[[Windows]]
+Windows
+~~~~~~~
+
+Windows binary package
+^^^^^^^^^^^^^^^^^^^^^^
+
+[NOTE]
+======
+NUT binary package built for Windows platform was last issued for
+a much older codebase (using NUT v2.6.5 as a baseline). While the current
+state of the codebase you are looking at aims to refresh the effort of
+delivering NUT on Windows, the aim at the moment is to help developers
+build and modernize it after a decade of blissful slumber, and packages
+are not being regularly produced yet. Functionality of such builds varies
+a lot depending on build environment used. This effort is generally
+tracked at https://github.com/orgs/networkupstools/projects/2/views/1
+and help would be welcome!
+
+It should currently be possible to build the codebase in native Windows
+with MSYS2/MinGW and cross-building from Linux with mingw (preferably
+in a Debian/Ubuntu container). Refer to
+link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+and link:scripts/Windows/README[scripts/Windows/README file] for respective
+build environment preparation instructions.
+
+Note that to use NUT for Windows, non-system dependency DLL files must
+be located in same directory as each EXE file that uses them. This can be
+accomplished for FOSS libraries (copying them from the build environment)
+by calling `make install-win-bundle DESTDIR=/some/valid/location` easily.
+
+Archives with binaries built by recent iterations of continuous integration
+jobs should be available for exploration on the respective CI platforms.
+======
+
+*Information below may be currently obsolete, but the NUT project wishes
+it to become actual and factual again :)*
+
+NUT binary package built for Windows platform comes in a `.msi` file.
+
+If you are using Windows 95, 98 or Me, you should install
+link:http://www.microsoft.com/downloads/en/details.aspx?familyid=cebbacd8-c094-4255-b702-de3bb768148f&displaylang=en[Windows Installer 2.0]
+from Microsoft site.
+
+If you are using Windows 2000 or NT 4.0, you can
+link:http://www.microsoft.com/downloads/en/details.aspx?FamilyID=4b6140f9-2d36-4977-8fa1-6f8a0f5dca8f&DisplayLang=en[download it here].
+
+Newer Windows releases should include the Windows Installer natively.
+
+Run `NUT-Installer.msi` and follow the wizard indications.
+
+If you plan to use an UPS which is locally connected to an USB port, you have to install
+link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
+on your system. Then you must install your device via libusb's "Inf Wizard".
+
+NOTE: If you intend to build from source, relevant sources may be available at
+https://github.com/mcuee/libusb-win32 and keep in mind that it is a variant of
+libusb-0.1. Current NUT supports libusb-1.0 as well, and that project should
+have Windows support out of the box (but it was not explored for NUT yet).
+
+If you have selected default directory, all configuration files are located in
+`C:\Program Files\NUT\ups\etc`
+
+Building for Windows
+^^^^^^^^^^^^^^^^^^^^
+
+For suggestions about setting up the NUT build environment variants
+for Windows, please see link:docs/config-prereqs.txt and/or
+link:scripts/Windows/README files. Note this is rather experimental
+at this point.
+
+
+Runtime configuration
+~~~~~~~~~~~~~~~~~~~~~
+
 You are now ready to configure NUT, and start testing and using it.
 
 You can jump directly to the

@@ -51,6 +51,8 @@
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
+#include "nut_stdint.h"	/* uint32_t */
+
 /* FIXME: still needed?
  * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
@@ -75,6 +77,15 @@
 
 #ifdef HAVE_DMALLOC_H
 #undef HAVE_DMALLOC_H
+#endif
+
+#ifdef WIN32
+# ifdef random
+#  undef random
+# endif
+# ifdef _WIN32_WINNT
+#  undef _WIN32_WINNT
+# endif
 #endif
 
 #include <net-snmp/net-snmp-config.h>

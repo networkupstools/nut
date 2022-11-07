@@ -962,7 +962,7 @@ if (buf[0] == '\0')
     printf(stderr, "RETURNED empty string from snprintf() with a NULL string argument");
     exit 0;
 }
-if (strcasestr(buf, 'null') == NULL)
+if (strcasecmp(buf, 'null') == NULL)
     printf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'", buf);
     exit 0;
 }

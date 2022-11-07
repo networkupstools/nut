@@ -13,7 +13,7 @@ LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libpar
 LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
-# most targets are drivers, so make this the default
+# most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
@@ -35,12 +35,13 @@ if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
 
+NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
- bestfortress bestuferrups bestups dummy-ups etapro everups 	\
+ bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
- safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
+ safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -59,12 +60,13 @@ IPMI_DRIVERLIST = nut-ipmipsu
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
+EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
  driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
 else
- driverexec_PROGRAMS =
+ driverexec_PROGRAMS = $(NUTSW_DRIVERLIST)
 if WITH_SERIAL
   driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 else
@@ -113,6 +115,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON)
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
+apcsmart_LDADD = $(LDADD) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
 bcmxcp_LDADD = $(LDADD) -lm
@@ -163,7 +166,7 @@ riello_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
-# dummy
+# dummy (in NUTSW_DRIVERLIST)
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
@@ -172,16 +175,16 @@ if WITH_SSL
   dummy_ups_LDADD += $(LIBSSL_LIBS)
 endif
 
-# Clone drivers
+# Clone drivers (in NUTSW_DRIVERLIST)
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
 
-# apcupsd client driver
+# apcupsd client driver (in NUTSW_DRIVERLIST)
 apcupsd_ups_SOURCES = apcupsd-ups.c
 apcupsd_ups_CFLAGS = $(AM_CFLAGS)
 apcupsd_ups_LDADD = $(LDADD_DRIVERS)
 
-# sample skeleton driver
+# sample skeleton driver (in NUTSW_DRIVERLIST)
 
 skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
@@ -228,7 +231,7 @@ mge_shut_LDADD = $(LDADD) -lm
 # Please keep the MIB table below sorted roughly alphabetically (incidentally
 # by vendor too) to ease maintenance and codebase fork resynchronisations
 snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
- apc-mib.c apc-pdu-mib.c \
+ apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
  baytech-mib.c bestpower-mib.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
@@ -336,7 +339,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
- apc-pdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
+ apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
  hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h
 

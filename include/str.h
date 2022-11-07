@@ -133,6 +133,13 @@ int	str_to_double_strict(const char *string, double *number, const int base);
  * Note: s=NULL always fails the test; otherwise suff=NULL always matches
  */
 int	str_ends_with(const char *s, const char *suff);
+
+#ifndef HAVE_STRSEP
+/* Makefile should add the implem to libcommon(client).la */
+char *strsep(char **stringp, const char *delim);
+#define HAVE_STRSEP 1
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

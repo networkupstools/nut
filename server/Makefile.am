@@ -32,7 +32,11 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
 
-sockdebug_SOURCES = sockdebug.c
+if HAVE_WINDOWS
+  sockdebug_SOURCES = pipedebug.c
+else !HAVE_WINDOWS
+  sockdebug_SOURCES = sockdebug.c
+endif !HAVE_WINDOWS
 
 dummy:
 

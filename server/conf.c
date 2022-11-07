@@ -60,6 +60,19 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 
 	temp->stale = 1;
 	temp->retain = 1;
+#ifdef WIN32
+	memset(&temp->read_overlapped,0,sizeof(temp->read_overlapped));
+	memset(temp->buf,0,sizeof(temp->buf));
+	temp->read_overlapped.hEvent = CreateEvent(NULL, /* Security */
+						FALSE, /* auto-reset*/
+						FALSE, /* initial state = non signaled */
+						NULL /* no name */);
+	if(temp->read_overlapped.hEvent == NULL ) {
+		upslogx(LOG_ERR, "Can't create event for UPS [%s]",
+			name);
+		return;
+	}
+#endif
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
@@ -100,8 +113,12 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 		sstate_cmdfree(temp);
 		pconf_finish(&temp->sock_ctx);
 
+#ifndef WIN32
 		close(temp->sock_fd);
-		temp->sock_fd = -1;
+#else
+		CloseHandle(temp->sock_fd);
+#endif
+		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
 		/* now redefine the filename and wrap up */
@@ -491,8 +508,12 @@ static void delete_ups(upstype_t *target)
 			else
 				last->next = ptr->next;
 
-			if (ptr->sock_fd != -1)
+			if (VALID_FD(ptr->sock_fd))
+#ifndef WIN32
 				close(ptr->sock_fd);
+#else
+				CloseHandle(ptr->sock_fd);
+#endif
 
 			/* release memory */
 			sstate_infofree(ptr);

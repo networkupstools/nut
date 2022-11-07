@@ -4,6 +4,7 @@
  *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2020 - 2022	Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.6"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.7"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -370,7 +371,7 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-	{ "battery.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
+	{ "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 /*	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL }, */
 /*	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL }, */

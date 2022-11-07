@@ -8,6 +8,11 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers tools \
   lib scripts server tests
 
+bindir = @bindir@
+sbindir = @sbindir@
+driverexecdir = @driverexecdir@
+cgiexecdir = @cgiexecdir@
+
 # Automatically update the libtool script if it becomes out-of-date
 # See https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
@@ -17,16 +22,26 @@ libtool: $(LIBTOOL_DEPS)
 # COPYING is included automatically.
 EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
+# Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
+# but lack NUT magic logic to recreate the `configure` script if someone would
+# want to adapt it to their autotools or locally fix a tarball-based build.
+EXTRA_DIST += autogen.sh
+
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
-# need to give augeas-lenses-dir, hotplug-dir and udev-dir, so that
-# staged install does not fail.
+# need to give augeas-lenses-dir, hotplug-dir and udev-dir, and request
+# PyNUT to be installed near the NUT-Monitor app (if feasible) so that
+# staged install does not fail. Note that by default PyNUT tries to go
+# into the system Python site-packages location, and autotools does not
+# tweak paths not using ${prefix} so `make distcheck` fails for it as
+# it does not play with a `DESTDIR` either.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
-DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g'
+DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g' --with-pynut=app --with-nut_monitor=force
 
+# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
@@ -34,7 +49,8 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
- --with-devd-dir='$${prefix}/etc/devd'
+ --with-devd-dir='$${prefix}/etc/devd'			\
+ --with-pynut=app --with-nut_monitor=force
 
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
@@ -328,6 +344,88 @@ package: dist
 		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
 	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
 	esac
+
+if HAVE_WINDOWS
+# Steam-roll over all executables/libs we have placed in DESTDIR and copy over
+# any resolved dependencies from the cross-build (or native MSYS2) environment.
+# Then hardlink libraries for sbin... (alternative: all bins in one dir)
+# TOTHINK: Are there more dirs to consider? So far we cover bindir, sbindir and
+# driverexecdir (e.g. some Linux distros place drivers to /lib/nut while tools
+# and daemons are in /usr/bin and /usr/sbin), and cgiexecdir; anything else?..
+# Note we hold existance of cgiexecdir as optional, but the name is expected to
+# be defined. Other dirs are "just assumed" to exist (that we are not packaging
+# some NUT build without drivers/tools/daemons). Subject to change if needed.
+# Currently this is handled by a CHECKING... step that should fail if it hits
+# anything.
+install-win-bundle: all
+	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
+	$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install
+	$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install-win-bundle-thirdparty
+
+install-win-bundle-thirdparty:
+	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
+	@echo "Searching which DLLs need to be bundled with NUT for Windows..." >&2
+	@if test -z "$$ARCH" ; then \
+	    if test -n "$(target)" ; then \
+	        ARCH='$(target)' \
+        ; else \
+            if test -n "$(target_triplet)" ; then ARCH='$(target_triplet)' ; fi ; \
+        fi ; \
+     fi ; \
+     if test -n "$$ARCH" ; then export ARCH ; fi ; \
+     DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
+	 (  cd '$(DESTDIR)' || exit ; \
+	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->bin   $$D" 2>&1 ; \
+	        cp -pf "$$D" './$(bindir)/' ; \
+        done ; \
+	 ) || exit ; \
+	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
+	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
+	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->sbin  $$D" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+        done ; \
+	 ) || exit ; \
+	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
+	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
+	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
+	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->drv   $$D" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+        done ; \
+	 ) || exit ; \
+	 (  if test -z "$(cgiexecdir)" -o ! -d "$(DESTDIR)/$(cgiexecdir)" ; then exit 0 ; fi ; \
+	    if test x"$(cgiexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
+	    if test x"$(cgiexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
+	    if test x"$(driverexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
+	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
+	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->cgi   $$D" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+        done ; \
+	 ) || exit
+	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
+	 relbindir="`echo './$(bindir)/' | sed 's,//*,/,g'`" ; \
+	 relsbindir="`echo './$(sbindir)/' | sed 's,//*,/,g'`" ; \
+	 reldriverexecdir="`echo './$(driverexecdir)/' | sed 's,//*,/,g'`" ; \
+	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
+	 cd '$(DESTDIR)' || exit ; \
+	 find . -type f | grep -Ei '\.(exe|dll)$$' \
+	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir})" \
+	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
+
+else
+install-win-bundle:
+	@echo "SKIP: '$@' not enabled for current build configuration"
+
+install-win-bundle-thirdparty:
+	@echo "SKIP: '$@' not enabled for current build configuration"
+endif
 
 print-MAINTAINERCLEANFILES print-REALCLEANFILES:
 	@echo $(MAINTAINERCLEANFILES)

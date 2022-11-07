@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
+ *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
@@ -350,7 +350,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
@@ -369,7 +369,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	switch (ret)
 	{
-	case ERROR_BUSY:			/* Device or resource busy */
+	case LIBUSB_ERROR_BUSY:			/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
@@ -383,7 +383,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 # endif
 #endif
 
-	case ERROR_PIPE:			/* Broken pipe */
+	case LIBUSB_ERROR_PIPE:			/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
@@ -397,28 +397,33 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 			upsdebugx(1, "Device reset handled");
 		}
 		goto fallthrough_case_reconnect;
-	case ERROR_NO_DEVICE: /* No such device */
-	case ERROR_ACCESS:    /* Permission denied */
-	case ERROR_IO:        /* I/O error */
+	case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+	case LIBUSB_ERROR_ACCESS:    /* Permission denied */
+	case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -ENXIO:				/* No such device or address */
 #endif
-	case ERROR_NOT_FOUND:		/* No such file or directory */
+	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
-	case ERROR_TIMEOUT:  /* Connection timed out */
+	case LIBUSB_ERROR_TIMEOUT:  /* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
 		break;
 
-	case ERROR_OVERFLOW: /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+#ifndef WIN32
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
+# if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
-#endif
+# endif
 		break;
+#endif
+
 	default:
 		break;
 	}
@@ -894,7 +899,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, &driver_callback);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -1216,7 +1221,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_cleanup(void)
 {
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);

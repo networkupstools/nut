@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.51"
+#define CYBERPOWER_MIB_VERSION		"0.52"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
@@ -33,7 +33,6 @@
 /* https://www.cyberpowersystems.com/products/software/mib-files/ */
 /* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
 static info_lkp_t cyberpower_power_status[] = {
-	{ 1, "NULL", NULL, NULL },	/* unknown */
 	{ 2, "OL", NULL, NULL },	/* onLine */
 	{ 3, "OB", NULL, NULL },	/* onBattery */
 	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
@@ -44,6 +43,10 @@ static info_lkp_t cyberpower_power_status[] = {
 	{ 9, "OL BYPASS", NULL, NULL },	/* onBypass */
 	{ 10, "OL TRIM", NULL, NULL },	/* onBuck */
 	{ 11, "OL OVER", NULL, NULL },	/* onOverload */
+
+	/* Note: a "NULL" string must be last due to snmp-ups.c parser logic */
+	{ 1, "NULL", NULL, NULL },	/* unknown */
+
 	{ 0, NULL, NULL, NULL }
 } ;
 

@@ -527,9 +527,17 @@ void upsdrv_initups(void)
 
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
-		if ((i < 3) && (sleep(5) == 0)) {
-			usb_comm_fail("Can't open USB device, retrying ...");
-			continue;
+		if (i < 3) {
+#ifdef WIN32
+			sleep(5);
+#else
+			if (sleep(5) == 0) {
+#endif
+				usb_comm_fail("Can't open USB device, retrying ...");
+				continue;
+#ifndef WIN32
+			}
+#endif
 		}
 
 		fatalx(EXIT_FAILURE,

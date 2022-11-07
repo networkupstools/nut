@@ -170,6 +170,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
 	}
 
+/* TODO: Find a place for this, from Windows branch made for libusb0.c */
+/*
+#ifdef WIN32
+	struct usb_bus *busses;
+	busses = usb_get_busses();
+#endif
+ */
+
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
 	/* nut_libusb_close(*udevp); */
@@ -186,7 +194,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		libusb_device	*device = devlist[devnum];
 
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %zu of %zu (%04X/%04X)",
+		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIuSIZE " (%04X/%04X)",
 			devnum + 1, devcount,
 			dev_desc.idVendor, dev_desc.idProduct);
 
@@ -367,6 +375,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = MAX_RETRY;
+#ifdef WIN32
+		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
+		libusb_set_configuration(udev, 1);
+#endif
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
@@ -564,7 +576,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		) {
 			upsdebugx(2,
 				"Report descriptor length is out of range on this device: "
-				"should be %ji < %d < %ju",
+				"should be %" PRIdMAX " < %d < %" PRIuMAX,
 					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
 					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 			goto next_device;
@@ -649,13 +661,15 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
+#ifndef WIN32
 	case LIBUSB_ERROR_OVERFLOW:	 /** Overflow */
-#ifdef EPROTO
+# ifdef EPROTO
 /* FIXME: not sure how to map this one! */
 	case -EPROTO:	/* Protocol error */
-#endif
+# endif
 		upsdebugx(2, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return 0;
+#endif /* WIN32 */
 
 	case LIBUSB_ERROR_OTHER:     /** Other error */
 	default:                     /** Undetermined, log only */

@@ -38,7 +38,7 @@ static devstate_t *dstate = NULL;						/* device state context */
 static int errcnt = 0;									/* modbus access error counter */
 static char *device_mfr = DEVICE_MFR;					/* device manufacturer */
 static char *device_model = DEVICE_MODEL;				/* device model */
-static char *device_type = DEVICE_TYPE;					/* device model */
+static char *device_type = DEVICE_TYPE_STRING;				/* device type (e.g. UPS, PDU...) */
 static int ser_baud_rate = BAUD_RATE;					/* serial port baud rate */
 static char ser_parity = PARITY;						/* serial port parity */
 static int ser_data_bit = DATA_BIT;						/* serial port data bit */
@@ -657,25 +657,25 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x00FF;
-	uint mask16 = 0xFFFF;
+	uint16_t mask8 = 0x00FF;
+	uint16_t mask16 = 0xFFFF;
 
 	switch (type) {
 		case COIL:
 			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_B:
 			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_R:
 			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 		case HOLDING:
 			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -723,7 +723,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -733,16 +733,16 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x00FF;
-	uint mask16 = 0xFFFF;
+	uint16_t mask8 = 0x00FF;
+	uint16_t mask16 = 0xFFFF;
 
 	switch (type) {
 		case COIL:
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			rval = modbus_write_bit(mb, addr, *(uint8_t *)data);
 			break;
 		case HOLDING:
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			rval = modbus_write_register(mb, addr, *(uint16_t *)data);
 			break;
 
@@ -780,7 +780,7 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -847,9 +847,9 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 	int n;
 	int rval;						/* return value */
 	static char *ptr = NULL;		/* temporary pointer */
-	uint reg_val;					/* register value */
+	unsigned int reg_val;					/* register value */
 #if READALL_REGS == 0
-	uint num;						/* register number */
+	unsigned int num;						/* register number */
 	regtype_t rtype;				/* register type */
 	int addr;						/* register address */
 #endif
