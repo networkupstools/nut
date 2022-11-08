@@ -3,6 +3,7 @@
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
+ *  2020 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -30,7 +31,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.6"
+#define CPS_HID_VERSION      "CyberPower HID 0.8"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -172,6 +173,7 @@ static hid_info_t cps_hid2nut[] = {
 
   /* Battery page */
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
+  { "battery.mfr.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_SEMI_STATIC, date_conversion },
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -269,7 +271,7 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
-/* CPS Models like CP900EPFCLCD return a syntactically legal but incorrect
+/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically legal but incorrect
  * Report Descriptor whereby the Input High Transfer Max/Min values
  * are used for the Output Voltage Usage Item limits.
  * Additionally the Input Voltage LogMax is set incorrectly for EU models.
@@ -282,7 +284,16 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
-	if (vendorID != CPS_VENDORID || productID != 0x0501) {
+	if (vendorID != CPS_VENDORID || (productID != 0x0501 && productID != 0x0601)) {
+		return 0;
+	}
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			vendorID, productID);
 		return 0;
 	}
 

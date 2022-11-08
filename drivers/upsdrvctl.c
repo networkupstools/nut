@@ -24,7 +24,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "proto.h"
 #include "common.h"
@@ -146,11 +150,12 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
-	int	ret;
-	struct stat	fs;
+	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
+#ifndef WIN32
+	struct stat	fs;
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
@@ -168,20 +173,69 @@ static void stop_driver(const ups_t *ups)
 		return;
 	}
 
+#else
+	snprintf(pidfn, sizeof(pidfn), "%s-%s",ups->driver, ups->upsname);
+#endif
+
 	upsdebugx(2, "Sending signal to %s", pidfn);
 
 	if (testmode)
 		return;
 
+#ifndef WIN32
 	ret = sendsignalfn(pidfn, SIGTERM);
+#else
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
 
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
-		exec_error++;
-		return;
+#ifndef WIN32
+		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
+		ret = sendsignalfn(pidfn, SIGKILL);
+#else
+		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
+		ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+			exec_error++;
+			return;
+		}
 	}
+
+	for (i = 0; i < 5 ; i++) {
+		if (sendsignalfn(pidfn, 0) != 0) {
+			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+			return;
+		}
+		sleep(1);
+	}
+
+#ifndef WIN32
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
+	ret = sendsignalfn(pidfn, SIGKILL);
+#else
+	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
+	if (ret == 0) {
+		for (i = 0; i < 5 ; i++) {
+			if (sendsignalfn(pidfn, 0) != 0) {
+				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
+				// While a TERMinated driver cleans up,
+				// a stuck and KILLed one does not, so:
+				unlink(pidfn);
+				return;
+			}
+			sleep(1);
+		}
+	}
+
+	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
+	exec_error++;
 }
 
+#ifndef WIN32
 static void waitpid_timeout(const int sig)
 {
 	NUT_UNUSED_VARIABLE(sig);
@@ -189,6 +243,7 @@ static void waitpid_timeout(const int sig)
 	/* do nothing */
 	return;
 }
+#endif
 
 /* print out a command line at the given debug level. */
 static void debugcmdline(int level, const char *msg, char *const argv[])
@@ -206,6 +261,7 @@ static void debugcmdline(int level, const char *msg, char *const argv[])
 
 static void forkexec(char *const argv[], const ups_t *ups)
 {
+#ifndef WIN32
 	int	ret;
 	pid_t	pid;
 
@@ -278,6 +334,57 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	/* shouldn't get here */
 	fatal_with_errno(EXIT_FAILURE, "execv");
+#else
+	BOOL	ret;
+	DWORD res;
+	DWORD exit_code = 0;
+	char	commandline[SMALLBUF];
+	STARTUPINFO StartupInfo;
+	PROCESS_INFORMATION ProcessInformation;
+	int 	i = 1;
+
+	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+
+	/* the command line is made of the driver name followed by args */
+	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
+	while( argv[i] != NULL ) {
+		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
+		i++;
+	}
+	
+	ret = CreateProcess(
+			argv[0],
+			commandline,
+			NULL,
+			NULL,
+			FALSE,
+			CREATE_NEW_PROCESS_GROUP,
+			NULL,
+			NULL,
+			&StartupInfo,
+			&ProcessInformation
+			);
+
+	if( ret == 0 ) {
+		fatal_with_errno(EXIT_FAILURE, "execv");
+	}
+	
+	/* Wait a bit then look at driver process.
+	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
+	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 */
+	res = WaitForSingleObject(ProcessInformation.hProcess,
+			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
+	
+	if (res != WAIT_TIMEOUT) {
+		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
+		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
+		exec_error++;
+		return;
+	}
+	
+	return;
+#endif
 }
 
 static void start_driver(const ups_t *ups)
@@ -290,7 +397,11 @@ static void start_driver(const ups_t *ups)
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
@@ -340,7 +451,7 @@ static void start_driver(const ups_t *ups)
 			m = (size_t)nut_debug_level + 1;
 		} else {
 			upsdebugx(1, "Requested debugging level %d is too "
-				"high for pass-through args, truncated to %zu",
+				"high for pass-through args, truncated to %" PRIuSIZE,
 				nut_debug_level,
 				(m - 1)	/* count off '-' (and '\0' already) chars */
 				);
@@ -429,7 +540,11 @@ static void shutdown_driver(const ups_t *ups)
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 
 	argv[arg++] = dfn;
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
@@ -607,7 +722,11 @@ int main(int argc, char **argv)
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
+#ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
+#else
+	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
+#endif
 
 	atexit(exit_cleanup);
 

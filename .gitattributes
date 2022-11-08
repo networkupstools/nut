@@ -1,0 +1,17 @@
+# Windows script files should be CR+LF always:
+*.bat text eol=crlf
+
+# Unix/Linux script files should be LF always:
+*.sh text eol=lf
+*.m4 text eol=lf
+*.ac text eol=lf
+*.am text eol=lf
+*.hwdb text eol=lf
+
+# Some files are binary always:
+*.png bin
+*.ico bin
+
+# The rest are assumed text sources with platform-dependent EOL being okay,
+# or we let Git guess otherwise:
+* text=auto

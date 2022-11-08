@@ -102,7 +102,7 @@
  * The MIN/MAX definitions here are primarily to generalize range-check
  * code (especially if anything is done outside the libraries).
  * FIXME: It may make sense to constrain the limits to lowest common
- * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+ * denominator that should fit all of libusb-0.1, libusb-1.0 and libshut,
  * so that any build of the practical (driver) code knows to not exceed
  * any use-case.
  */
@@ -162,6 +162,7 @@
  #define USB_TYPE_CLASS				LIBUSB_REQUEST_TYPE_CLASS
  #define USB_TYPE_VENDOR			LIBUSB_REQUEST_TYPE_VENDOR
 
+/* Codebase updated to use LIBUSB_* tokens:
  #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
  #define ERROR_BUSY			LIBUSB_ERROR_BUSY
  #define ERROR_IO			LIBUSB_ERROR_IO
@@ -170,6 +171,12 @@
  #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
  #define ERROR_PIPE			LIBUSB_ERROR_PIPE
  #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
+ #define ERROR_NO_MEM   LIBUSB_ERROR_NO_MEM
+ #define ERROR_INVALID_PARAM  LIBUSB_ERROR_INVALID_PARAM
+ #define ERROR_INTERRUPTED    LIBUSB_ERROR_INTERRUPTED
+ #define ERROR_NOT_SUPPORTED  LIBUSB_ERROR_NOT_SUPPORTED
+ #define ERROR_OTHER          LIBUSB_ERROR_OTHER
+*/
 
  /* Functions, including range-checks to convert data types of the two APIs.
   * Follows an example from libusb-1.0 headers that liberally cast int args
@@ -370,11 +377,19 @@
 
 /* Note: Checked above that in practice we handle some one libusb API */
 #if WITH_LIBUSB_0_1
-# include <usb.h>
+# ifdef HAVE_USB_H
+#  include <usb.h>
+# else
+#  ifdef HAVE_LUSB0_USB_H
+#   include <lusb0_usb.h>
+#  else
+#   error "configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build"
+#  endif
+# endif
  /* Structures */
  /* See detailed comments above, in libusb-1.0 definitions
   * FIXME: It may make sense to constrain the limits to lowest common
-  * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+  * denominator that should fit all of libusb-0.1, libusb-1.0 and libshut,
   * so that any build of the practical (driver) code knows to not exceed
   * any use-case.
   */
@@ -425,14 +440,19 @@
  #define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
  /* defines */
- #define ERROR_ACCESS		-EACCES
- #define ERROR_BUSY			-EBUSY
- #define ERROR_IO			-EIO
- #define ERROR_NO_DEVICE	-ENODEV
- #define ERROR_NOT_FOUND	-ENOENT
- #define ERROR_OVERFLOW		-EOVERFLOW
- #define ERROR_PIPE			-EPIPE
- #define ERROR_TIMEOUT		-ETIMEDOUT
+ #define LIBUSB_ERROR_ACCESS		-EACCES
+ #define LIBUSB_ERROR_BUSY			-EBUSY
+ #define LIBUSB_ERROR_IO			-EIO
+ #define LIBUSB_ERROR_NO_DEVICE	-ENODEV
+ #define LIBUSB_ERROR_NOT_FOUND	-ENOENT
+ #define LIBUSB_ERROR_OVERFLOW		-EOVERFLOW
+ #define LIBUSB_ERROR_PIPE			-EPIPE
+ #define LIBUSB_ERROR_TIMEOUT		-ETIMEDOUT
+ #define LIBUSB_ERROR_NO_MEM		-ENOMEM
+ #define LIBUSB_ERROR_INVALID_PARAM		-EINVAL
+ #define LIBUSB_ERROR_INTERRUPTED		-EINTR
+ #define LIBUSB_ERROR_NOT_SUPPORTED	-ENOSYS
+ #define LIBUSB_ERROR_OTHER		-ERANGE
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
  #define nut_usb_strerror(a)	usb_strerror()

@@ -63,6 +63,7 @@
 #include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
+#include "apc-epdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
@@ -94,6 +95,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
@@ -166,7 +168,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.22"
+#define DRIVER_VERSION		"1.23"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -344,7 +346,7 @@ void upsdrv_shutdown(void)
 
 	/* set shutdown and autostart delay */
 	set_delays();
-	
+
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -957,7 +959,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 
@@ -1025,7 +1027,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 
@@ -1154,7 +1156,24 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
-			numerr = 0;
+			/* Checked the "type" field of the returned varbind if
+			 * it is a type error exception (only applicable with
+			 * SNMPv2 or SNMPv3 protocol, would not happen with
+			 * SNMPv1). This allows to proceed interpreting large
+			 * responses when one entry in the middle is rejectable.
+			 */
+			if (response->variables->type == SNMP_NOSUCHOBJECT ||
+			    response->variables->type == SNMP_NOSUCHINSTANCE ||
+			    response->variables->type == SNMP_ENDOFMIBVIEW) {
+				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				snmp_free_pdu(response);
+				break;
+			}
+			else {
+				/* no error */
+				numerr = 0;
+			}
 		}
 
 		nb_iteration++;
@@ -2292,10 +2311,8 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 	char test_OID[SU_INFOSIZE];
 	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
-	if (!su_info_p->OID)
-		return base_index;
-
-	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
+	upsdebugx(3, "%s: OID template = %s", __func__,
+		(su_info_p->OID ? su_info_p->OID : "<null>") );
 
 	/* Try to differentiate between template types which may have
 	 * different indexes ; and store it to not redo it again */
@@ -2318,6 +2335,10 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
+
+	/* If no OID defined, now we can return the good index computed */
+	if (!su_info_p->OID)
+		return base_index;
 
 	if (template_index_base == -1)
 	{
@@ -2370,6 +2391,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				}
 			}
 		}
+
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
 		if (su_info_p->flags & SU_OUTLET)
@@ -2381,6 +2403,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		else
 			device_template_index_base = base_index;
 	}
+
 	upsdebugx(3, "%s: template_index_base = %i", __func__, base_index);
 	return base_index;
 }
@@ -2388,7 +2411,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 /* Try to determine the number of items (outlets, outlet groups, ...),
  * using a template definition. Walk through the template until we can't
  * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
-static int guestimate_template_count(snmp_info_t *su_info_p)
+static int guesstimate_template_count(snmp_info_t *su_info_p)
 {
 	int base_index = 0;
 	char test_OID[SU_INFOSIZE];
@@ -2476,8 +2499,8 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
 		 * su_info_p->flags &= ~SU_FLAG_OK;
-		 * or rely on guestimation? */
-		template_count = guestimate_template_count(su_info_p);
+		 * or rely on guesstimation? */
+		template_count = guesstimate_template_count(su_info_p);
 		/* Publish the count estimation */
 		if (template_count > 0) {
 			dstate_setinfo(template_count_var, "%i", template_count);
@@ -2858,7 +2881,7 @@ bool_t daisychain_init()
 		 * the number of devices present */
 		else
 		{
-			devices_count = guestimate_template_count(su_info_p);
+			devices_count = guesstimate_template_count(su_info_p);
 			upsdebugx(1, "Guesstimation: there are %ld device(s) present", devices_count);
 		}
 
@@ -3464,8 +3487,24 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			upsdebugx(2, "=> %ld alarms present", value);
-			if( value > 0 ) {
-				pdu_array = nut_snmp_walk(su_info_p->OID, value);
+			if (value > 0) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+				if (value > INT_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+					upsdebugx(2, "=> truncating alarms present to INT_MAX");
+					value = INT_MAX;
+				}
+				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;

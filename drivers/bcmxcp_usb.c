@@ -23,6 +23,7 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_TRY 4
+#define MAX_TRY_OPENUSB 32
 
 /* Powerware */
 #define POWERWARE 0x0592
@@ -243,7 +244,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 
 		/* Check data length byte (remove the header length) */
 		length = my_buf[2];
-		upsdebugx(3, "get_answer: data length = %zu", length);
+		upsdebugx(3, "get_answer: data length = %" PRIuSIZE, length);
 		if (bytes_read < (length + PW_HEADER_SIZE)) {
 			if (need_data < 0) --need_data; /* count zerro byte too */
 			need_data += length + 1; /* packet lenght + checksum */
@@ -305,7 +306,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		else if (tail == 0)
 			my_buf = &buf[0];
 		else { /* if (tail < 0) */
-			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %zd", tail);
+			upsdebugx(1, "get_answer(): did not expect to get negative tail size: %" PRIiSIZE, tail);
 			return -1;
 		}
 
@@ -513,6 +514,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	usb_find_devices();
 #endif /* WITH_LIBUSB_1_0 */
 
+	/* for (retry = 0; dev_h == NULL && retry < MAX_TRY_OPENUSB; retry++) */
 	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
 		dev_h = open_powerware_usb();
@@ -524,6 +526,13 @@ usb_dev_handle *nutusb_open(const char *port)
 			upsdebugx(1, "device %s opened successfully", curDevice.Bus);
 			errout = 0;
 
+#ifdef WIN32
+			if ((ret = usb_set_configuration(dev_h, 1)) < 0)
+			{
+				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", nut_usb_strerror(ret));
+				errout = 1;
+			}
+#endif
 			if ((ret = usb_claim_interface(dev_h, 0)) < 0)
 			{
 				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", nut_usb_strerror(ret));

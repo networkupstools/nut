@@ -7,6 +7,52 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+NOTE: For packaging (OS distribution or in-house) it is recommended to
+primarily `./configure --with-all` and then excise `--without-something`
+explicitly for items not supported on your platform, so you do not miss
+out on new NUT features as they come with new releases. Some may require
+that you update your build environment with new third-party dependencies,
+so a broken build of a new NUT release would let you know how to act.
+
+Changes from 2.8.0 to 2.8.1
+---------------------------
+
+- PLANNED: Keep track of any further API clean-up?
+
+- Work on NUT for Windows branch led to situation-specific definitions of
+  what in POSIX code was all "file descriptors" (an `int` type). Now such
+  entities are named `TYPE_FD`, `TYPE_FD_SER` or `TYPE_FD_SOCK` with some
+  helper macros to name and determine "invalid" values (closed file, etc.)
+  Some of these changes happened in NUT header files, and at this time it
+  was not investigated whether the set of files delivered for third-party
+  code integration (e.g. C/C++ projects binding with `libnutclient` or
+  `libupsclient) is consistent or requires additional definitions/files.
+  If something gets broken by this, it is a bug to address in future [#1556]
+
+- Further revision of public headers delivered by NUT was done, particularly
+  to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
+  `time_t` etc.) in third-party client code that earlier sufficed to only
+  include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
+  still have to re-declare some numeric variable types used) [#1638]
+
+  * For practical example of NUT consumer adaptation (to cater to both old and
+    new API types) please see https://github.com/collectd/collectd/pull/4043
+
+- Added support for `make install` of PyNUT module and NUT-Monitor desktop
+  application -- such activity was earlier done by packages directly; now
+  the packaging recipes may use NUT source-code facilities and package just
+  symlinks as relevant for each distro separately [#1462, #1504]
+
+- NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
+  serial drivers in respective Makefile and configure script options - this
+  may impact packaging decisions on some distributions going forward [#1446]
+
+- an explicit `configure --with-nut-scanner` toggle was added, specifically
+  so that build environments requesting `--with-all` but lacking `libltdl`
+  would abort and require the packager either to install the dependency
+  or explicitly forfeit building the tool (some distro packages missed it
+  quietly in the past) [#1560]
+
 Changes from 2.7.4 to 2.8.0
 ---------------------------
 

@@ -9,6 +9,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
+# Copyright (C) 2020-2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,7 +93,7 @@ if [ -n "$ZSH_VERSION" ]; then
 #    IFS="`printf ' \t\r\n'`" ; export IFS
 fi
 
-if set | egrep '^(shell|version|t?csh)' | egrep 't?csh' >/dev/null ; then
+if set | grep -E '^(shell|version|t?csh)' | grep -E 't?csh' >/dev/null ; then
     echo "FATAL: csh or tcsh is not supported in this script" >&2
     exit 1
 fi
@@ -442,7 +443,7 @@ upsconf_getValue() {
         RES_L=0
         VALUE=""
 
-        LINE="`echo "$SECTION_CONTENT" | egrep '(^'"$1"'=|^'"$1"'$)'`" \
+        LINE="`echo "$SECTION_CONTENT" | grep -E '(^'"$1"'=|^'"$1"'$)'`" \
         && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" \
         || RES_L=$?
 
@@ -625,7 +626,7 @@ smf_refreshSupervizor() {
 }
 smf_listInstances_raw() {
     # Newer versions have pattern matching; older SMF might not have this luxury
-    /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:'
+    /usr/bin/svcs -a -H -o fmri | grep -E '/nut-driver:'
 }
 smf_listInstances() {
     smf_listInstances_raw | sed 's/^.*://' | sort -n
@@ -756,7 +757,7 @@ systemd_refreshSupervizor() {
     /bin/systemctl daemon-reload
 }
 systemd_listInstances_raw() {
-    /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed 's,^Id=,,'
+    /bin/systemctl show 'nut-driver@*' -p Id | grep -E '=nut-driver' | sed 's,^Id=,,'
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
@@ -824,15 +825,15 @@ upslist_normalizeFile_filter() {
     # are dropped. Note that brackets with spaces inside, and brackets
     # that do not start the non-whitespace payload of the line, are not
     # sections.
-    egrep -v '(^$|^#)' | \
+    grep -E -v '(^$|^#)' | \
     sed -e 's,^['"$TABCHAR"'\ ]*,,' \
         -e 's,^\#.*$,,' \
         -e 's,['"$TABCHAR"'\ ]*$,,' \
         -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
         -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
-    | egrep -v '^$' \
-    | egrep '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
+    | grep -E -v '^$' \
+    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
 }
 
 upslist_normalizeFile() {
@@ -859,7 +860,7 @@ upslist_normalizeFile() {
     # for faster parsing when determining driver-required media etc.
     UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
         && [ -n "$UPSCONF_DATA" ] \
-        && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
+        && UPSCONF_DATA_SDP="`grep -E '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
 EOF`" \
         ||  { echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization" >&2
@@ -890,7 +891,7 @@ upslist_readFile() {
 
     if [ -n "$UPSCONF_DATA" ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | grep -E '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
         if [ -z "$UPSLIST_FILE" ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
@@ -1298,7 +1299,7 @@ while [ $# -gt 0 ]; do
             case "$SVC" in
                 MD5_*) ;; # fall through to the bulk of code
                 *)  upslist_readFile_once || exit $?
-                    echo "$UPSLIST_FILE" | egrep "^$SVC\$"
+                    echo "$UPSLIST_FILE" | grep -E "^$SVC\$"
                     exit $?
                     ;;
             esac

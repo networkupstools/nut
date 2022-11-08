@@ -35,7 +35,8 @@ as well as any others supporting the APC POWERNET MIB
 Socomec Sicon UPS with Netvision Web/SNMP management card/external box
 
 *pw*::
-Powerware devices with ConnectUPS SNMP cards
+Powerware devices with ConnectUPS SNMP cards, as well as UPSes with
+Eaton Gigabit Network Cards (Network-M2)
 
 *pxgx_ups*::
 Eaton devices with Power Xpert Gateway UPS Card

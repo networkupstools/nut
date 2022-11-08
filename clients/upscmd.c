@@ -22,11 +22,15 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -113,7 +117,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,

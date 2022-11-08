@@ -52,6 +52,7 @@ class NutActiveClientTest : public CppUnit::TestFixture
 	CPPUNIT_TEST_SUITE( NutActiveClientTest );
 		CPPUNIT_TEST( test_query_ver );
 		CPPUNIT_TEST( test_list_ups );
+		CPPUNIT_TEST( test_list_ups_clients );
 		CPPUNIT_TEST( test_auth_user );
 		CPPUNIT_TEST( test_auth_primary );
 	CPPUNIT_TEST_SUITE_END();
@@ -70,6 +71,7 @@ public:
 
 	void test_query_ver();
 	void test_list_ups();
+	void test_list_ups_clients();
 	void test_auth_user();
 	void test_auth_primary();
 };
@@ -209,6 +211,68 @@ void NutActiveClientTest::test_list_ups() {
 	catch(nut::NutException& ex)
 	{
 		std::cerr << "[D] Could not device list: " << ex.what() << std::endl;
+		noException = false;
+	}
+
+	c.logout();
+	c.disconnect();
+
+	CPPUNIT_ASSERT_MESSAGE(
+		"Failed to list UPS with TcpClient: threw NutException",
+		noException);
+}
+
+void NutActiveClientTest::test_list_ups_clients() {
+	nut::TcpClient c("localhost", NUT_PORT);
+	std::map<std::string, std::set<std::string>> deviceClients;
+	bool noException = true;
+
+	try {
+		c.authenticate(NUT_USER, NUT_PASS);
+		std::cerr << "[D] Authenticated without exceptions" << std::endl;
+		/* Note: no high hopes here, credentials are checked by server
+		 * when running critical commands, not at auth request itself */
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not authenticate as a simple user: " << ex.what() << std::endl;
+		/* no failure here */
+	}
+
+	try {
+		c.deviceLogin(NUT_PRIMARY_DEVICE);
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not log into primary device (envvars not set?) so test below should return empty client lists: " << ex.what() << std::endl;
+		/* no failure here */
+	}
+
+	try {
+		deviceClients = c.listDeviceClients();
+		std::cerr << "[D] Got device client list (" << deviceClients.size() << "): [";
+		for (std::map<std::string, std::set<std::string>>::iterator itM = deviceClients.begin();
+			itM != deviceClients.end(); itM++
+		) {
+			if (itM != deviceClients.begin()) {
+				std::cerr << "," << std::endl;
+			}
+			std::cerr << "{ \"" << itM->first << "\" : ";
+			for (std::set<std::string>::iterator it = itM->second.begin();
+				it != itM->second.end(); it++
+			) {
+				if (it != itM->second.begin()) {
+					std::cerr << ", ";
+				}
+				std::cerr << '"' << *it << '"';
+			}
+			std::cerr << " }";
+		}
+		std::cerr << " ]" << std::endl;
+	}
+	catch(nut::NutException& ex)
+	{
+		std::cerr << "[D] Could not device client list: " << ex.what() << std::endl;
 		noException = false;
 	}
 

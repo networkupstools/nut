@@ -1,6 +1,8 @@
 # Network UPS Tools: common
 
 AM_CFLAGS = -I$(top_srcdir)/include
+AM_LDFLAGS = -no-undefined
+EXTRA_DIST =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 libparseconf_la_SOURCES = parseconf.c
@@ -36,10 +38,32 @@ CLEANFILES = $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
 endif
 
+if HAVE_STRPTIME
+EXTRA_DIST += strptime.c
+else
+# fall back to NetBSD implem
+libcommon_la_SOURCES += strptime.c
+libcommonclient_la_SOURCES += strptime.c
+endif
+
+if HAVE_STRSEP
+EXTRA_DIST += strsep.c
+else
+# fall back to simple implem
+libcommon_la_SOURCES += strsep.c
+libcommonclient_la_SOURCES += strsep.c
+endif
+
+# TODO: libnutwincompat.la?
+if HAVE_WINDOWS
+libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+endif
+
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
-libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
-libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
+libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 

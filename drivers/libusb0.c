@@ -32,6 +32,9 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
 #define USB_DRIVER_VERSION	"0.43"
@@ -47,6 +50,14 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define MAX_REPORT_SIZE         0x1800
 #define MAX_RETRY               3
+
+#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
+/* Only used in this file of all NUT codebase, so not in str.{c,h}
+ * where it happens to conflict with netsnmp-provided variant for
+ * some of our build products.
+ */
+static char *strcasestr(const char *haystack, const char *needle);
+#endif
 
 static void libusb_close(usb_dev_handle *udev);
 
@@ -193,6 +204,17 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_find_busses();
 	usb_find_devices();
 
+	struct usb_bus *busses;
+#ifdef WIN32
+	busses = usb_get_busses();
+#else
+	/* libusb built-in; not sure why original NUT for WIN32
+	 * code differed or if it is actually better? Or why
+	 * this was not tackled in a few other files for USB?..
+	 */
+	busses = usb_busses;
+#endif
+
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
 	libusb_close(*udevp);
@@ -200,7 +222,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 	upsdebugx(3, "usb_busses=%p", (void*)usb_busses);
 
-	for (bus = usb_busses; bus; bus = bus->next) {
+	for (bus = busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
 			/* int	if_claimed = 0; */
 
@@ -350,6 +372,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
 			retries = MAX_RETRY;
+#ifdef WIN32
+			usb_set_configuration(udev, 1);
+#endif
 			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
 				upsdebugx(2, "failed to claim USB device: %s",
@@ -491,7 +516,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			if ((uintmax_t)rdlen > sizeof(rdbuf)) {
 				upsdebugx(2,
 					"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-					" (max %zu)",
+					" (max %" PRIuSIZE ")",
 					rdlen, sizeof(rdbuf));
 				goto next_device;
 			}
@@ -593,12 +618,16 @@ static int libusb_strerror(const int ret, const char *desc)
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
+/* libusb-win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
 	case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+# ifdef EPROTO
 	case -EPROTO:	/* Protocol error */
-#endif
+# endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
+#endif	/* WIN32 */
 
 	default:	/* Undetermined, log only */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
@@ -635,6 +664,10 @@ static int libusb_get_report(
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
 		return 0;
@@ -665,6 +698,10 @@ static int libusb_set_report(
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
+
+#ifdef WIN32
+	errno = -ret;
+#endif
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
@@ -714,6 +751,10 @@ static int libusb_get_string(
 
 	ret = usb_get_string_simple(udev, StringIdx, buf, (size_t)buflen);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	return libusb_strerror(ret, __func__);
 }
 
@@ -736,6 +777,10 @@ static int libusb_get_interrupt(
 	/* Interrupt EP is USB_ENDPOINT_IN with offset defined in hid_ep_in, which is 0 by default, unless overridden in subdriver. */
 	ret = usb_interrupt_read(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, timeout);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	/* Clear stall condition */
 	if (ret == -EPIPE) {
 		ret = usb_clear_halt(udev, 0x81);
@@ -756,6 +801,37 @@ static void libusb_close(usb_dev_handle *udev)
 	/* usb_release_interface(udev, 0); */
 	usb_close(udev);
 }
+
+#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
+static char *strcasestr(const char *haystack, const char *needle) {
+	/* work around "const char *" and guarantee the original is not
+	 * touched... not efficient but we have few uses for this method */
+	char * dH = NULL, *dN = NULL, *lH = NULL, *lN = NULL, *first = NULL;
+
+	dH = strdup(haystack);
+	if (dH == NULL) goto err;
+	dN = strdup(needle);
+	if (dN == NULL) goto err;
+	lH = strlwr(dH);
+	if (lH == NULL) goto err;
+	lN = strlwr(dN);
+	if (lN == NULL) goto err;
+	first = strstr(lH, lN);
+
+err:
+	if (dH != NULL) free(dH);
+	if (dN != NULL) free(dN);
+	/* Does this implementation of strlwr() change original buffer? */
+	if (lH != dH && lH != NULL) free(lH);
+	if (lN != dN && lN != NULL) free(lN);
+	if (first == NULL) {
+		return NULL;
+	}
+
+	/* Pointer to first char of the needle found in original haystack */
+	return (char *)(haystack + (first - lH));
+}
+#endif
 
 usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_NAME,

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2956 utf-8
+personal_ws-1.1 en 3047 utf-8
 AAS
 ABI
 ACFAIL
@@ -67,6 +67,7 @@ Angelone
 Antonino
 Apodaca
 AppData
+AppVeyor
 Arjen
 Arkadiusz
 Armin
@@ -211,6 +212,7 @@ Checksum
 Chiou
 Chu
 Cichowski
+CircleCI
 Claesson
 CodingStyle
 Collver
@@ -273,6 +275,7 @@ Defensor
 DeltaUPSv
 DeviceID
 DeviceKit
+DeviceLogin
 Dharm
 DiSplay
 Diehl
@@ -332,6 +335,7 @@ Erikson
 Eriksson
 Evgeny
 Exar
+FD
 FEMEA
 FFF
 FH
@@ -339,8 +343,10 @@ FHS
 FINALDELAY
 FIPS
 FIXME
+FMRI
 FO
 FOREACHUPS
+FOSS
 FPT
 FREEADDRINFO
 FREHn
@@ -377,6 +383,7 @@ Fuß
 GCCVER
 GES
 GETADDRINFO
+GID
 GKrellM
 GND
 GPL
@@ -422,9 +429,11 @@ HEHn
 HELn
 HFILE
 HIDIOCINITREPORT
+HIDRDD
 HITRANS
 HMAC
 HNX
+HOMEBREW
 HOSTLINK
 HOSTSYNC
 HOWTO
@@ -445,15 +454,19 @@ Hessenflow
 HiBox
 HiFreq
 HighBatt
+Hirschler
 Hlavinka
 Holger
+Homebrew
 Hoogervorst
 Hough
 Hunnox
 Hurd
 Håvard
 IANA
+IC
 ID's
+IDE
 IDEN
 IDentifiers
 IFBETWEEN
@@ -589,7 +602,10 @@ LineA
 LineB
 LineSens
 Lintian
+ListClients
 Lite's
+LogMax
+LogMin
 LowBatt
 LowFreq
 LowRntm
@@ -626,6 +642,8 @@ MQ
 MSI
 MSII
 MSIII
+MSVCRT
+MSYS
 MX
 MacKenzie's
 MacOS
@@ -666,6 +684,7 @@ Milkov
 MinACVI
 MinACVO
 MinDCV
+MinGW
 MiniCOL
 MiniGuard
 Minislot
@@ -834,6 +853,7 @@ PPP
 PPPPPPPPPP
 PR
 PR'ed
+PROGRA
 PROGS
 PROTVER
 PRs
@@ -846,6 +866,7 @@ PSSENTR
 PSUs
 PSW
 PSX
+PThreads
 PULS
 PV
 PWLv
@@ -853,6 +874,7 @@ PWR
 PXG
 PaaS
 Pac
+PackageRequired
 Parisi
 Patrik
 Pavel
@@ -945,6 +967,7 @@ QSKTn
 QSKn
 QVFW
 QWS
+QinHeng
 Quette
 RAIDiator
 RBWARNTIME
@@ -1019,6 +1042,7 @@ SDT
 SELFTEST
 SELinux
 SENTR
+SER
 SERIALNO
 SERVER's
 SETFL
@@ -1033,6 +1057,7 @@ SHUTDOWNCMD
 SIG
 SIGHUP
 SIGINT
+SIGKILL
 SIGPIPE
 SIGPWR
 SIGTERM
@@ -1051,11 +1076,13 @@ SMTP
 SMX
 SNMPv
 SNR
+SOCK
 SOCKADDR
 SOCKLEN
 SOFF
 SOLA
 SOLA's
+SOMECO
 SOV
 SPARC
 SPC
@@ -1068,6 +1095,7 @@ STARTTLS
 STB
 STESTI
 STI
+STIME
 STO
 STP
 SUNWlibusbugen
@@ -1078,6 +1106,7 @@ SUSE
 SX
 SXI
 SXL
+SYMLINKDIR
 SafeNet
 Salicru
 Salvia
@@ -1105,6 +1134,7 @@ Shutdn
 Sibbald
 Sicon
 Sidorov
+SigLevel
 Signetic
 Silvino
 Sinline
@@ -1127,6 +1157,7 @@ Solaris
 Soltec
 Soltys
 SomeVendor
+SourceForge
 Soyntec
 Spanier
 Spiros
@@ -1142,6 +1173,7 @@ Sublicensing
 SunOS
 SuperPower
 Sweex
+Sy
 Sycon
 Symmetra
 Symmetras
@@ -1151,6 +1183,7 @@ Sysgration
 SyslogIdentifier
 SystemIO
 Systeme
+Syu
 Szady
 TBD
 TBR
@@ -1211,6 +1244,7 @@ TxHS
 UB
 UBD
 UBR
+UCRT
 UDP
 UHV
 UI
@@ -1290,6 +1324,7 @@ Václav
 WALKMODE
 WARNFATAL
 WARNOPT
+WCH
 WELI
 WHAD
 WIPO
@@ -1302,6 +1337,7 @@ Werror
 Wextra
 WhizBang
 Wikipedia
+WinMerge
 WinNUT
 WinPower
 Wireshark
@@ -1396,6 +1432,7 @@ altroot
 altroots
 amd
 anded
+antivirus
 aod
 aon
 ap
@@ -1408,9 +1445,11 @@ apctest
 apcupsd
 aphel
 ar
+archlinux
 arduino
 arg
 argc
+argp
 args
 argv
 armac
@@ -1462,12 +1501,14 @@ awd
 awk
 bAlternateSetting
 backend
+backends
 backgrounding
 backport
 backported
 backupspro
 badpassword
 baseurl
+bashrc
 batchable
 batt
 battcap
@@ -1595,6 +1636,7 @@ clepple
 clicky
 cls
 clueful
+cmake
 cmd
 cmdline
 cmdname
@@ -1638,6 +1680,7 @@ cr
 crestfactor
 crlf
 cron
+crontab
 crossbuild
 crt
 crw
@@ -1690,8 +1733,10 @@ deschis
 descr
 desde
 dev
+devctl
 devd
 devel
+deviceGetClients
 devscan
 dfl
 dhcp
@@ -1752,12 +1797,15 @@ echoback
 eco
 edb
 edl
+ef
+egrep
 ei
 el
 emacs
 endchar
 enddate
 endian
+endianness
 endif
 endl
 energizerups
@@ -1788,6 +1836,7 @@ everups
 everyone's
 everything's
 evilhack
+exe
 executables
 executeCommand
 execve
@@ -1832,6 +1881,7 @@ frob
 frontends
 fs
 fsd
+fsr
 ftdi
 fuji
 fullload
@@ -1848,6 +1898,7 @@ genericups
 genesisII
 gentoo
 gestion
+getClients
 getDescription
 getDevice
 getDevicesVariableValues
@@ -1877,7 +1928,7 @@ groupname
 gtk
 guardpend
 guardpstart
-guestimate
+guesstimate
 guez
 gufw
 gui
@@ -1899,6 +1950,7 @@ hidtypes
 hidups
 highbattery
 highfrequency
+homebrew
 hoster
 hostname
 hostnames
@@ -1957,7 +2009,9 @@ initinfo
 initscripts
 initups
 inline
+innotech
 installcheck
+installurl
 instcmd
 instcmds
 intercharacter
@@ -2012,6 +2066,8 @@ kde
 keyclick
 keygen
 keyout
+keyring
+keyserver
 killall
 killpower
 kludgy
@@ -2025,19 +2081,23 @@ langid
 largp
 lasaine
 ld
+ldd
 le
 len
 lf
+libarchive
 libaugeas
 libavahi
 libc
 libcommon
 libcppunit
 libcrypto
+libcurl
 libdir
 libexec
 libfreeipmi
 libgd
+libgpgme
 libhid
 libhidups
 libi
@@ -2051,15 +2111,18 @@ libnutclient
 libnutclientsub
 libnutconfig
 libnutscan
+libpcre
 libpng
 libpowerman
 libre
+libregex
 libs
 libsnmp
 libssl
 libtool
 libupsclient
 libusb
+libusb's
 libusbugen
 libusbx
 libvirt
@@ -2075,6 +2138,7 @@ linevoltage
 linkdoc
 linux
 lipo
+listDeviceClients
 listdef
 littleguy
 lk
@@ -2102,6 +2166,7 @@ lowvoltsout
 lposix
 lr
 lsusb
+lt
 ltdl
 lu
 lua
@@ -2165,6 +2230,7 @@ minacvi
 minacvo
 mincharge
 mindcv
+mingw
 minicol
 minruntime
 mins
@@ -2192,6 +2258,8 @@ monuser
 morbo
 mozilla
 msec
+msi
+msvcrt
 multi
 multicommands
 multilib
@@ -2214,6 +2282,7 @@ mysecurityname
 myups
 myupsname
 nabcd
+nameserver
 namespace
 nanosleep
 nashkaminski
@@ -2303,6 +2372,7 @@ ol
 oldmac
 oldmge
 oldnut
+omnios
 onbatt
 onbattwarn
 onclick
@@ -2333,6 +2403,7 @@ otheruser
 outliers
 pF
 pacman
+pacstrap
 param
 paramkeywords
 parsable
@@ -2351,6 +2422,7 @@ pcs
 pdf
 pdu
 pe
+peasy
 peername
 pem
 perl
@@ -2425,7 +2497,9 @@ proc
 productid
 prog
 prtconf
+ps
 psu
+pts
 pty
 pulizzi
 pw
@@ -2467,6 +2541,7 @@ rebootdelay
 rebranded
 receivexhs
 reconnection
+recv
 redistributors
 reentrancy
 refactored
@@ -2475,10 +2550,12 @@ referencenominal
 regex
 regtype
 relicensing
+repo
 reposurgeon
 repotec
 req
 resistive
+resolv
 resync
 ret
 retrydelay
@@ -2580,6 +2657,7 @@ sio
 sitesearch
 sitop
 sizeof
+ske
 skel
 slavesync
 slewrate
@@ -2618,6 +2696,7 @@ ss
 sshd
 ssize
 ssl
+sstate
 stan
 startIP
 startdelay
@@ -2666,6 +2745,7 @@ suseconds
 sv
 svc
 svcadm
+svcs
 svn
 sw
 symlink
@@ -2705,6 +2785,7 @@ tcsetattr
 tcsh
 td
 tdriver
+teknologist
 tempmax
 tempmin
 terminal's
@@ -2756,9 +2837,12 @@ uA
 uD
 uM
 ua
+uart
 ubuntu
 uc
 ucb
+ucd
+ucrt
 udev
 udevadm
 ufw
@@ -2769,6 +2853,7 @@ ul
 un
 uname
 uncomment
+unconfigure
 unconfigured
 undefine
 undervoltage
@@ -2892,15 +2977,19 @@ vod
 voltronic
 von
 wDescriptorLength
+waitbeforereconnect
 wakeup
 wc
 wchar
+webNUT
+webnut
 webserver
 wf
 wget
 whitespace
 wiki
 winnutclient
+winpthreads
 wmNUT
 wmnut
 wordformat
@@ -2921,6 +3010,7 @@ xZZZZ
 xa
 xaabbcc
 xcalloc
+xcode
 xd
 xe
 xferdelay
@@ -2946,6 +3036,7 @@ xxxxAP
 youruid
 yyy
 zaac
+zakx
 zfs
 zinto
 zlib

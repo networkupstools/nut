@@ -94,7 +94,7 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null \
 	echo "this may cause issues for m4 parsing with autotools below."
 	if [ -e .git ] ; then
 		echo "You may want to enforce that Git uses 'lf' line endings and re-checkout:"
-		echo "    :; git config core.autocrlf false && git config core.eol lf"
+		echo "    :; git config core.autocrlf false && git config core.eol lf && rm .git/index && git checkout -f"
 	fi
 	echo ""
 fi >&2

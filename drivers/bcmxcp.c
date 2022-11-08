@@ -794,11 +794,11 @@ bool_t init_command(int size)
 
 		res = answer[iIndex];
 		NumComms = (int)res; /* Number of commands implemented in this UPS */
-		upsdebugx(3, "Number of commands implemented in ups %zd", res);
+		upsdebugx(3, "Number of commands implemented in ups %" PRIiSIZE, res);
 		iIndex++;
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
-		upsdebugx(5, "bytes per command %zd", res);
+		upsdebugx(5, "bytes per command %" PRIiSIZE, res);
 
 		/* In case of debug - make explanation of values */
 		upsdebugx(2, "Index\tCmd byte\tDescription");
@@ -1043,7 +1043,7 @@ unsigned char init_outlet(unsigned char len)
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	else
-		upsdebugx(1, "init_outlet(%i), res=%zi", len, res);
+		upsdebugx(1, "init_outlet(%i), res=%" PRIiSIZE, len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %u", num_outlet);
@@ -1564,11 +1564,11 @@ void upsdrv_initinfo(void)
 		len = init_outlet((unsigned char)outlet_block_len /* arg ignored */);
 
 		for (res = 1 ; (unsigned int)res <= (unsigned int)len ; res++) {
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.shutdown.return", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%" PRIiSIZE ".shutdown.return", res);
 			dstate_addcmd(outlet_name);
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.load.on", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%" PRIiSIZE ".load.on", res);
 			dstate_addcmd(outlet_name);
-			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%zd.load.off", res);
+			snprintf(outlet_name, sizeof(outlet_name) - 1, "outlet.%" PRIiSIZE ".load.off", res);
 			dstate_addcmd(outlet_name);
 		}
 	}

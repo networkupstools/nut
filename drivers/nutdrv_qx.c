@@ -176,7 +176,7 @@ static status_lkp_t	status_info[] = {
 	{ "CHRG", STATUS(CHRG) },
 	{ "DISCHRG", STATUS(DISCHRG) },
 	{ "BYPASS", STATUS(BYPASS) },
-	{ "CAL", STATUS(CAL) },
+	{ "CAL", STATUS(CALIB) },
 	{ "OFF", STATUS(OFF) },
 	{ "OVER", STATUS(OVER) },
 	{ "TRIM", STATUS(TRIM) },
@@ -471,7 +471,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -530,7 +530,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -544,7 +544,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	size_t  cmdlen, i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -597,7 +597,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 		/* No error!!! */
 		/* if (ret == -110) */
-		if (ret == ERROR_TIMEOUT)
+		if (ret == LIBUSB_ERROR_TIMEOUT)
 			break;
 
 		/* Any errors here mean that we are unable to read a reply
@@ -635,7 +635,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -649,7 +649,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -669,11 +669,11 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 * data (e.g. it times out). */
 		switch (ret)
 		{
-		case ERROR_PIPE:	/* Broken pipe */
+		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
 			break;
 
-		case ERROR_TIMEOUT:	/* Connection timed out */
+		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
 
@@ -737,7 +737,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	if (i > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%zu)", __func__, i);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
 		return -1;
 	}
 	return (int)i;
@@ -751,7 +751,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	size_t	i, len;
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -769,7 +769,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%d)",
-				(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 				ret);
 			return ret;
 		}
@@ -788,7 +788,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * to the UPS) */
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s (%d)",
-			(ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
 			ret);
 		return ret;
 	}
@@ -832,7 +832,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	if (len > INT_MAX) {
-		upsdebugx(3, "%s: read too much (%zu)", __func__, len);
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, len);
 		return -1;
 	}
 	return (int)len;
@@ -918,7 +918,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1042,7 +1042,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1167,7 +1167,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1330,7 +1330,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	};
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1469,13 +1469,13 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 	size_t cmdlen = strlen(cmd);
 
 	if (cmdlen > INT_MAX) {
-		upsdebugx(3, "%s: requested command is too long (%zu)",
+		upsdebugx(3, "%s: requested command is too long (%" PRIuSIZE ")",
 			__func__, cmdlen);
 		return 0;
 	}
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1530,7 +1530,7 @@ static int	phoenixtec_command(const char *cmd, char *buf, size_t buflen)
 		/* buflen constrained to INT_MAX above, so we can cast: */
 		return (int)(e - buf);
 	} else {
-		upsdebugx(3, "read: buflen %zu too small", buflen);
+		upsdebugx(3, "read: buflen %" PRIuSIZE " too small", buflen);
 		*buf = '\0';
 		return 0;
 	}
@@ -1556,7 +1556,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), "
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
@@ -1666,7 +1666,7 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	if (buflen > INT_MAX) {
-		upsdebugx(3, "%s: requested to read too much (%zu), reducing buflen to (INT_MAX-1)",
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
 	}
@@ -3023,7 +3023,7 @@ void	upsdrv_initups(void)
 		/* Link the matchers */
 		regex_matcher->next = &device_matcher;
 
-		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+		ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 		if (ret < 0) {
 			fatalx(EXIT_FAILURE,
 				"No supported devices found. "
@@ -3117,7 +3117,7 @@ void	upsdrv_cleanup(void)
 
 #ifdef QX_USB
 
-		usb->close(udev);
+		usb->close_dev(udev);
 		USBFreeExactMatcher(reopen_matcher);
 		USBFreeRegexMatcher(regex_matcher);
 		free(usbdevice.Vendor);
@@ -3162,7 +3162,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #  endif	/* QX_SERIAL (&& QX_USB)*/
 
 		if (udev == NULL) {
-			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+			ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 			if (ret < 1) {
 				return ret;
@@ -3177,7 +3177,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		switch (ret)
 		{
-		case ERROR_BUSY:	/* Device or resource busy */
+		case LIBUSB_ERROR_BUSY:	/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 # if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
@@ -3205,7 +3205,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #endif
 	#endif	/* WITH_LIBUSB_0_1 */
 
-		case ERROR_PIPE:	/* Broken pipe */
+		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
@@ -3219,21 +3219,21 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 				upsdebugx(1, "Device reset handled");
 			}
 			goto fallthrough_case_reconnect;
-		case ERROR_NO_DEVICE:	/* No such device */
-		case ERROR_ACCESS:	/* Permission denied */
-		case ERROR_IO:		/* I/O error */
+		case LIBUSB_ERROR_NO_DEVICE:	/* No such device */
+		case LIBUSB_ERROR_ACCESS:	/* Permission denied */
+		case LIBUSB_ERROR_IO:		/* I/O error */
 #if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
 #endif	/* WITH_LIBUSB_0_1 */
-		case ERROR_NOT_FOUND:	/* No such file or directory */
+		case LIBUSB_ERROR_NOT_FOUND:	/* No such file or directory */
 		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
-			usb->close(udev);
+			usb->close_dev(udev);
 			udev = NULL;
 			break;
 
-		case ERROR_TIMEOUT:	/* Connection timed out */
-		case ERROR_OVERFLOW:	/* Value too large for defined data type */
+		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
+		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type */
 #if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
 #endif
@@ -3255,7 +3255,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_send(upsfd, "%s", cmd);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%zd)",
+			upsdebugx(3, "send: %s (%" PRIiSIZE ")",
 				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
@@ -3266,7 +3266,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%zd)",
+			upsdebugx(3, "read: %s (%" PRIiSIZE ")",
 				ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
@@ -3871,7 +3871,7 @@ static void	ups_status_set(void)
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* UPS is off */
 	}
-	if (ups_status & STATUS(CAL)) {
+	if (ups_status & STATUS(CALIB)) {
 		status_set("CAL");		/* Calibration */
 	}
 	if (ups_status & STATUS(FSD)) {

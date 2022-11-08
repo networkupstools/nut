@@ -22,12 +22,19 @@
 #ifndef DSTATE_H_SEEN
 #define DSTATE_H_SEEN 1
 
+#include "common.h"
 #include "timehead.h"
 #include "state.h"
 #include "attribute.h"
 
 #include "parseconf.h"
 #include "upshandler.h"
+
+#include "main.h"	/* for set_exit_flag() */
+
+#ifdef WIN32
+# include "wincompat.h"
+#endif
 
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
@@ -38,7 +45,11 @@
 
 /* track client connections */
 typedef struct conn_s {
-	int     fd;
+	TYPE_FD	fd;
+#ifdef WIN32
+	char    buf[LARGEBUF];
+	OVERLAPPED read_overlapped;
+#endif
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
@@ -51,7 +62,7 @@ typedef struct conn_s {
 	extern	int	do_synchronous;
 
 char * dstate_init(const char *prog, const char *devname);
-int dstate_poll_fds(struct timeval timeout, int extrafd);
+int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int dstate_addenum(const char *var, const char *fmt, ...)

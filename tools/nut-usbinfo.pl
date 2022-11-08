@@ -1,8 +1,9 @@
 #!/usr/bin/env perl
-#   Current Version : 1.3
+#   Current Version : 1.4
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
+#   Copyright (C) 2014 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #	Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -138,10 +139,18 @@ sub gen_usb_files
 	print $outputDevScanner "#error \"configure script error: Both WITH_LIBUSB_1_0 and WITH_LIBUSB_0_1 are set\"\n";
 	print $outputDevScanner "#endif\n\n";
 	print $outputDevScanner "#if WITH_LIBUSB_1_0\n";
-	print $outputDevScanner " #include <libusb.h>\n";
+	print $outputDevScanner "# include <libusb.h>\n";
 	print $outputDevScanner "#endif\n";
 	print $outputDevScanner "#if WITH_LIBUSB_0_1\n";
-	print $outputDevScanner " #include <usb.h>\n";
+	print $outputDevScanner "# ifdef HAVE_USB_H\n";
+	print $outputDevScanner "#  include <usb.h>\n";
+	print $outputDevScanner "# else\n";
+	print $outputDevScanner "#  ifdef HAVE_LUSB0_USB_H\n";
+	print $outputDevScanner "#   include <lusb0_usb.h>\n";
+	print $outputDevScanner "#  else\n";
+	print $outputDevScanner "#   error \"configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build\"\n";
+	print $outputDevScanner "#  endif\n";
+	print $outputDevScanner "# endif\n";
 	print $outputDevScanner " /* simple remap to avoid bloating structures */\n";
 	print $outputDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
 	print $outputDevScanner "#endif\n";

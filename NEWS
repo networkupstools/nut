@@ -5,6 +5,174 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 ---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2:
+
+https://github.com/networkupstools/nut/milestone/9
+
+ - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
+   the driver binaries to be built once and data mappings to be loaded
+   and modernized on the fly [Ported from 42ITy project]
+
+---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1:
+
+https://github.com/networkupstools/nut/milestone/10
+
+ - (expected) clean-up of libusb API variants support [#300 and follow-ups]
+
+ - (expected) CI automation for coding style
+
+ - (expected) CI automation for use of data points in drivers that conform
+   to patterns defined in docs/nut-names.txt
+
+ - (expected) Porting of performance and bug fixes from 42ITy project
+
+ - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
+
+---------------------------------------------------------------------------
+PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0:
+
+https://github.com/networkupstools/nut/milestone/8
+
+ - "UPS management protocol", Informational RFC 9271 published
+   by IETF at https://www.rfc-editor.org/info/rfc9271 and the
+   IANA port number registry was updated accordingly at
+   https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=3493
+   (even though this RFC is not formally an Internet Standard)
+
+ - Bug fixes for fallout possible due to "fightwarn" effort and other
+   evolution in NUT v2.8.0 release:
+   * The `upsdebugx()` and similar methods were converted to macros in #685
+     to avoid useless data manipulations and requests for logged information,
+     whose results would be ignored instantly because the debug level is
+     too low. As issue #1455 and PR #1495 found, in two cases the called
+     commands did "meaningfully" modify data -- so without debug logs the
+     program misbehaved. A known regression for `upscode2` driver; might
+     be or not be a problem with `upsd` driver in NUT v2.8.0 release,
+     fixed for NUT v2.8.1.
+   * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
+     arranged in NUT v2.8.0 release in a way that precluded the driver
+     logic from looking at all of its entries. Regression fixed for NUT
+     v2.8.1 [#1432]
+   * A change for file-change detection in `dummy-ups` driver for NUT
+     v2.8.0 release misfired on some platforms. Regression fixed for NUT
+     v2.8.1 [#1420]
+   * Fixed building of NUT man pages when just a few drivers are selected
+     by `configure` script for custom builds [#1467]
+
+ - We lacked log information about changes of chroot jail (uncommon) and
+   of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
+   of access to config files or USB device nodes). Now we have it [#1694]
+
+ - huawei-ups2000 is now known to support more devices, noted in docs and
+   for auto-detection [#1448, #1684]
+
+ - nutdrv_qx updates:
+   * the `voltronic_qs_protocol` should now accept both "V" (as before)
+     and newly "H" dialects, which otherwise seem interchangeable [#1623]
+
+ - usbhid-ups updates:
+   * cps-hid subdriver now applies same report descriptor fixing logic to
+     devices with ProductID 0x0601 as done earlier for 0x0501, to get the
+     correct output voltage data [#1497]
+   * the `usbhid-ups` driver should now reconnect if `libusb` returned a
+     memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
+     Resource temporarily unavailable"), which can cause practical problems
+     in the field -- the driver otherwise interpreted the situation as
+     `ups.status` being `OL OFF` and cut the power supply.
+   * powercom-hid subdriver: fixed `UPS.Battery.ManufacturerDate` to map
+     to `battery.mfr.date` (not `battery.date` which is the maintenance
+     replacement date) [#1644]
+
+ - NUT for Windows:
+   * Ability to build NUT for Windows, last tackled with a branch based on
+     NUT v2.6.5 a decade ago, has been revived with the 2.8.x era codebase [#5].
+     It is known that at this time some features are not complete, for more
+     details see https://github.com/orgs/networkupstools/projects/2/views/1
+   * Cross-builds of NUT for Windows using Linux and MinGW (and many custom
+     built dependency packages, as documented in `scripts/Windows/README`)
+     are now regularly tested on NUT CI farm with moderate integration via
+     custom build script `scripts/Windows/build-mingw-nut.sh` [#1489]
+   * Semi-native NUT for Windows builds with MSYS2/MinGW x64 environment are
+     now regularly tested on AppVeyor, with the same `ci_build.sh` script and
+     `Makefile` checks as used across the board for local developer builds,
+     Linux/illumos/FreeBSD/OpenBSD/... on dedicated NUT CI farm on Fosshost,
+     and MacOS on CircleCI [#1552]
+
+ - snmp-ups updates:
+   * IETF MIB mapping updated for data points where negative readings
+     are invalid [#1558]
+   * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
+   * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
+     in the middle has a type error [#1682]
+
+ - Added support for `make install` of PyNUT module and NUT-Monitor desktop
+   application [#1462, #1504]
+
+ - Regular CI coverage for NUT codebase enhanced with CircleCI running some
+   scenarios on MacOS, might add Windows in the future. Fixed some build
+   issues for MacOS that had crept into NUT v2.8.0 release [#1415, #1421]
+
+ - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
+   serial drivers in respective Makefile and configure script options [#1446]
+
+ - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
+   `SIGKILL` [#1424]
+
+ - Code which resolves full paths to libraries should now consider the common
+   environment variable `LD_LIBRARY_PATH` as a preferred possible override
+   to built-in paths (note that most operating systems advise against setting
+   this variable unless troubleshooting, although other systems rely on it)
+   [#805]
+
+ - the nut-scanner program was updated to fall back to loading unresolved
+   library filenames, hoping that `lt_dlopen()` implementation on the current
+   platform would find library files better [#805]
+
+ - detection of `libltdl` in `configure` script updated with fallback code to
+   find it on systems that deliver the library to `/usr/local/lib` (e.g. on
+   FreeBSD) [#1577]
+
+ - an explicit `configure --with-nut-scanner` toggle was added, specifically
+   so that build environments requesting `--with-all` but lack `libltdl` would
+   abort and require either to install the dependency or explicitly forfeit
+   the tool (some distro packages missed it quietly in the past) [#1560]
+
+ - existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
+   be sufficient without deprecation warnings for builds against openssl-3.0.x
+   (but no real-time testing was done yet) [#1547]
+
+ - upslog: Added support for logging multiple devices with one call to the
+   program [#1604]
+
+ - some fixes applied to Solaris/illumos packaging and SMF service support
+   [#1554, #1564]
+
+ - PyNUT.py version bumped to 1.5.0 with some improvements:
+   * `ListClients()` method fixed (was broken in many ways), and is now
+     CI-tested [#549]
+   * `DeviceLogin()` method added (mostly as aid to CI-test `ListClients()`
+     in a practically relevant manner, so far)
+
+ - nutclient C++ library:
+   * added `listDeviceClients()` and `deviceGetClients(dev)` to `Client`
+     classes, and `Device::getClients()` to match PyNUT capabilities [#549]
+
+ - upsclient C library:
+   * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
+     the infamous "Init SSL without certificate database" warning [#1662]
+
+ - sstate (server state, e.g. upsd) should now "PING" drivers also if they
+   last reported themselves as "stale" (and might later crash) so their
+   connections would be terminated if really no longer active [#1626]
+
+ - Further revision of public headers delivered by NUT was done, particularly
+   to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
+   `time_t` etc.) in third-party client code that earlier sufficed to only
+   include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
+   still have to re-declare some numeric variable types used) [#1638, #1615]
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
 NOTE: Earlier discussions (mailing list threads, GitHub issues, etc.) could

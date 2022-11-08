@@ -23,6 +23,7 @@ ifndef::website[]
 - link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
 - link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
+- link:https://github.com/networkupstools/ConfigExamples/releases/latest[NUT Configuration Examples] book maintained by Roger Price
 
 Developer Documentation
 -----------------------
@@ -104,6 +105,7 @@ These are writeups by users of the software.
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 - link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
 - link:https://www.jamesridgway.co.uk/monitoring-eaton-5sc-ups-scripts-and-integration-network-tools-home-assistant/amp/[USB UPS, notifications, and Home Assistant] '(James Ridgway)'
+- link:https://www.hirschler.solutions/posts/2022/06/powerwalker-ups-on-fedora-server-36[PowerWalker UPS on Fedora Server 36] '(Michael Hirschler)'
 
 Video articles are also available:
 

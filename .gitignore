@@ -30,6 +30,8 @@ Makefile.in
 /dir.??????/
 /dir?.???????/
 /configure-test*/
+/confdefs.h
+/conftest.*
 /cscope.*
 /depcomp
 /INSTALL
@@ -43,6 +45,7 @@ Makefile.in
 /.ci*.log
 /.ci*.log.*
 .dirstamp
+*.exe
 
 # Python precompiled files
 __pycache__/
@@ -55,6 +58,8 @@ __pycache__/
 /NUT*.local.gz
 /NUT*.p5i
 /NUT*.depot
+/*.msi
+/*.MSI
 
 # Official dist
 /nut-*.tar.gz.md5
@@ -66,3 +71,8 @@ __pycache__/
 /nbproject
 /.idea
 /*.iml
+
+# Coredumps
+*.stackdump
+*.core
+core

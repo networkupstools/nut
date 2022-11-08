@@ -95,7 +95,7 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* Outlet page */
-	/* Note: outlet.count is deduced, with guestimate_outlet_count() */
+	/* Note: outlet.count is deduced, with guesstimate_outlet_count() */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
