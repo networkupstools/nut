@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3043 utf-8
+personal_ws-1.1 en 3047 utf-8
 AAS
 ABI
 ACFAIL
@@ -383,6 +383,7 @@ Fuß
 GCCVER
 GES
 GETADDRINFO
+GID
 GKrellM
 GND
 GPL
@@ -465,6 +466,7 @@ Håvard
 IANA
 IC
 ID's
+IDE
 IDEN
 IDentifiers
 IFBETWEEN
@@ -1430,6 +1432,7 @@ altroot
 altroots
 amd
 anded
+antivirus
 aod
 aon
 ap
@@ -1446,6 +1449,7 @@ archlinux
 arduino
 arg
 argc
+argp
 args
 argv
 armac
