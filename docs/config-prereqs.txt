@@ -1173,9 +1173,11 @@ involved is very important.
 * https://github.com/ccache/ccache/discussions/784
 * https://sourceforge.net/p/msys2/tickets/253/
 
-Notable packages not found in the repo:
+Notable packages *not found* in the repo:
 
-* snmp (net-snmp, ucd-snmp)
+* snmp (net-snmp, ucd-snmp) -- instructions in `scripts/Windows/README`
+  document now covers building it from source in MSYS2 MinGW x64 environment,
+  essentially same as for Linux cross builds with proper `ARCH` and `PREFIX`
 * libregex (C version, direct NUT `configure` script support was added by
   the Windows branch); MSYS2 however includes `libpcre` pulled by some
   of the dependencies above...

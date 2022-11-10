@@ -12,7 +12,9 @@ test and fix programs, re-enable some code just commented away by ifdefs...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
 for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
-handled by NUT common `ci_build.sh` script. Possibly, the instructions below
+handled by NUT common `ci_build.sh` script. Most prerequisites are already
+packaged in that environment, but notably net-snmp is missing -- but can be
+built from source following this document. Possibly, the instructions below
 would converge there over time to keep it simple.
 
 For additional reference about prerequisite preparation and further ideas for
@@ -100,6 +102,22 @@ or
 ------
 :; export HOST_FLAG="--host=$ARCH"
 :; PREFIX="/usr/$ARCH"
+------
+
+- NOTE: Technically, these instructions may apply to builds with MinGW on
+  Windows semi-natively (e.g. to add the net-snmp libraries which are not
+  packaged currently). Generally you can use environment variables set by
+  different launchers of MinGW terminal sessions depending on the target
+  profile (32/64 bit, gcc/clang, libc implementation...):
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX/$ARCH"
+------
+  You might want to verify that it sets values similar to:
+------
+:; set | grep -E '^(ARCH|PREFIX)='
+#export ARCH="x86_64-w64-mingw32"
+#PREFIX="/mingw64/$ARCH"
 ------
 
 - on Debian/Ubuntu style systems also:
@@ -482,6 +500,7 @@ net-snmp
 	# The following long `LDFLAGS` ensure that shared `libnetsnmp-40.dll`
 	# gets built and later installed (and siblings which NUT does not use):
 	:; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long"
+	:; find . -type f -name '*.dll' -o -name '*.dll.a'
 	:; sudo make install
 
 NOTE: net-snmp tends to only `make` a static-linking library for Windows
