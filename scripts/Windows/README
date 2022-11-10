@@ -111,10 +111,10 @@ or
 
 - also export the following compilation flags:
 ------
-:; export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-:; export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
-:; export PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig
+:; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export LDFLAGS="$LDFLAGS -L${PREFIX}/lib/"
+:; export PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig
 ------
 
 - prepare the download and build area, e.g. to match copy-paste instructions
@@ -155,9 +155,9 @@ You can also compile it (where that is still needed) using:
 	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
 	:; cd pthreads-w32-2-8-0-release/
 	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
-	:; sudo cp *.dll /usr/$ARCH/pthreads/lib/
-	:; sudo cp *.a /usr/$ARCH/lib/
-	:; sudo cp pthread.h sched.h semaphore.h /usr/$ARCH/pthreads/include
+	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
+	:; sudo cp *.a ${PREFIX}/lib/
+	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
 
 
 MinGW regex library
@@ -473,7 +473,7 @@ net-snmp
 	:; yes "" | ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
 	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
-	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
+	    --with-persistent-directory="${PREFIX}/var/net-snmp" \
 	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
 	    --enable-shared
 	# NOTE: ./configure script may ask a few questions, or may just print
@@ -488,7 +488,7 @@ NOTE: net-snmp tends to only `make` a static-linking library for Windows
 by default (the shared library only appears with `LDFLAGS` proposed above).
 In this case consumers must link not only with `-lnetsnmp` but also its
 dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
-your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
+your build (or installation in `${PREFIX}/lib/pkgconfig/netsnmp.pc`).
 Builds can extract this info with `pkg-config --libs --static netsnmp`
 as NUT scenarios do (for mingw, if shared-linking attempt fails).
 
@@ -540,7 +540,7 @@ Needed for glib2 (further for avahi).
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make all
 	:; sudo make install
-	:; sudo ln -s libpcre2-posix.pc /usr/$ARCH/lib/pkgconfig/libpcre.pc
+	:; sudo ln -s libpcre2-posix.pc ${PREFIX}/lib/pkgconfig/libpcre.pc
 
 
 gettext/libintl
@@ -706,7 +706,7 @@ targets.
 NOTE: For other ways of building and packaging, it might make sense for
 a packaged delivery to also `make install DESTDIR=.../nut_install` from
 the sources of dependency projects built above, or at least to copy the
-built `*.dll` files from `$PREFIX/bin` to `nut_install/bin`. For those
+built `*.dll` files from `${PREFIX}/bin` to `nut_install/bin`. For those
 dependencies that are listed above, the script does this best-effort
 activity (does not fail if some are missing, but running the programs
 can fail later).
