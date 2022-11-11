@@ -157,11 +157,11 @@ or
 ------
 
 - prepare the download and build area, e.g. to match copy-paste instructions
-  below, it would be like:
+below, it would be like:
 ------
-:; mkdir -p ~/nut-win-deps/"$ARCH"
 :; DLDIR=~/nut-win-deps
-:; WSDIR=~/nut-win-deps/"$ARCH"
+:; WSDIR="$DLDIR"/"$ARCH"
+:; mkdir -p "$WSDIR" "$DLDIR"
 ------
 
 ================================================================================
