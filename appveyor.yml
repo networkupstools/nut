@@ -61,7 +61,7 @@ before_build:
       set CHERE_INVOKING=yes
       REM Start a 64 bit Mingw environment:
       set MSYSTEM=MINGW64
-      C:\msys64\usr\bin\bash -lc 'set +e ; date -u; export PATH="/mingw64/bin:$PATH"; export ARCH="$MINGW_CHOST" ; export PREFIX="$MINGW_PREFIX"; export PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig ; pkg-config --exists netsnmp && exit ; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/" ; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/" ; export LDFLAGS="$LDFLAGS -L${PREFIX}/lib/" ; DLDIR=~/nut-win-deps ; WSDIR="$DLDIR"/"$ARCH" ; mkdir -p "$WSDIR" "$DLDIR" ; if [ -d "$WSDIR/net-snmp-5.9.1/.inst" ]; then cd "$WSDIR/net-snmp-5.9.1/.inst" && rsync -avPHK ./ / && exit ; fi ; if [ -d "$WSDIR/net-snmp-5.9.1" ]; then cd "$WSDIR/net-snmp-5.9.1" && make install -j 8 && exit ; fi ; set -e ; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz ) ; cd "$WSDIR" ; rm -rf net-snmp-5.9.1 || true ; tar xzf "$DLDIR"/net-snmp-5.9.1.tar.gz ; cd net-snmp-5.9.1 ; yes "" | ./configure --prefix="$PREFIX" --with-default-snmp-version=3 --disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" --with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks --enable-shared || exit ; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" -j 8 || exit ; make -d "`pwd`/.inst" install -j 8 || exit ; make install ; find . -type f -name "*.dll" -o -name "*.dll.a";'
+      C:\msys64\usr\bin\bash -lc "date -u; export MSYS2_PATH ; bash -x ./scripts/Windows/build-mingw-prereqs.sh"
 
 
 build_script:
