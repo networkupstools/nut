@@ -115,7 +115,7 @@ artifacts:
     name: Bundle of binary files and FOSS dependencies of NUT for Windows
 
   - path: config.log
-    name: config.log
+    name: config.log of recent build of NUT for Windows
 
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
