@@ -51,6 +51,19 @@ install:
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats"'
 
 
+before_build:
+  - cmd: |
+      REM Ensure we have a net-snmp to build against
+      REM Adapted from scripts/Windows/README document.
+      REM Here we hope to build it once, then use the
+      REM stashed version across Appveyor rebuilds.
+      REM Preserve the current working directory:
+      set CHERE_INVOKING=yes
+      REM Start a 64 bit Mingw environment:
+      set MSYSTEM=MINGW64
+      C:\msys64\usr\bin\bash -lc 'set +e ; date -u; export PATH="/mingw64/bin:$PATH"; export ARCH="$MINGW_CHOST" ; export PREFIX="$MINGW_PREFIX"; export PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig ; pkg-config --exists netsnmp && exit ; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/" ; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/" ; export LDFLAGS="$LDFLAGS -L${PREFIX}/lib/" ; DLDIR=~/nut-win-deps ; WSDIR="$DLDIR"/"$ARCH" ; mkdir -p "$WSDIR" "$DLDIR" ; if [ -d "$WSDIR/net-snmp-5.9.1/.inst" ]; then cd "$WSDIR/net-snmp-5.9.1/.inst" && rsync -avPHK ./ / && exit ; fi ; if [ -d "$WSDIR/net-snmp-5.9.1" ]; then cd "$WSDIR/net-snmp-5.9.1" && make install -j 8 && exit ; fi ; set -e ; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz ) ; cd "$WSDIR" ; rm -rf net-snmp-5.9.1 || true ; tar xzf "$DLDIR"/net-snmp-5.9.1.tar.gz ; cd net-snmp-5.9.1 ; yes "" | ./configure --prefix="$PREFIX" --with-default-snmp-version=3 --disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" --with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks --enable-shared || exit ; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" -j 8 || exit ; make -d "`pwd`/.inst" install -j 8 || exit ; make install ; find . -type f -name "*.dll" -o -name "*.dll.a";'
+
+
 build_script:
   - cmd: |
         REM Preserve the current working directory:
@@ -110,6 +123,7 @@ cache:
   - C:\msys64\home\appveyor\.ccache
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
   - C:\msys64\var\cache\pacman\pkg
+  - C:\msys64\home\appveyor\nut-win-deps
 
 # Below we tried to stash binaries of MSYS2 environment
 # so VM deployment is faster on subsequent builds
