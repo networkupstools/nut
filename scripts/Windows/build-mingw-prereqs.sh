@@ -98,7 +98,12 @@ provide_netsnmp() (
 
 	# (Re-)make and install from scratch
 	set -e
-	( cd "$DLDIR" && wget -c "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" )
+
+	# Funny ways to fetch from Sourceforge help get the archive,
+	# not the download page... For some reason, this bites CI
+	# builds on Appveyor but not local runs:
+	( cd "$DLDIR" && curl -vL "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" > "${DEP_ARCHIVE}" ) || \
+	( cd "$DLDIR" && wget -c "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" -O "${DEP_ARCHIVE}" )
 
 	cd "${WSDIR}"
 	rm -rf ${DEP_DIRNAME} || echo ""
