@@ -106,18 +106,36 @@ or
 
 - NOTE: Technically, these instructions may apply to builds with MinGW on
   Windows semi-natively (e.g. to add the net-snmp libraries which are not
-  packaged currently). Generally you can use environment variables set by
-  different launchers of MinGW terminal sessions depending on the target
-  profile (32/64 bit, gcc/clang, libc implementation...):
+  packaged for MSYS2 MinGW currently). Generally you can use environment
+  variables set by different launchers of MinGW terminal sessions depending
+  on the target profile (32/64 bit, gcc/clang, libc implementation...)
+
+** For a "native build" directly for consumption in the currently configured
+   environment, you would not use cross-build path in `PREFIX` and not set
+   the `HOST_FLAG` value:
++
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX"
+:; export HOST_FLAG=""
+------
+
+** If you wanted a "real cross-build" for a different MinGW environment, you
+   might want to set those (but the NUT build would then need to be told to
+   search for headers, libraries and pkg-config data in extra locations):
++
 ------
 :; export ARCH="$MINGW_CHOST"
 :; PREFIX="$MINGW_PREFIX/$ARCH"
+:; export HOST_FLAG="--host=$ARCH"
 ------
-  You might want to verify that it sets values similar to:
+** You might want then to verify that it sets values you expect with a command
+   like this:
++
 ------
-:; set | grep -E '^(ARCH|PREFIX)='
+:; set | grep -E '^(ARCH|PREFIX|HOST_FLAG)='
 #export ARCH="x86_64-w64-mingw32"
-#PREFIX="/mingw64/$ARCH"
+#PREFIX="/mingw64/x86_64-w64-mingw32"
 ------
 
 - on Debian/Ubuntu style systems also:
