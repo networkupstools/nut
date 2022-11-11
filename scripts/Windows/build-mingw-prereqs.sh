@@ -15,6 +15,12 @@ prepareEnv() {
 	[ -n "${MAKE-}" ] || MAKE="make -j 8"
 	export MAKE
 
+	if [ -z "${SUDO-}" ] ; then
+		SUDO=" " # avoid reeval
+		if (command -v sudo) ; then SUDO="sudo" ; fi
+	fi
+	export SUDO
+
 	[ -n "${DLDIR-}" ] || DLDIR=~/nut-win-deps
 
 	if [ -n "${ARCH-}" ] && [ -n "${PREFIX-}" ] ; then
@@ -80,14 +86,14 @@ provide_netsnmp() (
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
 			cd "${WSDIR}/${DEP_DIRNAME}/.inst" || exit
-			(command -v rsync) && rsync -avPHK ./ / && exit
-			cp -pr ./ / && exit
+			(command -v rsync) && $SUDO rsync -avPHK ./ / && exit
+			$SUDO cp -pr ./ / && exit
 			exit 1
 			) && return 0
 		fi
 
 		# no stashed .inst; any Makefile at least?
-		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $MAKE install ) && return ; fi
+		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
 	fi
 
 	# (Re-)make and install from scratch
@@ -116,7 +122,7 @@ provide_netsnmp() (
 	# Summarize what we have got
 	find ./ -type f -name "*.dll" -o -name "*.dll.a";
 
-	sudo $MAKE install
+	$SUDO $MAKE install
 )
 
 prepareEnv || exit
