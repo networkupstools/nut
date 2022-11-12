@@ -110,6 +110,9 @@ or
   variables set by different launchers of MinGW terminal sessions depending
   on the target profile (32/64 bit, gcc/clang, libc implementation...)
 
+** For `sudo make install` in instructions below, you may have to omit the
+   `sudo` part if missing in your MSYS2 MinGW environment;
+
 ** For a "native build" directly for consumption in the currently configured
    environment, you would not use cross-build path in `PREFIX` and not set
    the `HOST_FLAG` value:
@@ -154,11 +157,11 @@ or
 ------
 
 - prepare the download and build area, e.g. to match copy-paste instructions
-  below, it would be like:
+below, it would be like:
 ------
-:; mkdir -p ~/nut-win-deps/"$ARCH"
 :; DLDIR=~/nut-win-deps
-:; WSDIR=~/nut-win-deps/"$ARCH"
+:; WSDIR="$DLDIR"/"$ARCH"
+:; mkdir -p "$WSDIR" "$DLDIR"
 ------
 
 ================================================================================
