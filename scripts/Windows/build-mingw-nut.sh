@@ -89,14 +89,18 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
 	export CC="$ARCH-gcc"
 	export CXX="$ARCH-g++"
-	export PATH="/usr/$ARCH/bin:$PATH"
+
+	# TODO: Detect/parameterize?
+	#  This prefix is currently valid for mingw packaging in Debian/Ubuntu.
+	ARCH_PREFIX="/usr/$ARCH"
+	export PATH="${ARCH_PREFIX}/bin:$PATH"
 
 	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
 	# and the value 0xffff is anyway forced into some components at least
 	# by netsnmp cflags.
-	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
-	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
-	export LDFLAGS+=" -L/usr/$ARCH/lib/"
+	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
@@ -107,7 +111,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# location is passed to `make install` as DESTDIR below.
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
-	    PKG_CONFIG_PATH=/usr/$ARCH/lib/pkgconfig \
+	    PKG_CONFIG_PATH=${ARCH_PREFIX}/lib/pkgconfig \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
@@ -146,8 +150,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# Cover dependencies for nut-scanner (not pre-linked)
 		# Note: lib*snmp*.dll not listed below, it is
 		# statically linked into binaries that use it
-		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-		(cd $INSTALL_DIR/bin && cp -pf /usr/$ARCH/lib/libwinpthread*.dll .) || true
+		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/bin/{libgnurx,libusb,libltdl}*.dll .) || true
+		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/lib/libwinpthread*.dll .) || true
 
 		# Steam-roll over all executables/libs we have here and copy
 		# over resolved dependencies from the cross-build environment:
