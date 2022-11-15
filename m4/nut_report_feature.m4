@@ -38,12 +38,12 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
     echo "NUT Compiler settings:"
     echo "----------------------"
     echo ""
-    printf '* CC      \t:%s\n' "$CC"
-    printf '* CFLAGS  \t:%s\n' "$CFLAGS"
-    printf '* CXX     \t:%s\n' "$CXX"
-    printf '* CXXFLAGS\t:%s\n' "$CXXFLAGS"
-    printf '* CPP     \t:%s\n' "$CPP"
-    printf '* CPPFLAGS\t:%s\n' "$CPPFLAGS"
+    printf '* CC      \t: %s\n' "$CC"
+    printf '* CFLAGS  \t: %s\n' "$CFLAGS"
+    printf '* CXX     \t: %s\n' "$CXX"
+    printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
+    printf '* CPP     \t: %s\n' "$CPP"
+    printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
    ) >> config.nut_report_feature.log
 ])
 
