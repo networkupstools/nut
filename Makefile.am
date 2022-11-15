@@ -212,6 +212,9 @@ endif !HAVE_CPPCHECK
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEANFILES += ChangeLog
 
+# CI builds can leave a log of selected features:
+MAINTAINERCLEANFILES += config.nut_report_feature.log
+
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
