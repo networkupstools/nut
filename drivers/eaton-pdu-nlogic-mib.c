@@ -115,7 +115,7 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	/* pduPartNumber.1 = STRING: "EMSV0001" */
 	{ "device.part", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.7.1.1.2.1.7.1",
-		SU_FLAG_STATIC, SU_FLAG_OK, NULL },
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* For daisychain, there is only 1 physical interface! */
 	/* pduMACAddress.1 = Hex-STRING: 43 38 2D 34 35 2D 34 34 2D 33 30 2D 39 34 2D 31 */
 	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE,
