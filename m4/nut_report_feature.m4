@@ -13,8 +13,7 @@ AC_DEFUN([NUT_REPORT],
       AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
         [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])],
         [ac_clean_files="${ac_clean_files} config.nut_report_feature.log"])
-      echo > config.nut_report_feature.log
-      echo "NUT Configuration summary:" >> config.nut_report_feature.log
+      echo "NUT Configuration summary:" >  config.nut_report_feature.log
       echo "==========================" >> config.nut_report_feature.log
    fi
    echo "$1: $2" >> config.nut_report_feature.log
@@ -48,5 +47,6 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
+   echo ""
    cat config.nut_report_feature.log
 ])
