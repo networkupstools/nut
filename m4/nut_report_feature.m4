@@ -29,14 +29,15 @@ AC_DEFUN([NUT_REPORT_FEATURE],
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
-   cat conf_nut_report_feature
-
-   echo "------------------"
-   echo "Compiler settings:"
+   (echo "------------------"
+    echo "Compiler settings:"
     printf 'CC      \t:%s\n' "$CC"
     printf 'CFLAGS  \t:%s\n' "$CFLAGS"
     printf 'CXX     \t:%s\n' "$CXX"
     printf 'CXXFLAGS\t:%s\n' "$CXXFLAGS"
     printf 'CPP     \t:%s\n' "$CPP"
     printf 'CPPFLAGS\t:%s\n' "$CPPFLAGS"
+   ) >> conf_nut_report_feature
+
+   cat conf_nut_report_feature
 ])
