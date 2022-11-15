@@ -9,8 +9,8 @@ AC_DEFUN([NUT_REPORT],
       nut_report_feature_flag="1"
       ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
       echo > config.nut_report_feature.log
-      echo "Configuration summary:" >> config.nut_report_feature.log
-      echo "======================" >> config.nut_report_feature.log
+      echo "NUT Configuration summary:" >> config.nut_report_feature.log
+      echo "==========================" >> config.nut_report_feature.log
    fi
    echo "$1: $2" >> config.nut_report_feature.log
 ])
@@ -29,8 +29,9 @@ AC_DEFUN([NUT_REPORT_FEATURE],
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
-   (echo "------------------"
-    echo "Compiler settings:"
+   (echo ""
+    echo "NUT Compiler settings:"
+    echo "----------------------"
     printf 'CC      \t:%s\n' "$CC"
     printf 'CFLAGS  \t:%s\n' "$CFLAGS"
     printf 'CXX     \t:%s\n' "$CXX"
