@@ -2484,7 +2484,8 @@ case "${systemdsystemunitdir}" in
 		systemdsystemunitdir=""
 		;;
 	*)
-		systemdsystemunitdir="${withval}"
+		AS_IF([test -d "${systemdsystemunitdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystemunitdir='${systemdsystemunitdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
@@ -2518,7 +2519,8 @@ if test -n "${systemdsystemunitdir}"; then
 		systemdshutdowndir=""
 		;;
 	*)
-		systemdshutdowndir="${withval}"
+		AS_IF([test -d "${systemdshutdowndir}"], [],
+			[AC_MSG_WARN([--with-systemdshutdowndir='${systemdshutdowndir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 	esac
 fi
@@ -2549,7 +2551,8 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir=""
 		;;
 	*)
-		systemdtmpfilesdir="${withval}"
+		AS_IF([test -d "${systemdtmpfilesdir}"], [],
+			[AC_MSG_WARN([--with-systemdtmpfilesdir='${systemdtmpfilesdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
