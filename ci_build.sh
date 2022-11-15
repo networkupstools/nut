@@ -1855,6 +1855,7 @@ cross-windows-mingw*)
 
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
+    KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
     ;;
 

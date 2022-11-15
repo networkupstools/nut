@@ -97,9 +97,16 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
 	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I/usr/$ARCH/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L/usr/$ARCH/lib/"
+
+	KEEP_NUT_REPORT_FEATURE_FLAG=""
+	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
+		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
+	fi
+
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
+	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH=/usr/$ARCH/lib/pkgconfig \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
