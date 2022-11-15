@@ -7,7 +7,12 @@ dnl AM_CONDITIONAL)
 AC_DEFUN([NUT_REPORT],
 [  if test -z "${nut_report_feature_flag}"; then
       nut_report_feature_flag="1"
-      ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
+      dnl By (legacy) default we remove this report file
+      dnl For CI we want to publish its artifact
+      dnl Manageable by "--enable-keep_nut_report_feature"
+      AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
+        [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])],
+        [ac_clean_files="${ac_clean_files} config.nut_report_feature.log"])
       echo > config.nut_report_feature.log
       echo "NUT Configuration summary:" >> config.nut_report_feature.log
       echo "==========================" >> config.nut_report_feature.log
