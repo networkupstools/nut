@@ -27,7 +27,7 @@ AC_DEFUN([NUT_REPORT_FEATURE],
    fi
 ])
 
-AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
+AC_DEFUN([NUT_REPORT_COMPILERS],
 [
    (echo ""
     echo "NUT Compiler settings:"
@@ -39,6 +39,9 @@ AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
     printf 'CPP     \t:%s\n' "$CPP"
     printf 'CPPFLAGS\t:%s\n' "$CPPFLAGS"
    ) >> config.nut_report_feature.log
+])
 
+AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
+[
    cat config.nut_report_feature.log
 ])
