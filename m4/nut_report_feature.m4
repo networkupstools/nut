@@ -7,12 +7,12 @@ dnl AM_CONDITIONAL)
 AC_DEFUN([NUT_REPORT],
 [  if test -z "${nut_report_feature_flag}"; then
       nut_report_feature_flag="1"
-      ac_clean_files="${ac_clean_files} conf_nut_report_feature"
-      echo > conf_nut_report_feature
-      echo "Configuration summary:" >> conf_nut_report_feature
-      echo "======================" >> conf_nut_report_feature
+      ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
+      echo > config.nut_report_feature.log
+      echo "Configuration summary:" >> config.nut_report_feature.log
+      echo "======================" >> config.nut_report_feature.log
    fi
-   echo "$1: $2" >> conf_nut_report_feature
+   echo "$1: $2" >> config.nut_report_feature.log
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
@@ -37,7 +37,7 @@ AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
     printf 'CXXFLAGS\t:%s\n' "$CXXFLAGS"
     printf 'CPP     \t:%s\n' "$CPP"
     printf 'CPPFLAGS\t:%s\n' "$CPPFLAGS"
-   ) >> conf_nut_report_feature
+   ) >> config.nut_report_feature.log
 
-   cat conf_nut_report_feature
+   cat config.nut_report_feature.log
 ])
