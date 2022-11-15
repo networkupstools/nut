@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3050 utf-8
+personal_ws-1.1 en 3052 utf-8
 AAS
 ABI
 ACFAIL
@@ -1814,6 +1814,7 @@ energizerups
 energysave
 english
 enum
+env
 envvar
 envvars
 ep
@@ -2511,6 +2512,7 @@ pwro
 px
 pxgx
 py
+pycparser
 pydoc
 pygments
 pynut
