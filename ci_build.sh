@@ -963,6 +963,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
     fi
 
+    CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
@@ -1793,6 +1794,7 @@ bindings)
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can.
     ${CONFIGURE_SCRIPT} --enable-Wcolor \
+        --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
         --with-nut_monitor=auto --with-pynut=auto \
@@ -1853,6 +1855,7 @@ cross-windows-mingw*)
 
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
+    KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
     ;;
 

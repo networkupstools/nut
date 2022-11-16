@@ -7,12 +7,17 @@ dnl AM_CONDITIONAL)
 AC_DEFUN([NUT_REPORT],
 [  if test -z "${nut_report_feature_flag}"; then
       nut_report_feature_flag="1"
-      ac_clean_files="${ac_clean_files} conf_nut_report_feature"
-      echo > conf_nut_report_feature
-      echo "Configuration summary:" >> conf_nut_report_feature
-      echo "======================" >> conf_nut_report_feature
+      dnl By (legacy) default we remove this report file
+      dnl For CI we want to publish its artifact
+      dnl Manageable by "--enable-keep_nut_report_feature"
+      AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
+        [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])],
+        [ac_clean_files="${ac_clean_files} config.nut_report_feature.log"])
+      echo "NUT Configuration summary:" >  config.nut_report_feature.log
+      echo "==========================" >> config.nut_report_feature.log
+      echo "" >> config.nut_report_feature.log
    fi
-   echo "$1: $2" >> conf_nut_report_feature
+   echo "* $1: $2" >> config.nut_report_feature.log
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
@@ -27,16 +32,23 @@ AC_DEFUN([NUT_REPORT_FEATURE],
    fi
 ])
 
+AC_DEFUN([NUT_REPORT_COMPILERS],
+[
+   (echo ""
+    echo "NUT Compiler settings:"
+    echo "----------------------"
+    echo ""
+    printf '* CC      \t: %s\n' "$CC"
+    printf '* CFLAGS  \t: %s\n' "$CFLAGS"
+    printf '* CXX     \t: %s\n' "$CXX"
+    printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
+    printf '* CPP     \t: %s\n' "$CPP"
+    printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+   ) >> config.nut_report_feature.log
+])
+
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
-   cat conf_nut_report_feature
-
-   echo "------------------"
-   echo "Compiler settings:"
-    printf 'CC      \t:%s\n' "$CC"
-    printf 'CFLAGS  \t:%s\n' "$CFLAGS"
-    printf 'CXX     \t:%s\n' "$CXX"
-    printf 'CXXFLAGS\t:%s\n' "$CXXFLAGS"
-    printf 'CPP     \t:%s\n' "$CPP"
-    printf 'CPPFLAGS\t:%s\n' "$CPPFLAGS"
+   echo ""
+   cat config.nut_report_feature.log
 ])

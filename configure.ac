@@ -150,6 +150,10 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
+
+NUT_ARG_ENABLE([keep_nut_report_feature],
+    [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
+    [no])
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
@@ -2475,8 +2479,8 @@ case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
 			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${withval}" = yes],
-				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			[AS_IF([test "${systemdsystemunitdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdsystemunitdir=""
 			])
 		;;
@@ -2484,7 +2488,8 @@ case "${systemdsystemunitdir}" in
 		systemdsystemunitdir=""
 		;;
 	*)
-		systemdsystemunitdir="${withval}"
+		AS_IF([test -d "${systemdsystemunitdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystemunitdir='${systemdsystemunitdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
@@ -2518,7 +2523,8 @@ if test -n "${systemdsystemunitdir}"; then
 		systemdshutdowndir=""
 		;;
 	*)
-		systemdshutdowndir="${withval}"
+		AS_IF([test -d "${systemdshutdowndir}"], [],
+			[AC_MSG_WARN([--with-systemdshutdowndir='${systemdshutdowndir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 	esac
 fi
@@ -2549,7 +2555,8 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir=""
 		;;
 	*)
-		systemdtmpfilesdir="${withval}"
+		AS_IF([test -d "${systemdtmpfilesdir}"], [],
+			[AC_MSG_WARN([--with-systemdtmpfilesdir='${systemdtmpfilesdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
@@ -3575,4 +3582,5 @@ m4_foreach_w([SCRIPTFILE], [
 
 AC_OUTPUT
 
+NUT_REPORT_COMPILERS
 NUT_PRINT_FEATURE_REPORT
