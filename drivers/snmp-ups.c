@@ -170,7 +170,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.24"
+#define DRIVER_VERSION		"1.25"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1885,82 +1885,87 @@ static mib2nut_info_t *match_sysoid()
 	int i;
 
 	/* Retrieve sysOID value of this device */
-	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
+	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) != TRUE)
 	{
-		upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
-
-		/* Build OIDs for comparison */
-		if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
-		{
-			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
-				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
+		upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_oid())");
+		/* Fallback for non-compliant device, that returns a string and not an OID */
+		if (nut_snmp_get_str(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf), NULL) != TRUE) {
+			upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_str())");
 			return NULL;
 		}
+	}
 
-		/* Now, iterate on mib2nut definitions */
-		for (i = 0; mib2nut[i] != NULL; i++)
+	upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
+
+	/* Build OIDs for comparison */
+	if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
+	{
+		upsdebugx(2, "%s: can't build device_sysOID %s: %s",
+			__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
+
+		return NULL;
+	}
+
+	/* Now, iterate on mib2nut definitions */
+	for (i = 0; mib2nut[i] != NULL; i++)
+	{
+		upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+
+		if (mib2nut[i]->sysOID == NULL)
+			continue;
+
+		/* Clear variables */
+		memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
+		mib2nut_sysOID_len = MAX_OID_LEN;
+
+		if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
 		{
-			upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+			upsdebugx(2, "%s: can't build OID %s: %s",
+				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
-			if (mib2nut[i]->sysOID == NULL)
-				continue;
-
-			/* Clear variables */
-			memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
-			mib2nut_sysOID_len = MAX_OID_LEN;
-
-			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: can't build OID %s: %s",
-					__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
-				/* Try to continue anyway! */
-				continue;
-			}
-
-			/* Now compare these */
-			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
-			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-				/* Counter verify, using {ups,device}.model */
-				snmp_info = mib2nut[i]->snmp_info;
-
-				if (snmp_info == NULL) {
-					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name
-						);
-					continue;
-				}
-				else if (snmp_info[0].info_type == NULL) {
-					upsdebugx(1, "%s: WARNING: snmp_info is empty "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name);
-				}
-
-				if (match_model_OID() != TRUE)
-				{
-					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
-					snmp_info = NULL;
-					continue;
-				}
-				else
-					upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-
-				return mib2nut[i];
-			}
+			/* Try to continue anyway! */
+			continue;
 		}
 
-		/* Yell all to call for user report */
-		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
-			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
-			"Going back to the classic MIB detection method.",
-			sysOID_buf);
+		/* Now compare these */
+		upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
+		if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
+		{
+			upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+			/* Counter verify, using {ups,device}.model */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
+
+			if (match_model_OID() != TRUE)
+			{
+				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				snmp_info = NULL;
+				continue;
+			}
+			else
+				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+
+			return mib2nut[i];
+		}
 	}
-	else
-		upsdebugx(2, "Can't get sysOID value");
+
+	/* Yell all to call for user report */
+	upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
+		"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
+		"Going back to the classic MIB detection method.",
+		sysOID_buf);
 
 	return NULL;
 }
