@@ -101,6 +101,8 @@ https://github.com/networkupstools/nut/milestone/8
      and MacOS on CircleCI [#1552]
 
  - snmp-ups updates:
+   * Fixed detection for device agents which wrongly return the sysOID value
+     as a string instead of an OID [#1710]
    * IETF MIB mapping updated for data points where negative readings
      are invalid [#1558]
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
