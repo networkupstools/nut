@@ -506,6 +506,7 @@
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+"HPE"	"pdu"	"5"	"G2 Metered & Switched PDU"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 "Huawei"	"ups"	"3"	"UPS2000-G and UPS2000-A series"	"MODBUS (USB with Linux 5.12+, or Serial RS-232)"	"huawei-ups2000"	# https://github.com/networkupstools/nut/issues/1066 https://github.com/networkupstools/nut/pull/1198 https://github.com/networkupstools/nut/pull/954 https://github.com/networkupstools/nut/issues/1017

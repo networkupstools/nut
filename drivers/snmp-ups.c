@@ -67,6 +67,7 @@
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
+#include "hpe-pdu3-cis-mib.h"
 #include "eaton-pdu-nlogic-mib.h"
 
 /* Address API change */
@@ -114,6 +115,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
 	&hpe_pdu,			/* This struct comes from : hpe-pdu-mib.c */
+	&hpe_pdu3_cis,		/* This struct comes from : hpe-pdu3-cis-mib.c */
 	&huawei,			/* This struct comes from : huawei-mib.c */
 	&mge,				/* This struct comes from : mge-mib.c */
 	&netvision,			/* This struct comes from : netvision-mib.c */
@@ -170,7 +172,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.25"
+#define DRIVER_VERSION		"1.26"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
