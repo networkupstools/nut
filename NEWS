@@ -108,6 +108,10 @@ https://github.com/networkupstools/nut/milestone/8
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
    * Added SNMP subdriver "eaton-pdu-nlogic-mib" for nLogic (rebranded Eaton)
      support [#1698]
+   * Added SNMP subdriver "hpe-pdu3-cis-mib" for HPE G2 Metered & Switched PDU
+     initial "unitary" support (no daisychain support yet); also note that due
+     to SNMP v1 implementation limitations on this device, you should prefer
+     SNMP v3 to get both read and write rights [#1713]
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
 
