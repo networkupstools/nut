@@ -278,7 +278,7 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 		NULL, SU_OUTLET /*| SU_TYPE_DAISY_1*/, NULL },
 #endif
 
-#if WITH_UNMAPPED_DATA_POINTS
+#ifdef WITH_UNMAPPED_DATA_POINTS
 
 	/* pdu3IdentIndex.1 = INTEGER: 1 */
 	{ "unmapped.pdu3IdentIndex", 0, 1, ".1.3.6.1.4.1.232.165.11.1.2.1.1.1", NULL, SU_FLAG_OK, NULL },
