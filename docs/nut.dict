@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3056 utf-8
+personal_ws-1.1 en 3058 utf-8
 AAS
 ABI
 ACFAIL
@@ -1631,6 +1631,7 @@ chunking
 chv
 ci
 cidr
+cis
 clav
 clearalarms
 clearhistory
@@ -1962,6 +1963,7 @@ hostnames
 hostsfile
 hotplug
 hotplugging
+hpe
 href
 htaccess
 html
