@@ -166,6 +166,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
 dnl Historically this refers to *system location* for PID files, and
 dnl then NUT init-scripts, systemd-tmpfiles integration or some such
 dnl create and chown a "nut" subdirectory there for the daemons to use.
+dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below.
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -2095,7 +2096,7 @@ dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
-	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
+	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (${STATEPATH}, typically /var/state/ups)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -2118,7 +2119,7 @@ dnl
 
 AC_MSG_CHECKING(alt pid path)
 AC_ARG_WITH(altpidpath,
-	AS_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
+	AS_HELP_STRING([--with-altpidpath=PATH], [path for NUT driver/upsd .pid files not running as root (<statepath>)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -2193,7 +2194,7 @@ AC_MSG_RESULT(${htmldir})
 
 AC_MSG_CHECKING(pidpath)
 AC_ARG_WITH(pidpath,
-	AS_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
+	AS_HELP_STRING([--with-pidpath=PATH], [system base path for .pid files (${PIDPATH}, typically /var/run and ./nut will be created there)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -2204,7 +2205,7 @@ AC_ARG_WITH(pidpath,
 		;;
 	esac
 ], [])
-AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [Path where the pid files should go])
+AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [System path where the pid files should go])
 AC_MSG_RESULT(${PIDPATH})
 
 AC_MSG_CHECKING(network port number)
