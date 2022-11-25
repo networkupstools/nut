@@ -15,12 +15,14 @@ AC_DEFUN([NUT_REPORT_FILE],
         ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
         if [ "$3" = 1 ]; then
             echo "$4"
+            echo "$4" | sed 's/./=/g'
+            echo ""
         else
             echo ""
             echo "$4"
+            echo "$4" | sed 's/./-/g'
+            echo ""
         fi > "config.nut_report_feature.log.$3"
-        echo "$4" | sed 's/./=/g' >> "config.nut_report_feature.log.$3"
-        echo "" >> "config.nut_report_feature.log.$3"
     fi
     echo "* $1: $2" >> "config.nut_report_feature.log.$3"
 ])
