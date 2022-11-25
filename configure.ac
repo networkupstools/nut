@@ -161,16 +161,6 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
         done
         AC_MSG_RESULT([${sysconfdir}])
         ])
-
-    AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
-    AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
-        [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
-    AC_MSG_RESULT([${RUN_AS_GROUP}])
-
-    AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
-    AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
-        [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])
-    AC_MSG_RESULT([${RUN_AS_USER}])
 ])
 
 dnl Historically this refers to *system location* for PID files, and
@@ -3060,9 +3050,21 @@ if test -n "${target_cpu}" -a -n "${target_os}" ; then
 fi
 
 dnl ----------------------------------------------------------------------
-
 dnl Check the user and group to run as last, so we can use the paths configured
 dnl above as data sources for default values if building an in-place replacement
+
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
+    AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
+    AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
+        [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
+    AC_MSG_RESULT([${RUN_AS_GROUP}])
+
+    AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
+    AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
+        [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])
+    AC_MSG_RESULT([${RUN_AS_USER}])
+])
+
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
 	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
