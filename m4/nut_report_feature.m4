@@ -32,6 +32,13 @@ AC_DEFUN([NUT_REPORT],
     NUT_REPORT_FILE($1, $2, 1, "NUT Configuration summary:")
 ])
 
+AC_DEFUN([NUT_REPORT_PATH],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    NUT_REPORT_FILE($1, $2, 2, "NUT Paths:")
+])
+
 AC_DEFUN([NUT_REPORT_FEATURE],
 [
     dnl arg#1 = summary/config.log description
@@ -58,6 +65,20 @@ AC_DEFUN([NUT_REPORT_SETTING],
    AC_MSG_CHECKING([setting for $1])
    AC_MSG_RESULT([$3])
    NUT_REPORT([$1], [$3])
+
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
+])
+
+AC_DEFUN([NUT_REPORT_SETTING_PATH],
+[
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = description (summary and autoconf)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT_PATH([$1], [$3])
 
    dnl Note: unlike features, settings do not imply an AutoMake toggle
    AC_DEFINE_UNQUOTED($2, $3, $4)
