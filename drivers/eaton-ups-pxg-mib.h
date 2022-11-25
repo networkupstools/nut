@@ -4,7 +4,6 @@
 #include "main.h"
 #include "snmp-ups.h"
 
-extern mib2nut_info_t	powerware;
-extern mib2nut_info_t	pxgx_ups;
+extern mib2nut_info_t	eaton_pxg_ups;
 
 #endif /* POWERWARE_MIB_H */

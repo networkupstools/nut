@@ -44,7 +44,6 @@
 #include "apc-mib.h"
 #include "mge-mib.h"
 #include "netvision-mib.h"
-#include "powerware-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
@@ -69,6 +68,8 @@
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
 #include "eaton-pdu-nlogic-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -109,6 +110,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
 	&eaton_pdu_nlogic,	/* This struct comes from : eaton-pdu-nlogic-mib.c */
+	&eaton_pxg_ups,		/* This struct comes from : eaton-ups-pxg-mib.c */
+	&eaton_pw_nm2, 		/* This struct comes from : eaton-ups-pwnm2-mib.c */
 	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
@@ -119,8 +122,6 @@ static mib2nut_info_t *mib2nut[] = {
 	&huawei,			/* This struct comes from : huawei-mib.c */
 	&mge,				/* This struct comes from : mge-mib.c */
 	&netvision,			/* This struct comes from : netvision-mib.c */
-	&powerware,			/* This struct comes from : powerware-mib.c */
-	&pxgx_ups,			/* This struct comes from : powerware-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
@@ -172,7 +173,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.26"
+#define DRIVER_VERSION		"1.27"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
