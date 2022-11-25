@@ -118,14 +118,34 @@ case "${target_os}" in
         ;;
 esac
 
+dnl Note: this deals with run-time settings so that the newly built
+dnl programs can be "just executed" to use same configuration files
+dnl and filesystem object permissions as an older deployment of NUT
+dnl on this system; this specifically does not deal with trying to
+dnl use same prefix and other paths to fully replace an older setup
+dnl (a different option might be crafted to do that, but really the
+dnl arcane distro-dependent packaging recipes are a better way here).
+dnl This feature is intended for users who want to see if a custom
+dnl build of NUT supports their hardware or other use-cases better.
+NUT_ARG_ENABLE([inplace-runtime],
+    [Request configure option defaults for runtime user/group/confpath based on currently installed NUT (to extent these can be detected)],
+    [no])
+
 dnl Defaults for respective configure options below
 dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
-	[RUN_AS_GROUP="nogroup"]
+    [RUN_AS_GROUP="nogroup"]
 )
+
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
+    AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
+        [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
+    AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
+        [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])
+])
 
 dnl Historically this refers to *system location* for PID files, and
 dnl then NUT init-scripts, systemd-tmpfiles integration or some such
