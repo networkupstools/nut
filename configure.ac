@@ -141,6 +141,25 @@ AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GR
 )
 
 AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
+    dnl If there was no custom --sysconfdir=/etc/myNUT passed, try to default
+    dnl TODO: Smarter ways welcome (e.g. reliably look at configure CLI opts)
+    AS_IF([test x"${prefix}/etc" = x"${sysconfdir}"], [
+        dnl TODO: Any more reasonable defaults? Pile them on here :)
+        for D in \
+            /etc/nut /etc/ups \
+            /usr/etc/nut /usr/etc/ups \
+            /usr/local/etc/nut /usr/local/etc/ups \
+            /usr/local/nut/etc /usr/local/ups/etc \
+        ; do
+            if test -e "$D/ups.conf" || test -e "$D/upsmon.conf" \
+            || ( test -e "$D/upsd.conf" && test -e "$D/upsd.users" ) \
+            ; then
+                sysconfdir="$D"
+                break
+            fi
+        done
+        ])
+
     AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
         [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
     AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
