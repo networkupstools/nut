@@ -141,9 +141,11 @@ AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GR
 )
 
 AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
-    dnl If there was no custom --sysconfdir=/etc/myNUT passed, try to default
-    dnl TODO: Smarter ways welcome (e.g. reliably look at configure CLI opts)
-    AS_IF([test x"${prefix}/etc" = x"${sysconfdir}"], [
+    dnl If there was no custom --sysconfdir=/etc/myNUT passed,
+    dnl try to default it to something from existing deployment.
+    dnl NOTE: Single-quotes are correct for autotools default,
+    dnl expanded at runtime (see conftemp tricks below)
+    AS_IF([test x'${prefix}/etc' = x"${sysconfdir}"], [
         AC_MSG_CHECKING([for in-place replacement default sysconfdir (better than '${sysconfdir}')])
         dnl TODO: Any more reasonable defaults? Pile them on here :)
         for D in \
