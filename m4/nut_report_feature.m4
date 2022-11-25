@@ -13,7 +13,7 @@ AC_DEFUN([NUT_REPORT_FILE],
     if test -z "${nut_report_feature_flag$3}"; then
         nut_report_feature_flag$3="1"
         ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
-        if [ "$3" = 1 ]; then
+        if test x1 = x$3 ; then
             echo "$4"
             echo "$4" | sed 's/./=/g'
             echo ""
@@ -31,14 +31,14 @@ AC_DEFUN([NUT_REPORT],
 [
     dnl arg#1 = description (summary)
     dnl arg#2 = value
-    NUT_REPORT_FILE($1, $2, 1, "NUT Configuration summary:")
+    NUT_REPORT_FILE([$1], [$2], [1], "NUT Configuration summary:")
 ])
 
 AC_DEFUN([NUT_REPORT_PATH],
 [
     dnl arg#1 = description (summary)
     dnl arg#2 = value
-    NUT_REPORT_FILE($1, $2, 2, "NUT Paths:")
+    NUT_REPORT_FILE([$1], [$2], [2], "NUT Paths:")
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
@@ -93,7 +93,7 @@ AC_DEFUN([NUT_REPORT_TARGET],
     dnl arg#3 = summary/config.log/autoconf description
     AC_MSG_CHECKING([$3])
     AC_MSG_RESULT([$2])
-    NUT_REPORT_FILE([$3], [$2], 8, "NUT Build/Target system info:")
+    NUT_REPORT_FILE([$3], [$2], [8], "NUT Build/Target system info:")
 
     dnl Note: unlike features, target info does not imply an AutoMake toggle
     AC_DEFINE_UNQUOTED($1, $2, $3)
@@ -112,6 +112,7 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
     printf '* CPP     \t: %s\n' "$CPP"
     printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
    ) > config.nut_report_feature.log.9
+    ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"
 ])
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
