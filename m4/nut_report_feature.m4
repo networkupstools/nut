@@ -5,7 +5,10 @@ dnl nut_with_usb and WITH_USB (both macros, and
 dnl AM_CONDITIONAL)
 
 AC_DEFUN([NUT_REPORT],
-[  if test -z "${nut_report_feature_flag}"; then
+[
+    dnl $1 = description (summary)
+    dnl $2 = value
+   if test -z "${nut_report_feature_flag}"; then
       nut_report_feature_flag="1"
       dnl By (legacy) default we remove this report file
       dnl For CI we want to publish its artifact
@@ -22,6 +25,11 @@ AC_DEFUN([NUT_REPORT],
 
 AC_DEFUN([NUT_REPORT_FEATURE],
 [
+    dnl $1 = summary/config.log description
+    dnl $2 = test flag ("yes" or not)
+    dnl $3 = value
+    dnl $4 = autoconf varname
+    dnl $5 = longer description (autoconf comment)
    AC_MSG_CHECKING([whether to $1])
    AC_MSG_RESULT([$2 $3])
    NUT_REPORT([$1], [$2 $3])
@@ -30,6 +38,20 @@ AC_DEFUN([NUT_REPORT_FEATURE],
    if test "$2" = "yes"; then
       AC_DEFINE_UNQUOTED($4, 1, $5)
    fi
+])
+
+AC_DEFUN([NUT_REPORT_SETTING],
+[
+    dnl $1 = summary/config.log description
+    dnl $2 = autoconf varname
+    dnl $3 = value
+    dnl $4 = description (summary and autoconf)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT([$1], [$3])
+
+   # Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
 AC_DEFUN([NUT_REPORT_COMPILERS],
