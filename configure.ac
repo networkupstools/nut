@@ -3099,6 +3099,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
         && test -n "`getent passwd "${nut_inplace_user}"`" \
         && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
         || nut_inplace_user=""])
+    dnl Note: with default short inplace and no prefix, this would look under
+    dnl /usr/local/ups/lib/pkgconfig which may be irrelevant for packaged setups
     AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libupsclient.pc"],
         [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libupsclient.pc" | sed 's,^ *nutuser=,,'`" \
         && test -n "`getent passwd "${nut_inplace_user}"`" \
