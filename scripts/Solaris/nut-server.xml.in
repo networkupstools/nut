@@ -130,7 +130,7 @@
 		<!-- Also used by nut-driver.xml to stay in sync regarding the rights -->
 		<property_group name='nut' type='application'>
 			<stability value='Evolving' />
-			<propval name='NUT_RUN_DIR' type='astring' value='@PIDPATH@/nut' />
+			<propval name='NUT_RUN_DIR' type='astring' value='@ALTPIDPATH@' />
 			<propval name='NUTUSER' type='astring' value='@RUN_AS_USER@' />
 			<propval name='NUTGROUP' type='astring' value='@RUN_AS_GROUP@' />
 		</property_group>
