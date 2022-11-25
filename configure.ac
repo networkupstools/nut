@@ -2104,11 +2104,12 @@ AC_ARG_WITH(statepath,
 		;;
 	*)
 		STATEPATH="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
-AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
-AC_MSG_RESULT(${STATEPATH})
+], [AC_MSG_RESULT([default])])
+NUT_REPORT_SETTING([State file path],
+    STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
@@ -2127,13 +2128,15 @@ AC_ARG_WITH(altpidpath,
 		;;
 	*)
 		ALTPIDPATH="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
 ], [
 	ALTPIDPATH="${STATEPATH}"
+	AC_MSG_RESULT([default])
 ])
-AC_DEFINE_UNQUOTED(ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of drivers and upsd (usually STATEPATH)])
-AC_MSG_RESULT(${ALTPIDPATH})
+NUT_REPORT_SETTING([Unprivileged PID file path],
+    ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
@@ -2145,14 +2148,15 @@ AC_ARG_WITH(drvpath,
 		;;
 	*)
 		driverexecdir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}", [Default path for UPS drivers])
-AC_MSG_RESULT(${driverexecdir})
+NUT_REPORT_SETTING([Driver program path],
+    DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
 AC_MSG_CHECKING(cgi path)
 AC_ARG_WITH(cgipath,
@@ -2164,14 +2168,15 @@ AC_ARG_WITH(cgipath,
 		;;
 	*)
 		cgiexecdir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}", [Default path for CGI programs])
-AC_MSG_RESULT(${cgiexecdir})
+NUT_REPORT_SETTING([CGI program path],
+    CGIPATH, "${conftemp}", [Default path for CGI programs])
 
 AC_MSG_CHECKING(html path)
 AC_ARG_WITH(htmlpath,
@@ -2183,14 +2188,15 @@ AC_ARG_WITH(htmlpath,
 		;;
 	*)
 		htmldir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}", [Default path for HTML files])
-AC_MSG_RESULT(${htmldir})
+NUT_REPORT_SETTING([HTML file path],
+    HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
 AC_MSG_CHECKING(pidpath)
 AC_ARG_WITH(pidpath,
@@ -2202,11 +2208,12 @@ AC_ARG_WITH(pidpath,
 		;;
 	*)
 		PIDPATH="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
-AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [System path where the pid files should go])
-AC_MSG_RESULT(${PIDPATH})
+], [AC_MSG_RESULT([default])])
+NUT_REPORT_SETTING([System PID file path],
+    PIDPATH, "${PIDPATH}", [System default path where the pid files should go])
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
@@ -2961,42 +2968,48 @@ conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 CONFPATH=${conftemp}
-AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}", [Default path for configuration files])
+NUT_REPORT_SETTING([Config file path],
+    CONFPATH, "${conftemp}", [Default path for configuration files])
 
 dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 NUT_DATADIR=${conftemp}
-AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
+NUT_REPORT_SETTING([Data file path],
+    NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 BINDIR=${conftemp}
-AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
+NUT_REPORT_SETTING([Tool program path],
+    BINDIR, "${conftemp}", [Default path for user executables])
 
 dnl same for sbindir
 conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 SBINDIR=${conftemp}
-AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
+NUT_REPORT_SETTING([System program path],
+    SBINDIR, "${conftemp}", [Default path for system executables])
 
 dnl same for libdir
 conftemp="${libdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
-AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
+NUT_REPORT_SETTING([System library path],
+    LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl same for libexecdir
 conftemp="${libexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBEXECDIR=${conftemp}
-AC_DEFINE_UNQUOTED(LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
+NUT_REPORT_SETTING([System exec-library path],
+    LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
 
 dnl checks related to --with-snmp enabled on command-line
