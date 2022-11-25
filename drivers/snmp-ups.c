@@ -173,7 +173,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.27"
+#define DRIVER_VERSION		"1.28"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1132,6 +1132,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			break;
 		}
 
+
 		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
@@ -1140,7 +1141,18 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 				return NULL;
 			}
 
+			if (response->errstat == SNMP_ERR_NOSUCHNAME) {
+				upsdebugx(4, "%s: OID does not exist, skipping", __func__);
+				snmp_free_pdu(response);
+				nut_snmp_free(ret_array);
+				return NULL;
+			}
+
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
+			/* Error throttling otherwise */
 			numerr++;
+			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -2810,6 +2822,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 	} else {
 		if (mode == SU_WALKMODE_INIT) {
 			/* handle unsupported vars */
+			upsdebugx(4, "%s: Disabling var '%s'", __func__, su_info_p->info_type);
 			su_info_p->flags &= ~SU_FLAG_OK;
 		} else	{
 			if (!(su_info_p->flags & SU_FLAG_STALE)) {
