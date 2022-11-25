@@ -2098,7 +2098,7 @@ dnl ----------------------------------------------------------------------
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
-AC_MSG_CHECKING(state path)
+AC_MSG_CHECKING(if requested state path)
 AC_ARG_WITH(statepath,
 	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (${STATEPATH}, typically /var/state/ups)]),
 [
@@ -2122,7 +2122,7 @@ dnl /var/run path.  This defaults to the STATEPATH since they should be
 dnl able to write there.
 dnl
 
-AC_MSG_CHECKING(alt pid path)
+AC_MSG_CHECKING(if requested alt pid path)
 AC_ARG_WITH(altpidpath,
 	AS_HELP_STRING([--with-altpidpath=PATH], [path for NUT driver/upsd .pid files not running as root (<statepath>)]),
 [
@@ -2142,7 +2142,7 @@ AC_ARG_WITH(altpidpath,
 NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
     ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
-AC_MSG_CHECKING(pidpath)
+AC_MSG_CHECKING(if requested pidpath)
 AC_ARG_WITH(pidpath,
 	AS_HELP_STRING([--with-pidpath=PATH], [Path for root-owned .pid files (${PIDPATH}, typically /var/run)]),
 [
@@ -2159,7 +2159,7 @@ AC_ARG_WITH(pidpath,
 NUT_REPORT_SETTING_PATH([Privileged PID file path],
     PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
 
-AC_MSG_CHECKING(driver path)
+AC_MSG_CHECKING(if requested driver path)
 AC_ARG_WITH(drvpath,
 	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
 [
@@ -2179,7 +2179,7 @@ eval conftemp=\"${conftemp}\"
 NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
-AC_MSG_CHECKING(cgi path)
+AC_MSG_CHECKING(if requested cgi path)
 AC_ARG_WITH(cgipath,
 	AS_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
 [
@@ -2199,7 +2199,7 @@ eval conftemp=\"${conftemp}\"
 NUT_REPORT_SETTING_PATH([CGI program path],
     CGIPATH, "${conftemp}", [Default path for CGI programs])
 
-AC_MSG_CHECKING(html path)
+AC_MSG_CHECKING(if requested html path)
 AC_ARG_WITH(htmlpath,
 	AS_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
 [
@@ -3115,7 +3115,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
     AC_MSG_RESULT([${RUN_AS_USER}])
 ])
 
-AC_MSG_CHECKING(user to run as)
+AC_MSG_CHECKING(if requested user to run as)
 AC_ARG_WITH(user,
 	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
 [
@@ -3136,7 +3136,7 @@ AC_ARG_WITH(user,
 NUT_REPORT_SETTING([User to run as],
     RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 
-AC_MSG_CHECKING(group membership of user to run as)
+AC_MSG_CHECKING(if requested group membership of user to run as)
 AC_ARG_WITH(group,
 	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
 [
