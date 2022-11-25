@@ -3512,8 +3512,8 @@ AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
      cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 # State file (e.g. upsd to driver) and pidfile location for NUT:
-d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @STATEPATH@/nut
+d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
@@ -3522,13 +3522,14 @@ X @PIDPATH@/nut
 EOF])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @ALTPIDPATH@/nut
+d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@
 EOF])
+    dnl Generally added to support some forks
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @ALTSTATEPATH@/nut
+d @ALTSTATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@
 EOF])
 ])
 AC_MSG_RESULT([done])
