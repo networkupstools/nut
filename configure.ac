@@ -2093,6 +2093,8 @@ AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
+NUT_REPORT_SETTING_PATH([Default installation prefix path],
+    PREFIX, "${prefix}", [Default installation prefix path])
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
