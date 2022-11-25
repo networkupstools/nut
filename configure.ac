@@ -2747,7 +2747,7 @@ fi
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
-	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
+	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (${hotplugdir}); typically /etc/hotplug]),
 [
 	case "${withval}" in
 	yes)
@@ -2775,10 +2775,10 @@ AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
 AC_MSG_CHECKING(whether to install udev rules)
 AC_ARG_WITH(udev-dir,
-	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/lib/udev or /etc/udev)]),
+	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (${udevdir}; typically /lib/udev or /etc/udev)]),
 [
 	case "${withval}" in
-	yes)
+	yes) dnl Typically /lib/udev or /etc/udev
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
@@ -2813,10 +2813,10 @@ dnl FreeBSD devd support:
 
 AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
 AC_ARG_WITH(devd-dir,
-	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (/usr/local/etc/devd or /etc/devd)]),
+	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (${devddir}; typically /usr/local/etc/devd or /etc/devd)]),
 [
 	case "${withval}" in
-	yes)
+	yes) dnl Typically /usr/local/etc/devd or /etc/devd
 		if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
