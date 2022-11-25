@@ -2108,7 +2108,7 @@ AC_ARG_WITH(statepath,
 		;;
 	esac
 ], [AC_MSG_RESULT([default])])
-NUT_REPORT_SETTING([State file path],
+NUT_REPORT_SETTING_PATH([State file path],
     STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
 
 dnl ---------------------------------------------------------------------
@@ -2135,7 +2135,7 @@ AC_ARG_WITH(altpidpath,
 	ALTPIDPATH="${STATEPATH}"
 	AC_MSG_RESULT([default])
 ])
-NUT_REPORT_SETTING([Unprivileged PID file path],
+NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
     ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
 AC_MSG_CHECKING(driver path)
@@ -2155,7 +2155,7 @@ AC_ARG_WITH(drvpath,
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-NUT_REPORT_SETTING([Driver program path],
+NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
 AC_MSG_CHECKING(cgi path)
@@ -2175,7 +2175,7 @@ AC_ARG_WITH(cgipath,
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-NUT_REPORT_SETTING([CGI program path],
+NUT_REPORT_SETTING_PATH([CGI program path],
     CGIPATH, "${conftemp}", [Default path for CGI programs])
 
 AC_MSG_CHECKING(html path)
@@ -2195,7 +2195,7 @@ AC_ARG_WITH(htmlpath,
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-NUT_REPORT_SETTING([HTML file path],
+NUT_REPORT_SETTING_PATH([HTML file path],
     HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
 AC_MSG_CHECKING(pidpath)
@@ -2212,7 +2212,7 @@ AC_ARG_WITH(pidpath,
 		;;
 	esac
 ], [AC_MSG_RESULT([default])])
-NUT_REPORT_SETTING([System PID file path],
+NUT_REPORT_SETTING_PATH([System PID file path],
     PIDPATH, "${PIDPATH}", [System default path where the pid files should go])
 
 AC_MSG_CHECKING(network port number)
@@ -2968,7 +2968,7 @@ conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 CONFPATH=${conftemp}
-NUT_REPORT_SETTING([Config file path],
+NUT_REPORT_SETTING_PATH([Config file path],
     CONFPATH, "${conftemp}", [Default path for configuration files])
 
 dnl same for datadir
@@ -2976,7 +2976,7 @@ conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 NUT_DATADIR=${conftemp}
-NUT_REPORT_SETTING([Data file path],
+NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
@@ -2984,7 +2984,7 @@ conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 BINDIR=${conftemp}
-NUT_REPORT_SETTING([Tool program path],
+NUT_REPORT_SETTING_PATH([Tool program path],
     BINDIR, "${conftemp}", [Default path for user executables])
 
 dnl same for sbindir
@@ -2992,7 +2992,7 @@ conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 SBINDIR=${conftemp}
-NUT_REPORT_SETTING([System program path],
+NUT_REPORT_SETTING_PATH([System program path],
     SBINDIR, "${conftemp}", [Default path for system executables])
 
 dnl same for libdir
@@ -3000,7 +3000,7 @@ conftemp="${libdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
-NUT_REPORT_SETTING([System library path],
+NUT_REPORT_SETTING_PATH([System library path],
     LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl same for libexecdir
@@ -3008,7 +3008,7 @@ conftemp="${libexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBEXECDIR=${conftemp}
-NUT_REPORT_SETTING([System exec-library path],
+NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
 
