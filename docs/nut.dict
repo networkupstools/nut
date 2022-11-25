@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3058 utf-8
+personal_ws-1.1 en 3059 utf-8
 AAS
 ABI
 ACFAIL
@@ -2017,6 +2017,7 @@ initscripts
 initups
 inline
 innotech
+inplace
 installcheck
 installurl
 instcmd
