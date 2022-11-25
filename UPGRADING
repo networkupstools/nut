@@ -53,6 +53,10 @@ Changes from 2.8.0 to 2.8.1
   or explicitly forfeit building the tool (some distro packages missed it
   quietly in the past) [#1560]
 
+- `configure` script, reference init-script and packaging templates updated
+  to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
+  unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
+
 - snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
   were renamed: 'pw' is now 'eaton_pw_nm2', and 'pxgx_ups' is 'eaton_pxg_ups' 
 
