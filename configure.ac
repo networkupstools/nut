@@ -2189,51 +2189,6 @@ AC_ARG_WITH(port,
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
 
-AC_MSG_CHECKING(user to run as)
-AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_USER="${withval}"
-		nut_user_given=yes
-		;;
-	esac
-], [
-	nut_user_given=no
-])
-AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_USER})
-
-AC_MSG_CHECKING(group membership of user to run as)
-AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_GROUP="${withval}"
-		nut_group_given=yes
-		;;
-	esac
-], [
-	nut_group_given=no
-])
-AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_GROUP})
-
-dnl check that --with-user is given if --with-group is given.
-if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
-	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
-elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
-	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
-fi
-
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
 	AS_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
@@ -3056,6 +3011,55 @@ if test -n "${build_cpu}" -a -n "${build_os}" ; then
 fi
 if test -n "${target_cpu}" -a -n "${target_os}" ; then
 	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
+fi
+
+dnl ----------------------------------------------------------------------
+
+dnl Check the user and group to run as last, so we can use the paths configured
+dnl above as data sources for default values if building an in-place replacement
+AC_MSG_CHECKING(user to run as)
+AC_ARG_WITH(user,
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
+		;;
+	*)
+		RUN_AS_USER="${withval}"
+		nut_user_given=yes
+		;;
+	esac
+], [
+	nut_user_given=no
+])
+AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
+AC_MSG_RESULT(${RUN_AS_USER})
+
+AC_MSG_CHECKING(group membership of user to run as)
+AC_ARG_WITH(group,
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
+		;;
+	*)
+		RUN_AS_GROUP="${withval}"
+		nut_group_given=yes
+		;;
+	esac
+], [
+	nut_group_given=no
+])
+AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
+AC_MSG_RESULT(${RUN_AS_GROUP})
+
+dnl check that --with-user is given if --with-group is given.
+if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
+	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
+elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
+	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
 fi
 
 dnl ----------------------------------------------------------------------
