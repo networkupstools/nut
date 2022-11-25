@@ -213,7 +213,7 @@ endif !HAVE_CPPCHECK
 MAINTAINERCLEANFILES += ChangeLog
 
 # CI builds can leave a log of selected features:
-MAINTAINERCLEANFILES += config.nut_report_feature.log
+MAINTAINERCLEANFILES += config.nut_report_feature.log*
 
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...

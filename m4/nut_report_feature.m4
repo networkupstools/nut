@@ -4,23 +4,32 @@ dnl for example, "usb" (--with-usb) will give
 dnl nut_with_usb and WITH_USB (both macros, and
 dnl AM_CONDITIONAL)
 
+AC_DEFUN([NUT_REPORT_FILE],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    dnl arg#3 = file tag (e.g. number)
+    dnl arg#4 = file title (e.g. "NUT Configuration summary:")
+    if test -z "${nut_report_feature_flag$3}"; then
+        nut_report_feature_flag$3="1"
+        ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
+        if [ "$3" = 1 ]; then
+            echo "$4"
+        else
+            echo ""
+            echo "$4"
+        fi > "config.nut_report_feature.log.$3"
+        echo "$4" | sed 's/./=/g' >> "config.nut_report_feature.log.$3"
+        echo "" >> "config.nut_report_feature.log.$3"
+    fi
+    echo "* $1: $2" >> "config.nut_report_feature.log.$3"
+])
+
 AC_DEFUN([NUT_REPORT],
 [
     dnl arg#1 = description (summary)
     dnl arg#2 = value
-   if test -z "${nut_report_feature_flag}"; then
-      nut_report_feature_flag="1"
-      dnl By (legacy) default we remove this report file
-      dnl For CI we want to publish its artifact
-      dnl Manageable by "--enable-keep_nut_report_feature"
-      AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
-        [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])],
-        [ac_clean_files="${ac_clean_files} config.nut_report_feature.log"])
-      echo "NUT Configuration summary:" >  config.nut_report_feature.log
-      echo "==========================" >> config.nut_report_feature.log
-      echo "" >> config.nut_report_feature.log
-   fi
-   echo "* $1: $2" >> config.nut_report_feature.log
+    NUT_REPORT_FILE($1, $2, 1, "NUT Configuration summary:")
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
@@ -66,11 +75,22 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
     printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
     printf '* CPP     \t: %s\n' "$CPP"
     printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
-   ) >> config.nut_report_feature.log
+   ) > config.nut_report_feature.log.9
 ])
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
-   echo ""
-   cat config.nut_report_feature.log
+    dnl By (legacy) default we remove this report file
+    dnl For CI we want to publish its artifact
+    dnl Manageable by "--enable-keep_nut_report_feature"
+    echo ""
+    AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
+        [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])
+         cat config.nut_report_feature.log.* > config.nut_report_feature.log
+         cat config.nut_report_feature.log
+        ],
+        [dnl Remove if exists from old builds
+         ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
+         cat config.nut_report_feature.log.*
+        ])
 ])
