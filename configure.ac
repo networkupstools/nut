@@ -144,6 +144,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
     dnl If there was no custom --sysconfdir=/etc/myNUT passed, try to default
     dnl TODO: Smarter ways welcome (e.g. reliably look at configure CLI opts)
     AS_IF([test x"${prefix}/etc" = x"${sysconfdir}"], [
+        AC_MSG_CHECKING([for in-place replacement default sysconfdir (better than '${sysconfdir}')])
         dnl TODO: Any more reasonable defaults? Pile them on here :)
         for D in \
             /etc/nut /etc/ups \
@@ -158,12 +159,18 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
                 break
             fi
         done
+        AC_MSG_RESULT([${sysconfdir}])
         ])
 
+    AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
     AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
         [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
+    AC_MSG_RESULT([${RUN_AS_GROUP}])
+
+    AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
     AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
         [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])
+    AC_MSG_RESULT([${RUN_AS_USER}])
 ])
 
 dnl Historically this refers to *system location* for PID files, and
