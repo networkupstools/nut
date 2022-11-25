@@ -1833,6 +1833,10 @@ bindings)
             echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
             ;;
     esac
+
+    if [ -s config.nut_report_feature.log ]; then
+        cat config.nut_report_feature.log
+    fi
     ;;
 
 # These mingw modes below are currently experimental and not too integrated
