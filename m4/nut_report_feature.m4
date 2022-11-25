@@ -63,7 +63,7 @@ AC_DEFUN([NUT_REPORT_SETTING],
     dnl arg#1 = summary/config.log description
     dnl arg#2 = autoconf varname
     dnl arg#3 = value
-    dnl arg#4 = description (summary and autoconf)
+    dnl arg#4 = longer description (autoconf comment)
    AC_MSG_CHECKING([setting for $1])
    AC_MSG_RESULT([$3])
    NUT_REPORT([$1], [$3])
@@ -77,7 +77,7 @@ AC_DEFUN([NUT_REPORT_SETTING_PATH],
     dnl arg#1 = summary/config.log description
     dnl arg#2 = autoconf varname
     dnl arg#3 = value
-    dnl arg#4 = description (summary and autoconf)
+    dnl arg#4 = longer description (autoconf comment)
    AC_MSG_CHECKING([setting for $1])
    AC_MSG_RESULT([$3])
    NUT_REPORT_PATH([$1], [$3])
