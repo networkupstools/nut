@@ -6,8 +6,8 @@ dnl AM_CONDITIONAL)
 
 AC_DEFUN([NUT_REPORT],
 [
-    dnl $1 = description (summary)
-    dnl $2 = value
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
    if test -z "${nut_report_feature_flag}"; then
       nut_report_feature_flag="1"
       dnl By (legacy) default we remove this report file
@@ -25,11 +25,11 @@ AC_DEFUN([NUT_REPORT],
 
 AC_DEFUN([NUT_REPORT_FEATURE],
 [
-    dnl $1 = summary/config.log description
-    dnl $2 = test flag ("yes" or not)
-    dnl $3 = value
-    dnl $4 = autoconf varname
-    dnl $5 = longer description (autoconf comment)
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = test flag ("yes" or not)
+    dnl arg#3 = value
+    dnl arg#4 = autoconf varname
+    dnl arg#5 = longer description (autoconf comment)
    AC_MSG_CHECKING([whether to $1])
    AC_MSG_RESULT([$2 $3])
    NUT_REPORT([$1], [$2 $3])
@@ -42,15 +42,15 @@ AC_DEFUN([NUT_REPORT_FEATURE],
 
 AC_DEFUN([NUT_REPORT_SETTING],
 [
-    dnl $1 = summary/config.log description
-    dnl $2 = autoconf varname
-    dnl $3 = value
-    dnl $4 = description (summary and autoconf)
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = description (summary and autoconf)
    AC_MSG_CHECKING([setting for $1])
    AC_MSG_RESULT([$3])
    NUT_REPORT([$1], [$3])
 
-   # Note: unlike features, settings do not imply an AutoMake toggle
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
