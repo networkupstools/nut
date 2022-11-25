@@ -63,7 +63,8 @@ https://github.com/networkupstools/nut/milestone/8
  - New `configure --enable-inplace-runtime` option should set default values
    for `--sysconfdir`, `--with-user` and `--with-group` options to match an
    existing NUT deployment -- for users who are trying if a custom build
-   of recent codebase solves their practical issues [#1714]
+   of recent codebase solves their practical issues. For "quick tests", a
+   shortcut operation `./ci_build.sh inplace` was added [#1714]
 
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack

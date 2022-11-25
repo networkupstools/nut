@@ -683,6 +683,11 @@ optional_dist_clean_check() {
     return 0
 }
 
+if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
+    shift
+    BUILD_TYPE="inplace"
+fi
+
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
