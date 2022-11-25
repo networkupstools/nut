@@ -3073,13 +3073,45 @@ dnl above as data sources for default values if building an in-place replacement
 
 AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
     AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
-    AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
-        [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])
+    nut_inplace_group=""
+    AS_IF([test -d "${udevdir}/rules.d"],
+        [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
+            if test -s "$F" ; then
+                nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
+                && test -n "`getent group "${nut_inplace_group}"`" \
+                && AC_MSG_RESULT([Got from ${F}]) \
+                && break \
+                || nut_inplace_group=""
+            fi
+         done])
+    AS_IF([test -n "${nut_inplace_group}"],
+        [RUN_AS_GROUP="${nut_inplace_group}"],
+        [AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
+            [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])])
     AC_MSG_RESULT([${RUN_AS_GROUP}])
 
     AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
-    AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
-        [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])
+    nut_inplace_user=""
+    AS_IF([test -s "${CONFPATH}/upsmon.conf"],
+        [nut_inplace_user="`grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+        || nut_inplace_user=""])
+    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libupsclient.pc"],
+        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libupsclient.pc" | sed 's,^ *nutuser=,,'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libupsclient.pc]) \
+        || nut_inplace_user=""])
+    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libnutclient.pc"],
+        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libnutclient.pc" | sed 's,^ *nutuser=,,'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libnutclient.pc]) \
+        || nut_inplace_user=""])
+
+    AS_IF([test -n "${nut_inplace_user}"],
+        [RUN_AS_USER="${nut_inplace_user}"],
+        [AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
+            [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])])
     AC_MSG_RESULT([${RUN_AS_USER}])
 ])
 
