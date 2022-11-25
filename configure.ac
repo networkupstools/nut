@@ -3032,35 +3032,35 @@ NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${
 
 
 if test -n "${host_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])
+	NUT_REPORT_TARGET(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])
 else
 	if test -n "${host}" ; then
-		AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host}", [host env spec we run on])
+		NUT_REPORT_TARGET(AUTOTOOLS_HOST_ALIAS, "${host}", [host env spec we run on])
 	fi
 fi
 if test -n "${build_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host env spec we built on])
+	NUT_REPORT_TARGET(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host env spec we built on])
 else
 	if test -n "${build}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build}", [host env spec we built on])
+		NUT_REPORT_TARGET(AUTOTOOLS_BUILD_ALIAS, "${build}", [host env spec we built on])
 	fi
 fi
 if test -n "${target_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host env spec we built for])
+	NUT_REPORT_TARGET(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host env spec we built for])
 else
 	if test -n "${target}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target}", [host env spec we built for])
+		NUT_REPORT_TARGET(AUTOTOOLS_TARGET_ALIAS, "${target}", [host env spec we built for])
 	fi
 fi
 
 if test -n "${host_cpu}" -a -n "${host_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_SHORT_ALIAS, "${host_cpu}-${host_os}", [host OS short spec we run on])
+	NUT_REPORT_TARGET(AUTOTOOLS_HOST_SHORT_ALIAS, "${host_cpu}-${host_os}", [host OS short spec we run on])
 fi
 if test -n "${build_cpu}" -a -n "${build_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_SHORT_ALIAS, "${build_cpu}-${build_os}", [host OS short spec we built on])
+	NUT_REPORT_TARGET(AUTOTOOLS_BUILD_SHORT_ALIAS, "${build_cpu}-${build_os}", [host OS short spec we built on])
 fi
 if test -n "${target_cpu}" -a -n "${target_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
+	NUT_REPORT_TARGET(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
 fi
 
 dnl ----------------------------------------------------------------------
