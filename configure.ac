@@ -118,11 +118,18 @@ case "${target_os}" in
         ;;
 esac
 
+dnl Defaults for respective configure options below
+dnl Note these defaults may change further below depending on OS and
+dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
 	[RUN_AS_GROUP="nogroup"]
 )
+
+dnl Historically this refers to *system location* for PID files, and
+dnl then NUT init-scripts, systemd-tmpfiles integration or some such
+dnl create and chown a "nut" subdirectory there for the daemons to use.
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
