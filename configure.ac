@@ -168,6 +168,8 @@ dnl and more specifically that for `upsmon` (running as `root`).
 dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
 dnl for the unprivileged daemons (`upsd`, drivers).
 PIDPATH="/var/run"
+dnl Honour new LFS recommendations if applied on the build system:
+AS_IF([test -d "/run"], [PIDPATH="/run"])
 
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
