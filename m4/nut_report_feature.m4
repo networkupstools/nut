@@ -86,6 +86,19 @@ AC_DEFUN([NUT_REPORT_SETTING_PATH],
    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
+AC_DEFUN([NUT_REPORT_TARGET],
+[
+    dnl arg#1 = autoconf varname
+    dnl arg#2 = value
+    dnl arg#3 = summary/config.log/autoconf description
+    AC_MSG_CHECKING([$3])
+    AC_MSG_RESULT([$2])
+    NUT_REPORT_FILE([$3], [$2], 8, "NUT Build/Target system info:")
+
+    dnl Note: unlike features, target info does not imply an AutoMake toggle
+    AC_DEFINE_UNQUOTED($1, $2, $3)
+])
+
 AC_DEFUN([NUT_REPORT_COMPILERS],
 [
    (echo ""
