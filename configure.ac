@@ -3077,13 +3077,15 @@ AC_ARG_WITH(user,
 	*)
 		RUN_AS_USER="${withval}"
 		nut_user_given=yes
+		AC_MSG_RESULT([specified])
 		;;
 	esac
 ], [
 	nut_user_given=no
+	AC_MSG_RESULT([default])
 ])
-AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_USER})
+NUT_REPORT_SETTING([User to run as],
+    RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
@@ -3096,13 +3098,15 @@ AC_ARG_WITH(group,
 	*)
 		RUN_AS_GROUP="${withval}"
 		nut_group_given=yes
+		AC_MSG_RESULT([specified])
 		;;
 	esac
 ], [
 	nut_group_given=no
+	AC_MSG_RESULT([default])
 ])
-AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_GROUP})
+NUT_REPORT_SETTING([Group of user to run as],
+    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
 
 dnl check that --with-user is given if --with-group is given.
 if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
