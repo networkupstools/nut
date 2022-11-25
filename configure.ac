@@ -163,10 +163,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
         ])
 ])
 
-dnl Historically this refers to *system location* for PID files, and
-dnl then NUT init-scripts, systemd-tmpfiles integration or some such
-dnl create and chown a "nut" subdirectory there for the daemons to use.
-dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below.
+dnl Historically this refers to *system location* for PID files,
+dnl and more specifically that for `upsmon` (running as `root`).
+dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
+dnl for the unprivileged daemons (`upsd`, drivers).
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -2138,6 +2138,23 @@ AC_ARG_WITH(altpidpath,
 NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
     ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
+AC_MSG_CHECKING(pidpath)
+AC_ARG_WITH(pidpath,
+	AS_HELP_STRING([--with-pidpath=PATH], [Path for root-owned .pid files (${PIDPATH}, typically /var/run)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
+		;;
+	*)
+		PIDPATH="${withval}"
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [AC_MSG_RESULT([default])])
+NUT_REPORT_SETTING_PATH([Privileged PID file path],
+    PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
+
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
 	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
@@ -2197,23 +2214,6 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 NUT_REPORT_SETTING_PATH([HTML file path],
     HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
-
-AC_MSG_CHECKING(pidpath)
-AC_ARG_WITH(pidpath,
-	AS_HELP_STRING([--with-pidpath=PATH], [system base path for .pid files (${PIDPATH}, typically /var/run and ./nut will be created there)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
-		;;
-	*)
-		PIDPATH="${withval}"
-		AC_MSG_RESULT([specified])
-		;;
-	esac
-], [AC_MSG_RESULT([default])])
-NUT_REPORT_SETTING_PATH([System PID file path],
-    PIDPATH, "${PIDPATH}", [System default path where the pid files should go])
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
@@ -3529,10 +3529,13 @@ d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @STATEPATH@
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @PIDPATH@/nut
-EOF])
+        [AS_CASE(["${PIDPATH}"],
+            [*/run], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
+            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@
+EOF
+])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -

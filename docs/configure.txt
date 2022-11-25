@@ -544,8 +544,9 @@ Directories used by NUT at run-time
 
 	--with-pidpath=PATH
 
-Changes the directory where pid files are stored.  By default this is
-`/var/run`.  Certain programs like `upsmon` will leave files here.
+Changes the directory where NUT pid files are stored for processes running
+as `root`.  By default this is `/var/run`.  Certain programs like `upsmon`
+will leave files here.
 
 	--with-altpidpath=PATH
 
