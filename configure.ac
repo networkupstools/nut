@@ -3536,7 +3536,7 @@ X @STATEPATH@
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
         [AS_CASE(["${PIDPATH}"],
-            [*/run], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
+            [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
             [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @PIDPATH@
