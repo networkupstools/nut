@@ -683,6 +683,11 @@ optional_dist_clean_check() {
     return 0
 }
 
+if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
+    shift
+    BUILD_TYPE="inplace"
+fi
+
 if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
@@ -969,6 +974,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+
+    if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
+        CONFIG_OPTS+=("--enable-inplace-runtime")
+    fi
 
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
@@ -1759,7 +1768,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
-"")
+""|inplace)
     echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
@@ -1793,13 +1802,21 @@ bindings)
     # Below we aim for really fast iterations of C/C++ development so
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can.
-    ${CONFIGURE_SCRIPT} --enable-Wcolor \
+    CONFIG_OPTS=(--enable-Wcolor \
         --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
-        --enable-check-NIT --enable-maintainer-mode
+        --enable-check-NIT --enable-maintainer-mode)
+
+    # Not default for parameter-less build, to prevent "make check-NIT"
+    # from somehow interfering with the running daemons.
+    if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
+        CONFIG_OPTS+=("--enable-inplace-runtime")
+    fi
+
+    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
@@ -1816,6 +1833,10 @@ bindings)
             echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
             ;;
     esac
+
+    if [ -s config.nut_report_feature.log ]; then
+        cat config.nut_report_feature.log
+    fi
     ;;
 
 # These mingw modes below are currently experimental and not too integrated

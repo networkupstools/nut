@@ -7,6 +7,26 @@ There are a few options reviewed below that can be given to `configure`
 script to tweak your compilations. See also `./configure --help` for a
 current and complete listing for the current version of the codebase.
 
+In-place replacement defaults
+-----------------------------
+
+A common situation for NUT builds is to verify whether current version
+of the codebase (e.g. recent and not-yet-packaged release, or a Git branch)
+solves some issues of an existing deployment. Such tests are simplified
+if the new build of NUT plays by the same systems integration rules as
+the already deployed (e.g. package-delivered) version, specifically about
+filesystem access permissions and configuration file locations.
+
+	--enable-inplace-runtime
+
+Tries to detect and pre-set `configure` defaults for run-time settings
+(which you can still override if needed, but no longer *must* specify
+explicitly to be on same page as the existing setup):
+
+* --sysconfdir
+* --with-user
+* --with-group
+
 Driver selection
 ----------------
 
@@ -311,6 +331,8 @@ Daemon user accounts
 	--with-user=<username>
 	--with-group=<groupname>
 
+See also `--enable-inplace-runtime`.
+
 Programs started as `root` will `setuid()` to `<username>` for somewhat
 safer operation.  You can override this with `-u <otheruser>` in several
 programs, including `upsdrvctl` (and all drivers by extension), `upsd`,
@@ -371,7 +393,7 @@ default, it is the same as `<prefix>`.
 
 Changes the location where NUT's configuration files are stored.
 By default this path is `<prefix>/etc`.  Setting this to `/etc/nut` or
-`/etc/ups` might be useful.
+`/etc/ups` might be useful. See also `--enable-inplace-runtime`.
 
 The `NUT_CONFPATH` environment variable overrides this at run time.
 
@@ -522,8 +544,9 @@ Directories used by NUT at run-time
 
 	--with-pidpath=PATH
 
-Changes the directory where pid files are stored.  By default this is
-`/var/run`.  Certain programs like `upsmon` will leave files here.
+Changes the directory where NUT pid files are stored for processes running
+as `root`.  By default this is `/var/run`.  Certain programs like `upsmon`
+will leave files here.
 
 	--with-altpidpath=PATH
 

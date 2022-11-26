@@ -60,6 +60,12 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed building of NUT man pages when just a few drivers are selected
      by `configure` script for custom builds [#1467]
 
+ - New `configure --enable-inplace-runtime` option should set default values
+   for `--sysconfdir`, `--with-user` and `--with-group` options to match an
+   existing NUT deployment -- for users who are trying if a custom build
+   of recent codebase solves their practical issues. For "quick tests", a
+   shortcut operation `./ci_build.sh inplace` was added [#1714]
+
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
@@ -162,6 +168,10 @@ https://github.com/networkupstools/nut/milestone/8
 
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
+
+ - `configure` script, reference init-script and packaging templates updated
+   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
+   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now
