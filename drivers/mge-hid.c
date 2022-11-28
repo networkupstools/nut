@@ -687,7 +687,7 @@ static const char *eaton_compute_realpower_fun(double value)
 		ups_load = atoi(str_ups_load);
 		power_nominal = atoi(str_power_nominal);
 		if (str_powerfactor)
-			powerfactor = atoi(str_powerfactor);
+			powerfactor = atof(str_powerfactor);
 		/* Compute the value */
 		realpower = round(ups_load * 0.01 * power_nominal * powerfactor);
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", realpower);
