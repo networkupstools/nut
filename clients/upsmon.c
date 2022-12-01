@@ -104,6 +104,10 @@ static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 #endif
 
+#ifdef HAVE_SYSTEMD
+# define SERVICE_UNIT_NAME "nut-monitor.service"
+#endif
+
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
  * can define a debug_min value in the global section,
@@ -2373,6 +2377,33 @@ int main(int argc, char *argv[])
 		} else {
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
+
+# ifdef HAVE_SYSTEMD
+		if (cmdret != 0) {
+			switch (cmd) {
+				case SIGCMD_RELOAD:
+					upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+				case SIGCMD_STOP:
+					upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+				case SIGCMD_FSD:
+					if (oldpid < 0) {
+						upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+					}
+					break;
+				default:
+					upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+			}
+		}
+# endif
 #else
 		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
 #endif
