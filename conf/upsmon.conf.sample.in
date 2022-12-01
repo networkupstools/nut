@@ -27,6 +27,7 @@
 #
 # This user should not have write access to upsmon.conf.
 #
+# (Unprivileged) OS account to run as:
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
