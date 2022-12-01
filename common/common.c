@@ -229,7 +229,7 @@ struct passwd *get_user_pwent(const char *name)
 	   some implementations of getpwnam() do not set errno when this
 	   happens. */
 	if (errno == 0)
-		fatalx(EXIT_FAILURE, "user %s not found", name);
+		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 #else
