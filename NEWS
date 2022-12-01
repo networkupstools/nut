@@ -121,11 +121,11 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
    * Better manage the slight nuances (especially in ups.status) between
-     Eaton UPSs, and rename mibs from 'pw' to 'eaton_pw_nm2', and from
-     'pxgx_ups' to 'eaton_pxg_ups' 
+     Eaton UPSs, and rename mibs from `pw` to `eaton_pw_nm2`, and from
+     `pxgx_ups` to `eaton_pxg_ups` [#1715]
    * Fixed the long standing "Warning: excessive poll failures" issue, that
-     was tied to non-existent OIDs, not well handled in some part of the driver
-
+     was tied to non-existent OIDs, not well handled in some parts of the
+     driver [#1716]
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]

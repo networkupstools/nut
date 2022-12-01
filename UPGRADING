@@ -58,7 +58,8 @@ Changes from 2.8.0 to 2.8.1
   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
 
 - snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
-  were renamed: 'pw' is now 'eaton_pw_nm2', and 'pxgx_ups' is 'eaton_pxg_ups' 
+  were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`
+  [#1715]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------
