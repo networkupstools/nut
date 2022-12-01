@@ -159,6 +159,9 @@ static int	reload_flag = 0, exit_flag = 0;
 /* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
 #define UUID4_BYTESIZE 16
 
+#ifdef HAVE_SYSTEMD
+# define SERVICE_UNIT_NAME "nut-server.service"
+#endif
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -1690,6 +1693,32 @@ int main(int argc, char **argv)
 		} else {
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
+
+# ifdef HAVE_SYSTEMD
+		if (cmdret != 0) {
+			switch (cmd) {
+				case SIGCMD_RELOAD:
+					upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+				case SIGCMD_STOP:
+					upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+				default:
+					upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
+						SERVICE_UNIT_NAME,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+			}
+			/* ... or edit nut-server.service locally to start `upsd -FF`
+			 * and so save the PID file for ability to manage the daemon
+			 * beside the service framework, possibly confusing things...
+			 */
+		}
+# endif
 #else
 		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
 #endif
