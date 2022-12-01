@@ -118,12 +118,60 @@ case "${target_os}" in
         ;;
 esac
 
+dnl Note: this deals with run-time settings so that the newly built
+dnl programs can be "just executed" to use same configuration files
+dnl and filesystem object permissions as an older deployment of NUT
+dnl on this system; this specifically does not deal with trying to
+dnl use same prefix and other paths to fully replace an older setup
+dnl (a different option might be crafted to do that, but really the
+dnl arcane distro-dependent packaging recipes are a better way here).
+dnl This feature is intended for users who want to see if a custom
+dnl build of NUT supports their hardware or other use-cases better.
+NUT_ARG_ENABLE([inplace-runtime],
+    [Request configure option defaults for runtime user/group/confpath based on currently installed NUT (to extent these can be detected)],
+    [no])
+
+dnl Defaults for respective configure options below
+dnl Note these defaults may change further below depending on OS and
+dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
-	[RUN_AS_GROUP="nogroup"]
+    [RUN_AS_GROUP="nogroup"]
 )
+
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
+    dnl If there was no custom --sysconfdir=/etc/myNUT passed,
+    dnl try to default it to something from existing deployment.
+    dnl NOTE: Single-quotes are correct for autotools default,
+    dnl expanded at runtime (see conftemp tricks below)
+    AS_IF([test x'${prefix}/etc' = x"${sysconfdir}"], [
+        AC_MSG_CHECKING([for in-place replacement default sysconfdir (better than '${sysconfdir}')])
+        dnl TODO: Any more reasonable defaults? Pile them on here :)
+        for D in \
+            /etc/nut /etc/ups \
+            /usr/etc/nut /usr/etc/ups \
+            /usr/local/etc/nut /usr/local/etc/ups \
+            /usr/local/nut/etc /usr/local/ups/etc \
+        ; do
+            if test -e "$D/ups.conf" || test -e "$D/upsmon.conf" \
+            || ( test -e "$D/upsd.conf" && test -e "$D/upsd.users" ) \
+            ; then
+                sysconfdir="$D"
+                break
+            fi
+        done
+        AC_MSG_RESULT([${sysconfdir}])
+        ])
+])
+
+dnl Historically this refers to *system location* for PID files,
+dnl and more specifically that for `upsmon` (running as `root`).
+dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
+dnl for the unprivileged daemons (`upsd`, drivers).
 PIDPATH="/var/run"
+dnl Honour new LFS recommendations if applied on the build system:
+AS_IF([test -d "/run"], [PIDPATH="/run"])
 
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
@@ -150,6 +198,10 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
+
+NUT_ARG_ENABLE([keep_nut_report_feature],
+    [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
+    [no])
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
@@ -2045,10 +2097,12 @@ AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
+NUT_REPORT_SETTING_PATH([Default installation prefix path],
+    PREFIX, "${prefix}", [Default installation prefix path])
 
-AC_MSG_CHECKING(state path)
+AC_MSG_CHECKING(if requested state path)
 AC_ARG_WITH(statepath,
-	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
+	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (${STATEPATH}, typically /var/state/ups)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -2056,11 +2110,12 @@ AC_ARG_WITH(statepath,
 		;;
 	*)
 		STATEPATH="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
-AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
-AC_MSG_RESULT(${STATEPATH})
+], [AC_MSG_RESULT([default])])
+NUT_REPORT_SETTING_PATH([State file path],
+    STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
@@ -2069,9 +2124,9 @@ dnl /var/run path.  This defaults to the STATEPATH since they should be
 dnl able to write there.
 dnl
 
-AC_MSG_CHECKING(alt pid path)
+AC_MSG_CHECKING(if requested alt pid path)
 AC_ARG_WITH(altpidpath,
-	AS_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
+	AS_HELP_STRING([--with-altpidpath=PATH], [path for NUT driver/upsd .pid files not running as root (<statepath>)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -2079,15 +2134,34 @@ AC_ARG_WITH(altpidpath,
 		;;
 	*)
 		ALTPIDPATH="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
 ], [
 	ALTPIDPATH="${STATEPATH}"
+	AC_MSG_RESULT([default])
 ])
-AC_DEFINE_UNQUOTED(ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of drivers and upsd (usually STATEPATH)])
-AC_MSG_RESULT(${ALTPIDPATH})
+NUT_REPORT_SETTING_PATH([Unprivileged PID file path],
+    ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of processes not running as root, such as drivers and upsd (usually STATEPATH)])
 
-AC_MSG_CHECKING(driver path)
+AC_MSG_CHECKING(if requested pidpath)
+AC_ARG_WITH(pidpath,
+	AS_HELP_STRING([--with-pidpath=PATH], [Path for root-owned .pid files (${PIDPATH}, typically /var/run)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
+		;;
+	*)
+		PIDPATH="${withval}"
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [AC_MSG_RESULT([default])])
+NUT_REPORT_SETTING_PATH([Privileged PID file path],
+    PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
+
+AC_MSG_CHECKING(if requested driver path)
 AC_ARG_WITH(drvpath,
 	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
 [
@@ -2097,16 +2171,17 @@ AC_ARG_WITH(drvpath,
 		;;
 	*)
 		driverexecdir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}", [Default path for UPS drivers])
-AC_MSG_RESULT(${driverexecdir})
+NUT_REPORT_SETTING_PATH([Driver program path],
+    DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
-AC_MSG_CHECKING(cgi path)
+AC_MSG_CHECKING(if requested cgi path)
 AC_ARG_WITH(cgipath,
 	AS_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
 [
@@ -2116,16 +2191,17 @@ AC_ARG_WITH(cgipath,
 		;;
 	*)
 		cgiexecdir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}", [Default path for CGI programs])
-AC_MSG_RESULT(${cgiexecdir})
+NUT_REPORT_SETTING_PATH([CGI program path],
+    CGIPATH, "${conftemp}", [Default path for CGI programs])
 
-AC_MSG_CHECKING(html path)
+AC_MSG_CHECKING(if requested html path)
 AC_ARG_WITH(htmlpath,
 	AS_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
 [
@@ -2135,30 +2211,15 @@ AC_ARG_WITH(htmlpath,
 		;;
 	*)
 		htmldir="${withval}"
+		AC_MSG_RESULT([specified])
 		;;
 	esac
-], [])
+], [AC_MSG_RESULT([default])])
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}", [Default path for HTML files])
-AC_MSG_RESULT(${htmldir})
-
-AC_MSG_CHECKING(pidpath)
-AC_ARG_WITH(pidpath,
-	AS_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
-		;;
-	*)
-		PIDPATH="${withval}"
-		;;
-	esac
-], [])
-AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [Path where the pid files should go])
-AC_MSG_RESULT(${PIDPATH})
+NUT_REPORT_SETTING_PATH([HTML file path],
+    HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
@@ -2177,51 +2238,6 @@ AC_ARG_WITH(port,
 ])
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
-
-AC_MSG_CHECKING(user to run as)
-AC_ARG_WITH(user,
-	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_USER="${withval}"
-		nut_user_given=yes
-		;;
-	esac
-], [
-	nut_user_given=no
-])
-AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_USER})
-
-AC_MSG_CHECKING(group membership of user to run as)
-AC_ARG_WITH(group,
-	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
-[
-	case "${withval}" in
-	yes|no)
-		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
-		;;
-	*)
-		RUN_AS_GROUP="${withval}"
-		nut_group_given=yes
-		;;
-	esac
-], [
-	nut_group_given=no
-])
-AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
-AC_MSG_RESULT(${RUN_AS_GROUP})
-
-dnl check that --with-user is given if --with-group is given.
-if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
-	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
-elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
-	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
-fi
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
@@ -2475,8 +2491,8 @@ case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
 			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${withval}" = yes],
-				[AC_MSG_ERROR([--with-systemdsystemunitdir=${withval} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			[AS_IF([test "${systemdsystemunitdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
 			 systemdsystemunitdir=""
 			])
 		;;
@@ -2484,7 +2500,8 @@ case "${systemdsystemunitdir}" in
 		systemdsystemunitdir=""
 		;;
 	*)
-		systemdsystemunitdir="${withval}"
+		AS_IF([test -d "${systemdsystemunitdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystemunitdir='${systemdsystemunitdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
@@ -2518,7 +2535,8 @@ if test -n "${systemdsystemunitdir}"; then
 		systemdshutdowndir=""
 		;;
 	*)
-		systemdshutdowndir="${withval}"
+		AS_IF([test -d "${systemdshutdowndir}"], [],
+			[AC_MSG_WARN([--with-systemdshutdowndir='${systemdshutdowndir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 	esac
 fi
@@ -2549,7 +2567,8 @@ case "${systemdtmpfilesdir}" in
 		systemdtmpfilesdir=""
 		;;
 	*)
-		systemdtmpfilesdir="${withval}"
+		AS_IF([test -d "${systemdtmpfilesdir}"], [],
+			[AC_MSG_WARN([--with-systemdtmpfilesdir='${systemdtmpfilesdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
 		;;
 esac
 if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
@@ -2758,7 +2777,7 @@ fi
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
-	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
+	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (${hotplugdir}); typically /etc/hotplug]),
 [
 	case "${withval}" in
 	yes)
@@ -2786,10 +2805,10 @@ AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
 AC_MSG_CHECKING(whether to install udev rules)
 AC_ARG_WITH(udev-dir,
-	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/lib/udev or /etc/udev)]),
+	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (${udevdir}; typically /lib/udev or /etc/udev)]),
 [
 	case "${withval}" in
-	yes)
+	yes) dnl Typically /lib/udev or /etc/udev
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
@@ -2824,10 +2843,10 @@ dnl FreeBSD devd support:
 
 AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
 AC_ARG_WITH(devd-dir,
-	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (/usr/local/etc/devd or /etc/devd)]),
+	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (${devddir}; typically /usr/local/etc/devd or /etc/devd)]),
 [
 	case "${withval}" in
-	yes)
+	yes) dnl Typically /usr/local/etc/devd or /etc/devd
 		if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([devd directory requested but not found])
@@ -2955,42 +2974,48 @@ conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 CONFPATH=${conftemp}
-AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}", [Default path for configuration files])
+NUT_REPORT_SETTING_PATH([Config file path],
+    CONFPATH, "${conftemp}", [Default path for configuration files])
 
 dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 NUT_DATADIR=${conftemp}
-AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
+NUT_REPORT_SETTING_PATH([Data file path],
+    NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 BINDIR=${conftemp}
-AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
+NUT_REPORT_SETTING_PATH([Tool program path],
+    BINDIR, "${conftemp}", [Default path for user executables])
 
 dnl same for sbindir
 conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 SBINDIR=${conftemp}
-AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
+NUT_REPORT_SETTING_PATH([System program path],
+    SBINDIR, "${conftemp}", [Default path for system executables])
 
 dnl same for libdir
 conftemp="${libdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
-AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
+NUT_REPORT_SETTING_PATH([System library path],
+    LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl same for libexecdir
 conftemp="${libexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBEXECDIR=${conftemp}
-AC_DEFINE_UNQUOTED(LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
+NUT_REPORT_SETTING_PATH([System exec-library path],
+    LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
 
 dnl checks related to --with-snmp enabled on command-line
@@ -3013,35 +3038,134 @@ NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${
 
 
 if test -n "${host_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])
+	NUT_REPORT_TARGET(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])
 else
 	if test -n "${host}" ; then
-		AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host}", [host env spec we run on])
+		NUT_REPORT_TARGET(AUTOTOOLS_HOST_ALIAS, "${host}", [host env spec we run on])
 	fi
 fi
 if test -n "${build_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host env spec we built on])
+	NUT_REPORT_TARGET(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host env spec we built on])
 else
 	if test -n "${build}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build}", [host env spec we built on])
+		NUT_REPORT_TARGET(AUTOTOOLS_BUILD_ALIAS, "${build}", [host env spec we built on])
 	fi
 fi
 if test -n "${target_alias}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host env spec we built for])
+	NUT_REPORT_TARGET(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host env spec we built for])
 else
 	if test -n "${target}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target}", [host env spec we built for])
+		NUT_REPORT_TARGET(AUTOTOOLS_TARGET_ALIAS, "${target}", [host env spec we built for])
 	fi
 fi
 
 if test -n "${host_cpu}" -a -n "${host_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_SHORT_ALIAS, "${host_cpu}-${host_os}", [host OS short spec we run on])
+	NUT_REPORT_TARGET(AUTOTOOLS_HOST_SHORT_ALIAS, "${host_cpu}-${host_os}", [host OS short spec we run on])
 fi
 if test -n "${build_cpu}" -a -n "${build_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_SHORT_ALIAS, "${build_cpu}-${build_os}", [host OS short spec we built on])
+	NUT_REPORT_TARGET(AUTOTOOLS_BUILD_SHORT_ALIAS, "${build_cpu}-${build_os}", [host OS short spec we built on])
 fi
 if test -n "${target_cpu}" -a -n "${target_os}" ; then
-	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
+	NUT_REPORT_TARGET(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
+fi
+
+dnl ----------------------------------------------------------------------
+dnl Check the user and group to run as last, so we can use the paths configured
+dnl above as data sources for default values if building an in-place replacement
+
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
+    AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
+    nut_inplace_group=""
+    AS_IF([test -d "${udevdir}/rules.d"],
+        [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
+            if test -s "$F" ; then
+                nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
+                && test -n "`getent group "${nut_inplace_group}"`" \
+                && AC_MSG_RESULT([Got from ${F}]) \
+                && break \
+                || nut_inplace_group=""
+            fi
+         done])
+    AS_IF([test -n "${nut_inplace_group}"],
+        [RUN_AS_GROUP="${nut_inplace_group}"],
+        [AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
+            [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])])
+    AC_MSG_RESULT([${RUN_AS_GROUP}])
+
+    AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
+    nut_inplace_user=""
+    AS_IF([test -s "${CONFPATH}/upsmon.conf"],
+        [nut_inplace_user="`grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+        || nut_inplace_user=""])
+    dnl Note: with default short inplace and no prefix, this would look under
+    dnl /usr/local/ups/lib/pkgconfig which may be irrelevant for packaged setups
+    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libupsclient.pc"],
+        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libupsclient.pc" | sed 's,^ *nutuser=,,'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libupsclient.pc]) \
+        || nut_inplace_user=""])
+    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libnutclient.pc"],
+        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libnutclient.pc" | sed 's,^ *nutuser=,,'`" \
+        && test -n "`getent passwd "${nut_inplace_user}"`" \
+        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libnutclient.pc]) \
+        || nut_inplace_user=""])
+
+    AS_IF([test -n "${nut_inplace_user}"],
+        [RUN_AS_USER="${nut_inplace_user}"],
+        [AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
+            [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])])
+    AC_MSG_RESULT([${RUN_AS_USER}])
+])
+
+AC_MSG_CHECKING(if requested user to run as)
+AC_ARG_WITH(user,
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
+		;;
+	*)
+		RUN_AS_USER="${withval}"
+		nut_user_given=yes
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [
+	nut_user_given=no
+	AC_MSG_RESULT([default])
+])
+NUT_REPORT_SETTING([User to run as],
+    RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
+
+AC_MSG_CHECKING(if requested group membership of user to run as)
+AC_ARG_WITH(group,
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (${RUN_AS_GROUP})]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
+		;;
+	*)
+		RUN_AS_GROUP="${withval}"
+		nut_group_given=yes
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [
+	nut_group_given=no
+	AC_MSG_RESULT([default])
+])
+NUT_REPORT_SETTING([Group of user to run as],
+    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
+
+dnl check that --with-user is given if --with-group is given.
+if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
+	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
+elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
+	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
 fi
 
 dnl ----------------------------------------------------------------------
@@ -3088,6 +3212,8 @@ AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
+AC_SUBST(ALTPIDPATH)
+dnl #Not in main codebase yet# AC_SUBST(ALTSTATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
@@ -3441,23 +3567,27 @@ AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
      cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
 # State file (e.g. upsd to driver) and pidfile location for NUT:
-d @STATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @STATEPATH@/nut
+d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @STATEPATH@
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @PIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @PIDPATH@/nut
-EOF])
+        [AS_CASE(["${PIDPATH}"],
+            [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
+            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @PIDPATH@
+EOF
+])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @ALTPIDPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @ALTPIDPATH@/nut
+d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTPIDPATH@
 EOF])
+    dnl Generally added to support some forks
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
-d @ALTSTATEPATH@/nut 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
-X @ALTSTATEPATH@/nut
+d @ALTSTATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+X @ALTSTATEPATH@
 EOF])
 ])
 AC_MSG_RESULT([done])
@@ -3575,4 +3705,5 @@ m4_foreach_w([SCRIPTFILE], [
 
 AC_OUTPUT
 
+NUT_REPORT_COMPILERS
 NUT_PRINT_FEATURE_REPORT

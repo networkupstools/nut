@@ -43,12 +43,25 @@ install:
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -S --needed base-devel mingw-w64-x86_64-toolchain autoconf-wrapper automake-wrapper libtool mingw-w64-x86_64-libltdl gcc ccache mingw-w64-x86_64-ccache git aspell aspell-en python mingw-w64-x86_64-python-pygments mingw-w64-x86_64-winpthreads-git mingw-w64-x86_64-libusb mingw-w64-x86_64-libusb-compat-git mingw-w64-x86_64-neon libneon-devel mingw-w64-x86_64-libmodbus-git mingw-w64-x86_64-libgd mingw-w64-x86_64-cppunit"
   - cmd: |
         REM Assorted stats after package processing:
-        C:\msys64\usr\bin\bash -lc "date -u; ls la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
+        C:\msys64\usr\bin\bash -lc "date -u; ls -la / ; du -ksx / ; date -u; du -ks /var/cache/pacman/pkg; date -u"
         REM Preserve the current working directory:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats"'
+
+
+before_build:
+  - cmd: |
+      REM Ensure we have a net-snmp to build against
+      REM Adapted from scripts/Windows/README document.
+      REM Here we hope to build it once, then use the
+      REM stashed version across Appveyor rebuilds.
+      REM Preserve the current working directory:
+      set CHERE_INVOKING=yes
+      REM Start a 64 bit Mingw environment:
+      set MSYSTEM=MINGW64
+      C:\msys64\usr\bin\bash -lc "date -u; export MSYS2_PATH ; bash ./scripts/Windows/build-mingw-prereqs.sh"
 
 
 build_script:
@@ -102,7 +115,10 @@ artifacts:
     name: Bundle of binary files and FOSS dependencies of NUT for Windows
 
   - path: config.log
-    name: config.log
+    name: config.log of recent build of NUT for Windows
+
+  - path: config.nut_report_feature.log
+    name: config.nut_report_feature.log of recent build of NUT for Windows
 
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
@@ -110,6 +126,7 @@ cache:
   - C:\msys64\home\appveyor\.ccache
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
   - C:\msys64\var\cache\pacman\pkg
+  - C:\msys64\home\appveyor\nut-win-deps
 
 # Below we tried to stash binaries of MSYS2 environment
 # so VM deployment is faster on subsequent builds

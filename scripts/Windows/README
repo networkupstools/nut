@@ -12,7 +12,9 @@ test and fix programs, re-enable some code just commented away by ifdefs...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
 for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
-handled by NUT common `ci_build.sh` script. Possibly, the instructions below
+handled by NUT common `ci_build.sh` script. Most prerequisites are already
+packaged in that environment, but notably net-snmp is missing -- but can be
+built from source following this document. Possibly, the instructions below
 would converge there over time to keep it simple.
 
 For additional reference about prerequisite preparation and further ideas for
@@ -102,6 +104,43 @@ or
 :; PREFIX="/usr/$ARCH"
 ------
 
+- NOTE: Technically, these instructions may apply to builds with MinGW on
+  Windows semi-natively (e.g. to add the net-snmp libraries which are not
+  packaged for MSYS2 MinGW currently). Generally you can use environment
+  variables set by different launchers of MinGW terminal sessions depending
+  on the target profile (32/64 bit, gcc/clang, libc implementation...)
+
+** For `sudo make install` in instructions below, you may have to omit the
+   `sudo` part if missing in your MSYS2 MinGW environment;
+
+** For a "native build" directly for consumption in the currently configured
+   environment, you would not use cross-build path in `PREFIX` and not set
+   the `HOST_FLAG` value:
++
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX"
+:; export HOST_FLAG=""
+------
+
+** If you wanted a "real cross-build" for a different MinGW environment, you
+   might want to set those (but the NUT build would then need to be told to
+   search for headers, libraries and pkg-config data in extra locations):
++
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX/$ARCH"
+:; export HOST_FLAG="--host=$ARCH"
+------
+** You might want then to verify that it sets values you expect with a command
+   like this:
++
+------
+:; set | grep -E '^(ARCH|PREFIX|HOST_FLAG)='
+#export ARCH="x86_64-w64-mingw32"
+#PREFIX="/mingw64/x86_64-w64-mingw32"
+------
+
 - on Debian/Ubuntu style systems also:
 ------
 :; BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
@@ -111,18 +150,18 @@ or
 
 - also export the following compilation flags:
 ------
-:; export CFLAGS="$CFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I/usr/$ARCH/include/"
-:; export LDFLAGS="$LDFLAGS -L/usr/$ARCH/lib/"
-:; export PKG_CONFIG_PATH="$PREFIX"/lib/pkgconfig
+:; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export LDFLAGS="$LDFLAGS -L${PREFIX}/lib/"
+:; export PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig
 ------
 
 - prepare the download and build area, e.g. to match copy-paste instructions
-  below, it would be like:
+below, it would be like:
 ------
-:; mkdir -p ~/nut-win-deps/"$ARCH"
 :; DLDIR=~/nut-win-deps
-:; WSDIR=~/nut-win-deps/"$ARCH"
+:; WSDIR="$DLDIR"/"$ARCH"
+:; mkdir -p "$WSDIR" "$DLDIR"
 ------
 
 ================================================================================
@@ -155,9 +194,9 @@ You can also compile it (where that is still needed) using:
 	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
 	:; cd pthreads-w32-2-8-0-release/
 	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
-	:; sudo cp *.dll /usr/$ARCH/pthreads/lib/
-	:; sudo cp *.a /usr/$ARCH/lib/
-	:; sudo cp pthread.h sched.h semaphore.h /usr/$ARCH/pthreads/include
+	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
+	:; sudo cp *.a ${PREFIX}/lib/
+	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
 
 
 MinGW regex library
@@ -473,7 +512,7 @@ net-snmp
 	:; yes "" | ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
 	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
-	    --with-persistent-directory=/usr/$ARCH/var/net-snmp \
+	    --with-persistent-directory="${PREFIX}/var/net-snmp" \
 	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
 	    --enable-shared
 	# NOTE: ./configure script may ask a few questions, or may just print
@@ -482,13 +521,14 @@ net-snmp
 	# The following long `LDFLAGS` ensure that shared `libnetsnmp-40.dll`
 	# gets built and later installed (and siblings which NUT does not use):
 	:; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long"
+	:; find . -type f -name '*.dll' -o -name '*.dll.a'
 	:; sudo make install
 
 NOTE: net-snmp tends to only `make` a static-linking library for Windows
 by default (the shared library only appears with `LDFLAGS` proposed above).
 In this case consumers must link not only with `-lnetsnmp` but also its
 dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
-your build (or installation in `/usr/$ARCH/lib/pkgconfig/netsnmp.pc`).
+your build (or installation in `${PREFIX}/lib/pkgconfig/netsnmp.pc`).
 Builds can extract this info with `pkg-config --libs --static netsnmp`
 as NUT scenarios do (for mingw, if shared-linking attempt fails).
 
@@ -540,7 +580,7 @@ Needed for glib2 (further for avahi).
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make all
 	:; sudo make install
-	:; sudo ln -s libpcre2-posix.pc /usr/$ARCH/lib/pkgconfig/libpcre.pc
+	:; sudo ln -s libpcre2-posix.pc ${PREFIX}/lib/pkgconfig/libpcre.pc
 
 
 gettext/libintl
@@ -706,7 +746,7 @@ targets.
 NOTE: For other ways of building and packaging, it might make sense for
 a packaged delivery to also `make install DESTDIR=.../nut_install` from
 the sources of dependency projects built above, or at least to copy the
-built `*.dll` files from `$PREFIX/bin` to `nut_install/bin`. For those
+built `*.dll` files from `${PREFIX}/bin` to `nut_install/bin`. For those
 dependencies that are listed above, the script does this best-effort
 activity (does not fail if some are missing, but running the programs
 can fail later).

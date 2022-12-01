@@ -60,6 +60,12 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed building of NUT man pages when just a few drivers are selected
      by `configure` script for custom builds [#1467]
 
+ - New `configure --enable-inplace-runtime` option should set default values
+   for `--sysconfdir`, `--with-user` and `--with-group` options to match an
+   existing NUT deployment -- for users who are trying if a custom build
+   of recent codebase solves their practical issues. For "quick tests", a
+   shortcut operation `./ci_build.sh inplace` was added [#1714]
+
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
@@ -75,6 +81,7 @@ https://github.com/networkupstools/nut/milestone/8
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
      correct output voltage data [#1497]
+   * apc-hid subdriver now also supports ProductID 0x0004 [#1429]
    * the `usbhid-ups` driver should now reconnect if `libusb` returned a
      memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
      Resource temporarily unavailable"), which can cause practical problems
@@ -100,11 +107,25 @@ https://github.com/networkupstools/nut/milestone/8
      and MacOS on CircleCI [#1552]
 
  - snmp-ups updates:
+   * Fixed detection for device agents which wrongly return the sysOID value
+     as a string instead of an OID [#1710]
    * IETF MIB mapping updated for data points where negative readings
      are invalid [#1558]
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
+   * Added SNMP subdriver "eaton-pdu-nlogic-mib" for nLogic (rebranded Eaton)
+     support [#1698]
+   * Added SNMP subdriver "hpe-pdu3-cis-mib" for HPE G2 Metered & Switched PDU
+     initial "unitary" support (no daisychain support yet); also note that due
+     to SNMP v1 implementation limitations on this device, you should prefer
+     SNMP v3 to get both read and write rights [#1713]
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
+   * Better manage the slight nuances (especially in ups.status) between
+     Eaton UPSs, and rename mibs from 'pw' to 'eaton_pw_nm2', and from
+     'pxgx_ups' to 'eaton_pxg_ups' 
+   * Fixed the long standing "Warning: excessive poll failures" issue, that
+     was tied to non-existent OIDs, not well handled in some part of the driver
+
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
@@ -147,6 +168,10 @@ https://github.com/networkupstools/nut/milestone/8
 
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
+
+ - `configure` script, reference init-script and packaging templates updated
+   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
+   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now

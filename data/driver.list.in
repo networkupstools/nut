@@ -376,6 +376,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
+"Eaton"	"ups"	"5"	"ePDU EMSV0001" "nLogic rebranded"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
 "Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
@@ -505,6 +506,7 @@
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+"HPE"	"pdu"	"5"	"G2 Metered & Switched PDU"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 "Huawei"	"ups"	"3"	"UPS2000-G and UPS2000-A series"	"MODBUS (USB with Linux 5.12+, or Serial RS-232)"	"huawei-ups2000"	# https://github.com/networkupstools/nut/issues/1066 https://github.com/networkupstools/nut/pull/1198 https://github.com/networkupstools/nut/pull/954 https://github.com/networkupstools/nut/issues/1017
