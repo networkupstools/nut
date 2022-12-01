@@ -32,9 +32,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'python' ]
+        language: [ 'cpp' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
+        # TODO: Want to find Python sources to test like with LGTM, see https://github.com/networkupstools/nut/issues/1726
 
     steps:
     - name: Checkout repository
