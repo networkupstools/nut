@@ -535,12 +535,20 @@ Or a variation like...
 == How do you make upsd reload the config file?
 
 Either find the pid of the background process and send it a SIGHUP,
-or just start it again with '-c reload'.
+or just start it again with '-c reload' (requires that the previously
+started daemon saves a PID file).
 
 If you send the signals yourself instead of using -c, be sure you
 hit the right process.  There are usually two upsmon processes, and you
 should only send signals to one of them.  To be safe, read the pid
 file.
+
+If your daemons are managed as systemd units, it is more idiomatic to
+use the framework commands, e.g. `systemctl reload nut-server` (upsd)
+or `systemctl reload nut-monitor` (upsmon). Note that the implementation
+of `nut-server.service` by default starts `upsd -F` and does not save a
+PID file; if your workflow requires to use plain `upsd -c reload`, you
+should customize the unit (with a drop-in file) to start `upsd -FF`.
 
 == I just bought a new WhizBang UPS that has a USB connector.  How do I monitor it?
 
