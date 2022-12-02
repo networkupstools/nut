@@ -2371,6 +2371,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
+		int reported = 0;
 #ifndef WIN32
 		if (oldpid < 0) {
 			cmdret = sendsignal(prog, cmd);
@@ -2402,11 +2403,23 @@ int main(int argc, char *argv[])
 						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
 					break;
 			}
+			reported = 1;
 		}
 # endif
 #else
 		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
 #endif
+
+		if (cmdret != 0 && !reported) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon");
+			if (oldpid < 0) {
+				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+			}
+		}
+
 		/* exit(EXIT_SUCCESS); */
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
