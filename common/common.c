@@ -268,14 +268,26 @@ void become_user(struct passwd *pw)
 {
 #ifndef WIN32
 	/* if we can't switch users, then don't even try */
-	if ((geteuid() != 0) && (getuid() != 0)) {
-		upsdebugx(1, "Can not become_user(%s): not root initially, "
-			"remaining UID=%jd GID=%jd",
-			pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
+	intmax_t initial_uid = getuid();
+	intmax_t initial_euid = geteuid();
+	if ((initial_euid != 0) && (initial_uid != 0)) {
+		intmax_t initial_gid = getgid();
+		if (initial_euid == (intmax_t)pw->pw_uid
+		||   initial_uid == (intmax_t)pw->pw_uid
+		) {
+			upsdebugx(1, "No need to become_user(%s): "
+				"already UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		} else {
+			upsdebugx(1, "Can not become_user(%s): "
+				"not root initially, "
+				"remaining UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		}
 		return;
 	}
 
-	if (getuid() == 0)
+	if (initial_uid == 0)
 		if (seteuid(0))
 			fatal_with_errno(EXIT_FAILURE, "getuid gave 0, but seteuid(0) failed");
 
