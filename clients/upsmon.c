@@ -2370,100 +2370,117 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (cmd) {
-		int reported = 0;
+	/* Note: "cmd" may be non-trivial to command that instance by
+	 * explicit PID number or lookup in PID file (error if absent).
+	 * Otherwise, we are being asked to start and "cmd" is 0/NULL -
+	 * for probing whether a competing older instance of this program
+	 * is running (error if it is).
+	 */
 #ifndef WIN32
-		if (oldpid < 0) {
-			cmdret = sendsignal(prog, cmd);
-		} else {
-			cmdret = sendsignalpid(oldpid, cmd);
-		}
-
-# ifdef HAVE_SYSTEMD
-		if (cmdret != 0) {
-			switch (cmd) {
-				case SIGCMD_RELOAD:
-					upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
-						SERVICE_UNIT_NAME,
-						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
-					break;
-				case SIGCMD_STOP:
-					upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
-						SERVICE_UNIT_NAME,
-						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
-					break;
-				case SIGCMD_FSD:
-					if (oldpid < 0) {
-						upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
-					}
-					break;
-				default:
-					upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
-						SERVICE_UNIT_NAME,
-						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
-					break;
-			}
-			reported = 1;
-		}
-# endif
-#else
-		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
-#endif
-
-		if (cmdret != 0 && !reported) {
-			/* sendsignal*() above might have logged more details
-			 * for troubleshooting, e.g. about lack of PID file
-			 */
-			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon");
-			if (oldpid < 0) {
-				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
-			}
-		}
-
-		/* exit(EXIT_SUCCESS); */
-		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
-	}
-
-	/* otherwise, we are being asked to start.
-	 * so check if a previous instance is running by sending signal '0'
-	 * (Ie 'kill <pid> 0') */
-#ifndef WIN32
+	/* If cmd == 0 we are starting and check if a previous instance
+	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
+	 */
 	if (oldpid < 0) {
-		cmdret = sendsignal(prog, 0);
+		cmdret = sendsignal(prog, cmd);
 	} else {
-		cmdret = sendsignalpid(oldpid, 0);
-	}
-#else
-	mutex = CreateMutex(NULL,TRUE,UPSMON_PIPE_NAME);
-	if(mutex == NULL ) {
-		if( GetLastError() != ERROR_ACCESS_DENIED ) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSMON_PIPE_NAME,(int)GetLastError());
-		}
+		cmdret = sendsignalpid(oldpid, cmd);
 	}
 
-	cmdret = -1; /* unknown, maybe ok */
-	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED)
-		cmdret = 0; /* known conflict */
-#endif
+#else	/* WIN32 */
+	if (cmd) {
+		/* Command the running daemon, it should be there */
+		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
+	} else {
+		/* Starting new daemon, check for competition */
+		mutex = CreateMutex(NULL, TRUE, UPSMON_PIPE_NAME);
+		if (mutex == NULL) {
+			if (GetLastError() != ERROR_ACCESS_DENIED) {
+				fatalx(EXIT_FAILURE,
+					"Can not create mutex %s : %d.\n",
+					UPSMON_PIPE_NAME, (int)GetLastError());
+			}
+		}
+
+		cmdret = -1; /* unknown, maybe ok */
+		if (GetLastError() == ERROR_ALREADY_EXISTS
+		||  GetLastError() == ERROR_ACCESS_DENIED
+		) {
+			cmdret = 0; /* known conflict */
+		}
+	}
+#endif	/* WIN32 */
 
 	switch (cmdret) {
 	case 0:
-		printf("Fatal error: A previous upsmon instance is already running!\n");
-		printf("Either stop the previous instance first, or use the 'reload' command.\n");
-		exit(EXIT_FAILURE);
+		if (cmd) {
+			upsdebugx(1, "Signaled old daemon OK");
+		} else {
+			printf("Fatal error: A previous upsmon instance is already running!\n");
+			printf("Either stop the previous instance first, or use the 'reload' command.\n");
+			exit(EXIT_FAILURE);
+		}
+		break;
 
 	case -3:
 	case -2:
+		/* if starting new daemon, no competition running -
+		 *    maybe OK (or failed to detect it => problem)
+		 * if signaling old daemon - certainly have a problem
+		 */
 		upslogx(LOG_WARNING, "Could not %s PID file "
 			"to see if previous upsmon instance is "
-			"already running!\n",
+			"already running!",
 			(cmdret == -3 ? "find" : "parse"));
 		break;
 
 	case -1:
+	case 1:	/* WIN32 */
 	default:
-		/* Just failed to send signal, no competitor running */
+		/* if cmd was nontrivial - speak up below, else be quiet */
+		upsdebugx(1, "Just failed to send signal, no daemon was running");
 		break;
+	}
+
+	if (cmd) {
+		/* We were signalling a daemon, successfully or not - exit now... */
+		if (cmdret != 0) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+#ifndef WIN32
+# ifdef HAVE_SYSTEMD
+			switch (cmd) {
+			case SIGCMD_RELOAD:
+				upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			case SIGCMD_STOP:
+				upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			case SIGCMD_FSD:
+				if (oldpid < 0) {
+					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+				}
+				break;
+			default:
+				upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			}
+# else
+			if (oldpid < 0) {
+				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+			}
+# endif
+#endif	/* not WIN32 */
+		}
+
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	argc -= optind;
