@@ -1687,6 +1687,7 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
+		int reported = 0;
 #ifndef WIN32
 		if (oldpid < 0) {
 			cmdret = sendsignalfn(pidfn, cmd);
@@ -1717,11 +1718,23 @@ int main(int argc, char **argv)
 			 * and so save the PID file for ability to manage the daemon
 			 * beside the service framework, possibly confusing things...
 			 */
+			reported = 1;
 		}
 # endif
 #else
 		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
 #endif
+
+		if (cmdret != 0 && !reported) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon");
+			if (oldpid < 0) {
+				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+			}
+		}
+
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
