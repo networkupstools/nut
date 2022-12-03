@@ -2506,11 +2506,17 @@ case "${systemdsystemunitdir}" in
 esac
 if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
+	have_systemd="yes"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
+	have_systemd="no"
 	AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+dnl Note: we may want tighter integration, e.g. systemd-notify support at
+dnl a later point. That would be a further option/flag. This one is a very
+dnl basic yes/no toggle.
+NUT_REPORT_FEATURE([consider systemd support], [${have_systemd}], [],
+					[HAVE_SYSTEMD], [Define to consider systemd support])
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given

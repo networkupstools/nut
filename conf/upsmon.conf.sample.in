@@ -27,6 +27,7 @@
 #
 # This user should not have write access to upsmon.conf.
 #
+# (Unprivileged) OS account to run as:
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
@@ -66,10 +67,10 @@
 # changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "upsmon" and your password is
+# upsd.users.  If your NUT username is "monuser" and your password is
 # "blah", the upsd.users would look like this:
 #
-#	[upsmon]
+#	[monuser]
 #		password  = blah
 #		upsmon primary 	# (or secondary)
 #
@@ -113,8 +114,8 @@
 # Examples:
 #
 # MONITOR myups@bigserver 1 upswired blah primary
-# MONITOR su700@server.example.com 1 upsmon secretpass secondary
-# MONITOR myups@localhost 1 upsmon pass primary	# (or secondary)
+# MONITOR su700@server.example.com 1 monuser secretpass secondary
+# MONITOR myups@localhost 1 monuser pass primary	# (or secondary)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
