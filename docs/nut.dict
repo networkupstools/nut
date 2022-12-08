@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3059 utf-8
+personal_ws-1.1 en 3061 utf-8
 AAS
 ABI
 ACFAIL
@@ -744,7 +744,9 @@ NOTIFYMSG
 NQA
 NTP
 NUT's
+NUTClient
 NUTSRC
+NUTServer
 NVA
 NX
 Nadav
