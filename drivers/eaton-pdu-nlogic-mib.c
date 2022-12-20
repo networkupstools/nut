@@ -101,9 +101,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 		".1.3.6.1.4.1.534.7.1.1.2.1.4.1",
 		"EATON", SU_FLAG_STATIC, NULL },
 	/* pduModel.1 = STRING: "200-240V, 24A, 5.0kVA, 50/60Hz" */
-	/* Prefer ".1.3.6.1.2.1.1.1.0" / device.description */
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.2.1.1.1.0", /*".1.3.6.1.4.1.534.7.1.1.2.1.3.1", */
+		".1.3.6.1.4.1.534.7.1.1.2.1.3.1",
 		"Eaton ePDU", SU_FLAG_STATIC, NULL },
 	/* pduSerialNumber.1 = STRING: "WMEL0046" */
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE,
