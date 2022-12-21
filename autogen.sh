@@ -2,6 +2,7 @@
 #
 # Autoreconf wrapper script to ensure that the source tree is
 # in a buildable state
+# NOTE: uses cumbersome dumbest-possible shell syntax for extra portability
 
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
@@ -83,20 +84,23 @@ then
 	fi
 fi
 
-if [ ! -e scripts/systemd/nut-common.tmpfiles.in ]; then
+if [ ! -f scripts/systemd/nut-common.tmpfiles.in ]; then
 	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
 fi
 
 # now we can safely call autoreconf
-if ( command -v dos2unix ) 2>/dev/null >/dev/null \
-&& ! ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
-	echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
-	echo "this may cause issues for m4 parsing with autotools below."
-	if [ -e .git ] ; then
-		echo "You may want to enforce that Git uses 'lf' line endings and re-checkout:"
-		echo "    :; git config core.autocrlf false && git config core.eol lf && rm .git/index && git checkout -f"
+if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
+	if ( dos2unix < configure.ac | cmp - configure.ac ) 2>/dev/null >/dev/null ; then
+		:
+	else
+		echo "WARNING: Did not confirm that configure.ac has Unix EOL markers;"
+		echo "this may cause issues for m4 parsing with autotools below."
+		if [ -f .git ] || [ -d .git ] ; then
+			echo "You may want to enforce that Git uses 'lf' line endings and re-checkout:"
+			echo "    :; git config core.autocrlf false && git config core.eol lf && rm .git/index && git checkout -f"
+		fi
+		echo ""
 	fi
-	echo ""
 fi >&2
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
