@@ -110,5 +110,9 @@ fi >&2
 echo "Calling autoreconf..."
 autoreconf -iv && {
 	sh -n configure 2>/dev/null >/dev/null \
-	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ; exit 1; }
+	|| { echo "FAILED: configure script did not pass shell interpreter syntax checks" >&2 ;
+		head -1 configure
+		echo "NOTE: If you are using an older OS release, try executing the script with" >&2
+		echo "a more functional shell implementation (dtksh, bash, dash...)" >&2
+		exit 1; }
 }
