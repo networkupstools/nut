@@ -29,7 +29,7 @@
 #ifndef NUT_RIELLO_H_SEEN
 #define NUT_RIELLO_H_SEEN 1
 
-#include <stdint.h>
+#include "nut_stdint.h"
 
 #define CTRL_RETRIES 50
 #define CTRL_TIMEOUT 100
