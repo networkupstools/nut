@@ -6,13 +6,14 @@ all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
-TESTS = nutlogtest
+TESTS =
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
+check_SCRIPTS =
 
 # NUT Integration Testing suite
 check-NIT check-NIT-devel:
@@ -20,6 +21,24 @@ check-NIT check-NIT-devel:
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+
+if REQUIRE_NUT_STRARG
+check_SCRIPTS += nutlogtest-nofail.sh
+CLEANFILES += nutlogtest-nofail.sh nutlogtest
+
+nutlogtest-nofail.sh: nutlogtest
+	@echo '#!/bin/sh' > $@
+	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
+	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
+	@echo 'echo "a segmentation fault (especially with verbose debug) - that may be why" >&2' >> $@
+	@echo 'SCRIPT_DIR="`dirname "$$0"`"' >> $@
+	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> $@
+	@chmod +x $@
+
+# NOTE: Keep the line above empty!
+else
+TESTS += nutlogtest
+endif
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
