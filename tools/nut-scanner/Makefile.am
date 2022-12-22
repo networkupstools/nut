@@ -58,6 +58,10 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+if HAVE_SEMAPHORE_LIBS
+# Are additional libraries needed for semaphore support?
+libnutscan_la_LIBADD += $(SEMLIBS)
+endif
 
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)

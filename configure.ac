@@ -293,6 +293,7 @@ AC_CHECK_HEADER([poll.h],
     [AC_DEFINE([HAVE_POLL_H], [1],
         [Define to 1 if you have <poll.h>.])])
 
+SEMLIBS=""
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
@@ -311,12 +312,19 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
+
+	 dnl Solaris 8 builds complain about indirect dependency involved:
+	 dnl   sem_init   nut_scanner-nut-scanner.o
+	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+
+	 AC_CHECK_LIB(rt, sem_init, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
      AC_LANG_POP([C])
     ]
 )
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
@@ -3236,6 +3244,7 @@ AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
+AC_SUBST(SEMLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
