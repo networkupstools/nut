@@ -506,8 +506,12 @@ EOF
         # HACK: Avoid empty ups.status that may be present in example docs
         # FIXME: Might we actually want that value (un-)set for tests?..
         # TODO: Check if the problem was with dummy-ups looping? [#1385]
+        # Avoid "sed -i", it behaves differently on some platforms
+        # and is completely absent on others [#1736 and earlier]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
-            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i'.bak' "$F"
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' < "$F" > "$F.bak"
+            cat "$F.bak" > "$F"
+            rm -f "$F.bak"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
