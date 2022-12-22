@@ -465,6 +465,26 @@ AS_IF([test x"${ac_cv_func_strptime}" = xyes],
     )
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 
+AC_CACHE_CHECK([for strnlen(s1,s2,tm)],
+    [ac_cv_func_strnlen],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [size_t len = strnlen("LongString", 5);
+if (len != 5) return 5;
+
+len = strnlen("LongString", 50);
+if (len != 10) return 10
+])],
+        [ac_cv_func_strnlen=yes], [ac_cv_func_strnlen=no]
+    )])
+AS_IF([test x"${ac_cv_func_strnlen}" = xyes],
+    [AC_DEFINE([HAVE_STRNLEN], 1, [defined if standard library has, and C standard allows, the strnlen(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strnlen not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRNLEN], [test x"${ac_cv_func_strnlen}" = "xyes"])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(

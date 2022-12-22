@@ -46,6 +46,14 @@ libcommon_la_SOURCES += strptime.c
 libcommonclient_la_SOURCES += strptime.c
 endif
 
+if HAVE_STRNLEN
+EXTRA_DIST += strnlen.c
+else
+# fall back to FreeBSD implem
+libcommon_la_SOURCES += strnlen.c
+libcommonclient_la_SOURCES += strnlen.c
+endif
+
 if HAVE_STRSEP
 EXTRA_DIST += strsep.c
 else
