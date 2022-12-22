@@ -917,6 +917,10 @@ isTestablePython() {
     ; then
         return 1
     fi
+    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
+    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
+        return 1
+    fi
     return 0
 }
 
