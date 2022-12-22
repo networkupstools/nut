@@ -48,7 +48,7 @@ nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
 # a generated nut-snmpinfo.py by the @PYTHON@ shebang.
 $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
-	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c 1; then \
+	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
@@ -83,7 +83,7 @@ $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
 # a generated nut-snmpinfo.py by the @PYTHON@ shebang.
 dist-hook:
-	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c 1; then \
+	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
 		echo "Regenerating the SNMP helper files in DIST dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
