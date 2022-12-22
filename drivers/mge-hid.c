@@ -186,6 +186,25 @@ static char		mge_scratch_buf[20];
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
 
+/* TODO: Lifted from strptime.c... maybe should externalize the fallback? */
+#ifndef HAVE_ROUND
+# ifndef WIN32
+static long round (double value)
+# else
+static long round (LDOUBLE value)
+# endif
+{
+  long intpart;
+
+  intpart = (long)value;
+  value = value - intpart;
+  if (value >= 0.5)
+    intpart++;
+
+  return intpart;
+}
+#endif /* HAVE_ROUND */
+
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
