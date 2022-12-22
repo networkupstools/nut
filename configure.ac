@@ -224,7 +224,7 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl abs_val abs)
 
 AC_CHECK_HEADER([float.h],
     [AC_DEFINE([HAVE_FLOAT_H], [1],
@@ -233,7 +233,7 @@ AC_CHECK_HEADER([math.h],
     [AC_DEFINE([HAVE_MATH_H], [1],
         [Define to 1 if you have <math.h>.])])
 
-AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
+AC_CHECK_DECLS([fabs, fabsf, fabsl, pow10, round], [], [],
 [#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
@@ -250,7 +250,7 @@ AC_CHECK_HEADER([stdlib.h],
     [AC_DEFINE([HAVE_STDLIB_H], [1],
         [Define to 1 if you have <stdlib.h>.])])
 
-AC_CHECK_FUNCS(realpath, [], [],
+AC_CHECK_DECLS(realpath, [], [],
 [#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif

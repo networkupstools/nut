@@ -32,7 +32,7 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
 #endif
 
@@ -1306,7 +1306,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	}
 	while ((dirp = readdir(dp)) != NULL)
 	{
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 		struct stat	st;
 #endif
 
@@ -1316,7 +1316,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
 		) {
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
-#if HAVE_REALPATH
+#if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else
 			/* Just check if candidate name is (points to?) valid file */
@@ -1353,7 +1353,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				}
 			}
 # endif /* WIN32 */
-#endif  /* HAVE_REALPATH */
+#endif  /* HAVE_DECL_REALPATH */
 
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
