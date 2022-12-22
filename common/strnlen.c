@@ -24,9 +24,12 @@
  * SUCH DAMAGE.
  */
 
+/* // Includes amended for NUT cross-platform purposes
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: src/lib/libc/string/strnlen.c,v 1.1 2009/02/28 06:00:58 das Exp $");
+*/
 
+#include <stdlib.h>
 #include <string.h>
 
 size_t
