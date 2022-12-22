@@ -9,7 +9,7 @@ PYTHON = @PYTHON@
 # is assumed to only differ from a generated gen-nutupsconf-aug.py by the
 # @PYTHON@ shebang.
 dist-hook:
-	@if [ -n "$(PYTHON)" ] && $(PYTHON) -c "import re,glob,codecs"; then \
+	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c "import re,glob,codecs"; then \
 		echo "Regenerating Augeas ups.conf lens with '$(PYTHON)'."; \
 		$(PYTHON) $(distdir)/gen-nutupsconf-aug.py.in $(distdir)/; \
 	else \
