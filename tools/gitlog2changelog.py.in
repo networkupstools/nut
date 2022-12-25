@@ -137,7 +137,23 @@ for line in fin:
 
         # Assemble the actual commit message line(s) and limit the line length
         # to 80 characters.
-        commitLine = "* " + files + ": " + message
+        # Avoid printing same (or equivalen) filename lists twice, if commit
+        # message starts with them.
+        if message.startswith(files + ":"):
+            commitLine = "* " + message
+        else:
+            namesF = None
+            namesM = None
+            try:
+                namesM = sorted(re.split(r'[ ,]', message.split(":")[0]))
+                namesF = sorted(re.split(r'[ ,]', files))
+            except:
+                pass
+
+            if namesM is not None and namesM == namesF:
+                commitLine = "* " + message
+            else:
+                commitLine = "* " + files + ": " + message
 
         # Write out the commit line
         fout.write(wrapper.fill(commitLine) + "\n")
