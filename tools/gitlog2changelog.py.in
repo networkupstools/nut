@@ -6,17 +6,41 @@
 import string, re, os
 from textwrap import TextWrapper
 import sys
+import subprocess
 
-rev_range = ''
+rev_range = 'HEAD'
 
 if len(sys.argv) > 1:
     base = sys.argv[1]
     rev_range = '%s..HEAD' % base
 
 # Execute git log with the desired command line options.
-fin = os.popen('git log --summary --stat --no-merges --date=short %s' % rev_range, 'r')
+# Support Python2 and Python3 (esp. 3.6 and earlier) semantics
+# with regard to utf-8 content support (avois ascii decoding in Py3)
+fin_mode = 0
+# Remove trailing end of line? spitlines() in py3 variant takes care of them
+fin_chop = 0
+try:
+    p = subprocess.Popen(
+        ['git', 'log', '--summary', '--stat', '--no-merges', '--date=short', ('%s' % rev_range)],
+        encoding='utf-8', close_fds = True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    fin, ferr = p.communicate()
+    if p.wait() != 0:
+        print ("ERROR getting git changelog")
+        system.exit(1)
+    fin = fin.splitlines()
+    fin_mode = 3
+except TypeError:
+    fin = os.popen('git log --summary --stat --no-merges --date=short %s' % rev_range, 'r')
+    fin_mode = 2
+    fin_chop = 1
+
 # Create a ChangeLog file in the current directory.
-fout = open('ChangeLog', 'w')
+if fin_mode == 3:
+    fout = open('ChangeLog', 'w', encoding='UTF-8')
+else:
+    fout = open('ChangeLog', 'w')
 
 # Set up the loop variables in order to locate the blocks we want
 authorFound = False
@@ -49,7 +73,7 @@ for line in fin:
         authorList = re.split(': ', line, 1)
         try:
             author = authorList[1]
-            author = author[0:len(author)-1]
+            author = author[0:len(author) - fin_chop]
             authorFound = True
         except:
             print ("Could not parse authorList = '%s'" % (line))
@@ -59,7 +83,7 @@ for line in fin:
         dateList = re.split(':   ', line, 1)
         try:
             date = dateList[1]
-            date = date[0:len(date)-1]
+            date = date[0:len(date) - fin_chop]
             dateFound = True
         except:
             print ("Could not parse dateList = '%s'" % (line))
@@ -75,12 +99,12 @@ for line in fin:
     # Extract the actual commit message for this commit
     elif authorFound & dateFound & messageFound == False:
         # Find the commit message if we can
-        if len(line) == 1:
+        if len(line) == fin_chop:
             if messageNL:
                 messageFound = True
             else:
                 messageNL = True
-        elif len(line) == 4:
+        elif len(line) == 3 + fin_chop:
             messageFound = True
         else:
             if len(message) == 0:
@@ -129,5 +153,9 @@ for line in fin:
         prevAuthorLine = authorLine
 
 # Close the input and output lines now that we are finished.
-fin.close()
+if fin_mode == 3:
+    p.stdout.close()
+    p.stderr.close()
+else:
+    fin.close()
 fout.close()
