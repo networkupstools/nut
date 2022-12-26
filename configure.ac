@@ -770,6 +770,19 @@ dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON
 NUT_CHECK_PYTHON2
 NUT_CHECK_PYTHON3
+AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
+AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
+AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
+AS_IF([test x"$PYTHON" = x], [
+    AC_MSG_CHECKING([which python version to use by default])
+    dnl Last hit wins (py3)
+    AS_IF([test x"$PYTHON2" != x], [PYTHON="$PYTHON2"])
+    AS_IF([test x"$PYTHON3" != x], [PYTHON="$PYTHON3"])
+    AS_IF([test x"$PYTHON" = x],
+        [AC_MSG_RESULT([none])],
+        [AC_MSG_RESULT([$PYTHON])]
+        )
+    ])
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
