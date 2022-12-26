@@ -509,9 +509,8 @@ EOF
         # Avoid "sed -i", it behaves differently on some platforms
         # and is completely absent on others [#1736 and earlier]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
-            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' < "$F" > "$F.bak"
-            cat "$F.bak" > "$F"
-            rm -f "$F.bak"
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
+            mv -f "$F.bak" "$F"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
