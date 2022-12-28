@@ -779,7 +779,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             # Tell ccache the PATH without itself in it, to avoid loops processing
-                PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         fi
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
