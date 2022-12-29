@@ -27,7 +27,6 @@
 #include "config.h" /* must be the first header */
 
 #include <string.h>
-#include <stdint.h>
 
 #ifdef WIN32
 # include "wincompat.h"

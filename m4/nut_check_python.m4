@@ -137,7 +137,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         PYTHON3=""
         PYTHON3_SITE_PACKAGES=""
         AS_CASE([${nut_with_python3}],
-            [auto|yes|""], [AC_CHECK_PROGS([PYTHON3], [python3 python3.9 python-3.9 python3.7 python-3.7 python3.5 python-3.5 python], [_python3_runtime])],
+            [auto|yes|""], [AC_CHECK_PROGS([PYTHON3], [python3 python3.9 python-3.9 python3.7 python-3.7 python3.6 python-3.6 python3.5 python-3.5 python], [_python3_runtime])],
             [no], [PYTHON3="no"],
             [PYTHON3="${nut_with_python3}"]
         )

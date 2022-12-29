@@ -28,8 +28,6 @@
 
 #include "config.h" /* must be the first header */
 
-#include <stdint.h>
-
 #include "main.h"
 #include "nut_libusb.h"
 #include "usb-common.h"
