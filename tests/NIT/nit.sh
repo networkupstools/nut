@@ -611,6 +611,11 @@ testcase_upsd_allow_no_device() {
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
+            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+                log_warn "Retry once more to rule out very laggy systems"
+                sleep 15
+                runcmd upsc -l localhost:$NUT_PORT
+            fi
             [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
         fi
         if [ -n "$CMDOUT" ] ; then
