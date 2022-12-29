@@ -529,7 +529,7 @@ static hid_info_t belkin_hid2nut[] = {
      yet implemented) workaround, see the belkinunv(8) man page.
      -PS 2005/08/28 */
 
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
   /* added for debugging Liebert GXT3 : */
   { "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", 0, NULL },
@@ -543,7 +543,7 @@ static hid_info_t belkin_hid2nut[] = {
   { "unmapped.ups.powersummary.capacitygranularity1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.capacitygranularity2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%.0f", 0, NULL },
-#endif
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }

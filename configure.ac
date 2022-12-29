@@ -1003,6 +1003,18 @@ dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 
+dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
+dnl Note that production drivers must conform to docs/nut-names.txt
+NUT_ARG_WITH([unmapped-data-points],
+    [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet],
+    [no])
+AS_IF([test x"${nut_with_unmapped_data_points}" = xyes],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 1,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 0,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])]
+)
+
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
 dnl a second-class citizen (if both are set, the old option name wins).

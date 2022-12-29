@@ -547,10 +547,13 @@ static snmp_info_t hpe_pdu_mib[] = {
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
 	/* TODO: handle statistics */
-	/* pdu2InputPowerWattHour.0 = INTEGER: 91819
-	{ "unmapped.pdu2InputPowerWattHour", 0, 1, ".1.3.6.1.4.1.232.165.7.2.1.1.6.0", NULL, SU_FLAG_OK, NULL }, */
-	/* pdu2InputPowerWattHourTimer.0 = STRING: "16/10/2017,17:58:53"
-	{ "unmapped.pdu2InputPowerWattHourTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.2.1.1.7.0", NULL, SU_FLAG_OK, NULL }, */
+#if WITH_UNMAPPED_DATA_POINTS
+	/* pdu2InputPowerWattHour.0 = INTEGER: 91819 */
+	{ "unmapped.pdu2InputPowerWattHour", 0, 1, ".1.3.6.1.4.1.232.165.7.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	/* pdu2InputPowerWattHourTimer.0 = STRING: "16/10/2017,17:58:53" */
+	{ "unmapped.pdu2InputPowerWattHourTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.2.1.1.7.0", NULL, SU_FLAG_OK, NULL },
+#endif	/* #if WIH_UNMAPPED_DATA_POINTS */
+
 	/* pdu2InputPowerFactor.0 = INTEGER: 483 */
 	{ "input.powerfactor", 0, 0.001,
 		".1.3.6.1.4.1.232.165.7.2.1.1.8.%i",
@@ -736,12 +739,15 @@ static snmp_info_t hpe_pdu_mib[] = {
 	{ "outlet.%i.powerfactor", 0, 0.001,
 		".1.3.6.1.4.1.232.165.7.5.1.1.17.%i.%i",
 		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+
 	/* TODO: handle statistics */
+#if WITH_UNMAPPED_DATA_POINTS
 	/* pdu2OutletWh.0.1 = INTEGER: 1167
-	 * Note: setting this to zero resets the counter and timestamp => instcmd ???counter???.reset
-	{ "unmapped.pdu2OutletWh", 0, 1, ".1.3.6.1.4.1.232.165.7.5.1.1.15.%i.%i", NULL, SU_FLAG_OK, NULL }, */
-	/* pdu2OutletWhTimer.0.1 = STRING: "25/03/2016,09:03:26"
-	{ "unmapped.pdu2OutletWhTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.5.1.1.16.%i.%i", NULL, SU_FLAG_OK, NULL }, */
+	 * Note: setting this to zero resets the counter and timestamp => instcmd ???counter???.reset */
+	{ "unmapped.pdu2OutletWh", 0, 1, ".1.3.6.1.4.1.232.165.7.5.1.1.15.%i.%i", NULL, SU_FLAG_OK, NULL },
+	/* pdu2OutletWhTimer.0.1 = STRING: "25/03/2016,09:03:26" */
+	{ "unmapped.pdu2OutletWhTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.5.1.1.16.%i.%i", NULL, SU_FLAG_OK, NULL },
+#endif	/* #if WITH_UNMAPPED_DATA_POINTS */
 
 	/* Outlet groups collection */
 	/* pdu2GroupCount.0 = INTEGER: 3 */
@@ -857,11 +863,13 @@ static snmp_info_t hpe_pdu_mib[] = {
 		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* TODO: handle statistics */
+#if WITH_UNMAPPED_DATA_POINTS
 	/* pdu2GroupPowerWattHour.0.%i = INTEGER: 1373
-	 * Note: setting this to zero resets the counter and timestamp => instcmd .reset
-	{ "unmapped.pdu2GroupPowerWattHour", 0, 1, ".1.3.6.1.4.1.232.165.7.3.1.1.22.%i.%i", NULL, SU_FLAG_OK, NULL }, */
-	/* pdu2GroupPowerWattHourTimer.0.%i = STRING: "25/03/2016,09:01:16"
-	{ "unmapped.pdu2GroupPowerWattHourTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.3.1.1.23.%i.%i", NULL, SU_FLAG_OK, NULL }, */
+	 * Note: setting this to zero resets the counter and timestamp => instcmd .reset */
+	{ "unmapped.pdu2GroupPowerWattHour", 0, 1, ".1.3.6.1.4.1.232.165.7.3.1.1.22.%i.%i", NULL, SU_FLAG_OK, NULL },
+	/* pdu2GroupPowerWattHourTimer.0.%i = STRING: "25/03/2016,09:01:16" */
+	{ "unmapped.pdu2GroupPowerWattHourTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.7.3.1.1.23.%i.%i", NULL, SU_FLAG_OK, NULL },
+#endif	/* #if WITH_UNMAPPED_DATA_POINTS */
 
 	/* instant commands. */
 	/* TODO: handle delays (outlet.%i.{on,off}.delay) */
