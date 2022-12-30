@@ -232,9 +232,9 @@ static snmp_info_t huawei_mib[] = {
 	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.6.100.1.3.1", NULL, SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.6.100.1.4.1", NULL, SU_FLAG_OK, NULL },
 
-
-	/* { "unmapped.hwUpsBattTest", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.103.101.1.6.1", NULL, SU_FLAG_OK, NULL }, */
-
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "unmapped.hwUpsBattTest", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.103.101.1.6.1", NULL, SU_FLAG_OK, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

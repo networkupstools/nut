@@ -101,7 +101,7 @@ static snmp_info_t apc_pdu_mib[] = {
 
 
 
-#if 0 /* keep following scan for future development */
+#if WITH_UNMAPPED_DATA_POINTS /* keep following scan for future development */
 
 	/* sPDUMasterControlSwitch.0 = INTEGER: noCommand(6) */
 	{ "unmapped.sPDUMasterControlSwitch", 0, 1, ".1.3.6.1.4.1.318.1.1.4.2.1.0", NULL, SU_FLAG_OK, NULL },
@@ -960,7 +960,7 @@ static snmp_info_t apc_pdu_mib[] = {
 	{ "unmapped.experimental", 0, 1, ".1.3.6.1.4.1.318.1.4.7.4.0", NULL, SU_FLAG_OK, NULL },
 	/* experimental.7.5.0 = INTEGER: 3 */
 	{ "unmapped.experimental", 0, 1, ".1.3.6.1.4.1.318.1.4.7.5.0", NULL, SU_FLAG_OK, NULL },
-#endif /* scan result */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 
 	/* end of structure. */

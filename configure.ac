@@ -224,7 +224,7 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl abs_val abs)
 
 AC_CHECK_HEADER([float.h],
     [AC_DEFINE([HAVE_FLOAT_H], [1],
@@ -233,7 +233,7 @@ AC_CHECK_HEADER([math.h],
     [AC_DEFINE([HAVE_MATH_H], [1],
         [Define to 1 if you have <math.h>.])])
 
-AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
+AC_CHECK_DECLS([fabs, fabsf, fabsl, pow10, round], [], [],
 [#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
@@ -250,7 +250,7 @@ AC_CHECK_HEADER([stdlib.h],
     [AC_DEFINE([HAVE_STDLIB_H], [1],
         [Define to 1 if you have <stdlib.h>.])])
 
-AC_CHECK_FUNCS(realpath, [], [],
+AC_CHECK_DECLS(realpath, [], [],
 [#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif
@@ -293,6 +293,7 @@ AC_CHECK_HEADER([poll.h],
     [AC_DEFINE([HAVE_POLL_H], [1],
         [Define to 1 if you have <poll.h>.])])
 
+SEMLIBS=""
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
@@ -311,12 +312,19 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
+
+	 dnl Solaris 8 builds complain about indirect dependency involved:
+	 dnl   sem_init   nut_scanner-nut-scanner.o
+	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+
+	 AC_CHECK_LIB(rt, sem_init, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
      AC_LANG_POP([C])
     ]
 )
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
@@ -467,6 +475,26 @@ dnl Note: per Linux headers, this may need __USE_XOPEN (features.h)
 dnl which is enabled by _XOPEN_SOURCE via _GNU_SOURCE on the platform.
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 
+AC_CACHE_CHECK([for strnlen(s1,s2,tm)],
+    [ac_cv_func_strnlen],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [size_t len = strnlen("LongString", 5);
+if (len != 5) return 5;
+
+len = strnlen("LongString", 50);
+if (len != 10) return 10
+])],
+        [ac_cv_func_strnlen=yes], [ac_cv_func_strnlen=no]
+    )])
+AS_IF([test x"${ac_cv_func_strnlen}" = xyes],
+    [AC_DEFINE([HAVE_STRNLEN], 1, [defined if standard library has, and C standard allows, the strnlen(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strnlen not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRNLEN], [test x"${ac_cv_func_strnlen}" = "xyes"])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
@@ -586,6 +614,29 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_DOUBLE
 	AC_TYPE_LONG_LONG_INT
 ])
+
+AC_MSG_CHECKING([whether printf allows null string args])
+AC_LANG_PUSH([C])
+dnl The following code crashes on some libc implementations (e.g. Solaris 8)
+dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
+dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs
+AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM(
+    [#include <stdlib.h>],
+    [printf("%s", NULL)]
+)],
+    [
+     AC_MSG_RESULT([ok])
+     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+    ],
+    [AC_MSG_RESULT([no])
+     AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+        [Define to 1 if your libc requires workarounds to print NULL values.])
+     AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially with verbose debug) - that may be why])
+     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+    ]
+)
+AC_LANG_POP([C])
+
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
@@ -721,6 +772,19 @@ dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON
 NUT_CHECK_PYTHON2
 NUT_CHECK_PYTHON3
+AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
+AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
+AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
+AS_IF([test x"$PYTHON" = x], [
+    AC_MSG_CHECKING([which python version to use by default])
+    dnl Last hit wins (py3)
+    AS_IF([test x"$PYTHON2" != x], [PYTHON="$PYTHON2"])
+    AS_IF([test x"$PYTHON3" != x], [PYTHON="$PYTHON3"])
+    AS_IF([test x"$PYTHON" = x],
+        [AC_MSG_RESULT([none])],
+        [AC_MSG_RESULT([$PYTHON])]
+        )
+    ])
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
@@ -1004,6 +1068,18 @@ dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
+
+dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
+dnl Note that production drivers must conform to docs/nut-names.txt
+NUT_ARG_WITH([unmapped-data-points],
+    [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet],
+    [no])
+AS_IF([test x"${nut_with_unmapped_data_points}" = xyes],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 1,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 0,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])]
+)
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -3218,6 +3294,7 @@ AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
+AC_SUBST(SEMLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)

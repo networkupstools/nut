@@ -244,6 +244,13 @@ ever-changing `Makefile.am` content after Git updates or editing.
 
 Activate recipes for static analysis with `cppcheck` tools (if available).
 
+	--with-unmapped-data-points (default: no)
+
+Build SNMP and USB-HID subdrivers with entries discovered by the scripts
+which generated them from data walks, but developers did not rename yet
+to NUT mappings conforming to `docs/nut-names.txt` standards. Production
+driver builds must not include any non-standard names.
+
 I want it all!
 ~~~~~~~~~~~~~~
 

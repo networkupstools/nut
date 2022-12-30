@@ -239,6 +239,10 @@ static usage_tables_t ${LDRIVER}_utab[] = {
 
 static hid_info_t ${LDRIVER}_hid2nut[] = {
 
+/* Please revise values discovered by data walk for mappings to
+ * docs/nut-names.txt and group the rest under the ifdef below:
+ */
+#if WITH_UNMAPPED_DATA_POINTS
 EOF
 
 cat "$NEWUTABLE" | sort -u | while read U; do
@@ -249,6 +253,7 @@ EOF
 done
 
 cat >> "$CFILE" <<EOF
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }

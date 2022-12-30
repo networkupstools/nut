@@ -175,9 +175,18 @@ https://github.com/networkupstools/nut/milestone/8
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
+ - some fixes for builds on older OSes with less functional default system
+   shell interpreters - now `autogen.sh` supports a `CONFIG_SHELL` envvar
+   to inject its value into generated `configure` script [#1736]
+
  - `configure` script, reference init-script and packaging templates updated
    to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
    unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
+
+ - `configure` script enhanced: `--with-unmapped-data-points` option allows
+   to build SNMP and USB-HID subdrivers with entries discovered by the scripts
+   which generated them from data walks, but developers did not rename yet
+   to NUT mappings conforming to `docs/nut-names.txt` standards [#1699]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now
