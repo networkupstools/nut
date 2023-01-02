@@ -200,6 +200,9 @@ https://github.com/networkupstools/nut/milestone/8
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
 
+ - Clarified documentation in codebase according to end-user feedback [#1721,
+   #1750 and others over time]
+
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
    `time_t` etc.) in third-party client code that earlier sufficed to only
