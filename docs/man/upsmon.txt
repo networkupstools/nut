@@ -390,6 +390,22 @@ by starting another copy of the program with `-c fsd` command line argument.
 This is useful when you want to initiate a shutdown before the critical
 stage through some external means, such as linkman:upssched[8].
 
+WARNING: Please note that by design, since we require power-cycling the
+load and don't want some systems to be powered off while others remain
+running if the "wall power" returns at the wrong moment as usual, the "FSD"
+flag can not be removed from the data server unless its daemon is restarted.
+If we do take the first step in critical mode, then we normally intend to go
+all the way -- shut down all the servers gracefully, and power down the UPS.
+
+Keep in mind that some UPS devices and corresponding drivers would also latch
+or otherwise resurface the "FSD" state again even if "wall power" is available,
+but the remaining battery charge is below a threshold configured as "safe" in
+the device (usually if you manually power on the UPS after a long power outage).
+This is by design of respective UPS vendors, since in such situation they
+can not guarantee that if a new power outage happens, their UPS would safely
+shut down your systems again. So it is deemed better and safer to stay dark
+until batteries become sufficiently charged.
+
 SIMULATING POWER FAILURES
 -------------------------
 
@@ -406,6 +422,11 @@ crawling under a desk to find the plug.
 
 Note you can also use a dummy SHUTDOWNCMD setting to just report that the
 systems would shut down at this point, without actually disrupting their work.
+
+WARNING: after such "dummy" experiments you may have to restart the NUT data
+server `upsd` to clear its "FSD" flag for the devices and clients involved,
+and make sure no files named by `POWERDOWNFLAG` option (e.g. `/etc/killpower`)
+remain on the `upsmon primary` systems under test.
 
 DEAD UPSES
 ----------
