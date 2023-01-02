@@ -390,6 +390,23 @@ by starting another copy of the program with `-c fsd` command line argument.
 This is useful when you want to initiate a shutdown before the critical
 stage through some external means, such as linkman:upssched[8].
 
+SIMULATING POWER FAILURES
+-------------------------
+
+To test a synchronized shutdown without pulling the plug on your UPS(es),
+you need only set the forced shutdown (FSD) flag on them.  You can do this
+by calling upsmon again to set the flag, i.e.:
+
++upsmon -c fsd+
+
+After that, the primary and the secondary will do their usual shutdown
+sequence as if the battery had gone critical, while you can time how long
+it takes for them.  This is much easier on your UPS equipment, and it beats
+crawling under a desk to find the plug.
+
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the
+systems would shut down at this point, without actually disrupting their work.
+
 DEAD UPSES
 ----------
 
@@ -423,23 +440,6 @@ definitions with a reload due to the split-process model.  If you change
 those values, you *must* stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those
 values during a reload.
-
-SIMULATING POWER FAILURES
--------------------------
-
-To test a synchronized shutdown without pulling the plug on your UPS(es),
-you need only set the forced shutdown (FSD) flag on them.  You can do this
-by calling upsmon again to set the flag, i.e.:
-
-+upsmon -c fsd+
-
-After that, the primary and the secondary will do their usual shutdown
-sequence as if the battery had gone critical, while you can time how long
-it takes for them.  This is much easier on your UPS equipment, and it beats
-crawling under a desk to find the plug.
-
-Note you can also use a dummy SHUTDOWNCMD setting to just report that the
-systems would shut down at this point, without actually disrupting their work.
 
 FILES
 -----
