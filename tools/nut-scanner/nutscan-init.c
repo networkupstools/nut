@@ -197,6 +197,11 @@ void nutscan_init(void)
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
+#ifdef WIN32
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
+		}
+#endif
 	}
 #endif	/* WITH_SNMP */
 
@@ -214,6 +219,14 @@ void nutscan_init(void)
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
 		}
+#ifdef WIN32
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-27" SOEXT);
+		}
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls-27" SOEXT);
+		}
+#endif
 	}
 #endif	/* WITH_NEON */
 
