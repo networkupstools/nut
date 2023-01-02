@@ -13,7 +13,15 @@ greatest fixes, new drivers, bugs and other features.
 Installing from source
 ----------------------
 
-These are the essential steps for compiling and installing this software.
+These are the essential steps for compiling and installing this software
+from distribution archives (usually "release tarballs") which include a
+pre-built copy of the `configure` script and some other generated source
+files.
+
+To build NUT from a Git checkout you may need some additional tools
+(referenced just a bit below) and run `./autogen.sh` to generate the
+needed files. For common developer iterations, porting to new platforms,
+or in-place testing, running the `./ci_build.sh` script can be helpful.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
