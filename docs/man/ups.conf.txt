@@ -80,6 +80,9 @@ Optional.  Specify to upsdrvctl to not wait at all for the driver(s) to
 execute the request command.
 +
 The default (omission) is to wait.
++
+It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
+(e.g. used to work around certain issues with systemd otherwise).
 
 *retrydelay*::
 Optional.  Specify the delay between each restart attempt of the driver(s),

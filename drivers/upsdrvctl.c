@@ -90,8 +90,14 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 		if (!strcmp(var, "retrydelay"))
 			retrydelay = atoi(val);
 
-		if (!strcmp(var, "nowait"))
-			waitfordrivers = 0;
+		if (!strcmp(var, "nowait")) {
+			char * s = getenv("NUT_IGNORE_NOWAIT");
+			if (s && !strcmp(s, "true")) {
+				upsdebugx(0, "NOTE: 'nowait' setting ignored due to NUT_IGNORE_NOWAIT envvar");
+			} else {
+				waitfordrivers = 0;
+			}
+		}
 
 		/* ignore anything else - it's probably for main */
 
