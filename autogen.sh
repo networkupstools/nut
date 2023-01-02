@@ -84,8 +84,8 @@ then
 	fi
 fi
 
-if [ ! -f scripts/systemd/nut-common.tmpfiles.in ]; then
-	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common.tmpfiles.in
+if [ ! -f scripts/systemd/nut-common-tmpfiles.conf.in ]; then
+	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common-tmpfiles.conf.in
 fi
 
 # now we can safely call autoreconf
