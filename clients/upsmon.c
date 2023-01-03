@@ -222,11 +222,18 @@ static void notify(const char *notice, int flags, const char *ntype,
 	int	ret;
 #endif
 
-	if (flag_isset(flags, NOTIFY_IGNORE))
-		return;
+	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
+		__func__, upsname, ntype, flags, notice);
 
-	if (flag_isset(flags, NOTIFY_SYSLOG))
+	if (flag_isset(flags, NOTIFY_IGNORE)) {
+		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
+		return;
+	}
+
+	if (flag_isset(flags, NOTIFY_SYSLOG)) {
+		upsdebugx(6, "%s: NOTIFY_SYSLOG (as LOG_NOTICE)", __func__);
 		upslogx(LOG_NOTICE, "%s", notice);
+	}
 
 #ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
@@ -237,16 +244,24 @@ static void notify(const char *notice, int flags, const char *ntype,
 		return;
 	}
 
-	if (ret != 0)	/* parent */
+	if (ret != 0) {	/* parent */
+		upsdebugx(6, "%s (parent): forked a child to notify via subprocesses", __func__);
 		return;
+	}
 
 	/* child continues and does all the work */
+	upsdebugx(6, "%s (child): forked to notify via subprocesses", __func__);
 
-	if (flag_isset(flags, NOTIFY_WALL))
+	if (flag_isset(flags, NOTIFY_WALL)) {
+		upsdebugx(6, "%s (child): NOTIFY_WALL", __func__);
 		wall(notice);
+	}
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
+				__func__, notifycmd, notice);
+
 			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
 
 			if (upsname)
@@ -258,6 +273,8 @@ static void notify(const char *notice, int flags, const char *ntype,
 			if (system(exec) == -1) {
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
+		} else {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__);
 		}
 	}
 
