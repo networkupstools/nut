@@ -2559,10 +2559,6 @@ int main(int argc, char *argv[])
 		background();
 	}
 
-	if (nut_debug_level >= 1) {
-		upsdebugx(1, "debug level is '%d'", nut_debug_level);
-	}
-
 	/* only do the pipe stuff if the user hasn't disabled it */
 	if (use_pipe) {
 		struct passwd	*new_uid = get_user_pwent(run_as_user);
