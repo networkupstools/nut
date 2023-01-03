@@ -570,6 +570,13 @@ to interact with the data server `upsd`. Default is `/var/state/ups`.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
 
+	--with-powerdownflag=FILEPATH
+
+Change the default location (full filename path) of the POWERDOWNFLAG
+created by `upsmon` (as `root`) to tell the late-shutdown integration
+that this machine should tell all UPSes for which it is a "primary" NUT
+server to cut power to the load. Default is `/etc/killpower` on POSIX
+systems and `"C:\\killpower"` (note the double backslashes) on Windows.
 
 Things the compiler might need to find
 --------------------------------------

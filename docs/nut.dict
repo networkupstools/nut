@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3062 utf-8
+personal_ws-1.1 en 3064 utf-8
 AAS
 ABI
 ACFAIL
@@ -340,6 +340,7 @@ FEMEA
 FFF
 FH
 FHS
+FILEPATH
 FINALDELAY
 FIPS
 FIXME
@@ -2473,6 +2474,7 @@ portname
 powercom
 powerdev
 powerdown
+powerdownflag
 powerfactor
 powerman
 powermand

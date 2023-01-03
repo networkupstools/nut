@@ -71,6 +71,13 @@ dnl | default values for things later on (can be overridden)           |
 
 STATEPATH="/var/state/ups"
 
+dnl NOTE: NUT legacy default, keep as is for least surprise
+dnl Distributions are however welcome to specify the option to use tmpfs
+AS_CASE([${target_os}],
+	[*mingw*], [POWERDOWNFLAG="C:\\killpower"], dnl NOTE: Double backslashes are correct!
+	[POWERDOWNFLAG="/etc/killpower"] dnl POSIX systems default
+)
+
 cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
@@ -2237,6 +2244,36 @@ AC_ARG_WITH(pidpath,
 NUT_REPORT_SETTING_PATH([Privileged PID file path],
     PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
 
+dnl --------------------------------------------------------------------
+dnl Legacy default was /etc/killpower, but modern distros may prefer some
+dnl temporary filesystem (no I/O storage device impact) as long as it is
+dnl mounted at least read-only late in shutdown routine. The upsmon program
+dnl writes it as root, so this may well be in /var/run or in NUT PID/state
+dnl path (if that location remains mounted in run-time OS distribution).
+dnl Ideally the filesystems with `upsmon` program and libraries it needs
+dnl also remain mounted, so `upsmon -K` may be queried late in shutdown -
+dnl and we can avoid hardcoding such paths into those shutdown hooks.
+dnl Note that upsmon removes this file early in any daemonized start-up.
+AC_MSG_CHECKING(if requested default upsmon POWERDOWNFLAG path)
+AC_ARG_WITH(powerdownflag,
+	AS_HELP_STRING([--with-powerdownflag=PATH], [default path for upsmon POWERDOWNFLAG file (${POWERDOWNFLAG}, typically /etc/killpower)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)
+		;;
+	*)
+		POWERDOWNFLAG="${withval}"
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [AC_MSG_RESULT([default])])
+dnl # This should be internal detail for "upsmon -K" implementation,
+dnl # so not necessarily reported (reduce noise):
+dnl NUT_REPORT_SETTING_PATH([Default upsmon POWERDOWNFLAG path],
+dnl    POWERDOWNFLAG, "${POWERDOWNFLAG}", [Default path for upsmon POWERDOWNFLAG file])
+
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested driver path)
 AC_ARG_WITH(drvpath,
 	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
@@ -3298,6 +3335,7 @@ AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
 dnl #Not in main codebase yet# AC_SUBST(ALTSTATEPATH)
 AC_SUBST(CONFPATH)
+AC_SUBST(POWERDOWNFLAG)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
