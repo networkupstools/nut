@@ -2432,9 +2432,15 @@ int main(int argc, char *argv[])
 		if (cmd) {
 			upsdebugx(1, "Signaled old daemon OK");
 		} else {
-			printf("Fatal error: A previous upsmon instance is already running!\n");
-			printf("Either stop the previous instance first, or use the 'reload' command.\n");
-			exit(EXIT_FAILURE);
+			if (checking_flag) {
+				printf("Note: A previous upsmon instance is already running!\n");
+				printf("Usually it should not be running during OS shutdown,\n");
+				printf("which is when checking POWERDOWNFLAG makes most sense.\n");
+			} else {
+				printf("Fatal error: A previous upsmon instance is already running!\n");
+				printf("Either stop the previous instance first, or use the 'reload' command.\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 		break;
 
