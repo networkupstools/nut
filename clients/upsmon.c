@@ -115,6 +115,10 @@ static	sigset_t nut_upsmon_sigmask;
  * than that would not have effect, can only have more).
  */
 static int nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in ups.conf
+ */
+static int nut_debug_level_args = 0;
 
 static void setflag(int *val, int flag)
 {
@@ -1628,6 +1632,13 @@ static void loadconfig(void)
 				"Applying debug_min=%d from upsmon.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
 		}
 	}
 
@@ -2336,6 +2347,7 @@ int main(int argc, char *argv[])
 #endif
 			case 'D':
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'F':
 				foreground = 1;
