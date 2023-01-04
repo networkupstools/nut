@@ -363,6 +363,9 @@ static int libusb_open(usb_dev_handle **udevp,
 					goto next_device;
 				}
 			}
+
+			/* If we got here, none of the matchers said
+			 * that the device is not what we want. */
 			upsdebugx(2, "Device matches");
 
 			/* Now we have matched the device we wanted. Claim it. */
@@ -375,8 +378,8 @@ static int libusb_open(usb_dev_handle **udevp,
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
 #endif
-			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
+			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
 					usb_strerror());
 
