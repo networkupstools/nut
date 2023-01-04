@@ -4,9 +4,10 @@ NUT variable names and instant commands
 endif::external_title[]
 
 [NOTE]
-.RFC xxxx Recording Document
+.RFC 9271 Recording Document
 ====
-This document is defined by (pending) RFC xxxx and is referenced as the
+This document is defined by RFC 9271 published by IETF at
+https://www.rfc-editor.org/info/rfc9271 and is referenced as the
 document of record for the variable names and the instant commands used
 in the protocol described by the RFC.
 
