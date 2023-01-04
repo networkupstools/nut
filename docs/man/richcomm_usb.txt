@@ -22,10 +22,14 @@ As such, all the limitations of the underlying contact closure interface
 apply.  This means that you will only get the essentials in ups.status: OL,
 OB, and LB.  See also linkman:genericups[8].
 
+////////
+TODO: Uncomment after solving https://github.com/networkupstools/nut/issues/1768
+
 EXTRA ARGUMENTS
 ---------------
 
 include::nut_usb_addvars.txt[]
+////////
 
 BUGS
 ----
