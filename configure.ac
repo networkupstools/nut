@@ -2180,6 +2180,7 @@ AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
+PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
@@ -2291,6 +2292,7 @@ AC_ARG_WITH(drvpath,
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+DRVPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
@@ -2311,6 +2313,7 @@ AC_ARG_WITH(cgipath,
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+CGIPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([CGI program path],
     CGIPATH, "${conftemp}", [Default path for CGI programs])
 
@@ -2331,6 +2334,7 @@ AC_ARG_WITH(htmlpath,
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+HTMLPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([HTML file path],
     HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
@@ -3092,7 +3096,7 @@ dnl autotools default would be $prefix/etc
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-CONFPATH=${conftemp}
+CONFPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Config file path],
     CONFPATH, "${conftemp}", [Default path for configuration files])
 
@@ -3100,7 +3104,7 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-NUT_DATADIR=${conftemp}
+NUT_DATADIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
@@ -3108,7 +3112,7 @@ dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-BINDIR=${conftemp}
+BINDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Tool program path],
     BINDIR, "${conftemp}", [Default path for user executables])
 
@@ -3116,7 +3120,7 @@ dnl same for sbindir
 conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-SBINDIR=${conftemp}
+SBINDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System program path],
     SBINDIR, "${conftemp}", [Default path for system executables])
 
@@ -3124,7 +3128,7 @@ dnl same for libdir
 conftemp="${libdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-LIBDIR=${conftemp}
+LIBDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System library path],
     LIBDIR, "${conftemp}", [Default path for system libraries])
 
@@ -3132,7 +3136,7 @@ dnl same for libexecdir
 conftemp="${libexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-LIBEXECDIR=${conftemp}
+LIBEXECDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
@@ -3330,6 +3334,7 @@ AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(SEMLIBS)
+AC_SUBST(PREFIX)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
