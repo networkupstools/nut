@@ -34,11 +34,18 @@ EXTRA ARGUMENTS
 
 This driver supports the following optional setting:
 
-*vendor*='name'::
+*vendor =* 'name'::
+
 In case your iManufacturer (Vendor) string does not exactly match
-+ATCL FOR UPS+, you may provide an alternate string here. Note that a more
-likely case is that your device is handled by another driver for +0001:0000+
-devices, such as linkman:nutdrv_qx[8].
++ATCL FOR UPS+, you may provide an alternate string here (or specify "NULL" if
+the device does not provide a vendor string but you want this driver to match).
++
+Note that a more likely case for mismatch is that your device is handled by
+another driver for +0001:0000+ devices, such as linkman:nutdrv_qx[8].
++
+NOTE: This driver does not intend to support USB-matching settings common to
+other drivers, such as *vendorid*, *product*, *productid*, *serial*, *device*
+or *bus*; also the *vendor* setting supported here is not a regular expression.
 
 BUGS
 ----
