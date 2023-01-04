@@ -224,7 +224,7 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl abs_val abs)
 
 AC_CHECK_HEADER([float.h],
     [AC_DEFINE([HAVE_FLOAT_H], [1],
@@ -233,7 +233,7 @@ AC_CHECK_HEADER([math.h],
     [AC_DEFINE([HAVE_MATH_H], [1],
         [Define to 1 if you have <math.h>.])])
 
-AC_CHECK_FUNCS(fabs fabsf fabsl, [], [],
+AC_CHECK_DECLS([fabs, fabsf, fabsl, pow10, round], [], [],
 [#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
@@ -250,7 +250,7 @@ AC_CHECK_HEADER([stdlib.h],
     [AC_DEFINE([HAVE_STDLIB_H], [1],
         [Define to 1 if you have <stdlib.h>.])])
 
-AC_CHECK_FUNCS(realpath, [], [],
+AC_CHECK_DECLS(realpath, [], [],
 [#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif
@@ -293,6 +293,7 @@ AC_CHECK_HEADER([poll.h],
     [AC_DEFINE([HAVE_POLL_H], [1],
         [Define to 1 if you have <poll.h>.])])
 
+SEMLIBS=""
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
@@ -311,12 +312,19 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
          AC_MSG_RESULT([ok])
+
+	 dnl Solaris 8 builds complain about indirect dependency involved:
+	 dnl   sem_init   nut_scanner-nut-scanner.o
+	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+
+	 AC_CHECK_LIB(rt, sem_init, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
      AC_LANG_POP([C])
     ]
 )
+AM_CONDITIONAL(HAVE_SEMAPHORE_LIBS, test -n "${SEMLIBS}")
 
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
@@ -465,6 +473,26 @@ AS_IF([test x"${ac_cv_func_strptime}" = xyes],
     )
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
 
+AC_CACHE_CHECK([for strnlen(s1,s2,tm)],
+    [ac_cv_func_strnlen],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdlib.h>
+],
+            [size_t len = strnlen("LongString", 5);
+if (len != 5) return 5;
+
+len = strnlen("LongString", 50);
+if (len != 10) return 10
+])],
+        [ac_cv_func_strnlen=yes], [ac_cv_func_strnlen=no]
+    )])
+AS_IF([test x"${ac_cv_func_strnlen}" = xyes],
+    [AC_DEFINE([HAVE_STRNLEN], 1, [defined if standard library has, and C standard allows, the strnlen(s1,s2) method])],
+    [AC_MSG_WARN([Optional C library routine strnlen not found; a fallback implementation will be built in])]
+    )
+AM_CONDITIONAL([HAVE_STRNLEN], [test x"${ac_cv_func_strnlen}" = "xyes"])
+
 AC_CACHE_CHECK([for strdup(s)],
     [ac_cv_func_strdup],
     [AX_RUN_OR_LINK_IFELSE(
@@ -584,6 +612,29 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_DOUBLE
 	AC_TYPE_LONG_LONG_INT
 ])
+
+AC_MSG_CHECKING([whether printf allows null string args])
+AC_LANG_PUSH([C])
+dnl The following code crashes on some libc implementations (e.g. Solaris 8)
+dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
+dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs
+AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM(
+    [#include <stdlib.h>],
+    [printf("%s", NULL)]
+)],
+    [
+     AC_MSG_RESULT([ok])
+     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+    ],
+    [AC_MSG_RESULT([no])
+     AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+        [Define to 1 if your libc requires workarounds to print NULL values.])
+     AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially with verbose debug) - that may be why])
+     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+    ]
+)
+AC_LANG_POP([C])
+
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
@@ -719,6 +770,19 @@ dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON
 NUT_CHECK_PYTHON2
 NUT_CHECK_PYTHON3
+AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
+AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
+AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
+AS_IF([test x"$PYTHON" = x], [
+    AC_MSG_CHECKING([which python version to use by default])
+    dnl Last hit wins (py3)
+    AS_IF([test x"$PYTHON2" != x], [PYTHON="$PYTHON2"])
+    AS_IF([test x"$PYTHON3" != x], [PYTHON="$PYTHON3"])
+    AS_IF([test x"$PYTHON" = x],
+        [AC_MSG_RESULT([none])],
+        [AC_MSG_RESULT([$PYTHON])]
+        )
+    ])
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
@@ -1002,6 +1066,18 @@ dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
+
+dnl Activate WITH_UNMAPPED_DATA_POINTS for troubleshooting and evolution?
+dnl Note that production drivers must conform to docs/nut-names.txt
+NUT_ARG_WITH([unmapped-data-points],
+    [represent USB-HID and SNMP data points discovered during subdriver generation but not mapped to nut-names yet],
+    [no])
+AS_IF([test x"${nut_with_unmapped_data_points}" = xyes],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 1,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])],
+    [AC_DEFINE(WITH_UNMAPPED_DATA_POINTS, 0,
+        [Define to enable data points discovered during subdriver generation but not mapped to nut-names yet])]
+)
 
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
@@ -2506,11 +2582,17 @@ case "${systemdsystemunitdir}" in
 esac
 if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
+	have_systemd="yes"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
+	have_systemd="no"
 	AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+dnl Note: we may want tighter integration, e.g. systemd-notify support at
+dnl a later point. That would be a further option/flag. This one is a very
+dnl basic yes/no toggle.
+NUT_REPORT_FEATURE([consider systemd support], [${have_systemd}], [],
+					[HAVE_SYSTEMD], [Define to consider systemd support])
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
@@ -3210,6 +3292,7 @@ AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
+AC_SUBST(SEMLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
@@ -3562,10 +3645,10 @@ ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
-AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
+AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
-     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 # State file (e.g. upsd to driver) and pidfile location for NUT:
 d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @STATEPATH@
@@ -3573,19 +3656,19 @@ EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
         [AS_CASE(["${PIDPATH}"],
             [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
-            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @PIDPATH@
 EOF
 ])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTPIDPATH@
 EOF])
     dnl Generally added to support some forks
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @ALTSTATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTSTATEPATH@
 EOF])
@@ -3633,7 +3716,7 @@ AC_CONFIG_FILES([
  scripts/python/module/PyNUT.py
  scripts/upsdrvsvcctl/Makefile
  scripts/systemd/Makefile
- scripts/systemd/nut-common.tmpfiles
+ scripts/systemd/nut-common-tmpfiles.conf
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service

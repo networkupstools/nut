@@ -88,7 +88,9 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 	/* pdu3NumberPDU.0 = INTEGER: 1 (for daisychain support) */
-//	{ "device.count", 0, 1, ".1.3.6.1.4.1.232.165.11.1.1.0", NULL, SU_FLAG_OK, NULL },
+/*
+	{ "device.count", 0, 1, ".1.3.6.1.4.1.232.165.11.1.1.0", NULL, SU_FLAG_OK, NULL },
+*/
 	/* pdu3Manufacturer.1 = STRING: "HPE" */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.232.165.11.1.2.1.4.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
@@ -278,7 +280,7 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 		NULL, SU_OUTLET /*| SU_TYPE_DAISY_1*/, NULL },
 #endif
 
-#ifdef WITH_UNMAPPED_DATA_POINTS
+#if WITH_UNMAPPED_DATA_POINTS
 
 	/* pdu3IdentIndex.1 = INTEGER: 1 */
 	{ "unmapped.pdu3IdentIndex", 0, 1, ".1.3.6.1.4.1.232.165.11.1.2.1.1.1", NULL, SU_FLAG_OK, NULL },
@@ -325,8 +327,8 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 	{ "unmapped.pdu3InputPowerWattHourTimer", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.11.2.1.1.7.1", NULL, SU_FLAG_OK, NULL },
 	/* pdu3InputResettableEnergy.1 = INTEGER: 0 */
 	{ "unmapped.pdu3InputResettableEnergy", 0, 1, ".1.3.6.1.4.1.232.165.11.2.1.1.8.1", NULL, SU_FLAG_OK, NULL },
-/* pdu3InputPowerFactor.1 = INTEGER: 97 */
-{ "unmapped.pdu3InputPowerFactor", 0, 1, ".1.3.6.1.4.1.232.165.11.2.1.1.9.1", NULL, SU_FLAG_OK, NULL },
+	/* pdu3InputPowerFactor.1 = INTEGER: 97 */
+	{ "unmapped.pdu3InputPowerFactor", 0, 1, ".1.3.6.1.4.1.232.165.11.2.1.1.9.1", NULL, SU_FLAG_OK, NULL },
 	/* pdu3InputPowerVAR.1 = INTEGER: 197 */
 	{ "unmapped.pdu3InputPowerVAR", 0, 1, ".1.3.6.1.4.1.232.165.11.2.1.1.10.1", NULL, SU_FLAG_OK, NULL },
 	/* pdu3InputPhaseIndex.1.1 = INTEGER: 1 */
@@ -1724,7 +1726,7 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 	/* pdu3OutletControlShutoffDelay.1.%i = INTEGER: 0 */
 	{ "unmapped.pdu3OutletControlShutoffDelay", 0, 1, ".1.3.6.1.4.1.232.165.11.5.2.1.9.1.%i", NULL, SU_FLAG_OK, NULL },
 
-#endif /* WITH_UNMAPPED_DATA_POINTS */
+#endif	/* WITH_UNMAPPED_DATA_POINTS */
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };

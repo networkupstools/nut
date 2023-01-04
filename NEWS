@@ -121,11 +121,11 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
    * Better manage the slight nuances (especially in ups.status) between
-     Eaton UPSs, and rename mibs from 'pw' to 'eaton_pw_nm2', and from
-     'pxgx_ups' to 'eaton_pxg_ups' 
+     Eaton UPSs, and rename mibs from `pw` to `eaton_pw_nm2`, and from
+     `pxgx_ups` to `eaton_pxg_ups` [#1715]
    * Fixed the long standing "Warning: excessive poll failures" issue, that
-     was tied to non-existent OIDs, not well handled in some part of the driver
-
+     was tied to non-existent OIDs, not well handled in some parts of the
+     driver [#1716]
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
@@ -169,9 +169,23 @@ https://github.com/networkupstools/nut/milestone/8
  - some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
+ - some fixes for builds on older OSes with less functional default system
+   shell interpreters - now `autogen.sh` supports a `CONFIG_SHELL` envvar
+   to inject its value into generated `configure` script [#1736]
+   * Note that you may have to install additional tools (possibly from
+     third-party FOSS packaging efforts) to prepare and build the NUT
+     codebase, and/or prefer non-default system provided implementations
+     (e.g. to use the XPG4 `grep` with `-E` support on Solaris as detailed
+     in https://github.com/networkupstools/nut/issues/1736 comments)
+
  - `configure` script, reference init-script and packaging templates updated
    to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
    unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
+
+ - `configure` script enhanced: `--with-unmapped-data-points` option allows
+   to build SNMP and USB-HID subdrivers with entries discovered by the scripts
+   which generated them from data walks, but developers did not rename yet
+   to NUT mappings conforming to `docs/nut-names.txt` standards [#1699]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now
@@ -190,6 +204,9 @@ https://github.com/networkupstools/nut/milestone/8
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
+
+ - Clarified documentation in codebase according to end-user feedback [#1721,
+   #1750 and others over time]
 
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,

@@ -147,9 +147,10 @@ void nutscan_init(void)
 # ifdef HAVE_PTHREAD_TRYJOIN
 	pthread_mutex_init(&threadcount_mutex, NULL);
 # endif
-#endif /* HAVE_PTHREAD */
+#endif	/* HAVE_PTHREAD */
 
 	char *libname = NULL;
+
 #ifdef WITH_USB
  #if WITH_LIBUSB_1_0
 	libname = get_libname("libusb-1.0" SOEXT);
@@ -186,7 +187,8 @@ void nutscan_init(void)
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
 		}
 	}
-#endif
+#endif	/* WITH_USB */
+
 #ifdef WITH_SNMP
 	libname = get_libname("libnetsnmp" SOEXT);
 	if (libname) {
@@ -195,8 +197,14 @@ void nutscan_init(void)
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
-	}
+#ifdef WIN32
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
+		}
 #endif
+	}
+#endif	/* WITH_SNMP */
+
 #ifdef WITH_NEON
 	libname = get_libname("libneon" SOEXT);
 	if (!libname) {
@@ -211,8 +219,17 @@ void nutscan_init(void)
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
 		}
-	}
+#ifdef WIN32
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-27" SOEXT);
+		}
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls-27" SOEXT);
+		}
 #endif
+	}
+#endif	/* WITH_NEON */
+
 #ifdef WITH_AVAHI
 	libname = get_libname("libavahi-client" SOEXT);
 	if (libname) {
@@ -222,7 +239,8 @@ void nutscan_init(void)
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
 	}
-#endif
+#endif	/* WITH_AVAHI */
+
 #ifdef WITH_FREEIPMI
 	libname = get_libname("libfreeipmi" SOEXT);
 	if (libname) {
@@ -232,7 +250,9 @@ void nutscan_init(void)
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
 	}
-#endif
+#endif	/* WITH_FREEIPMI */
+
+/* start of libupsclient for "old NUT" (vs. Avahi) protocol - unconditional */
 	libname = get_libname("libupsclient" SOEXT);
 #ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
@@ -259,6 +279,8 @@ void nutscan_init(void)
 		}
 #endif
 	}
+/* end of libupsclient for "old NUT" (vs. Avahi) protocol */
+
 }
 
 void nutscan_free(void)

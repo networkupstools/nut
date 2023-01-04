@@ -57,8 +57,18 @@ Changes from 2.8.0 to 2.8.1
   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
 
+- Renamed generated nut-common.tmpfiles(.in) => nut-common-tmpfiles.conf(.in)
+  to install a /usr/lib/systemd-tmpfiles/*.conf pattern [#1755]
+
+  * If earlier NUT v2.8.0 package recipes for your Linux distribution dealt
+    with this file, you may have to adjust its name for newer releases.
+
+  * Several other issues have been fixed related to this file and its content,
+    including #1030, #1037, #1117 and #1712
+
 - snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
-  were renamed: 'pw' is now 'eaton_pw_nm2', and 'pxgx_ups' is 'eaton_pxg_ups' 
+  were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`
+  [#1715]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------

@@ -732,7 +732,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | grep -E '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
+set | grep -E '^(PATH|.*CCACHE.*|CI_.*|OS_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -779,7 +779,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             # Tell ccache the PATH without itself in it, to avoid loops processing
-                PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         fi
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
@@ -1848,6 +1848,20 @@ bindings)
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
+
+    if [ "$HAVE_CCACHE" = yes ] \
+    && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
+    && [ -d "${CI_CCACHE_SYMLINKDIR}" ] \
+    ; then
+        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export CCACHE_PATH CCACHE_DIR PATH
+        fi
+    fi
 
     ./autogen.sh || exit
     cd scripts/Windows || exit

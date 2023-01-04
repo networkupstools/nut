@@ -380,6 +380,10 @@ char * getfullpath(char * relative_path);
 int __cdecl usleep(useconds_t useconds);
 #endif /* HAVE_USLEEP */
 
+#ifndef HAVE_STRNLEN
+size_t strnlen(const char *s, size_t maxlen);
+#endif
+
 /* Not all platforms support the flag; this method abstracts
  * its use (or not) to simplify calls in the actual codebase */
 /* TODO: Extend for TYPE_FD and WIN32 eventually? */

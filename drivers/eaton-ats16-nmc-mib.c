@@ -185,7 +185,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
 		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]},
 
-#if 0 /* FIXME: Remaining data to be processed */
+#if WITH_UNMAPPED_DATA_POINTS /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
 	{ "unmapped.ats2InputStatusDephasing", 0, 1, ".1.3.6.1.4.1.534.10.2.3.1.1.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputStatusIndex.source1 = INTEGER: source1(1) */
@@ -257,7 +257,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactDescr.2 = STRING: Input #2 */
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.2", NULL, SU_FLAG_OK, NULL },
-#endif /* if 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };

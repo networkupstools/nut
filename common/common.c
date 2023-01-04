@@ -32,7 +32,7 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
 #endif
 
@@ -49,7 +49,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
 #include "nut_stdint.h"
-#if UINTPTR_MAX == 0xffffffffffffffffULL
+#if defined(UINTPTR_MAX) && (UINTPTR_MAX + 0) == 0xffffffffffffffffULL
 # define BUILD_64   1
 #else
 # ifdef BUILD_64
@@ -229,7 +229,7 @@ struct passwd *get_user_pwent(const char *name)
 	   some implementations of getpwnam() do not set errno when this
 	   happens. */
 	if (errno == 0)
-		fatalx(EXIT_FAILURE, "user %s not found", name);
+		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 #else
@@ -268,14 +268,26 @@ void become_user(struct passwd *pw)
 {
 #ifndef WIN32
 	/* if we can't switch users, then don't even try */
-	if ((geteuid() != 0) && (getuid() != 0)) {
-		upsdebugx(1, "Can not become_user(%s): not root initially, "
-			"remaining UID=%jd GID=%jd",
-			pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
+	intmax_t initial_uid = getuid();
+	intmax_t initial_euid = geteuid();
+	if ((initial_euid != 0) && (initial_uid != 0)) {
+		intmax_t initial_gid = getgid();
+		if (initial_euid == (intmax_t)pw->pw_uid
+		||   initial_uid == (intmax_t)pw->pw_uid
+		) {
+			upsdebugx(1, "No need to become_user(%s): "
+				"already UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		} else {
+			upsdebugx(1, "Can not become_user(%s): "
+				"not root initially, "
+				"remaining UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		}
 		return;
 	}
 
-	if (getuid() == 0)
+	if (initial_uid == 0)
 		if (seteuid(0))
 			fatal_with_errno(EXIT_FAILURE, "getuid gave 0, but seteuid(0) failed");
 
@@ -1294,7 +1306,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	}
 	while ((dirp = readdir(dp)) != NULL)
 	{
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 		struct stat	st;
 #endif
 
@@ -1304,7 +1316,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
 		) {
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
-#if HAVE_REALPATH
+#if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else
 			/* Just check if candidate name is (points to?) valid file */
@@ -1341,7 +1353,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				}
 			}
 # endif /* WIN32 */
-#endif  /* HAVE_REALPATH */
+#endif  /* HAVE_DECL_REALPATH */
 
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,

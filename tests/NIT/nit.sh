@@ -114,7 +114,7 @@ isBusy_NUT_PORT() {
         (   # Hide this looped noise:
             # ./nit.sh: connect: Connection refused
             # ./nit.sh: line 112: /dev/tcp/localhost/35050: Connection refused
-            if ! shouldDebug ; then
+            if shouldDebug ; then : ; else
                 exec 2>/dev/null
             fi
             for H in "localhost" "127.0.0.1" "::1"; do
@@ -176,7 +176,7 @@ case "${BUILDDIR}" in
         TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
     *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
 esac
-if ! test -w "${BUILDDIR}" ; then
+if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
@@ -226,7 +226,9 @@ TESTDIR="$BUILDDIR/tmp"
 # we reserve 17 chars for "/dummy-ups-dummy" longest filename.
 if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
     log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
-    if ! ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
+    if ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
+        :
+    else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
@@ -278,7 +280,7 @@ else
         && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
         || NUT_PORT=34931
 
-        if ! isBusy_NUT_PORT ; then
+        if isBusy_NUT_PORT ; then : ; else
             break
         fi
 
@@ -296,7 +298,7 @@ else
             && [ "$DELTA2" -ge 0 ] || die "Can not pick random port"
 
             NUT_PORT="`expr $DELTA1 + $DELTA2`"
-            if ! isBusy_NUT_PORT ; then
+            if isBusy_NUT_PORT ; then : ; else
                 break
             fi
 
@@ -504,8 +506,11 @@ EOF
         # HACK: Avoid empty ups.status that may be present in example docs
         # FIXME: Might we actually want that value (un-)set for tests?..
         # TODO: Check if the problem was with dummy-ups looping? [#1385]
+        # Avoid "sed -i", it behaves differently on some platforms
+        # and is completely absent on others [#1736 and earlier]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
-            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i'.bak' "$F"
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
+            mv -f "$F.bak" "$F"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
@@ -604,11 +609,18 @@ testcase_upsd_allow_no_device() {
 
         log_separator
         log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
-        if ! runcmd upsc -l localhost:$NUT_PORT ; then
+        if runcmd upsc -l localhost:$NUT_PORT ; then
+            :
+        else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
                 log_warn "Retry once to rule out laggy systems"
                 sleep 3
+                runcmd upsc -l localhost:$NUT_PORT
+            fi
+            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+                log_warn "Retry once more to rule out very laggy systems"
+                sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
             fi
             [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
@@ -830,9 +842,8 @@ testcase_sandbox_start_drivers_after_upsd() {
             COUNTDOWN=60
             # TODO: Convert to runcmd()?
             OUT=""
-            while [ x"$OUT" = x"ups.status: WAIT" ] \
-            || ! OUT="`upsc $U@localhost:$NUT_PORT ups.status`" \
-            ; do
+            while [ x"$OUT" = x"ups.status: WAIT" ] ; do
+                OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
                 [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "Got output:"; echo "$OUT"; break; }
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
@@ -908,6 +919,10 @@ isTestablePython() {
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
     ; then
+        return 1
+    fi
+    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
+    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
         return 1
     fi
     return 0
@@ -1154,7 +1169,7 @@ fi
 # Allow to leave the sandbox daemons running for a while,
 # to experiment with them interactively:
 if [ -n "${DEBUG_SLEEP-}" ] ; then
-    if ! [ "${DEBUG_SLEEP-}" -gt 0 ] ; then
+    if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then : ; else
         DEBUG_SLEEP=60
     fi
 

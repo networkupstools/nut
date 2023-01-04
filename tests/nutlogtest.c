@@ -29,7 +29,9 @@ int main(void) {
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat-overflow"
 #endif
-    upsdebugx(0, "D: checking with libc handling of NULL: '%s' vs '%s'", s1, s2);
+
+    upsdebugx(0, "D: checking with libc handling of NULL (can segfault for some libc implementations):");
+    upsdebugx(0, "D:   '%s' vs '%s'", s1, s2);
 
 /* This explicitly does not work with -Wformat, due to verbatim NULL without a var:
  * nutlogtest.c:20:5: error: reading through null pointer (argument 4) [-Werror=format=]

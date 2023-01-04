@@ -101,9 +101,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 		".1.3.6.1.4.1.534.7.1.1.2.1.4.1",
 		"EATON", SU_FLAG_STATIC, NULL },
 	/* pduModel.1 = STRING: "200-240V, 24A, 5.0kVA, 50/60Hz" */
-	/* Prefer ".1.3.6.1.2.1.1.1.0" / device.description */
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.2.1.1.1.0", /*".1.3.6.1.4.1.534.7.1.1.2.1.3.1", */
+		".1.3.6.1.4.1.534.7.1.1.2.1.3.1",
 		"Eaton ePDU", SU_FLAG_STATIC, NULL },
 	/* pduSerialNumber.1 = STRING: "WMEL0046" */
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE,
@@ -279,8 +278,9 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 		".1.3.6.1.4.1.534.7.1.5.2.1.10.1.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET, NULL }, + set "outlet.%i.delay.start" + set itself to delayedReboot (6),
 		// &eaton_nlogic_outlet_delayed_reboot_info[0]
+#endif
 
-
+#if WITH_UNMAPPED_DATA_POINTS
 	/* pduIPv4Address.1 = IpAddress: 192.168.1.55 */
 	{ "unmapped.pduIPv4Address", 0, 1, ".1.3.6.1.4.1.534.7.1.1.2.1.15.1", NULL, SU_FLAG_OK, NULL },
 	/* pduIPv6Address.1 = STRING: "FE80::CA45:44FF:FE30:9414" */
@@ -304,8 +304,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	/* pduConfigNetworkManagementCardReset.1 = INTEGER: 0 */
 	{ "unmapped.pduConfigNetworkManagementCardReset", 0, 1, ".1.3.6.1.4.1.534.7.1.1.3.1.10.1", NULL, SU_FLAG_OK, NULL },
 
-/* pduConfigDaisyChainStatus.1 = INTEGER: 0 */
-{ "unmapped.pduConfigDaisyChainStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.1.3.1.11.1", NULL, SU_FLAG_OK, NULL },
+	/* pduConfigDaisyChainStatus.1 = INTEGER: 0 */
+	{ "unmapped.pduConfigDaisyChainStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.1.3.1.11.1", NULL, SU_FLAG_OK, NULL },
 
 	/* pduInputFrequencyStatus.1 = INTEGER: 1 */
 	{ "unmapped.pduInputFrequencyStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.2.1.1.3.1", NULL, SU_FLAG_OK, NULL },
@@ -912,8 +912,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduGroupCurrentPercentLoad", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.18.1.11", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupCurrentPercentLoad.1.12 = INTEGER: 0 */
 	{ "unmapped.pduGroupCurrentPercentLoad", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.18.1.12", NULL, SU_FLAG_OK, NULL },
-/* pduGroupPowerVA.1.1 = INTEGER: 0 */
-{ "unmapped.pduGroupPowerVA", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.19.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduGroupPowerVA.1.1 = INTEGER: 0 */
+	{ "unmapped.pduGroupPowerVA", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.19.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupPowerVA.1.2 = INTEGER: 0 */
 	{ "unmapped.pduGroupPowerVA", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.19.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupPowerVA.1.3 = INTEGER: 0 */
@@ -936,8 +936,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduGroupPowerVA", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.19.1.11", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupPowerVA.1.12 = INTEGER: 0 */
 	{ "unmapped.pduGroupPowerVA", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.19.1.12", NULL, SU_FLAG_OK, NULL },
-/* pduGroupPowerWatts.1.1 = INTEGER: 0 */
-{ "unmapped.pduGroupPowerWatts", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.20.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduGroupPowerWatts.1.1 = INTEGER: 0 */
+	{ "unmapped.pduGroupPowerWatts", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.20.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupPowerWatts.1.2 = INTEGER: 0 */
 	{ "unmapped.pduGroupPowerWatts", 0, 1, ".1.3.6.1.4.1.534.7.1.3.1.1.20.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduGroupPowerWatts.1.3 = INTEGER: 0 */
@@ -1204,8 +1204,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduTemperatureProbeStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.4.2.1.3.1.5", NULL, SU_FLAG_OK, NULL },
 	/* pduTemperatureProbeStatus.1.6 = INTEGER: 1 */
 	{ "unmapped.pduTemperatureProbeStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.4.2.1.3.1.6", NULL, SU_FLAG_OK, NULL },
-/* pduTemperatureValue.1.1 = INTEGER: 0 */
-{ "unmapped.pduTemperatureValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.2.1.4.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduTemperatureValue.1.1 = INTEGER: 0 */
+	{ "unmapped.pduTemperatureValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.2.1.4.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduTemperatureValue.1.2 = INTEGER: 0 */
 	{ "unmapped.pduTemperatureValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.2.1.4.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduTemperatureValue.1.3 = INTEGER: 0 */
@@ -1324,8 +1324,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduHumidityProbeStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.4.3.1.3.1.5", NULL, SU_FLAG_OK, NULL },
 	/* pduHumidityProbeStatus.1.6 = INTEGER: 1 */
 	{ "unmapped.pduHumidityProbeStatus", 0, 1, ".1.3.6.1.4.1.534.7.1.4.3.1.3.1.6", NULL, SU_FLAG_OK, NULL },
-/* pduHumidityValue.1.1 = INTEGER: 0 */
-{ "unmapped.pduHumidityValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.3.1.4.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduHumidityValue.1.1 = INTEGER: 0 */
+	{ "unmapped.pduHumidityValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.3.1.4.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduHumidityValue.1.2 = INTEGER: 0 */
 	{ "unmapped.pduHumidityValue", 0, 1, ".1.3.6.1.4.1.534.7.1.4.3.1.4.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduHumidityValue.1.3 = INTEGER: 0 */
@@ -3000,8 +3000,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduOutletActivePowerThCtrl", 0, 1, ".1.3.6.1.4.1.534.7.1.5.1.1.21.1.48", NULL, SU_FLAG_OK, NULL },
 
 
-/* pduOutletControlOffCmd.1.1 = INTEGER: -1 */
-{ "unmapped.pduOutletControlOffCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.2.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduOutletControlOffCmd.1.1 = INTEGER: -1 */
+	{ "unmapped.pduOutletControlOffCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.2.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOffCmd.1.2 = INTEGER: -1 */
 	{ "unmapped.pduOutletControlOffCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.2.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOffCmd.1.3 = INTEGER: -1 */
@@ -3096,8 +3096,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduOutletControlOffCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.2.1.47", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOffCmd.1.48 = INTEGER: 0 */
 	{ "unmapped.pduOutletControlOffCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.2.1.48", NULL, SU_FLAG_OK, NULL },
-/* pduOutletControlOnCmd.1.1 = INTEGER: -1 */
-{ "unmapped.pduOutletControlOnCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.3.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduOutletControlOnCmd.1.1 = INTEGER: -1 */
+	{ "unmapped.pduOutletControlOnCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.3.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOnCmd.1.2 = INTEGER: -1 */
 	{ "unmapped.pduOutletControlOnCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.3.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOnCmd.1.3 = INTEGER: -1 */
@@ -3192,8 +3192,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduOutletControlOnCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.3.1.47", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlOnCmd.1.48 = INTEGER: 0 */
 	{ "unmapped.pduOutletControlOnCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.3.1.48", NULL, SU_FLAG_OK, NULL },
-/* pduOutletControlRebootCmd.1.1 = INTEGER: -1 */
-{ "unmapped.pduOutletControlRebootCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.4.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduOutletControlRebootCmd.1.1 = INTEGER: -1 */
+	{ "unmapped.pduOutletControlRebootCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.4.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlRebootCmd.1.2 = INTEGER: -1 */
 	{ "unmapped.pduOutletControlRebootCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.4.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlRebootCmd.1.3 = INTEGER: -1 */
@@ -3288,8 +3288,8 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	{ "unmapped.pduOutletControlRebootCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.4.1.47", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlRebootCmd.1.48 = INTEGER: 0 */
 	{ "unmapped.pduOutletControlRebootCmd", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.4.1.48", NULL, SU_FLAG_OK, NULL },
-/* pduOutletControlPowerOnState.1.1 = INTEGER: 2 */
-{ "unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.1", NULL, SU_FLAG_OK, NULL },
+	/* pduOutletControlPowerOnState.1.1 = INTEGER: 2 */
+	{ "unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.1", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlPowerOnState.1.2 = INTEGER: 2 */
 	{ "unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.2", NULL, SU_FLAG_OK, NULL },
 	/* pduOutletControlPowerOnState.1.3 = INTEGER: 2 */
@@ -3385,7 +3385,7 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	/* pduOutletControlPowerOnState.1.48 = INTEGER: 0 */
 	{ "unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.48", NULL, SU_FLAG_OK, NULL },
 
-#endif
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
