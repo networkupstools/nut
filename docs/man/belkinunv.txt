@@ -291,7 +291,7 @@ readable at that point.
 
  # NEAR END OF SHUTDOWN SCRIPT:
  # if shutdown was caused by UPS, perform Belkin UPS workaround.
- if [ -f /etc/killpower ] ; then
+ if [ -f /etc/killpower ] || /usr/sbin/upsmon -K ; then
     echo "Waiting for AC power, or for UPS batteries to run out..."
     /usr/bin/belkinunv -x wait /dev/ttyS1
 
@@ -309,7 +309,7 @@ file system integrity checks are done.
  # NEAR BEGINNING OF STARTUP SCRIPT:
  # if we are recovering from a power failure, wait for the UPS to
  # charge to a comfortable level before writing anything to disk
- if [ -f /etc/killpower ] ; then
+ if [ -f /etc/killpower ] || /usr/sbin/upsmon -K ; then
     echo "Waiting for UPS battery charge to reach 60%..."
     /usr/bin/belkinunv -x wait=60 -x nohang /dev/ttyS1
  fi

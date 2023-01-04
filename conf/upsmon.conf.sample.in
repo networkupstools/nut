@@ -258,8 +258,10 @@ DEADTIME 15
 #
 # For Windows setup use something like:
 # POWERDOWNFLAG "C:\\killpower"
-
-POWERDOWNFLAG /etc/killpower
+#
+# For Unix/Linux systems the legacy default is:
+# POWERDOWNFLAG /etc/killpower
+POWERDOWNFLAG "@POWERDOWNFLAG@"
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur

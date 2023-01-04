@@ -36,6 +36,10 @@ int	num_ups = 0;
  * than that would not have effect, can only have more).
  */
 int	nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in upsd.conf
+ */
+int nut_debug_level_args = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -390,6 +394,13 @@ void load_upsdconf(int reloading)
 				"Applying debug_min=%d from upsd.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
 		}
 	}
 
