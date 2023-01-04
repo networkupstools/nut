@@ -1162,8 +1162,14 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
-	while (!exit_flag) {
+	dstate_setinfo("driver.state", "quiet");
+	if (dump_data) {
+		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
+	} else {
+		upsdebugx(1, "Driver initialization completed, beginning regular infinite loop");
+	}
 
+	while (!exit_flag) {
 		struct timeval	timeout;
 
 		gettimeofday(&timeout, NULL);
