@@ -61,3 +61,9 @@ connected (e.g. `device="001"` or `device="00[1-2]"`) as seen in
 `/proc/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
 Note that device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
+
+*usb_set_altinterface =* 'bAlternateSetting'::
+
+Force redundant call to `usb_set_altinterface()`, especially if needed
+for devices serving multiple USB roles where the UPS is not represented
+by the interface number `0` (default).
