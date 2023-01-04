@@ -12,10 +12,8 @@ EXTRA_DIST = README \
     perl/Nut.pm \
     RedHat/halt.patch \
     RedHat/README \
-    RedHat/ups \
-    RedHat/upsd \
+    RedHat/ups.in \
     RedHat/upsd.in \
-    RedHat/upsmon \
     RedHat/upsmon.in \
     Solaris8/S99upsmon \
     subdriver/gen-usbhid-subdriver.sh \

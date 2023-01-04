@@ -3742,6 +3742,7 @@ AC_CONFIG_FILES([
  lib/libnutscan.pc
  lib/Makefile
  scripts/Aix/nut-aix.spec
+ scripts/RedHat/ups
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsdconf.aug
@@ -3790,6 +3791,8 @@ AC_MSG_NOTICE([Generating templated script files that should be marked executabl
 m4_foreach_w([SCRIPTFILE], [
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall
+ scripts/RedHat/upsd
+ scripts/RedHat/upsmon
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
  scripts/augeas/gen-nutupsconf-aug.py
