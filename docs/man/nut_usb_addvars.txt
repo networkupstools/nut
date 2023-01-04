@@ -9,6 +9,16 @@ Keep in sync with nut_usb_addvars() method provided by
 * drivers/usb-common.h
 ////////
 
+*port =* 'string'::
+
+Some 'value' must be set, typically *auto*.
++
+NOTE: This could be a device filesystem path like `/dev/usb/hiddev0` but current
+use of libusb API precludes knowing and matching by such identifiers.  They may
+also be inherently unreliable (dependent on re-plugging and enumeration order).
+At this time the actual 'value' is ignored, but some 'port' must be there
+syntactically.
+
 *vendorid =* 'regex'::
 *productid =* 'regex'::
 *vendor =* 'regex'::
