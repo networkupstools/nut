@@ -137,6 +137,11 @@ https://github.com/networkupstools/nut/milestone/8
  - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
    serial drivers in respective Makefile and configure script options [#1446]
 
+ - Fixed support for common USB matching options ("vendor", "device", "bus",
+   etc.) for `riello_usb` and `richcomm_usb` [#1763] and updated man pages
+   of all USB drivers using these options to include the same description
+   [#1766]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 

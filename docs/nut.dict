@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3064 utf-8
+personal_ws-1.1 en 3067 utf-8
 AAS
 ABI
 ACFAIL
@@ -1409,6 +1409,7 @@ addenum
 addinfo
 addr
 addrange
+addvars
 adelsystem
 adkorte
 adm

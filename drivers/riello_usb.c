@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -831,7 +831,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 }
 
 void upsdrv_initups(void)

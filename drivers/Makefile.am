@@ -215,7 +215,7 @@ blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
 nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
-richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
+richcomm_usb_SOURCES = richcomm_usb.c $(LIBUSB_IMPL) usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c

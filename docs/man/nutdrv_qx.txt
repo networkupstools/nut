@@ -319,32 +319,7 @@ If you find that your UPS isn't detected or the communication with the UPS is un
 USB INTERFACE ONLY
 ~~~~~~~~~~~~~~~~~~
 
-*port =* 'string'::
-You must set 'value' to *auto*.
-
-*vendorid =* 'regex'::
-*productid =* 'regex'::
-*vendor =* 'regex'::
-*product =* 'regex'::
-*serial =* 'regex'::
-Select a specific UPS, in case there is more than one connected via USB.
-Each option specifies an extended regular expression (see *regex(7)*) that must match the UPS's entire vendor/product/serial string (minus any surrounding whitespace), or the whole 4-digit hexadecimal code for vendorid and productid.
-Try *-DD* for finding out the strings to match.
-+
-Examples:
-
- - `-x vendor="Foo.Corporation.*"`
- - `-x vendorid=051d*` (APC)
- - `-x product=".*(Smart|Back)-?UPS.*"`
-
-*bus =* 'regex'::
-Select a UPS on a specific USB bus or group of buses.
-The argument is a regular expression that must match the bus name where the UPS is connected (e.g. +bus="002"+, +bus="00[2-3]"+).
-
-*device =* 'regex'::
-Select a UPS on a specific USB device or group of devices.
-The argument is a regular expression that must match the device name where the UPS is connected (e.g. +device="001"+, +device="00[1-2]"+).
-Note that device numbers are not guaranteed by the OS to be stable across re-boots or device re-plugging.
+include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
