@@ -24,12 +24,11 @@
  */
 
 #include "main.h"
-#include "nut_libusb.h"
 #include "usb-common.h"
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.17"
+#define DRIVER_VERSION	"1.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -83,7 +82,8 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					return 1;
 				}
 			}
-			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
+			upsdebugx(0, "To keep trying (in case your device does not have a vendor string), use vendor=NULL. "
+				"Have you tried the nutdrv_qx driver?");
 			return 0;
 		}
 
@@ -98,15 +98,16 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
 				return 1;
 			} else {
-				upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
-					"but provided vendor '%s' does not match device: '%s'.",
+				upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
+					"but provided vendor '%s' does not match device: '%s'. "
+					"Have you tried the nutdrv_qx driver?",
 					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
 				return 0;
 			}
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+		upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
 			"but device vendor string '%s' does not match expected string '%s'. "
 			"Have you tried the nutdrv_qx driver?",
 			device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
@@ -680,6 +681,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	nut_usb_addvars();
+	/* NOTE: This driver uses a very custom device matching method,
+	 * so does not involve nut_usb_addvars() method like others do.
+	 */
+	addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
 }
