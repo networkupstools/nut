@@ -27,10 +27,13 @@ syntactically.
 
 Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
-*regex(7)* that must match the UPS's entire vendor/product/serial
-string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for `vendorid` and `productid`. Try *-DD* for
-finding out the strings to match.
+*regex(7)* for more information on regular expressions), which
+must match the UPS's entire respective vendor/product/serial string
+(minus any surrounding whitespace), or the whole 4-digit
+hexadecimal code for `vendorid` and `productid`.
++
+Try *lsusb(8)* or running this NUT driver with *-DD* command-line
+argument for finding out the strings to match.
 +
 Examples:
 
@@ -42,12 +45,14 @@ Examples:
 
 Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
-connected (e.g. `bus="002"` or `bus="00[2-3]"`).
+connected (e.g. `bus="002"` or `bus="00[2-3]"`) as seen in
+`/proc/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
 
 *device =* 'regex'::
 
 Select a UPS on a specific USB device or group of devices. The argument is
 a regular expression that must match the device name where the UPS is
-connected (e.g. `device="001"` or `device="00[1-2]"`).
+connected (e.g. `device="001"` or `device="00[1-2]"`) as seen in
+`/proc/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
 Note that device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
