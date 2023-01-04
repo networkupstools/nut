@@ -700,6 +700,16 @@ driver: Internal driver information
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or
                             cmdline -x) status           | enabled (or absent)
+| driver.state            | Current state in driver's
+                            lifecycle, primarily to help
+                            readers discern long-running
+                            init (with full device walk)
+                            or cleanup stages from
+                            the stable working loop      | init.starting, init.quiet,
+                                                           init.device, init.info,
+                                                           init.updateinfo (first walk),
+                                                           updateinfo, quiet, dumping,
+                                                           cleanup.upsdrv, cleanup.exit
 |===============================================================================
 
 server: Internal server information
