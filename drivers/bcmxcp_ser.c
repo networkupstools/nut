@@ -410,6 +410,11 @@ static void pw_comm_setup(const char *port)
 # pragma GCC diagnostic pop
 #endif
 
+void upsdrv_makevartable(void)
+{
+	bcmxcp_makevartable();
+}
+
 void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);

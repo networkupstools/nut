@@ -46,9 +46,12 @@ LINKED_SOURCE_FILES += serial.c
 serial.c: $(top_srcdir)/drivers/serial.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
 
-LINKED_SOURCE_FILES += bcmxcp_ser.c
+LINKED_SOURCE_FILES += bcmxcp_ser.c bcmxcp.c
 bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
+
+bcmxcp.c: $(top_srcdir)/drivers/bcmxcp.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp.c" "$@"
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)

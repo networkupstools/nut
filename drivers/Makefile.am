@@ -229,7 +229,7 @@ usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
+bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c $(LIBUSB_IMPL) usb-common.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
