@@ -138,7 +138,7 @@ https://github.com/networkupstools/nut/milestone/8
    serial drivers in respective Makefile and configure script options [#1446]
 
  - Fixed support for common USB matching options ("vendor", "device", "bus",
-   etc.) for `riello_usb`, `richcomm_usb` and `nutdrv_atcl_usb` [#1763]
+   etc.) for `riello_usb` and `richcomm_usb` [#1763]
 
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]

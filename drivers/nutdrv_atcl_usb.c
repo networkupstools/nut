@@ -24,12 +24,11 @@
  */
 
 #include "main.h"
-#include "nut_libusb.h"
 #include "usb-common.h"
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.17"
+#define DRIVER_VERSION	"1.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -680,6 +679,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	nut_usb_addvars();
+	/* NOTE: This driver uses a very custom device matching method,
+	 * so does not involve nut_usb_addvars() method like others do.
+	 */
+	addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
 }
