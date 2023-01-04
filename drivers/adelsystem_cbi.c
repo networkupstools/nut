@@ -1281,6 +1281,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(1, "modbus_reconnect, trying to reconnect to modbus server");
+	dstate_setinfo("driver.state", "reconnect.trying");
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1340,5 +1341,7 @@ void modbus_reconnect(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	dstate_setinfo("driver.state", "quiet");
 }
 

@@ -348,13 +348,17 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
+		dstate_setinfo("driver.state", "reconnect.trying");
+
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
 			return ret;
 
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 		upsdrv_initinfo();	/* reconnect usb cable */
+		dstate_setinfo("driver.state", "quiet");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -404,6 +408,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
 		break;

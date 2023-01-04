@@ -708,6 +708,8 @@ driver: Internal driver information
                             the stable working loop      | init.starting, init.quiet,
                                                            init.device, init.info,
                                                            init.updateinfo (first walk),
+                                                           reconnect.trying,
+                                                           reconnect.updateinfo,
                                                            updateinfo, quiet, dumping,
                                                            cleanup.upsdrv, cleanup.exit
 |===============================================================================

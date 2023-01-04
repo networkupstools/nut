@@ -1037,6 +1037,8 @@ int main(int argc, char **argv)
 	/* get the base data established before allowing connections */
 	dstate_setinfo("driver.state", "init.info");
 	upsdrv_initinfo();
+	/* Note: a few drivers also call their upsdrv_updateinfo() during
+	 * their upsdrv_initinfo(), possibly to impact the initialization */
 	dstate_setinfo("driver.state", "init.updateinfo");
 	upsdrv_updateinfo();
 	dstate_setinfo("driver.state", "init.quiet");
