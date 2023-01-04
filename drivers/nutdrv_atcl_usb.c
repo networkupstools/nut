@@ -82,7 +82,8 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					return 1;
 				}
 			}
-			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
+			upsdebugx(0, "To keep trying (in case your device does not have a vendor string), use vendor=NULL. "
+				"Have you tried the nutdrv_qx driver?");
 			return 0;
 		}
 
@@ -97,15 +98,16 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
 				return 1;
 			} else {
-				upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
-					"but provided vendor '%s' does not match device: '%s'.",
+				upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
+					"but provided vendor '%s' does not match device: '%s'. "
+					"Have you tried the nutdrv_qx driver?",
 					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
 				return 0;
 			}
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+		upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
 			"but device vendor string '%s' does not match expected string '%s'. "
 			"Have you tried the nutdrv_qx driver?",
 			device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
