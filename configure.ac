@@ -74,7 +74,7 @@ STATEPATH="/var/state/ups"
 dnl NOTE: NUT legacy default, keep as is for least surprise
 dnl Distributions are however welcome to specify the option to use tmpfs
 AS_CASE([${target_os}],
-	[*mingw*], [POWERDOWNFLAG="C:\\killpower"], dnl NOTE: Double backslashes are correct!
+	[*mingw*], [POWERDOWNFLAG="C:\\\\killpower"], dnl NOTE: Double backslashes (times escaping) are correct!
 	[POWERDOWNFLAG="/etc/killpower"] dnl POSIX systems default
 )
 
