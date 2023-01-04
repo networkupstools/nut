@@ -19,6 +19,11 @@ also be inherently unreliable (dependent on re-plugging and enumeration order).
 At this time the actual 'value' is ignored, but some 'port' must be there
 syntactically.
 
+It is possible to control multiple UPS units simultaneously by running several
+instances of this driver, provided they can be uniquely distinguished by setting
+some combination of the *vendor*, *product*, *vendorid*, *productid*, *serial*,
+*bus* and/or *device* options detailed below.
+
 *vendorid =* 'regex'::
 *productid =* 'regex'::
 *vendor =* 'regex'::
