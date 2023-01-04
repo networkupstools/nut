@@ -24,12 +24,13 @@
  */
 
 #include "main.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "nut_stdint.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -734,4 +735,6 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 }
