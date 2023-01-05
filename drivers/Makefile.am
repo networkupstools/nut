@@ -15,6 +15,7 @@ LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
@@ -292,9 +293,9 @@ socomec_jbus_SOURCES = socomec_jbus.c
 socomec_jbus_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBMODBUS_LIBS)
 
 # Linux I2C drivers
-asem_LDADD = $(LDADD_DRIVERS)
+asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
-pijuice_LDADD = $(LDADD_DRIVERS)
+pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
 
 # nutdrv_qx USB/Serial

@@ -1397,6 +1397,7 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c
 dnl Check for i2c header on Linux, used for ASEM UPS driver
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+LIBI2C_LIBS=""
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
@@ -1429,6 +1430,8 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl "compromised" by lack of respective binary library, so
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
+            LIBS_SAVED="$LIBS"
+            LIBS=""
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [i2c],
                 [nut_with_linux_i2c="yes"],
@@ -1436,6 +1439,8 @@ if test "${nut_with_linux_i2c}" != no; then
                     [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
                     [nut_with_linux_i2c="no"])
                 ])
+            LIBI2C_LIBS="$LIBS"
+            LIBS="$LIBS_SAVED"
             ;;
         * )
             if test "${nut_with_linux_i2c}" = yes; then
@@ -3345,6 +3350,7 @@ AC_SUBST(LIBMODBUS_CFLAGS)
 AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
+AC_SUBST(LIBI2C_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
