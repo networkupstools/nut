@@ -311,6 +311,9 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 
 	upsdebugx(3, "%s: matching a device...", __func__);
 
+	/* NOTE: Here and below the "detailed" logging is commented away
+	 * because data->regex[] elements are not strings anymore! */
+
 	r = match_regex_hex(data->regex[0], hd->VendorID);
 	if (r != 1) {
 /*

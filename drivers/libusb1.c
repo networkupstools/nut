@@ -331,8 +331,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				goto next_device;
 			}
 		}
-		upsdebugx(2, "Device matches");
 
+		/* If we got here, none of the matchers said
+		 * that the device is not what we want. */
+		upsdebugx(2, "Device matches");
 
 		upsdebugx(2, "Reading first configuration descriptor");
 		ret = libusb_get_config_descriptor(device,
@@ -379,20 +381,23 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
 		libusb_set_configuration(udev, 1);
 #endif
+
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
 # ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-				if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
-				if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # endif
-				if (ret == LIBUSB_ERROR_NOT_FOUND)
+				if (ret == LIBUSB_ERROR_NOT_FOUND) {
+					/* logged as "Entity not found" if this persists */
 					upsdebugx(2, "Kernel driver already detached");
-				else
+				} else {
 					upsdebugx(1, "failed to detach kernel driver from USB device: %s",
 						libusb_strerror((enum libusb_error)ret));
+				}
 			} else {
 				upsdebugx(2, "detached kernel driver from USB device...");
 			}
