@@ -36,6 +36,17 @@
 # include <sys/stat.h>
 #endif
 
+#ifdef WITH_LIBSYSTEMD
+# include <systemd/sd-daemon.h>
+/* upsnotify() debug-logs its reports; a watchdog ping is something we
+ * try to send often so report it just once (whether enabled or not) */
+static int upsnotify_reported_watchdog_systemd = 0;
+/* Similarly for only reporting once if the notification subsystem is disabled */
+static int upsnotify_reported_disabled_systemd = 0;
+#endif
+/* Similarly for only reporting once if the notification subsystem is not built-in */
+static int upsnotify_reported_disabled_notech = 0;
+
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
 	on nut_version_macro.h), and also to prevent all sources from
@@ -589,6 +600,248 @@ const char *xbasename(const char *file)
 	if (p == NULL)
 		return file;
 	return p + 1;
+}
+
+/* Send (daemon) state-change notifications to an
+ * external service management framework such as systemd
+ */
+int upsnotify(upsnotify_state_t state, const char *fmt, ...)
+{
+	int ret = -127;
+	va_list va;
+	char	buf[LARGEBUF];
+	char	msgbuf[LARGEBUF];
+	size_t	msglen = 0;
+
+	/* Prepare the message (if any) as a string */
+	msgbuf[0] = '\0';
+	if (fmt) {
+		va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* generic message... */
+		ret = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(va);
+
+		if ((ret < 0) || (ret >= (int) sizeof(msgbuf))) {
+			syslog(LOG_WARNING,
+				"%s: vsnprintf needed more than %d bytes",
+				__func__, LARGEBUF);
+		} else {
+			msglen = strlen(msgbuf);
+		}
+		/* Reset for actual notification processing below */
+		ret = -127;
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+	if (!upsnotify_reported_disabled_systemd)
+		upsdebugx(6, "%s: notify about state %i with libsystemd: "
+		"skipped for libcommonclient build, "
+		"will not spam more about it", __func__, state);
+	upsnotify_reported_disabled_systemd = 1;
+# else
+	if (!getenv("NOTIFY_SOCKET")) {
+		if (!upsnotify_reported_disabled_systemd)
+			upsdebugx(6, "%s: notify about state %i with libsystemd: "
+				"was requested, but not running as a service unit now, "
+				"will not spam more about it",
+				__func__, state);
+		upsnotify_reported_disabled_systemd = 1;
+	} else {
+#  if HAVE_SD_NOTIFY
+		upsdebugx(6, "%s: notify about state %i with libsystemd: use sd_notify()", __func__, state);
+		/* https://www.freedesktop.org/software/systemd/man/sd_notify.html */
+		if (msglen) {
+			ret = snprintf(buf, sizeof(buf), "STATUS=%s", msgbuf);
+			if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+				syslog(LOG_WARNING,
+					"%s: snprintf needed more than %d bytes",
+					__func__, LARGEBUF);
+				msglen = 0;
+			} else {
+				msglen = (size_t)ret;
+			}
+		}
+
+		switch (state) {
+			case NOTIFY_STATE_READY:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+					"%sREADY=1",
+					msglen ? "\n" : "");
+				break;
+
+			case NOTIFY_STATE_READY_WITH_PID:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+					"%sREADY=1\n"
+					"MAINPID=%lu",
+					msglen ? "\n" : "",
+					(unsigned long) getpid());
+				break;
+
+			case NOTIFY_STATE_RELOADING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+					msglen ? "\n" : "",
+					"RELOADING=1");
+				break;
+
+			case NOTIFY_STATE_STOPPING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+					msglen ? "\n" : "",
+					"STOPPING=1");
+				break;
+
+			case NOTIFY_STATE_STATUS:
+				/* Only send a text message per "fmt" */
+				if (!msglen) {
+					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
+					ret = -1;
+				} else {
+					ret = (int)msglen;
+				}
+				break;
+
+			case NOTIFY_STATE_WATCHDOG:
+				/* Ping the framework that we are still alive */
+				if (1) {	/* scoping */
+					int	postit = 0;
+
+#   if HAVE_SD_WATCHDOG_ENABLED
+					uint64_t	to = 0;
+					postit = sd_watchdog_enabled(0, &to);
+
+					if (postit < 0) {
+						if (!upsnotify_reported_watchdog_systemd)
+							upsdebugx(6, "%s: sd_enabled_watchdog query failed: %s",
+								__func__, strerror(postit));
+					} else {
+						upsdebugx(6, "%s: sd_enabled_watchdog query returned: %d "
+							"(%" PRIu64 "msec remain)",
+							__func__, postit, to);
+					}
+#   endif
+
+					if (postit < 1) {
+						char *s = getenv("WATCHDOG_USEC");
+						if (s && *s) {
+							long l = strtol(s, (char **)NULL, 10);
+							if (l > 0) {
+								pid_t wdpid = parsepid(getenv("WATCHDOG_PID"));
+								if (wdpid == (pid_t)-1 || wdpid == getpid()) {
+									postit = 1;
+								} else {
+									/* Configured, but not for this process */
+									postit = 0;
+								}
+							}
+						}
+					}
+
+					if (postit > 0) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+							msglen ? "\n" : "",
+							"WATCHDOG=1");
+					} else if (postit == 0) {
+						if (!upsnotify_reported_watchdog_systemd)
+							upsdebugx(6, "%s: failed to tickle the watchdog: not enabled for this unit", __func__);
+						ret = -1;
+					}
+				}
+				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+				/* All enum cases defined as of the time of coding
+				 * have been covered above. Handle later definitions,
+				 * memory corruptions and buggy inputs below...
+				 */
+			default:
+				if (!msglen) {
+					upsdebugx(6, "%s: unknown state and no status message provided", __func__);
+					ret = -1;
+				} else {
+					upsdebugx(6, "%s: unknown state but have a status message provided", __func__);
+					ret = (int)msglen;
+				}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+		}
+
+		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+			syslog(LOG_WARNING,
+				"%s: snprintf needed more than %d bytes",
+				__func__, LARGEBUF);
+			ret = -1;
+		} else {
+			upsdebugx(6, "%s: posting sd_notify: %s", __func__, buf);
+			msglen = (size_t)ret;
+			ret = sd_notify(0, buf);
+		}
+
+#  else	/* not HAVE_SD_NOTIFY: */
+		/* FIXME: Try to fork and call systemd-notify helper program */
+		upsdebugx(6, "%s: notify about state %i with libsystemd: lacking sd_notify()", __func__, state);
+		ret = -127;
+#  endif	/* HAVE_SD_NOTIFY */
+	}
+# endif	/* if not WITHOUT_LIBSYSTEMD (explicit avoid) */
+#else	/* not WITH_LIBSYSTEMD */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+#endif	/* WITH_LIBSYSTEMD */
+
+	if (ret < 0
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && HAVE_SD_NOTIFY
+	&& !( (!upsnotify_reported_watchdog_systemd) && (state == NOTIFY_STATE_STATUS))
+#endif
+	) {
+		if (ret == -127) {
+			if (!upsnotify_reported_disabled_notech)
+				upsdebugx(6, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
+			upsnotify_reported_disabled_notech = 1;
+		} else {
+			upsdebugx(6, "%s: failed to notify about state %i", __func__, state);
+		}
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+	if (state == NOTIFY_STATE_STATUS) {
+		upsdebugx(6, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
+		upsnotify_reported_watchdog_systemd = 1;
+	}
+#endif
+
+	return ret;
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)

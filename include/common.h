@@ -245,6 +245,23 @@ const char * altpidpath(void);
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
 
+/* Send (daemon) state-change notifications to an
+ * external service management framework such as systemd.
+ * State types below are initially loosely modeled after
+ *   https://www.freedesktop.org/software/systemd/man/sd_notify.html
+ */
+typedef enum eupsnotify_state {
+	NOTIFY_STATE_READY = 1,
+	NOTIFY_STATE_READY_WITH_PID,
+	NOTIFY_STATE_RELOADING,
+	NOTIFY_STATE_STOPPING,
+	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
+	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
+} upsnotify_state_t;
+/* Note: here fmt may be null, then the STATUS message would not be sent/added */
+int upsnotify(upsnotify_state_t state, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
+
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)
