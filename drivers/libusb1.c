@@ -151,7 +151,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
-	uint8_t bus;
+	uint8_t bus, port;
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -235,6 +235,17 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
 		sprintf(curDevice->Bus, "%03d", bus);
+		port = libusb_get_port_number(device);
+		curDevice->Device = (char *)malloc(4);
+		if (curDevice->Device == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
+#if 0
+		sprintf(curDevice->Device, "%03d", port);
+#else
+		sprintf(curDevice->Device, "%03d", devnum);
+#endif
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
