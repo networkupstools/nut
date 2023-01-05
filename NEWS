@@ -228,6 +228,9 @@ https://github.com/networkupstools/nut/milestone/8
    include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
    still have to re-declare some numeric variable types used) [#1638, #1615]
 
+ - The `COPYING` file was updated with licenses and attribution for certain
+   source code files and blocks coming from the Internet originally [#1758]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 

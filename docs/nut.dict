@@ -1132,6 +1132,7 @@ Sequentializing
 SerialNumber
 Serv
 Shara
+ShareAlike
 Shaul
 ShdnDbnc
 ShdnDly
@@ -2325,9 +2326,9 @@ nitram
 nl
 nlb
 nlogic
+nm
 nn
 nnn
-nm
 noAuthNoPriv
 nobody's
 nobt
@@ -2738,6 +2739,8 @@ strdup
 strerror
 strftime
 strlen
+strnlen
+strptime
 struct
 structs
 sts
