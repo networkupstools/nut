@@ -2596,6 +2596,7 @@ fi
 AC_MSG_RESULT([${solarisinit}])
 AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
+
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
@@ -2629,14 +2630,15 @@ else
 	have_systemd="no"
 	AC_MSG_RESULT(no)
 fi
-dnl Note: we may want tighter integration, e.g. systemd-notify support at
-dnl a later point. That would be a further option/flag. This one is a very
-dnl basic yes/no toggle.
-NUT_REPORT_FEATURE([consider systemd support], [${have_systemd}], [],
-					[HAVE_SYSTEMD], [Define to consider systemd support])
+dnl Note: we may want tighter integration, e.g. systemd-notify support
+dnl configured as a further option/flag (see --with-systemd below).
+dnl This one is a very basic yes/no toggle for unit file delivery.
+NUT_REPORT_FEATURE([consider basic systemd support], [${have_systemd}], [],
+					[HAVE_SYSTEMD], [Define to consider basic systemd support (provide units and configuration files)])
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
 
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
@@ -2670,6 +2672,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
@@ -2700,6 +2703,27 @@ if test -n "${systemdtmpfilesdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+
+
+dnl Note: we may want binaries with sd_notify and similar features regardless
+dnl of building and delivering unit files (which may be crafted separately).
+AC_MSG_CHECKING(whether to build binaries with tighter systemd integration support)
+NUT_ARG_WITH([libsystemd], [build binaries with tighter systemd integration (notifications etc)], [auto])
+NUT_CHECK_LIBSYSTEMD
+
+AS_IF([test x"${nut_with_libsystemd}" = xyes && test x"${nut_have_libsystemd}" != xyes],
+	[AC_MSG_ERROR([--with-libsystemd was requested, but the library was not found or usable])])
+AS_CASE(["${nut_with_libsystemd}"],
+	[yes|no], [have_libsystemd="${nut_with_libsystemd}"],
+	[AS_IF([test x"${nut_have_libsystemd}" = xyes],
+		[with_libsystemd="yes"],
+		[with_libsystemd="no"])
+	])
+AC_MSG_RESULT(${with_libsystemd})
+
+NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [],
+	[WITH_LIBSYSTEMD], [Define to build with tighter systemd support (sd_notify etc)])
+
 
 dnl
 dnl Tests for CppUnit availability and usability (will be built if we can,
@@ -3327,6 +3351,8 @@ AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
+AC_SUBST(LIBSYSTEMD_CFLAGS)
+AC_SUBST(LIBSYSTEMD_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)
