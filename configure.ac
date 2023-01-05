@@ -71,6 +71,13 @@ dnl | default values for things later on (can be overridden)           |
 
 STATEPATH="/var/state/ups"
 
+dnl NOTE: NUT legacy default, keep as is for least surprise
+dnl Distributions are however welcome to specify the option to use tmpfs
+AS_CASE([${target_os}],
+	[*mingw*], [POWERDOWNFLAG="C:\\\\killpower"], dnl NOTE: Double backslashes (times escaping) are correct!
+	[POWERDOWNFLAG="/etc/killpower"] dnl POSIX systems default
+)
+
 cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
@@ -2175,6 +2182,7 @@ AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
+PREFIX="${prefix}"
 NUT_REPORT_SETTING_PATH([Default installation prefix path],
     PREFIX, "${prefix}", [Default installation prefix path])
 
@@ -2239,6 +2247,36 @@ AC_ARG_WITH(pidpath,
 NUT_REPORT_SETTING_PATH([Privileged PID file path],
     PIDPATH, "${PIDPATH}", [Path for pid files of processes running as root, such as upsmon])
 
+dnl --------------------------------------------------------------------
+dnl Legacy default was /etc/killpower, but modern distros may prefer some
+dnl temporary filesystem (no I/O storage device impact) as long as it is
+dnl mounted at least read-only late in shutdown routine. The upsmon program
+dnl writes it as root, so this may well be in /var/run or in NUT PID/state
+dnl path (if that location remains mounted in run-time OS distribution).
+dnl Ideally the filesystems with `upsmon` program and libraries it needs
+dnl also remain mounted, so `upsmon -K` may be queried late in shutdown -
+dnl and we can avoid hardcoding such paths into those shutdown hooks.
+dnl Note that upsmon removes this file early in any daemonized start-up.
+AC_MSG_CHECKING(if requested default upsmon POWERDOWNFLAG path)
+AC_ARG_WITH(powerdownflag,
+	AS_HELP_STRING([--with-powerdownflag=PATH], [default path for upsmon POWERDOWNFLAG file (${POWERDOWNFLAG}, typically /etc/killpower)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-powerdownflag - see docs/configure.txt)
+		;;
+	*)
+		POWERDOWNFLAG="${withval}"
+		AC_MSG_RESULT([specified])
+		;;
+	esac
+], [AC_MSG_RESULT([default])])
+dnl # This should be internal detail for "upsmon -K" implementation,
+dnl # so not necessarily reported (reduce noise):
+dnl NUT_REPORT_SETTING_PATH([Default upsmon POWERDOWNFLAG path],
+dnl    POWERDOWNFLAG, "${POWERDOWNFLAG}", [Default path for upsmon POWERDOWNFLAG file])
+
+dnl ---------------------------------------------------------------------
 AC_MSG_CHECKING(if requested driver path)
 AC_ARG_WITH(drvpath,
 	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
@@ -2256,6 +2294,7 @@ AC_ARG_WITH(drvpath,
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+DRVPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Driver program path],
     DRVPATH, "${conftemp}", [Default path for UPS drivers])
 
@@ -2276,6 +2315,7 @@ AC_ARG_WITH(cgipath,
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+CGIPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([CGI program path],
     CGIPATH, "${conftemp}", [Default path for CGI programs])
 
@@ -2296,6 +2336,7 @@ AC_ARG_WITH(htmlpath,
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+HTMLPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([HTML file path],
     HTMLPATH, "${conftemp}", [Default path for HTML files (CGI templates)])
 
@@ -3057,7 +3098,7 @@ dnl autotools default would be $prefix/etc
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-CONFPATH=${conftemp}
+CONFPATH="${conftemp}"
 NUT_REPORT_SETTING_PATH([Config file path],
     CONFPATH, "${conftemp}", [Default path for configuration files])
 
@@ -3065,7 +3106,7 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-NUT_DATADIR=${conftemp}
+NUT_DATADIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
@@ -3073,7 +3114,7 @@ dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-BINDIR=${conftemp}
+BINDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Tool program path],
     BINDIR, "${conftemp}", [Default path for user executables])
 
@@ -3081,7 +3122,7 @@ dnl same for sbindir
 conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-SBINDIR=${conftemp}
+SBINDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System program path],
     SBINDIR, "${conftemp}", [Default path for system executables])
 
@@ -3089,7 +3130,7 @@ dnl same for libdir
 conftemp="${libdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-LIBDIR=${conftemp}
+LIBDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System library path],
     LIBDIR, "${conftemp}", [Default path for system libraries])
 
@@ -3097,7 +3138,7 @@ dnl same for libexecdir
 conftemp="${libexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-LIBEXECDIR=${conftemp}
+LIBEXECDIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([System exec-library path],
     LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
@@ -3295,11 +3336,13 @@ AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(SEMLIBS)
+AC_SUBST(PREFIX)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(ALTPIDPATH)
 dnl #Not in main codebase yet# AC_SUBST(ALTSTATEPATH)
 AC_SUBST(CONFPATH)
+AC_SUBST(POWERDOWNFLAG)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
@@ -3647,10 +3690,10 @@ ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
-AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common.tmpfiles.in for this system])
+AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
-     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+     cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 # State file (e.g. upsd to driver) and pidfile location for NUT:
 d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @STATEPATH@
@@ -3658,19 +3701,19 @@ EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
         [AS_CASE(["${PIDPATH}"],
             [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
-            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+            [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @PIDPATH@
 EOF
 ])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTPIDPATH@
 EOF])
     dnl Generally added to support some forks
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
-        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common.tmpfiles.in << EOF
+        [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
 d @ALTSTATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTSTATEPATH@
 EOF])
@@ -3701,6 +3744,7 @@ AC_CONFIG_FILES([
  lib/libnutscan.pc
  lib/Makefile
  scripts/Aix/nut-aix.spec
+ scripts/RedHat/ups
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsdconf.aug
@@ -3718,7 +3762,7 @@ AC_CONFIG_FILES([
  scripts/python/module/PyNUT.py
  scripts/upsdrvsvcctl/Makefile
  scripts/systemd/Makefile
- scripts/systemd/nut-common.tmpfiles
+ scripts/systemd/nut-common-tmpfiles.conf
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
@@ -3749,6 +3793,8 @@ AC_MSG_NOTICE([Generating templated script files that should be marked executabl
 m4_foreach_w([SCRIPTFILE], [
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall
+ scripts/RedHat/upsd
+ scripts/RedHat/upsmon
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
  scripts/augeas/gen-nutupsconf-aug.py

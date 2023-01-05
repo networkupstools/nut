@@ -143,6 +143,11 @@ https://github.com/networkupstools/nut/milestone/8
  - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
    serial drivers in respective Makefile and configure script options [#1446]
 
+ - Fixed support for common USB matching options ("vendor", "device", "bus",
+   etc.) for `riello_usb` and `richcomm_usb` [#1763] and updated man pages
+   of all USB drivers using these options to include the same description
+   [#1766]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 
@@ -178,6 +183,11 @@ https://github.com/networkupstools/nut/milestone/8
  - some fixes for builds on older OSes with less functional default system
    shell interpreters - now `autogen.sh` supports a `CONFIG_SHELL` envvar
    to inject its value into generated `configure` script [#1736]
+   * Note that you may have to install additional tools (possibly from
+     third-party FOSS packaging efforts) to prepare and build the NUT
+     codebase, and/or prefer non-default system provided implementations
+     (e.g. to use the XPG4 `grep` with `-E` support on Solaris as detailed
+     in https://github.com/networkupstools/nut/issues/1736 comments)
 
  - `configure` script, reference init-script and packaging templates updated
    to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
@@ -205,6 +215,14 @@ https://github.com/networkupstools/nut/milestone/8
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
+
+ - Clarified documentation in codebase according to end-user feedback [#1721,
+   #1750 and others over time]
+
+ - Several fixes for `upsmon` behavior [#1761, #1680...], including new
+   ability to configure default POWERDOWNFLAG location -- packagers are
+   encouraged to pick optimal location for their distributions (which
+   remains mounted at least read-only late in shutdown) [#529]
 
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,

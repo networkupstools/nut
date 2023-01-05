@@ -115,6 +115,10 @@ static	sigset_t nut_upsmon_sigmask;
  * than that would not have effect, can only have more).
  */
 static int nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in ups.conf
+ */
+static int nut_debug_level_args = 0;
 
 static void setflag(int *val, int flag)
 {
@@ -222,11 +226,18 @@ static void notify(const char *notice, int flags, const char *ntype,
 	int	ret;
 #endif
 
-	if (flag_isset(flags, NOTIFY_IGNORE))
-		return;
+	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
+		__func__, upsname, ntype, flags, notice);
 
-	if (flag_isset(flags, NOTIFY_SYSLOG))
+	if (flag_isset(flags, NOTIFY_IGNORE)) {
+		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
+		return;
+	}
+
+	if (flag_isset(flags, NOTIFY_SYSLOG)) {
+		upsdebugx(6, "%s: NOTIFY_SYSLOG (as LOG_NOTICE)", __func__);
 		upslogx(LOG_NOTICE, "%s", notice);
+	}
 
 #ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
@@ -237,16 +248,24 @@ static void notify(const char *notice, int flags, const char *ntype,
 		return;
 	}
 
-	if (ret != 0)	/* parent */
+	if (ret != 0) {	/* parent */
+		upsdebugx(6, "%s (parent): forked a child to notify via subprocesses", __func__);
 		return;
+	}
 
 	/* child continues and does all the work */
+	upsdebugx(6, "%s (child): forked to notify via subprocesses", __func__);
 
-	if (flag_isset(flags, NOTIFY_WALL))
+	if (flag_isset(flags, NOTIFY_WALL)) {
+		upsdebugx(6, "%s (child): NOTIFY_WALL", __func__);
 		wall(notice);
+	}
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
+				__func__, notifycmd, notice);
+
 			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
 
 			if (upsname)
@@ -258,6 +277,8 @@ static void notify(const char *notice, int flags, const char *ntype,
 			if (system(exec) == -1) {
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
+		} else {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__);
 		}
 	}
 
@@ -1611,6 +1632,13 @@ static void loadconfig(void)
 				"Applying debug_min=%d from upsmon.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
 		}
 	}
 
@@ -2319,6 +2347,7 @@ int main(int argc, char *argv[])
 #endif
 			case 'D':
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'F':
 				foreground = 1;
@@ -2415,9 +2444,15 @@ int main(int argc, char *argv[])
 		if (cmd) {
 			upsdebugx(1, "Signaled old daemon OK");
 		} else {
-			printf("Fatal error: A previous upsmon instance is already running!\n");
-			printf("Either stop the previous instance first, or use the 'reload' command.\n");
-			exit(EXIT_FAILURE);
+			if (checking_flag) {
+				printf("Note: A previous upsmon instance is already running!\n");
+				printf("Usually it should not be running during OS shutdown,\n");
+				printf("which is when checking POWERDOWNFLAG makes most sense.\n");
+			} else {
+				printf("Fatal error: A previous upsmon instance is already running!\n");
+				printf("Either stop the previous instance first, or use the 'reload' command.\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 		break;
 
@@ -2522,10 +2557,6 @@ int main(int argc, char *argv[])
 
 	if (!foreground) {
 		background();
-	}
-
-	if (nut_debug_level >= 1) {
-		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
 
 	/* only do the pipe stuff if the user hasn't disabled it */

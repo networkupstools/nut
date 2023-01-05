@@ -52,6 +52,8 @@ EXTRA ARGUMENTS
 
 This driver also supports the following optional settings:
 
+include::nut_usb_addvars.txt[]
+
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the *-k* switch).
@@ -110,39 +112,6 @@ It is also always possible that NUT fix-ups cause issues on some devices,
 whether due to NUT bugs or because the vendor protocol implementation is
 broken in more than one place.
 
-*vendor*='regex'::
-*product*='regex'::
-*serial*='regex'::
-*vendorid*='regex'::
-*productid*='regex'::
-
-Select a specific UPS, in case there is more than one connected via
-USB. Each option specifies an extended regular expression (see
-regex(7)) that must match the UPS's entire vendor/product/serial
-string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for vendorid and productid. Try *-DD* for
-finding out the strings to match.
-+
-Examples:
-
- -  `-x vendor="Foo.Corporation.*"`
- -  `-x vendorid=051d*` (APC)
- -  `-x product=".*(Smart|Back)-?UPS.*"`
-
-*bus*='regex'::
-
-Select a UPS on a specific USB bus or group of buses. The argument is
-a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]").
-
-*device =* 'regex'::
-
-Select a UPS on a specific USB device or group of devices. The argument is
-a regular expression that must match the device name where the UPS is
-connected (e.g. device="001", device="00[1-2]").
-Note that device numbers are not guaranteed by the OS to be stable across
-re-boots or device re-plugging.
-
 *explore*::
 With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
@@ -194,11 +163,11 @@ IMPLEMENTATION
 Selecting a specific UPS
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The driver ignores the "port" value in *ups.conf*. Unlike previous
-versions of this driver, it is now possible to control multiple UPS
-units simultaneously with this driver, provided they can be distinguished
-by setting some combination of the "vendor", "product", "serial",
-"vendorid", and "productid" options. For instance:
+As mentioned above, the driver ignores the "port" value in *ups.conf*.
+Unlike previous versions of this driver, it is now possible to control
+multiple UPS units simultaneously with this driver, provided they can
+be distinguished by setting some combination of the device-matching options.
+For instance:
 
 	[mge]
 		driver = usbhid-ups

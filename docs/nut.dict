@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3064 utf-8
+personal_ws-1.1 en 3068 utf-8
 AAS
 ABI
 ACFAIL
@@ -340,6 +340,7 @@ FEMEA
 FFF
 FH
 FHS
+FILEPATH
 FINALDELAY
 FIPS
 FIXME
@@ -1357,6 +1358,7 @@ XOFF
 XON
 XOPEN
 XP
+XPG
 XPPC
 XSL
 XT
@@ -1407,6 +1409,7 @@ addenum
 addinfo
 addr
 addrange
+addvars
 adelsystem
 adkorte
 adm
@@ -2473,6 +2476,7 @@ portname
 powercom
 powerdev
 powerdown
+powerdownflag
 powerfactor
 powerman
 powermand

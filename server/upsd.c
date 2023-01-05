@@ -1651,6 +1651,7 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'F':
 				if (foreground > 0) {
