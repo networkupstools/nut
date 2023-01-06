@@ -752,14 +752,23 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 					if (postit < 1) {
 						char *s = getenv("WATCHDOG_USEC");
+						if (!upsnotify_reported_watchdog_systemd)
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
 								pid_t wdpid = parsepid(getenv("WATCHDOG_PID"));
 								if (wdpid == (pid_t)-1 || wdpid == getpid()) {
+									if (!upsnotify_reported_watchdog_systemd)
+										upsdebugx(6, "%s: can post: WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
 									postit = 1;
 								} else {
-									/* Configured, but not for this process */
+									if (!upsnotify_reported_watchdog_systemd)
+										upsdebugx(6, "%s: watchdog is configured, "
+											"but not for this process: "
+											"WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
 									postit = 0;
 								}
 							}
