@@ -698,6 +698,13 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					"MAINPID=%lu",
 					msglen ? "\n" : "",
 					(unsigned long) getpid());
+				upsdebugx(6, "%s: notifying systemd about MAINPID=%lu",
+					__func__, (unsigned long) getpid());
+				/* could be a great moment to call reset_cached_pid() to
+				 * un-wedge sd_enabled_watchdog() for NUT drivers, but
+				 * it is not public API. See more at:
+				 *   https://github.com/systemd/systemd/issues/25961
+				 */
 				break;
 
 			case NOTIFY_STATE_RELOADING:
