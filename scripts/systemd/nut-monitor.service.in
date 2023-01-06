@@ -19,9 +19,10 @@ PartOf=nut.target
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStart=@SBINDIR@/upsmon -F
+ExecStart=@SBINDIR@/upsmon @SYSTEMD_DAEMON_ARGS_UPSMON@
 ExecReload=@SBINDIR@/upsmon -c reload
 PIDFile=@PIDPATH@/upsmon.pid
+Type=@SYSTEMD_DAEMON_TYPE_UPSMON@
 
 [Install]
 WantedBy=nut.target
