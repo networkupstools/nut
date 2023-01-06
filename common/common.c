@@ -769,7 +769,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 											"but not for this process: "
 											"WATCHDOG_PID=%li",
 											__func__, (long)wdpid);
-									postit = 0;
+									/* Currently just try to post - at worst, systemd
+									 * NotifyAccess will prohibit the message */
+									/* postit = 0; */
+									postit = 1;
 								}
 							}
 						}
