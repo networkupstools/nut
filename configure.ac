@@ -2737,6 +2737,14 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
+	dnl Calling shell, upsdrvctl, driver, and then it forks... ugh!
+	dnl https://github.com/systemd/systemd/issues/25961
+	dnl FIXME: if NotifyAccess=cgroup appears, use it (consult SYSTEMD_VERSION)
+	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER="NotifyAccess=all"
+	dnl Similar for UPSMON with its two processes:
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON="NotifyAccess=all"
+	dnl UPSD is started directly by systemd and do not fork:
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD="NotifyAccess=main"
 	dnl Note: at this time we do not pre-define watchdog settings,
 	dnl to avoid breaking something by a poorly hardcoded guess.
 	dnl This is something end-users should do for their deployment,
@@ -2752,6 +2760,9 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
+	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON=""
 	dnl Watchdog should not be configured for not-notifying units, right?
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
@@ -3397,6 +3408,9 @@ AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)

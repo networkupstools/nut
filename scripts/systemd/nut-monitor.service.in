@@ -24,6 +24,7 @@ ExecReload=@SBINDIR@/upsmon -c reload
 PIDFile=@PIDPATH@/upsmon.pid
 Type=@SYSTEMD_DAEMON_TYPE_UPSMON@
 @SYSTEMD_DAEMON_WATCHDOG_UPSMON@
+@SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON@
 
 [Install]
 WantedBy=nut.target

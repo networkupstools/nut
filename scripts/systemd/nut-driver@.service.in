@@ -54,6 +54,7 @@ Restart=always
 # orderly series of initializations). More details in NUT issue #779.
 RestartSec=15s
 Type=@SYSTEMD_DAEMON_TYPE_DRIVER@
+@SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER@
 # Note: if you set up with systemd notification support, you can take
 # advantage of watchdog mechanism. Timeouts involved are deployment
 # dependent (how many devices you monitor, how stressed are they and
