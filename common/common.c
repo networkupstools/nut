@@ -641,8 +641,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		if ((ret < 0) || (ret >= (int) sizeof(msgbuf))) {
 			syslog(LOG_WARNING,
-				"%s: vsnprintf needed more than %d bytes",
-				__func__, LARGEBUF);
+				"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
+				__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
 		} else {
 			msglen = strlen(msgbuf);
 		}
@@ -675,8 +675,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			ret = snprintf(buf, sizeof(buf), "STATUS=%s", msgbuf);
 			if ((ret < 0) || (ret >= (int) sizeof(buf))) {
 				syslog(LOG_WARNING,
-					"%s: snprintf needed more than %d bytes",
-					__func__, LARGEBUF);
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(buf), ret);
 				msglen = 0;
 			} else {
 				msglen = (size_t)ret;
@@ -805,8 +805,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
 			syslog(LOG_WARNING,
-				"%s: snprintf needed more than %d bytes",
-				__func__, LARGEBUF);
+				"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+				__func__, __FILE__, __LINE__, sizeof(buf), ret);
 			ret = -1;
 		} else {
 			upsdebugx(6, "%s: posting sd_notify: %s", __func__, buf);
