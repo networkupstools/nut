@@ -2712,6 +2712,9 @@ fi
 
 dnl Note: we may want binaries with sd_notify and similar features regardless
 dnl of building and delivering unit files (which may be crafted separately).
+dnl TODO: although end-user deployments (for custom builds) may be lacking
+dnl libsystemd development files, they might have a `systemd-notify` program
+dnl intended to help scripted service units. Consider making use of that then.
 AC_MSG_CHECKING(whether to build binaries with tighter systemd integration support)
 NUT_ARG_WITH([libsystemd], [build binaries with tighter systemd integration (notifications etc)], [auto])
 NUT_CHECK_LIBSYSTEMD
