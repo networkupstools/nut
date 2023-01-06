@@ -449,9 +449,15 @@ int sendsignalpid(pid_t pid, int sig)
 pid_t parsepid(const char *buf)
 {
 	pid_t	pid = -1;
+	intmax_t	_pid;
+
+	if (!buf) {
+		upsdebugx(6, "%s: called with NULL input", __func__);
+		return pid;
+	}
 
 	/* assuming 10 digits for a long */
-	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	_pid = strtol(buf, (char **)NULL, 10);
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
