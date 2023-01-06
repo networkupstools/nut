@@ -234,18 +234,36 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice->Bus, "%03d", bus);
+		if (bus > 0) {
+			sprintf(curDevice->Bus, "%03d", bus);
+		} else {
+			upsdebugx(1, "%s: invalid libusb bus number %i",
+				__func__, bus);
+		}
+
 		port = libusb_get_port_number(device);
 		curDevice->Device = (char *)malloc(4);
 		if (curDevice->Device == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-#if 0
-		sprintf(curDevice->Device, "%03d", port);
-#else
-		sprintf(curDevice->Device, "%03d", devnum);
-#endif
+		if (port > 0) {
+			/* 0 means not available, e.g. lack of platform support */
+			sprintf(curDevice->Device, "%03d", port);
+		} else {
+			if (devnum <= 999) {
+				/* Log visibly so users know their number discovered
+				 * from `lsusb` or `dmesg` (if any) was ignored */
+				upsdebugx(0, "%s: invalid libusb port number %i, "
+					"falling back to enumeration order counter %" PRIuSIZE,
+					__func__, port, devnum);
+				sprintf(curDevice->Device, "%03d", (int)devnum);
+			} else {
+				upsdebugx(1, "%s: invalid libusb port number %i",
+					__func__, port);
+			}
+		}
+
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
