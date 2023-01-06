@@ -1,5 +1,6 @@
 [Unit]
 Description=Network UPS Tools - power device monitor and shutdown controller
+# Note: do not mistake this historic misnomer for "NUT-Monitor" Python GUI client
 After=local-fs.target network.target nut-server.service
 # Note: We do not specify Requires nut-server.service because
 # the `upsd` daemon(s) may be running on a different machine
@@ -24,3 +25,4 @@ PIDFile=@PIDPATH@/upsmon.pid
 
 [Install]
 WantedBy=nut.target
+Alias=upsmon.service

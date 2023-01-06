@@ -28,3 +28,4 @@ ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
 
 [Install]
 WantedBy=nut.target
+Alias=upsd.service
