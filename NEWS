@@ -142,6 +142,10 @@ https://github.com/networkupstools/nut/milestone/8
    of all USB drivers using these options to include the same description
    [#1766]
 
+ - Added an `allow_duplicates` flag for common USB matching options which
+   may help monitor several related no-name devices (although without knowing
+   reliably which one is which... better than nothing) [#1756]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 
