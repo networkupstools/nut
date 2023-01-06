@@ -54,6 +54,13 @@ Restart=always
 # orderly series of initializations). More details in NUT issue #779.
 RestartSec=15s
 Type=@SYSTEMD_DAEMON_TYPE_DRIVER@
+# Note: if you set up with systemd notification support, you can take
+# advantage of watchdog mechanism. Timeouts involved are deployment
+# dependent (how many devices you monitor, how stressed are they and
+# the monitoring system, protocol used -- e.g. SNMP walks can take long),
+# so distributions should not pre-define this (at least not to a small
+# value):
+@SYSTEMD_DAEMON_WATCHDOG_DRIVER@
 # Note: If you customize the "maxstartdelay" in ups.conf or in your
 # NUT compilation defaults, so it exceeds the default systemd unit
 # startup timeout (typically 90 sec), then make sure to set a slightly

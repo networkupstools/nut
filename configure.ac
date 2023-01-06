@@ -2734,6 +2734,13 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
+	dnl Note: at this time we do not pre-define watchdog settings,
+	dnl to avoid breaking something by a poorly hardcoded guess.
+	dnl This is something end-users should do for their deployment,
+	dnl especially for drivers
+	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	], [
 	dnl "Usual" daemons that happen to be spawned by systemd
 	SYSTEMD_DAEMON_ARGS_UPSD="-F"
@@ -2742,6 +2749,10 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
+	dnl Watchdog should not be configured for not-notifying units, right?
+	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	])
 
 NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [],
@@ -3383,6 +3394,9 @@ AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)
