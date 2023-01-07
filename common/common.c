@@ -693,18 +693,35 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_READY_WITH_PID:
-				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
-					"%sREADY=1\n"
-					"MAINPID=%lu",
-					msglen ? "\n" : "",
-					(unsigned long) getpid());
-				upsdebugx(6, "%s: notifying systemd about MAINPID=%lu",
-					__func__, (unsigned long) getpid());
-				/* could be a great moment to call reset_cached_pid() to
-				 * un-wedge sd_enabled_watchdog() for NUT drivers, but
-				 * it is not public API. See more at:
-				 *   https://github.com/systemd/systemd/issues/25961
-				 */
+				if (1) { /* scoping */
+					char pidbuf[SMALLBUF];
+					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1\n"
+							"MAINPID=%s",
+							msglen ? "\n" : "",
+							pidbuf);
+						upsdebugx(6, "%s: notifying systemd about MAINPID=%s",
+							__func__, pidbuf);
+						/* https://github.com/systemd/systemd/issues/25961
+						 * Reset the WATCHDOG_PID so we know this is the
+						 * process we want to post pings from!
+						 */
+						unsetenv("WATCHDOG_PID");
+						setenv("WATCHDOG_PID", pidbuf, 1);
+					} else {
+						upsdebugx(6, "%s: NOT notifying systemd about MAINPID, "
+							"got an error stringifying it; processing as "
+							"plain NOTIFY_STATE_READY",
+							__func__);
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1",
+							msglen ? "\n" : "");
+						/* TODO: Maybe revise/drop this tweak if
+						 * loggers other than systemd are used: */
+						state = NOTIFY_STATE_READY;
+					}
+				}
 				break;
 
 			case NOTIFY_STATE_RELOADING:
@@ -769,10 +786,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 											"but not for this process: "
 											"WATCHDOG_PID=%li",
 											__func__, (long)wdpid);
-									/* Currently just try to post - at worst, systemd
-									 * NotifyAccess will prohibit the message */
-									/* postit = 0; */
-									postit = 1;
+									postit = 0;
 								}
 							}
 						}
