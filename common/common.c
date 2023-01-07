@@ -673,7 +673,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				__func__, state);
 		upsnotify_reported_disabled_systemd = 1;
 	} else {
-#  if HAVE_SD_NOTIFY
+#  ifdef HAVE_SD_NOTIFY
 
 #   if ! DEBUG_SYSTEMD_WATCHDOG
 		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
@@ -759,7 +759,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				if (1) {	/* scoping */
 					int	postit = 0;
 
-#   if HAVE_SD_WATCHDOG_ENABLED
+#   ifdef HAVE_SD_WATCHDOG_ENABLED
 					uint64_t	to = 0;
 					postit = sd_watchdog_enabled(0, &to);
 
@@ -889,7 +889,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				 * and post a watchdog message but systemd did not
 				 * yet prepare to handle us */
 				upsdebugx(6, "%s: wait for NOTIFY_STATE_READY_WITH_PID to be handled by systemd", __func__);
-#   if HAVE_SD_NOTIFY_BARRIER
+#   ifdef HAVE_SD_NOTIFY_BARRIER
 				sd_notify_barrier(0, UINT64_MAX);
 #   else
 				usleep(3 * 1000000);
@@ -910,7 +910,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #endif	/* WITH_LIBSYSTEMD */
 
 	if (ret < 0
-#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && HAVE_SD_NOTIFY
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && (defined(HAVE_SD_NOTIFY) && HAVE_SD_NOTIFY)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	&& (!upsnotify_reported_watchdog_systemd || (state != NOTIFY_STATE_WATCHDOG))
 # endif
