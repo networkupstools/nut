@@ -1927,13 +1927,12 @@ static void pollups(utype_t *ups)
 	/* try to make some of these a little friendlier */
 
 	switch (upscli_upserror(&ups->conn)) {
-
 		case UPSCLI_ERR_UNKNOWNUPS:
 			upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
-			"does not exist on server %s",
-			ups->sys, ups->upsname,	ups->hostname);
-
+				"does not exist on server %s",
+				ups->sys, ups->upsname,	ups->hostname);
 			break;
+
 		default:
 			upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
 				ups->sys, upscli_strerror(&ups->conn));
