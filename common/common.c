@@ -837,6 +837,17 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			upsdebugx(6, "%s: posting sd_notify: %s", __func__, buf);
 			msglen = (size_t)ret;
 			ret = sd_notify(0, buf);
+			if (ret > 0 && state == NOTIFY_STATE_READY_WITH_PID) {
+				/* Usually we begin the main loop just after this
+				 * and post a watchdog message but systemd did not
+				 * yet prepare to handle us */
+				upsdebugx(6, "%s: wait for NOTIFY_STATE_READY_WITH_PID to be handled by systemd", __func__);
+#   if HAVE_SD_NOTIFY_BARRIER
+				sd_notify_barrier(0, UINT64_MAX);
+#   else
+				usleep(3 * 1000000);
+#   endif
+			}
 		}
 
 #  else	/* not HAVE_SD_NOTIFY: */

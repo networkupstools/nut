@@ -78,7 +78,7 @@ if test -z "${nut_have_libsystemd_seen}"; then
 
 	AS_IF([test x"${nut_have_libsystemd}" = x"yes"], [
 		dnl Check for additional feature support in library (optional)
-		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled)
+		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
 		LIBSYSTEMD_CFLAGS="${CFLAGS}"
 		LIBSYSTEMD_LIBS="${LIBS}"
 	])
