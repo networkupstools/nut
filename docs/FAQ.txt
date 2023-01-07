@@ -550,6 +550,10 @@ of `nut-server.service` by default starts `upsd -F` and does not save a
 PID file; if your workflow requires to use plain `upsd -c reload`, you
 should customize the unit (with a drop-in file) to start `upsd -FF`.
 
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
+
 == I just bought a new WhizBang UPS that has a USB connector.  How do I monitor it?
 
 There are several driver to support USB models.
