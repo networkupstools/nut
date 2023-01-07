@@ -2731,7 +2731,9 @@ AC_MSG_RESULT(${with_libsystemd})
 
 AS_IF([test x"${with_libsystemd}" = xyes], [
 	dnl Built with sd_notify support
-	SYSTEMD_DAEMON_ARGS_UPSD="-F"
+	dnl Note: `upsd -FF` both runs without forking and leaves a PID file, as
+	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
+	SYSTEMD_DAEMON_ARGS_UPSD="-FF"
 	SYSTEMD_DAEMON_TYPE_UPSD="notify"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
