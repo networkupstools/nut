@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3067 utf-8
+personal_ws-1.1 en 3069 utf-8
 AAS
 ABI
 ACFAIL
@@ -846,6 +846,7 @@ PIPEFN
 PLD
 PLL
 PLVn
+POLLFAIL
 POLLFREQALERT
 POMode
 POSIX
@@ -2818,6 +2819,7 @@ testuser
 textproc
 th
 timehead
+timeframe
 timeline
 timername
 timestamp

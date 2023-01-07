@@ -441,6 +441,16 @@ upsmon will alert you to a UPS that can't be contacted for monitoring
 with a "NOCOMM" notifier by default every 300 seconds.  This can be
 changed with the NOCOMMWARNTIME setting.
 
+Also upsmon normally reports polling failures for each device that are in place
+for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+system log as configured.  If your devices are expected to be AWOL for an
+extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the
+stress on syslog traffic and storage, by posting these messages only once
+in every several loop cycles, and when the error condition has changed or
+cleared. A negative value means standard behavior, and a zero value means
+to never repeat the message (log only on start and end/change of the failure
+state).
+
 RELOADING NUANCES
 -----------------
 

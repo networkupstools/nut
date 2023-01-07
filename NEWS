@@ -220,7 +220,8 @@ https://github.com/networkupstools/nut/milestone/8
  - Several fixes for `upsmon` behavior [#1761, #1680...], including new
    ability to configure default POWERDOWNFLAG location -- packagers are
    encouraged to pick optimal location for their distributions (which
-   remains mounted at least read-only late in shutdown) [#529]
+   remains mounted at least read-only late in shutdown) and a new optional
+   POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
 
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,

@@ -134,6 +134,8 @@ int upscli_ssl(UPSCONN_t *ups);
 
 /* upsclient error list */
 
+#define UPSCLI_ERR_NONE		-1	/* No known error (internally used in tools like upsmon, not set by upsclient.c) */
+
 #define UPSCLI_ERR_UNKNOWN	0	/* Unknown error */
 #define UPSCLI_ERR_VARNOTSUPP	1	/* Variable not supported by UPS */
 #define UPSCLI_ERR_NOSUCHHOST	2	/* No such host */
