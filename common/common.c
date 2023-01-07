@@ -43,6 +43,11 @@
 static int upsnotify_reported_watchdog_systemd = 0;
 /* Similarly for only reporting once if the notification subsystem is disabled */
 static int upsnotify_reported_disabled_systemd = 0;
+# ifndef DEBUG_SYSTEMD_WATCHDOG
+/* Define this to 1 for lots of spam at debug level 6, and ignoring WATCHDOG_PID
+ * so trying to post reports anyway if WATCHDOG_USEC is valid */
+#  define DEBUG_SYSTEMD_WATCHDOG 0
+# endif
 #endif
 /* Similarly for only reporting once if the notification subsystem is not built-in */
 static int upsnotify_reported_disabled_notech = 0;
@@ -669,7 +674,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		upsnotify_reported_disabled_systemd = 1;
 	} else {
 #  if HAVE_SD_NOTIFY
+
+#   if ! DEBUG_SYSTEMD_WATCHDOG
 		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
+#   endif
 			upsdebugx(6, "%s: notify about state %i with libsystemd: use sd_notify()", __func__, state);
 
 		/* https://www.freedesktop.org/software/systemd/man/sd_notify.html */
@@ -756,11 +764,17 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					postit = sd_watchdog_enabled(0, &to);
 
 					if (postit < 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
+#    endif
 							upsdebugx(6, "%s: sd_enabled_watchdog query failed: %s",
 								__func__, strerror(postit));
 					} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd || postit > 0)
+#    else
+						if (postit > 0)
+#    endif
 							upsdebugx(6, "%s: sd_enabled_watchdog query returned: %d "
 								"(%" PRIu64 "msec remain)",
 								__func__, postit, to);
@@ -769,24 +783,41 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 					if (postit < 1) {
 						char *s = getenv("WATCHDOG_USEC");
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
+#    endif
 							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
 								pid_t wdpid = parsepid(getenv("WATCHDOG_PID"));
 								if (wdpid == (pid_t)-1 || wdpid == getpid()) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 									if (!upsnotify_reported_watchdog_systemd)
+#    endif
 										upsdebugx(6, "%s: can post: WATCHDOG_PID=%li",
 											__func__, (long)wdpid);
 									postit = 1;
 								} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 									if (!upsnotify_reported_watchdog_systemd)
+#    endif
 										upsdebugx(6, "%s: watchdog is configured, "
 											"but not for this process: "
 											"WATCHDOG_PID=%li",
 											__func__, (long)wdpid);
+#    if DEBUG_SYSTEMD_WATCHDOG
+									/* Just try to post - at worst, systemd
+									 * NotifyAccess will prohibit the message.
+									 * The envvar simply helps child processes
+									 * know they should not spam the watchdog
+									 * handler (usually only MAINPID should):
+									 *   https://github.com/systemd/systemd/issues/25961#issuecomment-1373947907
+									 */
+									postit = 1;
+#    else
 									postit = 0;
+#    endif
 								}
 							}
 						}
@@ -797,7 +828,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 							msglen ? "\n" : "",
 							"WATCHDOG=1");
 					} else if (postit == 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
 						if (!upsnotify_reported_watchdog_systemd)
+#    endif
 							upsdebugx(6, "%s: failed to tickle the watchdog: not enabled for this unit", __func__);
 						ret = -126;
 					}
@@ -878,7 +911,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 	if (ret < 0
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && HAVE_SD_NOTIFY
+# if ! DEBUG_SYSTEMD_WATCHDOG
 	&& (!upsnotify_reported_watchdog_systemd || (state != NOTIFY_STATE_WATCHDOG))
+# endif
 #endif
 	) {
 		if (ret == -127) {
@@ -891,10 +926,12 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	}
 
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
 		upsdebugx(6, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 	}
+# endif
 #endif
 
 	return ret;
