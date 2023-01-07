@@ -22,6 +22,11 @@ SyslogIdentifier=%N
 ExecStart=@SBINDIR@/upsmon @SYSTEMD_DAEMON_ARGS_UPSMON@
 ExecReload=@SBINDIR@/upsmon -c reload
 PIDFile=@PIDPATH@/upsmon.pid
+# If "-FF" or background-daemon mode is used, so that PID file exists
+# and "upsmon -c stop" in particular can be used from command-line or
+# legacy scripts, it causes a clean and intentional exit of the daemon.
+# Then systemd should not revive it - hence restart it only on failure:
+Restart=on-failure
 Type=@SYSTEMD_DAEMON_TYPE_UPSMON@
 @SYSTEMD_DAEMON_WATCHDOG_UPSMON@
 @SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON@
