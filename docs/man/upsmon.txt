@@ -406,6 +406,15 @@ can not guarantee that if a new power outage happens, their UPS would safely
 shut down your systems again. So it is deemed better and safer to stay dark
 until batteries become sufficiently charged.
 
+When it is time to shut down, upsmon creates POWERDOWNFLAG to
+communicate to the operating system that the UPS should be commanded
+off late in the shutdown sequence.  This file is removed if present
+when upsmon starts, so that the next normal shutdown does not cause
+the UPS to be turned off.  (The file can't in general be removed
+during shutdown because the filesystem might be read only.  If the
+file is in a RAM-backed filesystem, the it won't be present and the
+check to remove it won't fire.)
+
 SIMULATING POWER FAILURES
 -------------------------
 
