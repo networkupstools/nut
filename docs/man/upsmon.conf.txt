@@ -163,6 +163,18 @@ reach any of the UPS entries in this configuration file.  It keeps
 warning you until the situation is fixed.  By default this is 300
 seconds.
 
+*POLLFAIL_LOG_THROTTLE_MAX* 'count'::
+
+upsmon normally reports polling failures for each device that are in place
+for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+system log as configured.  If your devices are expected to be AWOL for an
+extended timeframe, you can use this throttle to reduce the stress on
+syslog traffic and storage, by posting these messages only once in every
+several loop cycles, and when the error condition has changed or cleared.
+
+A negative value means standard behavior, and a zero value means to never
+repeat the message (log only on start and end/change of the failure state).
+
 *NOTIFYCMD* 'command'::
 
 upsmon calls this to send messages when things happen.

@@ -846,6 +846,7 @@ PIPEFN
 PLD
 PLL
 PLVn
+POLLFAIL
 POLLFREQALERT
 POMode
 POSIX
@@ -2820,6 +2821,7 @@ testuser
 textproc
 th
 timehead
+timeframe
 timeline
 timername
 timestamp
