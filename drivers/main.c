@@ -641,6 +641,10 @@ static void exit_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.exit");
 
+	if (!dump_data) {
+		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
+	}
+
 	free(chroot_path);
 	free(device_path);
 	free(user);
@@ -1169,10 +1173,15 @@ int main(int argc, char **argv)
 		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
 	} else {
 		upsdebugx(1, "Driver initialization completed, beginning regular infinite loop");
+		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
 	}
 
 	while (!exit_flag) {
 		struct timeval	timeout;
+
+		if (!dump_data) {
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+		}
 
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
@@ -1201,8 +1210,10 @@ int main(int argc, char **argv)
 
 	/* if we get here, the exit flag was set by a signal handler */
 	/* however, avoid to "pollute" data dump output! */
-	if (!dump_data)
+	if (!dump_data) {
 		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+	}
 
 	exit(EXIT_SUCCESS);
 }

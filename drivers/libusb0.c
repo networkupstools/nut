@@ -76,6 +76,17 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+
+	/* Warning: this feature is inherently non-deterministic!
+	 * If you only care to know that at least one of your no-name UPSes is online,
+	 * this option can help. If you must really know which one, it will not!
+	 */
+	addvar(VAR_FLAG, "allow_duplicates",
+		"If you have several UPS devices which may not be uniquely "
+		"identified by options above, allow each driver instance with this "
+		"option to take the first match if available, or try another "
+		"(association of driver to device may vary between runs)");
+
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
@@ -363,6 +374,9 @@ static int libusb_open(usb_dev_handle **udevp,
 					goto next_device;
 				}
 			}
+
+			/* If we got here, none of the matchers said
+			 * that the device is not what we want. */
 			upsdebugx(2, "Device matches");
 
 			/* Now we have matched the device we wanted. Claim it. */
@@ -375,10 +389,15 @@ static int libusb_open(usb_dev_handle **udevp,
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
 #endif
-			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
+			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
 					usb_strerror());
+
+				if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+					upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+					goto next_device;
+				}
 
 				if (usb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index) < 0) {
 					upsdebugx(2, "failed to detach kernel driver from USB device: %s",
@@ -399,7 +418,12 @@ static int libusb_open(usb_dev_handle **udevp,
 					usb_strerror());
 			}
 #else
-			if (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
+			if ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
+				if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+					upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+					goto next_device;
+				}
+
 				fatalx(EXIT_FAILURE,
 					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3068 utf-8
+personal_ws-1.1 en 3075 utf-8
 AAS
 ABI
 ACFAIL
@@ -846,6 +846,7 @@ PIPEFN
 PLD
 PLL
 PLVn
+POLLFAIL
 POLLFREQALERT
 POMode
 POSIX
@@ -1132,6 +1133,7 @@ Sequentializing
 SerialNumber
 Serv
 Shara
+ShareAlike
 Shaul
 ShdnDbnc
 ShdnDly
@@ -1340,6 +1342,7 @@ WS
 WSE
 WTU
 Waldie
+WatchdogSec
 Werror
 Wextra
 WhizBang
@@ -2132,6 +2135,7 @@ libregex
 libs
 libsnmp
 libssl
+libsystemd
 libtool
 libupsclient
 libusb
@@ -2326,9 +2330,9 @@ nitram
 nl
 nlb
 nlogic
+nm
 nn
 nnn
-nm
 noAuthNoPriv
 nobody's
 nobt
@@ -2739,6 +2743,8 @@ strdup
 strerror
 strftime
 strlen
+strnlen
+strptime
 struct
 structs
 sts
@@ -2816,6 +2822,7 @@ testuser
 textproc
 th
 timehead
+timeframe
 timeline
 timername
 timestamp

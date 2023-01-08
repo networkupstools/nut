@@ -73,6 +73,22 @@ endif
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
+libcommon_la_CFLAGS = $(AM_CFLAGS)
+libcommonclient_la_CFLAGS = $(AM_CFLAGS)
+
+# Did the user request, and build env support, tighter integration with
+# libsystemd methods such as sd_notify()?
+if WITH_LIBSYSTEMD
+  libcommon_la_CFLAGS += $(LIBSYSTEMD_CFLAGS)
+  libcommon_la_LIBADD += $(LIBSYSTEMD_LIBS)
+
+# A typical client should not need this,
+# but just in case (and to simplify linking)...
+#  libcommonclient_la_CFLAGS += $(LIBSYSTEMD_CFLAGS)
+#  libcommonclient_la_LIBADD += $(LIBSYSTEMD_LIBS)
+  libcommonclient_la_CFLAGS += -DWITHOUT_LIBSYSTEMD=1
+endif
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,

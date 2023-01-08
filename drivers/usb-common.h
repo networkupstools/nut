@@ -463,7 +463,7 @@
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
- * the 5 pieces of information by which a USB device identifies
+ * the 7 pieces of information by which a USB device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client

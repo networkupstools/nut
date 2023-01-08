@@ -142,6 +142,10 @@ https://github.com/networkupstools/nut/milestone/8
    of all USB drivers using these options to include the same description
    [#1766]
 
+ - Added an `allow_duplicates` flag for common USB matching options which
+   may help monitor several related no-name devices (although without knowing
+   reliably which one is which... better than nothing) [#1756]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 
@@ -154,30 +158,30 @@ https://github.com/networkupstools/nut/milestone/8
    this variable unless troubleshooting, although other systems rely on it)
    [#805]
 
- - the nut-scanner program was updated to fall back to loading unresolved
+ - The nut-scanner program was updated to fall back to loading unresolved
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]
 
- - detection of `libltdl` in `configure` script updated with fallback code to
+ - Detection of `libltdl` in `configure` script updated with fallback code to
    find it on systems that deliver the library to `/usr/local/lib` (e.g. on
    FreeBSD) [#1577]
 
- - an explicit `configure --with-nut-scanner` toggle was added, specifically
+ - An explicit `configure --with-nut-scanner` toggle was added, specifically
    so that build environments requesting `--with-all` but lack `libltdl` would
    abort and require either to install the dependency or explicitly forfeit
    the tool (some distro packages missed it quietly in the past) [#1560]
 
- - existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
+ - Existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]
 
  - upslog: Added support for logging multiple devices with one call to the
    program [#1604]
 
- - some fixes applied to Solaris/illumos packaging and SMF service support
+ - Some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
- - some fixes for builds on older OSes with less functional default system
+ - Some fixes for builds on older OSes with less functional default system
    shell interpreters - now `autogen.sh` supports a `CONFIG_SHELL` envvar
    to inject its value into generated `configure` script [#1736]
    * Note that you may have to install additional tools (possibly from
@@ -219,13 +223,24 @@ https://github.com/networkupstools/nut/milestone/8
  - Several fixes for `upsmon` behavior [#1761, #1680...], including new
    ability to configure default POWERDOWNFLAG location -- packagers are
    encouraged to pick optimal location for their distributions (which
-   remains mounted at least read-only late in shutdown) [#529]
+   remains mounted at least read-only late in shutdown) and a new optional
+   POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
+
+ - Extended Linux systemd support with optional notifications about daemon
+   state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
+
+ - Extended Linux systemd units with aliases named after the daemons:
+   `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
+   `upsmon.service` (so simple `systemctl reload upsd` can work) [#1777]
 
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
    `time_t` etc.) in third-party client code that earlier sufficed to only
    include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
    still have to re-declare some numeric variable types used) [#1638, #1615]
+
+ - The `COPYING` file was updated with licenses and attribution for certain
+   source code files and blocks coming from the Internet originally [#1758]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:

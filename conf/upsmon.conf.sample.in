@@ -349,6 +349,20 @@ RBWARNTIME 43200
 NOCOMMWARNTIME 300
 
 # --------------------------------------------------------------------------
+# POLLFAIL_LOG_THROTTLE_MAX - device poll failure logging throttle
+#
+# upsmon normally reports polling failures for each device that are in place
+# for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+# system log as configured.  If your devices are expected to be AWOL for an
+# extended timeframe, you can use this throttle to reduce the stress on
+# syslog traffic and storage, by posting these messages only once in every
+# several loop cycles, and when the error condition has changed or cleared.
+# A negative value means standard behavior, and a zero value means to never
+# repeat the message (log only on start and end/change of the failure state).
+#
+#POLLFAIL_LOG_THROTTLE_MAX 100
+
+# --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system
 #
 # On a primary, upsmon will wait this long after sending the NOTIFY_SHUTDOWN

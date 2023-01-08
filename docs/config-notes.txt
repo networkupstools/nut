@@ -602,6 +602,10 @@ generally forgoes saving of PID files, so `upsd -c <cmd>` would not work.
 If your workflow requires to manage these daemons beside the OS provided
 framework, you can customize it to start `upsd -FF` and save the PID file.
 
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
+
 NOTE: If you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting `upsd` as a different user.
 

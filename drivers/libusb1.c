@@ -66,6 +66,17 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+
+	/* Warning: this feature is inherently non-deterministic!
+	 * If you only care to know that at least one of your no-name UPSes is online,
+	 * this option can help. If you must really know which one, it will not!
+	 */
+	addvar(VAR_FLAG, "allow_duplicates",
+		"If you have several UPS devices which may not be uniquely "
+		"identified by options above, allow each driver instance with this "
+		"option to take the first match if available, or try another "
+		"(association of driver to device may vary between runs)");
+
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 #ifdef LIBUSB_API_VERSION
@@ -151,7 +162,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
-	uint8_t bus;
+	uint8_t bus, port;
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -234,7 +245,36 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice->Bus, "%03d", bus);
+		if (bus > 0) {
+			sprintf(curDevice->Bus, "%03d", bus);
+		} else {
+			upsdebugx(1, "%s: invalid libusb bus number %i",
+				__func__, bus);
+		}
+
+		port = libusb_get_port_number(device);
+		curDevice->Device = (char *)malloc(4);
+		if (curDevice->Device == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
+		if (port > 0) {
+			/* 0 means not available, e.g. lack of platform support */
+			sprintf(curDevice->Device, "%03d", port);
+		} else {
+			if (devnum <= 999) {
+				/* Log visibly so users know their number discovered
+				 * from `lsusb` or `dmesg` (if any) was ignored */
+				upsdebugx(0, "%s: invalid libusb port number %i, "
+					"falling back to enumeration order counter %" PRIuSIZE,
+					__func__, port, devnum);
+				sprintf(curDevice->Device, "%03d", (int)devnum);
+			} else {
+				upsdebugx(1, "%s: invalid libusb port number %i",
+					__func__, port);
+			}
+		}
+
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
@@ -331,8 +371,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				goto next_device;
 			}
 		}
-		upsdebugx(2, "Device matches");
 
+		/* If we got here, none of the matchers said
+		 * that the device is not what we want. */
+		upsdebugx(2, "Device matches");
 
 		upsdebugx(2, "Reading first configuration descriptor");
 		ret = libusb_get_config_descriptor(device,
@@ -379,20 +421,28 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
 		libusb_set_configuration(udev, 1);
 #endif
+
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 # ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-				if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
-				if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # endif
-				if (ret == LIBUSB_ERROR_NOT_FOUND)
+				if (ret == LIBUSB_ERROR_NOT_FOUND) {
+					/* logged as "Entity not found" if this persists */
 					upsdebugx(2, "Kernel driver already detached");
-				else
+				} else {
 					upsdebugx(1, "failed to detach kernel driver from USB device: %s",
 						libusb_strerror((enum libusb_error)ret));
+				}
 			} else {
 				upsdebugx(2, "detached kernel driver from USB device...");
 			}
@@ -412,6 +462,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #else
 		if ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS ) {
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,

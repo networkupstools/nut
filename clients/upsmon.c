@@ -55,6 +55,18 @@ static	int deadtime = 15;
 	/* default polling interval = 5 sec */
 static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 
+	/* If pollfail_log_throttle_max > 0, error messages for same
+	 * state of an UPS (e.g. "Data stale" or "Driver not connected")
+	 * will only be repeated every so many POLLFREQ loops.
+	 * If pollfail_log_throttle_max == 0, such error messages will
+	 * only be reported once when that situation starts, and ends.
+	 * By default it is logged every pollfreq (which can abuse syslog
+	 * and its storage).
+	 * To support this, each utype_t (UPS) structure tracks individual
+	 * pollfail_log_throttle_count and pollfail_log_throttle_state
+	 */
+static	int	pollfail_log_throttle_max = -1;
+
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
 
@@ -621,6 +633,8 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
+	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
+
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
@@ -1050,6 +1064,11 @@ static void drop_connection(utype_t *ups)
 
 	ups->commstate = 0;
 	ups->linestate = 0;
+
+	/* forget poll-failure logging throttling */
+	ups->pollfail_log_throttle_count = -1;
+	ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+
 	clearflag(&ups->status, ST_LOGIN);
 	clearflag(&ups->status, ST_CLICONNECTED);
 
@@ -1241,6 +1260,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->commstate = -1;
 	tmp->linestate = -1;
 
+	/* forget poll-failure logging throttling */
+	tmp->pollfail_log_throttle_count = -1;
+	tmp->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+
 	tmp->lastpoll = 0;
 	tmp->lastnoncrit = 0;
 	tmp->lastrbwarn = 0;
@@ -1428,6 +1451,17 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			upsdebugx(0, "Ignoring invalid POLLFREQALERT value: %d", ipollfreqalert);
 		} else {
 			pollfreqalert = (unsigned int)ipollfreqalert;
+		}
+		return 1;
+	}
+
+	/* POLLFAIL_LOG_THROTTLE_MAX <num> */
+	if (!strcmp(arg[0], "POLLFAIL_LOG_THROTTLE_MAX")) {
+		int ipollfail_log_throttle_max = atoi(arg[1]);
+		if (ipollfail_log_throttle_max < 0 || ipollfail_log_throttle_max == INT_MAX) {
+			upsdebugx(0, "Ignoring invalid POLLFAIL_LOG_THROTTLE_MAX value: %d", ipollfail_log_throttle_max);
+		} else {
+			pollfail_log_throttle_max = ipollfail_log_throttle_max;
 		}
 		return 1;
 	}
@@ -1639,6 +1673,12 @@ static void loadconfig(void)
 				"original command line arguments",
 				nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
+		}
+
+		if (pollfail_log_throttle_max >= 0) {
+			upslogx(LOG_INFO,
+				"Applying pollfail_log_throttle_max=%d from upsmon.conf",
+				pollfail_log_throttle_max);
 		}
 	}
 
@@ -1902,11 +1942,15 @@ static void parse_status(utype_t *ups, char *status)
 static void pollups(utype_t *ups)
 {
 	char	status[SMALLBUF];
+	int	pollfail_log = 0;	/* if we throttle, only upsdebugx() but not upslogx() the failures */
+	int	upserror;
 
 	/* try a reconnect here */
-	if (!flag_isset(ups->status, ST_CLICONNECTED))
-		if (try_connect(ups) != 1)
+	if (!flag_isset(ups->status, ST_CLICONNECTED)) {
+		if (try_connect(ups) != 1) {
 			return;
+		}
+	}
 
 	if (upscli_ssl(&ups->conn) == 1)
 		upsdebugx(2, "%s: %s [SSL]", __func__, ups->sys);
@@ -1917,6 +1961,27 @@ static void pollups(utype_t *ups)
 
 	if (get_var(ups, "status", status, sizeof(status)) == 0) {
 		clear_alarm();
+
+		/* reset pollfail log throttling */
+#if 0
+		/* Note: last error is never cleared, so we reset it below */
+		upserror = upscli_upserror(&ups->conn);
+		upsdebugx(3, "%s: Poll UPS [%s] after getvar(status) okay: upserror=%d: %s",
+			__func__, ups->sys, upserror, upscli_strerror(&ups->conn));
+#endif
+		upserror = UPSCLI_ERR_NONE;
+		if (pollfail_log_throttle_max >= 0
+		&&  ups->pollfail_log_throttle_state != upserror
+		) {
+			/* Notify throttled log that we are okay now */
+			upslogx(LOG_ERR, "Poll UPS [%s] recovered from "
+				"failure state code %d - now %d",
+				ups->sys, ups->pollfail_log_throttle_state,
+				upserror);
+		}
+		ups->pollfail_log_throttle_state = upserror;
+		ups->pollfail_log_throttle_count = -1;
+
 		parse_status(ups, status);
 		return;
 	}
@@ -1925,18 +1990,75 @@ static void pollups(utype_t *ups)
 	clear_alarm();
 
 	/* try to make some of these a little friendlier */
+	upserror = upscli_upserror(&ups->conn);
+	upsdebugx(3, "%s: Poll UPS [%s] after getvar(status) failed: upserror=%d",
+		__func__, ups->sys, upserror);
+	if (pollfail_log_throttle_max < 0) {
+		/* Log properly on each loop */
+		pollfail_log = 1;
+	} else {
+		if (ups->pollfail_log_throttle_state == upserror) {
+			/* known issue, no syslog spam now... maybe */
+			if (pollfail_log_throttle_max == 0) {
+				/* Only log once for start or end of the same
+				 * failure state */
+				pollfail_log = 0;
+			} else {
+				/* Only log once for start, every MAX iterations,
+				 * and end of the same failure state */
+				if (ups->pollfail_log_throttle_count++ >= pollfail_log_throttle_max) {
+					/* ping... */
+					pollfail_log = 1;
+					ups->pollfail_log_throttle_count = 0;
+				} else {
+					pollfail_log = 0;
+				}
+			}
+		} else {
+			/* new error => reset pollfail log throttling and log it
+			 * now (numeric states here, string for new state below) */
+			if (pollfail_log_throttle_max == 0) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
+					"changed from %d to %d; "
+					"report below will not be repeated to syslog:",
+					ups->sys, ups->pollfail_log_throttle_state,
+					upserror);
+			} else {
+				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
+					"changed from %d to %d; "
+					"report below will only be repeated to syslog "
+					"every %d polling loop cycles:",
+					ups->sys, ups->pollfail_log_throttle_state,
+					upserror, pollfail_log_throttle_max);
+			}
 
-	switch (upscli_upserror(&ups->conn)) {
+			ups->pollfail_log_throttle_state = upserror;
+			ups->pollfail_log_throttle_count = 0;
+			pollfail_log = 1;
+		}
+	}
 
+	switch (upserror) {
 		case UPSCLI_ERR_UNKNOWNUPS:
-			upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
-			"does not exist on server %s",
-			ups->sys, ups->upsname,	ups->hostname);
-
+			if (pollfail_log) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
+					"does not exist on server %s",
+					ups->sys, ups->upsname,	ups->hostname);
+			} else {
+				upsdebugx(1, "Poll UPS [%s] failed - [%s] "
+					"does not exist on server %s",
+					ups->sys, ups->upsname,	ups->hostname);
+			}
 			break;
+
 		default:
-			upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
-				ups->sys, upscli_strerror(&ups->conn));
+			if (pollfail_log) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
+					ups->sys, upscli_strerror(&ups->conn));
+			} else {
+				upsdebugx(1, "Poll UPS [%s] failed - [%s]",
+					ups->sys, upscli_strerror(&ups->conn));
+			}
 			break;
 	}
 
@@ -2580,6 +2702,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
+		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init()");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2590,15 +2713,22 @@ int main(int argc, char *argv[])
 	closelog();
 	open_syslog(prog);
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (exit_flag == 0) {
 		utype_t	*ups;
+
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
 		if (userfsd)
 			forceshutdown();
 
-		if (reload_flag)
+		if (reload_flag) {
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			reload_conf();
+			upsnotify(NOTIFY_STATE_READY, NULL);
+		}
 
 		for (ups = firstups; ups != NULL; ups = ups->next)
 			pollups(ups);
@@ -2676,6 +2806,7 @@ int main(int argc, char *argv[])
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	upsmon_cleanup();
 
 	exit(EXIT_SUCCESS);
