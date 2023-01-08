@@ -151,6 +151,10 @@ metadata about recently published package revisions:
 :; apt-get install \
     libgd-dev
 
+# Optionally for sd_notify integration:
+:; apt-get install \
+    libsystemd-dev
+
 # NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
 # and/or "openssl-dev" instead of "libssl-dev" by its modern name
 :; apt-get install \
@@ -254,7 +258,7 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 ------
 :; yum install \
     ccache time \
-    file systemd-devel \
+    file \
     git python perl curl \
     make autoconf automake libtool-ltdl-devel libtool \
     valgrind \
@@ -281,6 +285,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 # For CGI graph generation - massive packages (X11):
 :; yum install \
     gd-devel
+
+# Optionally for sd_notify integration:
+:; yum install \
+    systemd-devel
 
 # NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
 # vs. the older "libusb" as the package with "libusb-0.1"
@@ -357,6 +365,10 @@ Install tools and prerequisites for NUT:
 # For CGI graph generation - massive packages (X11):
 :; pacman -S --needed \
     gd
+
+# Optionally for sd_notify integration:
+:; pacman -S --needed \
+    systemd
 
 :; pacman -S --needed \
     cppunit \

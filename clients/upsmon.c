@@ -621,6 +621,8 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
+	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
+
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
@@ -2580,6 +2582,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
+		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init()");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2590,15 +2593,22 @@ int main(int argc, char *argv[])
 	closelog();
 	open_syslog(prog);
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (exit_flag == 0) {
 		utype_t	*ups;
+
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
 		if (userfsd)
 			forceshutdown();
 
-		if (reload_flag)
+		if (reload_flag) {
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			reload_conf();
+			upsnotify(NOTIFY_STATE_READY, NULL);
+		}
 
 		for (ups = firstups; ups != NULL; ups = ups->next)
 			pollups(ups);
@@ -2676,6 +2686,7 @@ int main(int argc, char *argv[])
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	upsmon_cleanup();
 
 	exit(EXIT_SUCCESS);

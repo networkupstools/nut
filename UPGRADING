@@ -47,7 +47,7 @@ Changes from 2.8.0 to 2.8.1
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]
 
-- an explicit `configure --with-nut-scanner` toggle was added, specifically
+- An explicit `configure --with-nut-scanner` toggle was added, specifically
   so that build environments requesting `--with-all` but lacking `libltdl`
   would abort and require the packager either to install the dependency
   or explicitly forfeit building the tool (some distro packages missed it
@@ -65,6 +65,13 @@ Changes from 2.8.0 to 2.8.1
 
   * Several other issues have been fixed related to this file and its content,
     including #1030, #1037, #1117 and #1712
+
+- Extended Linux systemd support with optional notifications about daemon
+  state (READY, RELOADING, STOPPING) and watchdog keep-alive messages.
+  Note that `WatchdogSec=` values are currently NOT pre-set into systemd
+  unit file templates provided by NUT, this is an exercise for end-users
+  based on sizing of their deployments and performance of monitoring station
+  [#1590, #1777]
 
 - snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
   were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`

@@ -537,6 +537,18 @@ Use `--with-systemdtmpfilesdir` to detect the settings using pkg-config.
 
 Use `--with-systemdtmpfilesdir=no` to disable this feature altogether.
 
+	--with-libsystemd=(auto|yes|no)
+	--with-libsystemd-includes=CFLAGS
+	--with-libsystemd-libs=LDFLAGS
+
+If the build system provides `libsystemd` headers, NUT binaries can be
+built with tighter integration to this service management framework.
+In this case NUT daemons (`upsd`, `upsmon`, `upslog` and drivers) would
+report their life-cycle milestones (`READY`, `RELOADING`, `STOPPING`) and
+support the watchdog reports (if enabled in their respective units by
+end-user -- not done by default since the numbers depends on monitoring
+system performance). Default: "auto" (integration enabled if detected).
+
 	--with-augeas-lenses-dir=PATH
 
 Where to install Augeas configuration-management lenses.
