@@ -255,25 +255,25 @@ to `export` special environment variables to signal to `autogen.sh` that
 this is an expected situation (it would suggest which, for your current
 NUT version).
 
-Since this is an area which impacts both `configure` script generation by
-the helper `autogen.sh` script and subsequently the choices made by the
-`configure` script itself, settings can be made by exporting the `PYTHON`
-environment variables which should evaluate to some way to call the correct
-interpreter (e.g. `python2.7`, `/usr/bin/env python` or `/usr/bin/python3`).
+NOTE: For CI builds (or similar reproducible developer activity) performed
+with `ci_build.sh` -- since this is an area which impacts both `configure`
+script generation by the helper `autogen.sh` script and subsequently the
+choices made by the `configure` script itself, settings can be made by
+exporting the `PYTHON` environment variable which should evaluate to some
+way to call the correct interpreter (e.g. `python2.7`, `/usr/bin/env python`
+or `/usr/bin/python3`).
 
 The `configure` script does support equivalent options, whose defaults
-come from such environment variables (if specified and exported by caller).
-Further use of the interpreter names and other paths during NUT build and
-installation is managed by Makefile variable expansion, as prepared by
-the `configure` script.
+come from detection of certain program names by current `PATH` setting.
+Further use of these interpreter names and other paths during NUT build
+and installation is managed by Makefile variable expansion, as prepared
+by the `configure` script.
 
 As noted above, both python-2.x and python-3.x variants are supported.
-For consistency, they can be defaulted for the `configure` script by
-exporting `PYTHON2` and `PYTHON3` environment variables, respectively.
-Otherwise, consult `m4/nut_check_python.m4` for detection methods used.
+You can consult the `m4/nut_check_python.m4` file for detection methods used.
 If both interpreter generations are present, and a particular un-versioned
-`PYTHON` is not specified, then selected/detected `PYTHON3` is chosen as
-the ultimate `PYTHON` value.
+`PYTHON` is not specified or detected, then selected/detected `PYTHON3` is
+chosen as the ultimate `PYTHON` value.
 
 For majority of uses in the build procedure and products, the generation
 of Python does not matter and the un-versioned `PYTHON` value is substituted
@@ -299,17 +299,14 @@ The `SHEBANG_PATH` should be a full program pathname, optionally with
 one argument, e.g. `/usr/bin/python-3.9` or `/usr/bin/env python2`.
 
 Defaults (in order):
-* `PYTHON` environment variable,
-* `python` program if present in `PATH`,
-* `python3` program if present in `PATH`,
-* `python2` program if present in `PATH`,
-* or the newest of `PYTHON3` or `PYTHON2` values.
+* `python`, `python3` or `python2` program if present in `PATH` by such name,
+* or the newest of `PYTHON3` or `PYTHON2` values (specified or detected below).
 
 	--with-python2=SHEBANG_PATH
 	--with-python3=SHEBANG_PATH
 
 For version-dependent scripts (see above) or to default the newest Python
-version if not specified by `--with-python` option or `PYTHON` envvar,
+version if not specified by `--with-python` option or detected otherwise,
 you can provide the preferred version and implementation of Python 2 or 3
 respectively.
 
