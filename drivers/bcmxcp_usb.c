@@ -385,13 +385,18 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
+
 	upsdrv_initups();
+
+	dstate_setinfo("driver.state", "quiet");
 }
 
 /* USB functions */

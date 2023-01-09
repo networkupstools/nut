@@ -61,6 +61,12 @@ typedef struct {
 	int	commstate;		/* these start at -1, and only	*/
 	int	linestate;		/* fire on a 0->1 transition	*/
 
+	/* see detailed comment for pollfail_log_throttle_max in upsmon.c
+	 * about handling of poll failure log throttling (syslog storage I/O)
+	 */
+	int	pollfail_log_throttle_state;	/* Last (error) state which we throttle */
+	int	pollfail_log_throttle_count;	/* How many pollfreq loops this UPS was in this state since last logged report? */
+
 	time_t	lastpoll;		/* time of last successful poll	*/
 	time_t  lastnoncrit;		/* time of last non-crit poll	*/
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/

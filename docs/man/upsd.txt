@@ -88,9 +88,18 @@ RELOADING
 upsd can reload its configuration files without shutting down the process
 if you send it a SIGHUP or start it again with `-c reload`.  This only works
 if the background process is able to read those files, and if the daemon did
-save a PID file when it started (e.g. service instances wrapped by systemd
-or SMF do not save them by default -- use respective `reload`/`refresh`
-framework actions instead).
+save a PID file when it started.
+
+[NOTE]
+======
+Service instances wrapped by systemd or SMF might not save them by default --
+use respective `reload`/`refresh` framework actions instead then), e.g.
+`systemctl reload nut-server`
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
+======
 
 If you think that upsd can't reload, check your syslog for error messages.
 If it's complaining about not being able to read the files, then you need

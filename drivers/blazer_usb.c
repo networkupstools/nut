@@ -445,11 +445,15 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	ssize_t	ret;
 
 	if (udev == NULL) {
+		dstate_setinfo("driver.state", "reconnect.trying");
+
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
 			return ret;
 		}
+
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, buflen);
@@ -496,6 +500,7 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
 		break;

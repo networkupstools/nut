@@ -62,6 +62,29 @@ connected (e.g. `device="001"` or `device="00[1-2]"`) as seen in
 Note that device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
 
+*allow_duplicates*::
+
+If you have several UPS devices which may not be uniquely identified by
+the options above (e.g. only VID:PID can be discovered there), this flag
+allows each driver instance where it is set to take the first match if
+available, or proceed to try another.
++
+Normally the driver initialization would abort at this point claiming
+"Resource busy" or similar error, assuming that the otherwise properly
+matched device is unique -- and some other process already handles it.
++
+[WARNING]
+=========
+This feature is inherently non-deterministic!
+The association of driver instance name to actual device
+may vary between runs!
+
+If you only care to know that *at least* one of your no-name UPSes
+is online, this option can help.
+
+If you must really know *which* one, it will not!
+=========
+
 *usb_set_altinterface =* 'bAlternateSetting'::
 
 Force redundant call to `usb_set_altinterface()`, especially if needed

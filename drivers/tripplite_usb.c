@@ -325,6 +325,8 @@ static int reconnect_ups(void)
 		return 1;
 	}
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(2, "==================================================");
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
@@ -337,6 +339,7 @@ static int reconnect_ups(void)
 	}
 
 	hd = &curDevice;
+	dstate_setinfo("driver.state", "quiet");
 
 	return ret;
 }
@@ -552,6 +555,7 @@ static void usb_comm_fail(int res, const char *msg)
 #endif
 
 		default:
+			dstate_setinfo("driver.state", "reconnect.trying");
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
@@ -563,7 +567,9 @@ static void usb_comm_fail(int res, const char *msg)
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
 				try = 0;
+				dstate_setinfo("driver.state", "reconnect.updateinfo");
 				upsdrv_initinfo();
+				dstate_setinfo("driver.state", "quiet");
 			} else {
 				if(try > MAX_RECONNECT_TRIES) {
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");

@@ -888,10 +888,12 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
 			hd = NULL;
 			return;
 		case LIBUSB_ERROR_IO:        /* I/O error */
 			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
 			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return;
@@ -1510,11 +1512,13 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
 			hd = NULL;
 			return FALSE;
 
 		case LIBUSB_ERROR_IO:        /* I/O error */
 			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
 			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return FALSE;
@@ -1595,6 +1599,8 @@ static int reconnect_ups(void)
 	char	*val;
 	int wait_before_reconnect = 0;
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	/* Init time to wait before trying to reconnect (seconds) */
 	val = getval(HU_VAR_WAITBEFORERECONNECT);
 	if (val) {
@@ -1627,6 +1633,7 @@ static int reconnect_ups(void)
 		return 1;
 	}
 
+	dstate_setinfo("driver.state", "quiet");
 	return 0;
 }
 

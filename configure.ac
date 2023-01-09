@@ -1399,6 +1399,7 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c
 dnl Check for i2c header on Linux, used for ASEM UPS driver
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+LIBI2C_LIBS=""
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
@@ -1431,6 +1432,8 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl "compromised" by lack of respective binary library, so
             dnl even if we have the right headers, ultimate link fails.
             dnl Note: here we keep the verdict from above, or make it worse.
+            LIBS_SAVED="$LIBS"
+            LIBS=""
             AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [i2c],
                 [nut_with_linux_i2c="yes"],
@@ -1438,6 +1441,8 @@ if test "${nut_with_linux_i2c}" != no; then
                     [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
                     [nut_with_linux_i2c="no"])
                 ])
+            LIBI2C_LIBS="$LIBS"
+            LIBS="$LIBS_SAVED"
             ;;
         * )
             if test "${nut_with_linux_i2c}" = yes; then
@@ -2598,6 +2603,7 @@ fi
 AC_MSG_RESULT([${solarisinit}])
 AM_CONDITIONAL(WITH_SOLARIS_INIT, test x"$solarisinit" = x"yes")
 
+
 dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
@@ -2631,14 +2637,15 @@ else
 	have_systemd="no"
 	AC_MSG_RESULT(no)
 fi
-dnl Note: we may want tighter integration, e.g. systemd-notify support at
-dnl a later point. That would be a further option/flag. This one is a very
-dnl basic yes/no toggle.
-NUT_REPORT_FEATURE([consider systemd support], [${have_systemd}], [],
-					[HAVE_SYSTEMD], [Define to consider systemd support])
+dnl Note: we may want tighter integration, e.g. systemd-notify support
+dnl configured as a further option/flag (see --with-systemd below).
+dnl This one is a very basic yes/no toggle for unit file delivery.
+NUT_REPORT_FEATURE([consider basic systemd support], [${have_systemd}], [],
+					[HAVE_SYSTEMD], [Define to consider basic systemd support (provide units and configuration files)])
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
+
 
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
@@ -2672,6 +2679,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
 AC_MSG_CHECKING([whether to install systemd tmpfiles files])
@@ -2702,6 +2710,72 @@ if test -n "${systemdtmpfilesdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+
+
+dnl Note: we may want binaries with sd_notify and similar features regardless
+dnl of building and delivering unit files (which may be crafted separately).
+dnl TODO: although end-user deployments (for custom builds) may be lacking
+dnl libsystemd development files, they might have a `systemd-notify` program
+dnl intended to help scripted service units. Consider making use of that then.
+AC_MSG_CHECKING(whether to build binaries with tighter systemd integration support)
+NUT_ARG_WITH([libsystemd], [build binaries with tighter systemd integration (notifications etc)], [auto])
+NUT_CHECK_LIBSYSTEMD
+
+AS_IF([test x"${nut_with_libsystemd}" = xyes && test x"${nut_have_libsystemd}" != xyes],
+	[AC_MSG_ERROR([--with-libsystemd was requested, but the library was not found or usable])])
+AS_CASE(["${nut_with_libsystemd}"],
+	[yes|no], [have_libsystemd="${nut_with_libsystemd}"],
+	[AS_IF([test x"${nut_have_libsystemd}" = xyes],
+		[with_libsystemd="yes"],
+		[with_libsystemd="no"])
+	])
+AC_MSG_RESULT(${with_libsystemd})
+
+AS_IF([test x"${with_libsystemd}" = xyes], [
+	dnl Built with sd_notify support
+	dnl Note: `upsd -FF` both runs without forking and leaves a PID file, as
+	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
+	SYSTEMD_DAEMON_ARGS_UPSD="-FF"
+	SYSTEMD_DAEMON_TYPE_UPSD="notify"
+	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
+	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
+	SYSTEMD_DAEMON_ARGS_DRIVER=""
+	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
+	dnl Calling shell, upsdrvctl, driver, and then it forks... ugh!
+	dnl https://github.com/systemd/systemd/issues/25961
+	dnl FIXME: if NotifyAccess=cgroup appears, use it (consult SYSTEMD_VERSION)
+	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER="NotifyAccess=all"
+	dnl Similar for UPSMON with its two processes:
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON="NotifyAccess=all"
+	dnl UPSD is started directly by systemd and do not fork:
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD="NotifyAccess=main"
+	dnl Note: at this time we do not pre-define watchdog settings,
+	dnl to avoid breaking something by a poorly hardcoded guess.
+	dnl This is something end-users should do for their deployment,
+	dnl especially for drivers
+	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
+	], [
+	dnl "Usual" daemons that happen to be spawned by systemd
+	SYSTEMD_DAEMON_ARGS_UPSD="-F"
+	SYSTEMD_DAEMON_TYPE_UPSD="simple"
+	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
+	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
+	SYSTEMD_DAEMON_ARGS_DRIVER=""
+	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
+	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON=""
+	dnl Watchdog should not be configured for not-notifying units, right?
+	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
+	])
+
+NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [],
+	[WITH_LIBSYSTEMD], [Define to build with tighter systemd support (sd_notify etc)])
+
 
 dnl
 dnl Tests for CppUnit availability and usability (will be built if we can,
@@ -3323,12 +3397,27 @@ AC_SUBST(LIBMODBUS_CFLAGS)
 AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
+AC_SUBST(LIBI2C_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
+AC_SUBST(LIBSYSTEMD_CFLAGS)
+AC_SUBST(LIBSYSTEMD_LIBS)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)

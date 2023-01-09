@@ -1083,12 +1083,16 @@ static void mainloop(void)
 	stype_t		*server;
 	time_t	now;
 
+	upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 	time(&now);
 
 	if (reload_flag) {
+		upsnotify(NOTIFY_STATE_RELOADING, NULL);
 		conf_reload();
 		poll_reload();
 		reload_flag = 0;
+		upsnotify(NOTIFY_STATE_READY, NULL);
 	}
 
 	/* cleanup instcmd/setvar status tracking entries if needed */
@@ -1914,12 +1918,16 @@ int main(int argc, char **argv)
 	/* initialize SSL (keyfile must be readable by nut user) */
 	ssl_init();
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (!exit_flag) {
+		/* Note: mainloop() calls upsnotify(NOTIFY_STATE_WATCHDOG, NULL); */
 		mainloop();
 	}
 
-	ssl_cleanup();
-
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+
+	ssl_cleanup();
 	return EXIT_SUCCESS;
 }

@@ -4,9 +4,10 @@ NUT variable names and instant commands
 endif::external_title[]
 
 [NOTE]
-.RFC xxxx Recording Document
+.RFC 9271 Recording Document
 ====
-This document is defined by (pending) RFC xxxx and is referenced as the
+This document is defined by RFC 9271 published by IETF at
+https://www.rfc-editor.org/info/rfc9271 and is referenced as the
 document of record for the variable names and the instant commands used
 in the protocol described by the RFC.
 
@@ -43,7 +44,9 @@ strings in those reports. The `unmapped` entries should not be exposed in
 "production" builds of the NUT drivers. They are an aid for developers to
 know that such entries are served by their device, so an existing standard
 NUT name can be assigned for the concept (or new name negotiated with the
-community), but are normally hidden with `#if 0` clauses.
+community), but are normally hidden with `#if WITH_UNMAPPED_DATA_POINTS`
+clauses which can be enabled in custom NUT builds by use of
+`./configure --with-unmapped-data-points` option.
 
 NOTE: In the descriptions, "opaque" means programs should not attempt to
 parse the value for that variable as it may vary greatly from one UPS
@@ -700,6 +703,18 @@ driver: Internal driver information
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or
                             cmdline -x) status           | enabled (or absent)
+| driver.state            | Current state in driver's
+                            lifecycle, primarily to help
+                            readers discern long-running
+                            init (with full device walk)
+                            or cleanup stages from
+                            the stable working loop      | init.starting, init.quiet,
+                                                           init.device, init.info,
+                                                           init.updateinfo (first walk),
+                                                           reconnect.trying,
+                                                           reconnect.updateinfo,
+                                                           updateinfo, quiet, dumping,
+                                                           cleanup.upsdrv, cleanup.exit
 |===============================================================================
 
 server: Internal server information

@@ -1949,6 +1949,8 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 
 		/* generic retry for modbus read failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_read_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a read failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -1974,7 +1976,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal read failure.", addr);
+	upslogx(LOG_ERR, "modbus_read_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal read failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -1994,6 +1998,8 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 
 		/* generic retry for modbus write failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_write_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a write failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -2005,7 +2011,9 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal write failure.", addr);
+	upslogx(LOG_ERR, "modbus_write_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal write failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
