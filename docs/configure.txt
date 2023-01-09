@@ -313,6 +313,11 @@ version if not specified by `--with-python` option or detected otherwise,
 you can provide the preferred version and implementation of Python 2 or 3
 respectively.
 
+Conversely, if neither of these configure options were specified, but some
+`--with-python` program was specified or detected, and its report says it
+has Python major version 2 or 3, then the versioned interpreter string would
+point to that.
+
 	--with-nut_monitor
 
 Install the NUT-Monitor GUI application (depending on Python 2 or 3 version
