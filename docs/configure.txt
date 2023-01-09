@@ -329,6 +329,18 @@ Install the PyNUT module files for general consumption into "site-packages"
 location of the currently chosen Python interpreter(s): yes, no, auto.
 or dedicated as the required dependency of NUT-Monitor application (app).
 
+[WARNING]
+=========
+The module files are installed into a particular Python version's location
+such as `/usr/lib/python2.7/dist-packages` even if you specify a relaxed
+or un-versioned interpreter like `python2` (which would be used in scripts
+for the NUT-Monitor application and possible other consumers of the module).
+If the preferred Python version in the deployed system changes later (so the
+`python2` symlink for this example would point elsewhere) the module import
+would become not resolvable for such consumers, until it is installed into
+that other Python's "site-packages" location.
+=========
+
 Development files
 ~~~~~~~~~~~~~~~~~
 
