@@ -284,9 +284,9 @@ library).
 Networking transport security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    --with-ssl (default: auto-detect)
-    --with-nss (default: auto-detect)
-    --with-openssl (default: auto-detect)
+	--with-ssl (default: auto-detect)
+	--with-nss (default: auto-detect)
+	--with-openssl (default: auto-detect)
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
 
