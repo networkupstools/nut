@@ -126,8 +126,20 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         dnl if provided by the caller:
         AS_CASE([${PYTHON2}],
             [_python2_runtime], [
-                PYTHON2="/usr/bin/env python2"
-                AC_MSG_WARN([A python2 program name was not detected during configuration, will default to '$PYTHON2' (scripts will fail if that is not in PATH at run time)])],
+                dnl Cross check --with-python results:
+                AS_CASE(["${PYTHON_VERSION_REPORT}"],
+                    [*major=2,*], [
+                        AS_CASE([${PYTHON}],
+                            [/usr/bin/env*], [],
+                            [/*py*2*], [PYTHON2="${PYTHON}"])
+                    ])
+                AS_IF([test x"${PYTHON2}" = x_python2_runtime], [
+                    PYTHON2="/usr/bin/env python2"
+                    AC_MSG_WARN([A python2 program name was not detected during configuration, will default to '$PYTHON2' (scripts will fail if that is not in PATH at run time)])
+                    ],[
+                    AC_MSG_WARN([A python2 program name was not detected during configuration, will default to '$PYTHON2' (specified or detected as --with-python setting)])
+                    ])
+                ],
             [no], [],
             [/*" "*" "*], [
                 AC_MSG_WARN([A python2 program name is not a single token (was specified with more than one argument?), so shebangs can be not reliable])
@@ -197,8 +209,20 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         dnl if provided by the caller:
         AS_CASE([${PYTHON3}],
             [_python3_runtime], [
-                PYTHON3="/usr/bin/env python3"
-                AC_MSG_WARN([A python3 program name was not detected during configuration, will default to '$PYTHON3' (scripts will fail if that is not in PATH at run time)])],
+                dnl Cross check --with-python results:
+                AS_CASE(["${PYTHON_VERSION_REPORT}"],
+                    [*major=3,*], [
+                        AS_CASE([${PYTHON}],
+                            [/usr/bin/env*], [],
+                            [/*py*3*], [PYTHON3="${PYTHON}"])
+                    ])
+                AS_IF([test x"${PYTHON3}" = x_python3_runtime], [
+                    PYTHON3="/usr/bin/env python3"
+                    AC_MSG_WARN([A python3 program name was not detected during configuration, will default to '$PYTHON3' (scripts will fail if that is not in PATH at run time)])
+                    ],[
+                    AC_MSG_WARN([A python3 program name was not detected during configuration, will default to '$PYTHON3' (specified or detected as --with-python setting)])
+                    ])
+                ],
             [no], [],
             [/*" "*" "*], [
                 AC_MSG_WARN([A python3 program name is not a single token (was specified with more than one argument?), so shebangs can be not reliable])
