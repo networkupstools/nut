@@ -71,7 +71,12 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                 AC_MSG_WARN([A python program name is not a single token (was specified with an argument?), so /usr/bin/env shebangs can be not reliable])
                 PYTHON="/usr/bin/env ${PYTHON}"
                 ],
-            [*], [PYTHON="/usr/bin/env ${PYTHON}"]
+            [*], [
+                myPYTHON="`command -v "${PYTHON}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                && PYTHON="${myPYTHON}" \
+                || PYTHON="/usr/bin/env ${PYTHON}"
+                unset myPYTHON
+                ]
         )
 
         PYTHON_VERSION_REPORT=""
@@ -178,7 +183,12 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                 AC_MSG_WARN([A python2 program name is not a single token (was specified with an argument?), so /usr/bin/env shebangs can be not reliable])
                 PYTHON2="/usr/bin/env ${PYTHON2}"
                 ],
-            [*], [PYTHON2="/usr/bin/env ${PYTHON2}"]
+            [*], [
+                myPYTHON="`command -v "${PYTHON2}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                && PYTHON2="${myPYTHON}" \
+                || PYTHON2="/usr/bin/env ${PYTHON2}"
+                unset myPYTHON
+                ]
         )
 
         PYTHON2_VERSION_REPORT=""
@@ -285,7 +295,12 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 AC_MSG_WARN([A python3 program name is not a single token (was specified with an argument?), so /usr/bin/env shebangs can be not reliable])
                 PYTHON3="/usr/bin/env ${PYTHON3}"
                 ],
-            [*], [PYTHON3="/usr/bin/env ${PYTHON3}"]
+            [*], [
+                myPYTHON="`command -v "${PYTHON3}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
+                && PYTHON3="${myPYTHON}" \
+                || PYTHON3="/usr/bin/env ${PYTHON3}"
+                unset myPYTHON
+                ]
         )
 
         PYTHON3_VERSION_REPORT=""
