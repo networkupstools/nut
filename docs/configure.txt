@@ -238,6 +238,92 @@ Example valid formats of this flag:
 * `--with-doc=pdf,html-chunked`
 * `--with-doc=man=no,pdf=auto,html-single`
 
+Python support
+~~~~~~~~~~~~~~
+
+NUT includes a client binding `PyNUT` module, as well as an optional GUI
+application `NUT-Monitor` (not to be confused with `nut-monitor` service
+name for `upsmon` as delivered by some OS distribution packages). Both
+python 2.7 and several versions of python 3.x are supported and regularly
+tested by NUT CI farm builds; other versions may work or not.
+
+Also some of the source configuration (including activity in `autogen.sh`
+script and later in certain `Makefile`s during build) relies on presence
+of `python` (and `perl`) interpreters. If they are not available, e.g. on
+older operating systems, certain features are skipped -- but you may have
+to `export` special environment variables to signal to `autogen.sh` that
+this is an expected situation (it would suggest which, for your current
+NUT version).
+
+Since this is an area which impacts both `configure` script generation by
+the helper `autogen.sh` script and subsequently the choices made by the
+`configure` script itself, settings can be made by exporting the `PYTHON`
+environment variables which should evaluate to some way to call the correct
+interpreter (e.g. `python2.7`, `/usr/bin/env python` or `/usr/bin/python3`).
+
+The `configure` script does support equivalent options, whose defaults
+come from such environment variables (if specified and exported by caller).
+Further use of the interpreter names and other paths during NUT build and
+installation is managed by Makefile variable expansion, as prepared by
+the `configure` script.
+
+As noted above, both python-2.x and python-3.x variants are supported.
+For consistency, they can be defaulted for the `configure` script by
+exporting `PYTHON2` and `PYTHON3` environment variables, respectively.
+Otherwise, consult `m4/nut_check_python.m4` for detection methods used.
+If both interpreter generations are present, and a particular un-versioned
+`PYTHON` is not specified, then selected/detected `PYTHON3` is chosen as
+the ultimate `PYTHON` value.
+
+For majority of uses in the build procedure and products, the generation
+of Python does not matter and the un-versioned `PYTHON` value is substituted
+into files as the script shebang, used to find the `site-packages` location,
+etc.
+
+One exception is generation of NUT-Monitor GUI application which has been
+separated for `NUT-Monitor-py2gtk2` and `NUT-Monitor-py3qt5` due to further
+backend platform technical differences -- these build products specifically
+use `PYTHON2` and `PYTHON3` substitutions. They may be co-installed on the
+same system. A dispatcher shell script `NUT-Monitor` is used to launch the
+preferred (newest) or the only existing implementation.
+
+The settings below may be of particular interest to non-distribution
+packaging efforts with their own dedicated directory trees:
+
+	--with-python=SHEBANG_PATH
+
+Specify a definitive version you want used for majority of the Python
+code (except version-dependent scripts, see above).
+
+The `SHEBANG_PATH` should be a full program pathname, optionally with
+one argument, e.g. `/usr/bin/python-3.9` or `/usr/bin/env python2`.
+
+Defaults (in order):
+* `PYTHON` environment variable,
+* `python` program if present in `PATH`,
+* `python3` program if present in `PATH`,
+* `python2` program if present in `PATH`,
+* or the newest of `PYTHON3` or `PYTHON2` values.
+
+	--with-python2=SHEBANG_PATH
+	--with-python3=SHEBANG_PATH
+
+For version-dependent scripts (see above) or to default the newest Python
+version if not specified by `--with-python` option or `PYTHON` envvar,
+you can provide the preferred version and implementation of Python 2 or 3
+respectively.
+
+	--with-nut_monitor
+
+Install the NUT-Monitor GUI application (depending on Python 2 or 3 version
+availability), and optional `desktop-file-install` integration).
+
+	--with-pynut
+
+Install the PyNUT module files for general consumption into "site-packages"
+location of the currently chosen Python interpreter(s): yes, no, auto.
+or dedicated as the required dependency of NUT-Monitor application (app).
+
 Development files
 ~~~~~~~~~~~~~~~~~
 
