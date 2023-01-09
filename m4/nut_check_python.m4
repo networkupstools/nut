@@ -21,6 +21,18 @@ AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
             [AC_MSG_RESULT([$PYTHON])]
             )
         ])
+
+    AS_IF([test -z "${PYTHON3}" && test x"${nut_with_python3}" = xyes], [
+        AC_MSG_ERROR([A python3 interpreter was required but not found or validated])
+        ])
+
+    AS_IF([test -z "${PYTHON2}" && test x"${nut_with_python2}" = xyes], [
+        AC_MSG_ERROR([A python2 interpreter was required but not found or validated])
+        ])
+
+    AS_IF([test -z "${PYTHON}" && test x"${nut_with_python}" = xyes], [
+        AC_MSG_ERROR([A python interpreter was required but not found or validated])
+        ])
 ])
 
 dnl Note: this checks for default/un-versioned python version
@@ -67,6 +79,13 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                 [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON} was not suitable as python])
                  PYTHON=no])
+            ])
+
+        dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
+        AS_IF([test -z "${PYTHON}" || test "${PYTHON}" = "no"], [
+            AS_CASE([${nut_with_python}],
+                [auto|yes|no|""], [],
+                [AC_MSG_ERROR([A python interpreter was required but not found or validated: ${nut_with_python}])])
             ])
 
         AC_MSG_CHECKING([python interpeter to call])
@@ -133,6 +152,13 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                  PYTHON2=no])
             ])
 
+        dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
+        AS_IF([test -z "${PYTHON2}" || test "${PYTHON2}" = "no"], [
+            AS_CASE([${nut_with_python2}],
+                [auto|yes|no|""], [],
+                [AC_MSG_ERROR([A python2 interpreter was required but not found or validated: ${nut_with_python2}])])
+            ])
+
         AC_MSG_CHECKING([python2 interpeter to call])
         AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_REPORT}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
@@ -195,6 +221,13 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON3} was not suitable as python3])
                  PYTHON3=no])
+            ])
+
+        dnl Unfulfilled "yes" is re-tested in NUT_CHECK_PYTHON_DEFAULT
+        AS_IF([test -z "${PYTHON3}" || test "${PYTHON3}" = "no"], [
+            AS_CASE([${nut_with_python3}],
+                [auto|yes|no|""], [],
+                [AC_MSG_ERROR([A python3 interpreter was required but not found or validated: ${nut_with_python3}])])
             ])
 
         AC_MSG_CHECKING([python3 interpeter to call])
