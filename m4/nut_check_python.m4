@@ -1,6 +1,31 @@
 dnl Check for python binary program names per language version
 dnl to embed into scripts and Make rules
 
+AC_DEFUN([NUT_CHECK_PYTHON_DEFAULT],
+[
+    dnl Check for all present variants and pick the default PYTHON
+    AC_REQUIRE([NUT_CHECK_PYTHON])
+    AC_REQUIRE([NUT_CHECK_PYTHON2])
+    AC_REQUIRE([NUT_CHECK_PYTHON3])
+
+    AS_IF([test x"$PYTHON2" = xno], [PYTHON2=""])
+    AS_IF([test x"$PYTHON3" = xno], [PYTHON3=""])
+    AS_IF([test x"$PYTHON" = xno],  [PYTHON=""])
+    AS_IF([test x"$PYTHON" = x], [
+        AC_MSG_CHECKING([which python version to use by default])
+        dnl Last hit wins (py3)
+        AS_IF([test x"$PYTHON2" != x], [PYTHON="$PYTHON2"])
+        AS_IF([test x"$PYTHON3" != x], [PYTHON="$PYTHON3"])
+        AS_IF([test x"$PYTHON" = x],
+            [AC_MSG_RESULT([none])],
+            [AC_MSG_RESULT([$PYTHON])]
+            )
+        ])
+])
+
+dnl Note: this checks for default/un-versioned python version
+dnl as the --with-python=SHEBANG_PATH setting into the PYTHON
+dnl variable; it may be further tweaked by NUT_CHECK_PYTHON_DEFAULT
 AC_DEFUN([NUT_CHECK_PYTHON],
 [
     AS_IF([test -z "${nut_with_python}"], [
