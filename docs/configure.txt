@@ -269,6 +269,9 @@ Further use of these interpreter names and other paths during NUT build
 and installation is managed by Makefile variable expansion, as prepared
 by the `configure` script.
 
+Also note that it is not required to use the same `PYTHON` implementation
+for `autogen.sh` to do its job, and for the `configure` script option.
+
 As noted above, both python-2.x and python-3.x variants are supported.
 You can consult the `m4/nut_check_python.m4` file for detection methods used.
 If both interpreter generations are present, and a particular un-versioned
