@@ -631,8 +631,16 @@ static void vartab_free(void)
 	}
 }
 
+static void exit_upsdrv_cleanup(void)
+{
+	dstate_setinfo("driver.state", "cleanup.upsdrv");
+	upsdrv_cleanup();
+}
+
 static void exit_cleanup(void)
 {
+	dstate_setinfo("driver.state", "cleanup.exit");
+
 	if (!dump_data) {
 		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
 	}
@@ -694,6 +702,8 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
+
+	dstate_setinfo("driver.state", "init.starting");
 
 	atexit(exit_cleanup);
 
@@ -1000,10 +1010,12 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
+	dstate_setinfo("driver.state", "init.device");
 	upsdrv_initups();
+	dstate_setinfo("driver.state", "init.quiet");
 
 	/* UPS is detected now, cleanup upon exit */
-	atexit(upsdrv_cleanup);
+	atexit(exit_upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
 	if (upsdrv_info.status == DRV_BROKEN) {
@@ -1027,8 +1039,13 @@ int main(int argc, char **argv)
 		syslogbit_set();
 
 	/* get the base data established before allowing connections */
+	dstate_setinfo("driver.state", "init.info");
 	upsdrv_initinfo();
+	/* Note: a few drivers also call their upsdrv_updateinfo() during
+	 * their upsdrv_initinfo(), possibly to impact the initialization */
+	dstate_setinfo("driver.state", "init.updateinfo");
 	upsdrv_updateinfo();
+	dstate_setinfo("driver.state", "init.quiet");
 
 	if (dstate_getinfo("driver.flag.ignorelb")) {
 		int	have_lb_method = 0;
@@ -1151,12 +1168,15 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
-	if (!dump_data) {
+	dstate_setinfo("driver.state", "quiet");
+	if (dump_data) {
+		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
+	} else {
+		upsdebugx(1, "Driver initialization completed, beginning regular infinite loop");
 		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
 	}
 
 	while (!exit_flag) {
-
 		struct timeval	timeout;
 
 		if (!dump_data) {
@@ -1166,12 +1186,15 @@ int main(int argc, char **argv)
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
 
+		dstate_setinfo("driver.state", "updateinfo");
 		upsdrv_updateinfo();
+		dstate_setinfo("driver.state", "quiet");
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */
 		if (dump_data) {
 			/* Wait for 'dump_data' update loops to ensure data completion */
 			if (update_count == dump_data) {
+				dstate_setinfo("driver.state", "dumping");
 				dstate_dump();
 				exit_flag = 1;
 			}
