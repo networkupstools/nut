@@ -140,34 +140,31 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                 dnl Cross check --with-python results:
                 AS_CASE(["${PYTHON_VERSION_REPORT}"],
                     [*major=2,*], [
-                        PYTHON2="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
-                        PYTHON2="`realpath "${PYTHON2}" 2>/dev/null`" && test -n "${PYTHON2}" || {
-                            PYTHON2="${PYTHON}"
-                            PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
-                            if test -n "${PYTHON_CONFIG}" ; then
-                                mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
-                                || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
-                                if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
-                                    if test -n "${mySHEBANG}" ; then
-                                        PYTHON2="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
-                                        && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
+                        AS_CASE(["${PYTHON}"],
+                            [/usr/bin/env*], [],
+                            [/*py*2*], [
+                                PYTHON2="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
+                                PYTHON2="`realpath "${PYTHON2}" 2>/dev/null`" && test -n "${PYTHON2}" || {
+                                    PYTHON2="${PYTHON}"
+                                    PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
+                                    if test -n "${PYTHON_CONFIG}" ; then
+                                        mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
+                                        || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
+                                        if test -f "${mySHEBANG_SCRIPT}" ; then
+                                            mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
+                                            if test -n "${mySHEBANG}" ; then
+                                                PYTHON2="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
+                                                && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
+                                            fi
+                                        fi
                                     fi
-                                fi
-                            fi
-                            unset mySHEBANG_SCRIPT
-                            unset mySHEBANG
-                            unset PYTHON_CONFIG
-                        }
-
-                        dnl Only accept fully qualified names that refer to expected
-                        dnl python version or quietly fall back to search below:
-                        AS_CASE(["${PYTHON2}"],
-                            [/usr/bin/env*], [PYTHON2=""],
-                            [/*py*2.*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version)])],
-                            [/*py*2*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
-                            [PYTHON2=""])
-                        ])
+                                    unset mySHEBANG_SCRIPT
+                                    unset mySHEBANG
+                                    unset PYTHON_CONFIG
+                                }
+                                AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version)])
+                                ])
+                    ])
                 AS_IF([test x"${PYTHON2}" = x], [
                     AC_CHECK_PROGS([PYTHON2], [python2 python2.7 python-2.7 python], [_python2_runtime])
                     ])
@@ -252,34 +249,31 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 dnl Cross check --with-python results:
                 AS_CASE(["${PYTHON_VERSION_REPORT}"],
                     [*major=3,*], [
-                        PYTHON3="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
-                        PYTHON3="`realpath "${PYTHON3}" 2>/dev/null`" && test -n "${PYTHON3}" || {
-                            PYTHON3="${PYTHON}"
-                            PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
-                            if test -n "${PYTHON_CONFIG}" ; then
-                                mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
-                                || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
-                                if test -f "${mySHEBANG_SCRIPT}" ; then
-                                    mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
-                                    if test -n "${mySHEBANG}" ; then
-                                        PYTHON3="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
-                                        && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
+                        AS_CASE(["${PYTHON}"],
+                            [/usr/bin/env*], [],
+                            [/*py*3*], [
+                                PYTHON3="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
+                                PYTHON3="`realpath "${PYTHON3}" 2>/dev/null`" && test -n "${PYTHON3}" || {
+                                    PYTHON3="${PYTHON}"
+                                    PYTHON_CONFIG="`command -v "${PYTHON}-config" 2>/dev/null`" || PYTHON_CONFIG=""
+                                    if test -n "${PYTHON_CONFIG}" ; then
+                                        mySHEBANG_SCRIPT="`${PYTHON_CONFIG} --config-dir 2>/dev/null`/python-config.py" \
+                                        || mySHEBANG_SCRIPT="${PYTHON_CONFIG}"
+                                        if test -f "${mySHEBANG_SCRIPT}" ; then
+                                            mySHEBANG="`head -1 "${mySHEBANG_SCRIPT}" | grep -E '^#!'`" || mySHEBANG=""
+                                            if test -n "${mySHEBANG}" ; then
+                                                PYTHON3="`echo "${mySHEBANG}" | sed 's,^#! *,,'`" \
+                                                && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
+                                            fi
+                                        fi
                                     fi
-                                fi
-                            fi
-                            unset mySHEBANG_SCRIPT
-                            unset mySHEBANG
-                            unset PYTHON_CONFIG
-                        }
-
-                        dnl Only accept fully qualified names that refer to expected
-                        dnl python version or quietly fall back to search below:
-                        AS_CASE(["${PYTHON3}"],
-                            [/usr/bin/env*], [PYTHON3=""],
-                            [/*py*3.*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version)])],
-                            [/*py*3*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
-                            [PYTHON3=""])
-                        ])
+                                    unset mySHEBANG_SCRIPT
+                                    unset mySHEBANG
+                                    unset PYTHON_CONFIG
+                                }
+                                AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version)])
+                                ])
+                    ])
                 AS_IF([test x"${PYTHON3}" = x], [
                     AC_CHECK_PROGS([PYTHON3], [python3 python3.9 python-3.9 python3.7 python-3.7 python3.6 python-3.6 python3.5 python-3.5 python], [_python3_runtime])
                     ])
