@@ -92,6 +92,9 @@ AC_DEFUN([NUT_CHECK_PYTHON],
             [*2.*|*3.*], [],
             [AC_MSG_WARN([A python program name without a specific version number was requested (may be a symlink prone to change over time): ${PYTHON}])])
 
+        AS_CASE(["${PYTHON}"],
+            [/usr/bin/env*], [AC_MSG_WARN([A python program will be resolved from PATH at run-time (PyNUT module may be not found if installed into site-packages of a specific version): ${PYTHON}])])
+
         PYTHON_VERSION_REPORT=""
         AS_IF([test -n "${PYTHON}"], [
             AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
