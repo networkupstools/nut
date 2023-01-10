@@ -1806,6 +1806,15 @@ AC_SUBST([nut_with_pynut_py], [${nut_with_pynut_py}])
 AC_SUBST([nut_with_pynut_py2], [${nut_with_pynut_py2}])
 AC_SUBST([nut_with_pynut_py3], [${nut_with_pynut_py3}])
 
+AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
+    NUT_REPORT([Default  Python  interpreter  ],   [${PYTHON}])
+    NUT_REPORT([Default  Python  site-packages], [${PYTHON_SITE_PACKAGES}])
+    NUT_REPORT([Specific Python2 interpreter  ],   [${PYTHON2}])
+    NUT_REPORT([Specific Python2 site-packages], [${PYTHON2_SITE_PACKAGES}])
+    NUT_REPORT([Specific Python3 interpreter  ],   [${PYTHON3}])
+    NUT_REPORT([Specific Python3 site-packages], [${PYTHON3_SITE_PACKAGES}])
+])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --enable-cppcheck
 
