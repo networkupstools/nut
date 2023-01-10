@@ -162,13 +162,14 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                             unset mySHEBANG
                             unset PYTHON_CONFIG
                         }
-                        AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version)])
-                        AS_IF([test "x${PYTHON}" = "x${PYTHON2}"], [
-                            AS_CASE(["${PYTHON2}"],
-                                [/usr/bin/env*], [AC_MSG_WARN([Chosen python2 program name will be resolved from PATH at run-time (PyNUT module may be not found if installed into site-packages of a specific version)])],
-                                [/*py*2.*], [],
-                                [AC_MSG_WARN([Chosen python2 program name without a specific version number may be a symlink (prone to change over time)])])
-                            ])
+
+                        dnl Only accept fully qualified names that refer to expected
+                        dnl python version or quietly fall back to search below:
+                        AS_CASE(["${PYTHON2}"],
+                            [/usr/bin/env*], [PYTHON2=""],
+                            [/*py*2.*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version)])],
+                            [/*py*2*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
+                            [PYTHON2=""])
                         ])
                     ])
                 AS_IF([test x"${PYTHON2}" = x], [
@@ -274,13 +275,14 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                             unset mySHEBANG
                             unset PYTHON_CONFIG
                         }
-                        AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version)])
-                        AS_IF([test "x${PYTHON}" = "x${PYTHON3}"], [
-                            AS_CASE(["${PYTHON3}"],
-                                [/usr/bin/env*], [AC_MSG_WARN([Chosen python3 program name will be resolved from PATH at run-time (PyNUT module may be not found if installed into site-packages of a specific version)])],
-                                [/*py*3.*], [],
-                                [AC_MSG_WARN([Chosen python3 program name without a specific version number may be a symlink (prone to change over time)])])
-                            ])
+
+                        dnl Only accept fully qualified names that refer to expected
+                        dnl python version or quietly fall back to search below:
+                        AS_CASE(["${PYTHON3}"],
+                            [/usr/bin/env*], [PYTHON3=""],
+                            [/*py*3.*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version)])],
+                            [/*py*3*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
+                            [PYTHON3=""])
                         ])
                     ])
                 AS_IF([test x"${PYTHON3}" = x], [
