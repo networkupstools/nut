@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
