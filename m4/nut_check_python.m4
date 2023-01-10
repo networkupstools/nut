@@ -72,12 +72,25 @@ AC_DEFUN([NUT_CHECK_PYTHON],
                 PYTHON="/usr/bin/env ${PYTHON}"
                 ],
             [*], [
+                dnl Note: no "realpath" here, see comment below
                 myPYTHON="`command -v "${PYTHON}" 2>/dev/null`" && test -n "${myPYTHON}" && test -x "${myPYTHON}" \
                 && PYTHON="${myPYTHON}" \
                 || PYTHON="/usr/bin/env ${PYTHON}"
                 unset myPYTHON
                 ]
         )
+
+        dnl Note: requesting e.g. "--with-python=python3" is valid,
+        dnl but would likely use a symlink that changes over time -
+        dnl and if `env` gets used, can resolve according to PATH
+        dnl (by default we try to bolt pathname here if resolvable,
+        dnl but do not unwrap the chain of symlinks like we do for
+        dnl versioned "--with-python2/3" due to their site-packages).
+        dnl For some use-cases, this lack of constraints may be
+        dnl deliberately desired; for others it is a "caveat emptor!"
+        AS_CASE(["${PYTHON}"],
+            [*2.*|*3.*], [],
+            [AC_MSG_WARN([A python program name without a specific version number was requested (may be a symlink prone to change over time): ${PYTHON}])])
 
         PYTHON_VERSION_REPORT=""
         AS_IF([test -n "${PYTHON}"], [
