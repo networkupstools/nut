@@ -290,6 +290,13 @@ use `PYTHON2` and `PYTHON3` substitutions. They may be co-installed on the
 same system. A dispatcher shell script `NUT-Monitor` is used to launch the
 preferred (newest) or the only existing implementation.
 
+Please note that by default NUT tries to make use of everything in your
+build environment, so if both Python generation are detected -- the binding
+module will be delivered into both, and two versions of NUT-Monitor GUI
+application will be installed.  If you want to avoid that behaviour on a
+build system with both interpreters present, you can explicitly specify
+to build e.g. `--without-python2 --with-python=/usr/bin/python-3.9`.
+
 The settings below may be of particular interest to non-distribution
 packaging efforts with their own dedicated directory trees:
 
