@@ -289,6 +289,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Device);
 			memset(curDevice, '\0', sizeof(*curDevice));
 
+			/* Keep the list of items in sync with those matched by
+			 * drivers/libusb1.c and tools/nut-scanner/scan_usb.c:
+			 */
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = xstrdup(bus->dirname);
