@@ -275,7 +275,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                                 ])
                     ])
                 AS_IF([test x"${PYTHON3}" = x], [
-                    AC_CHECK_PROGS([PYTHON3], [python3 python3.9 python-3.9 python3.7 python-3.7 python3.6 python-3.6 python3.5 python-3.5 python], [_python3_runtime])
+                    AC_CHECK_PROGS([PYTHON3], [python3 python3.10 python-3.10 python3.9 python-3.9 python3.7 python-3.7 python3.6 python-3.6 python3.5 python-3.5 python], [_python3_runtime])
                     ])
                 ],
             [no], [PYTHON3="no"],
