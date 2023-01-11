@@ -243,7 +243,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
 	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
 	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
-	{ "APCDelayBeforeReboot",	0xff86007c },
+	{ "APCDelayBeforeReboot",	0xff86007c }, /* WARNING: apcupsd maps this as APCForceShutdown... which one is right? */
 	{ "APCDelayBeforeShutdown",	0xff86007d },
 	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
 	/* usage seen in dumps but unknown:
