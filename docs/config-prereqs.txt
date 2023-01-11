@@ -290,7 +290,8 @@ NOTE: Below we request to install generic `python` per system defaults.
 You may request specifically `python2` or `python3` (or both): current
 NUT should be compatible with both (2.7+ at least).
 
-NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version.
+NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version
+(latter is not available for CentOS 6).
 
 NOTE: On CentOS, it seems that development against libi2c/smbus is not
 supported. Neither the suitable devel packages were found, nor i2c-based
@@ -332,7 +333,7 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     systemd-devel
 
-# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
+# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0" (not in CentOS 6)
 # vs. the older "libusb" as the package with "libusb-0.1"
 :; yum install \
     cppunit-devel \
