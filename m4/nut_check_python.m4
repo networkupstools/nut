@@ -171,7 +171,6 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                             [/*py*2.*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version)])],
                             [/*py*2*], [AC_MSG_WARN([A python2 program name was not specified during configuration, will default to '$PYTHON2' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
                             [PYTHON2=""])
-                        ])
                     ])
                 AS_IF([test x"${PYTHON2}" = x], [
                     AC_CHECK_PROGS([PYTHON2], [python2 python2.7 python-2.7 python], [_python2_runtime])
@@ -284,7 +283,6 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                             [/*py*3.*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version)])],
                             [/*py*3*], [AC_MSG_WARN([A python3 program name was not specified during configuration, will default to '$PYTHON3' (derived from --with-python setting which has a suitable version, but without a specific version number - so may be a symlink prone to change over time)])],
                             [PYTHON3=""])
-                        ])
                     ])
                 AS_IF([test x"${PYTHON3}" = x], [
                     AC_CHECK_PROGS([PYTHON3], [python3 python3.10 python-3.10 python3.9 python-3.9 python3.7 python-3.7 python3.6 python-3.6 python3.5 python-3.5 python], [_python3_runtime])
