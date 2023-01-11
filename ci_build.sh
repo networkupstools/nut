@@ -983,7 +983,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+    if [ "${CANBUILD_NIT_TESTS-}" != no ] ; then
         CONFIG_OPTS+=("--enable-check-NIT")
     else
         echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2

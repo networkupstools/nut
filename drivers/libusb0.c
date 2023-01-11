@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -289,6 +289,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Device);
 			memset(curDevice, '\0', sizeof(*curDevice));
 
+			/* Keep the list of items in sync with those matched by
+			 * drivers/libusb1.c and tools/nut-scanner/scan_usb.c:
+			 */
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = xstrdup(bus->dirname);

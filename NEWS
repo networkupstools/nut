@@ -146,6 +146,10 @@ https://github.com/networkupstools/nut/milestone/8
    may help monitor several related no-name devices (although without knowing
    reliably which one is which... better than nothing) [#1756]
 
+ - The `nut-scanner` program should now suggest same configuration fields as
+   those used by common USB matching options in (most of the) drivers, e.g.
+   adding "device" to the generated configuration section [#1790]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
 
