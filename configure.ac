@@ -1811,17 +1811,15 @@ AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
     NUT_REPORT([use specific Python2 interpreter],   [${PYTHON2}])
     NUT_REPORT([use specific Python3 interpreter],   [${PYTHON3}])
 
-    NUT_REPORT_SETTING_PATH_INTEGRATIONS([Default  Python  interpreter site-packages],
-        PYTHON_SITE_PACKAGES, "${PYTHON_SITE_PACKAGES}",
-        [Python site-packages installation path for default Python interpreter])
+    NUT_REPORT_PATH_INTEGRATIONS([Default  Python  interpreter site-packages],
+        ["${PYTHON_SITE_PACKAGES}"])
 
-    NUT_REPORT_SETTING_PATH_INTEGRATIONS([Specific Python2 interpreter site-packages],
-        PYTHON2_SITE_PACKAGES, "${PYTHON2_SITE_PACKAGES}",
-        [Python site-packages installation path for specific Python2 interpreter])
+    NUT_REPORT_PATH_INTEGRATIONS([Specific Python2 interpreter site-packages],
+        ["${PYTHON2_SITE_PACKAGES}"])
 
-    NUT_REPORT_SETTING_PATH_INTEGRATIONS([Specific Python3 interpreter site-packages],
-        PYTHON3_SITE_PACKAGES, "${PYTHON3_SITE_PACKAGES}",
-        [Python site-packages installation path for specific Python3 interpreter])
+    NUT_REPORT_PATH_INTEGRATIONS([Specific Python3 interpreter site-packages],
+        ["${PYTHON3_SITE_PACKAGES}"])
+        dnl # Python site-packages installation path for specific Python3 interpreter
 ])
 
 dnl ----------------------------------------------------------------------
