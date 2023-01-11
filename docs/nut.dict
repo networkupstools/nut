@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3075 utf-8
+personal_ws-1.1 en 3076 utf-8
 AAS
 ABI
 ACFAIL
@@ -1815,6 +1815,7 @@ egrep
 ei
 el
 emacs
+emptor
 endchar
 enddate
 endian
