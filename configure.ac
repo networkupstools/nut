@@ -2463,6 +2463,7 @@ AC_ARG_WITH(pkgconfig-dir,
 ], [])
 if test -n "${pkgconfigdir}"; then
 	AC_MSG_RESULT(using ${pkgconfigdir})
+	NUT_REPORT_PATH_INTEGRATIONS([pkg-config *.pc directory], ["${pkgconfigdir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -2632,6 +2633,7 @@ if test "${systemdsystemunitdir}" = "auto" ; then systemdsystemunitdir=""; fi
 if test -n "${systemdsystemunitdir}"; then
 	have_systemd="yes"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Service units for systemd], ["${systemdsystemunitdir}"])
 else
 	have_systemd="no"
 	AC_MSG_RESULT(no)
@@ -2674,6 +2676,7 @@ fi
 if test "${systemdshutdowndir}" = "auto" ; then systemdshutdowndir=""; fi
 if test -n "${systemdshutdowndir}"; then
 	AC_MSG_RESULT(using ${systemdshutdowndir})
+	NUT_REPORT_PATH_INTEGRATIONS([Shutdown hooks for systemd], ["${systemdshutdowndir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -2706,6 +2709,7 @@ esac
 if test "${systemdtmpfilesdir}" = "auto" ; then systemdtmpfilesdir=""; fi
 if test -n "${systemdtmpfilesdir}"; then
 	AC_MSG_RESULT(using ${systemdtmpfilesdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Systemd-tmpfiles configs], ["${systemdtmpfilesdir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -2958,6 +2962,7 @@ AC_ARG_WITH(augeas-lenses-dir,
 ], [])
 if test -n "${auglensdir}"; then
 	AC_MSG_RESULT(using ${auglensdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Augeas lenses directory], ["${auglensdir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -2996,6 +3001,7 @@ AC_ARG_WITH(hotplug-dir,
 ], [])
 if test -n "${hotplugdir}"; then
 	AC_MSG_RESULT(using ${hotplugdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Hotplug rules directory], ["${hotplugdir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -3032,6 +3038,7 @@ AC_ARG_WITH(udev-dir,
 ], [])
 if test -n "${udevdir}"; then
 	AC_MSG_RESULT(using ${udevdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Udev rules directory], ["${udevdir}"])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -3070,6 +3077,7 @@ AC_ARG_WITH(devd-dir,
 ], [])
 if test -n "${devddir}"; then
 	AC_MSG_RESULT(using ${devddir})
+	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD devd rules directory], ["${devddir}"])
 else
 	AC_MSG_RESULT(no)
 fi
