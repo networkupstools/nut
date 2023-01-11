@@ -91,6 +91,8 @@ https://github.com/networkupstools/nut/milestone/8
      to `battery.mfr.date` (not `battery.date` which is the maintenance
      replacement date) [#1644]
 
+ - powercom driver should now try harder to refresh data from device [#356]
+
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
      NUT v2.6.5 a decade ago, has been revived with the 2.8.x era codebase [#5].

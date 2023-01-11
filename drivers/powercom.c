@@ -86,7 +86,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -770,8 +770,12 @@ void upsdrv_updateinfo(void)
 {
 	char	val[32];
 
-	if (!ups_getinfo()){
-		return;
+	if (!ups_getinfo()) {
+		/* https://github.com/networkupstools/nut/issues/356 */
+		upsdebugx(1, "%s: failed to ups_getinfo() once, retrying for slower devices", __func__);
+		if (!ups_getinfo()) {
+			return;
+		}
 	}
 
 	/* input.frequency */
