@@ -46,6 +46,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
 
         PYTHON=""
         PYTHON_SITE_PACKAGES=""
+        PYTHON_VERSION_REPORT=""
         AS_CASE([${nut_with_python}],
             [auto|yes|""], [AC_CHECK_PROGS([PYTHON], [python python3 python2], [_python_runtime])],
             [no], [PYTHON="no"],
@@ -95,8 +96,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AS_CASE(["${PYTHON}"],
             [/usr/bin/env*], [AC_MSG_WARN([A python program will be resolved from PATH at run-time (PyNUT module may be not found if installed into site-packages of a specific version): ${PYTHON}])])
 
-        PYTHON_VERSION_REPORT=""
-        AS_IF([test -n "${PYTHON}"], [
+        AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
                 [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON} was not suitable as python])
@@ -113,7 +113,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         AC_MSG_CHECKING([python interpeter to call])
         AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_REPORT}])
         AC_SUBST([PYTHON], [${PYTHON}])
-        AM_CONDITIONAL([HAVE_PYTHON], [test "${PYTHON}" != "no"])
+        AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
         AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             export PYTHON
             AC_MSG_CHECKING([python site-packages location])
@@ -138,6 +138,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
 
         PYTHON2=""
         PYTHON2_SITE_PACKAGES=""
+        PYTHON2_VERSION_REPORT=""
         AS_CASE([${nut_with_python2}],
             [auto|yes|""], [
                 dnl Cross check --with-python results:
@@ -208,8 +209,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
                 ]
         )
 
-        PYTHON2_VERSION_REPORT=""
-        AS_IF([test -n "${PYTHON2}"], [
+        AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             AS_IF([test x"`$PYTHON2 -c 'import sys; print (sys.version_info >= (2, 6) and sys.version_info < (3, 0))'`" = xTrue],
                 [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON2} was not suitable as python2])
@@ -226,7 +226,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         AC_MSG_CHECKING([python2 interpeter to call])
         AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_REPORT}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
-        AM_CONDITIONAL([HAVE_PYTHON2], [test "${PYTHON2}" != "no"])
+        AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
         AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             export PYTHON2
             AC_MSG_CHECKING([python2 site-packages location])
@@ -251,6 +251,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
 
         PYTHON3=""
         PYTHON3_SITE_PACKAGES=""
+        PYTHON3_VERSION_REPORT=""
         AS_CASE([${nut_with_python3}],
             [auto|yes|""], [
                 dnl Cross check --with-python results:
@@ -321,8 +322,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
                 ]
         )
 
-        PYTHON3_VERSION_REPORT=""
-        AS_IF([test -n "${PYTHON3}"], [
+        AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             AS_IF([test x"`$PYTHON3 -c 'import sys; print (sys.version_info >= (3, 0))'`" = xTrue],
                 [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON3} was not suitable as python3])
@@ -339,7 +339,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         AC_MSG_CHECKING([python3 interpeter to call])
         AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_REPORT}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
-        AM_CONDITIONAL([HAVE_PYTHON3], [test "${PYTHON3}" != "no"])
+        AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
         AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             export PYTHON3
             AC_MSG_CHECKING([python3 site-packages location])
