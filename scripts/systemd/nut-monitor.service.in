@@ -9,8 +9,10 @@ After=local-fs.target network.target nut-server.service
 # would not abort if that attempt fails for whatever reason.
 Wants=nut-server.service
 # Extending the unit does not require *this* file to be edited, you
-# can instead drop in an additional piece of configuration, e.g. add
-# a `/etc/systemd/system/nut-monitor.service.d/network.conf` with:
+# can instead drop in an additional piece of configuration, e.g. to
+# require the monitoring client to only start after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-monitor.service.d/network.conf` with:
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target
