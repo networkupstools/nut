@@ -23,9 +23,21 @@ tab_width = 4
 [*.{bat,cmd,ps1}]
 end_of_line = crlf
 
-[*.{sh,am,hwdb,service,target,path}{,.in}]
+[*.{am,hwdb,service,target,path}{,.in}]
 end_of_line = lf
 line_comment = #
+
+[*.sh{,.in}]
+end_of_line = lf
+line_comment = #
+
+# Borrowed from https://github.com/armbian/build/blob/master/.editorconfig
+shell_variant = bash
+binary_next_line = false
+switch_case_indent = true
+space_redirects = true
+keep_padding = false
+function_next_line = false
 
 [*.{m4,ac}{,.in}]
 end_of_line = lf
@@ -37,9 +49,20 @@ line_comment = #
 
 [*.txt{,.in}]
 max_line_length = 76
+indent_style = space
+indent_size = 4
+
 # Assumes asciidoc comments:
 block_comment_start = ////////
 block_comment_end = ////////
+
+[*.{yaml,yml,json}{,.in}]
+indent_style = space
+indent_size = 4
+
+################################################################
+# Primary concern: C/C++ style
+# See also docs/developers.txt => Code Style chapter
 
 [*.{c,h,cpp}{,.in}]
 spaces_around_operators = true
