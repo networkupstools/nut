@@ -526,8 +526,8 @@ static void help(const char *progname)
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
-	printf("  -D            	raise debugging level\n");
-	printf("  -d            	pass debugging level from upsdrvctl to driver\n");
+	printf("  -D			raise debugging level\n");
+	printf("  -d			pass debugging level from upsdrvctl to driver\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
