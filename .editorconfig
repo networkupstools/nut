@@ -20,6 +20,8 @@ tab_width = 4
 # whose sources must use LF, see .gitattributes
 ###end_of_line = lf
 
+ij_formatter_enabled = false
+
 [*.{bat,cmd,ps1}]
 end_of_line = crlf
 
