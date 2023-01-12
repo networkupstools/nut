@@ -22,6 +22,9 @@ tab_width = 4
 
 ij_formatter_enabled = false
 
+[.editorconfig]
+trim_trailing_whitespace = false
+
 [*.{bat,cmd,ps1}]
 end_of_line = crlf
 
