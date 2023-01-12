@@ -24,7 +24,9 @@ syntactically.
 It is possible to control multiple UPS units simultaneously by running several
 instances of this driver, provided they can be uniquely distinguished by setting
 some combination of the *vendor*, *product*, *vendorid*, *productid*, *serial*,
-*bus* and/or *device* options detailed below.
+*bus* and/or *device* options detailed
+below.  For devices or operating systems that do not provide sufficient
+information, the *allow_duplicates* option can be of use (limited and risky!)
 
 *vendorid =* 'regex'::
 *productid =* 'regex'::
