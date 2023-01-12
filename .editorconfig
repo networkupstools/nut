@@ -23,8 +23,32 @@ tab_width = 4
 [*.{bat,cmd,ps1}]
 end_of_line = crlf
 
-[*.{sh,m4,ac,am,hwdb,service,target,path}{,.in}]
+[*.{sh,am,hwdb,service,target,path}{,.in}]
 end_of_line = lf
+line_comment = #
 
-[*.{txt,conf,sample}{,.in}]
+[*.{m4,ac}{,.in}]
+end_of_line = lf
+line_comment = dnl 
+
+[*.{conf,sample}{,.in}]
 max_line_length = 76
+line_comment = #
+
+[*.txt{,.in}]
+max_line_length = 76
+# Assumes asciidoc comments:
+block_comment_start = ////////
+block_comment_end = ////////
+
+[*.{c,h,cpp}{,.in}]
+spaces_around_operators = true
+spaces_around_brackets = none
+
+# Plus one TAB:
+continuation_indent_size = 1
+
+indent_brace_style = K&R
+
+block_comment_start = /*
+block_comment_end = */
