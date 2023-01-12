@@ -8,8 +8,10 @@ Wants=nut-driver.target
 # The `upsd` is a networked service (even if bound to a `localhost`)
 # so it requires that the OS has some notion of networking already.
 # Extending the unit does not require *this* file to be edited, you
-# can instead drop in an additional piece of configuration, e.g. add
-# a `/etc/systemd/system/nut-server.service.d/network.conf` with:
+# can instead drop in an additional piece of configuration, e.g. to
+# require that NUT data server only starts after external networking
+# is configured (usable IP addresses appear in the system) you can
+# add a `/etc/systemd/system/nut-server.service.d/network.conf` with:
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target

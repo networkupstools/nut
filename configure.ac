@@ -2461,9 +2461,20 @@ AC_ARG_WITH(pkgconfig-dir,
 		;;
 	esac
 ], [])
+
+dnl Note: currently pkgconfigdir='${libdir}/pkgconfig' literally
+dnl goes into lib/Makefile.am substitution for pkgconfig_DATA.
+dnl By default we get ${libdir}/pkgconfig and below expand it to
+dnl => ${exec_prefix}/lib/pkgconfig => ${prefix}/lib/pkgconfig => real path
+conftemp="${pkgconfigdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+PKGCONFIGDIR="${conftemp}"
+
 if test -n "${pkgconfigdir}"; then
-	AC_MSG_RESULT(using ${pkgconfigdir})
-	NUT_REPORT_PATH_INTEGRATIONS([pkg-config *.pc directory], ["${pkgconfigdir}"])
+	AC_MSG_RESULT(using ${pkgconfigdir} => ${conftemp})
+	NUT_REPORT_PATH_INTEGRATIONS([pkg-config *.pc directory], [${pkgconfigdir} => ${conftemp}])
 else
 	AC_MSG_RESULT(no)
 fi
@@ -3442,6 +3453,7 @@ AC_SUBST(CONFPATH)
 AC_SUBST(POWERDOWNFLAG)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
+AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)

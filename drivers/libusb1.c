@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -239,6 +239,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Device);
 		memset(curDevice, '\0', sizeof(*curDevice));
 
+		/* Keep the list of items in sync with those matched by
+		 * drivers/libusb0.c and tools/nut-scanner/scan_usb.c:
+		 */
 		bus = libusb_get_bus_number(device);
 		curDevice->Bus = (char *)malloc(4);
 		if (curDevice->Bus == NULL) {
