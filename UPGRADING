@@ -19,6 +19,24 @@ Changes from 2.8.0 to 2.8.1
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Several improvements regarding simultaneous support of USB devices that
+  were previously deemed "identical" and so NUT driver instances did not
+  start for all of them:
+
+  * Some more drivers should now use the common USB device matching logic
+    and the 7 `ups.conf` options for that [#1763], and man pages were
+    updated to reflect that [#1766];
+
+  * The `nut-scanner` tool should suggest these options in its generated
+    device configuration [#1790]: hopefully these would now suffice for
+    sufficiently unique combinations;
+
+  * The common USB matching logic was updated with an `allow_duplicates`
+    flag (caveat emptor!) which may help monitor several related no-name
+    devices on systems that do not discern "bus" and "device" values
+    (although without knowing reliably which one is which... sometimes it
+    is better than nothing) [#1756].
+
 - Work on NUT for Windows branch led to situation-specific definitions of
   what in POSIX code was all "file descriptors" (an `int` type). Now such
   entities are named `TYPE_FD`, `TYPE_FD_SER` or `TYPE_FD_SOCK` with some
