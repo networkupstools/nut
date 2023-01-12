@@ -20,7 +20,7 @@ tab_width = 4
 # whose sources must use LF, see .gitattributes
 ###end_of_line = lf
 
-ij_formatter_enabled = false
+#ij_formatter_enabled = false
 
 [.editorconfig]
 trim_trailing_whitespace = false
