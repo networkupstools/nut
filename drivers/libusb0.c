@@ -466,9 +466,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				upsdebugx(2, "Unable to get HID descriptor (%s)",
 					usb_strerror());
 			} else if (res < 9) {
-				upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+				upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 9, res);
 			} else {
-
+				upsdebugx(2, "Retrieved HID descriptor (expected %d, got %d)", 9, res);
 				upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 				rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);
