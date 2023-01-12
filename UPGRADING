@@ -3,7 +3,7 @@ Upgrading notes
 ===============
 endif::txt[]
 
-This file lists changes that affect users who installed older versions 
+This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
@@ -511,7 +511,7 @@ which makes it work with upsclient.
 has been gone for a long time, and the target was ambiguous.
 
 - The newapc driver has been renamed to apcsmart.  If you previously
-used newapc, make sure you delete the old binary and fix your 
+used newapc, make sure you delete the old binary and fix your
 ups.conf.  Otherwise, you may run the old driver from 1.4.
 
 

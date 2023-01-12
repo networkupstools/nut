@@ -7,7 +7,7 @@
 # This is a blatant ripoff of the fields found in the Linux kernel's CREDITS
 # file.  If we need more data, those fields can always be added later.
 #
-# N = name, E = email, W = web address, D = description, P = PGP info, 
+# N = name, E = email, W = web address, D = description, P = PGP info,
 # S = snailmail address, etc.
 #
 # This file is supposed to be roughly alpha-sorted by the last name, but
@@ -17,7 +17,7 @@
 N: Stephen Brown
 E: steve@datalimbo.net
 W: http://www.datalimbo.net/
-D: Hacked genericups to add TrippLite Lan2.x support (Internet Office 700) 
+D: Hacked genericups to add TrippLite Lan2.x support (Internet Office 700)
 
 N: Bill Carlson
 E: wcarlson@wkks.org
@@ -140,7 +140,7 @@ E: lwhite@darkfires.net
 
 N: Walt Holman
 E: walt_h@lorettotel.net
-D: Hacked up the cpsups driver for CyberPower text protocol UPSes 
+D: Hacked up the cpsups driver for CyberPower text protocol UPSes
 
 N: Fabio Di Niro
 E: blaxwan@users.sourceforge.net
@@ -177,4 +177,5 @@ D: Author of asem driver
 
 N: zakx
 E: zakx@zakx.de
-D: Updating device support docs after unnecessarily writing a redundant driver first
+D: Updating device support docs after unnecessarily writing a redundant
+D: driver first

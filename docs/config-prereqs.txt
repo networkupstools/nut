@@ -1265,4 +1265,3 @@ problematic on that platform) may be needed in other directories, such as
 ------
 :; ( cd "$DESTDIR/mingw64/bin/" && ln *.dll ../sbin && ln *.dll ../cgi-bin )
 ------
-

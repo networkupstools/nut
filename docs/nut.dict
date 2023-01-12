@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3078 utf-8
+personal_ws-1.1 en 3080 utf-8
 AAS
 ABI
 ACFAIL
@@ -391,6 +391,7 @@ GPL
 GPSER
 GRs
 GTK
+GUESSTIMATION
 GUIs
 GWD
 GXE
@@ -1948,6 +1949,7 @@ gtk
 guardpend
 guardpstart
 guesstimate
+guesstimation
 guez
 gufw
 gui

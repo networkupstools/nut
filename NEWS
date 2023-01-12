@@ -2281,7 +2281,7 @@ Release notes for NUT 1.2.2 - what's new since 1.2.1:
  - upssched now uses a lock file to prevent a race where two could
    start at the same time.  The second upssched would "win", and the
    first one would be unreachable.  This had the side-effect of not
-   being able to cancel timers on the first one.	
+   being able to cancel timers on the first one.
 
    If you use upssched, you must define the LOCKFN directive when
    upgrading to this version, or it will not work.
