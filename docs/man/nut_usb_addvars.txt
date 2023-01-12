@@ -7,6 +7,8 @@ Keep in sync with nut_usb_addvars() method provided by
 * drivers/libusb0.c
 * drivers/libusb1.c
 * drivers/usb-common.h
+
+and matching code in tools/nut-scanner/scan_usb.c
 ////////
 
 *port =* 'string'::
