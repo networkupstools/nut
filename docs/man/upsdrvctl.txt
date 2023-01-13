@@ -60,6 +60,19 @@ Raise the debug level.  Use this multiple times for additional details.
 
 *-d*::
 Pass the selected debug level from `upsdrvctl` to launched drivers.
+Note that by default for NUT daemons, enabled debugging means running
+in foreground mode; you can specify *-B* additionally to avoid that.
+
+*-F*::
+Driver will run in the foreground (not fork away from the `upsdrvctl`
+process), regardless of debugging settings. This may be counterproductive
+if you start "everything" (do not specify an *ups* argument) as the loop
+would never proceed beyond the first device in the list, so `upsdrvctl`
+will warn about such situations.
+
+*-B*::
+Drivers will run in the background, regardless of debugging settings,
+as set by *-D* and passed-through by *-d* options.
 
 COMMANDS
 --------

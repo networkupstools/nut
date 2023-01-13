@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -239,6 +239,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Device);
 		memset(curDevice, '\0', sizeof(*curDevice));
 
+		/* Keep the list of items in sync with those matched by
+		 * drivers/libusb0.c and tools/nut-scanner/scan_usb.c:
+		 */
 		bus = libusb_get_bus_number(device);
 		curDevice->Bus = (char *)malloc(4);
 		if (curDevice->Bus == NULL) {
@@ -512,9 +515,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "Unable to get HID descriptor (%s)",
 				libusb_strerror((enum libusb_error)res));
 		} else if (res < 9) {
-			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 9, res);
 		} else {
-
+			upsdebugx(2, "Retrieved HID descriptor (expected %d, got %d)", 9, res);
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 			rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);

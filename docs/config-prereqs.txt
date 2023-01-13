@@ -208,13 +208,19 @@ NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
-CentOS 7
-~~~~~~~~
+CentOS 6 and 7
+~~~~~~~~~~~~~~
 
 CentOS is another popular baseline among Linux distributions, being a free
 derivative of the RedHat Linux, upon which many other distros are based as
 well. These systems typically use the RPM package manager, using directly
 `rpm` command, or `yum` or `dnf` front-ends depending on their generation.
+
+For CI farm container setup, prepared root filesystem archives from
+http://download.proxmox.com/images/system/ worked sufficiently well.
+
+Prepare CentOS repository mirrors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For CentOS 7 it seems that not all repositories are equally good; some of
 the software below is only served by EPEL (Extra Packages for Enterprise
@@ -237,19 +243,55 @@ file (as the aged distributions become less served by mirrors), such as:
 # lines, and comment away the mirrorlist= lines (if yum hiccups otherwise)
 ------
 
+For systemd support on CentOS 7 (no equivalent found for CentOS 6),
+you can use backports repository below:
+------
+:; curl https://copr.fedorainfracloud.org/coprs/jsynacek/systemd-backports-for-centos-7
+    > /etc/yum.repos.d/systemd-backports-for-centos-7.repo
+------
+
+For CentOS 6 (the oldest I could try) the situation is similar, with sites like
+https://www.getpagespeed.com/server-setup/how-to-fix-yum-after-centos-6-went-eol
+detailing how to replace `/etc/yum.repos.d/` contents (you can wholesale rename
+the existing directory and populate a new one with `curl` downloads from the
+article), and additional key trust for EPEL packages:
+------
+:; yum install https://dl.fedoraproject.org/pub/archive/epel/6/x86_64/epel-release-6-8.noarch.rpm
+------
+
+Set up CentOS packages for NUT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Instructions below apply to both CentOS 6 and 7 (a few nuances for 6 commented).
+
 General developer system helpers mentioned in link:ci-farm-lxc-setup.txt[]:
 ------
 :; yum update
 
 :; yum install \
-    sudo vim mc p7zip pigz pbzip2
+    sudo vim mc p7zip pigz pbzip2 tar
+------
+
+To have SSH access to the build VM/Container, you may have to install and
+enable it:
+------
+:; yum install \
+    openssh-server openssh-clients
+
+:; chkconfig sshd on
+:; service sshd start
+
+# If there are errors loading generated host keys, remove mentioned files
+# including the one with .pub extension and retry with:
+#:; service sshd restart
 ------
 
 NOTE: Below we request to install generic `python` per system defaults.
 You may request specifically `python2` or `python3` (or both): current
 NUT should be compatible with both (2.7+ at least).
 
-NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version.
+NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version
+(latter is not available for CentOS 6).
 
 NOTE: On CentOS, it seems that development against libi2c/smbus is not
 supported. Neither the suitable devel packages were found, nor i2c-based
@@ -273,6 +315,7 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 #   :; yum install python3 python3-3.6.8
 # You can find a list of what is (pre-)installed with:
 #   :; rpm -qa | grep -Ei 'perl|python'
+# Note that CentOS 6 includes python-2.6.x and does not serve newer versions
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; yum install \
@@ -286,11 +329,11 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     gd-devel
 
-# Optionally for sd_notify integration:
+# Optionally for sd_notify integration (on CentOS 7+, not on 6):
 :; yum install \
     systemd-devel
 
-# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0"
+# NOTE: "libusbx" is the CentOS way of naming "libusb-1.0" (not in CentOS 6)
 # vs. the older "libusb" as the package with "libusb-0.1"
 :; yum install \
     cppunit-devel \
@@ -328,7 +371,8 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 :; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
 ------
 
-NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`.
+NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
+(not available for CentOS 6).
 
 Arch Linux
 ~~~~~~~~~~

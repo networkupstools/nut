@@ -69,6 +69,7 @@ static char	*pt_root = NULL, *pt_user = NULL;
 
 	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
 static int	nut_debug_level_passthrough = 0;
+static int	nut_foreground_passthrough = -1;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -395,7 +396,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 static void start_driver(const ups_t *ups)
 {
-	char	*argv[9];
+	char	*argv[10];
 	char	dfn[SMALLBUF], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
@@ -471,6 +472,23 @@ static void start_driver(const ups_t *ups)
 		argv[arg++] = dbg;
 	}
 
+	/* Default: -1, FG/BG depends on debugging level */
+	/* send_all_drivers() also warns if got many drivers to handle
+	 * and foreground mode - it won't loop really */
+	if (nut_foreground_passthrough == 0) {
+		argv[arg++] = (char *)"-B";		/* FIXME: cast away const */
+	} else if (nut_foreground_passthrough == 1) {
+		argv[arg++] = (char *)"-F";		/* FIXME: cast away const */
+	} else {
+		if (nut_debug_level_passthrough > 0
+		&&  nut_debug_level > 0
+		) {
+			upsdebugx(1, "WARNING: Requested a debugging level "
+				"but not explicitly a backgrounding mode - "
+				"driver may never try to fork away");
+		}
+	}
+
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
 
@@ -526,8 +544,10 @@ static void help(const char *progname)
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
-	printf("  -D            	raise debugging level\n");
-	printf("  -d            	pass debugging level from upsdrvctl to driver\n");
+	printf("  -D			raise debugging level\n");
+	printf("  -d			pass debugging level from upsdrvctl to driver\n");
+	printf("  -F			driver stays foregrounded even if no debugging is enabled\n");
+	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
@@ -608,6 +628,21 @@ static void send_all_drivers(void (*command)(const ups_t *))
 	if (command != &shutdown_driver) {
 		ups = upstable;
 
+		/* Only warn when relevant - got more than one device to start */
+		if (command == &start_driver
+		&&  ups->next
+		&&  ( (nut_foreground_passthrough == 1)
+		      || (nut_foreground_passthrough != 0
+		          && nut_debug_level > 0
+		          && nut_debug_level_passthrough > 0)
+		    )
+		) {
+			upslogx(LOG_WARNING,
+				"Starting \"all\" drivers but requested the "
+				"foreground mode (or debug without backgrounding)! "
+				"This request may never loop past the first driver!");
+		}
+
 		while (ups) {
 			command(ups);
 
@@ -617,6 +652,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		return;
 	}
 
+	/* Orderly processing of shutdowns */
 	for (i = 0; i <= maxsdorder; i++) {
 		ups = upstable;
 
@@ -659,7 +695,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DdV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdFBV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -682,6 +718,14 @@ int main(int argc, char **argv)
 
 			case 'd':
 				nut_debug_level_passthrough = 1;
+				break;
+
+			case 'F':
+				nut_foreground_passthrough = 1;
+				break;
+
+			case 'B':
+				nut_foreground_passthrough = 0;
 				break;
 
 			case 'h':
@@ -713,7 +757,7 @@ int main(int argc, char **argv)
 			"starts and you need to copy and paste that line and append the debug flags to that\n"
 			"line (less the 'exec:' prefix).\n\n"
 			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
-			"pass its current debug level to the launched driver.\n");
+			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
 	}
 
 	if (!strcmp(argv[0], "start"))
