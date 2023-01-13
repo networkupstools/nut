@@ -19,6 +19,7 @@ AM_INIT_AUTOMAKE([subdir-objects])
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
+dnl UPDATE: As tested on CentOS 6, its "autoconf-2.63-5.1.el6.noarch" also suffices.
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -27,7 +28,8 @@ m4_version_prereq(2.61, [
 	AC_MSG_RESULT(no)
 ])
 
-AC_PREREQ([2.64])
+AC_PREREQ([2.63])
+dnl #AC_PREREQ([2.64])
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.

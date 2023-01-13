@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3076 utf-8
+personal_ws-1.1 en 3078 utf-8
 AAS
 ABI
 ACFAIL
@@ -1517,6 +1517,7 @@ backends
 backgrounding
 backport
 backported
+backports
 backupspro
 badpassword
 baseurl
@@ -1626,6 +1627,7 @@ charset
 checksum
 chgrp
 chipset
+chkconfig
 chmod
 chown
 chr
@@ -2822,8 +2824,8 @@ testtime
 testuser
 textproc
 th
-timehead
 timeframe
+timehead
 timeline
 timername
 timestamp
