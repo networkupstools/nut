@@ -59,6 +59,13 @@ https://github.com/networkupstools/nut/milestone/8
      v2.8.1 [#1420]
    * Fixed building of NUT man pages when just a few drivers are selected
      by `configure` script for custom builds [#1467]
+   * Now that `upsdrvctl` can pass debugging level through to the launched
+     driver(s), they would by default stay in the foreground. This can
+     complicate (or simplify, when intentional) the management of service
+     instances. Now there are explicit `upsdrvctl` options for choosing
+     this (`-F`/`-B`), although default behavior is retained. Note that
+     foregrounding and mass-management loop to start all drivers (without
+     specifying the single device) do not play well together [#1759]
 
  - New `configure --enable-inplace-runtime` option should set default values
    for `--sysconfdir`, `--with-user` and `--with-group` options to match an
