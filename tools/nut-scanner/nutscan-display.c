@@ -178,6 +178,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		return;
 	}
 
+	/* At least one entry exists... */
+	listlen++;
+
 	/* Find end of the list */
 	while (current_dev->next != NULL) {
 		current_dev = current_dev->next;
@@ -187,11 +190,6 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	while (current_dev->prev != NULL) {
 		current_dev = current_dev->prev;
 		listlen++;
-	}
-
-	/* Empty? No bogus data or conflicts at least... */
-	if (!listlen) {
-		return;
 	}
 
 	/* Process each device:
