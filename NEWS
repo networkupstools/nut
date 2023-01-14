@@ -184,6 +184,10 @@ https://github.com/networkupstools/nut/milestone/8
    abort and require either to install the dependency or explicitly forfeit
    the tool (some distro packages missed it quietly in the past) [#1560]
 
+ - The `nut-scanner` program should now by default warn about serial numbers
+   which do not make much sense (are duplicate, empty, all same character, etc)
+   [#1810]
+
  - Existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]

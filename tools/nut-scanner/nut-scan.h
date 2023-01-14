@@ -4,6 +4,7 @@
  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
  *    2016-2021 - EATON - Various threads-related improvements
+ *    2023 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -171,6 +172,11 @@ sem_t * nutscan_semaphore(void);
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
 void nutscan_display_parsable(nutscan_device_t * device);
+
+/* Display sanity-check concerns for various fields etc. (if any) */
+void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check_serial(nutscan_device_t * device);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
