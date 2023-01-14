@@ -39,6 +39,8 @@ static char * nutscan_device_type_string[TYPE_END] = {
 	"EATON_SERIAL"
 };
 
+static int last_nutdev_num = 0;
+
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 {
 	upsdebugx(2, "%s: %s", __func__, device
@@ -91,6 +93,8 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 		current_dev = current_dev->next;
 	}
 	while (current_dev != NULL);
+
+	last_nutdev_num = nutdev_num;
 }
 
 void nutscan_display_parsable(nutscan_device_t * device)
@@ -164,9 +168,19 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	 * Also note that not all devices may have/report
 	 * a serial at all (option will be missing).
 	 */
+	/* FIXME: Currently this is normally called as part
+	 * of nutscan_display_ups_conf_with_sanity_check()
+	 * and nut-scanner goes over each type separately.
+	 * So with current approach it will not see "issues"
+	 * with multiple data paths (e.g. USB and SNMP) to
+	 * same device.
+	 */
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
-	int nutdev_num = 1;
+	/* Keep numbering consistent with global entry naming.
+	 * Note its last value is after loop, so "real + 1".
+	 */
+	int nutdev_num = last_nutdev_num - 1;
 	size_t listlen = 0, count = 0, i;
 	keyval_strings_t *map = NULL, *entry = NULL;
 
