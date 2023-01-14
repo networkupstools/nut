@@ -207,6 +207,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		return;
 	}
 
+	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)",
+		__func__, listlen);
+
 	do {
 		/* Look for serial option in current device */
 		opt = current_dev->opt;
@@ -227,6 +230,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 
 				if (entry) {
 					/* Got a hit => append value */
+					upsdebugx(3, "%s: duplicate entry for serial '%s'",
+						__func__, keytmp);
+
 					/* TODO: If changing from preallocated LARGEBUF to
 					 * dynamic allocation, malloc data for larger "val".
 					 */
@@ -234,6 +240,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 						",nutdev%i", nutdev_num);
 				} else {
 					/* No hit => new key */
+					upsdebugx(3, "%s: new entry for serial '%s'",
+						__func__, keytmp);
+
 					/* TODO: If changing from preallocated LARGEBUF to
 					 * dynamic allocation, malloc data for new "entry"
 					 * and its key/val fields.
@@ -244,6 +253,8 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					if (count != i || count > listlen) {
 						/* Should never get here, but just in case... */
 						fprintf(stderr, "%s: Loop overflow, skipped\n", __func__);
+						upsdebugx(3, "%s: count=%" PRIuSIZE " i=%" PRIuSIZE " listlen%" PRIuSIZE,
+							__func__, count, i, listlen);
 						goto exit;
 					}
 
