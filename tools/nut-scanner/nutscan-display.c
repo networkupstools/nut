@@ -248,7 +248,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					entry = &(map[i]);
 
 					count++;
-					if (count != i || count > listlen) {
+					if (count != (i + 1) || count > listlen) {
 						/* Should never get here, but just in case... */
 						fprintf(stderr, "%s: Loop overflow, skipped\n", __func__);
 						upsdebugx(3, "%s: count=%" PRIuSIZE " i=%" PRIuSIZE " listlen%" PRIuSIZE,
