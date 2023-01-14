@@ -323,7 +323,7 @@ Ap_Id                          Receptacle   Occupant     Condition
 Information
 When         Type         Busy     Phys_Id
 
-usb10/1                        connected    configured   ok         
+usb10/1                        connected    configured   ok
 Mfg: INNO TECH  Product: USB to Serial  NConfigs: 1  Config: 0  : 20100826
 unavailable  usb-input    n        /devices/pci@0,0/pci103c,1609@13:1
 ----
