@@ -1026,6 +1026,93 @@ NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
 for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
 summer 2022.
 
+Solaris 8
+~~~~~~~~~
+
+Builds for a platform as old as this are not currently covered by CI, however
+since the very possibility of doing this was recently verified, some notes
+follow.
+
+For context: Following a discussion in the mailing list starting at
+https://alioth-lists.debian.net/pipermail/nut-upsuser/2022-December/013051.html
+and followed up by GitHub issues and PR:
+
+* https://github.com/networkupstools/nut/issues/1736
+* https://github.com/networkupstools/nut/issues/1737
+  (about a possible but not yet confirmed platform problem)
+* https://github.com/networkupstools/nut/pull/1738
+
+...recent NUT codebase was successfully built and self-tested in a Solaris 8
+x86 VM (a circa 2002 release), confirming the project's adherence to the
+goal that if NUT ran on a platform earlier, so roughly anything POSIX-ish
+released this millennium and still running, it should still be possible --
+at least as far as our part of equation is concerned.
+
+That said, platform shows its age vs. later standards (script interpreters
+and other tools involved), and base "complete install" lacked compilers,
+so part of the tested build platform setup involved third-party provided
+package repositories.
+
+One helpful project was extensive notes about preparation of the Solaris 8 VM
+(and our further comments there), which pointed to the still active "tgcware"
+repository and contains scripts to help prepare the freshly installed system:
+
+* https://github.com/mac-65/Solaris_8_x86_VM
+* https://github.com/mac-65/Solaris_8_x86_VM/issues/1
+* http://jupiterrise.com/tgcware/sunos5.8_x86/stable/
+
+Note that scripts attached to the notes refer to older versions of the
+packages than what is currently published, so I ended up downloading
+everything from the repository into the VM and using shell wildcards
+to pick the packages to install (mind the package families with similar
+names when preparing such patterns).
+
+After the OS, tools and feasible third-party dependencies were installed,
+certain environment customization was needed to prepare for NUT build in
+particular (originally detailed in GitHub issues linked above):
+
+* For `CONFIG_SHELL`, system `dtksh` seems to support the syntax (unlike
+  default `/bin/sh`), but for some reason segfaults during `configure` tests.
+  Alternatively `/usr/tgcware/bin/bash` (4.4-ish) can be used successfully.
+  System-provided bash 2.x is too old for these scripts.
+* To run `ci_build.sh` CI/dev-testing helper script, either the shebang
+  should be locally fixed to explicitly call `/usr/tgcware/bin/bash`, or
+  the build environment's `PATH` should point to this `bash` implementation
+  as a first hit. If we want to primarily use OS-provided tools, this latter
+  option may need a bit of creative setup; I made a symlink into the
+  `/usr/lib/ccache` directory which has to be first anyway (before compilers).
+* The system-provided default `grep` lacks the `-E` option which was preferred
+  over generally obsoleted `egrep` since
+  link:https://github.com/networkupstools/nut/pull/1660[PR #1660] -- however
+  pre-pending `/usr/xpg4/bin` early in the `PATH` fixes the problem.
+* The builds of `gcc` in TGCWARE repository were picky about shared objects
+  linking as needed to run them, so `LD_LIBRARY_PATH` had to refer to its
+  library directories (generally this is frowned upon and should be a last
+  resort).
+* Due to lack of Python in that OS release, NUT augeas support had to be
+  disabled when preparing the build from Git sources (generated files may
+  be available as part of distribution tarballs however):
+  `WITHOUT_NUT_AUGEAS=true; export WITHOUT_NUT_AUGEAS; ./autogen.sh`
+
+Overall, the successful test build using the NUT standard CI helper script
+`ci_build.sh` had the following shell session settings:
+
+----
+### Common pre-sets from .profile or .bashrc:
+### bash-2.03$ echo $PATH
+### /usr/bin:/usr/dt/bin:/usr/openwin/bin:/bin:/usr/ucb:/usr/tgcware/bin:/usr/tgcware/gnu:/usr/tgcware/gcc42/bin:/usr/tgcware/i386-pc-solaris2.8/bin
+
+### bash-2.03$ echo $LD_LIBRARY_PATH
+### /usr/lib:/usr/tgcware/lib:/usr/tgcware/gcc42/lib:/usr/tgcware/i386-pc-solaris2.8/lib
+
+### Further tuning for the build itself:
+:; git clean -fffdddxxx
+:; CONFIG_SHELL=/usr/tgcware/bin/bash \
+   WITHOUT_NUT_AUGEAS=true \
+   PATH="/usr/xpg4/bin:$PATH" \
+    /usr/tgcware/bin/bash ./ci_build.sh
+----
+
 MacOS with homebrew
 ~~~~~~~~~~~~~~~~~~~
 

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3080 utf-8
+personal_ws-1.1 en 3087 utf-8
 AAS
 ABI
 ACFAIL
@@ -1797,6 +1797,7 @@ dsssl
 dstate
 dt
 dtds
+dtksh
 dtr
 du
 dumbterm
@@ -1874,6 +1875,7 @@ fds
 fe
 fenton
 fentonups
+fffdddxxx
 ffff
 fi
 fieldset
@@ -2067,6 +2069,7 @@ ipmipsu
 ippon
 ipv
 isbmex
+ish
 iso
 isolator
 ivtscd
@@ -2827,6 +2830,7 @@ testime
 testtime
 testuser
 textproc
+tgcware
 th
 timeframe
 timehead
@@ -3059,6 +3063,7 @@ xhtml
 xmalloc
 xml
 xmllint
+xpg
 xr
 xrealloc
 xsl
