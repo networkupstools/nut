@@ -41,6 +41,9 @@ static char * nutscan_device_type_string[TYPE_END] = {
 
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 {
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
 	nutscan_display_ups_conf(device);
 	nutscan_display_sanity_check(device);
 }
@@ -50,6 +53,10 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
 	static int nutdev_num = 1;
+
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
 
 	if (device == NULL) {
 		return;
@@ -90,6 +97,10 @@ void nutscan_display_parsable(nutscan_device_t * device)
 {
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
+
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
 
 	if (device == NULL) {
 		return;
@@ -158,6 +169,10 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	int nutdev_num = 1;
 	size_t listlen = 0, count = 0, i;
 	keyval_strings_t *map = NULL, *entry = NULL;
+
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
 
 	if (device == NULL) {
 		return;
@@ -299,6 +314,10 @@ exit:
 
 void nutscan_display_sanity_check(nutscan_device_t * device)
 {
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
+
 	/* Extend the list later as more sanity-checking appears */
 	nutscan_display_sanity_check_serial(device);
 }
