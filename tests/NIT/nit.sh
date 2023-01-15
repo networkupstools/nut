@@ -1127,36 +1127,38 @@ testcase_sandbox_nutscanner_list() {
     log_info "Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
 
     # NOTE: Currently mask mode is IPv4 only
-    { OUT="`"${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}"`" \
-      || OUT="`"${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"`" ; } \
-    && [ -n "$OUT" ] \
-    || OUT=""
+    runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
+    || runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"
 
     # Note: the reported "driver" string is not too helpful as a "nutclient".
     # In practice this could be a "dummy-ups" repeater or "clone" driver,
     # or some of the config elements needed for upsmon (lacking creds/role)
     if (
-        test -n "$OUT" \
-        && echo "$OUT" | grep -E '^\[nutdev1\]$' \
-        && echo "$OUT" | grep 'port = "dummy@' \
+        test -n "$CMDOUT" \
+        && echo "$CMDOUT" | grep -E '^\[nutdev1\]$' \
+        && echo "$CMDOUT" | grep 'port = "dummy@' \
         || return
 
         if [ x"${TOP_SRCDIR}" = x ]; then
             echo "Note: only testing one dummy device" >&2
         else
-            echo "$OUT" | grep -E '^\[nutdev2\]$' \
-            && echo "$OUT" | grep 'port = "UPS1@' \
-            && echo "$OUT" | grep -E '^\[nutdev3\]$' \
-            && echo "$OUT" | grep 'port = "UPS2@' \
+            echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
+            && echo "$CMDOUT" | grep 'port = "UPS1@' \
+            && echo "$CMDOUT" | grep -E '^\[nutdev3\]$' \
+            && echo "$CMDOUT" | grep 'port = "UPS2@' \
             || return
         fi
     ) ; then
         log_info "OK, nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "nut-scanner complained, check above"
-        FAILED="`expr $FAILED + 1`"
-        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
+        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*The specified module could not be found.*NUT search disabled" ) ; then
+            log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
+        else
+            log_error "nut-scanner complained or did not return all expected data, check above"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
+        fi
     fi
 }
 
