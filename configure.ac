@@ -146,6 +146,36 @@ NUT_ARG_ENABLE([inplace-runtime],
     [Request configure option defaults for runtime user/group/confpath based on currently installed NUT (to extent these can be detected)],
     [no])
 
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
+    AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
+
+    dnl If existing NUT installation reports its build options, re-run this
+    dnl script with those flags (overridden by any options passed currently):
+    conftemp="${sbindir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    SBINDIR="${conftemp}"
+
+    CONFIG_FLAGS_DEPLOYED=""
+    dnl TODO: Similar query can be done for BINDIR tools
+    dnl and for libupsclient-config if deployed locally
+    AC_MSG_CHECKING([${SBINDIR}/upsd])
+    AS_IF([test -x "${SBINDIR}/upsd"], [
+        CONFIG_FLAGS_DEPLOYED="`"${SBINDIR}/upsd" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
+        && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
+        || CONFIG_FLAGS_DEPLOYED=""
+    ])
+
+    AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
+        AC_MSG_RESULT([${CONFIG_FLAGS_DEPLOYED}])
+        AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
+        dnl For multiply-specified flags with conflicting values, last mention wins:
+        exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
+    ],[
+        AC_MSG_RESULT([not reported])
+    ])
+])
+
 dnl Defaults for respective configure options below
 dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")

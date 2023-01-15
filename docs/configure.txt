@@ -55,11 +55,15 @@ filesystem access permissions and configuration file locations.
 
 Tries to detect and pre-set `configure` defaults for run-time settings
 (which you can still override if needed, but no longer *must* specify
-explicitly to be on same page as the existing setup):
+explicitly to be on same page as the existing setup), e.g.:
 
 * --sysconfdir
 * --with-user
 * --with-group
+
+If the installed NUT version supports reporting of `CONFIG_FLAGS` used
+during its build, the `configure` script will try to take those values
+into account when running in this mode.
 
 Driver selection
 ----------------
