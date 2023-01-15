@@ -170,6 +170,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         AC_MSG_RESULT([${CONFIG_FLAGS_DEPLOYED}])
         AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
         dnl For multiply-specified flags with conflicting values, last mention wins:
+        AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
         exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_RESULT([not reported])
