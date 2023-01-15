@@ -4,7 +4,8 @@ BCMXCP_USB(8)
 NAME
 ----
 
-bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol over USB
+bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol
+over USB
 
 NOTE
 ----
@@ -12,14 +13,15 @@ NOTE
 This man page only documents the hardware-specific features of the
 bcmxcp_usb driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
-This driver is a variant of the serial driver bcmxcp and uses the same core code.
+This driver is a variant of the serial driver bcmxcp and uses the same
+core code.
 
 SUPPORTED HARDWARE
 ------------------
 
 This driver should recognize all BCM/XCP-compatible UPSes that are connected
-via USB.  It has been developed and tested on Powerware PW3501 hardware. It also has
-been tested on PW5110 hardware.
+via USB.  It has been developed and tested on Powerware PW3501 hardware.
+It also has been tested on PW5110 hardware.
 
 EXTRA ARGUMENTS
 ---------------

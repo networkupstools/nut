@@ -203,7 +203,7 @@ MinGW regex library
 ^^^^^^^^^^^^^^^^^^^
 
 You can compile it  using:
- 
+
 	:; ( cd "$DLDIR" && wget -c http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz )
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/mingw-libgnurx-2.5.1-src.tar.gz

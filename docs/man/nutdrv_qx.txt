@@ -77,11 +77,11 @@ If your UPS doesn't report either *battery.charge* or *battery.runtime* you may 
 
 *default.battery.voltage.high =* 'value'::
 Maximum battery voltage that is reached after about 12 to 24 hours charging.
-If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.low =* 'value'::
 Minimum battery voltage just before the UPS automatically shuts down.
-If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.nominal =* 'value'::
 *override.battery.voltage.nominal =* 'value'::
@@ -508,8 +508,8 @@ Put the UPS in ECO Mode.
 Take the UPS out of ECO Mode.
 
 
-BATTERY CHARGE
---------------
+BATTERY CHARGE GUESSTIMATION
+----------------------------
 
 Due to popular demand, this driver will report a guesstimated *battery.charge* and optionally *battery.runtime*, provided you specified a couple of the <<_extra_arguments,EXTRA ARGUMENTS>> listed above.
 
@@ -517,9 +517,9 @@ If you specify both *battery.voltage.high* and *battery.voltage.low* in linkman:
 This is not reliable under load, as this only gives reasonably accurate readings if you disconnect the load, let the battery rest for a couple of minutes and then measure the open cell voltage.
 This just isn't practical if the power went out and the UPS is providing power for your systems.
 
-                     battery.voltage - battery.voltage.low
-battery.charge =  ------------------------------------------ x 100 %
-                  battery.voltage.high - battery.voltage.low
+                         battery.voltage - battery.voltage.low
+    battery.charge =  ------------------------------------------ x 100 %
+                      battery.voltage.high - battery.voltage.low
 
 There is a way to get better readings without disconnecting the load but this requires one to keep track on how much (and how fast) current is going in and out of the battery.
 If you specified the *runtimecal*, the driver will attempt to do this.
@@ -577,7 +577,7 @@ Part of this, the following bestups options, in linkman:ups.conf[5], are no long
 
 *nombattvolt*::
 *battvoltmult*::
-See <<_battery_charge,BATTERY CHARGE>>.
+See <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>.
 
 *ID*::
 Discarded.

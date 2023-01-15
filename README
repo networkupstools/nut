@@ -11,8 +11,8 @@ It uses a layered approach to connect all of the parts.
 Drivers are provided for a wide assortment of equipment.  They
 understand the specific language of each device and map it back to a
 compatibility layer.  This means both an expensive high end UPS, a simple
-"power strip" PDU, or any other power device can be handled transparently with
-a uniform management interface.
+"power strip" PDU, or any other power device can be handled transparently
+with a uniform management interface.
 
 This information is cached by the network server `upsd`, which then
 answers queries from the clients.  upsd contains a number of access
@@ -35,8 +35,8 @@ Installing
 
 If you are installing these programs for the first time, go read the
 <<_installation_instructions,installation instructions>>
-to find out how to do that.  This document contains more information on what all
-of this stuff does.
+to find out how to do that.  This document contains more information
+on what all of this stuff does.
 
 
 Upgrading
@@ -44,8 +44,8 @@ Upgrading
 
 When upgrading from an older version, always check the
 <<Upgrading_notes,upgrading notes>> to see what may have
-changed.  Compatibility issues and other changes will be listed there to ease
-the process.
+changed.  Compatibility issues and other changes will be listed there
+to ease the process.
 
 
 Configuring and using
@@ -59,8 +59,8 @@ Documentation
 -------------
 
 This is just an overview of the software.  You should read the man pages,
-included example configuration files, and auxiliary documentation for the parts
-that you intend to use.
+included example configuration files, and auxiliary documentation for the
+parts that you intend to use.
 
 
 Network Information
@@ -180,7 +180,8 @@ If your driver has vanished, see the link:FAQ.html[FAQ] and
 Generic Device Drivers
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NUT provides several generic drivers that support a variety of very similar models.
+NUT provides several generic drivers that support a variety of very similar
+models.
 
 - The `genericups` driver supports many serial models that use the same basic
 principle to communicate with the computer.  This is known as "contact

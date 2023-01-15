@@ -7,22 +7,28 @@ Keep in sync with nut_usb_addvars() method provided by
 * drivers/libusb0.c
 * drivers/libusb1.c
 * drivers/usb-common.h
+
+and matching code in tools/nut-scanner/scan_usb.c
 ////////
 
 *port =* 'string'::
 
 Some 'value' must be set, typically *auto*.
 +
-NOTE: This could be a device filesystem path like `/dev/usb/hiddev0` but current
-use of libusb API precludes knowing and matching by such identifiers.  They may
-also be inherently unreliable (dependent on re-plugging and enumeration order).
-At this time the actual 'value' is ignored, but some 'port' must be there
-syntactically.
+NOTE: This could be a device filesystem path like `/dev/usb/hiddev0`
+but current use of libusb API precludes knowing and matching by such
+identifiers.  They may also be inherently unreliable (dependent on
+re-plugging and enumeration order). At this time the actual 'value'
+is ignored, but syntactically some 'port' configuration must still
+be there.
 
-It is possible to control multiple UPS units simultaneously by running several
-instances of this driver, provided they can be uniquely distinguished by setting
-some combination of the *vendor*, *product*, *vendorid*, *productid*, *serial*,
-*bus* and/or *device* options detailed below.
+It is possible to control multiple UPS units simultaneously by running
+several instances of this driver, provided they can be uniquely
+distinguished by setting some combination of the *vendor*, *product*,
+*vendorid*, *productid*, *serial*, *bus* and/or *device* options detailed
+below.  For devices or operating systems that do not provide sufficient
+information, the *allow_duplicates* option can be of use (limited and
+risky!)
 
 *vendorid =* 'regex'::
 *productid =* 'regex'::

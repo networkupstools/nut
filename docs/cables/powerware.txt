@@ -23,4 +23,3 @@ Pin 2 <-----------> Pin 8
 Pin 4 <-----------> Pin 4
 Pin 5 <-----------> Pin 1
 Shells Grounded Both Ends
-

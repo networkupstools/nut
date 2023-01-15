@@ -40,8 +40,8 @@ This driver has been tested with the following models:
  * SMART2200RMXL2U
  * SMART3000RM2U
 
-If you have used Tripp Lite's PowerAlert software to connect to your UPS, there
-is a good chance that 'tripplite_usb' will work if it uses one of the
+If you have used Tripp Lite's PowerAlert software to connect to your UPS,
+there is a good chance that 'tripplite_usb' will work if it uses one of the
 following protocols:
 
  * Protocol 0004
@@ -50,10 +50,10 @@ following protocols:
  * Protocol 3003
  * Protocol 3005
 
-On the other hand, if the web page for your UPS on the Tripp-Lite website says
-"HID-compliant USB port also enables direct integration with built-in power
-management and auto-shutdown features of Windows and MAC OS X", then you should
-use the linkman:usbhid-ups[8] driver instead.
+On the other hand, if the web page for your UPS on the Tripp-Lite website
+says "HID-compliant USB port also enables direct integration with built-in
+power management and auto-shutdown features of Windows and MAC OS X", then
+you should use the linkman:usbhid-ups[8] driver instead.
 
 EXTRA ARGUMENTS
 ---------------
@@ -105,22 +105,25 @@ RUNTIME VARIABLES
 
 *ups.delay.shutdown*::
 
-This variable is the same as the 'offdelay' setting, but it can be changed at
-runtime by linkman:upsrw[8].
+This variable is the same as the 'offdelay' setting, but it can be
+changed at runtime by linkman:upsrw[8].
 
 *ups.id*::
 
-Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
-supports this feature, this variable will be listed in the output of linkman:upsrw[8].
+Some SMARTPRO models feature an ID that can be set and retrieved.
+If your UPS supports this feature, this variable will be listed in
+the output of linkman:upsrw[8].
 
 *outlet.1.switch*::
 
-Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
-turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`
-with linkman:upsrw[8].
-If your unit has multiple switchable outlets, substitute the outlet number for
-'1' in the variable name. Be sure to test this first - there is no other way to
-be certain that the number used by the driver matches the label on the unit.
+Some Tripp Lite units have a switchable outlet (usually outlet #1)
+which can be turned on and off by writing '1' or '0', respectively,
+to `outlet.1.switch` with linkman:upsrw[8].
++
+If your unit has multiple switchable outlets, substitute the outlet
+number for '1' in the variable name. Be sure to test this first --
+there is no other way to be certain that the number used by the driver
+matches the label on the unit.
 
 KNOWN ISSUES AND BUGS
 ---------------------
