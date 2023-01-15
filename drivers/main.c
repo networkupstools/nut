@@ -861,6 +861,14 @@ int main(int argc, char **argv)
 		}
 	} /* else: default remains `background_flag==-1` where nonzero is true */
 
+	/* Since debug mode dumps from drivers are often posted to mailing list
+	 * or issue tracker, as well as viewed locally, it can help to know the
+	 * build options involved when troubleshooting (especially when needed
+	 * to walk through building a PR branch with candidate fix for an issue).
+	 */
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
+
 	argc -= optind;
 	argv += optind;
 
