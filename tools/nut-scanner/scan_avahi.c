@@ -519,7 +519,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	/* Allocate main loop object */
 	if (!(simple_poll = (*nut_avahi_simple_poll_new)())) {
-		fprintf(stderr, "Failed to create simple poll object.\n");
+		fprintf(stderr, "Failed to create Avahi simple poll object.\n");
 		goto fail;
 	}
 
@@ -541,7 +541,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	/* Check wether creating the client object succeeded */
 	if (!client) {
 		fprintf(stderr,
-			"Failed to create client: %s\n",
+			"Failed to create Avahi client: %s\n",
 			(*nut_avahi_strerror)(error));
 		goto fail;
 	}
@@ -560,7 +560,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 # pragma GCC diagnostic pop
 #endif
 		fprintf(stderr,
-			"Failed to create service browser: %s\n",
+			"Failed to create Avahi service browser: %s\n",
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}
