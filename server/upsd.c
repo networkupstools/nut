@@ -1507,6 +1507,9 @@ static void help(const char *arg_progname)
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
 
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -1632,7 +1635,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				/* do nothing - we already printed the banner */
+				/* Note - we already printed the banner for program name */
+				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+					UPS_VERSION, CONFIG_FLAGS);
+
 				exit(EXIT_SUCCESS);
 
 			case 'c':

@@ -28,6 +28,19 @@ There are a few options reviewed below that can be given to `configure`
 script to tweak your compilations. See also `./configure --help` for a
 current and complete listing for the current version of the codebase.
 
+NUT tracks `configure` options used during build, so you can view them
+to produce a replacement by asking NUT programs for `--help` or for
+`--version` with debugging enabled (first), e.g.:
+
+----
+:; upsd -DV
+Network UPS Tools upsd 2.8.0.1
+   0.000000     [D1] Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
+----
+
+A more industrial approach is to use `lib/libupsclient-config --config-flags`
+where supported.
+
 In-place replacement defaults
 -----------------------------
 
