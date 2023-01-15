@@ -3854,7 +3854,6 @@ AC_CONFIG_FILES([
  docs/man/Makefile
  drivers/Makefile
  include/Makefile
- lib/libupsclient-config
  lib/libupsclient.pc
  lib/libnutclient.pc
  lib/libnutclientstub.pc
@@ -3908,6 +3907,7 @@ AC_CONFIG_FILES([
 
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
+ lib/libupsclient-config
  scripts/Aix/nut.init
  scripts/HP-UX/postinstall
  scripts/RedHat/upsd
