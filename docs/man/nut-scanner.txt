@@ -37,6 +37,10 @@ Display the help text.
 DISPLAY OPTIONS
 ---------------
 
+*-Q* | *--disp_nut_conf_with_sanity_check*::
+Display result in the 'ups.conf' format with sanity-check warnings (if any)
+as comments (default).
+
 *-N* | *--disp_nut_conf*::
 Display result in the 'ups.conf' format.
 

@@ -31,6 +31,10 @@ Changes from 2.8.0 to 2.8.1
     device configuration [#1790]: hopefully these would now suffice for
     sufficiently unique combinations;
 
+  * The `nut-scanner` tool should also suggest sanity-check violations
+    as comments in its generated device configuration [#1810], e.g. bogus
+    or duplicate serial number values;
+
   * The common USB matching logic was updated with an `allow_duplicates`
     flag (caveat emptor!) which may help monitor several related no-name
     devices on systems that do not discern "bus" and "device" values
