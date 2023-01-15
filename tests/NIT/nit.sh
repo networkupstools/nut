@@ -22,7 +22,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2023 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -1106,7 +1106,70 @@ testcases_sandbox_cppnit() {
     testcase_sandbox_cppnit_simple_admin
 }
 
+####################################
+
+isTestableNutScanner() {
+    # We optionally make and here can run nut-scanner (as NUT client)
+    # tests, which tangentially tests the C client library:
+    if [ x"${TOP_BUILDDIR}" = x ] \
+    || [ ! -x "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" ] \
+    ; then
+        log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: Not found"
+        return 1
+    fi
+    return 0
+}
+
+testcase_sandbox_nutscanner_list() {
+    isTestableNutScanner || return 0
+
+    log_separator
+    log_info "Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
+
+    # NOTE: Currently mask mode is IPv4 only
+    { OUT="`"${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}"`" \
+      || OUT="`"${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"`" ; } \
+    && [ -n "$OUT" ] \
+    || OUT=""
+
+    # Note: the reported "driver" string is not too helpful as a "nutclient".
+    # In practice this could be a "dummy-ups" repeater or "clone" driver,
+    # or some of the config elements needed for upsmon (lacking creds/role)
+    if (
+        test -n "$OUT" \
+        && echo "$OUT" | grep -E '^\[nutdev1\]$' \
+        && echo "$OUT" | grep 'port = "dummy@' \
+        || return
+
+        if [ x"${TOP_SRCDIR}" = x ]; then
+            echo "Note: only testing one dummy device" >&2
+        else
+            echo "$OUT" | grep -E '^\[nutdev2\]$' \
+            && echo "$OUT" | grep 'port = "UPS1@' \
+            && echo "$OUT" | grep -E '^\[nutdev3\]$' \
+            && echo "$OUT" | grep 'port = "UPS2@' \
+            || return
+        fi
+    ) ; then
+        log_info "OK, nut-scanner found all expected devices"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "nut-scanner complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
+    fi
+}
+
+testcases_sandbox_nutscanner() {
+    isTestableNutScanner || return 0
+    testcase_sandbox_nutscanner_list
+}
+
+####################################
+
 # TODO: Some upsmon tests?
+
+####################################
 
 testgroup_sandbox() {
     testcase_sandbox_start_drivers_after_upsd
@@ -1115,6 +1178,7 @@ testgroup_sandbox() {
     testcase_sandbox_upsc_query_timer
     testcases_sandbox_python
     testcases_sandbox_cppnit
+    testcases_sandbox_nutscanner
 
     sandbox_forget_configs
 }
@@ -1140,11 +1204,19 @@ testgroup_sandbox_cppnit_simple_admin() {
     sandbox_forget_configs
 }
 
+testgroup_sandbox_nutscanner() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_nutscanner
+    sandbox_forget_configs
+}
+
 ################################################################
 
 case "${NIT_CASE}" in
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
+    nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
         log_warn "========================================================"
         log_warn "You asked to run just a specific testcase* or testgroup*"
