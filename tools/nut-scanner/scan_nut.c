@@ -33,8 +33,8 @@
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
-static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
-static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
+static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, uint16_t *port);
+static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, uint16_t port,
 					int flags, struct timeval * timeout);
 static int (*nut_upscli_list_start)(UPSCONN_t *ups, size_t numq,
 					const char **query);
@@ -137,7 +137,7 @@ static void * list_nut_devices(void * arg)
 	struct scan_nut_arg * nut_arg = (struct scan_nut_arg*)arg;
 	char *target_hostname = nut_arg->hostname;
 	struct timeval tv;
-	int port;
+	uint16_t port;
 	size_t numq, numa;
 	const char *query[4];
 	char **answer;
