@@ -193,11 +193,30 @@ static void * list_nut_devices(void * arg)
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
+#if (defined PORT) && (PORT > 0)
+		if (port != PORT) {
+#else
+		if (port != 3493) {
+#endif
+			/* colon and up to 5 digits */
+			buf_size += 6;
+		}
+
 		dev->port = malloc(buf_size);
 
 		if (dev->port) {
-			snprintf(dev->port, buf_size, "%s@%s", answer[1],
-					hostname);
+#if (defined PORT) && (PORT > 0)
+			if (port != PORT) {
+#else
+			if (port != 3493) {
+#endif
+				snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
+					answer[1], hostname, port);
+			} else {
+				/* Standard port, not suffixed */
+				snprintf(dev->port, buf_size, "%s@%s",
+					answer[1], hostname);
+			}
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
 #endif
