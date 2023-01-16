@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.06"
+#define DRIVER_VERSION  "0.07"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -46,6 +46,11 @@ upsdrv_info_t   upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
+
+/*
+ * Choose 20s for off delay, reading the tea leaves from other drivers.
+ */
+static const char *shutdown_delay = "20";
 
 /*
  * Logging plan:
@@ -72,6 +77,9 @@ static int upsdrv_setvar (const char *varname, const char *val);
 /* Rated maximum VA output as configured by the user. */
 static int maxload = 0;
 
+/*
+ * NB: Not called for shutdown.
+ */
 void upsdrv_initinfo(void)
 {
 	dstate_setinfo("ups.mfr", "Best Power");
@@ -83,9 +91,6 @@ void upsdrv_initinfo(void)
 	if (maxload)
 		dstate_setinfo("ups.load", "0");
 	dstate_setinfo("output.voltamps", "0");
-
-	upsdebugx(1, "bestfortress: arbitrarily setting ups.delay.shutdown to 10");
-	dstate_setinfo("ups.delay.shutdown", "10");	/* write only */
 
 	/* tunable via front panel: (european voltage level)
 	   parameter        factory default  range
@@ -489,36 +494,44 @@ static int upsdrv_setvar (const char *var, const char * data) {
 }
 
 /*
- * This is equivalent to the "shutdown.return" instant command.
+ * The "power down and maybe return command" is "OFF %d\r", with a
+ * delay in seconds before poweroff.  As a special case, "OFF 0" does
+ * not shut down.  The UPS will power on the load when power returns
+ * (or after a delay if power is not out), according to the front panel
+ * parameter, or the value set via `autorestart()`.
+ */
+
+/*
+ * This is equivalent to the `shutdown.return` instant command, but
+ * invoked with `-k`.
  * \todo Reduce duplication.
  */
 void upsdrv_shutdown(void)
 {
 	const	char	*grace;
 
-	upsdebugx(2, "upsdrv_shutdown: invoked");
+	upsdebugx(2, "upsdrv_shutdown: begin");
 
 	grace = dstate_getinfo("ups.delay.shutdown");
-
 	if (!grace) {
 		upsdebugx(1, "upsdrv_shutdown: ups.delay.shutdown is NULL!");
-		grace = "1"; /* apparently, OFF0 does not work */
+		/* Pick a different value than 20 so we can see it in the logs. */
+		grace = "30";
 	}
 
 	upslogx(LOG_CRIT, "upsdrv_shutdown: OFF/restart in %s seconds", grace);
 
-	/* make power return when utility power returns */
+	/* Start again, overriding front panel setting. */
 	autorestart (1);
 
 	upssend ("OFF%s\r", grace);
 	/* I'm nearly dead, Jim */
-	/* OFF will powercycle when line power is available again */
+
+	upsdebugx(2, "upsdrv_shutdown: end");
 }
 
 static int instcmd (const char *cmdname, const char *extra)
 {
-	const char *p;
-
 	if (!strcasecmp(cmdname, "load.off")) {
 		upslogx(LOG_CRIT, "instcmd: %s: OFF/stayoff in 1s", cmdname);
 		autorestart (0);
@@ -526,11 +539,8 @@ static int instcmd (const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	else if (!strcasecmp(cmdname, "shutdown.return")) {
-		p = dstate_getinfo ("ups.delay.shutdown");
-		if (!p) p = "1";
-		upslogx(LOG_CRIT, "instcmd: %s: OFF/restart in %s seconds", cmdname, p);
-		autorestart (1);
-		upssend ("OFF%s\r", p);
+		upsdebugx(2, "instcmd: %s: start", cmdname);
+		upsdrv_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 	/* \todo Software error or user error? */
@@ -560,6 +570,9 @@ static struct {
 	{NULL, B1200},
 };
 
+/*
+ * Called first, for normal operation and for shutdown.
+ */
 void upsdrv_initups(void)
 {
 	speed_t speed = B1200;
@@ -592,12 +605,8 @@ void upsdrv_initups(void)
 	upsdebugx(1, "upsdrv_initups: opened %s speed %s upsfd %d",
 		  device_path, speed_val ? speed_val : "DEFAULT", upsfd);
 
-
-	/* TODO: probe ups type */
-
-	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
-	 */
+	/* Set early so that it is in place for shutdown. */
+	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsdebugx(1, "upsdrv_initups: end");
 }
