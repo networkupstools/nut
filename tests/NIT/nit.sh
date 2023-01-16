@@ -1162,6 +1162,13 @@ testcase_sandbox_nutscanner_list() {
         && echo "$CMDOUT" | grep 'port = "dummy@' \
         || return
 
+        if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
+            echo "Note: not testing for suffixed port number" >&2
+        else
+            echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
+            || return
+        fi
+
         if [ x"${TOP_SRCDIR}" = x ]; then
             echo "Note: only testing one dummy device" >&2
         else
