@@ -2,6 +2,7 @@
 <!-- Copyright 2014 Arnaud Quette <arnaud.quette@free.fr> -->
 <component type="desktop-application">
  <id>nut-monitor.desktop</id>
+ <launchable type="desktop-id">nut-monitor.desktop</launchable>
  <metadata_license>CC0-1.0</metadata_license>
  <project_license>GPL-3.0+</project_license>
  <name>NUT Monitor</name>
