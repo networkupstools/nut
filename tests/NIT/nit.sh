@@ -189,9 +189,10 @@ case "${SRCDIR}" in
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
-# No fuss about LD_LIBRARY_PATH: for binaries that need it,
-# PATH entries below would contain libtool wrapper scripts;
-# for other builds we use system default or caller's env.
+# No fuss about LD_LIBRARY_PATH: for most of the (client) binaries that
+# need it, the PATH entries below would contain libtool wrapper scripts;
+# for other builds we use system default or caller's env. One exception
+# so far is nut-scanner that needs to know where libupsclient.so is...
 PATH_ADD="${BUILDDIR}"
 if [ x"${SRCDIR}" != x"${BUILDDIR}" ]; then
     PATH_ADD="${PATH_ADD}:${SRCDIR}"
@@ -210,6 +211,20 @@ export PATH
 unset PATH_ADD
 
 log_debug "Using PATH='$PATH'"
+
+LD_LIBRARY_PATH_ORIG="${LD_LIBRARY_PATH-}"
+LD_LIBRARY_PATH_CLIENT=""
+if [ x"${TOP_BUILDDIR}" != x ]; then
+    LD_LIBRARY_PATH_CLIENT="${TOP_BUILDDIR}/clients:${TOP_BUILDDIR}/clients/.libs"
+fi
+
+if [ x"${LD_LIBRARY_PATH_CLIENT}" != x ]; then
+    if [ -n "${LD_LIBRARY_PATH_ORIG-}" ]; then
+        LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_CLIENT}:${LD_LIBRARY_PATH_ORIG}"
+    fi
+else
+    LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
+fi
 
 for PROG in upsd upsc dummy-ups upsmon ; do
     (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
@@ -1125,10 +1140,18 @@ testcase_sandbox_nutscanner_list() {
 
     log_separator
     log_info "Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
+    log_info "Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
+
+    # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
+    export LD_LIBRARY_PATH
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
     || runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"
+
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH_ORIG}"
+    export LD_LIBRARY_PATH
 
     # Note: the reported "driver" string is not too helpful as a "nutclient".
     # In practice this could be a "dummy-ups" repeater or "clone" driver,
