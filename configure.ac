@@ -12,7 +12,7 @@ CONFIG_FLAGS=""
 dnl Keep each token quoted, in case spaces or other special chars crawl in:
 for F in "$@" ; do
     case "$F" in
-    *=*" "*) NF="`echo "$F" | sed "s,=,=',"`""'" && F="$NF" ;;
+    *=*" "*) NF="$(echo "$F" | sed "s,=,=',")""'" && F="$NF" ;;
     esac
 
     test -z "${CONFIG_FLAGS}" \
