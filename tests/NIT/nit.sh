@@ -1152,7 +1152,7 @@ testcase_sandbox_nutscanner_list() {
         log_info "OK, nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*The specified module could not be found.*NUT search disabled" ) ; then
+        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
             log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
             log_error "nut-scanner complained or did not return all expected data, check above"
