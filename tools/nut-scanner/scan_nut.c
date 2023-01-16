@@ -190,6 +190,8 @@ static void * list_nut_devices(void * arg)
 		 * - for upsmon.conf or ups.conf (using dummy-ups)? */
 		dev = nutscan_new_device();
 		dev->type = TYPE_NUT;
+		/* NOTE: There is no driver by such name, in practice it could
+		 * be a dummy-ups relay, a clone driver, or part of upsmon config */
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
