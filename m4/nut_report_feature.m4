@@ -132,6 +132,7 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
     printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
     printf '* CPP     \t: %s\n' "$CPP"
     printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+    printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
    ) > config.nut_report_feature.log.9
     ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"
 ])

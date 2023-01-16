@@ -177,6 +177,10 @@ static void show_usage()
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		NUT_VERSION_MACRO, CONFIG_FLAGS);
+
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
@@ -648,6 +652,10 @@ int main(int argc, char *argv[])
 				break;
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+
+				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+					NUT_VERSION_MACRO, CONFIG_FLAGS);
+
 				exit(EXIT_SUCCESS);
 			case 'a':
 				printf("OLDNUT\n");
