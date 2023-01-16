@@ -264,6 +264,8 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			device_found = 1;
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
+			/* NOTE: There is no driver by such name, in practice it could
+			 * be a dummy-ups relay, a clone driver, or part of upsmon config */
 			dev->driver = strdup("nutclient");
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
@@ -282,7 +284,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 					5 + 1 + 1 + 1;
 				dev->port = malloc(buf_size);
 				if (dev->port) {
-					snprintf(dev->port, buf_size, "%s@%s:%u",
+					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
 						device, host_name, port);
 				}
 			}
