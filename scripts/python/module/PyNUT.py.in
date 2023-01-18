@@ -51,6 +51,10 @@
 #            Fixed raised PyNUTError() exceptions to carry a Python string
 #            (suitable for Python2 and Python3), not byte array from protocol,
 #            so exception catchers can process them naturally (see test script).
+#
+# 2023-01-18 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.6.0
+#            Added CheckUPSAvailable() method originally by Michal Hlavinka
+#            from 2013-01-07 RedHat/Fedora packaging
 
 import telnetlib
 
@@ -69,8 +73,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.5.0"
-    __release     = "2022-08-12"
+    __version     = "1.6.0"
+    __release     = "2023-01-18"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -205,6 +209,23 @@ available vars.
             ups_vars[ var ] = data
 
         return( ups_vars )
+
+    def CheckUPSAvailable( self, ups="" ) :
+        """ Check whether UPS is reachable
+
+Just tries to contact UPS with a safe command.
+The result is True (reachable) or False (unreachable)
+        """
+        if self.__debug :
+            print( "[DEBUG] CheckUPSAvailable called..." )
+
+        self.__srv_handler.write( "LIST CMD %s\n" % ups )
+        result = self.__srv_handler.read_until( "\n" )
+        if result != "BEGIN LIST CMD %s\n" % ups :
+            return False
+
+        self.__srv_handler.read_until( "END LIST CMD %s\n" % ups )
+        return True
 
     def GetUPSCommands( self, ups="" ) :
         """ Get all available commands for the specified UPS

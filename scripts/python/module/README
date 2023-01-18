@@ -65,6 +65,8 @@ class PyNUTClient :
 
   def FSD( self, ups="" ) :
 
+  def CheckUPSAvailable( self, ups="" ) :
+
   def GetRWVars( self, ups='' ) :
 
   def GetUPSCommands( self, ups='' ) :
@@ -146,6 +148,29 @@ Send the FSD (Forced ShutDown) command to the specified UPS.
 The command should return `OK` if everything went well, or raise an exception
 in case of failure, such as that this server does not allow to manage that UPS
 as a "primary" (or "master" before NUT 2.8.0).
+
+
+CheckUPSAvailable
+~~~~~~~~~~~~~~~~~
+
+Returns a boolean state whether the specified UPS is recognized and available
+(`True`), or is not (`False`).
+
+Internally, requests a listing of commands supported by the device name, and
+evaluates the server response.
+
+.Example
+-----
+    import PyNUT
+
+    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    result = ups.CheckUPSAvailable( ups='ups1' )
+    print( result )
+
+    >> True
+-----
+
+See also: `GetUPSCommands()`
 
 
 GetRWVars
