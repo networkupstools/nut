@@ -1485,7 +1485,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
                 #$MAKE distclean $MAKE_FLAGS_CLEAN -k || true
 
-                echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1500,7 +1500,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_SSL_VARIANT='${NUT_SSL_VARIANT}' ..."
+                        echo "=== Building with 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' ..."
                         ( CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
                           configure_nut
                         )
@@ -1517,7 +1517,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
@@ -1591,7 +1591,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
              || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
-                echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1618,7 +1618,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     libusb-*)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1629,7 +1629,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1651,7 +1651,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
