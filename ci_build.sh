@@ -653,7 +653,13 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+        case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || return
+            ;;
+        *)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+        esac
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
@@ -1262,7 +1268,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k \
+        case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
+            || ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+            ;;
+        *)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+        esac \
         || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
         || true
         echo "=== Finished initial clean-up"
