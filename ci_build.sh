@@ -1795,9 +1795,10 @@ bindings)
 
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
+        # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} realclean $MAKE_FLAGS_CLEAN -k || true
+        ${MAKE} realclean -k || true
         echo "=== Finished initial clean-up"
     fi
 
@@ -1820,6 +1821,9 @@ bindings)
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
+    else
+        # Help developers debug:
+        CONFIG_OPTS+=("--disable-silent-rules")
     fi
 
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
