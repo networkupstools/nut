@@ -23,4 +23,4 @@ check-NIT-devel: $(abs_srcdir)/nit.sh
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp
