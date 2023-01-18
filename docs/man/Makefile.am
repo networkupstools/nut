@@ -1057,4 +1057,4 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp

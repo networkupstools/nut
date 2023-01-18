@@ -165,5 +165,5 @@ endif
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf *.pyc __pycache__ */*.pyc */__pycache__ */*/*.pyc */*/__pycache__
-	rm -f NUT-Monitor
+	$(AM_V_at)rm -rf *.pyc __pycache__ */*.pyc */__pycache__ */*/*.pyc */*/__pycache__
+	$(AM_V_at)rm -f NUT-Monitor
