@@ -16,7 +16,9 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-This driver supports old Best Fortress UPS equipment using a serial connection.
+This driver supports old Best Fortress UPS equipment using a serial
+connection.
+
 One example is the "Fortress LI660", sold in (at least) 1995.
 
 EXTRA ARGUMENTS

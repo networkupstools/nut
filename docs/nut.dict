@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3078 utf-8
+personal_ws-1.1 en 3087 utf-8
 AAS
 ABI
 ACFAIL
@@ -391,6 +391,7 @@ GPL
 GPSER
 GRs
 GTK
+GUESSTIMATION
 GUIs
 GWD
 GXE
@@ -471,6 +472,7 @@ IC
 ID's
 IDE
 IDEN
+IDEs
 IDentifiers
 IFBETWEEN
 IFF
@@ -1795,6 +1797,7 @@ dsssl
 dstate
 dt
 dtds
+dtksh
 dtr
 du
 dumbterm
@@ -1811,6 +1814,7 @@ ec
 echoback
 eco
 edb
+editorconfig
 edl
 ef
 egrep
@@ -1871,6 +1875,7 @@ fds
 fe
 fenton
 fentonups
+fffdddxxx
 ffff
 fi
 fieldset
@@ -1946,6 +1951,7 @@ gtk
 guardpend
 guardpstart
 guesstimate
+guesstimation
 guez
 gufw
 gui
@@ -2063,6 +2069,7 @@ ipmipsu
 ippon
 ipv
 isbmex
+ish
 iso
 isolator
 ivtscd
@@ -2823,6 +2830,7 @@ testime
 testtime
 testuser
 textproc
+tgcware
 th
 timeframe
 timehead
@@ -3055,6 +3063,7 @@ xhtml
 xmalloc
 xml
 xmllint
+xpg
 xr
 xrealloc
 xsl

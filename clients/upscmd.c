@@ -64,6 +64,9 @@ static void usage(const char *prog)
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void print_cmd(char *cmdname)
@@ -309,6 +312,9 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+				UPS_VERSION, CONFIG_FLAGS);
+
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */

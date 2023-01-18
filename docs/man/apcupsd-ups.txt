@@ -91,10 +91,11 @@ if you notice a mismatch in units).
 LIMITATIONS
 -----------
 
-Access to *apcupsd* is strictly read only: no commands can be issued. This
-stems from the design of *apcupsd*, where the settings are changed in
-*apctest*. In order to run *apctest*, *apcupsd* must be stopped (and *apcupsd*
-exposes the UPS to the network).
+Access to *apcupsd* is strictly read only: no commands can be issued.
+This stems from the design of *apcupsd*, where the settings are changed
+in *apctest*. In order to run *apctest*, *apcupsd* must be stopped
+(and it is *apcupsd* exposes the UPS to the network and to this NUT
+driver as its client).
 
 AUTHOR
 ------

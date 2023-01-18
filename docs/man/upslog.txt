@@ -88,8 +88,8 @@ ups and logfile separated by commas. An example would be:
 If started as root, upslog will *setuid*(2) to the user id
 associated with 'username' for security.
 +
-If 'username' is not defined, it will use the value that was compiled into the
-program.  This defaults to "nobody", which is less than ideal.
+If 'username' is not defined, it will use the value that was compiled into
+the program.  This defaults to "nobody", which is less than ideal.
 
 SERVICE DELAYS
 --------------

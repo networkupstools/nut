@@ -143,7 +143,7 @@ CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
 
 # Dirs to clean
 clean-local:
-	rm -rf *.chunked *.bak tmp
+	$(AM_V_at)rm -rf *.chunked *.bak tmp
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents

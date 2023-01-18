@@ -29,8 +29,8 @@ EXTRA ARGUMENTS
 
 *port*=auto::
 Due to changes in the way that Mac OS X lists power sources, the *port*
-parameter no longer has any effect. The rest of NUT still requires a value here,
-and our traditional "don't care" value is `auto`.
+parameter no longer has any effect. The rest of NUT still requires a value
+here, and our traditional "don't care" value is `auto`.
 
 *model*='regex'::
 Likewise, if you have more than one UPS, it may be necessary to specify a
@@ -41,8 +41,8 @@ DIAGNOSTICS
 -----------
 
 If the driver cannot find an UPS, first open System Preferences and see if
-there is an "UPS" tab on the Energy Saver panel. If so, re-run the driver with
-the *-D* flag to list the names of the power sources found.
+there is an "UPS" tab on the Energy Saver panel. If so, re-run the driver
+with the *-D* flag to list the names of the power sources found.
 
 KNOWN ISSUES AND BUGS
 ---------------------
