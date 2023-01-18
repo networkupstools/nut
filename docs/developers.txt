@@ -571,6 +571,13 @@ To display in a rough example:
 Miscellaneous coding style tools
 --------------------------------
 
+NUT codebase includes an `.editorconfig` file which should be supported
+by most of the IDEs and text editors nowadays. Many support this format
+specification (at least partially) out of the box, possibly with some
+configuration toggle in the GUI. Others may need a plugin, see more at
+https://editorconfig.org/#pre-installed page. There are also command-line
+tools to verify and/or enforce compliance of source files to configuration.
+
 You can go a long way towards converting your source code to the NUT
 coding style by piping it through the following command:
 

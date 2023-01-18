@@ -1,19 +1,24 @@
 Python NUT Client files
 -----------------------
 
-This directory contains various NUT Client related Python scripts, written by
-David Goncalves, and released under GPL v3.
+This directory contains various NUT Client related Python scripts, written
+by David Goncalves, and released under GPL v3.
 
-* "module": this directory contains PyNUT.py, which is a Python abstraction
-class to access NUT server(s). You can use it in Python programs to access NUT's
+module
+~~~~~~
+
+This directory contains PyNUT.py, which is a Python abstraction class to
+access NUT data server(s). You can use it in Python programs to access NUT's
 upsd data server in a simple way, without having to know the NUT protocol.
+
 The same module should work for Python 2 and Python 3.
 
-To import it on Python programs you have to use the following (case sensitive) :
-'import PyNUT'
+To import it on Python programs you have to use the following (case sensitive):
 
-This module provides a 'PyNUTClient' class that can be used to connect and get
-data from an upsd data server.
+    import PyNUT
+
+This module provides a 'PyNUTClient' class that can be used to connect and
+get data from an upsd data server.
 
 To install the PyNUT module on Debian/Ubuntu, copy it to:
 /usr/share/python-support/python-pynut/
@@ -26,8 +31,12 @@ For this to be fully functional, you will need to adapt the login, password and
 upsname to fit your configuration. A NUT data server should be running for the
 test program to verify connection and protocol support.
 
+For one practical example, you can research `tests/NIT/nit.sh` in NUT sources.
 
-* "app": this directory contains the NUT-Monitor application, that uses the
+app
+~~~
+
+This directory contains the NUT-Monitor application, which uses the
 PyNUT class, along with its resources.
 
 To install it, you will either need to keep the files together, or to install:

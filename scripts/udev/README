@@ -22,9 +22,11 @@ Installation
 ------------
 
 For most users, these files will be automatically installed in
-/etc/udev (or /lib/udev) upon "make install", if that directory exists and if
-the feature (USB and / or IPMI) has been enabled at configure time. You can
-specify an alternate directory with ./configure --with-udev-dir=DIR.
+/etc/udev (or /lib/udev) upon "make install", if that directory
+exists and if the feature (USB and / or IPMI) has been enabled
+at configure time. You can specify an alternate directory with:
+
+    ./configure --with-udev-dir=DIR
 
 Manual installation
 -------------------
@@ -32,13 +34,13 @@ Manual installation
 To install them manually, copy the rules file(s) to /etc/udev/rules.d
 (or /lib/udev/rules.d on newer systems) using the command(s):
 
-$ cp -f nut-usbups.rules /etc/udev/rules.d/62-nut-usbups.rules
-$ cp -f nut-ipmipsu.rules /etc/udev/rules.d/52-nut-ipmipsu.rules
+    :; cp -f nut-usbups.rules /etc/udev/rules.d/62-nut-usbups.rules
+    :; cp -f nut-ipmipsu.rules /etc/udev/rules.d/52-nut-ipmipsu.rules
 
 You will need to refresh the bus to avoid a reboot for these rules to be
 active. You can do so using:
 
-$ udevadm trigger --subsystem-match=usb_device
+    :; udevadm trigger --subsystem-match=usb_device
 
 For USB devices, you can then plug your UPS USB cord, or unplug / replug
 it to refresh the device permission, and start NUT.

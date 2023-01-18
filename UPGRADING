@@ -3,7 +3,7 @@ Upgrading notes
 ===============
 endif::txt[]
 
-This file lists changes that affect users who installed older versions 
+This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
@@ -30,6 +30,10 @@ Changes from 2.8.0 to 2.8.1
   * The `nut-scanner` tool should suggest these options in its generated
     device configuration [#1790]: hopefully these would now suffice for
     sufficiently unique combinations;
+
+  * The `nut-scanner` tool should also suggest sanity-check violations
+    as comments in its generated device configuration [#1810], e.g. bogus
+    or duplicate serial number values;
 
   * The common USB matching logic was updated with an `allow_duplicates`
     flag (caveat emptor!) which may help monitor several related no-name
@@ -511,7 +515,7 @@ which makes it work with upsclient.
 has been gone for a long time, and the target was ambiguous.
 
 - The newapc driver has been renamed to apcsmart.  If you previously
-used newapc, make sure you delete the old binary and fix your 
+used newapc, make sure you delete the old binary and fix your
 ups.conf.  Otherwise, you may run the old driver from 1.4.
 
 

@@ -44,4 +44,4 @@ FORCE:
 # deps of a local target, we must clean it by ourselves before the
 # distribution
 dist-hook:
-	rm -f $(distdir)/nut_version.h
+	$(AM_V_at)rm -f $(distdir)/nut_version.h

@@ -88,5 +88,4 @@ SANDBOX (to be completed and pushed)
 * update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
 * add download hashes for tarball
 
-
 //////////////////////////////////////////////////////////////////////////////
