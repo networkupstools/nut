@@ -9,10 +9,11 @@ ups.conf - UPS definitions for Network UPS Tools
 DESCRIPTION
 -----------
 
-This file is read by the driver controller linkman:upsdrvctl[8], the UPS drivers
-that use the common core (see linkman:nutupsdrv[8], and linkman:upsd[8]).  The
-file begins with global directives, and then each UPS has a section which
-contains a number of directives that set parameters for that UPS.
+This file is read by the driver controller linkman:upsdrvctl[8],
+the UPS drivers which use the common core (see linkman:nutupsdrv[8]),
+linkman:nut-driver-enumerator[8], and the NUT data server linkman:upsd[8].
+The file begins with global directives, and then each UPS has a section
+which contains a number of directives that set parameters for that UPS.
 
 A UPS section begins with the name of the UPS in brackets, and continues
 until the next UPS name in brackets or until EOF.  The name "default" is
@@ -39,6 +40,14 @@ hardware-specific part of the driver:
 In this case, the linkman:apcsmart[8] driver will receive variables called
 "cable" and "sdtype" which have special meanings.  See the man pages of
 your driver(s) to learn which variables are supported and what they do.
+
+Here is another example, when connecting a serial UPS on Windows:
+
+	[windows-ups]
+		driver = mge-shut
+		port = "\\\\.\\COM10"
+		desc = "UPS on a Windows machine"
+
 
 GLOBAL DIRECTIVES
 -----------------
@@ -72,6 +81,9 @@ Optional.  Specify to upsdrvctl to not wait at all for the driver(s) to
 execute the request command.
 +
 The default (omission) is to wait.
++
+It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
+(e.g. used to work around certain issues with systemd otherwise).
 
 *retrydelay*::
 Optional.  Specify the delay between each restart attempt of the driver(s),
@@ -83,14 +95,14 @@ The default is 5 seconds.
 *pollinterval*::
 
 Optional.  The status of the UPS will be refreshed after a maximum
-delay which is controlled by this setting.  This is normally 2 seconds.  This
-may be useful if the driver is creating too much of a load on your system or
-network.
+delay which is controlled by this setting.  This is normally 2 seconds.
+This setting may be useful if the driver is creating too much of a load
+on your monitoring system or network.
 +
-Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8] and
-linkman:nutdrv_qx[8]) also have an option called *pollfreq* which controls how
-frequently some of the less critical parameters are polled. Details are
-provided in the respective driver man pages.
+Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8]
+and linkman:nutdrv_qx[8]) also have an option called *pollfreq* which
+controls how frequently some of the less critical parameters are polled.
+Details are provided in the respective driver man pages.
 
 *synchronous*::
 
@@ -144,16 +156,18 @@ UPS FIELDS
 
 *driver*::
 
-Required.  This specifies which program will be monitoring this UPS.  You
-need to specify the one that is compatible with your hardware.  See
-linkman:nutupsdrv[8] for more information on drivers in general and pointers to the
-man pages of specific drivers.
+Required.  This specifies which program will be monitoring this UPS.
+You need to specify the one that is compatible with your hardware.
+See linkman:nutupsdrv[8] for more information on drivers in general
+and pointers to the man pages of specific drivers.
 
 *port*::
 
-Required.  This is the serial port where the UPS is connected.  On a Linux
-system, the first serial port usually is '/dev/ttyS0'.  On FreeBSD and
-similar systems, it probably will be '/dev/cuaa0'.
+Required.  This is the serial port where the UPS is connected.
+On a Linux system, the first serial port usually is '/dev/ttyS0'.
+On FreeBSD and similar systems, it probably will be '/dev/cuaa0'.
+On Windows, the first serial port will be "\\\\.\\COM1" (note the
+escaped slashes).
 
 *user*::
 

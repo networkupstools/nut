@@ -189,7 +189,7 @@ typedef enum {
 	CHRG,		/* Charging */
 	DISCHRG,	/* Discharging */
 	BYPASS,		/* On bypass */
-	CAL,		/* Calibration */
+	CALIB,		/* Calibration */
 	OFF,		/* UPS is off */
 	OVER,		/* Overload */
 	TRIM,		/* SmartTrim */

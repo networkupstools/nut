@@ -2,8 +2,8 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf"
- * and "http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -27,7 +27,10 @@
 #include "config.h" /* must be the first header */
 
 #include <string.h>
-#include <stdint.h>
+
+#ifdef WIN32
+# include "wincompat.h"
+#endif
 
 #include "main.h"
 #include "serial.h"
@@ -82,13 +85,17 @@ static TRielloData DevData;
  *
  * return -1 on error, -2 on timeout, nb_bytes_readen on success
  *
+ * See also select_read() in common.c (TODO: standardize codebase)
+ *
  *********************************************************************/
 static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 {
+	ssize_t readen = 0;
+
+#ifndef WIN32
+	int rc = 0;
 	struct timeval serial_timeout;
 	fd_set readfs;
-	ssize_t readen = 0;
-	int rc = 0;
 
 	FD_ZERO (&readfs);
 	FD_SET (upsfd, &readfs);
@@ -101,7 +108,30 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		ssize_t now = read (upsfd, bytes, size - (size_t)readen);
+#else
+		DWORD timeout;
+		COMMTIMEOUTS TOut;
+
+		timeout = read_timeout;	/* recast */
+
+		GetCommTimeouts(upsfd, &TOut);
+		TOut.ReadIntervalTimeout = MAXDWORD;
+		TOut.ReadTotalTimeoutMultiplier = 0;
+		TOut.ReadTotalTimeoutConstant = timeout;
+		SetCommTimeouts(upsfd, &TOut);
+#endif
+
+		ssize_t now;
+#ifndef WIN32
+		now = read (upsfd, bytes, size - (size_t)readen);
+#else
+		/* FIXME? for some reason this compiles, but the first
+		 * arg to the method should be serial_handler_t* - not
+		 * a HANDLE as upsfd is (in main.c)... then again, many
+		 * other drivers seem to use it just fine...
+		 */
+		now = w32_serial_read(upsfd, bytes, size - (size_t)readen, timeout);
+#endif
 
 		if (now < 0) {
 			return -1;
@@ -109,10 +139,12 @@ static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 		else {
 			readen += now;
 		}
+#ifndef WIN32
 	}
 	else {
 		return -1;
 	}
+#endif
 	return readen;
 }
 

@@ -8,4 +8,3 @@ NAME
 blazer_usb - Driver for Megatec/Q1 protocol USB based UPS equipment
 
 include::blazer-common.txt[]
-

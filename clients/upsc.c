@@ -21,9 +21,11 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -54,6 +56,9 @@ static void usage(const char *prog)
 	printf("\nThird form (lists clients connected to a device):\n");
 	printf("  -c         - lists each client connected on <ups>, one per line.\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void printvar(const char *var)
@@ -87,7 +92,7 @@ static void printvar(const char *var)
 	}
 
 	if (numa < numq) {
-		fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least %zu)", numa, numq);
+		fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
 	}
 
 	printf("%s\n", answer[3]);
@@ -120,7 +125,7 @@ static void list_vars(void)
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("%s: %s\n", answer[2], answer[3]);
@@ -152,7 +157,7 @@ static void list_upses(int verbose)
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		if(verbose) {
@@ -189,7 +194,7 @@ static void list_clients(const char *devname)
 
 		/* CLIENT <upsname> <address> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		printf("%s\n", answer[2]);
@@ -230,6 +235,9 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+				UPS_VERSION, CONFIG_FLAGS);
+
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */

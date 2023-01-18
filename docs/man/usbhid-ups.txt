@@ -45,12 +45,14 @@ This driver is known to work on:
  - most Linux systems,
  - FreeBSD (beta stage) and maybe other *BSD,
  - Darwin / Mac OS X,
- - Solaris 10.
+ - Solaris 10 and illumos-based distributions.
 
 EXTRA ARGUMENTS
 ---------------
 
 This driver also supports the following optional settings:
+
+include::nut_usb_addvars.txt[]
 
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
@@ -96,38 +98,19 @@ For most devices this combination means calibration or similar maintenance;
 however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
 
-*vendor*='regex'::
-*product*='regex'::
-*serial*='regex'::
-*vendorid*='regex'::
-*productid*='regex'::
-
-Select a specific UPS, in case there is more than one connected via
-USB. Each option specifies an extended regular expression (see
-regex(7)) that must match the UPS's entire vendor/product/serial
-string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for vendorid and productid. Try *-DD* for
-finding out the strings to match.
+*disable_fix_report_desc*::
+Set to disable fix-ups for broken USB encoding, etc. which we apply by default
+on certain models (vendors/products) which were reported as not following the
+protocol strictly. This flag allows to disable the feature in particular device
+configurations.
 +
-Examples:
-
- -  `-x vendor="Foo.Corporation.*"`
- -  `-x vendorid=051d*` (APC)
- -  `-x product=".*(Smart|Back)-?UPS.*"`
-
-*bus*='regex'::
-
-Select a UPS on a specific USB bus or group of buses. The argument is
-a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]").
-
-*device =* 'regex'::
-
-Select a UPS on a specific USB device or group of devices. The argument is
-a regular expression that must match the device name where the UPS is
-connected (e.g. device="001", device="00[1-2]").
-Note that device numbers are not guaranteed by the OS to be stable across
-re-boots or device re-plugging.
+It is always possible that the vendors eventually release fixed firmware, or
+re-use identifiers by which we match suspected broken devices for unrelated
+products, so processing these fix-ups would be a waste of time there.
++
+It is also always possible that NUT fix-ups cause issues on some devices,
+whether due to NUT bugs or because the vendor protocol implementation is
+broken in more than one place.
 
 *explore*::
 With this option, the driver will connect to any device, including
@@ -149,6 +132,18 @@ INPUT flagged objects. Some Powercom units need this option.
 Limit the number of bytes to read from interrupt pipe. For some Powercom units
 this option should be equal to 8.
 
+*waitbeforereconnect*='num'::
+The driver automatically tries to reconnect to the UPS on unexpected error.
+This parameter (in seconds) allows it to wait before attempting the reconnection.
+The default value is 0.
++
+NOTE: for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware
+stops responding every few hours, which causes usbhid-ups driver to detect an
+libusb insufficient memory error; in this case, when the usbhid-ups driver tries
+to reconnect too early, the activity sometimes led the UPS firmware to crash and
+turn off the load immediately! Setting this parameter to 30 seconds solved this
+problem (while 20 seconds were not enough).
+
 INSTALLATION
 ------------
 
@@ -168,11 +163,11 @@ IMPLEMENTATION
 Selecting a specific UPS
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The driver ignores the "port" value in *ups.conf*. Unlike previous
-versions of this driver, it is now possible to control multiple UPS
-units simultaneously with this driver, provided they can be distinguished
-by setting some combination of the "vendor", "product", "serial",
-"vendorid", and "productid" options. For instance:
+As mentioned above, the driver ignores the "port" value in *ups.conf*.
+Unlike previous versions of this driver, it is now possible to control
+multiple UPS units simultaneously with this driver, provided they can
+be distinguished by setting some combination of the device-matching options.
+For instance:
 
 	[mge]
 		driver = usbhid-ups

@@ -2,8 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
@@ -143,7 +143,7 @@ CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
 
 # Dirs to clean
 clean-local:
-	rm -rf *.chunked *.bak tmp
+	$(AM_V_at)rm -rf *.chunked *.bak tmp
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents

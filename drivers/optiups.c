@@ -25,6 +25,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
 #define DRIVER_VERSION "1.02"
@@ -157,7 +158,7 @@ static inline ssize_t optireadline(void)
 		}
 	}
 	else
-		upsdebugx(1, "READ ERROR: %zd", r );
+		upsdebugx(1, "READ ERROR: %" PRIiSIZE, r);
 	return r;
 }
 

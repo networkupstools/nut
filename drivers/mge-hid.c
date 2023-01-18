@@ -37,6 +37,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "nut_float.h"
+#include "timehead.h"
 
 #define MGE_HID_VERSION		"MGE HID 1.46"
 
@@ -184,6 +185,27 @@ static char		mge_scratch_buf[20];
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
+
+/* TODO: Lifted from strptime.c... maybe should externalize the fallback?
+ * NOTE: HAVE_DECL_* are always defined, 0 or 1. Many other flags are not.
+ */
+#if ! HAVE_DECL_ROUND
+# ifndef WIN32
+static long round (double value)
+# else
+static long round (LDOUBLE value)
+# endif
+{
+  long intpart;
+
+  intpart = (long)value;
+  value = value - intpart;
+  if (value >= 0.5)
+    intpart++;
+
+  return intpart;
+}
+#endif /* HAVE_DECL_ROUND */
 
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
@@ -686,7 +708,7 @@ static const char *eaton_compute_realpower_fun(double value)
 		ups_load = atoi(str_ups_load);
 		power_nominal = atoi(str_power_nominal);
 		if (str_powerfactor)
-			powerfactor = atoi(str_powerfactor);
+			powerfactor = atof(str_powerfactor);
 		/* Compute the value */
 		realpower = round(ups_load * 0.01 * power_nominal * powerfactor);
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", realpower);
@@ -1248,6 +1270,9 @@ static hid_info_t mge_hid2nut[] =
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
+#if 0
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
+#endif
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },

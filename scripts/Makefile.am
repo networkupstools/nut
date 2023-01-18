@@ -12,10 +12,8 @@ EXTRA_DIST = README \
     perl/Nut.pm \
     RedHat/halt.patch \
     RedHat/README \
-    RedHat/ups \
-    RedHat/upsd \
+    RedHat/ups.in \
     RedHat/upsd.in \
-    RedHat/upsmon \
     RedHat/upsmon.in \
     Solaris8/S99upsmon \
     subdriver/gen-usbhid-subdriver.sh \
@@ -25,6 +23,6 @@ EXTRA_DIST = README \
     Windows/halt.c \
     Windows/Makefile
 
-SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris upsdrvsvcctl
+SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris Windows upsdrvsvcctl
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

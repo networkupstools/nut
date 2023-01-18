@@ -29,8 +29,7 @@
 
 #include "config.h"
 
-#include <stdint.h>
-#include <inttypes.h>
+#include "nut_stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,7 +117,7 @@ static int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%zd ", i + 1);
+		printf("Test #%" PRIiSIZE " ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);

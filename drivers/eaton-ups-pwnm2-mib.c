@@ -1,10 +1,10 @@
-/*  powerware-mib.c - data to monitor Powerware UPS with NUT
+/*  eaton-ups-pwnm2-mib.c - data to monitor Powerware and Eaton NM2 UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
  *
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2019 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *       2015-2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,27 +23,17 @@
  *
  */
 
-#include "powerware-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
 #if WITH_SNMP_LKP_FUN
 /* FIXME: shared helper code, need to be put in common */
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.104"
-
-/* TODO: more sysOID and MIBs support:
- *
- * Powerware UPS (Ingrasys X-SLOT and BD-SLOT): ".1.3.6.1.4.1.534.1"
- * Powerware PXGX cards: ".1.3.6.1.4.1.534.2.12"
- *		PXGX 2000 cards (UPS): Get xupsIdentModel (".1.3.6.1.4.1.534.1.1.2.0")
- * 		PXGX 1000 cards (PDU/RPP/RPM): Get pduNumPanels ".1.3.6.1.4.1.534.6.6.4.1.1.1.4.0"
- */
+#define PW_MIB_VERSION "0.105"
 
 /* Powerware UPS (Ingrasys X-SLOT and BD-SLOT)
  * Eaton Gigabit Network Card (Genepi) */
 #define POWERWARE_SYSOID	".1.3.6.1.4.1.534.1"
-/* Powerware UPS newer PXGX UPS cards (BladeUPS, ...) */
-#define EATON_PXGX_SYSOID	".1.3.6.1.4.1.534.2.12"
 
 /* SNMP OIDs set */
 #define PW_OID_MFR_NAME		"1.3.6.1.4.1.534.1.1.1.0"	/* XUPS-MIB::xupsIdentManufacturer.0 */
@@ -129,16 +119,11 @@ static info_lkp_t pw_pwr_info[] = {
 	{   8, "OL"        /* parallel capacity */, NULL, NULL },
 	{   9, "OL"        /* parallel redundancy */, NULL, NULL },
 	{  10, "OL"        /* high efficiency */, NULL, NULL },
-	/* Extended status values */
-	{ 240, "OB"        /* battery (0xF0) */, NULL, NULL },
-	{ 100, "BYPASS"    /* maintenanceBypass (0x64) */, NULL, NULL },
-	{  96, "BYPASS"    /* Bypass (0x60) */, NULL, NULL },
-	{  81, "OL"        /* high efficiency (0x51) */, NULL, NULL },
-	{  80, "OL"        /* normal (0x50) */, NULL, NULL },
-	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */, NULL, NULL },
-	{  16, "OFF"       /* none (0x10) */, NULL, NULL },
+	{  11, "BYPASS"    /* maintenanceBypass */, NULL, NULL },
+	{  11, "OL"        /* essMode */, NULL, NULL },
+	
 	{ 0, NULL, NULL, NULL }
-};
+};             
 
 /* FIXME: mapped to (experimental.)ups.type, but
  * should be output.source or ups.mode (need RFC)
@@ -814,5 +799,4 @@ static alarms_info_t pw_alarms[] = {
 } ;
 
 
-mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
-mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };
+mib2nut_info_t	eaton_pw_nm2 = { "eaton_pw_nm2", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };

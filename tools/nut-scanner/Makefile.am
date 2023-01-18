@@ -43,8 +43,8 @@ BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 $(top_builddir)/include/nut_version.h:
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# Only build nut-scanner, and its library, if libltdl was found (required!)
-if WITH_LIBLTDL
+# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+if WITH_NUT_SCANNER
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
@@ -58,6 +58,19 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+if HAVE_SEMAPHORE_LIBS
+# Are additional libraries needed for semaphore support?
+libnutscan_la_LIBADD += $(SEMLIBS)
+endif
+
+# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
+libnutscan_la_LDFLAGS = $(SERLIBS)
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LDFLAGS += -no-undefined
+endif
+
 #
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -65,7 +78,7 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 2:0:0
+libnutscan_la_LDFLAGS += -version-info 2:0:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -91,9 +104,23 @@ endif
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
 endif
+# Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
-endif
+if    WITH_SNMP_STATIC
+    # MinGW builds of libnetsnmp are static-only, so we link it in:
+    libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
+    # Some workarouds here, to avoid libtool bailing out like this:
+    # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
+    # *** I have the capability to make that library automatically link in when
+    # *** you link to this library.  But I can only do this if you have a
+    # *** shared version of the library, which you do not appear to have.
+    # Note that LIBNETSNMP_LIBS prepared by nut_check_libnetsnmp.m4 for such
+    # builds particularly WITH_SNMP_STATIC is special (with -Wl passthrough,
+    # and for that automake requires LDFLAGS not LIBADD):
+    libnutscan_la_LDFLAGS += $(LIBNETSNMP_LIBS)
+endif WITH_SNMP_STATIC
+endif WITH_SNMP
 if WITH_NEON
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
 endif
@@ -107,6 +134,7 @@ endif
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
+# Optionally deliverable as part of NUT public API:
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else
@@ -121,4 +149,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

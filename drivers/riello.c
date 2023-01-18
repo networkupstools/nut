@@ -4,8 +4,8 @@
  * Documents describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
- *   http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf
+ *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -27,7 +27,6 @@
  */
 
 #include <string.h>
-#include <stdint.h>
 
 #include "main.h"
 #include "riello.h"

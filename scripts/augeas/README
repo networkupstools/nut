@@ -43,7 +43,7 @@ As an example, on Debian and derivatives, do the following:
 
 And optionally:
 
-	$ apt-get install libaugeas0 libaugeas-dev python-augeas 
+	$ apt-get install libaugeas0 libaugeas-dev python-augeas
 
 On RedHat and derivatives, you have to install the packages 'augeas' and
 'augeas-libs'.
@@ -155,7 +155,7 @@ ret = aug_save(a);
 Python
 ~~~~~~
 
-The `augeas` class abstracts access to the configuration files. 
+The `augeas` class abstracts access to the configuration files.
 
   $ python
   Python 2.5.1 (r251:54863, Apr  8 2008, 01:19:33)
@@ -201,7 +201,7 @@ Test the conformity testing module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Existing configuration files can be tested for conformity. To do so, use:
- 
+
 	$ augparse -I ./ ./test_nut.aug
 
 
@@ -218,7 +218,7 @@ driver_name="usbhid-ups"
 port_name="auto"
 
 a = augeas.augeas()
-  
+
 # Generate nut.conf
 a.set("/files/etc/nut/nut.conf/MODE", "standalone")
 

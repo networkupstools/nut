@@ -62,7 +62,8 @@
 static info_lkp_t avocent_outlet_status_info[] = {
 	{ 1, "off", NULL, NULL },
 	{ 2, "on", NULL, NULL },
-/*	{ 3, "offLocked", NULL, NULL },
+/*
+	{ 3, "offLocked", NULL, NULL },
 	{ 4, "onLocked", NULL, NULL },
 	{ 5, "offCycle", NULL, NULL },
 	{ 6, "onPendingOff", NULL, NULL },
@@ -71,7 +72,8 @@ static info_lkp_t avocent_outlet_status_info[] = {
 	{ 9, "notSet", NULL, NULL },
 	{ 10, "onFixed", NULL, NULL },
 	{ 11, "offShutdown", NULL, NULL },
-	{ 12, "tripped", NULL, NULL },*/
+	{ 12, "tripped", NULL, NULL },
+*/
 	{ 0, NULL, NULL, NULL }
 };
 

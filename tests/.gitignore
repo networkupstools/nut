@@ -6,6 +6,7 @@
 /cppnit.trs
 /test-suite.log
 /selftest-rw/*
+/nutlogtest-nofail.sh
 /nutlogtest
 /nutlogtest.log
 /nutlogtest.trs

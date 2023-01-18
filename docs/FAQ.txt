@@ -310,7 +310,7 @@ might look like this:
 	# `upsmon -K` if available on still mounted filesystems
 	# at this point is more portable than the `test` below
 
-	if (test -f /etc/killpower)
+	if (test -f /etc/killpower || /sbin/upsmon -K)
 	then
 		/sbin/upsdrvctl shutdown
 
@@ -535,12 +535,24 @@ Or a variation like...
 == How do you make upsd reload the config file?
 
 Either find the pid of the background process and send it a SIGHUP,
-or just start it again with '-c reload'.
+or just start it again with '-c reload' (requires that the previously
+started daemon saves a PID file).
 
 If you send the signals yourself instead of using -c, be sure you
 hit the right process.  There are usually two upsmon processes, and you
 should only send signals to one of them.  To be safe, read the pid
 file.
+
+If your daemons are managed as systemd units, it is more idiomatic to
+use the framework commands, e.g. `systemctl reload nut-server` (upsd)
+or `systemctl reload nut-monitor` (upsmon). Note that the implementation
+of `nut-server.service` by default starts `upsd -F` and does not save a
+PID file; if your workflow requires to use plain `upsd -c reload`, you
+should customize the unit (with a drop-in file) to start `upsd -FF`.
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
 
 == I just bought a new WhizBang UPS that has a USB connector.  How do I monitor it?
 
@@ -1004,9 +1016,11 @@ Or a variation like...
 You can rig up a little hack to handle this issue in software.
 
 Essentially, you need to test for the POWERDOWNFLAG in your *startup* scripts
-while the filesystems are still read-only.  If it's there, you know your last
-shutdown was caused by a power failure and the UPS battery is probably still
-quite weak.
+while the filesystems are still read-only (before `upsmon` daemon has started
+and removed it).  You can also query `upsmon -K` for presence of the file, to
+avoid hard-coding the path or parsing it from your `upsmon.conf` file.  If the
+flag is there, you know your last shutdown was caused by a power failure and
+the UPS battery is probably still quite weak.
 
 In this situation, your best bet is to sleep it off.  Pausing in your startup
 script to let the batteries recharge with the filesystems in a safe state is
@@ -1046,7 +1060,7 @@ Implement this by modifying your shutdown script like this:
 	# `upsmon -K` if available on still mounted filesystems
 	# at this point is more portable than the `test` below
 
-	if (test -f /etc/killpower)
+	if (test -f /etc/killpower || /sbin/upsmon -K)
 	then
 		/sbin/upsdrvctl shutdown
 

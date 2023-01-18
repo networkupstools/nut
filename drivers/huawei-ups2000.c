@@ -1,33 +1,21 @@
 /*
  * huawei-ups2000.c - Driver for Huawei UPS2000 (1kVA-3kVA)
  *
- * Note: Huawei UPS2000 (1kVA-3kVA) can be accessed via RS-232,
- * USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
- * RS-232 and USB are supported, RS-485 is not.
+ * Note: If you're trying to debug the driver because it doesn't work,
+ * please BE SURE to read the manual in "docs/man/huawei-ups2000.txt"
+ * first! Otherwise you are guaranteed to waste your time!
  *
- * The USB port on the UPS is implemented via a MaxLinear RX21V1410
- * USB-to-serial converter, and can be recongized as a standard
- * USB-CDC serial device. Unfortunately, the generic USB-CDC driver
- * is incompatible with the specific chip configuration and cannot
- * be used. A device-specific driver, "xr_serial", must be used.
- *
- * The driver has only been merged to Linux 5.12 or later, via the
- * "xr_serial" kernel module. When the UPS2000 is connected via USB
- * to a supported Linux system, you should see the following logs in
- * "dmesg".
- *
- *     xr_serial 1-1.2:1.1: xr_serial converter detected
- *     usb 1-1.2: xr_serial converter now attached to ttyUSB0
- *
- * The driver must be "xr_serial". If your system doesn't have the
- * necessary device driver, you will get this message instead:
- *
- *     cdc_acm 1-1.2:1.0: ttyACM0: USB ACM device
- *
- * On other operating systems, USB cannot be used due to the absence
- * of the driver. You must use connect UPS2000 to your computer via
- * RS-232, either directly or using an USB-to-RS-232 converter supported
- * by your Linux or BSD kernel.
+ * Long story short, Huawei UPS2000 (1kVA-3kVA) can be accessed via
+ * RS-232, USB, or an optional RMS-MODBUS01B (RS-485) adapter. Only
+ * RS-232 and USB are supported, RS-485 is not. Also, for most UPS
+ * units, their USB ports are implemented via the MaxLinear RX21V1410
+ * USB-to-serial converter, and they DO NOT WORK without a special
+ * "xr_serial" driver, only available on Linux 5.12+ (not BSD or Solaris).
+ * Without this driver, the USB can still be recognized as a generic
+ * USB ACM device, but it DOES NOT WORK. Alternatively, some newer UPS
+ * units use the WCH CH341 chip, which should have better compatibility.
+ * Detailed information will not be repeated here, please read
+ * "docs/man/huawei-ups2000.txt".
  *
  * A document describing the protocol implemented by this driver can
  * be found online at:
@@ -36,7 +24,7 @@
  *
  * Huawei UPS2000 driver implemented by
  *   Copyright (C) 2020, 2021 Yifeng Li <tomli@tomli.me>
- *   The author is not affiliated to Huawei or other manufacturers.
+ *   The author is not affiliated with Huawei or other manufacturers.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,9 +47,11 @@
 #include <modbus.h>
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
+#include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -72,7 +62,7 @@
  * model of the UPS2000 series.
  */
 static const char *supported_model[] = {
-	"UPS2000", "UPS2000A",
+	"UPS2000", "UPS2000A", "UPS2000G",
 	NULL
 };
 
@@ -169,7 +159,7 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
 static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
-static uint16_t crc16(uint8_t *buffer, uint16_t buffer_length);
+static uint16_t crc16(uint8_t *buffer, size_t buffer_length);
 static time_t time_seek(time_t t, int seconds);
 
 /* rw variables function prototypes */
@@ -345,20 +335,13 @@ static void ups2000_device_identification(void)
 
 		if (ptr + IDENT_RESPONSE_HEADER_LEN > ident_response_end) {
 			fatalx(EXIT_FAILURE, "response header too short! "
-					     "expected %d, received %zu.",
+					     "expected %d, received %" PRIuSIZE ".",
 					     IDENT_RESPONSE_HEADER_LEN, ident_response_len);
 		}
 
 		/* step 3: check response CRC-16 */
-		crc16_recv = (uint16_t)((uint16_t)(ident_response_end[0]) << 8) | (uint16_t)(ident_response_end[1]);
-		if (ident_response_len < IDENT_RESPONSE_CRC_LEN
-		|| (((uintmax_t)(ident_response_len) - IDENT_RESPONSE_CRC_LEN) > UINT16_MAX)
-		) {
-			fatalx(EXIT_FAILURE, "response header shorter than CRC "
-					     "or longer than UINT16_MAX!");
-		}
-
-		crc16_calc = crc16(ident_response, (uint16_t)(ident_response_len - IDENT_RESPONSE_CRC_LEN));
+		crc16_recv = (uint16_t) ident_response_end[0] << 8 | ident_response_end[1];
+		crc16_calc = crc16(ident_response, ident_response_len - IDENT_RESPONSE_CRC_LEN);
 		if (crc16_recv == crc16_calc) {
 			crc16_fail = 0;
 			break;
@@ -1441,7 +1424,8 @@ static int ups2000_delay_set(const char *var, const char *string)
  * used to handle commands that needs additional processing.
  * If "reg1" is not necessary or unsuitable, "-1" is used.
  */
-#define REG_NONE -1, -1
+#define REG_NULL  -1, -1
+#define FUNC_NULL NULL
 
 static struct ups2000_cmd_t {
 	const char *cmd;
@@ -1449,20 +1433,20 @@ static struct ups2000_cmd_t {
 	int (*const handler_func)(const uint16_t);
 } ups2000_cmd[] =
 {
-	{ "test.battery.start.quick", 2028,  1, REG_NONE, NULL },
-	{ "test.battery.start.deep",  2021,  1, REG_NONE, NULL },
-	{ "test.battery.stop",        2023,  1, REG_NONE, NULL },
-	{ "beeper.enable",            1046,  0, REG_NONE, NULL },
-	{ "beeper.disable",           1046,  1, REG_NONE, NULL },
-	{ "load.off",                 1045,  0, 1030, 1,  NULL },
-	{ "bypass.stop",              1029,  1, 1045, 0,  NULL },
-	{ "load.on",                  1029, -1, REG_NONE, ups2000_instcmd_load_on                  },
-	{ "bypass.start",             REG_NONE, REG_NONE, ups2000_instcmd_bypass_start             },
-	{ "beeper.toggle",            1046, -1, REG_NONE, ups2000_instcmd_beeper_toggle            },
-	{ "shutdown.stayoff",         1049, -1, REG_NONE, ups2000_instcmd_shutdown_stayoff         },
-	{ "shutdown.return",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_return          },
-	{ "shutdown.reboot",          REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot          },
-	{ "shutdown.reboot.graceful", REG_NONE, REG_NONE, ups2000_instcmd_shutdown_reboot_graceful },
+	{ "test.battery.start.quick", 2028,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.start.deep",  2021,  1, REG_NULL, FUNC_NULL },
+	{ "test.battery.stop",        2023,  1, REG_NULL, FUNC_NULL },
+	{ "beeper.enable",            1046,  0, REG_NULL, FUNC_NULL },
+	{ "beeper.disable",           1046,  1, REG_NULL, FUNC_NULL },
+	{ "load.off",                 1045,  0, 1030, 1,  FUNC_NULL },
+	{ "bypass.stop",              1029,  1, 1045, 0,  FUNC_NULL },
+	{ "load.on",                  1029, -1, REG_NULL, ups2000_instcmd_load_on                  },
+	{ "bypass.start",             REG_NULL, REG_NULL, ups2000_instcmd_bypass_start             },
+	{ "beeper.toggle",            1046, -1, REG_NULL, ups2000_instcmd_beeper_toggle            },
+	{ "shutdown.stayoff",         1049, -1, REG_NULL, ups2000_instcmd_shutdown_stayoff         },
+	{ "shutdown.return",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_return          },
+	{ "shutdown.reboot",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot          },
+	{ "shutdown.reboot.graceful", REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot_graceful },
 	{ NULL, -1, -1, -1, -1, NULL },
 };
 
@@ -1908,11 +1892,16 @@ static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len)
 		else if (bytes == 0)
 			return total;  /* nothing to read */
 
+		if ((size_t) bytes > buf_len) {
+			/*
+			 * Assertion: This should never happen. bytes is always less or equal
+			 * to buf_len, and buf_len will never underflow under any circumstances.
+			 */
+			fatalx(EXIT_FAILURE, "ups2000_read_serial() reads too much!");
+		}
+
 		total += (size_t)bytes;        /* increment byte counter */
 		buf += bytes;                  /* advance buffer position */
-		if ((size_t)bytes > buf_len) {
-			fatalx(EXIT_FAILURE, "ups2000_read_serial() read too much!");
-		}
 		buf_len -= (size_t)bytes;      /* decrement limiter */
 	}
 	return 0;  /* buffer exhaustion */
@@ -1960,6 +1949,8 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 
 		/* generic retry for modbus read failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_read_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a read failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -1985,7 +1976,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal read failure.", addr);
+	upslogx(LOG_ERR, "modbus_read_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal read failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -2005,6 +1998,8 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 
 		/* generic retry for modbus write failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_write_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a write failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -2016,7 +2011,9 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal write failure.", addr);
+	upslogx(LOG_ERR, "modbus_write_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal write failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -2105,7 +2102,7 @@ static const uint8_t table_crc_lo[] = {
 };
 
 
-static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
+static uint16_t crc16(uint8_t * buffer, size_t buffer_length)
 {
 	uint8_t crc_hi = 0xFF;	/* high CRC byte initialized */
 	uint8_t crc_lo = 0xFF;	/* low CRC byte initialized */
@@ -2118,5 +2115,5 @@ static uint16_t crc16(uint8_t * buffer, uint16_t buffer_length)
 		crc_lo = table_crc_lo[i];
 	}
 
-	return ((uint16_t)((uint16_t)(crc_hi) << 8) | (uint16_t)crc_lo);
+	return (uint16_t) crc_hi << 8 | crc_lo;
 }

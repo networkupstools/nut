@@ -19,10 +19,14 @@
 
 #include "common.h"
 
+#ifndef WIN32
 #include <netdb.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -411,7 +415,7 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %zu args, need at least 3)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 3)\n", numa);
 
 			return;
 		}
@@ -698,7 +702,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %zu args, need at least 4)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 4)\n", numa);
 
 			free(val);
 			return;

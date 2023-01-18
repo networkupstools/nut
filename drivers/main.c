@@ -27,18 +27,24 @@
 #include "dstate.h"
 #include "attribute.h"
 
-#include <grp.h>
+#ifndef WIN32
+# include <grp.h>
+#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 /* data which may be useful to the drivers */
-int		upsfd = -1;
+TYPE_FD	upsfd = ERROR_FD;
+
 char		*device_path = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
-int	extrafd = -1;
+TYPE_FD	extrafd = ERROR_FD;
+#ifdef WIN32
+static HANDLE	mutex = INVALID_HANDLE_VALUE;
+#endif
 
 /* for ser_open */
 int	do_lock_port = 1;
@@ -127,6 +133,9 @@ static void forceshutdown(void)
 static void help_msg(void)
 {
 	vartab_t	*tmp;
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
@@ -625,8 +634,20 @@ static void vartab_free(void)
 	}
 }
 
+static void exit_upsdrv_cleanup(void)
+{
+	dstate_setinfo("driver.state", "cleanup.upsdrv");
+	upsdrv_cleanup();
+}
+
 static void exit_cleanup(void)
 {
+	dstate_setinfo("driver.state", "cleanup.exit");
+
+	if (!dump_data) {
+		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
+	}
+
 	free(chroot_path);
 	free(device_path);
 	free(user);
@@ -639,13 +660,21 @@ static void exit_cleanup(void)
 
 	dstate_free();
 	vartab_free();
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
-static void set_exit_flag(int sig)
+void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
 
+#ifndef WIN32
 static void setup_signals(void)
 {
 	struct sigaction	sa;
@@ -669,12 +698,15 @@ static void setup_signals(void)
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 }
+#endif
 
 int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
+
+	dstate_setinfo("driver.state", "init.starting");
 
 	atexit(exit_cleanup);
 
@@ -685,6 +717,24 @@ int main(int argc, char **argv)
 	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
 	progname = xbasename(argv[0]);
+
+#ifdef WIN32
+	const char * drv_name;
+	drv_name = xbasename(argv[0]);
+	/* remove trailing .exe */
+	char * dot = strrchr(drv_name,'.');
+	if( dot != NULL ) {
+		if(strcasecmp(dot, ".exe") == 0 ) {
+			progname = strdup(drv_name);
+			char * t = strrchr(progname,'.');
+			*t = 0;
+		}
+	}
+	else {
+		progname = strdup(drv_name);
+	}
+#endif
+
 	open_syslog(progname);
 
 	upsdrv_banner();
@@ -780,7 +830,9 @@ int main(int argc, char **argv)
 				group_from_cmdline = 1;
 				break;
 			case 'V':
-				/* already printed the banner, so exit */
+				/* already printed the banner for program name */
+				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+					UPS_VERSION, CONFIG_FLAGS);
 				exit(EXIT_SUCCESS);
 			case 'x':
 				splitxarg(optarg);
@@ -808,6 +860,14 @@ int main(int argc, char **argv)
 				);
 		}
 	} /* else: default remains `background_flag==-1` where nonzero is true */
+
+	/* Since debug mode dumps from drivers are often posted to mailing list
+	 * or issue tracker, as well as viewed locally, it can help to know the
+	 * build options involved when troubleshooting (especially when needed
+	 * to walk through building a PR branch with candidate fix for an issue).
+	 */
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 
 	argc -= optind;
 	argv += optind;
@@ -857,6 +917,7 @@ int main(int argc, char **argv)
 	/* Only switch to statepath if we're not powering off
 	 * or not just dumping data (for discovery) */
 	/* This avoids case where ie /var is unmounted already */
+#ifndef WIN32
 	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
@@ -879,15 +940,37 @@ int main(int argc, char **argv)
 				break;
 			}
 
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
+
 			if (sendsignalfn(buffer, SIGTERM) != 0) {
 				/* Can't send signal to PID, assume invalid file */
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
-
 			/* Allow driver some time to quit */
 			sleep(5);
+		}
+
+		if (i > 0) {
+			struct stat	st;
+			if (stat(buffer, &st) == 0) {
+				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", buffer);
+				if (sendsignalfn(buffer, SIGKILL) == 0) {
+					sleep(5);
+					if (sendsignalfn(buffer, 0) == 0) {
+						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
+						/* TODO: Should we writepid() below in this case?
+						 * Or if driver init fails, restore the old content
+						 * for that running sibling? */
+					} else {
+						upslogx(LOG_WARNING, "Could not signal the other driver after kill, either its process is finally dead or owned by another user!");
+					}
+				} else {
+					upslogx(LOG_WARNING, "Could not signal the other driver, either its process is dead or owned by another user!");
+				}
+				/* Note: PID file would remain here, but invalid
+				 * as far as further killers would be concerned */
+			}
 		}
 
 		/* Only write pid if we're not just dumping data, for discovery */
@@ -896,6 +979,42 @@ int main(int argc, char **argv)
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
+#else
+	char	name[SMALLBUF];
+
+	snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+
+	mutex = CreateMutex(NULL,TRUE,name);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
+		}
+	}
+
+	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
+		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+		for(i=0;i<10;i++) {
+			DWORD res;
+			sendsignal(name, COMMAND_STOP);
+			if(mutex != NULL ) {
+				res = WaitForSingleObject(mutex,1000);
+				if(res==WAIT_OBJECT_0) {
+					break;
+				}
+			}
+			else {
+				sleep(1);
+				mutex = CreateMutex(NULL,TRUE,name);
+				if(mutex != NULL ) {
+					break;
+				}
+			}
+		}
+		if(i >= 10 ) {
+			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
+		}
+	}
+#endif
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
@@ -904,10 +1023,12 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
+	dstate_setinfo("driver.state", "init.device");
 	upsdrv_initups();
+	dstate_setinfo("driver.state", "init.quiet");
 
 	/* UPS is detected now, cleanup upon exit */
-	atexit(upsdrv_cleanup);
+	atexit(exit_upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
 	if (upsdrv_info.status == DRV_BROKEN) {
@@ -931,8 +1052,13 @@ int main(int argc, char **argv)
 		syslogbit_set();
 
 	/* get the base data established before allowing connections */
+	dstate_setinfo("driver.state", "init.info");
 	upsdrv_initinfo();
+	/* Note: a few drivers also call their upsdrv_updateinfo() during
+	 * their upsdrv_initinfo(), possibly to impact the initialization */
+	dstate_setinfo("driver.state", "init.updateinfo");
 	upsdrv_updateinfo();
+	dstate_setinfo("driver.state", "init.quiet");
 
 	if (dstate_getinfo("driver.flag.ignorelb")) {
 		int	have_lb_method = 0;
@@ -966,6 +1092,7 @@ int main(int argc, char **argv)
 		if (strcmp(group, RUN_AS_GROUP)
 		||  strcmp(user,  RUN_AS_USER)
 		) {
+#ifndef WIN32
 			int allOk = 1;
 			/* Tune group access permission to the pipe,
 			 * so that upsd can access it (using the
@@ -1027,13 +1154,15 @@ int main(int argc, char **argv)
 					"the device: %s",
 					sockname);
 			}
-
+#else	/* not WIN32 */
+			upsdebugx(1, "Options for alternate user/group are not implemented on this platform");
+#endif	/* WIN32 */
 		}
 		free(sockname);
 	}
 
 	/* The poll_interval may have been changed from the default */
-	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
+	dstate_setinfo("driver.parameter.pollinterval", "%" PRIdMAX, (intmax_t)poll_interval);
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",
@@ -1052,19 +1181,33 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
-	while (!exit_flag) {
+	dstate_setinfo("driver.state", "quiet");
+	if (dump_data) {
+		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
+	} else {
+		upsdebugx(1, "Driver initialization completed, beginning regular infinite loop");
+		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+	}
 
+	while (!exit_flag) {
 		struct timeval	timeout;
+
+		if (!dump_data) {
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+		}
 
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
 
+		dstate_setinfo("driver.state", "updateinfo");
 		upsdrv_updateinfo();
+		dstate_setinfo("driver.state", "quiet");
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */
 		if (dump_data) {
 			/* Wait for 'dump_data' update loops to ensure data completion */
 			if (update_count == dump_data) {
+				dstate_setinfo("driver.state", "dumping");
 				dstate_dump();
 				exit_flag = 1;
 			}
@@ -1080,8 +1223,10 @@ int main(int argc, char **argv)
 
 	/* if we get here, the exit flag was set by a signal handler */
 	/* however, avoid to "pollute" data dump output! */
-	if (!dump_data)
+	if (!dump_data) {
 		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+	}
 
 	exit(EXIT_SUCCESS);
 }

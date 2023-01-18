@@ -58,18 +58,22 @@
 # LISTEN myhostname 83493
 # LISTEN myhostname.mydomain
 #
-# This defaults to the localhost listening addresses and port 3493.
-# In case of IP v4 or v6 disabled kernel, only the available one will be used.
+# With no LISTEN statement, the default is localhost and port 3493.
+# In case of IP v4 or v6 disabled kernel, only the available one will
+# be used.
+# Note that it is not true for Windows platforms. You shouldn't use IPv6 in
+# your configuration files unless you have IPv6 installed.
 #
-# You may specify each interface IP address or name that you want upsd to
-# listen on for connections, optionally with a port number.
+# One or more LISTEN statements give the IP address (or name that
+# resolves to such an address) for upsd to listen on, optionally with
+# a port number.
 #
-# You may need this if you have multiple interfaces on your machine and
-# you don't want upsd to listen to all interfaces (for instance on a
-# firewall, you may not want to listen to the external interface).
+# As an example, a machine with a LAN and a WAN interface that also
+# functions as a router and firewall might be configured to listen
+# only on the LAN interface.
 #
 # This will only be read at startup of upsd.  If you make changes here,
-# you'll need to restart upsd, reload will have no effect.
+# you'll need to restart upsd, as reload will have no effect.
 
 # =======================================================================
 # MAXCONN <connections>

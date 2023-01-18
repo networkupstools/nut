@@ -943,32 +943,32 @@ if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
-  AC_CACHE_CHECK([for practical support to pritnf("%s", NULL)],
+  AC_CACHE_CHECK([for practical support to printf("%s", NULL)],
     [ax_cv__printf_string_null],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([dnl
 #include <stdio.h>
-#include <strings.h>
-], [dnl
+#include <string.h>
+], [[
 char buf[128];
 char *s = NULL;
 int res = snprintf(buf, sizeof(buf), "%s", s);
 buf[sizeof(buf)-1] = '\0';
 if (res < 0) {
-    printf(stderr, "FAILED to snprintf() a NULL string argument");
-    exit 1;
+    fprintf(stderr, "FAILED to snprintf() a NULL string argument\n");
+    return 1;
 }
-if (buf[0] == '\0')
-    printf(stderr, "RETURNED empty string from snprintf() with a NULL string argument");
-    exit 0;
+if (buf[0] == '\0') {
+    fprintf(stderr, "RETURNED empty string from snprintf() with a NULL string argument\n");
+    return 0;
 }
-if (strcasestr(buf, 'null') == NULL)
-    printf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'", buf);
-    exit 0;
+if (strstr(buf, "null") == NULL) {
+    fprintf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'\n", buf);
+    return 0;
 }
-printf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'", buf);
-exit 0;
-            ])],
+fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'\n", buf);
+return 0;
+            ]])],
         [ax_cv__printf_string_null=yes],
         [ax_cv__printf_string_null=no]
     )]

@@ -79,6 +79,7 @@
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
 "APC"	"ups"	"3"	"SMC2200BI-BR"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/557
 "APC"	"ups"	"3"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"CS500"	"USB"	"usbhid-ups (limited data available)"	# https://github.com/networkupstools/nut/issues/1776#issuecomment-1377784584
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
@@ -371,10 +372,12 @@
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (SNMP mode)"	"Eaton Gigabit Network Card (Network-M2)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (serial mode)"	"Management Card Contact (ref 66104)"	"mge-shut or mge-utalk"
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
+"Eaton"	"ups"	"5"	"ePDU EMSV0001" "nLogic rebranded"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
 "Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
@@ -504,6 +507,7 @@
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+"HPE"	"pdu"	"5"	"G2 Metered & Switched PDU"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 "Huawei"	"ups"	"3"	"UPS2000-G and UPS2000-A series"	"MODBUS (USB with Linux 5.12+, or Serial RS-232)"	"huawei-ups2000"	# https://github.com/networkupstools/nut/issues/1066 https://github.com/networkupstools/nut/pull/1198 https://github.com/networkupstools/nut/pull/954 https://github.com/networkupstools/nut/issues/1017
@@ -1087,6 +1091,8 @@
 
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
+
+"SKE"		"ups"	"2"	"SK600"		"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 bus=003"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 

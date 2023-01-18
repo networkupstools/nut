@@ -41,6 +41,7 @@
 #include "main.h"
 #include "serial.h"
 #include "oneac.h"
+#include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
@@ -89,7 +90,7 @@ static ssize_t OneacGetResponse (char* chBuff, const size_t BuffSize, int Expect
 			break;
 
 		upsdebugx (3,
-			"!OneacGetResponse retry (%zd, %d)...",
+			"!OneacGetResponse retry (%" PRIiSIZE ", %d)...",
 			return_val, Retries);
 
 	} while (--Retries > 0);

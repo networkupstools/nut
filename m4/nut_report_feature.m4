@@ -4,19 +4,57 @@ dnl for example, "usb" (--with-usb) will give
 dnl nut_with_usb and WITH_USB (both macros, and
 dnl AM_CONDITIONAL)
 
+AC_DEFUN([NUT_REPORT_FILE],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    dnl arg#3 = file tag (e.g. number)
+    dnl arg#4 = file title (e.g. "NUT Configuration summary:")
+    if test -z "${nut_report_feature_flag$3}"; then
+        nut_report_feature_flag$3="1"
+        ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
+        if test x1 = x$3 ; then
+            echo "$4"
+            echo "$4" | sed 's/./=/g'
+            echo ""
+        else
+            echo ""
+            echo "$4"
+            echo "$4" | sed 's/./-/g'
+            echo ""
+        fi > "config.nut_report_feature.log.$3"
+    fi
+    printf "* $1:\t$2\n" >> "config.nut_report_feature.log.$3"
+])
+
 AC_DEFUN([NUT_REPORT],
-[  if test -z "${nut_report_feature_flag}"; then
-      nut_report_feature_flag="1"
-      ac_clean_files="${ac_clean_files} conf_nut_report_feature"
-      echo > conf_nut_report_feature
-      echo "Configuration summary:" >> conf_nut_report_feature
-      echo "======================" >> conf_nut_report_feature
-   fi
-   echo "$1: $2" >> conf_nut_report_feature
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    NUT_REPORT_FILE([$1], [$2], [1], "NUT Configuration summary:")
+])
+
+AC_DEFUN([NUT_REPORT_PATH],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    NUT_REPORT_FILE([$1], [$2], [2], "NUT Paths:")
+])
+
+AC_DEFUN([NUT_REPORT_PATH_INTEGRATIONS],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    NUT_REPORT_FILE([$1], [$2], [3], "NUT Paths for third-party integrations:")
 ])
 
 AC_DEFUN([NUT_REPORT_FEATURE],
 [
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = test flag ("yes" or not)
+    dnl arg#3 = value
+    dnl arg#4 = autoconf varname
+    dnl arg#5 = longer description (autoconf comment)
    AC_MSG_CHECKING([whether to $1])
    AC_MSG_RESULT([$2 $3])
    NUT_REPORT([$1], [$2 $3])
@@ -27,16 +65,91 @@ AC_DEFUN([NUT_REPORT_FEATURE],
    fi
 ])
 
+AC_DEFUN([NUT_REPORT_SETTING],
+[
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = longer description (autoconf comment)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT([$1], [$3])
+
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
+])
+
+AC_DEFUN([NUT_REPORT_SETTING_PATH],
+[
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = longer description (autoconf comment)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT_PATH([$1], [$3])
+
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
+])
+
+AC_DEFUN([NUT_REPORT_SETTING_PATH_INTEGRATIONS],
+[
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = longer description (autoconf comment)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT_PATH_INTEGRATIONS([$1], [$3])
+
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
+])
+
+AC_DEFUN([NUT_REPORT_TARGET],
+[
+    dnl arg#1 = autoconf varname
+    dnl arg#2 = value
+    dnl arg#3 = summary/config.log/autoconf description
+    AC_MSG_CHECKING([$3])
+    AC_MSG_RESULT([$2])
+    NUT_REPORT_FILE([$3], [$2], [8], "NUT Build/Target system info:")
+
+    dnl Note: unlike features, target info does not imply an AutoMake toggle
+    AC_DEFINE_UNQUOTED($1, $2, $3)
+])
+
+AC_DEFUN([NUT_REPORT_COMPILERS],
+[
+   (echo ""
+    echo "NUT Compiler settings:"
+    echo "----------------------"
+    echo ""
+    printf '* CC      \t: %s\n' "$CC"
+    printf '* CFLAGS  \t: %s\n' "$CFLAGS"
+    printf '* CXX     \t: %s\n' "$CXX"
+    printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
+    printf '* CPP     \t: %s\n' "$CPP"
+    printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+    printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
+   ) > config.nut_report_feature.log.9
+    ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"
+])
+
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [
-   cat conf_nut_report_feature
-
-   echo "------------------"
-   echo "Compiler settings:"
-    printf 'CC      \t:%s\n' "$CC"
-    printf 'CFLAGS  \t:%s\n' "$CFLAGS"
-    printf 'CXX     \t:%s\n' "$CXX"
-    printf 'CXXFLAGS\t:%s\n' "$CXXFLAGS"
-    printf 'CPP     \t:%s\n' "$CPP"
-    printf 'CPPFLAGS\t:%s\n' "$CPPFLAGS"
+    dnl By (legacy) default we remove this report file
+    dnl For CI we want to publish its artifact
+    dnl Manageable by "--enable-keep_nut_report_feature"
+    echo ""
+    AS_IF([test x"${nut_enable_keep_nut_report_feature-}" = xyes],
+        [AC_MSG_NOTICE([Will keep config.nut_report_feature.log])
+         cat config.nut_report_feature.log.* > config.nut_report_feature.log
+         cat config.nut_report_feature.log
+        ],
+        [dnl Remove if exists from old builds
+         ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
+         cat config.nut_report_feature.log.*
+        ])
 ])

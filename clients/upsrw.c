@@ -22,10 +22,14 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -61,6 +65,9 @@ static void usage(const char *prog)
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void clean_exit(void)
@@ -397,7 +404,7 @@ static void do_enum(const char *varname, const int vartype, const long len)
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("Option: \"%s\"", answer[3]);
@@ -450,7 +457,7 @@ static void do_range(const char *varname)
 		/* RANGE <upsname> <varname> <min> <max> */
 
 		if (numa < 5) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		min = atoi(answer[3]);
@@ -593,7 +600,7 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		/* sock this entry away for later */
@@ -662,6 +669,8 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+				UPS_VERSION, CONFIG_FLAGS);
 			exit(EXIT_SUCCESS);
 		case 'h':
 		default:

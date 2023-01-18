@@ -60,6 +60,10 @@ P: Arnaud Quette
 M: aquette@debian.org
 S: Maintained: Official Debian packages
 
+P: Greg Troxel
+M: gdt@lexort.com
+S: Maintained: pkgsrc (sysutils/ups-nut)
+
 Everything else
 ===============
 

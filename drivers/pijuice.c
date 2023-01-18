@@ -20,7 +20,7 @@
 #include "main.h"
 
 #include <sys/ioctl.h>
-#include <stdint.h>
+#include "nut_stdint.h"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to

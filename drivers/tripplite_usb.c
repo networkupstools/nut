@@ -325,11 +325,13 @@ static int reconnect_ups(void)
 		return 1;
 	}
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(2, "==================================================");
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, NULL);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -337,6 +339,7 @@ static int reconnect_ups(void)
 	}
 
 	hd = &curDevice;
+	dstate_setinfo("driver.state", "quiet");
 
 	return ret;
 }
@@ -543,7 +546,7 @@ static void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case ERROR_BUSY:
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING,
 				"%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
@@ -552,6 +555,7 @@ static void usb_comm_fail(int res, const char *msg)
 #endif
 
 		default:
+			dstate_setinfo("driver.state", "reconnect.trying");
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
@@ -563,7 +567,9 @@ static void usb_comm_fail(int res, const char *msg)
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
 				try = 0;
+				dstate_setinfo("driver.state", "reconnect.updateinfo");
 				upsdrv_initinfo();
+				dstate_setinfo("driver.state", "quiet");
 			} else {
 				if(try > MAX_RECONNECT_TRIES) {
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
@@ -622,7 +628,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			(usb_ctrl_charbufsize)sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %zu",
+			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
 				ret, sizeof(buffer_out));
 			return ret;
 		}
@@ -1017,7 +1023,7 @@ void upsdrv_initinfo(void)
 	if(tl_model != TRIPP_LITE_SMARTPRO ) {
 		ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 		if(ret <= 0) {
-			if(ret == ERROR_PIPE) {
+			if(ret == LIBUSB_ERROR_PIPE) {
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {
@@ -1589,7 +1595,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 * expression */
-	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, NULL);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
@@ -1642,7 +1648,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	comm_driver->close(udev);
+	comm_driver->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(curDevice.Vendor);

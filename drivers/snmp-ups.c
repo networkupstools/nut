@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2021	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -44,7 +44,6 @@
 #include "apc-mib.h"
 #include "mge-mib.h"
 #include "netvision-mib.h"
-#include "powerware-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
@@ -63,9 +62,14 @@
 #include "eaton-ats16-nm2-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
+#include "apc-epdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
+#include "hpe-pdu3-cis-mib.h"
+#include "eaton-pdu-nlogic-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -94,6 +98,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
@@ -104,17 +109,19 @@ static mib2nut_info_t *mib2nut[] = {
 	&eaton_ats16_nm2,	/* This struct comes from : eaton-ats16-nm2-mib.c */
 	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
+	&eaton_pdu_nlogic,	/* This struct comes from : eaton-pdu-nlogic-mib.c */
+	&eaton_pxg_ups,		/* This struct comes from : eaton-ups-pxg-mib.c */
+	&eaton_pw_nm2, 		/* This struct comes from : eaton-ups-pwnm2-mib.c */
 	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
 	&hpe_pdu,			/* This struct comes from : hpe-pdu-mib.c */
+	&hpe_pdu3_cis,		/* This struct comes from : hpe-pdu3-cis-mib.c */
 	&huawei,			/* This struct comes from : huawei-mib.c */
 	&mge,				/* This struct comes from : mge-mib.c */
 	&netvision,			/* This struct comes from : netvision-mib.c */
-	&powerware,			/* This struct comes from : powerware-mib.c */
-	&pxgx_ups,			/* This struct comes from : powerware-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
@@ -166,7 +173,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.21"
+#define DRIVER_VERSION		"1.28"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -344,7 +351,7 @@ void upsdrv_shutdown(void)
 
 	/* set shutdown and autostart delay */
 	set_delays();
-	
+
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -957,7 +964,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 
@@ -1025,7 +1032,7 @@ net-snmp/library/keytools.h:   int    generate_Ku(const oid * hashtype, u_int ha
 # pragma GCC diagnostic pop
 #endif
 				fatalx(EXIT_FAILURE,
-					"Bad SNMPv3 securityAuthProtoLen: %zu",
+					"Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
 					g_snmp_sess.securityAuthProtoLen);
 			}
 
@@ -1125,6 +1132,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			break;
 		}
 
+
 		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
@@ -1133,7 +1141,18 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 				return NULL;
 			}
 
+			if (response->errstat == SNMP_ERR_NOSUCHNAME) {
+				upsdebugx(4, "%s: OID does not exist, skipping", __func__);
+				snmp_free_pdu(response);
+				nut_snmp_free(ret_array);
+				return NULL;
+			}
+
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
+			/* Error throttling otherwise */
 			numerr++;
+			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -1154,7 +1173,24 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
-			numerr = 0;
+			/* Checked the "type" field of the returned varbind if
+			 * it is a type error exception (only applicable with
+			 * SNMPv2 or SNMPv3 protocol, would not happen with
+			 * SNMPv1). This allows to proceed interpreting large
+			 * responses when one entry in the middle is rejectable.
+			 */
+			if (response->variables->type == SNMP_NOSUCHOBJECT ||
+			    response->variables->type == SNMP_NOSUCHINSTANCE ||
+			    response->variables->type == SNMP_ENDOFMIBVIEW) {
+				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				snmp_free_pdu(response);
+				break;
+			}
+			else {
+				/* no error */
+				numerr = 0;
+			}
 		}
 
 		nb_iteration++;
@@ -1864,82 +1900,87 @@ static mib2nut_info_t *match_sysoid()
 	int i;
 
 	/* Retrieve sysOID value of this device */
-	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
+	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) != TRUE)
 	{
-		upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
-
-		/* Build OIDs for comparison */
-		if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
-		{
-			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
-				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
+		upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_oid())");
+		/* Fallback for non-compliant device, that returns a string and not an OID */
+		if (nut_snmp_get_str(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf), NULL) != TRUE) {
+			upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_str())");
 			return NULL;
 		}
+	}
 
-		/* Now, iterate on mib2nut definitions */
-		for (i = 0; mib2nut[i] != NULL; i++)
+	upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
+
+	/* Build OIDs for comparison */
+	if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
+	{
+		upsdebugx(2, "%s: can't build device_sysOID %s: %s",
+			__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
+
+		return NULL;
+	}
+
+	/* Now, iterate on mib2nut definitions */
+	for (i = 0; mib2nut[i] != NULL; i++)
+	{
+		upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+
+		if (mib2nut[i]->sysOID == NULL)
+			continue;
+
+		/* Clear variables */
+		memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
+		mib2nut_sysOID_len = MAX_OID_LEN;
+
+		if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
 		{
-			upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+			upsdebugx(2, "%s: can't build OID %s: %s",
+				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
-			if (mib2nut[i]->sysOID == NULL)
-				continue;
-
-			/* Clear variables */
-			memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
-			mib2nut_sysOID_len = MAX_OID_LEN;
-
-			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: can't build OID %s: %s",
-					__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
-				/* Try to continue anyway! */
-				continue;
-			}
-
-			/* Now compare these */
-			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
-			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-				/* Counter verify, using {ups,device}.model */
-				snmp_info = mib2nut[i]->snmp_info;
-
-				if (snmp_info == NULL) {
-					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name
-						);
-					continue;
-				}
-				else if (snmp_info[0].info_type == NULL) {
-					upsdebugx(1, "%s: WARNING: snmp_info is empty "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name);
-				}
-
-				if (match_model_OID() != TRUE)
-				{
-					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
-					snmp_info = NULL;
-					continue;
-				}
-				else
-					upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-
-				return mib2nut[i];
-			}
+			/* Try to continue anyway! */
+			continue;
 		}
 
-		/* Yell all to call for user report */
-		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
-			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
-			"Going back to the classic MIB detection method.",
-			sysOID_buf);
+		/* Now compare these */
+		upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
+		if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
+		{
+			upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+			/* Counter verify, using {ups,device}.model */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
+
+			if (match_model_OID() != TRUE)
+			{
+				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				snmp_info = NULL;
+				continue;
+			}
+			else
+				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+
+			return mib2nut[i];
+		}
 	}
-	else
-		upsdebugx(2, "Can't get sysOID value");
+
+	/* Yell all to call for user report */
+	upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
+		"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
+		"Going back to the classic MIB detection method.",
+		sysOID_buf);
 
 	return NULL;
 }
@@ -2292,10 +2333,8 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 	char test_OID[SU_INFOSIZE];
 	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
 
-	if (!su_info_p->OID)
-		return base_index;
-
-	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
+	upsdebugx(3, "%s: OID template = %s", __func__,
+		(su_info_p->OID ? su_info_p->OID : "<null>") );
 
 	/* Try to differentiate between template types which may have
 	 * different indexes ; and store it to not redo it again */
@@ -2318,6 +2357,10 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
+
+	/* If no OID defined, now we can return the good index computed */
+	if (!su_info_p->OID)
+		return base_index;
 
 	if (template_index_base == -1)
 	{
@@ -2370,6 +2413,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				}
 			}
 		}
+
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
 		if (su_info_p->flags & SU_OUTLET)
@@ -2381,6 +2425,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		else
 			device_template_index_base = base_index;
 	}
+
 	upsdebugx(3, "%s: template_index_base = %i", __func__, base_index);
 	return base_index;
 }
@@ -2388,7 +2433,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 /* Try to determine the number of items (outlets, outlet groups, ...),
  * using a template definition. Walk through the template until we can't
  * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
-static int guestimate_template_count(snmp_info_t *su_info_p)
+static int guesstimate_template_count(snmp_info_t *su_info_p)
 {
 	int base_index = 0;
 	char test_OID[SU_INFOSIZE];
@@ -2476,8 +2521,8 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
 		 * su_info_p->flags &= ~SU_FLAG_OK;
-		 * or rely on guestimation? */
-		template_count = guestimate_template_count(su_info_p);
+		 * or rely on guesstimation? */
+		template_count = guesstimate_template_count(su_info_p);
 		/* Publish the count estimation */
 		if (template_count > 0) {
 			dstate_setinfo(template_count_var, "%i", template_count);
@@ -2777,6 +2822,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 	} else {
 		if (mode == SU_WALKMODE_INIT) {
 			/* handle unsupported vars */
+			upsdebugx(4, "%s: Disabling var '%s'", __func__, su_info_p->info_type);
 			su_info_p->flags &= ~SU_FLAG_OK;
 		} else	{
 			if (!(su_info_p->flags & SU_FLAG_STALE)) {
@@ -2858,7 +2904,7 @@ bool_t daisychain_init()
 		 * the number of devices present */
 		else
 		{
-			devices_count = guestimate_template_count(su_info_p);
+			devices_count = guesstimate_template_count(su_info_p);
 			upsdebugx(1, "Guesstimation: there are %ld device(s) present", devices_count);
 		}
 
@@ -3464,8 +3510,24 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			upsdebugx(2, "=> %ld alarms present", value);
-			if( value > 0 ) {
-				pdu_array = nut_snmp_walk(su_info_p->OID, INT_MAX);
+			if (value > 0) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+				if (value > INT_MAX) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+					upsdebugx(2, "=> truncating alarms present to INT_MAX");
+					value = INT_MAX;
+				}
+				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;

@@ -41,6 +41,18 @@
 	#include <limits.h>
 #endif
 
+/* Not including NUT timehead.h because this is part of end-user API */
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -121,6 +133,8 @@ int upscli_upserror(UPSCONN_t *ups);
 int upscli_ssl(UPSCONN_t *ups);
 
 /* upsclient error list */
+
+#define UPSCLI_ERR_NONE		-1	/* No known error (internally used in tools like upsmon, not set by upsclient.c) */
 
 #define UPSCLI_ERR_UNKNOWN	0	/* Unknown error */
 #define UPSCLI_ERR_VARNOTSUPP	1	/* Variable not supported by UPS */

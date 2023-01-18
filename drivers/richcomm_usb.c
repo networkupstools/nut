@@ -24,12 +24,13 @@
  */
 
 #include "main.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "nut_stdint.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -248,6 +249,9 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		return -1;
 	}
 
+#ifdef WIN
+	usb_set_configuration(handle, 0);
+#endif
 	if (usb_claim_interface(handle, 0) < 0) {
 		upsdebugx(5, "Can't claim USB interface");
 		return -1;
@@ -344,6 +348,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		*handlep = handle;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_bus	*bus;
+
 	for (bus = usb_busses; bus; bus = bus->next) {
 
 		struct usb_device	*dev;
@@ -575,7 +580,13 @@ void upsdrv_initups(void)
 
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
+#ifndef WIN32
 		if ((i < 32) && (sleep(5) == 0)) {
+#else
+/*FIXME*/
+		sleep(5);
+		if ((i < 32)) {
+#endif
 			usb_comm_fail("Can't open USB device, retrying ...");
 			continue;
 		}
@@ -627,11 +638,13 @@ void upsdrv_updateinfo(void)
 	int	ret, online, battery_normal;
 
 	if (!udev) {
+		dstate_setinfo("driver.state", "reconnect.trying");
 		ret = usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback);
 
 		if (ret < 0) {
 			return;
 		}
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
 
 	ret = query_ups(reply);
@@ -640,6 +653,7 @@ void upsdrv_updateinfo(void)
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb_device_close(udev);
 		udev = NULL;
 
@@ -724,4 +738,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	/* TODO: Uncomment while addressing https://github.com/networkupstools/nut/issues/1768
+	nut_usb_addvars();
+	*/
 }

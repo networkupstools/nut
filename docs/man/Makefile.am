@@ -17,8 +17,8 @@
 #   files from source tree
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -177,6 +177,9 @@ SRC_DEV_PAGES = \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
 	nutscan_scan_eaton_serial.txt \
+	nutscan_display_sanity_check.txt \
+	nutscan_display_sanity_check_serial.txt \
+	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
 	nutscan_cidr_to_ip.txt \
@@ -290,6 +293,9 @@ MAN3_DEV_PAGES = \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
 	nutscan_scan_eaton_serial.3 \
+	nutscan_display_sanity_check.3 \
+	nutscan_display_sanity_check_serial.3 \
+	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
 	nutscan_cidr_to_ip.3 \
@@ -352,6 +358,9 @@ HTML_DEV_MANS = \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
 	nutscan_scan_eaton_serial.html \
+	nutscan_display_sanity_check.html \
+	nutscan_display_sanity_check_serial.html \
+	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
 	nutscan_cidr_to_ip.html \
@@ -528,11 +537,13 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer-common.txt	\
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
+	nut_usb_addvars.txt \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
+# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
 if WITH_MANS
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
@@ -695,6 +706,14 @@ SRC_DRIVERS_PAGES = \
 	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES)
 
+if SOME_DRIVERS
+# The list above probably came up empty in this case, so make sure that
+# the drivers requested by configure script are documented in the build;
+# notably in the linkman-driver-names.txt file.
+SRC_DRIVERS_PAGES += \
+	$(DRIVER_MAN_LIST_PAGES)
+endif
+
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
 SRC_ALL_PAGES = \
@@ -764,6 +783,7 @@ linkman-driver-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT drivers were built" > "$@" ; fi
 
 linkman-drivertool-names.txt:
 	@if test x"$(srcdir)" != x"$(builddir)" ; then \
@@ -777,6 +797,7 @@ linkman-drivertool-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT driver tools were built" > "$@" ; fi
 
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
@@ -1036,4 +1057,4 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp

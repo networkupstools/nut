@@ -32,12 +32,12 @@
 # On a system called "doghouse", the line in your upsmon.conf to monitor
 # and manage it would look something like this:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword primary
+#   MONITOR snoopy@doghouse 1 monuser mypassword primary
 #
 # It might look like this if monitoring in "secondary" mode (without any
 # ability to directly manage the UPS) from a different system:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword secondary
+#   MONITOR snoopy@doghouse 1 monuser mypassword secondary
 #
 # Configuration directives
 # ------------------------
@@ -127,7 +127,11 @@ maxretry = 3
 #          apcsmart, bestups, and sec are some examples.
 #
 #    port: REQUIRED.  The serial port where your UPS is connected.
-#          /dev/ttyS0 is usually the first port on Linux boxes, for example.
+#          For example:
+#            /dev/ttyS0 is usually the first port on Linux boxes.
+#            "\\\\.\\COM1" is the first port on Windows boxes (note that
+#                the backslash characters themselves must be escaped,
+#                for the NUT configuration parser to yield "\\.\COM1").
 #
 # sdorder: OPTIONAL.  When you have multiple UPSes on your system, you
 #          usually need to turn them off in a certain order.  upsdrvctl

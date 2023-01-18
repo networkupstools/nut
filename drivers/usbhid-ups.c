@@ -28,13 +28,18 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.47"
+#define DRIVER_VERSION		"0.49"
+#define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
 #include "main.h"
+#include "nut_stdint.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -58,7 +63,7 @@
 	#include "tripplite-hid.h"
 #endif
 
-/* Reference list of avaiable subdrivers */
+/* Reference list of available subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&explore_subdriver,
@@ -106,37 +111,6 @@ typedef enum {
 	HU_WALKMODE_FULL_UPDATE
 } walkmode_t;
 
-/* Compatibility layer between libusb 0.1 and 1.0, for errno/return codes */
-#if WITH_LIBUSB_0_1 || (defined SHUT_MODE)
- #define ERROR_BUSY	-EBUSY
- #define ERROR_NO_DEVICE -ENODEV
- #define ERROR_ACCESS -EACCES
- #define ERROR_IO -EIO
- #define ERROR_NOT_FOUND -ENOENT
- #define ERROR_TIMEOUT -ETIMEDOUT
- #define ERROR_OVERFLOW -EOVERFLOW
- #define ERROR_PIPE -EPIPE
- #define ERROR_NO_MEM -ENOMEM
- #define ERROR_INVALID_PARAM -EINVAL
- #define ERROR_INTERRUPTED -EINTR
- #define ERROR_NOT_SUPPORTED -ENOSYS
- #define ERROR_OTHER -ERANGE
-#else /* for libusb 1.0 */
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
- #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
- #define ERROR_IO LIBUSB_ERROR_IO
- #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
- #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
- #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
- #define ERROR_NO_MEM LIBUSB_ERROR_NO_MEM
- #define ERROR_INVALID_PARAM LIBUSB_ERROR_INVALID_PARAM
- #define ERROR_INTERRUPTED LIBUSB_ERROR_INTERRUPTED
- #define ERROR_NOT_SUPPORTED LIBUSB_ERROR_NOT_SUPPORTED
- #define ERROR_OTHER LIBUSB_ERROR_OTHER
-#endif
-
 /* pointer to the active subdriver object (changed in callback() function) */
 static subdriver_t *subdriver = NULL;
 
@@ -156,6 +130,7 @@ bool_t use_interrupt_pipe = TRUE;
 #else
 bool_t use_interrupt_pipe = FALSE;
 #endif
+static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
@@ -186,7 +161,7 @@ static double interval(void);
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
-
+int disable_fix_report_desc = 0; /* by default we apply fix-ups for broken USB encoding, etc. */
 
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
@@ -214,7 +189,7 @@ static status_lkp_t status_info[] = {
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "off", STATUS(OFF) },
-	{ "cal", STATUS(CAL) },
+	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
 	{ "commfault", STATUS(COMMFAULT) },
 	{ "depleted", STATUS(DEPLETED) },
@@ -433,6 +408,12 @@ info_lkp_t on_off_info[] = {
    done with result! */
 static const char *date_conversion_fun(double value)
 {
+	/* Per  spec https://www.usb.org/sites/default/files/pdcv11.pdf (page 38):
+	 * 4.2.6 Battery Settings -> ManufacturerDate
+	 *   The date the pack was manufactured in a packed integer.
+	 *   The date is packed in the following fashion:
+	 *   (year – 1980)*512 + month*32 + day.
+	 */
 	static char buf[32];
 	long year, month, day;
 
@@ -817,6 +798,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "onlinedischarge",
 		"Set to treat discharging while online as being offline");
 
+	addvar(VAR_FLAG, "disable_fix_report_desc",
+		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
+
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -829,6 +813,9 @@ void upsdrv_makevartable(void)
 		"Don't use polling, only use interrupt pipe");
 	addvar(VAR_VALUE, "interruptsize",
 		"Number of bytes to read from interrupt pipe");
+	addvar(VAR_VALUE, HU_VAR_WAITBEFORERECONNECT,
+		"Seconds to wait before trying to reconnect");
+
 #else
 	addvar(VAR_VALUE, "notification",
 		"Set notification type, (ignored, only for backward compatibility)");
@@ -856,7 +843,12 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		upsdebugx(1, "Got to reconnect!\n");
+		upsdebugx(1, "Got to reconnect!");
+		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
+			upsdebugx(0, "\nReconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
+				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+		}
 
 		if (!reconnect_ups()) {
 			lastpoll = now;
@@ -865,6 +857,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		hd = &curDevice;
+		interrupt_pipe_EIO_count = 0;
 
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
@@ -874,27 +867,34 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	interval();
 #endif
+
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		switch (evtCount)
 		{
-		case ERROR_BUSY:      /* Device or resource busy */
+		case LIBUSB_ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
-		case ERROR_NO_DEVICE: /* No such device */
-		case ERROR_ACCESS:    /* Permission denied */
-		case ERROR_IO:        /* I/O error */
+		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
 #if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
 		case -ENXIO:		    /* No such device or address */
 #endif
-		case ERROR_NOT_FOUND: /* No such file or directory */
-		case ERROR_NO_MEM:    /* Insufficient memory */
+		case LIBUSB_ERROR_NOT_FOUND: /* No such file or directory */
+		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			hd = NULL;
+			return;
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return;
 		default:
@@ -923,10 +923,10 @@ void upsdrv_updateinfo(void)
 
 		/* Skip Input reports, if we don't use the Feature report */
 		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
-		if(!found_data && !interrupt_only) {
+		if (!found_data && !interrupt_only) {
 			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
 		}
-		if(!found_data) {
+		if (!found_data) {
 			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
 			continue;
 		}
@@ -942,7 +942,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n",
 		interval());
 #endif
-	/* clear status buffer before begining */
+	/* clear status buffer before beginning */
 	status_init();
 
 	/* Do a full update (polling) every pollfreq
@@ -1078,7 +1078,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
+	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
 	if (ret < 1)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
@@ -1096,6 +1096,10 @@ void upsdrv_initups(void)
 	/* Activate Cyberpower tweaks */
 	if (testvar("onlinedischarge")) {
 		onlinedischarge = 1;
+	}
+
+	if (testvar("disable_fix_report_desc")) {
+		disable_fix_report_desc = 1;
 	}
 
 	val = getval("interruptsize");
@@ -1157,7 +1161,7 @@ void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "upsdrv_cleanup...");
 
-	comm_driver->close(udev);
+	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
 #ifndef SHUT_MODE
@@ -1354,6 +1358,9 @@ int fix_report_desc(HIDDevice_t *arg_pDev, HIDDesc_t *arg_pDesc) {
 	NUT_UNUSED_VARIABLE(arg_pDev);
 	NUT_UNUSED_VARIABLE(arg_pDesc);
 
+/* Implementations should honor the user's toggle:
+ *	if (disable_fix_report_desc) return 0;
+ */
 	return 0;
 }
 
@@ -1489,22 +1496,30 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
-		case ERROR_BUSY:      /* Device or resource busy */
+		case LIBUSB_ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
-		case ERROR_NO_DEVICE: /* No such device */
-		case ERROR_ACCESS:    /* Permission denied */
-		case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
-		case -ENXIO:		    /* No such device or address */
+		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
+#if WITH_LIBUSB_0_1           /* limit to libusb 0.1 implementation */
+		case -ENXIO:		  /* No such device or address */
 #endif
-		case ERROR_NOT_FOUND: /* No such file or directory */
-		case ERROR_NO_MEM:    /* Insufficient memory */
+		case LIBUSB_ERROR_NOT_FOUND: /* No such file or directory */
+		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			hd = NULL;
+			return FALSE;
+
+		case LIBUSB_ERROR_IO:        /* I/O error */
+			/* Uh oh, got to reconnect, with a special suggestion! */
+			dstate_setinfo("driver.state", "reconnect.trying");
+			interrupt_pipe_EIO_count++;
 			hd = NULL;
 			return FALSE;
 
@@ -1514,12 +1529,16 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
-		case ERROR_TIMEOUT:   /* Connection timed out */
-		case ERROR_OVERFLOW:  /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+		case LIBUSB_ERROR_TIMEOUT:   /* Connection timed out */
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
+		case LIBUSB_ERROR_OVERFLOW:  /* Value too large for defined data type */
+# if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
+# endif
 #endif
-		case ERROR_PIPE:      /* Broken pipe */
+		case LIBUSB_ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
 		   upsdebugx(1, "HIDGetDataValue unknown retcode '%i'", retcode);
@@ -1577,21 +1596,44 @@ static bool_t hid_ups_walk(walkmode_t mode)
 static int reconnect_ups(void)
 {
 	int ret;
+	char	*val;
+	int wait_before_reconnect = 0;
 
-	upsdebugx(4, "==================================================");
-	upsdebugx(4, "= device has been disconnected, try to reconnect =");
-	upsdebugx(4, "==================================================");
+	dstate_setinfo("driver.state", "reconnect.trying");
+
+	/* Init time to wait before trying to reconnect (seconds) */
+	val = getval(HU_VAR_WAITBEFORERECONNECT);
+	if (val) {
+		wait_before_reconnect = atoi(val);
+	}
 
 	/* Try to close the previous handle */
-	if (udev)
-		comm_driver->close(udev);
+	if (udev == HID_DEV_HANDLE_CLOSED) {
+		upsdebugx(4, "Not closing comm_driver previous handle: already closed");
+	} else {
+		upsdebugx(4, "Closing comm_driver previous handle");
+		comm_driver->close_dev(udev);
+		udev = HID_DEV_HANDLE_CLOSED;
+	}
 
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
+	upsdebugx(4, "===================================================================");
+	if (wait_before_reconnect > 0 ) {
+		upsdebugx(4, " device has been disconnected, trying to reconnect in %i seconds", wait_before_reconnect);
+		sleep(wait_before_reconnect);
+		upsdebugx(4, " trying to reconnect");
+	} else {
+		upsdebugx(4, " device has been disconnected, try to reconnect");
+	}
+	upsdebugx(4, "===================================================================");
 
+	upsdebugx(4, "Opening comm_driver ...");
+	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
+	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
 		return 1;
 	}
 
+	dstate_setinfo("driver.state", "quiet");
 	return 0;
 }
 
@@ -1664,7 +1706,7 @@ static void ups_status_set(void)
 			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
 		} else {
-			if (!(ups_status & STATUS(CAL))) {
+			if (!(ups_status & STATUS(CALIB))) {
 				/* if in OL+DISCHRG unknowingly, warn user */
 				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
 				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
@@ -1706,7 +1748,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
-	if (ups_status & STATUS(CAL)) {
+	if (ups_status & STATUS(CALIB)) {
 		status_set("CAL");		/* calibration */
 	}
 }

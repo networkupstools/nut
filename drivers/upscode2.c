@@ -517,7 +517,7 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "Bad output_pace parameter: %s", str);
 		output_pace_usec = (useconds_t)temp;
 	}
-	upsdebugx(1, "output_pace = %ju uSec", (uintmax_t)output_pace_usec);
+	upsdebugx(1, "output_pace = %" PRIuMAX " uSec", (uintmax_t)output_pace_usec);
 
 	if ((str = getval("full_update_timer")) != NULL) {
 		int temp = atoi(str);
@@ -1050,7 +1050,9 @@ static ssize_t upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %zd bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		/* Note: s should end up same as buf */
+		char *s = str_rtrim(buf, ENDCHAR);
+		upsdebugx(3, "upscrecv: %" PRIiSIZE " bytes:\t'%s'", res-1, s);
 	}
 
 	return res;

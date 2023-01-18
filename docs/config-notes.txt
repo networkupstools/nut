@@ -165,10 +165,13 @@ If you own more than one, refer to the driver's manual page for more
 information on matching a specific device.
 ======
 
+NOTE: On Windows systems, the second serial port (COM2), equivalent to
+"/dev/ttyS1" on Linux, would be "\\\\.\\COM2".
+
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
 linkman:bcmxcp_usb[8],
-linkman:blazer[8],
+linkman:blazer_usb[8],
 linkman:nutdrv_qx[8],
 linkman:richcomm_usb[8],
 linkman:riello_usb[8],
@@ -582,7 +585,8 @@ Reloading the data server
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Reload `upsd`.  Depending on your configuration, you may be able to
-do this without stopping the `upsd` daemon process:
+do this without stopping the `upsd` daemon process (if it had saved
+a PID file earlier):
 
 	upsd -c reload
 
@@ -593,7 +597,14 @@ If that doesn't work (check the syslog), just restart it:
 
 For systems with integrated service management (Linux systemd,
 illumos/Solaris SMF) their corresponding `reload` or `refresh`
-service actions should handle this as well.
+service actions should handle this as well. Note that such integration
+generally forgoes saving of PID files, so `upsd -c <cmd>` would not work.
+If your workflow requires to manage these daemons beside the OS provided
+framework, you can customize it to start `upsd -FF` and save the PID file.
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
 
 NOTE: If you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting `upsd` as a different user.

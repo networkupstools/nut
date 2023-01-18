@@ -22,11 +22,15 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -60,6 +64,9 @@ static void usage(const char *prog)
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void print_cmd(char *cmdname)
@@ -113,7 +120,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,
@@ -305,6 +312,9 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+				UPS_VERSION, CONFIG_FLAGS);
+
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */

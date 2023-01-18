@@ -30,6 +30,9 @@
 #include <stdlib.h>
 #include "nut_platform.h"
 #include "common.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
@@ -217,4 +220,3 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 	}
 	return ports_list;
 }
-

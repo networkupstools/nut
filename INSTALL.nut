@@ -4,16 +4,24 @@ Installation instructions
 This chapter describes the various methods for installing Network UPS Tools.
 
 Whenever it is possible, prefer <<Installing_packages, installing from packages>>.
-Packagers have done an excellent and hard work at improving NUT integration into
-their system.  On the other hand, distributions and appliances tend to package
-"official releases" of projects such as NUT, and so do not deliver latest and
-greatest fixes, new drivers, bugs and other features.
+Packagers have done an excellent and hard work at improving NUT integration
+into their operating system.  On the other hand, distributions and appliances
+tend to package "official releases" of projects such as NUT, and so do not
+deliver latest and greatest fixes, new drivers, bugs and other features.
 
 [[Installing_source]]
 Installing from source
 ----------------------
 
-These are the essential steps for compiling and installing this software.
+These are the essential steps for compiling and installing this software
+from distribution archives (usually "release tarballs") which include a
+pre-built copy of the `configure` script and some other generated source
+files.
+
+To build NUT from a Git checkout you may need some additional tools
+(referenced just a bit below) and run `./autogen.sh` to generate the
+needed files. For common developer iterations, porting to new platforms,
+or in-place testing, running the `./ci_build.sh` script can be helpful.
 
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
@@ -30,20 +38,21 @@ you might select a sub-set of those suggestions).
 ================================================================================
 
 - the paths shown below are the default values you get by just calling
-configure by itself.  If you have used --prefix or similar, things will be
-different.  Also, if you didn't install this program from source yourself, the
-paths will probably have a number of differences.
+  configure by itself.  If you have used --prefix or similar, things will be
+  different.  Also, if you didn't install this program from source yourself,
+  the paths will probably have a number of differences.
 
 - by default, your system probably won't find the man pages, since they
-install to /usr/local/ups/man.  You can fix this by editing your MANPATH, or
-just do this:
+  install to /usr/local/ups/man.  You can fix this by editing your MANPATH,
+  or just do this:
 
 	man -M /usr/local/ups/man <man page>
 
-- if your favorite system offers up to date binary packages, you should always
-prefer these over a source installation. Along with the known advantages of such
-systems for installation, upgrade and removal, there are many integration issues
-that have been addressed.
+- if your favorite system offers up to date binary packages, you should
+  always prefer these over a source installation (unless there are known
+  deficiencies in the package or one is too obsolete). Along with the known
+  advantages of such systems for installation, upgrade and removal, there
+  are many integration issues that have been addressed.
 
 ================================================================================
 
@@ -54,8 +63,8 @@ Prepare your system
 System User creation
 ^^^^^^^^^^^^^^^^^^^^
 
-Create at least one system user and a group for running this software. You
-might call them "ups" and "nut".  The exact names aren't important as
+Create at least one system user and a group for running this software.
+You might call them "ups" and "nut".  The exact names aren't important as
 long as you are consistent.
 
 The process for doing this varies from one system to the next, and
@@ -232,7 +241,8 @@ the 'nut' package, and optionally the following:
 Configuration files are located in /etc/nut.
 linkman:nut.conf[5] must be edited to be able to invoke /etc/init.d/nut
 
-NOTE: Ubuntu users can access the APT URL installation by clicking on link:apt://nut[this link].
+NOTE: Ubuntu users can access the APT URL installation by clicking
+on link:apt://nut[this link].
 
 
 [[Mandriva]]
@@ -242,8 +252,8 @@ Mandriva
 NOTE: NUT is packaged and well maintained in these systems.
 The official Mandriva packager is part of the NUT Team.
 
-Using your preferred method (urpmi, RPMdrake, ...), install one of the two below
-packages:
+Using your preferred method (urpmi, RPMdrake, ...), install one of the
+two below packages:
 
 - 'nut-server' if you have a 'standalone' or 'netserver' installation,
 - 'nut' if you have a 'netclient' installation.
@@ -279,8 +289,8 @@ Red Hat, Fedora and CentOS
 NOTE: NUT is packaged and well maintained in these systems.
 The official Red Hat packager is part of the NUT Team.
 
-Using your preferred method (yum, Add/Remove Software, ...), install one of the
-two below packages:
+Using your preferred method (yum, Add/Remove Software, ...), install
+one of the two below packages:
 
 - 'nut' if you have a 'standalone' or 'netserver' installation,
 - 'nut-client' if you have a 'netclient' installation.
@@ -309,7 +319,8 @@ Port
 ^^^^
 
 The port is located under +sysutils/nut+.
-Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
+Use +make config+ to select configuration options, e.g. to build the
+optional CGI scripts.
 To install it, use:
 
 	# make install clean
@@ -317,13 +328,15 @@ To install it, use:
 USB UPS on FreeBSD
 ^^^^^^^^^^^^^^^^^^
 
-For USB UPS devices the NUT package/port installs devd rules in +/usr/local/etc/devd/nut-usb.conf+ to set USB device permissions. 'devd' needs to be restarted  for these rules to apply:
+For USB UPS devices the NUT package/port installs devd rules in
++/usr/local/etc/devd/nut-usb.conf+ to set USB device permissions.
+ 'devd' needs to be restarted  for these rules to apply:
 
 	# service devd restart
 
-(Re-)connect the device after restarting 'devd' and check that the USB device has the proper
-permissions. Check the last entries of the system message buffer. You should
-find an entry like
+(Re-)connect the device after restarting 'devd' and check that the USB
+device has the proper permissions. Check the last entries of the system
+message buffer. You should find an entry like:
 
 	# dmesg | tail
 	[...]
@@ -341,8 +354,85 @@ using:
 
 	# usbconfig -u 0 -a 2 dump_device_desc
 
-where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
+where +-u+ specifies the USB bus number and +-a+ specifies the USB device
+index.
 
+
+[[Windows]]
+Windows
+~~~~~~~
+
+Windows binary package
+^^^^^^^^^^^^^^^^^^^^^^
+
+[NOTE]
+======
+NUT binary package built for Windows platform was last issued for
+a much older codebase (using NUT v2.6.5 as a baseline). While the current
+state of the codebase you are looking at aims to refresh the effort of
+delivering NUT on Windows, the aim at the moment is to help developers
+build and modernize it after a decade of blissful slumber, and packages
+are not being regularly produced yet. Functionality of such builds varies
+a lot depending on build environment used. This effort is generally
+tracked at https://github.com/orgs/networkupstools/projects/2/views/1
+and help would be welcome!
+
+It should currently be possible to build the codebase in native Windows
+with MSYS2/MinGW and cross-building from Linux with mingw (preferably
+in a Debian/Ubuntu container). Refer to
+link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+and link:scripts/Windows/README[scripts/Windows/README file] for respective
+build environment preparation instructions.
+
+Note that to use NUT for Windows, non-system dependency DLL files must
+be located in same directory as each EXE file that uses them. This can be
+accomplished for FOSS libraries (copying them from the build environment)
+by calling `make install-win-bundle DESTDIR=/some/valid/location` easily.
+
+Archives with binaries built by recent iterations of continuous integration
+jobs should be available for exploration on the respective CI platforms.
+======
+
+*Information below may be currently obsolete, but the NUT project wishes
+it to become actual and factual again :)*
+
+NUT binary package built for Windows platform comes in a `.msi` file.
+
+If you are using Windows 95, 98 or Me, you should install
+link:http://www.microsoft.com/downloads/en/details.aspx?familyid=cebbacd8-c094-4255-b702-de3bb768148f&displaylang=en[Windows Installer 2.0]
+from Microsoft site.
+
+If you are using Windows 2000 or NT 4.0, you can
+link:http://www.microsoft.com/downloads/en/details.aspx?FamilyID=4b6140f9-2d36-4977-8fa1-6f8a0f5dca8f&DisplayLang=en[download it here].
+
+Newer Windows releases should include the Windows Installer natively.
+
+Run `NUT-Installer.msi` and follow the wizard indications.
+
+If you plan to use an UPS which is locally connected to an USB port,
+you have to install
+link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
+on your system. Then you must install your device via libusb's "Inf Wizard".
+
+NOTE: If you intend to build from source, relevant sources may be available at
+https://github.com/mcuee/libusb-win32 and keep in mind that it is a variant of
+libusb-0.1. Current NUT supports libusb-1.0 as well, and that project should
+have Windows support out of the box (but it was not explored for NUT yet).
+
+If you have selected default directory, all configuration files are located in
+`C:\Program Files\NUT\ups\etc`
+
+Building for Windows
+^^^^^^^^^^^^^^^^^^^^
+
+For suggestions about setting up the NUT build environment variants
+for Windows, please see link:docs/config-prereqs.txt and/or
+link:scripts/Windows/README files. Note this is rather experimental
+at this point.
+
+
+Runtime configuration
+~~~~~~~~~~~~~~~~~~~~~
 
 You are now ready to configure NUT, and start testing and using it.
 

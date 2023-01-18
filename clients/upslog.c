@@ -40,17 +40,35 @@
 #include "nut_stdint.h"
 #include "upslog.h"
 
-	static	int	reopen_flag = 0, exit_flag = 0;
-	static	uint16_t	port;
-	static	char	*upsname, *hostname;
-	static	UPSCONN_t	ups;
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
-	static	FILE	*logfile;
-	static	const	char *logfn, *monhost;
+	static	int	reopen_flag = 0, exit_flag = 0;
+	static	char	*upsname;
+	static	UPSCONN_t	*ups;
+
+	static	char *logfn, *monhost;
+#ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
+#endif
 	static	char	logbuffer[LARGEBUF], *logformat;
 
 	static	flist_t	*fhead = NULL;
+	struct 	monhost_ups {
+		char	*monhost;
+		char	*logfn;
+		char	*upsname;
+		char	*hostname;
+		uint16_t	port;
+		UPSCONN_t	*ups;
+		FILE	*logfile;
+		struct	monhost_ups	*next;
+	};
+	static	struct	monhost_ups *monhost_ups_anchor = NULL;
+	static	struct	monhost_ups *monhost_ups_current = NULL;
+	static	struct	monhost_ups *monhost_ups_prev = NULL;
+
 
 #define DEFAULT_LOGFORMAT "%TIME @Y@m@d @H@M@S% %VAR battery.charge% " \
 		"%VAR input.voltage% %VAR ups.load% [%VAR ups.status%] " \
@@ -58,17 +76,23 @@
 
 static void reopen_log(void)
 {
-	if (logfile == stdout) {
-		upslogx(LOG_INFO, "logging to stdout");
-		return;
-	}
+	for (monhost_ups_current = monhost_ups_anchor;
+	     monhost_ups_current != NULL;
+	     monhost_ups_current = monhost_ups_current->next) {
+		if (monhost_ups_current->logfile == stdout) {
+			upslogx(LOG_INFO, "logging to stdout");
+			return;
+		}
 
-	fclose(logfile);
-	logfile = fopen(logfn, "a");
-	if (logfile == NULL)
-		fatal_with_errno(EXIT_FAILURE, "could not reopen logfile %s", logfn);
+		if ((monhost_ups_current->logfile = freopen(
+		    monhost_ups_current->logfn, "a",
+		    monhost_ups_current->logfile)) == NULL)
+			fatal_with_errno(EXIT_FAILURE,
+				"could not reopen logfile %s", logfn);
+	}
 }
 
+#ifndef WIN32
 static void set_reopen_flag(int sig)
 {
 	reopen_flag = sig;
@@ -85,10 +109,12 @@ static void set_print_now_flag(int sig)
 
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
+#endif
 
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
+#ifndef WIN32
 	struct	sigaction	sa;
 
 	sigemptyset(&nut_upslog_sigmask);
@@ -110,6 +136,7 @@ static void setup_signals(void)
 	sa.sa_handler = set_print_now_flag;
 	if (sigaction(SIGUSR1, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
+#endif
 }
 
 static void help(const char *prog)
@@ -131,6 +158,8 @@ static void help(const char *prog)
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
+	printf("  -m <tuple>	- Monitor UPS <ups,logfile>\n");
+	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 
 	printf("\n");
@@ -146,6 +175,9 @@ static void help(const char *prog)
 
 	printf("\n");
 	printf("See the upslog(8) man page for more information.\n");
+
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 
 	exit(EXIT_SUCCESS);
 }
@@ -215,7 +247,7 @@ static void getvar(const char *var)
 	query[2] = var;
 	numq = 3;
 
-	ret = upscli_get(&ups, numq, query, &numa, &answer);
+	ret = upscli_get(ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
 		snprintfcat(logbuffer, sizeof(logbuffer), "NA");
@@ -368,7 +400,7 @@ static void compile_format(void)
 }
 
 /* go through the list of functions and call them in order */
-static void run_flist(void)
+static void run_flist(struct monhost_ups *monhost_ups_print)
 {
 	flist_t	*tmp;
 
@@ -382,8 +414,8 @@ static void run_flist(void)
 		tmp = tmp->next;
 	}
 
-	fprintf(logfile, "%s\n", logbuffer);
-	fflush(logfile);
+	fprintf(monhost_ups_print->logfile, "%s\n", logbuffer);
+	fflush(monhost_ups_print->logfile);
 }
 
 	/* -s <monhost>
@@ -396,6 +428,7 @@ static void run_flist(void)
 int main(int argc, char **argv)
 {
 	int	interval = 30, i, foreground = -1;
+	size_t	monhost_len = 0;
 	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
@@ -407,7 +440,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FB")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -415,12 +448,47 @@ int main(int argc, char **argv)
 				break;
 #endif
 
+			case 'm': { /* var scope */
+					char *m_arg, *s;
+
+					monhost_ups_prev = monhost_ups_current;
+					monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+					if (monhost_ups_anchor == NULL)
+						monhost_ups_anchor = monhost_ups_current;
+					else
+						monhost_ups_prev->next = monhost_ups_current;
+					monhost_ups_current->next = NULL;
+					monhost_len++;
+
+					/* Be sure to not mangle original optarg, nor rely on its longevity */
+					s = xstrdup(optarg);
+					m_arg = s;
+					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
+					if (!m_arg)
+						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
+#ifndef WIN32
+					monhost_ups_current->logfn = xstrdup(strsep(&m_arg, ","));
+#else
+					monhost_ups_current->logfn = xstrdup(filter_path(strsep(&m_arg, ",")));
+#endif
+					if (m_arg) /* Had a third comma - also unexpected! */
+						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
+					if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+						fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+					}
+					free(s);
+				} /* var scope */
+				break;
 			case 's':
 				monhost = optarg;
 				break;
 
 			case 'l':
+#ifndef WIN32
 				logfn = optarg;
+#else
+				logfn = filter_path(optarg);
+#endif
 				break;
 
 			case 'i':
@@ -436,6 +504,8 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+					UPS_VERSION, CONFIG_FLAGS);
 				exit(EXIT_SUCCESS);
 
 			case 'p':
@@ -465,7 +535,11 @@ int main(int argc, char **argv)
 
 	if (argc >= 3) {
 		monhost = argv[0];
+#ifndef WIN32
 		logfn = argv[1];
+#else
+		logfn = filter_path(argv[1]);
+#endif
 		interval = atoi(argv[2]);
 	}
 
@@ -479,34 +553,50 @@ int main(int argc, char **argv)
 			snprintfcat(logformat, LARGEBUF, "%s ", argv[i]);
 	}
 
-	if (!monhost)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system>");
+	if (monhost_ups_anchor == NULL) {
+		if (monhost) {
+			monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+			monhost_ups_anchor = monhost_ups_current;
+			monhost_ups_current->next = NULL;
+			monhost_ups_current->monhost = monhost;
+			monhost_len=1;
+		} else {
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system>");
+		}
 
-	if (!logfn)
-		fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file>");
+		if (logfn)
+			monhost_ups_current->logfn = logfn;
+		else
+			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file>");
+	}
 
 	/* shouldn't happen */
 	if (!logformat)
 		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
 
-	printf("logging status of %s to %s (%is intervals)\n",
-		monhost, logfn, interval);
+	for (monhost_ups_current = monhost_ups_anchor;
+	     monhost_ups_current != NULL;
+	     monhost_ups_current = monhost_ups_current->next) {
+		printf("logging status of %s to %s (%is intervals)\n",
+			monhost_ups_current->monhost, monhost_ups_current->logfn, interval);
+		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		}
 
-	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
-		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
+		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
+			fprintf(stderr, "Warning: initial connect failed: %s\n",
+				upscli_strerror(monhost_ups_current->ups));
+
+		if (strcmp(monhost_ups_current->logfn, "-") == 0)
+			monhost_ups_current->logfile = stdout;
+		else
+			monhost_ups_current->logfile = fopen(monhost_ups_current->logfn, "a");
+
+		if (monhost_ups_current->logfile == NULL)
+			fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", logfn);
+
 	}
-
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "Warning: initial connect failed: %s\n",
-			upscli_strerror(&ups));
-
-	if (strcmp(logfn, "-") == 0)
-		logfile = stdout;
-	else
-		logfile = fopen(logfn, "a");
-
-	if (logfile == NULL)
-		fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", logfn);
 
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
@@ -514,7 +604,7 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 
 	if (foreground < 0) {
-		if (logfile == stdout) {
+		if (monhost_ups_anchor->logfile == stdout) {
 			foreground = 1;
 		} else {
 			foreground = 0;
@@ -533,7 +623,11 @@ int main(int argc, char **argv)
 
 	compile_format();
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (exit_flag == 0) {
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 		time(&now);
 
 		if (nextpoll > now) {
@@ -546,31 +640,45 @@ int main(int argc, char **argv)
 		}
 
 		if (reopen_flag) {
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			upslogx(LOG_INFO, "Signal %d: reopening log file",
 				reopen_flag);
 			reopen_log();
 			reopen_flag = 0;
+			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		/* reconnect if necessary */
-		if (upscli_fd(&ups) < 0) {
-			upscli_connect(&ups, hostname, port, 0);
-		}
+		for (monhost_ups_current = monhost_ups_anchor;
+		     monhost_ups_current != NULL;
+		     monhost_ups_current = monhost_ups_current->next) {
+			ups = monhost_ups_current->ups;	/* XXX Not ideal */
+			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
+			/* reconnect if necessary */
+			if (upscli_fd(ups) < 0) {
+				upscli_connect(ups, monhost_ups_current->hostname, monhost_ups_current->port, 0);
+			}
 
-		run_flist();
+			run_flist(monhost_ups_current);
 
-		/* don't keep connection open if we don't intend to use it shortly */
-		if (interval > 30) {
-			upscli_disconnect(&ups);
+			/* don't keep connection open if we don't intend to use it shortly */
+			if (interval > 30) {
+				upscli_disconnect(ups);
+			}
 		}
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
-	if (logfile != stdout)
-		fclose(logfile);
+	for (monhost_ups_current = monhost_ups_anchor;
+	     monhost_ups_current != NULL;
+	     monhost_ups_current = monhost_ups_current->next) {
 
-	upscli_disconnect(&ups);
+		if (monhost_ups_current->logfile != stdout)
+			fclose(monhost_ups_current->logfile);
+
+		upscli_disconnect(monhost_ups_current->ups);
+	}
 
 	exit(EXIT_SUCCESS);
 }

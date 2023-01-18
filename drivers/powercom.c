@@ -86,7 +86,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -407,11 +407,11 @@ static int ups_getinfo(void)
 			types[type].num_of_bytes_from_ups, 3, 0);
 
 		if (c != (ssize_t)types[type].num_of_bytes_from_ups) {
-			upslogx(LOG_NOTICE, "data receiving error (%zd instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
+			upslogx(LOG_NOTICE, "data receiving error (%" PRIiSIZE " instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %zd", c);
+			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE, c);
 	}
 
 	/* optional dump of raw data */
@@ -770,8 +770,12 @@ void upsdrv_updateinfo(void)
 {
 	char	val[32];
 
-	if (!ups_getinfo()){
-		return;
+	if (!ups_getinfo()) {
+		/* https://github.com/networkupstools/nut/issues/356 */
+		upsdebugx(1, "%s: failed to ups_getinfo() once, retrying for slower devices", __func__);
+		if (!ups_getinfo()) {
+			return;
+		}
 	}
 
 	/* input.frequency */
