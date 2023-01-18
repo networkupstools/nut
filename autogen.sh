@@ -122,7 +122,7 @@ FAILED: did not generate an executable configure script!
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
 # scripts, and need you to explicitly say which version you want, e.g.
-#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
+#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
 EOF
 	exit 1
