@@ -2728,6 +2728,10 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl What pathname would we embed into unit files ExecStartPre?
+dnl TODO? Any need to make it a --with-... argument?
+AC_CHECK_PROGS([SYSTEMD_TMPFILES_PROGRAM], [systemd-tmpfiles], [/usr/bin/systemd-tmpfiles])
+
 
 dnl Note: we may want binaries with sd_notify and similar features regardless
 dnl of building and delivering unit files (which may be crafted separately).
@@ -3439,6 +3443,7 @@ AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
+AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)

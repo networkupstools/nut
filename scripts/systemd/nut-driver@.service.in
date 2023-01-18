@@ -43,7 +43,7 @@ PartOf=nut-driver.target
 Environment=NUT_IGNORE_NOWAIT=true
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
-ExecStartPre=-/usr/bin/systemd-tmpfiles --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl @SYSTEMD_DAEMON_ARGS_DRIVER@ start "$NUTDEV"'
 ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; @SBINDIR@/upsdrvctl stop "$NUTDEV"'
 # Restart really always, do not stop trying:
