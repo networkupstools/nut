@@ -586,7 +586,7 @@ During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
 allows to test many versions of auto-tools in the same agent), e.g.:
 ------
-:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10
+:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.13
 ------
 
 To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD

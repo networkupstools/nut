@@ -35,12 +35,17 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
-dnl `configure --enable-silent-rules` or `make V=1` for details:
-AM_SILENT_RULES([yes])
+dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
+dnl This feature seems to require automake-1.13 or newer (1.11+ by other info)
+dnl On very old systems can comment it away with little loss (then automake-1.10
+dnl is known to suffice):
+ifdef(`AM_SILENT_RULES', `AM_SILENT_RULES([yes])')
+dnl, `AC_MSG_NOTICE([Silent Rules feature not defined in this automake version, skipped])' )
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 dnl UPDATE: As tested on CentOS 6, its "autoconf-2.63-5.1.el6.noarch" also suffices.
+dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
