@@ -3862,20 +3862,25 @@ AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common
 AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
      cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
-# State file (e.g. upsd to driver) and pidfile location for NUT:
+# See also: https://github.com/networkupstools/nut/wiki/Technicalities:-Work-with-PID-and-state-file-paths#pidpath-altpidpath-statepath
+# State file (e.g. upsd to driver pipes) and PID file location for NUT:
 d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
+# Default PIPEFN and LOCKFN locations per upssched.conf:
+d @STATEPATH@/upssched 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @STATEPATH@
 EOF
     AS_IF([test "$STATEPATH" != "$PIDPATH"],
         [AS_CASE(["${PIDPATH}"],
             [*/run|*/tmp|*/shm], [], dnl Do not intrude into system paths; TODO: add more if appropriate for some Linux distro
             [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
+# Primarily used by upsmon and upslog, possibly running as root:
 d @PIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @PIDPATH@
 EOF
 ])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
+# Can be used as upsd and driver PID file location for NUT:
 d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTPIDPATH@
 EOF])
