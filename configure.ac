@@ -3859,6 +3859,8 @@ ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
+dnl TOTHINK: Some distributions make the directories below owned
+dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
 AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
      cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
@@ -3880,13 +3882,15 @@ EOF
 ])])
     AS_IF([test -n "$ALTPIDPATH" && test "$STATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTPIDPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
-# Can be used as upsd and driver PID file location for NUT:
+# Should be used as upsd and driver PID file location for NUT
+# (if ALTPIDPATH differs from STATEPATH):
 d @ALTPIDPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTPIDPATH@
 EOF])
     dnl Generally added to support some forks
     AS_IF([test -n "$ALTSTATEPATH" && test "$STATEPATH" != "$ALTSTATEPATH" && test "$ALTSTATEPATH" != "$ALTPIDPATH" && test "$PIDPATH" != "$ALTSTATEPATH"],
         [cat >> "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
+# Some NUT variants also maintain an ALTSTATEPATH:
 d @ALTSTATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
 X @ALTSTATEPATH@
 EOF])
