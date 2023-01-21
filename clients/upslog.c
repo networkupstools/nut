@@ -176,8 +176,7 @@ static void help(const char *prog)
 	printf("\n");
 	printf("See the upslog(8) man page for more information.\n");
 
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 
 	exit(EXIT_SUCCESS);
 }
@@ -504,8 +503,7 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-					UPS_VERSION, CONFIG_FLAGS);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
 			case 'p':

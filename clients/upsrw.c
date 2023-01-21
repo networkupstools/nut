@@ -66,8 +66,7 @@ static void usage(const char *prog)
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 }
 
 static void clean_exit(void)
@@ -669,8 +668,7 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
-			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-				UPS_VERSION, CONFIG_FLAGS);
+			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 		case 'h':
 		default:
