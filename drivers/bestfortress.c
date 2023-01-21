@@ -225,11 +225,11 @@ static int upssend(const char *fmt,...) {
 
 	/* Why do we not upsflushin here? */
 
-	upsdebugx(3, "upssend: sending %d bytes <%s>", ret, buf);
+	upsdebugx(3, "%s: sending %d bytes <%s>", __func__, ret, buf);
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
-		upslogx(LOG_ERR, "upssend: vsnprintf needed more "
-				"than %d bytes", (int)sizeof(buf));
+		upslogx(LOG_ERR, "%s: vsnprintf needed more than %d bytes",
+			__func__, (int) sizeof(buf));
 
 	for (p = buf; *p && sent < INT_MAX - 1; p++) {
 #ifndef WIN32
@@ -254,12 +254,13 @@ static int upssend(const char *fmt,...) {
 
 		sent++;
 		if (sent >= INT_MAX) {
-			upslogx(LOG_ERR, "upssend: sent more than INT_MAX, aborting");
+			upslogx(LOG_ERR, "%s: sent >= INT_MAX, aborting",
+				__func__);
 		}
 	}
 
 	if (ret != (int) sent) {
-		upsdebugx(1, "upssend: ret %d != sent %u", ret, sent);
+		upsdebugx(1, "%s: ret %d != sent %u", __func__, ret, sent);
 	}
 
 	return (int)sent;
@@ -273,7 +274,7 @@ static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 			     SER_WAIT_SEC, SER_WAIT_USEC);
 
 	/* \todo is buf null terminated? */
-	upsdebugx(4, "upsrecv read %d <%s>", (int) nread, buf);
+	upsdebugx(4, "%s: read %d <%s>", __func__, (int) nread, buf);
 
 	return nread;
 }
@@ -281,7 +282,7 @@ static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 static ssize_t upsflushin(int f, int verbose, const char *ignset)
 {
 	NUT_UNUSED_VARIABLE(f);
-	upsdebugx(4, "upsflushin: begin");
+	upsdebugx(4, "%s: begin", __func__);
 	return ser_flush_in(upsfd, ignset, verbose);
 }
 
@@ -297,7 +298,7 @@ void upsdrv_updateinfo(void)
 	char ch;
 	int checksum_ok = -1, is_online = 1, is_off, low_batt, trimming, boosting;
 
-	upsdebugx(2, "upsdrv_updateinfo: begin");
+	upsdebugx(2, "%s: begin", __func__);
 
 	for (retry = 0; retry < 5; ++retry) {
 		upsflushin (0, 0, "\r ");
@@ -306,15 +307,16 @@ void upsdrv_updateinfo(void)
 		temp[2] = 0;
 		do {
 			if ((recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
-				upsdebugx(1, "upsdrv_updateinfo: "
-					  "upsrecv failed, retrying without counting");
+				upsdebugx(1, "%s: upsrecv failed, "
+					  "retrying without counting", __func__);
 				upsflushin (0, 0, "\r ");
 				upssend ("f\r");
 				while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
 			}
 		} while (temp[2] == 0);
 
-		upsdebugx(3, "upsdrv_updateinfo: received %" PRIiSIZE " bytes (try %i)", recv, retry);
+		upsdebugx(3, "%s: received %" PRIiSIZE " bytes (try %i)",
+			  __func__, recv, retry);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
@@ -355,24 +357,28 @@ void upsdrv_updateinfo(void)
 			checksum_ok = 0;
 		if (checksum_ok) break;
 
-		upsdebugx(1, "upsdrv_updateinfo: failed to read status try %d", retry);
+		upsdebugx(1, "%s: failed to read status try %d",
+			  __func__, retry);
 		sleep(SER_WAIT_SEC);
 	}
 
 	if (!p || len < 1 || checksum_ok < 0) {
-		upsdebugx(2, "pointer to data not initialized after processing");
+		/* \todo: Analyze/fix code and rewrite message. */
+		upsdebugx(2, "%s: pointer to data not initialized after processing",
+			__func__);
 		dstate_datastale();
 		return;
 	}
 
 	if (!checksum_ok) {
-		upsdebugx(2, "checksum corruption");
+		upsdebugx(2, "%s: checksum corruption", __func__);
 		upsdebug_hex(3, "buffer", temp, (size_t)len);
 		dstate_datastale();
 		return;
 	}
 
-	upsdebugx(3, "upsdrv_updateinfo: %s", p);
+	/* Log assuming ASCII which it 99% is.  \todo Improve. */
+	upsdebugx(3, "%s: %s", __func__, p);
 
 	setinfo_int ("input.voltage", p+24,4);
 	setinfo_int ("output.voltage", p+28,4);
@@ -424,20 +430,20 @@ static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 
-	upsdebugx(2, "setparam: begin");
+	upsdebugx(2, "%s: begin", __func__);
 
 	/* Note the use of "%*s" - parameter (int)dlen specifies
 	 * the string width reserved for data */
 	upssend ("p%d=%*s\r", parameter, dlen, data);
 	if (upsrecv (reply, sizeof(reply), ENDCHAR, "") < 0) {
-		upsdebugx(1, "setparam: did not get reply");
+		upsdebugx(1, "%s: did not get reply", __func__);
 		return 0;
 	}
 	if (strncmp (reply, "OK", 2) == 0) {
-		upsdebugx(5, "setparam: reply OK");
+		upsdebugx(5, "%s: reply OK", __func__);
 		return 1;
 	} else {
-		upsdebugx(1, "setparam: reply NOT ok");
+		upsdebugx(1, "%s: reply NOT ok", __func__);
 		return 0;
 	}
 }
@@ -464,7 +470,7 @@ static void autorestart (int restart)
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
 	size_t len = strlen(data);
-	upsdebugx(1, "upsdrv_setvar: %s %s (%d bytes)", var, data, (int) len);
+	upsdebugx(1, "%s: %s %s (%d bytes)", __func__, var, data, (int) len);
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
 	}
@@ -481,7 +487,7 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		 * exist.  If the former, change to LOG_ERR and if the
 		 * latter change to LOG_DEBUG.
 		 */
-		upslogx(LOG_INFO, "upsdrv_setvar: unsettable variable %s", var);
+		upslogx(LOG_INFO, "%s: unsettable variable %s", __func__, var);
 		return STAT_SET_UNKNOWN;
 	}
 	ups_setsuper (1);
@@ -510,16 +516,16 @@ void upsdrv_shutdown(void)
 {
 	const	char	*grace;
 
-	upsdebugx(2, "upsdrv_shutdown: begin");
+	upsdebugx(2, "%s: begin", __func__);
 
 	grace = dstate_getinfo("ups.delay.shutdown");
 	if (!grace) {
-		upsdebugx(1, "upsdrv_shutdown: ups.delay.shutdown is NULL!");
+		upsdebugx(1, "%s: ups.delay.shutdown is NULL!", __func__);
 		/* Pick a different value than 20 so we can see it in the logs. */
 		grace = "30";
 	}
 
-	upslogx(LOG_CRIT, "upsdrv_shutdown: OFF/restart in %s seconds", grace);
+	upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
 
 	/* Start again, overriding front panel setting. */
 	autorestart (1);
@@ -527,24 +533,26 @@ void upsdrv_shutdown(void)
 	upssend ("OFF%s\r", grace);
 	/* I'm nearly dead, Jim */
 
-	upsdebugx(2, "upsdrv_shutdown: end");
+	upsdebugx(2, "%s: end", __func__);
 }
 
 static int instcmd (const char *cmdname, const char *extra)
 {
 	if (!strcasecmp(cmdname, "load.off")) {
-		upslogx(LOG_CRIT, "instcmd: %s: OFF/stayoff in 1s", cmdname);
+		upslogx(LOG_CRIT, "%s: %s: OFF/stayoff in 1s",
+			__func__, cmdname);
 		autorestart (0);
 		upssend ("OFF1\r");
 		return STAT_INSTCMD_HANDLED;
 	}
 	else if (!strcasecmp(cmdname, "shutdown.return")) {
-		upsdebugx(2, "instcmd: %s: start", cmdname);
+		upsdebugx(2, "%s: %s: start", __func__, cmdname);
 		upsdrv_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 	/* \todo Software error or user error? */
-	upslogx(LOG_ERR, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslogx(LOG_ERR, "%s: unknown command [%s] [%s]",
+		__func__, cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -580,7 +588,7 @@ void upsdrv_initups(void)
 	char * speed_val = getval("baudrate");
 	char * max_load = getval("max_load");
 
-	upsdebugx(1, "upsdrv_initups: begin");
+	upsdebugx(1, "%s: begin", __func__);
 
 	if (max_load) maxload = atoi(max_load);
 
@@ -594,24 +602,25 @@ void upsdrv_initups(void)
 	}
 
 	upsfd = ser_open(device_path);
-	if (upsfd < 0) {
-		upslogx(LOG_WARNING, "failed to open %s", device_path);
+	if (INVALID_FD(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
 		/* \todo: Deal with the failure */
 	}
 
 	/* ser_set_speed returns int 0 always; fatal if ioctl fails */
 	ser_set_speed(upsfd, device_path, speed);
 
-	upsdebugx(1, "upsdrv_initups: opened %s speed %s upsfd %d",
-		  device_path, speed_val ? speed_val : "DEFAULT", upsfd);
+	upsdebugx(1, "%s: opened %s speed %s upsfd %d",
+		  __func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
 
 	/* Set early so that it is in place for shutdown. */
 	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
-	upsdebugx(1, "upsdrv_initups: end");
+	upsdebugx(1, "%s: end", __func__);
 }
 
 void upsdrv_cleanup(void)
 {
-	upsdebugx(1, "upsdrv_cleanup: begin/end");
+	upsdebugx(1, "%s: begin/end", __func__);
 }
