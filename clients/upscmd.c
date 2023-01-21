@@ -65,8 +65,7 @@ static void usage(const char *prog)
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
 
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 }
 
 static void print_cmd(char *cmdname)
@@ -312,8 +311,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
-			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-				UPS_VERSION, CONFIG_FLAGS);
+			nut_report_config_flags();
 
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN

@@ -937,6 +937,12 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	return ret;
 }
 
+void nut_report_config_flags(void)
+{
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
+}
+
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret;

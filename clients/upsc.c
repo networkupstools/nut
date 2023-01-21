@@ -57,8 +57,7 @@ static void usage(const char *prog)
 	printf("  -c         - lists each client connected on <ups>, one per line.\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 }
 
 static void printvar(const char *var)
@@ -235,8 +234,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
-			upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-				UPS_VERSION, CONFIG_FLAGS);
+			nut_report_config_flags();
 
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
