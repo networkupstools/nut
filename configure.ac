@@ -2787,7 +2787,7 @@ fi
 
 dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?
-AC_CHECK_PROGS([SYSTEMD_TMPFILES_PROGRAM], [systemd-tmpfiles], [/usr/bin/systemd-tmpfiles])
+AC_PATH_PROG([SYSTEMD_TMPFILES_PROGRAM], [systemd-tmpfiles], [/usr/bin/systemd-tmpfiles])
 
 
 dnl Note: we may want binaries with sd_notify and similar features regardless
