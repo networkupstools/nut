@@ -250,6 +250,28 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}${NUT_VERSION_DEPLOYED}" = x], [], [break])
     done
 
+    dnl Account for custom paths if known/found:
+    AS_IF([test x"${DEPLOYED_PREFIX}" != x && test x"${DEPLOYED_PREFIX}" != x"${prefix}"],
+        AC_MSG_WARN([Deployed NUT installation uses a PREFIX different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_PREFIX}' vs. '${prefix}'])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--prefix=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --prefix='${DEPLOYED_PREFIX}'"])
+    ])
+
+    AS_IF([test x"${DEPLOYED_SBINDIR}" != x && test x"${DEPLOYED_SBINDIR}" != x"${PREFIX_SBINDIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a SBINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_SBINDIR}' vs. '${sbindir}'])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--sbindir=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --sbindir='${DEPLOYED_SBINDIR}'"])
+    ])
+
+    AS_IF([test x"${DEPLOYED_BINDIR}" != x && test x"${DEPLOYED_BINDIR}" != x"${PREFIX_BINDIR}"],
+        AC_MSG_WARN([Deployed NUT installation uses a BINDIR different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_BINDIR}' vs. '${bindir}'])
+        [AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+            [*--bindir=*], [],
+            [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --bindir='${DEPLOYED_BINDIR}'"])
+    ])
+
     AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
         AC_MSG_RESULT([${CONFIG_FLAGS_DEPLOYED}])
         AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
