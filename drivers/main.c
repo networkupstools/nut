@@ -134,8 +134,7 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
@@ -831,8 +830,7 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				/* already printed the banner for program name */
-				upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-					UPS_VERSION, CONFIG_FLAGS);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':
 				splitxarg(optarg);
