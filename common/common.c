@@ -939,8 +939,23 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 void nut_report_config_flags(void)
 {
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	/* Roughly similar to upslogx() but without the buffer-size limits and
+	 * timestamp/debug-level prefixes. Only printed if debug (any) is on.
+	 * Depending on amount of configuration tunables involved by a particular
+	 * build of NUT, the string can be quite long (over 1KB).
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	if (xbit_test(upslog_flags, UPSLOG_STDERR))
+		fprintf(stderr, "Network UPS Tools version %s configured with flags: %s\n",
+			UPS_VERSION, CONFIG_FLAGS);
+
+	/* NOTE: May be ignored or truncated by receiver if that syslog server
+	 * (and/or OS sender) does not accept messages of such length */
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+		syslog(LOG_DEBUG, "Network UPS Tools version %s configured with flags: %s",
+			UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
