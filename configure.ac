@@ -10,15 +10,15 @@ AC_INIT([nut],[2.8.0.1],[https://github.com/networkupstools/nut/issues])
 dnl Keep track of command-line options passed to this script:
 CONFIG_FLAGS=""
 dnl Keep each token quoted, in case spaces or other special chars crawl in:
-_flag_enable_inplace_runtime=no
+_flag_enable_inplace_runtime=""
 for F in "$@" ; do
     case "$F" in
     *=*" "*) NF="$(echo "$F" | sed "s,=,=',")""'" && F="$NF" ;;
     esac
 
     case "$F" in
-    --disable-runtime-support|--enable-runtime-support=no) ;;
-    --enable-runtime-support*) _flag_enable_inplace_runtime=yes ;;
+    --disable-runtime-support|--enable-runtime-support=no) _flag_enable_inplace_runtime="no" ;;
+    --enable-runtime-support*) _flag_enable_inplace_runtime="$F" ;;
     *)
         test -z "${CONFIG_FLAGS}" \
         && CONFIG_FLAGS="$F" \
@@ -28,12 +28,20 @@ for F in "$@" ; do
 done
 dnl Keep it "known" that we tried to re-use at least some local configuration
 dnl so unspecified options are not necessarily at default values for this script
-AS_IF([test x"${_flag_enable_inplace_runtime}" = xyes], [
-        F="--enable-runtime-support"
-        test -z "${CONFIG_FLAGS}" \
-        && CONFIG_FLAGS="$F" \
-        || CONFIG_FLAGS="${CONFIG_FLAGS} $F"
+F=""
+AS_CASE(["${_flag_enable_inplace_runtime}"],
+    [no], [ dnl Explicitly disabled... did we re-enter? Save the value to be seen:
+        AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x], [
+            F="--enable-runtime-support=${NUT_VERSION_DEPLOYED}"
         ])
+    ],
+    [""], [],
+    [F="${_flag_enable_inplace_runtime}"])
+AS_IF([test x"$F" != x], [
+    test -z "${CONFIG_FLAGS}" \
+    && CONFIG_FLAGS="$F" \
+    || CONFIG_FLAGS="${CONFIG_FLAGS} $F"
+    ])
 unset _flag_enable_inplace_runtime
 unset F
 unset NF
@@ -193,6 +201,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
     SBINDIR="${conftemp}"
 
     CONFIG_FLAGS_DEPLOYED=""
+    NUT_VERSION_DEPLOYED=""
     dnl TODO: Similar query can be done for BINDIR tools
     dnl and for libupsclient-config if deployed locally
     AC_MSG_CHECKING([${SBINDIR}/upsd])
@@ -200,6 +209,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         CONFIG_FLAGS_DEPLOYED="`"${SBINDIR}/upsd" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
+
+        NUT_VERSION_DEPLOYED="`"${SBINDIR}/upsd" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
+        && test x"${NUT_VERSION_DEPLOYED}" != x \
+        || NUT_VERSION_DEPLOYED=""
     ])
 
     AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
@@ -207,6 +220,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
         dnl For multiply-specified flags with conflicting values, last mention wins:
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
+        AS_IF([test x"${NUT_VERSION_DEPLOYED}" != x], [
+            AC_MSG_NOTICE([NUT_VERSION_DEPLOYED: ${NUT_VERSION_DEPLOYED}])
+            export NUT_VERSION_DEPLOYED
+        ])
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_RESULT([not reported])
