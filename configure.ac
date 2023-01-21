@@ -18,8 +18,8 @@ for F in "$@" ; do
     esac
 
     case "$F" in
-    --disable-runtime-support|--enable-runtime-support=no) _flag_enable_inplace_runtime="no" ;;
-    --enable-runtime-support*) _flag_enable_inplace_runtime="$F" ;;
+    --disable-inplace-runtime|--enable-inplace-runtime=no) _flag_enable_inplace_runtime="no" ;;
+    --enable-inplace-runtime*) _flag_enable_inplace_runtime="$F" ;;
     *)
         test -z "${CONFIG_FLAGS}" \
         && CONFIG_FLAGS="$F" \
@@ -33,7 +33,7 @@ F=""
 AS_CASE(["${_flag_enable_inplace_runtime}"],
     [no], [ dnl Explicitly disabled... did we re-enter? Save the value to be seen:
         AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x], [
-            F="--enable-runtime-support=${NUT_VERSION_DEPLOYED}"
+            F="--enable-inplace-runtime='${NUT_VERSION_DEPLOYED}'"
         ])
     ],
     [""], [],
