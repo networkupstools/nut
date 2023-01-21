@@ -194,29 +194,61 @@ NUT_ARG_ENABLE([inplace-runtime],
     [no])
 
 AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
-    AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
+    AC_MSG_NOTICE([checking for location, CONFIG_FLAGS and version of an already deployed NUT build (if it reports those)])
 
     dnl If existing NUT installation reports its build options, re-run this
     dnl script with those flags (overridden by any options passed currently):
     conftemp="${sbindir}"
     eval conftemp=\"${conftemp}\"
     eval conftemp=\"${conftemp}\"
-    SBINDIR="${conftemp}"
+    PREFIX_SBINDIR="${conftemp}"
+
+    conftemp="${bindir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PREFIX_BINDIR="${conftemp}"
+
+    DEPLOYED_SBINDIR="${PREFIX_SBINDIR}"
+    DEPLOYED_BINDIR="${PREFIX_BINDIR}"
+    dnl Note use of AC_PATH_PROG for specific pathname (not AC_CHECK_PROGS which picks filename variants)!
+    dnl Note: "ordinary" users might not have "sbin" in their default PATH, so appending it:
+    AC_PATH_PROG([DEPLOYED_UPSD], [upsd], [], [${PREFIX_SBINDIR}:${PATH}:/sbin:/usr/sbin:/usr/local/sbin])
+    dnl ...however "upsc" is a userland tool so should be there:
+    AC_PATH_PROG([DEPLOYED_UPSC], [upsc], [], [${PREFIX_BINDIR}:${PATH}])
+    AS_IF([test -x "${DEPLOYED_UPSD}"], [DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"])
+    AS_IF([test -x "${DEPLOYED_UPSC}"], [DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"])
+
+    DEPLOYED_PREFIX=""
+    AS_IF([test -d "${DEPLOYED_SBINDIR}"],
+        [DEPLOYED_PREFIX="`dirname "${DEPLOYED_SBINDIR}"`"],
+        [AS_IF([test -d "${DEPLOYED_BINDIR}"],
+            [DEPLOYED_PREFIX="`dirname "${DEPLOYED_BINDIR}"`"])]
+    )
+
+    AC_MSG_CHECKING([for CONFIG_FLAGS of an already deployed NUT build (if it reports those)])
 
     CONFIG_FLAGS_DEPLOYED=""
     NUT_VERSION_DEPLOYED=""
     dnl TODO: Similar query can be done for BINDIR tools
     dnl and for libupsclient-config if deployed locally
-    AC_MSG_CHECKING([${SBINDIR}/upsd])
-    AS_IF([test -x "${SBINDIR}/upsd"], [
-        CONFIG_FLAGS_DEPLOYED="`"${SBINDIR}/upsd" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
+    for DEPLOYED_TOOL in \
+        "${DEPLOYED_UPSD}" \
+        "${DEPLOYED_UPSC}" \
+    ; do
+        AS_IF([test x"${DEPLOYED_TOOL}" = x], [continue])
+        AS_IF([test -x "${DEPLOYED_TOOL}"], [], [continue])
+
+        AC_MSG_CHECKING([for CONFIG_FLAGS from ${DEPLOYED_TOOL}])
+        CONFIG_FLAGS_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*configured with flags: *,,'`" \
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
-        NUT_VERSION_DEPLOYED="`"${SBINDIR}/upsd" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
+        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
-    ])
+
+        AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}${NUT_VERSION_DEPLOYED}" = x], [], [break])
+    done
 
     AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
         AC_MSG_RESULT([${CONFIG_FLAGS_DEPLOYED}])
