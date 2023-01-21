@@ -10,15 +10,31 @@ AC_INIT([nut],[2.8.0.1],[https://github.com/networkupstools/nut/issues])
 dnl Keep track of command-line options passed to this script:
 CONFIG_FLAGS=""
 dnl Keep each token quoted, in case spaces or other special chars crawl in:
+_flag_enable_inplace_runtime=no
 for F in "$@" ; do
     case "$F" in
     *=*" "*) NF="$(echo "$F" | sed "s,=,=',")""'" && F="$NF" ;;
     esac
 
-    test -z "${CONFIG_FLAGS}" \
-    && CONFIG_FLAGS="$F" \
-    || CONFIG_FLAGS="${CONFIG_FLAGS} $F"
+    case "$F" in
+    --disable-runtime-support|--enable-runtime-support=no) ;;
+    --enable-runtime-support*) _flag_enable_inplace_runtime=yes ;;
+    *)
+        test -z "${CONFIG_FLAGS}" \
+        && CONFIG_FLAGS="$F" \
+        || CONFIG_FLAGS="${CONFIG_FLAGS} $F"
+        ;;
+    esac
 done
+dnl Keep it "known" that we tried to re-use at least some local configuration
+dnl so unspecified options are not necessarily at default values for this script
+AS_IF([test x"${_flag_enable_inplace_runtime}" = xyes], [
+        F="--enable-runtime-support"
+        test -z "${CONFIG_FLAGS}" \
+        && CONFIG_FLAGS="$F" \
+        || CONFIG_FLAGS="${CONFIG_FLAGS} $F"
+        ])
+unset _flag_enable_inplace_runtime
 unset F
 unset NF
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["${CONFIG_FLAGS}"],[Flags passed to configure script])
