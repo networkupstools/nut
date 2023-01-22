@@ -35,7 +35,7 @@ to produce a replacement by asking NUT programs for `--help` or for
 ----
 :; upsd -DV
 Network UPS Tools upsd 2.8.0.1
-   0.000000     [D1] Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
+Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
 ----
 
 A more industrial approach is to use `lib/libupsclient-config --config-flags`
