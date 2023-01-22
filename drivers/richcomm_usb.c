@@ -332,7 +332,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -391,13 +392,13 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
-			bus = libusb_get_bus_number(dev);
+			bus_num = libusb_get_bus_number(dev);
 			device->Bus = (char *)malloc(4);
 			if (device->Bus == NULL) {
 				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			sprintf(device->Bus, "%03d", bus);
+			sprintf(device->Bus, "%03d", bus_num);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;

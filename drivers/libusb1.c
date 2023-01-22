@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.44"
+#define USB_DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -162,7 +162,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
-	uint8_t bus, port;
+	uint8_t bus_num, device_addr;
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -242,39 +242,39 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* Keep the list of items in sync with those matched by
 		 * drivers/libusb0.c and tools/nut-scanner/scan_usb.c:
 		 */
-		bus = libusb_get_bus_number(device);
+		bus_num = libusb_get_bus_number(device);
 		curDevice->Bus = (char *)malloc(4);
 		if (curDevice->Bus == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		if (bus > 0) {
-			sprintf(curDevice->Bus, "%03d", bus);
+		if (bus_num > 0) {
+			sprintf(curDevice->Bus, "%03d", bus_num);
 		} else {
 			upsdebugx(1, "%s: invalid libusb bus number %i",
-				__func__, bus);
+				__func__, bus_num);
 		}
 
-		port = libusb_get_port_number(device);
+		device_addr = libusb_get_device_address(device);
 		curDevice->Device = (char *)malloc(4);
 		if (curDevice->Device == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		if (port > 0) {
+		if (device_addr > 0) {
 			/* 0 means not available, e.g. lack of platform support */
-			sprintf(curDevice->Device, "%03d", port);
+			sprintf(curDevice->Device, "%03d", device_addr);
 		} else {
 			if (devnum <= 999) {
 				/* Log visibly so users know their number discovered
 				 * from `lsusb` or `dmesg` (if any) was ignored */
-				upsdebugx(0, "%s: invalid libusb port number %i, "
+				upsdebugx(0, "%s: invalid libusb device address %" PRIu8 ", "
 					"falling back to enumeration order counter %" PRIuSIZE,
-					__func__, port, devnum);
+					__func__, device_addr, devnum);
 				sprintf(curDevice->Device, "%03d", (int)devnum);
 			} else {
-				upsdebugx(1, "%s: invalid libusb port number %i",
-					__func__, port);
+				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
+					__func__, device_addr);
 			}
 		}
 
