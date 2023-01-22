@@ -60,7 +60,7 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
+$(GENERATED_USB_FILES) $(GENERATED_USB_OS_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
