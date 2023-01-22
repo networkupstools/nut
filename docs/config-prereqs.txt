@@ -730,9 +730,14 @@ as detailed below:
 :; export PATH
 ------
 
-To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
+To use the `ci_build.sh` don't forget `bash` which may be not part of NetBSD
 base installation. It is not required for "legacy" builds arranged by just
 `autogen.sh` and `configure` scripts.
+
+Also note that the `install-sh` helper added by autotools from OS-provided
+resources when generating the `configure` script may be old and its directory
+creation mode is not safe for parallel-`make` installations. If this happens,
+you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 ------
 :; pkgin install \
