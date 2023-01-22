@@ -191,6 +191,8 @@ static int reconnect_ups(void)
 {
 	pm_err_t rv;
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(4, "===================================================");
 	upsdebugx(4, "= connection lost with Powerman, try to reconnect =");
 	upsdebugx(4, "===================================================");
@@ -202,6 +204,7 @@ static int reconnect_ups(void)
 	if ((rv = pm_connect(device_path, NULL, &pm, 0)) != PM_ESUCCESS)
 		return 0;
 	else {
+		dstate_setinfo("driver.state", "quiet");
 		upsdebugx(4, "connection restored with Powerman");
 		return 1;
 	}

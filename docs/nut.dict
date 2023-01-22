@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3067 utf-8
+personal_ws-1.1 en 3087 utf-8
 AAS
 ABI
 ACFAIL
@@ -391,6 +391,7 @@ GPL
 GPSER
 GRs
 GTK
+GUESSTIMATION
 GUIs
 GWD
 GXE
@@ -471,6 +472,7 @@ IC
 ID's
 IDE
 IDEN
+IDEs
 IDentifiers
 IFBETWEEN
 IFF
@@ -846,6 +848,7 @@ PIPEFN
 PLD
 PLL
 PLVn
+POLLFAIL
 POLLFREQALERT
 POMode
 POSIX
@@ -1341,6 +1344,7 @@ WS
 WSE
 WTU
 Waldie
+WatchdogSec
 Werror
 Wextra
 WhizBang
@@ -1515,6 +1519,7 @@ backends
 backgrounding
 backport
 backported
+backports
 backupspro
 badpassword
 baseurl
@@ -1624,6 +1629,7 @@ charset
 checksum
 chgrp
 chipset
+chkconfig
 chmod
 chown
 chr
@@ -1791,6 +1797,7 @@ dsssl
 dstate
 dt
 dtds
+dtksh
 dtr
 du
 dumbterm
@@ -1807,12 +1814,14 @@ ec
 echoback
 eco
 edb
+editorconfig
 edl
 ef
 egrep
 ei
 el
 emacs
+emptor
 endchar
 enddate
 endian
@@ -1866,6 +1875,7 @@ fds
 fe
 fenton
 fentonups
+fffdddxxx
 ffff
 fi
 fieldset
@@ -1941,6 +1951,7 @@ gtk
 guardpend
 guardpstart
 guesstimate
+guesstimation
 guez
 gufw
 gui
@@ -2058,6 +2069,7 @@ ipmipsu
 ippon
 ipv
 isbmex
+ish
 iso
 isolator
 ivtscd
@@ -2133,6 +2145,7 @@ libregex
 libs
 libsnmp
 libssl
+libsystemd
 libtool
 libupsclient
 libusb
@@ -2147,6 +2160,7 @@ licensor
 licensors
 liebert
 liebertgxt
+lifecycle
 linesensitivity
 linevoltage
 linkdoc
@@ -2816,7 +2830,9 @@ testime
 testtime
 testuser
 textproc
+tgcware
 th
+timeframe
 timehead
 timeline
 timername
@@ -3047,6 +3063,7 @@ xhtml
 xmalloc
 xml
 xmllint
+xpg
 xr
 xrealloc
 xsl

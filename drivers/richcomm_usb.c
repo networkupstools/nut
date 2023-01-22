@@ -638,11 +638,13 @@ void upsdrv_updateinfo(void)
 	int	ret, online, battery_normal;
 
 	if (!udev) {
+		dstate_setinfo("driver.state", "reconnect.trying");
 		ret = usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback);
 
 		if (ret < 0) {
 			return;
 		}
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
 
 	ret = query_ups(reply);
@@ -651,6 +653,7 @@ void upsdrv_updateinfo(void)
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb_device_close(udev);
 		udev = NULL;
 

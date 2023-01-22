@@ -41,6 +41,13 @@ AC_DEFUN([NUT_REPORT_PATH],
     NUT_REPORT_FILE([$1], [$2], [2], "NUT Paths:")
 ])
 
+AC_DEFUN([NUT_REPORT_PATH_INTEGRATIONS],
+[
+    dnl arg#1 = description (summary)
+    dnl arg#2 = value
+    NUT_REPORT_FILE([$1], [$2], [3], "NUT Paths for third-party integrations:")
+])
+
 AC_DEFUN([NUT_REPORT_FEATURE],
 [
     dnl arg#1 = summary/config.log description
@@ -86,6 +93,20 @@ AC_DEFUN([NUT_REPORT_SETTING_PATH],
    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
+AC_DEFUN([NUT_REPORT_SETTING_PATH_INTEGRATIONS],
+[
+    dnl arg#1 = summary/config.log description
+    dnl arg#2 = autoconf varname
+    dnl arg#3 = value
+    dnl arg#4 = longer description (autoconf comment)
+   AC_MSG_CHECKING([setting for $1])
+   AC_MSG_RESULT([$3])
+   NUT_REPORT_PATH_INTEGRATIONS([$1], [$3])
+
+   dnl Note: unlike features, settings do not imply an AutoMake toggle
+   AC_DEFINE_UNQUOTED($2, $3, $4)
+])
+
 AC_DEFUN([NUT_REPORT_TARGET],
 [
     dnl arg#1 = autoconf varname
@@ -111,6 +132,7 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
     printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
     printf '* CPP     \t: %s\n' "$CPP"
     printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+    printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
    ) > config.nut_report_feature.log.9
     ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"
 ])

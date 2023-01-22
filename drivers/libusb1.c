@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.44"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -66,6 +66,17 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+
+	/* Warning: this feature is inherently non-deterministic!
+	 * If you only care to know that at least one of your no-name UPSes is online,
+	 * this option can help. If you must really know which one, it will not!
+	 */
+	addvar(VAR_FLAG, "allow_duplicates",
+		"If you have several UPS devices which may not be uniquely "
+		"identified by options above, allow each driver instance with this "
+		"option to take the first match if available, or try another "
+		"(association of driver to device may vary between runs)");
+
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 #ifdef LIBUSB_API_VERSION
@@ -228,6 +239,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Device);
 		memset(curDevice, '\0', sizeof(*curDevice));
 
+		/* Keep the list of items in sync with those matched by
+		 * drivers/libusb0.c and tools/nut-scanner/scan_usb.c:
+		 */
 		bus_num = libusb_get_bus_number(device);
 		curDevice->Bus = (char *)malloc(4);
 		if (curDevice->Bus == NULL) {
@@ -415,6 +429,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 # ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
 			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
@@ -446,6 +465,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #else
 		if ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS ) {
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
@@ -491,9 +515,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "Unable to get HID descriptor (%s)",
 				libusb_strerror((enum libusb_error)res));
 		} else if (res < 9) {
-			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 9, res);
 		} else {
-
+			upsdebugx(2, "Retrieved HID descriptor (expected %d, got %d)", 9, res);
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 			rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);

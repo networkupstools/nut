@@ -4,6 +4,18 @@
 # in a buildable state
 # NOTE: uses cumbersome dumbest-possible shell syntax for extra portability
 
+# perl tends to complain if locale is not set (or its files are absent)
+if [ -z "${LANG-}" ]; then
+	LANG="C"
+	export LANG
+fi
+
+if [ -z "${LC_ALL-}" ] ; then
+	LC_ALL="C"
+	export LC_ALL
+fi
+
+
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
 	(command -v "$PYTHON") \
@@ -110,7 +122,7 @@ FAILED: did not generate an executable configure script!
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
 # scripts, and need you to explicitly say which version you want, e.g.
-#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
+#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
 EOF
 	exit 1

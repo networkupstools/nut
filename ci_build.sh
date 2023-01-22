@@ -165,7 +165,8 @@ esac
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
-[ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
+[ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
+[ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
 # This is where many symlinks like "gcc -> ../bin/ccache" reside
 # (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
@@ -652,10 +653,17 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+        case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || return
+            ;;
+        *)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+        esac
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
+
     return 0
 }
 
@@ -676,7 +684,7 @@ optional_dist_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || return
 
         check_gitignore "distclean" || return
     fi
@@ -983,7 +991,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+    if [ "${CANBUILD_NIT_TESTS-}" != no ] ; then
         CONFIG_OPTS+=("--enable-check-NIT")
     else
         echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
@@ -1260,7 +1268,16 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
+        case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
+            || ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+            ;;
+        *)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+        esac \
+        || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
+        || true
         echo "=== Finished initial clean-up"
     fi
 
@@ -1466,9 +1483,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # would just re-evaluate `configure` to update the
                 # Makefile to remove it and other generated data.
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE distclean -k || true
+                #$MAKE distclean $MAKE_FLAGS_CLEAN -k || true
 
-                echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1483,7 +1500,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_SSL_VARIANT='${NUT_SSL_VARIANT}' ..."
+                        echo "=== Building with 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' ..."
                         ( CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
                           configure_nut
                         )
@@ -1500,7 +1517,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
@@ -1549,7 +1566,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean $MAKE_FLAGS_CLEAN -k \
+                        || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1573,7 +1591,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
              || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
-                echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1600,7 +1618,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     libusb-*)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1611,7 +1629,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1633,7 +1651,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
                 build_to_only_catch_errors && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
@@ -1680,7 +1698,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean $MAKE_FLAGS_CLEAN -k \
+                        || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1789,6 +1808,7 @@ bindings)
 
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
+        # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
         ${MAKE} realclean -k || true
@@ -1814,6 +1834,9 @@ bindings)
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
+    else
+        # Help developers debug:
+        CONFIG_OPTS+=("--disable-silent-rules")
     fi
 
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"

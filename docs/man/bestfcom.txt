@@ -17,7 +17,8 @@ SUPPORTED HARDWARE
 ------------------
 
 Best Power Fortress/Ferrups implementing the Fortress UPS Protocol
-(f-command set).
+(f-command set).  (For older Fortress units, see
+linkman:bestfortress[8].)
 
 EXTRA ARGUMENTS
 ---------------
