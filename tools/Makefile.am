@@ -30,7 +30,8 @@ GENERATED_USB_OS_FILES += ../scripts/udev/nut-usbups.rules.in
 GENERATED_USB_OS_FILES += ../scripts/devd/nut-usb.conf.in
 
 # UPower output file
-GENERATED_USB_OS_FILES += ../scripts/upower/95-upower-hid.rules
+# Note: unlike others above, this one is currently tracked in Git
+GENERATED_USB_OS_FILES += ../scripts/upower/95-upower-hid.hwdb
 
 CLEANFILES = $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
 # We do not clean away these files, some are even tracked in Git:
