@@ -274,7 +274,7 @@ static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 			     SER_WAIT_SEC, SER_WAIT_USEC);
 
 	/* \todo is buf null terminated? */
-	upsdebugx(4, "%s: read %d <%s>", __func__, (int) nread, buf);
+	upsdebugx(4, "%s: read %" PRIiSIZE " <%s>", __func__, nread, buf);
 
 	return nread;
 }
@@ -470,7 +470,7 @@ static void autorestart (int restart)
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
 	size_t len = strlen(data);
-	upsdebugx(1, "%s: %s %s (%d bytes)", __func__, var, data, (int) len);
+	upsdebugx(1, "%s: %s %s (%" PRIuSIZE " bytes)", __func__, var, data, len);
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
 	}
