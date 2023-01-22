@@ -368,6 +368,11 @@ AC_C_VARARRAYS
 NUT_ARG_ENABLE([keep_nut_report_feature],
     [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
     [no])
+
+AS_IF([test x"${GITREV}" = x],
+    [NUT_REPORT([configured version], [${PACKAGE_VERSION}])],
+    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${GITREV})])])
+
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
