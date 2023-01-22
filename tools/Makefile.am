@@ -73,6 +73,16 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 		echo "----------------------------------------------------------------------"; \
 	fi
 
+# Currently GENERATED_USB_FILES refers to a single file, which ensures
+# that the perl script (if needed) runs once even in parallel builds.
+# The GENERATED_USB_OS_FILES should not *have* to be built by make at
+# all, but just in case (developer iterations) a dependency is here.
+# It is expected that the files exist (from tarball or latest run of
+# script for GENERATED_USB_FILES purposes), so we only confirm that
+# and bump timestamps to avoid more noise.
+$(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
+	@test -s "$@" && touch "$@"
+
 $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
