@@ -4121,6 +4121,9 @@ m4_foreach_w([SCRIPTFILE], [
 	)
 ])
 
+dnl Define this before AC_OUTPUT(), so not in report below
+AM_CONDITIONAL(KEEP_NUT_REPORT, test x"${nut_enable_keep_nut_report_feature-}" = xyes)
+
 AC_OUTPUT
 
 NUT_REPORT_COMPILERS
