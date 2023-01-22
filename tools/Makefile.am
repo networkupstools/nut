@@ -33,17 +33,17 @@ GENERATED_USB_FILES = nut-scanner/nutscan-usb.h
 # after such fundamental changes the project should better run `autogen.sh`.
 
 # Hotplug output file
-GENERATED_USB_OS_FILES = ../scripts/hotplug/libhid.usermap
+GENERATED_USB_OS_FILES = $(top_builddir)/scripts/hotplug/libhid.usermap
 
 # udev output file
-GENERATED_USB_OS_FILES += ../scripts/udev/nut-usbups.rules.in
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/udev/nut-usbups.rules.in
 
 # BSD devd output file
-GENERATED_USB_OS_FILES += ../scripts/devd/nut-usb.conf.in
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.conf.in
 
 # UPower output file
 # Note: unlike others above, this one is currently tracked in Git
-GENERATED_USB_OS_FILES += ../scripts/upower/95-upower-hid.hwdb
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/upower/95-upower-hid.hwdb
 
 CLEANFILES = $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
 # We do not clean away these files, some are even tracked in Git:
@@ -83,8 +83,22 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 # builds from scratch (with explicit envvars passed to autogen.sh)
 # these files may be empty to satisfy dependencies and forfeit the
 # features for a particular build.
+# To facilitate "make distcheck" and out-of-tree builds, we try to
+# use files pre-generated in SRCDIR if those in BUILDDIR dir are empty
+# or did not appear.
 $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	@test -s "$@" || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
+	@$(MKDIR_P) "$(@D)"
+	@if ! test -s "$@" ; then \
+	    if test x"$(top_srcdir)" != x"$(top_builddir)" ; then \
+	        RELNAME="`echo "$@" | sed 's,^$(top_builddir)/*,,'`" ; \
+	        SRCNAME="$(top_srcdir)/$${RELNAME}" ; \
+	        if test -s "$${SRCNAME}" ; then \
+	            echo "WARNING: GENERATED_USB_OS_FILES: using '$${SRCNAME}' for '$@'" >&2 ; \
+	            cp "$${SRCNAME}" "$@" ; \
+	        fi ; \
+	    fi ; \
+	 fi
 	@touch "$@"
 
 $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
