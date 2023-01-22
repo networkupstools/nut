@@ -79,9 +79,13 @@ $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 # all, but just in case (developer iterations) a dependency is here.
 # It is expected that the files exist (from tarball or latest run of
 # script for GENERATED_USB_FILES purposes), so we only confirm that
-# and bump timestamps to avoid more noise.
+# and bump their timestamps to avoid more noise. Note that for some
+# builds from scratch (with explicit envvars passed to autogen.sh)
+# these files may be empty to satisfy dependencies and forfeit the
+# features for a particular build.
 $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
-	@test -s "$@" && touch "$@"
+	@test -s "$@" || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
+	@touch "$@"
 
 $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
 	@if perl -e 1; then \
