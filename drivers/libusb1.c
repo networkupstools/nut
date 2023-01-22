@@ -268,12 +268,12 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			if (devnum <= 999) {
 				/* Log visibly so users know their number discovered
 				 * from `lsusb` or `dmesg` (if any) was ignored */
-				upsdebugx(0, "%s: invalid libusb device address %i, "
-					"falling back to enumeration order counter %zd",
+				upsdebugx(0, "%s: invalid libusb device address %" PRIu8 ", "
+					"falling back to enumeration order counter %" PRIuSIZE,
 					__func__, device_addr, devnum);
 				sprintf(curDevice->Device, "%03d", (int)devnum);
 			} else {
-				upsdebugx(1, "%s: invalid libusb device address %i",
+				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
 					__func__, device_addr);
 			}
 		}
