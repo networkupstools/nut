@@ -152,4 +152,6 @@ AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
          ac_clean_files="${ac_clean_files} config.nut_report_feature.log"
          cat config.nut_report_feature.log.*
         ])
+
+    AM_CONDITIONAL(KEEP_NUT_REPORT, test x"${nut_enable_keep_nut_report_feature-}" = xyes)
 ])
