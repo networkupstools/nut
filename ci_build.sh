@@ -1524,6 +1524,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' build"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -1658,6 +1660,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' build"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
