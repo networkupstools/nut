@@ -1761,14 +1761,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     check_gitignore "all" || exit
 
     if test -s "${SCRIPTDIR}/install-sh" \
-    && ( grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" \
-         && { grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' ; } ; \
-       ) >/dev/null \
+    && grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
     ; then
-        if [ -z "${MKDIRPROG-}" ] ; then
-            echo "`date`: WARNING: setting MKDIRPROG to work around possible deficiencies of install-sh"
-            MKDIRPROG="mkdir -p"
-            export MKDIRPROG
+         if grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null \
+        ; then
+            true
+        else
+            if [ -z "${MKDIRPROG-}" ] ; then
+                echo "`date`: WARNING: setting MKDIRPROG to work around possible deficiencies of install-sh"
+                MKDIRPROG="mkdir -p"
+                export MKDIRPROG
+            fi
         fi
     fi
 
