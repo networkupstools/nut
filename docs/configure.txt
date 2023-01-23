@@ -35,11 +35,20 @@ to produce a replacement by asking NUT programs for `--help` or for
 ----
 :; upsd -DV
 Network UPS Tools upsd 2.8.0.1
-   0.000000     [D1] Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
+Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
 ----
 
 A more industrial approach is to use `lib/libupsclient-config --config-flags`
 where supported.
+
+Keeping a report of NUT configuration
+-------------------------------------
+
+	--enable-keep_nut_report_feature
+
+If this option is enabled (not currently default), the report displayed
+by `configure` script will be kept in a file when the script ends, and
+installed into the data directory.
 
 In-place replacement defaults
 -----------------------------
@@ -64,6 +73,10 @@ explicitly to be on same page as the existing setup), e.g.:
 If the installed NUT version supports reporting of `CONFIG_FLAGS` used
 during its build, the `configure` script will try to take those values
 into account when running in this mode.
+
+NOTE: This does not currently rely on the configuration report optionally
+installed by `--enable-keep_nut_report_feature` above, but might do so
+eventually.
 
 Driver selection
 ----------------
