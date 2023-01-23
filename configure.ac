@@ -4133,8 +4133,15 @@ NUT_PRINT_FEATURE_REPORT
 
 dnl Stopping short of patching the unknown script, we can warn about the issue
 dnl (visibly as it impacts next activities of the caller):
-AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && (grep -w MKDIRPROG "${ABS_TOP_SRCDIR}/install-sh" && { grep -v '#' "${ABS_TOP_SRCDIR}/install-sh" | grep -E '\$mkdirprog.*-p' ; } ; ) >/dev/null],
-	[AC_MSG_WARN([Your system provided (or NUT tarball included) an 'install-sh' implementation])
-	 AC_MSG_WARN([which is not safe for parallel installs; export MKDIRPROG='mkdir -p' may help,])
-	 AC_MSG_WARN([otherwise run 'make install' sequentially. It should not impact parallel builds.])
+AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && grep -w MKDIRPROG "${ABS_TOP_SRCDIR}/install-sh" >/dev/null],
+	[AS_IF([grep -v '#' "${ABS_TOP_SRCDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null],
+		[],
+		[AC_MSG_WARN([=====================================================])
+		 AC_MSG_WARN([Your system provided (or NUT tarball included) an])
+		 AC_MSG_WARN(['install-sh' implementation which is not safe for])
+		 AC_MSG_WARN([parallel installs; export MKDIRPROG='mkdir -p'])
+		 AC_MSG_WARN([may help, otherwise run 'make install' sequentially.])
+		 AC_MSG_WARN([This should not impact parallel builds.])
+		 AC_MSG_WARN([=====================================================])
 	])
+])
