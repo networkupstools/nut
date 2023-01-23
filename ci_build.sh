@@ -1760,6 +1760,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # fail due to them:
     check_gitignore "all" || exit
 
+    if test -s "${SCRIPTDIR}/install-sh" \
+    && ( grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" \
+         && { grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' ; } ; \
+       ) >/dev/null \
+    ; then
+        if [ -z "${MKDIRPROG-}" ] ; then
+            echo "`date`: WARNING: setting MKDIRPROG to work around possible deficiencies of install-sh"
+            MKDIRPROG="mkdir -p"
+            export MKDIRPROG
+        fi
+    fi
+
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DESTDIR="$INST_PREFIX" install
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
