@@ -71,8 +71,16 @@ then
 	fi
 fi
 
+# Keep in sync with tools/nut-usbinfo.pl outputs:
+# * List actual file opens:
+#    grep -i '">' tools/nut-usbinfo.pl
+# * List the names involved:
+#    grep -E 'output.*=' tools/nut-usbinfo.pl
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
-     ! -f scripts/devd/nut-usb.conf.in ]
+     ! -f scripts/hotplug/libhid.usermap -o \
+     ! -f scripts/upower/95-upower-hid.hwdb -o \
+     ! -f scripts/devd/nut-usb.conf.in -o \
+     ! -f tools/nut-scanner/nutscan-usb.h ]
 then
 	if perl -e 1; then
 		echo "Regenerating the USB helper files..."

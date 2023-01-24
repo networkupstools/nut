@@ -58,7 +58,7 @@ SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremov
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
-		mkdir -p "$(DESTDIR)@datadir@/augeas-lenses" && \
+		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
 		cd "$(DESTDIR)@auglensdir@" && \
 		( cp -prf ./ "$(DESTDIR)@datadir@/augeas-lenses/" || cp -rf ./ "$(DESTDIR)@datadir@/augeas-lenses/" ) ; fi
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1

@@ -4121,10 +4121,27 @@ m4_foreach_w([SCRIPTFILE], [
 	)
 ])
 
-dnl Define this before AC_OUTPUT(), so not in report below
+dnl Define this before AC_OUTPUT(), so not inside the report routine below:
 AM_CONDITIONAL(KEEP_NUT_REPORT, test x"${nut_enable_keep_nut_report_feature-}" = xyes)
 
+dnl Prints a long list of files generated from templates...
 AC_OUTPUT
 
+dnl Normally the latest action, for the summary to be visible:
 NUT_REPORT_COMPILERS
 NUT_PRINT_FEATURE_REPORT
+
+dnl Stopping short of patching the unknown script, we can warn about the issue
+dnl (visibly as it impacts next activities of the caller):
+AS_IF([test -s "${ABS_TOP_SRCDIR}/install-sh" && grep -w MKDIRPROG "${ABS_TOP_SRCDIR}/install-sh" >/dev/null],
+	[AS_IF([grep -v '#' "${ABS_TOP_SRCDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null],
+		[],
+		[AC_MSG_WARN([=====================================================])
+		 AC_MSG_WARN([Your system provided (or NUT tarball included) an])
+		 AC_MSG_WARN(['install-sh' implementation which is not safe for])
+		 AC_MSG_WARN([parallel installs; export MKDIRPROG='mkdir -p'])
+		 AC_MSG_WARN([may help, otherwise run 'make install' sequentially.])
+		 AC_MSG_WARN([This should not impact parallel builds.])
+		 AC_MSG_WARN([=====================================================])
+	])
+])

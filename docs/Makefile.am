@@ -201,7 +201,7 @@ DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
         case "$${A2X_OUTDIR}" in \
             tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
         esac; \

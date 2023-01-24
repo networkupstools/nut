@@ -615,7 +615,7 @@ check_gitignore() {
     if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | grep -E -v '^.. \.ci.*\.log.*' | grep -E "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
-        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
             PAGER=cat git diff -- "${FILE_GLOB}" || true
         fi
@@ -1759,6 +1759,21 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # changed (listed as a special group above) but should still
     # fail due to them:
     check_gitignore "all" || exit
+
+    if test -s "${SCRIPTDIR}/install-sh" \
+    && grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
+    ; then
+         if grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null \
+        ; then
+            true
+        else
+            if [ -z "${MKDIRPROG-}" ] ; then
+                echo "`date`: WARNING: setting MKDIRPROG to work around possible deficiencies of install-sh"
+                MKDIRPROG="mkdir -p"
+                export MKDIRPROG
+            fi
+        fi
+    fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DESTDIR="$INST_PREFIX" install
