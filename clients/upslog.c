@@ -176,6 +176,8 @@ static void help(const char *prog)
 	printf("\n");
 	printf("See the upslog(8) man page for more information.\n");
 
+	nut_report_config_flags();
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -501,6 +503,7 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
 			case 'p':

@@ -19,6 +19,7 @@ EXTRA_DIST = README \
     subdriver/gen-usbhid-subdriver.sh \
     subdriver/gen-snmp-subdriver.sh \
     ufw/README \
+    upower/95-upower-hid.hwdb \
     upower/95-upower-hid.rules \
     Windows/halt.c \
     Windows/Makefile

@@ -53,7 +53,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
  static void (*nut_usb_free_device_list)(libusb_device **list, int unref_devices);
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
- static uint8_t (*nut_usb_get_port_number)(libusb_device *dev);
+ static uint8_t (*nut_usb_get_device_address)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 #else /* => WITH_LIBUSB_0_1 */
@@ -151,8 +151,8 @@ int nutscan_load_usb_library(const char *libname_path)
 	 * was a libusb_get_port_path() equivalent with different arguments, but
 	 * not for too long (libusb-1.0.12...1.0.16) and now it is deprecated.
 	 */
-	*(void **) (&nut_usb_get_port_number) = lt_dlsym(dl_handle,
-					"libusb_get_port_number");
+	*(void **) (&nut_usb_get_device_address) = lt_dlsym(dl_handle,
+					"libusb_get_device_address");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
@@ -250,9 +250,12 @@ nutscan_device_t * nutscan_scan_usb()
 	 *   different consumers plugged into same socket should have
 	 *   the same port value. However in practice such functionality
 	 *   depends on platform and HW involved.
-	 * In libusb1 API: libusb_get_port_numbers() earlier known
+	 * In libusb1 API: first libusb_get_port_numbers() earlier known
 	 *    as libusb_get_port_path() for physical port number on the bus, see
 	 *    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html#ga14879a0ea7daccdcddb68852d86c00c4
+	 *    later changed to logical libusb_get_bus_number() (which
+	 *    often yields same numeric value, except on systems that
+	 *    can not see or tell about physical topology)
 	 * In libusb0 API: "device filename"
 	 */
 	char *device_port = NULL;
@@ -261,7 +264,7 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
-	uint8_t bus;
+	uint8_t bus_num;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -310,7 +313,7 @@ nutscan_device_t * nutscan_scan_usb()
 		iManufacturer = dev_desc.iManufacturer;
 		iProduct = dev_desc.iProduct;
 		iSerialNumber = dev_desc.iSerialNumber;
-		bus = (*nut_usb_get_bus_number)(dev);
+		bus_num = (*nut_usb_get_bus_number)(dev);
 
 		busname = (char *)malloc(4);
 		if (busname == NULL) {
@@ -318,7 +321,7 @@ nutscan_device_t * nutscan_scan_usb()
 			(*nut_usb_exit)(NULL);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		snprintf(busname, 4, "%03d", bus);
+		snprintf(busname, 4, "%03d", bus_num);
 
 		device_port = (char *)malloc(4);
 		if (device_port == NULL) {
@@ -326,9 +329,9 @@ nutscan_device_t * nutscan_scan_usb()
 			(*nut_usb_exit)(NULL);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		} else {
-			uint8_t port = (*nut_usb_get_port_number)(dev);
-			if (port > 0) {
-				snprintf(device_port, 4, "%03d", port);
+			uint8_t device_addr = (*nut_usb_get_device_address)(dev);
+			if (device_addr > 0) {
+				snprintf(device_port, 4, "%03d", device_addr);
 			} else {
 				snprintf(device_port, 4, ".*");
 			}

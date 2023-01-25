@@ -312,6 +312,11 @@ void fatal_with_errno(int status, const char *fmt, ...)
 void fatalx(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 
+/* Report CONFIG_FLAGS used for this build of NUT similarly to how
+ * upsdebugx(1, ...) would do it, but not limiting the string length
+ */
+void nut_report_config_flags(void);
+
 extern int nut_debug_level;
 extern int nut_log_level;
 

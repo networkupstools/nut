@@ -27,6 +27,10 @@ EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 # want to adapt it to their autotools or locally fix a tarball-based build.
 EXTRA_DIST += autogen.sh
 
+if KEEP_NUT_REPORT
+nodist_data_DATA = config.nut_report_feature.log
+endif
+
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
@@ -97,7 +101,7 @@ MAINTAINERCLEANFILES += Makefile.in .dirstamp include/config.h.in
 
 # Executed after default rules
 maintainer-clean-local:
-	rm -f missing || true
+	$(AM_V_at)rm -f missing || true
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
@@ -111,8 +115,8 @@ distclean-local:
 			( cd "$${DIR}" && $(MAKE) -s distclean ) || exit ; \
 		fi ; \
 	 done
-	rm -rf .inst tmp autom4te.cache
-	find "$(builddir)" -type d -name '.deps' | while read DIR ; do rm -rf "$${DIR}" ; done
+	$(AM_V_at)rm -rf .inst tmp autom4te.cache
+	$(AM_V_at)find "$(builddir)" -type d -name '.deps' | while read DIR ; do rm -rf "$${DIR}" ; done
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)

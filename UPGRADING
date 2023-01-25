@@ -79,6 +79,11 @@ Changes from 2.8.0 to 2.8.1
   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
 
+- The "layman report" of NUT configuration options displayed after the run
+  of `configure` script can now be retained and installed by using the
+  `--enable-keep_nut_report_feature` option; packagers are welcome to make
+  use of this, to better keep track of their deliveries [#1826, #1708]
+
 - Renamed generated nut-common.tmpfiles(.in) => nut-common-tmpfiles.conf(.in)
   to install a /usr/lib/systemd-tmpfiles/*.conf pattern [#1755]
 

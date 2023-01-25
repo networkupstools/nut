@@ -134,6 +134,8 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
+	nut_report_config_flags();
+
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
@@ -831,7 +833,8 @@ int main(int argc, char **argv)
 				group_from_cmdline = 1;
 				break;
 			case 'V':
-				/* already printed the banner, so exit */
+				/* already printed the banner for program name */
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':
 				splitxarg(optarg);
@@ -859,6 +862,14 @@ int main(int argc, char **argv)
 				);
 		}
 	} /* else: default remains `background_flag==-1` where nonzero is true */
+
+	/* Since debug mode dumps from drivers are often posted to mailing list
+	 * or issue tracker, as well as viewed locally, it can help to know the
+	 * build options involved when troubleshooting (especially when needed
+	 * to walk through building a PR branch with candidate fix for an issue).
+	 */
+	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
+		UPS_VERSION, CONFIG_FLAGS);
 
 	argc -= optind;
 	argv += optind;

@@ -901,7 +901,7 @@ DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
             if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
@@ -1057,4 +1057,4 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp

@@ -10,10 +10,10 @@ AC_DEFUN([NUT_REPORT_FILE],
     dnl arg#2 = value
     dnl arg#3 = file tag (e.g. number)
     dnl arg#4 = file title (e.g. "NUT Configuration summary:")
-    if test -z "${nut_report_feature_flag$3}"; then
+    AS_IF([test x"${nut_report_feature_flag$3}" = x], [
         nut_report_feature_flag$3="1"
         ac_clean_files="${ac_clean_files} config.nut_report_feature.log.$3"
-        if test x1 = x$3 ; then
+        if test x1 = "x$3" ; then
             echo "$4"
             echo "$4" | sed 's/./=/g'
             echo ""
@@ -23,7 +23,7 @@ AC_DEFUN([NUT_REPORT_FILE],
             echo "$4" | sed 's/./-/g'
             echo ""
         fi > "config.nut_report_feature.log.$3"
-    fi
+    ])
     printf "* $1:\t$2\n" >> "config.nut_report_feature.log.$3"
 ])
 
@@ -55,14 +55,14 @@ AC_DEFUN([NUT_REPORT_FEATURE],
     dnl arg#3 = value
     dnl arg#4 = autoconf varname
     dnl arg#5 = longer description (autoconf comment)
-   AC_MSG_CHECKING([whether to $1])
-   AC_MSG_RESULT([$2 $3])
-   NUT_REPORT([$1], [$2 $3])
+    AC_MSG_CHECKING([whether to $1])
+    AC_MSG_RESULT([$2 $3])
+    NUT_REPORT([$1], [$2 $3])
 
-   AM_CONDITIONAL([$4], test "$2" = "yes")
-   if test "$2" = "yes"; then
-      AC_DEFINE_UNQUOTED($4, 1, $5)
-   fi
+    AM_CONDITIONAL([$4], test "$2" = "yes")
+    AS_IF([test x"$2" = x"yes"], [
+        AC_DEFINE_UNQUOTED($4, 1, $5)
+    ])
 ])
 
 AC_DEFUN([NUT_REPORT_SETTING],
@@ -71,12 +71,12 @@ AC_DEFUN([NUT_REPORT_SETTING],
     dnl arg#2 = autoconf varname
     dnl arg#3 = value
     dnl arg#4 = longer description (autoconf comment)
-   AC_MSG_CHECKING([setting for $1])
-   AC_MSG_RESULT([$3])
-   NUT_REPORT([$1], [$3])
+    AC_MSG_CHECKING([setting for $1])
+    AC_MSG_RESULT([$3])
+    NUT_REPORT([$1], [$3])
 
-   dnl Note: unlike features, settings do not imply an AutoMake toggle
-   AC_DEFINE_UNQUOTED($2, $3, $4)
+    dnl Note: unlike features, settings do not imply an AutoMake toggle
+    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
 AC_DEFUN([NUT_REPORT_SETTING_PATH],
@@ -85,12 +85,12 @@ AC_DEFUN([NUT_REPORT_SETTING_PATH],
     dnl arg#2 = autoconf varname
     dnl arg#3 = value
     dnl arg#4 = longer description (autoconf comment)
-   AC_MSG_CHECKING([setting for $1])
-   AC_MSG_RESULT([$3])
-   NUT_REPORT_PATH([$1], [$3])
+    AC_MSG_CHECKING([setting for $1])
+    AC_MSG_RESULT([$3])
+    NUT_REPORT_PATH([$1], [$3])
 
-   dnl Note: unlike features, settings do not imply an AutoMake toggle
-   AC_DEFINE_UNQUOTED($2, $3, $4)
+    dnl Note: unlike features, settings do not imply an AutoMake toggle
+    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
 AC_DEFUN([NUT_REPORT_SETTING_PATH_INTEGRATIONS],
@@ -99,12 +99,12 @@ AC_DEFUN([NUT_REPORT_SETTING_PATH_INTEGRATIONS],
     dnl arg#2 = autoconf varname
     dnl arg#3 = value
     dnl arg#4 = longer description (autoconf comment)
-   AC_MSG_CHECKING([setting for $1])
-   AC_MSG_RESULT([$3])
-   NUT_REPORT_PATH_INTEGRATIONS([$1], [$3])
+    AC_MSG_CHECKING([setting for $1])
+    AC_MSG_RESULT([$3])
+    NUT_REPORT_PATH_INTEGRATIONS([$1], [$3])
 
-   dnl Note: unlike features, settings do not imply an AutoMake toggle
-   AC_DEFINE_UNQUOTED($2, $3, $4)
+    dnl Note: unlike features, settings do not imply an AutoMake toggle
+    AC_DEFINE_UNQUOTED($2, $3, $4)
 ])
 
 AC_DEFUN([NUT_REPORT_TARGET],
@@ -122,17 +122,18 @@ AC_DEFUN([NUT_REPORT_TARGET],
 
 AC_DEFUN([NUT_REPORT_COMPILERS],
 [
-   (echo ""
-    echo "NUT Compiler settings:"
-    echo "----------------------"
-    echo ""
-    printf '* CC      \t: %s\n' "$CC"
-    printf '* CFLAGS  \t: %s\n' "$CFLAGS"
-    printf '* CXX     \t: %s\n' "$CXX"
-    printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
-    printf '* CPP     \t: %s\n' "$CPP"
-    printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
-   ) > config.nut_report_feature.log.9
+    (echo ""
+     echo "NUT Compiler settings:"
+     echo "----------------------"
+     echo ""
+     printf '* CC      \t: %s\n' "$CC"
+     printf '* CFLAGS  \t: %s\n' "$CFLAGS"
+     printf '* CXX     \t: %s\n' "$CXX"
+     printf '* CXXFLAGS\t: %s\n' "$CXXFLAGS"
+     printf '* CPP     \t: %s\n' "$CPP"
+     printf '* CPPFLAGS\t: %s\n' "$CPPFLAGS"
+     printf '* CONFIG_FLAGS\t: %s\n' "$CONFIG_FLAGS"
+    ) > config.nut_report_feature.log.9
     ac_clean_files="${ac_clean_files} config.nut_report_feature.log.9"
 ])
 

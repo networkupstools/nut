@@ -71,8 +71,16 @@ then
 	fi
 fi
 
+# Keep in sync with tools/nut-usbinfo.pl outputs:
+# * List actual file opens:
+#    grep -i '">' tools/nut-usbinfo.pl
+# * List the names involved:
+#    grep -E 'output.*=' tools/nut-usbinfo.pl
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
-     ! -f scripts/devd/nut-usb.conf.in ]
+     ! -f scripts/hotplug/libhid.usermap -o \
+     ! -f scripts/upower/95-upower-hid.hwdb -o \
+     ! -f scripts/devd/nut-usb.conf.in -o \
+     ! -f tools/nut-scanner/nutscan-usb.h ]
 then
 	if perl -e 1; then
 		echo "Regenerating the USB helper files..."
@@ -122,7 +130,7 @@ FAILED: did not generate an executable configure script!
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
 # scripts, and need you to explicitly say which version you want, e.g.
-#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.10
+#    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
 EOF
 	exit 1
