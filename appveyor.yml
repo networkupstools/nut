@@ -109,7 +109,7 @@ after_test:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x 2>/dev/null || echo "SKIP: Could not query ccache compression stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
 
 
 artifacts:
